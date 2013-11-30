@@ -112,13 +112,13 @@ chptTitle flags cpt =
 class Xreferencable a where
   xLabel :: a  -> String
   xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
-  xrefReference a = RawInline "latex" ("\\ref{"++xLabel a++"}")
+  xrefReference a = RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{"++xLabel a++"}")
   xRefReference :: Options -> a -> Inlines
   xRefReference flags a 
     | canXRefer flags = rawInline "latex" ("\\ref{"++xLabel a++"}")
     | otherwise       = mempty -- "fatal 89 xreferencing is not supported!"
   xrefLabel :: a -> Inline
-  xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")
+  xrefLabel a = RawInline (Text.Pandoc.Builder.Format "latex") ("\\label{"++xLabel a++"}")
 
 canXRefer :: Options -> Bool
 canXRefer opts = fspecFormat opts `elem` [FLatex] 
@@ -147,12 +147,12 @@ showImage flags pict =
          _       -> mempty
 xrefFigure1 :: Picture -> [Inline]  --DEPRECIATED! Use showImage instead.
 xrefFigure1 pict =
-   [ RawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
+   [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
    , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] (uniqueName pict, xLabel pict)
-   , RawInline "latex" "}\n"
-   , RawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
+   , RawInline (Text.Pandoc.Builder.Format "latex") "}\n"
+   , RawInline (Text.Pandoc.Builder.Format "latex") ("\\caption{"++latexEscShw (caption pict)++"}\n") 
    , xrefLabel pict
-   , RawInline "latex" "\n\\end{center}\n\\end{figure}"]
+   , RawInline (Text.Pandoc.Builder.Format "latex") "\n\\end{center}\n\\end{figure}"]
 
 -- | This function orders the content to print by theme. It returns a list of 
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
@@ -239,25 +239,25 @@ dpRule fSpec flags = dpR
         text1
          = case (length nds,language flags) of
              (1,Dutch)   -> let d = head nds in
-                            [Str ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",RawInline "latex" $ symDefRef d,Str "):"]
+                            [Str ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d,Str "):"]
              (1,English) -> let d = head nds in
-                            [Str "In order to formalize this, a ", Str (if isFunction d then "function" else "relation"), Space, Str (name d),Str " is introduced (",RawInline "latex" $ symDefRef d,Str "):"]
-             (l,Dutch)   -> [Str "Om te komen tot de formalisatie in vergelijking",RawInline "latex" "~",RawInline "latex" $ symDefRef r,Str (" zijn de volgende "++count flags l "relatie"++" nodig.")]
-             (l,English) -> [Str "To arrive at the formalization in equation",RawInline "latex" "~",RawInline "latex" $ symDefRef r,Str (", the following "++count flags l "relation"++" are introduced.")]
+                            [Str "In order to formalize this, a ", Str (if isFunction d then "function" else "relation"), Space, Str (name d),Str " is introduced (",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d,Str "):"]
+             (l,Dutch)   -> [Str "Om te komen tot de formalisatie in vergelijking",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (" zijn de volgende "++count flags l "relatie"++" nodig.")]
+             (l,English) -> [Str "To arrive at the formalization in equation",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (", the following "++count flags l "relation"++" are introduced.")]
         text2
          = (case (length nds,length rds,language flags) of
-             (0,1,Dutch)   -> [Str "Definitie ",RawInline "latex" $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
-             (0,1,English) -> [Str "We use definition ",RawInline "latex" $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (0,_,Dutch)   -> Str "We gebruiken definities ":commaNLPandoc (Str "en") [RawInline "latex" $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-             (0,_,English) -> Str "We use definitions ":commaEngPandoc (Str "and") [RawInline "latex" $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-             (_,1,Dutch)   -> [Str "Daarnaast gebruiken we definitie ",RawInline "latex" $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,1,English) -> [Str "Beside that, we use definition ",RawInline "latex" $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,_,Dutch)   -> Str "Ook gebruiken we definities ":commaNLPandoc (Str "en") [RawInline "latex" $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-             (_,_,English) -> Str "We also use definitions ":commaEngPandoc (Str "and") [RawInline "latex" $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
+             (0,1,Dutch)   -> [Str "Definitie ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
+             (0,1,English) -> [Str "We use definition ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (0,_,Dutch)   -> Str "We gebruiken definities ":commaNLPandoc (Str "en") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
+             (0,_,English) -> Str "We use definitions ":commaEngPandoc (Str "and") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
+             (_,1,Dutch)   -> [Str "Daarnaast gebruiken we definitie ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (_,1,English) -> [Str "Beside that, we use definition ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (_,_,Dutch)   -> Str "Ook gebruiken we definities ":commaNLPandoc (Str "en") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
+             (_,_,English) -> Str "We also use definitions ":commaEngPandoc (Str "and") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
            )++
            (case (length nds,language flags) of
-             (1,Dutch)   -> [Str " om eis",RawInline "latex" "~",RawInline "latex" $ symReqRef r, Str " (pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ") te formaliseren:"]
-             (1,English) -> [Str " to formalize requirement",RawInline "latex" "~",RawInline "latex" $ symReqRef r, Str " (page",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str "):"]
+             (1,Dutch)   -> [Str " om eis",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " (pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ") te formaliseren:"]
+             (1,English) -> [Str " to formalize requirement",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " (page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str "):"]
              _           -> [Str ". "]
            )
         text3
@@ -272,14 +272,14 @@ dpRule fSpec flags = dpR
                  English -> [Str " These activities are signalled by:"]
         text5
          = case (language flags,isSignal r) of
-             (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
-             (English,False) -> [ Plain [ Str "This corresponds to the requirement on page",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
+             (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
+             (English,False) -> [ Plain [ Str "This corresponds to the requirement on page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
              (Dutch  ,True)  -> [ Plain [ Str "Dit komt overeen met "
                                         , Quoted  SingleQuote [Str (name r)]
-                                        , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]]
+                                        , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
              (English,True)  -> [ Plain [ Str "This corresponds to "
                                         , Quoted  SingleQuote [Str (name r)]
-                                        , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]]
+                                        , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  =  declsUsedIn r
@@ -311,7 +311,7 @@ purposes2Blocks flags ps
            Just p  -> amPandoc p
    where   -- The reference information, if available for this purpose, is put
     ref purp = case fspecFormat flags of
-                FLatex | (not.null.explRefId) purp-> [RawInline "latex" ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]
+                FLatex | (not.null.explRefId) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]
                 _                                 -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
