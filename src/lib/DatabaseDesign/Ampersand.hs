@@ -60,8 +60,7 @@ module DatabaseDesign.Ampersand
    -- * Functions with plugs:
    , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
    -- * Parser related stuff
-   , parseADL1pExpr
-   , CtxError 
+   , parseADL1pExpr, CtxError 
    , createFspec
    , getGeneralizations, getSpecializations
     -- * Type checking and calculus

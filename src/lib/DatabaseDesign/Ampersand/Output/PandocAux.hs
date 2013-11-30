@@ -319,15 +319,15 @@ instance SymRef PlugInfo where
   symLabel p = "PlugInfo "++escapeNonAlphaNum (name p)
 
 --   xrefChptReference :: String -> [Inline]
---   xrefChptReference myLabel = [RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
+--   xrefChptReference myLabel = [RawInline "latex" ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
 ---   xrefTableReference :: String -> [Inline]
---   xrefTableReference myLabel = [RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{tab:"++myLabel++"}")]
+--   xrefTableReference myLabel = [RawInline "latex" ("\\ref{tab:"++myLabel++"}")]
 -- BECAUSE: Why (SJ) does the code of labeledHeader look stupid?
 --         When Han looked at pandoc code TexInfo.hs blockToTexinfo ln.208,
 --         he expected chapter,section,sub,subsub respectively.
 --         However, he got section,sub,subsub,plain text respectively.
 --         Looks like an error in PanDoc, doesn't it?
---         So now he wrote chapters as 0 setting a [Inline] -> [RawInline (Text.Pandoc.Builder.Format "latex") "\\chapter{...}"].
+--         So now he wrote chapters as 0 setting a [Inline] -> [RawInline "latex" "\\chapter{...}"].
 --         We do not know yet how this relates to other formats like rtf.
 
 -- TODO: Fix the other labeled 'things', to make a neat reference.
@@ -345,13 +345,13 @@ xrefLabel flags myLabel
 xrefSupported :: Options -> Bool
 xrefSupported flags = fspecFormat flags `elem` [FLatex] 
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
-xrefCitation myLabel = RawInline (Text.Pandoc.Builder.Format "latex") ("\\cite{"++escapeNonAlphaNum myLabel++"}")
+xrefCitation myLabel = RawInline "latex" ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 
 
 -- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
 pandocEqnArray :: [(String,String,String)] -> [Block]
 pandocEqnArray xs
- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++
+ = [ Para [ RawInline "latex" ("\\begin{eqnarray}\n   "++
                                intercalate "\\\\\n   " [ a++"&"++b++"&"++c | (a,b,c)<-xs ]++
                                "\n\\end{eqnarray}") ]
    | not (null xs)]
@@ -360,14 +360,14 @@ pandocEqnArrayOnelabel :: String -> [(String,String,String)] -> [Block]
 pandocEqnArrayOnelabel label xs
  = case xs of
     []           -> []
-    (a,b,c):rest -> [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++a++"&"++b++"&"++c++label++"\\\\\n   "++
+    (a,b,c):rest -> [ Para [ RawInline "latex" ("\\begin{eqnarray}\n   "++a++"&"++b++"&"++c++label++"\\\\\n   "++
                                intercalate "\\nonumber\\\\\n   " [ l++"&"++m++"&"++r | (l,m,r)<-rest ]++
                                "\\nonumber\n\\end{eqnarray}")
                     ]      ]
    
 pandocEquation :: String -> [Block]
 pandocEquation x
- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{equation}\n   "++ x ++"\n\\end{equation}") ]
+ = [ Para [ RawInline "latex" ("\\begin{equation}\n   "++ x ++"\n\\end{equation}") ]
    | not (null x)]
 
 --DESCR -> pandoc print functions for Ampersand data structures
@@ -580,10 +580,10 @@ uniquecds c = [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) 
 makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
 makeDefinition flags i nm lbl defin ref =
   case fspecFormat flags of
-    FLatex ->  [ Para ( [ RawInline (Text.Pandoc.Builder.Format "latex") $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
-                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ lbl ++ "\n" | i == 0] ++
-                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ insertAfterFirstWord refStr defStr] ++
-                        [ RawInline (Text.Pandoc.Builder.Format "latex") (latexEscShw (" ["++ref++"]")) | not (null ref) ]
+    FLatex ->  [ Para ( [ RawInline "latex" $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
+                        [ RawInline "latex" $ lbl ++ "\n" | i == 0] ++
+                        [ RawInline "latex" $ insertAfterFirstWord refStr defStr] ++
+                        [ RawInline "latex" (latexEscShw (" ["++ref++"]")) | not (null ref) ]
                       )
                ]
     _      ->  [ Para ( Str defin : [ Str (" ["++ref++"]") | not (null ref) ] )
