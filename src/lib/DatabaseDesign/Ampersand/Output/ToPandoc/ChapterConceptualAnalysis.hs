@@ -137,17 +137,17 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
                                        else Str "Daarom is als afspraak gesteld in paragraaf " | language flags==Dutch]
                       ++ [if null purp then Str "The following requirement has been defined in section " 
                                        else Str "Therefore the following requirement has been defined in section " | language flags==English]
-                      ++ [RawInline "latex" "~"
-                         ,RawInline "latex" $ symReqRef r
+                      ++ [RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "~"
+                         ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqRef r
                          ,Str " p."
-                         ,RawInline "latex" "~"
-                         ,RawInline "latex" $ symReqPageRef r
+                         ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "~"
+                         ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqPageRef r
                          ,Str ": "]]
                ++ meaning2Blocks (language flags) r
                   -- then the formal rule
                ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | language flags==Dutch]
                       ++ [Str "This is formalized - using relations "     | language flags==English]
-                      ++ intercalate [Str ", "] [[RawInline "latex" $ symDefRef d] | d@Sgn{}<-declsUsedIn r]
+                      ++ intercalate [Str ", "] [[RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symDefRef d] | d@Sgn{}<-declsUsedIn r]
                       ++ [Str " - als " | language flags==Dutch]
                       ++ [Str " - as "     | language flags==English]]
                ++ (if showPredExpr flags
