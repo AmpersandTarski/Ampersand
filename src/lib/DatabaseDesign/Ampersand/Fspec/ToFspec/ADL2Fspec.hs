@@ -633,7 +633,7 @@ while maintaining all invariants.
           split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
           split dc             []             = dc
 
--- | Action semantics for inserting a delta into a relation dcl.
+   -- | Action semantics for inserting a delta into a relation dcl.
    actSem :: InsDel -> Declaration -> Expression -> Expression
    actSem Ins dcl e@(EDcD d) | dcl==d        = EDcD dcl
                              | otherwise     = EDcD dcl .\/. e
