@@ -318,8 +318,8 @@ where
    data PairViewSegment a = PairViewText String
                           | PairViewExp SrcOrTgt a
             deriving Show
-   
-   newtype PairViewTerm a = PairViewTerm (PairView (Term a)) -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
+   -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
+   newtype PairViewTerm a = PairViewTerm (PairView (Term a)) 
    newtype PairViewSegmentTerm a = PairViewSegmentTerm (PairViewSegment (Term a))
    
    instance Traversable PairViewSegmentTerm where
