@@ -211,20 +211,6 @@ instance Object PlugSQL where
  contextOf p@BinSQL{} = mLkp p 
  contextOf p = EDcI (concept p)
 
-{-WHY151210 -> why do I need PlugSQL to be an Association
---       in other words why do I need a (target p) for BinSQL and ScalarSQL only
---       (remark: source p=concept p and target PlugSQL{}=error)
-instance Association PlugSQL Concept where
-   source p               = concept p
-   target p@BinSQL{}      = target (mLkp p)
-   target p@ScalarSQL{}   = cLkp p
-   target p               = fatal 312 $ "cannot compute the target of plug "++name p++", because it is not binary."
--}
-
---WHY151210 -> why can only binary plugs be signals?
---instance Signaling PlugSQL where
--- isSignal p@BinSQL{} = isSignal (mLkp p)
--- isSignal _          = False
 
 fldauto::SqlField->Bool -- is the field auto increment?
 fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f -- && isIdent (fldexpr f)
@@ -251,11 +237,13 @@ showSQL (SQLBool     ) = "BOOLEAN"
 --REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is 
 --          thus I must check whether fldexpr isUni && isInj && isSur
 isPlugIndex :: PlugSQL->SqlField->Bool
-isPlugIndex plug@ScalarSQL{} f = sqlColumn plug==f
-isPlugIndex plug@BinSQL{} _ --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\r;r~=I i.e. a key for this plug
-  | isUni(mLkp plug) || isInj(mLkp plug) = fatal 366 "BinSQL may not store a univalent or injective rel, use TblSQL instead."
-  | otherwise                            = False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
-isPlugIndex plug@TblSQL{} f    = elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
+isPlugIndex plug f =
+  case plug of 
+    ScalarSQL{} -> sqlColumn plug==f
+    BinSQL{}  --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\r;r~=I i.e. a key for this plug
+     | isUni(mLkp plug) || isInj(mLkp plug) -> fatal 366 "BinSQL may not store a univalent or injective rel, use TblSQL instead."
+     | otherwise                            -> False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
+    TblSQL{}    -> elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
 
 --mLkpTbl stores the relation of some target field with one source field
 --an isPlugIndex target field is a kernel field related to some similar or larger kernel field
@@ -324,33 +312,35 @@ requires plug (fld1,fld2) = fld2 `elem` requiredFields plug fld1
 
 --composition from srcfld to trgfld
 plugpath :: PlugSQL -> SqlField -> SqlField -> Expression
-plugpath p@BinSQL{} srcfld trgfld
-  | srcfld==trgfld = let tm=mLkp p --(note: mLkp p is the relation from fst to snd column of BinSQL)
-                     in if srcfld==fst(columns p) 
-                        then tm .:. flp tm --domain of r
-                        else flp tm .:. tm --codomain of r
-  | srcfld==fst(columns p) && trgfld==snd(columns p) = fldexpr trgfld
-  | trgfld==fst(columns p) && srcfld==snd(columns p) = flp(fldexpr srcfld)
-  | otherwise = fatal 444 $ "BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p)
-plugpath p@ScalarSQL{} srcfld trgfld
-  | srcfld==trgfld = fldexpr trgfld
-  | otherwise = fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
-plugpath p@TblSQL{} srcfld trgfld  
-  | srcfld==trgfld && isPlugIndex p trgfld = EDcI (target (fldexpr trgfld))
-  | srcfld==trgfld && not(isPlugIndex p trgfld) = flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
-  | (not . null) (paths srcfld trgfld)
-     = case head (paths srcfld trgfld) of
-        []    -> fatal 338 ("Empty head (paths srcfld trgfld) should be impossible.")
-        ps    -> foldr1 (.:.) ps
-  --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
-  --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
-  --      because these kernel fields connect to themselves by r=I[X] (i.e. end of path).
-  --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
-  | (not.null) (pathsoverIs srcfld trgfld) =      foldr1 (.:.) (head (pathsoverIs srcfld trgfld))
-  | (not.null) (pathsoverIs trgfld srcfld) = flp (foldr1 (.:.) (head (pathsoverIs trgfld srcfld)))
-  | otherwise = let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " ++intercalate "\n     " (map show es)
-  
-                in fatal 406 $ "no kernelpath:"
+plugpath p srcfld trgfld =
+ case p of
+  BinSQL{}
+   | srcfld==trgfld -> let tm=mLkp p --(note: mLkp p is the relation from fst to snd column of BinSQL)
+                       in if srcfld==fst(columns p) 
+                          then tm .:. flp tm --domain of r
+                          else flp tm .:. tm --codomain of r
+   | srcfld==fst(columns p) && trgfld==snd(columns p) -> fldexpr trgfld
+   | trgfld==fst(columns p) && srcfld==snd(columns p) -> flp(fldexpr srcfld)
+   | otherwise -> fatal 444 $ "BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p)
+  ScalarSQL{}
+   | srcfld==trgfld -> fldexpr trgfld
+   | otherwise -> fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
+  TblSQL{}  
+   | srcfld==trgfld && isPlugIndex p trgfld -> EDcI (target (fldexpr trgfld))
+   | srcfld==trgfld && not(isPlugIndex p trgfld) -> flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
+   | (not . null) (paths srcfld trgfld)
+      -> case head (paths srcfld trgfld) of
+          []    -> fatal 338 ("Empty head (paths srcfld trgfld) should be impossible.")
+          ps    -> foldr1 (.:.) ps
+   --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
+   --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
+   --      because these kernel fields connect to themselves by r=I[X] (i.e. end of path).
+   --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
+   | (not.null) (pathsoverIs srcfld trgfld) ->      foldr1 (.:.) (head (pathsoverIs srcfld trgfld))
+   | (not.null) (pathsoverIs trgfld srcfld) -> flp (foldr1 (.:.) (head (pathsoverIs trgfld srcfld)))
+   | otherwise 
+        -> let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " ++intercalate "\n     " (map show es)
+           in fatal 406 $ "no kernelpath:"
                 ++"\nplugname: "++(show.name) p
                 ++"\nsrcfld: "++(show.fldname) srcfld
                 ++"\ntrgfld: "++(show.fldname) trgfld
