@@ -275,8 +275,7 @@ generateViews fSpec flags =
                                                                 (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)++"'"
                                      , "      )"
                                    ]
-       islands = kernels fSpec
-       conceptsFromSpecificToGeneric = concat (map reverse islands)  -- TODO: This doesn't make any sence, for kernels are not ordered
+       conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
 
 generateInterfaces :: Fspc -> Options -> [String]
 generateInterfaces fSpec flags =
