@@ -59,6 +59,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fspec
                  , allDecls ::     [Declaration]            -- ^ All declarations in the fspec
                  , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
+                 , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
