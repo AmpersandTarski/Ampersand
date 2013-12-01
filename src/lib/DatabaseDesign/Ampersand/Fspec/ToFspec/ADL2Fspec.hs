@@ -16,7 +16,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
-   import Data.List (nub,intercalate)
+   import Data.List (nub,intercalate,intersect,partition,group)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
 
@@ -61,6 +61,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = alldecls
                  , allConcepts  = concs context
+                 , kernels      = constructKernels
                  , fsisa        = []
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -91,6 +92,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
             where calculated = decprps d `uni` [Tot | d `elem` totals]
                                          `uni` [Sur | d `elem` surjectives]
         calculatedDecls = map calcProps alldecls
+        constructKernels = foldl f ((group.concs) context) (gens context)
+            where f disjuncLists g = concat haves : nohaves
+                    where
+                      (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
      -- determine relations that are total (as many as possible, but not necessarily all)
         totals      = [ d |       EDcD d  <- totsurs ]
         surjectives = [ d | EFlp (EDcD d) <- totsurs ]
