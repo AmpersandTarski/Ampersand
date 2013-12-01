@@ -292,8 +292,8 @@ where
                eList  = rs++exprIsc2list l++exprIsc2list r
      nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
-         | or [length cl>1 |cl<-absorbClasses]
-              = ( case absorbClasses of [] -> fatal 300 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (.\/.) [head cl | cl<-absorbClasses]
+         | or [length cl>1 |cl<-absorbClasses]   -- yields False if absorbClasses is empty
+              = ( foldr1 (.\/.) [head cl | cl<-absorbClasses]  -- cl cannot be empty, because it is made by eqClass
                 , [shw e++" \\/ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
                 , "<=>"
                 )

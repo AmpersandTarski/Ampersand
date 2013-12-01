@@ -186,7 +186,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e     -> isImin e
      EDcD{}     -> False
      EDcI{}     -> True
-     EEps{}     -> True
+     EEps i sgn -> isEndo sgn && i==source expr
      EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
