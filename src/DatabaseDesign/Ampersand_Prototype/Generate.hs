@@ -275,13 +275,8 @@ generateViews fSpec flags =
                                                                 (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)++"'"
                                      , "      )"
                                    ]
-       (_,islands,_,_,_) = case concs fSpec of
-                               []  -> (undef,[],undef,undef,undef)
-                               c:_ -> case c of 
-                                        PlainConcept{}  -> fatal 99281 "Do not know what to do for generateViews, because the ordering relation is gone"
-                                        ONE  -> fatal 280 "What to do with ONE???" --HJO, 20130216: Deze bug kwam aan het licht bij Roles.adl. Ik heb er de fatal message bij geplaatst, zodat diagnose eenvoudiger is.
-                           where undef=fatal 281 "undef would cause a loop..."
-       conceptsFromSpecificToGeneric = concat (map reverse islands)
+       islands = kernels fSpec
+       conceptsFromSpecificToGeneric = concat (map reverse islands)  -- TODO: This doesn't make any sence, for kernels are not ordered
 
 generateInterfaces :: Fspc -> Options -> [String]
 generateInterfaces fSpec flags =
