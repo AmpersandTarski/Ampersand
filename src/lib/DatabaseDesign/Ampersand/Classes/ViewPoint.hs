@@ -128,11 +128,10 @@ instance Language A_Context where
                                             , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                                              , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                                              }]
-  udefrules    context = concatMap udefrules (ctxpats context) ++ concatMap udefrules (ctxprocs context) ++ ctxrs context  -- all user defined rules
---  invariants   context = [r | r<-udefrules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
+  udefrules    context = concatMap udefrules  (ctxpats context) ++ concatMap udefrules  (ctxprocs context) ++ ctxrs context
   identities   context = concatMap identities (ctxpats context) ++ concatMap identities (ctxprocs context) ++ ctxks context
-  viewDefs     context = concatMap viewDefs (ctxpats context) ++ concatMap viewDefs (ctxprocs context) ++ ctxvs context
-  gens         context = ctxgs context
+  viewDefs     context = concatMap viewDefs   (ctxpats context) ++ concatMap viewDefs   (ctxprocs context) ++ ctxvs context
+  gens         context = concatMap gens       (ctxpats context) ++ concatMap gens       (ctxprocs context) ++ ctxgs context
   patterns             = ctxpats
 
 instance ProcessStructure A_Context where
