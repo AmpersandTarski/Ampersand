@@ -301,6 +301,7 @@ where
            ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fspec)
            ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
+           ,wrap ", kernels       = " indentA (\_->showHSName) (kernels fspec)
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
