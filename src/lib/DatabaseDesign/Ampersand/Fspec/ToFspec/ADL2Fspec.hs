@@ -16,7 +16,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
-   import Data.List (nub,intercalate,intersect,partition,group)
+   import Data.List (nub,intercalate,intersect,partition,group,delete)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
 
@@ -61,7 +61,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = alldecls
                  , allConcepts  = concs context
-                 , kernels      = constructKernels
+                 , kernels      = sortedKernels
                  , fsisa        = []
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -92,7 +92,22 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
             where calculated = decprps d `uni` [Tot | d `elem` totals]
                                          `uni` [Sur | d `elem` surjectives]
         calculatedDecls = map calcProps alldecls
-        constructKernels = foldl f ((group.concs) context) (gens context)
+        -- | while there is only a partial ordering of concepts, the concepts that belong to a kernel
+        --   can be given an ordering in such a way that the following constraints hold:
+        --
+        --     * The root concept(s) will be the most left ones
+        --
+        --     * for any x,y in the kernel, whenever x is more generic than y, x will be more to the beginning of the list
+        sortedKernels = map someKindOfSort constructKernels
+            where someKindOfSort :: [A_Concept] -> [A_Concept]
+                  someKindOfSort cpts = largests ++ (if null others then [] else someKindOfSort others)
+                    where
+                     (largests,others) = partition hasNoLarger cpts
+                     hasNoLarger :: A_Concept -> Bool
+                     hasNoLarger = null.largers
+                     largers :: A_Concept -> [A_Concept]
+                     largers cpt = largerConcepts (gens context) cpt `intersect` cpts
+        constructKernels = foldl f (group (delete ONE (concs context))) (gens context)
             where f disjuncLists g = concat haves : nohaves
                     where
                       (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
