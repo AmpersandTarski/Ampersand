@@ -416,28 +416,28 @@ infixl 2 .\/.   -- union
 infixl 4 .-.    -- difference
 infixl 6 ./.    -- left residual
 infixl 6 .\.    -- right residual
-infixl 8 .:.    -- composition    -- .;. was unavailable, because Haskells scanner does not recognize it as an operator.
+infixl 8 .:.    -- composition    -- .;. was unavailable, because Haskell's scanner does not recognize it as an operator.
 infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
 
 -- SJ 2013118: The fatals are superfluous, but only if the type checker works correctly. Once we have sufficient confidence, they can be removed for performance reasons.
-l .==. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot equate (with operator \"==\") expression\n   "++show l++"\n   with "++show r++".") else
+l .==. r = if source l/=source r ||  target l/=target r then fatal 424 ("Cannot equate (with operator \"==\") expression\n   "++show l++"\n   with "++show r++".") else
            EEqu (l,r)
-l .|-. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot include (with operator \"|-\") expression\n   "++show l++"\n   with "++show r++".") else
+l .|-. r = if source l/=source r ||  target l/=target r then fatal 426 ("Cannot include (with operator \"|-\") expression\n   "++show l++"\n   with "++show r++".") else
            EImp (l,r)
-l ./\. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot intersect (with operator \"/\\\") expression\n   "++show l++"\n   with "++show r++".") else
+l ./\. r = if source l/=source r ||  target l/=target r then fatal 428 ("Cannot intersect (with operator \"/\\\") expression\n   "++show l++"\n   with "++show r++".") else
            EIsc (l,r)
-l .\/. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot unite (with operator \"\\/\") expression\n   "++show l++"\n   with "++show r++".") else
+l .\/. r = if source l/=source r ||  target l/=target r then fatal 430 ("Cannot unite (with operator \"\\/\") expression\n   "++show l++"\n   with "++show r++".") else
            EUni (l,r)
 l .-. r  = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot subtract (with operator \"-\") expression\n   "++show l++"\n   with "++show r++".") else
            EDif (l,r)
-l ./. r  = if target l/=target r then fatal 432 ("Cannot residuate (with operator \"/\") expression\n   "++show l++"\n   with "++show r++".") else
+l ./. r  = if target l/=target r then fatal 434 ("Cannot residuate (with operator \"/\") expression\n   "++show l++"\n   with "++show r++".") else
            ELrs (l,r)
-l .\. r  = if source l/=source r then fatal 432 ("Cannot residuate (with operator \"\\\") expression\n   "++show l++"\n   with "++show r++".") else
+l .\. r  = if source l/=source r then fatal 436 ("Cannot residuate (with operator \"\\\") expression\n   "++show l++"\n   with "++show r++".") else
            ERrs (l,r)
-l .:. r  = if source r/=target l then fatal 432 ("Cannot compose (with operator \";\") expression\n   "++show l++"\n   with "++show r++".") else
+l .:. r  = if source r/=target l then fatal 438 ("Cannot compose (with operator \";\") expression\n   "++show l++"\n   with "++show r++".") else
            ECps (l,r)
-l .!. r  = if source r/=target l then fatal 432 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
+l .!. r  = if source r/=target l then fatal 440 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
            ERad (l,r)
 l .*. r  = -- SJC: should always fit! No fatal here..
            EPrd (l,r)
