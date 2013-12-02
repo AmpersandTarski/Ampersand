@@ -190,9 +190,8 @@ pCtx2aCtx
             Just b@(Box c _)
               -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
-                    r  -> if name c `elem` r
-                          then ( if c/=source (fst expr) then fatal 188 ("Erroneous call to addEpsilonLeft: c="++show c++"  and e="++show (fst expr)++".")
-                                 else pure (obj (addEpsilonLeft (gc Tgt (fst expr)) r (name c) (fst expr), snd expr) (Just$ b)) )
+                    r  -> if (name c) `elem` r
+                          then pure (obj (addEpsilonLeft (name c) r (gc Tgt (fst expr)) (fst expr), snd expr) (Just$ b))
                           else mustBeBound (origin o) [(Tgt,fst expr)]
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
