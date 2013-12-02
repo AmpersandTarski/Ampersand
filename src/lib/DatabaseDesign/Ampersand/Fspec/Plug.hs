@@ -198,8 +198,10 @@ instance Object PlugSQL where
       = case sortWith length stop of
          []  -> f c mms'  -- a path from c to a is not found (yet), so add another step to the recursion
          (hd:_) -> case hd of
-                    []  -> fatal 204 "Empty head should be impossible."
-                    es  -> foldr1 (.:.) es  -- pick the shortest path and turn it into an expression.
+                    []  -> fatal 201 "Empty head should be impossible."
+                    es  -> case [(l,r) | (l,r)<-zip (init es) (tail es), target l/=source r] of
+                            [] -> foldr1 (.:.) es  -- pick the shortest path and turn it into an expression.
+                            es -> fatal 204 ("illegal compositions " ++show es)
       where
         mms' = if [] `elem` mms 
                then fatal 295 "null in mms."
@@ -310,6 +312,10 @@ requiredFields plug@TblSQL{} fld
 requires :: PlugSQL -> (SqlField,SqlField) ->Bool
 requires plug (fld1,fld2) = fld2 `elem` requiredFields plug fld1
 
+composeCheck l r
+ = if target l/=source r then fatal 316 ("\nl: "++show l++"with target "++show (target l)++"\nl: "++show r++"with source "++show (source r)) else
+   l .:. r
+ 
 --composition from srcfld to trgfld
 plugpath :: PlugSQL -> SqlField -> SqlField -> Expression
 plugpath p srcfld trgfld =
@@ -327,17 +333,17 @@ plugpath p srcfld trgfld =
    | otherwise -> fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
   TblSQL{}  
    | srcfld==trgfld && isPlugIndex p trgfld -> EDcI (target (fldexpr trgfld))
-   | srcfld==trgfld && not(isPlugIndex p trgfld) -> flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
+   | srcfld==trgfld && not(isPlugIndex p trgfld) -> composeCheck (flp (fldexpr srcfld)) (fldexpr trgfld) --codomain of r of morAtt
    | (not . null) (paths srcfld trgfld)
       -> case head (paths srcfld trgfld) of
           []    -> fatal 338 ("Empty head (paths srcfld trgfld) should be impossible.")
-          ps    -> foldr1 (.:.) ps
+          ps    -> foldr1 composeCheck ps
    --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
    --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
    --      because these kernel fields connect to themselves by r=I[X] (i.e. end of path).
    --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
-   | (not.null) (pathsoverIs srcfld trgfld) ->      foldr1 (.:.) (head (pathsoverIs srcfld trgfld))
-   | (not.null) (pathsoverIs trgfld srcfld) -> flp (foldr1 (.:.) (head (pathsoverIs trgfld srcfld)))
+   | (not.null) (pathsoverIs srcfld trgfld) ->      foldr1 composeCheck (head (pathsoverIs srcfld trgfld))
+   | (not.null) (pathsoverIs trgfld srcfld) -> flp (foldr1 composeCheck (head (pathsoverIs trgfld srcfld)))
    | otherwise 
         -> let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " ++intercalate "\n     " (map show es)
            in fatal 406 $ "no kernelpath:"

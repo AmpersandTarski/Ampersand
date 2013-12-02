@@ -23,7 +23,7 @@ import DatabaseDesign.Ampersand.Basics     (fatalMsg)
   --   So it is possible to derive some dynamic behaviour from static properties.
   --   The following datatypes form a process algebra.
 fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.ECArule.hs"
+fatal = fatalMsg "ADL1.ECArule"
 
   
 

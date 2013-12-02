@@ -126,7 +126,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
    
    fatal :: Int -> String -> a
-   fatal = fatalMsg "UU_Parsing.hs"
+   fatal = fatalMsg "Input.ADL1.UU_Parsing"
 
    btLookup :: BinSearchTree (a -> Ordering) (Maybe b) -> a -> Maybe b
    tab2tree :: Ord a => [(SymbolR a,b)] -> BinSearchTree (a -> Ordering) b

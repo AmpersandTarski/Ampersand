@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    import Data.Maybe
    
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ADL1.Parser"
+   fatal = fatalMsg "Input.ADL1.Parser"
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]

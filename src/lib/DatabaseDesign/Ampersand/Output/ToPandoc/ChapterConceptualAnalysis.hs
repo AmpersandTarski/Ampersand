@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List (intercalate)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis.hs"
+fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis"
 
 chpConceptualAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> caIntro <> caBlocks, pictures)

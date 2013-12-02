@@ -279,7 +279,7 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar  EEps{}      = "epsilon"
+          showchar  EEps{}      = "" -- Epsilon doesn't show in ADL.
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 

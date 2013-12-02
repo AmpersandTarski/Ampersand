@@ -21,7 +21,7 @@ import Paths_ampersand
 type ParseError = Message Token
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Parsing"
+fatal = fatalMsg "Input.Parsing"
 
 -- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
