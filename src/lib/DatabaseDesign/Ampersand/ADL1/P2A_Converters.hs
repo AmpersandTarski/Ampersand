@@ -116,7 +116,7 @@ pCtx2aCtx
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap
-    findDecl o x = getOneExactly o . concat . Map.elems $ findDecls x
+    findDecl o x = getOneExactly o . Map.elems $ findDecls x
     findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls x))
     findDeclTyped o x tp = getOneExactly o (findDeclsTyped x tp)
     -- accumDecl is the function that combines two declarations into one
