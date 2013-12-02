@@ -199,7 +199,8 @@ pCtx2aCtx
     addEpsilonLeft :: String -> [String] -> String -> Expression -> Expression
     addEpsilonLeft a b c e
      = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
-               else EEps (findConceptOrONE (head b)) (findSign a c) .:. e
+               else if c/=name (source e) then fatal 202 ("addEpsilonLeft glues erroneously: c="++show c++"  and e="++show e++".")
+                    else EEps (findConceptOrONE (head b)) (findSign a c) .:. e
     addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
     addEpsilonLeft' a e
      = if a==name (source e) then e else EEps (findConceptOrONE a) (findSign a (name (source e))) .:. e
@@ -527,7 +528,7 @@ pCtx2aCtx
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs --  in order to allow multiple declarations of the same relation, change  'cannotDisambRel o rs'  to  'pure (head rs)'
+pDisAmb2Expr (o,Rel rs)  = pure (head rs) --  in order to forbid multiple declarations of the same relation, change  'pure (head rs)'  to  'cannotDisambRel o rs'
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 pMean2aMean :: Lang           -- The default language 
