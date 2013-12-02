@@ -114,12 +114,18 @@ pCtx2aCtx
     patProcs = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
       
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
-      where groupOnTp lst = Map.fromListWith (++) [(SignOrd$ sign d,[d]) | d <- lst]
+      where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap
     findDecl o x = getOneExactly o . concat . Map.elems $ findDecls x
-    findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (findDecls x)
+    findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls x))
     findDeclTyped o x tp = getOneExactly o (findDeclsTyped x tp)
-        
+    -- accumDecl is the function that combines two declarations into one
+    -- meanings, for instance, two should get combined into a list of meanings, et cetera
+    -- positions are combined
+    -- TODO
+    accumDecl :: Declaration -> Declaration -> Declaration
+    accumDecl a _ = a
+    
     pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = findConcept cnm, popas = ps }
@@ -322,12 +328,12 @@ pCtx2aCtx
            Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt conspt))
            PVee _      -> Vee
            Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
-           Prel _ r    -> Rel [EDcD dc | dc <- concat (Map.elems $ findDecls r)]
+           Prel _ r    -> Rel [EDcD dc | dc <- (Map.elems $ findDecls r)]
            PTrel _ r s -> Rel [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
         )
     
     termPrim2Decl :: TermPrim -> Guarded Declaration
-    termPrim2Decl o@(Prel _ r   ) = getOneExactly o [ dc | dc <- concat (Map.elems $ findDecls r)]
+    termPrim2Decl o@(Prel _ r   ) = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
     termPrim2Decl o@(PTrel _ r s) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
     termPrim2Decl _ = fatal 231 "Expecting Declaration"
     termPrim2Expr :: TermPrim -> Guarded Expression
@@ -523,12 +529,10 @@ pCtx2aCtx
               where cs = [cd | cd<-conceptDefs, name cd==s]
     conceptDefs = p_conceptdefs++concat (map pt_cds p_patterns)++concat (map procCds p_processes)
     
-    
-
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (o,Rel rs)  = pure (head rs) --  in order to forbid multiple declarations of the same relation, change  'pure (head rs)'  to  'cannotDisambRel o rs'
+pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 pMean2aMean :: Lang           -- The default language 
