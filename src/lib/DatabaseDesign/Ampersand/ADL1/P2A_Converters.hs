@@ -534,7 +534,7 @@ pCtx2aCtx
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (_,Rel rs)  = cannotDisambRel o rs'
+pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 pMean2aMean :: Lang           -- The default language 
