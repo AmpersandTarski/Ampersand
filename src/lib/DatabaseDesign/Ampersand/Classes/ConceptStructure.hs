@@ -15,7 +15,9 @@ where
    class ConceptStructure a where
     concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
     declsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-    declsUsedIn a = map prim2dcl ((filter (not.isMp1).nub.concatMap primitives.expressionsIn) a)
+    declsUsedIn a = [ d | EDcD d@Sgn{}<-(nub.concatMap primitives.expressionsIn) a]
+    relsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
+    relsUsedIn a = [ prim2dcl e | e<-nub ((concatMap primitives.expressionsIn) a++(map EDcI . concs) a), not (isMp1 e) ]
       where prim2dcl expr =
              case expr of
                EDcD d@Sgn{} -> d
@@ -23,7 +25,7 @@ where
                EDcI c       -> Isn c
                EDcV sgn     -> Vs sgn
                EMp1{}  -> fatal 25 "EMp1 should be filtered out from primitives. use `filter (not isMp1)`"
-               _       -> fatal 26 "prim2dcl is not supposed to be calleed on a non-primitive expression."
+               _       -> fatal 26 "prim2dcl is not supposed to be called on a non-primitive expression."
     expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
     mp1Exprs = filter isMp1.nub.concatMap primitives.expressionsIn
@@ -64,7 +66,11 @@ where
     expressionsIn vd = expressionsIn        [objDef | ViewExp objDef <- vdats vd]
 
    instance ConceptStructure Expression where
-    concs          = foldrMapExpression uni concs []
+    concs (EDcI c    ) = [c]
+    concs (EEps i sgn) = nub (i:concs sgn)
+    concs (EDcV   sgn) = concs sgn
+    concs (EMp1 _ c  ) = [c]
+    concs e            = foldrMapExpression uni concs [] e
     expressionsIn e = [e]
 
 

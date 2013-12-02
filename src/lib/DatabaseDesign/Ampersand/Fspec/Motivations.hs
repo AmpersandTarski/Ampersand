@@ -9,7 +9,7 @@ import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Motivations"
+fatal = fatalMsg "Fspec.Motivations"
 
 
 -- The general idea is that an Ampersand declaration such as:

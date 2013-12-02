@@ -56,7 +56,7 @@ where
 --         where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]
 --        vis        = nub (rels++map (I . target) rels)
 --   --     visible r  = r `elem` vis
---        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (declsUsedIn rule) `isc` vis)]
+--        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (relsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
 --   --     ecaRs      = assembleECAs qs
 ----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
@@ -220,7 +220,7 @@ where
 --                                , let frExpr  = if ev==Ins
 --                                                then conjNF negs
 --                                                else conjNF poss
---                                , rel `elem` declsUsedIn frExpr
+--                                , rel `elem` relsUsedIn frExpr
 --                                , let toExpr = if ev==Ins
 --                                               then conjNF poss
 --                                               else conjNF (notCpl negs)
@@ -258,7 +258,7 @@ where
                                       [Str ("Computing the violations means to negate the conjunct: "++showADL (notClau)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notClau/=viols] ++
                                       [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (notClau .\/. clause')), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
-                                    | dcl <-declsUsedIn r
+                                    | dcl <-relsUsedIn r
                                     , ev<-[Ins,Del]
                                     , let ex'     = subst (dcl, actSem ev dcl (delta (sign dcl))) expr
                                     , let clause' = conjNF ex'
@@ -270,7 +270,7 @@ where
                                     , let frExpr  = if ev==Ins
                                                     then conjNF negs
                                                     else conjNF poss
-                                    , dcl `elem` declsUsedIn frExpr
+                                    , dcl `elem` relsUsedIn frExpr
                         --            , let toExpr = if ev==Ins
                         --                           then conjNF poss
                         --                           else conjNF (notCpl negs)
@@ -306,7 +306,7 @@ where
                                                 "An appropriate reaction on this event is required."
                                            --     showECA fSpec "\n  " (ECA (On ev rel) delt (genPAclause visible Ins r viols conj [rule]) 0)
                                      )
-                                   | rel<-nub [x |x<-declsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
+                                   | rel<-nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]
@@ -532,7 +532,7 @@ Rewrite rules:
                       | length (eqCl first xss)==1 = remainders xss [tail prf | prf<-xss]
                       | otherwise                  = xss
      isConst :: (ConceptStructure a, ConceptStructure b) => a->b->Bool
-     isConst e f = null (declsUsedIn e `isc` declsUsedIn f)
+     isConst e f = null (relsUsedIn e `isc` relsUsedIn f)
      isVar :: (ConceptStructure a, ConceptStructure b) => a->b->Bool
      isVar e f   = not (isConst e f)
      derivtext :: InsDel -> String -> Expression -> Expression -> String

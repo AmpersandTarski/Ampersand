@@ -16,7 +16,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Data.Hashable
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "ShowMeatGrinder.hs"
+fatal = fatalMsg "Fspec.ShowMeatGrinder"
 
 meatGrinder :: Options -> Fspc -> (FilePath, String)
 meatGrinder flags fSpec = ("TemporaryPopulationsFileOfRap" ,content)

@@ -53,7 +53,7 @@ import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.List (intercalate,nub)
 fatal :: Int -> String -> a
-fatal = fatalMsg "AbstractSyntaxTree.hs"
+fatal = fatalMsg "Core.AbstractSyntaxTree"
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context

@@ -14,7 +14,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs.hs"
+fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
 
 {- TODO: This module needs to be rewritten from scratch. Instead of deciding on the fly what should be included, 
          a datastructure needs to be added to the fSpec, which contains per theme the concepts, rules and relations

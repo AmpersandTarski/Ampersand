@@ -43,7 +43,7 @@ import Data.Monoid
 import System.Locale
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
+fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
 
 data Chapter = Intro 
              | SharedLang
