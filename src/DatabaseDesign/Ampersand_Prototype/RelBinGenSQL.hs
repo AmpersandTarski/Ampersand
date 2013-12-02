@@ -236,7 +236,7 @@ selectExpr fSpec i src trg expr
     (EEps inter sgn)     -> sqlcomment i ("epsilon "++name inter++" "++showSign sgn)  -- showSign yields:   "["++(name.source) sgn++"*"++(name.target) sgn++"]"
                                 ( case inter of -- select the population of the most specific concept, which is the source.
                                     ONE -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
-                                    c   -> selectExprRelation fSpec i src trg (Isn c)
+                                    c   -> selectExprRelation fSpec i src trg (Isn inter)
                                 )
     (EDcD d)             -> selectExprRelation fSpec i src trg d
 
