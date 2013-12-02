@@ -315,10 +315,12 @@ pCtx2aCtx
        = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
-                   (True,True) -> pure (head (Set.toList r))
+                   (True,True) -> pure (head' (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map findConceptOrONE . Set.toList) lst)
-    
+       where head' [] =fatal 321 ("empty list on expressions "++show ((p1,b1,e1),(p2,b2,e2)))
+             head' [a] = a
+             head (a:as) = a
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb x
      = (x, case x of
@@ -532,7 +534,7 @@ pCtx2aCtx
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (_,Rel rs)  = pure (head rs) --  in order to forbid multiple declarations of the same relation, change to  'pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs'
+pDisAmb2Expr (_,Rel rs)  = cannotDisambRel o rs'
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 pMean2aMean :: Lang           -- The default language 
