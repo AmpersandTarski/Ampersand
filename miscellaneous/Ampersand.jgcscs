@@ -11,15 +11,13 @@ TRUE
 
 1
 ADL (ampersand) files
-39
+37
 #define spuleenboel
 CONTEXT Piet
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
 
 --! Line comment die er qua colouring uitspringt kan soms handig zijn.
---$ other line comment
---[ still other line comment ] ===
 
 {-preCdx  :: Proces -> Conditie.-}
 postCdx :: Proces -> Conditie.
@@ -53,7 +51,7 @@ ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-18
+17
 Preprocessor
 Kleuren van preprocessor commando's - herkend aan het '#' teken aan het begin van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
@@ -68,17 +66,6 @@ FALSE
 Err-Relations PRAGMA
 Error if relation declaration uses strings, but does not contain the keyword PRAGMA
 (?<=[^:])::\s*+\w*+\s*+(\-\>|\*)\s*+\w*+\s*+(\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\])\s*+"
-FALSE
-FALSE
-15
-0
-
-
-0
-FALSE
-Err-Rules without ':'
-Rules must have a colon behind their identifier text
-(?<!PURPOSE\s*+)(RULE|KEY)\s*+(\"[^\"]*+\"|[^"][\w]*+)\s*+[^\:]
 FALSE
 FALSE
 15
@@ -165,8 +152,8 @@ FALSE
 0
 FALSE
 operators
-Lijstje staat in 'SourceForge:\src\DatabaseDesign\Ampersand\Input\ADL1\CC.hs'
--\||\|-|-|->|>|=|~|\+|;|!|\*|::|:|\/|/\\|\\|/|<>
+Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
+\|-|-|->|>|=|~|\+|;|!|\*|::|:|\\/|/\\|\\|/|<>
 FALSE
 FALSE
 13
@@ -176,8 +163,8 @@ FALSE
 0
 FALSE
 Reserved words
-Lijstje staat in 'SourceForge:\src\DatabaseDesign\Ampersand\Input\ADL1\CC.hs'
-\b(INCLUDE|VIOLATION|TXT|SRC|TGT|BOX|SPEC|ISA|CONTEXT|ENDCONTEXT|EXTENDS|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|INTERFACE|FOR|INITIAL|SQLPLUG|PHPPLUG|POPULATION|CONTAINS|RULE|TEST|RELATION|MEANING|MESSAGE|CONCEPT|KEY|IMPORT|I|V|PRAGMA|PHRASE|PURPOSE|IN|REF|ENGLISH|DUTCH|ONE|BIND|TOPHP|BINDING|BYPLUG|ROLE|MAINTAINS|EDITS)\b
+Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
+\b(INCLUDE|CONTEXT|ENDCONTEXT|EXTENDS|THEMES|META|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|INTERFACE|FOR|BOX|INITIAL|SQLPLUG|PHPPLUG|TYPE|POPULATION|CONTAINS|UNI|INJ|SUR|TOT|SYM|ASY|TRN|RFX|IRF|PROP|ALWAYS|RULE|MESSAGE|VIOLATION|SRC|TGT|TEST|RELATION|MEANING|DEFINE|CONCEPT|IDENT|VIEW|TXT|PRIMHTML|IMPORT|SPEC|ISA|IS|I|V|CLASSIFY|PRAGMA|EXPLAIN|PURPOSE|IN|REF|ENGLISH|DUTCH|REST|HTML|LATEX|MARKDOWN|ONE|BYPLUG|ROLE|EDITS|MAINTAINS)\b
 FALSE
 FALSE
 7
