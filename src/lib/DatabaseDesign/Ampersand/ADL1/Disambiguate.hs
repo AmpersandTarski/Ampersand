@@ -149,8 +149,8 @@ data DisambPrim
 
 -- get concept:
 gc :: Association expr => SrcOrTgt -> expr -> String
-gc Src e = (name (source e))
-gc Tgt e = (name (target e))
+gc Src e = name (source e)
+gc Tgt e = name (target e)
 
 disambiguationStep :: (Disambiguatable d, Traversable d) => d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
 disambiguationStep x = traverse performUpdate withInfo

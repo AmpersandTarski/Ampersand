@@ -190,8 +190,9 @@ pCtx2aCtx
             Just b@(Box c _)
               -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
-                    r  -> if (name c) `elem` r
-                          then pure (obj (addEpsilonLeft (gc Tgt (fst expr)) r (name c) (fst expr), snd expr) (Just$ b))
+                    r  -> if name c `elem` r
+                          then ( if c/=source (fst expr) then fatal 188 ("Erroneous call to addEpsilonLeft: c="++show c++"  and e="++show (fst expr)++".")
+                                 else pure (obj (addEpsilonLeft (gc Tgt (fst expr)) r (name c) (fst expr), snd expr) (Just$ b)) )
                           else mustBeBound (origin o) [(Tgt,fst expr)]
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
@@ -532,7 +533,7 @@ pCtx2aCtx
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
+pDisAmb2Expr (_,Rel rs)  = pure (head rs) --  in order to forbid multiple declarations of the same relation, change to  'pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs'
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 pMean2aMean :: Lang           -- The default language 

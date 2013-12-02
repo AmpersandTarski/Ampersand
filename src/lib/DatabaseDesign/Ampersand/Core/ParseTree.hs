@@ -50,7 +50,7 @@ where
    import Control.Applicative
 
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ParseTree"
+   fatal = fatalMsg "Core.ParseTree"
    
    data P_Context
       = PCtx{ ctx_nm ::     String           -- ^ The name of this context

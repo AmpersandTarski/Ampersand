@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis.hs"
+fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
 chpDiagnosis :: Fspc -> Options -> (Blocks,[Picture])
 chpDiagnosis fSpec flags

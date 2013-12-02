@@ -13,7 +13,7 @@ import Data.List (sortBy)
 import Data.Function (on)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis.hs"
+fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec

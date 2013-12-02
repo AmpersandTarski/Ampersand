@@ -9,8 +9,8 @@ import DatabaseDesign.Ampersand.Core.ParseTree       (Prop(..))
 import DatabaseDesign.Ampersand.ADL1.Expression
 import DatabaseDesign.Ampersand.Basics
 
--- fatal :: Int -> String -> a
--- fatal = fatalMsg "Classes.Relational"
+fatal :: Int -> String -> a
+fatal = fatalMsg "Classes.Relational"
 
 class Association r => Relational r where
     multiplicities :: r -> [Prop]
@@ -186,13 +186,14 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e     -> isImin e
      EDcD{}     -> False
      EDcI{}     -> True
-     EEps i sgn -> isEndo sgn && i==source expr
+     EEps i sgn -> if isEndo sgn && i==source expr then fatal 189 (show expr++" is endo") else
+                   False
      EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EPrd, and ERad
  isEpsilon e = case e of
-                EEps{} -> True   -- > tells whether the argument is equivalent to I
+                EEps{} -> True
                 _      -> False
  
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-

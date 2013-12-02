@@ -207,7 +207,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         clos xs
          = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
            where
-           -- SJ 20131117: function f assumes that there are no ISA's. So this will work correctly after the introduction of EEps.
              f :: [[Expression]] -> A_Concept -> [[Expression]]
              f q x = q ++ [l ++ r | l <- q, x == target (last l),
                                     r <- q, x == source (head r), null (l `isc` r)]
@@ -354,14 +353,14 @@ while maintaining all invariants.
                  } in s
     where
 -- declarations that may be affected by an edit action within the transaction
-        decls        = declsUsedIn rul
+        decls        = relsUsedIn rul
 -- the quads that induce automated action on an editable relation.
 -- (A quad contains the conjunct(s) to be maintained.)
 -- Those are the quads that originate from invariants.
         invQs       = [q | q@(Quad _ ccrs)<-vquads fSpec, (not.isSignal.cl_rule.qClauses) q
-                         , (not.null) ((declsUsedIn.cl_rule) ccrs `isc` decls)]
+                         , (not.null) ((relsUsedIn.cl_rule) ccrs `isc` decls)] -- SJ 20111201 TODO: make this selection more precise (by adding inputs and outputs to a quad).
 -- a relation affects another if there is a quad (i.e. an automated action) that links them
-        affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(declsUsedIn.cl_rule.qClauses) q]
+        affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(relsUsedIn.cl_rule.qClauses) q]
 -- the relations affected by automated action
 --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
 ----------------------------------------------------
@@ -402,7 +401,7 @@ while maintaining all invariants.
       --                , (not.isTrue.dnfClauseNF) (notCpl conj .\/. conj') -- the system must act to restore invariance     
                         ]
                         rule)
-      | rule<-rs, d<- declsUsedIn rule, visible d
+      | rule<-rs, d<-relsUsedIn rule, visible d
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
@@ -569,7 +568,7 @@ while maintaining all invariants.
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
-                                , dcl `elem` declsUsedIn frExpr
+                                , dcl `elem` relsUsedIn frExpr
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
                                                else conjNF (notCpl negs)
@@ -704,8 +703,7 @@ while maintaining all invariants.
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let els=foldCompose ls
                                    , let ers=foldCompose rs
-                                   , let c=source ers  -- SJ 20131117 was: if source ers<=target els then source ers else target els
-                                                       --                but introduction of EEps makes this unneccessary
+                                   , let c=source ers  -- SJ 20131202: Note that target ers==source els
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (source ers) .*. deltaX) .\/. notCpl ers)) Ins ers []
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (target els)) .\/. notCpl els)) Ins els []
                                    ] motiv
@@ -897,8 +895,7 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let ers=foldCompose rs
                                    , let els=foldCompose ls
-                                   , let c=source ers  -- SJ 20131117 was: if target ers<=source els then target ers else source els
-                                                       --                but introduction of EEps makes this unneccessary
+                                   , let c=source ers  -- SJ 20131202: Note that target ers==source els
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (source ers) .*. deltaX) .\/. notCpl ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (target els)) .\/. notCpl els)) Del els []
                                    ] motiv
