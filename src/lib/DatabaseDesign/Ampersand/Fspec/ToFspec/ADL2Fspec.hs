@@ -98,7 +98,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         --     * The root concept(s) will be the most left ones
         --
         --     * for any x,y in the kernel, whenever x is more generic than y, x will be more to the beginning of the list
-        sortedKernels = map someKindOfSort constructKernels
+        sortedKernels = {-map someKindOfSort-} constructKernels
             where someKindOfSort :: [A_Concept] -> [A_Concept]
                   someKindOfSort cpts = largests ++ (if null others then [] else someKindOfSort others)
                     where
