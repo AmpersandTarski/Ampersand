@@ -13,7 +13,7 @@ license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
-tested-with:    GHC == 7.4.1
+tested-with:    GHC == 7.6.3
 data-files:     
                 AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/RepoRap/admin_interfaces.adl, 
