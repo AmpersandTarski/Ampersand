@@ -245,16 +245,15 @@ where
          shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS flags newindent'' conj++newindent++"   )"
 
    instance ShowHS Clauses where
-    showHS flags indent c
+    showHS _ indent c
       = intercalate indent
-          [ "Clauses{ cl_conjNF = [ "++intercalate (ind++", ") 
-                                       [ "( "++showHS flags (ind++"    ") e++ind++"  , "++showHS flags (ind++"   ") dnfClauses++ind++"  )"
-                                       | (e,dnfClauses)<-cl_conjNF c ]++ind++"]"
-          , "       , cl_rule   = " ++ showHSName (cl_rule c)
+          [ "Clauses{ cl_conjNF = "++wrap "" ind (\_->showConjName) [ (ruleNm,i) | (i,_)<-zip [0..] (cl_conjNF c) ]
+          , "       , cl_rule   = " ++ ruleNm
           , "       }"
           ]
        where 
          ind = indent ++ "                     "
+         ruleNm = showHSName (cl_rule c)
 
    instance ShowHS DnfClause where
     showHS flags indent (Dnf antcs conss)
@@ -305,7 +304,7 @@ where
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
-           ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
+           ,wrap ", vconjs        = " indentA (\_->showConjName) [(name rul, i) | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses, (i,_)<-zip [0..] (cl_conjNF clauses)] -- Conjuncts are numbered rather than named.
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
@@ -376,6 +375,15 @@ where
         "\n -- *** Generated rules (total: "++(show.length.grules) fspec++" rules) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fspec ]++"\n"++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
+       )++
+       (if null (vconjs fspec ) then "" else
+        "\n -- *** Conjuncts (total: "++(show.length.vconjs) fspec++" conjuncts) ***: "++
+        concat [ indent++" "++showConjName (ruleNm, i)++indent++"  = "++showHS flags (indent++"    ") conj
+               | cl<-eqCl fst [(name rul,zip [0..] (cl_conjNF clauses))
+                              | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses]
+               , (ruleNm,iCls)<-take 1 cl, (i,conj)<-iCls
+               ]++"\n"
+
        )++
        (if null (vquads fspec ) then "" else
         "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
@@ -753,11 +761,15 @@ where
 
    instance ShowHS SubInterface where
     showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n 
-    showHS flags indent (Box x objs) = "Box "++showHS flags indent x++" ("++showHS flags (indent++"     ") objs++")" 
+    showHS flags indent (Box x objs) = "Box "++showHS flags indent x++indent++"     ("++showHS flags (indent++"     ") objs++")" 
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
 -- \***********************************************************************
+
+-- In order to share Expressions in Haskell, expressions can be numbered. This replaces  "instance ShowHSName Expression". It is used for giving conjuncts a name.
+   showConjName :: (String, Int) -> String
+   showConjName (ruleNm,i) = "conj_"++ruleNm++show i
 
    instance ShowHS Expression where
     showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
@@ -797,7 +809,9 @@ where
     showHS flags _ gen@IsE{} = "IsE ("++showHS flags "" (genfp gen)++") ["++intercalate ", " (map showHSName (genrhs gen))++"] ("++showHSName (genspc gen)++") "
    
    instance ShowHSName Declaration where
-    showHSName d | decusr d  = haskellIdentifier ("dcl_"++name d++name (source d)++name (target d)) -- user defined relations
+    showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
+    showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++name (target d)) -- full relation
+    showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++name (target d)) -- user defined relations
                  | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++name (target d)) -- relations generated for signalling
                  | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++name (target d)) -- relations generated per rule
    
