@@ -221,18 +221,28 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
                             <> (emph.text.nm.assSrc) assoc
                             <> text " kan hebben."
                            )
-           English -> para (   text (case assrhm assoc of
-                                       Mult MinZero _ -> "Some "
-                                       Mult MinOne  _ -> "Each "
-                                    ) 
+           English -> para (   text "Every "
                             <> (emph.text.nm.assSrc) assoc
-                            <> text " "
-                            <> (singleQuoted.text.     assrhr) assoc
-                            <> text (case assrhm assoc of
-                                       Mult _ MaxOne  -> fatal 167 "This should have become an attribute of this Class!"
-                                       Mult _ MaxMany -> " one or more "
-                                    ) 
-                            <> (emph .text.nm.assTrg) assoc
+                            <> let rel = (singleQuoted.text.assrhr) assoc
+                                   rel' = text ""
+                               in (case assrhm assoc of
+                                     Mult MinZero MaxOne  -> text " "  <> rel <> text " at most one " 
+                                     Mult MinZero MaxMany -> text " "  <> rel <> text " zero or more "
+                                     Mult MinOne  MaxOne  -> text " must " <> rel <> text " exactly one "
+                                     Mult MinOne  MaxMany -> text " must " <> rel <> text " at least one "
+                                  ) 
+                            <> (emph.text.nm.assTrg) assoc 
+                            <> text ". For the other way round, for this relation holds that "
+                            <> text "each "
+                            <> (emph.text.nm.assTrg) assoc
+                            <> (case asslhm assoc of
+                                     Mult MinZero MaxOne  -> text " "  <> rel' <> text " at most one " 
+                                     Mult MinZero MaxMany -> text " "  <> rel' <> text " zero or more "
+                                     Mult MinOne  MaxOne  -> text " must " <> rel' <> text " exactly one "
+                                     Mult MinOne  MaxMany -> text " must " <> rel' <> text " at least one "
+                                  )
+                            <> (emph.text.nm.assSrc) assoc
+                            <> text "."
                            )
              
 showDummy :: DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
