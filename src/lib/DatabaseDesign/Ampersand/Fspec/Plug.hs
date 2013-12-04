@@ -199,9 +199,9 @@ instance Object PlugSQL where
          []  -> f c mms'  -- a path from c to a is not found (yet), so add another step to the recursion
          (hd:_) -> case hd of
                     []  -> fatal 201 "Empty head should be impossible."
-                    es  -> case [(l,r) | (l,r)<-zip (init es) (tail es), target l/=source r] of
-                            [] -> foldr1 (.:.) es  -- pick the shortest path and turn it into an expression.
-                            es -> fatal 204 ("illegal compositions " ++show es)
+                    _  -> case [(l,r) | (l,r)<-zip (init hd) (tail hd), target l/=source r] of
+                            [] -> foldr1 (.:.) hd  -- pick the shortest path and turn it into an expression.
+                            lrs -> fatal 204 ("illegal compositions " ++show lrs)
       where
         mms' = if [] `elem` mms 
                then fatal 295 "null in mms."
@@ -312,6 +312,7 @@ requiredFields plug@TblSQL{} fld
 requires :: PlugSQL -> (SqlField,SqlField) ->Bool
 requires plug (fld1,fld2) = fld2 `elem` requiredFields plug fld1
 
+composeCheck :: Expression -> Expression -> Expression
 composeCheck l r
  = if target l/=source r then fatal 316 ("\nl: "++show l++"with target "++show (target l)++"\nl: "++show r++"with source "++show (source r)) else
    l .:. r
