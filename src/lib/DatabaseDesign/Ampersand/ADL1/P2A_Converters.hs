@@ -319,8 +319,7 @@ pCtx2aCtx
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map findConceptOrONE . Set.toList) lst)
        where head' [] =fatal 321 ("empty list on expressions "++show ((p1,b1,e1),(p2,b2,e2)))
-             head' [a] = a
-             head (a:as) = a
+             head' (a:_) = a
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb x
      = (x, case x of
