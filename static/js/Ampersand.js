@@ -514,8 +514,8 @@ function stopAtomEditing($atom) {
 
   // todo if newAtom is keyed and has no atom, don't do anything
   var newAtom;
-  if (conceptHasKey(concept)) { // if concept has a key, we map the key back onto an atom (todo: use autocomplete selection, so we don't need this lookup)
-    newAtom = getAtomForKey(newAtomText, concept);
+  if (conceptHasView(concept)) { // if concept has a key, we map the key back onto an atom (todo: use autocomplete selection, so we don't need this lookup)
+    newAtom = getAtomForView(newAtomText, concept);
     
     if (!newAtom) { // If the entered key does not correspond to an atom, the edit operation is ignored.
       $atomName.attr('style',''); // Undo the hide() action from above. We don't use show, because that sets a style attribute on the div,
@@ -675,13 +675,13 @@ function addClickEvent($item, interface, atom) {
 
 //Keys
 
-function conceptHasKey(concept) {
+function conceptHasView(concept) {
   return getEditableConceptInfo()[concept]['hasKey'];
 }
 
-// return the atom for key, or null if the key is not in the atomKeyMap
-function getAtomForKey(key, concept) {
-  var conceptAtomKeyMap = getEditableConceptInfo()[concept]['atomKeyMap'];
+// return the atom for key, or null if the key is not in the atomViewMap
+function getAtomForView(key, concept) {
+  var conceptAtomKeyMap = getEditableConceptInfo()[concept]['atomViewMap'];
   
   var atom = null;
   for (var i=0; i<conceptAtomKeyMap.length; i++)
@@ -900,10 +900,10 @@ function logError(msg) {
 
 // precondition: concept appears on the page (and is therefore represented in getEditableConceptInfo)
 function getAllConceptAtoms(concept) {
-  var atomKeyMap = getEditableConceptInfo()[concept]["atomKeyMap"];
+  var atomViewMap = getEditableConceptInfo()[concept]["atomViewMap"];
   var atoms = new Array();
-  for (var i=0; i<atomKeyMap.length; i++) {
-    atoms.push( atomKeyMap[i]["key"] ); // if the concept has no key, "key" contains the atom name.
+  for (var i=0; i<atomViewMap.length; i++) {
+    atoms.push( atomViewMap[i]["key"] ); // if the concept has no key, "key" contains the atom name.
   }
   return atoms;
 }

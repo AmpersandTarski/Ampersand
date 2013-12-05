@@ -112,37 +112,37 @@ function getSpecializations($concept) {
   return isset( $allSpecializations[$concept]) ? $allSpecializations[$concept] : array ();
 }
 
-function getKey($concept) {
-  global $allKeys;
+function getView($concept) {
+  global $allViews;
 
-  foreach ($allKeys as $key)
-    if ($concept == $key['concept'] || in_array($concept, getSpecializations($key['concept'])))
-      return $key;
+  foreach ($allViews as $view)
+    if ($concept == $view['concept'] || in_array($concept, getSpecializations($view['concept'])))
+      return $view;
 
   return null;
 }
 
-function showKeyAtom($atom, $concept) {
-  $keyDef = getKey($concept);
+function showViewAtom($atom, $concept) {
+  $viewDef = getView($concept);
 
-  if (!$keyDef || $atom == '') {
+  if (!$viewDef || $atom == '') {
     return $atom;
   }
   else {
-    $keyStrs = array ();
-    foreach ($keyDef['segments'] as $keySegment) 
-      if ($keySegment['segmentType'] == 'Text')
-        $keyStrs[] = htmlSpecialChars($keySegment['Text']);
-      elseif ($keySegment['segmentType'] == 'Html')
-        $keyStrs[] = $keySegment['Html'];
+    $viewStrs = array ();
+    foreach ($viewDef['segments'] as $viewSegment) 
+      if ($viewSegment['segmentType'] == 'Text')
+        $viewStrs[] = htmlSpecialChars($viewSegment['Text']);
+      elseif ($viewSegment['segmentType'] == 'Html')
+        $viewStrs[] = $viewSegment['Html'];
       else {
-	$r = getCoDomainAtoms($atom, $keySegment['expSQL']);
-	$txt = count($r) ? $r[0] : "<Key relation not total>";
-        $keyStrs[] = htmlSpecialChars($txt);
+	$r = getCoDomainAtoms($atom, $viewSegment['expSQL']);
+	$txt = count($r) ? $r[0] : "<View relation not total>";
+        $viewStrs[] = htmlSpecialChars($txt);
         // this can happen in a create-new interface when the key fields have not yet been 
         // filled out, while the atom is shown (but hidden by css) at the top. 
       }
-    return implode($keyStrs);
+    return implode($viewStrs);
   }
 }
 
@@ -151,11 +151,11 @@ function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $t
   $tgtHasInterfaces = $tgtNrOfIfcs == 0 ? '' : ' hasInterface=' . ($tgtNrOfIfcs == 1 ? 'single' : 'multiple');
 
   if (count($pairView) == 0) {
-    $source = showKeyAtom($srcAtom, $srcConcept);
-    $target = showKeyAtom($tgtAtom, $tgtConcept);
+    $source = showViewAtom($srcAtom, $srcConcept);
+    $target = showViewAtom($tgtAtom, $tgtConcept);
     
-    // if source and target are the same atom and we have a key for it, don't show a tuple
-    if ($srcAtom == $tgtAtom && $srcConcept == $tgtConcept && getKey($srcConcept) )
+    // if source and target are the same atom and we have a view for it, don't show a tuple
+    if ($srcAtom == $tgtAtom && $srcConcept == $tgtConcept && getView($srcConcept) )
       return "<span class=\"Pair\">".
                "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\"$srcHasInterfaces>$source</span>".
              "</span>";
@@ -177,7 +177,7 @@ function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $t
         
         // we label all expressionsegments as violation source or target based on the source of their expression
         $pairStrs[] = "<span class=\"PairAtom\" atom=\"$atom\" concept=\"$concept\"$hasInterfaces>";
-        $pairStrs[] = showKeyAtom($r[0], $segment['expTgt']) . "</span>"; 
+        $pairStrs[] = showViewAtom($r[0], $segment['expTgt']) . "</span>"; 
       }
       $pairStrs[] = "</span>";
       return implode($pairStrs);

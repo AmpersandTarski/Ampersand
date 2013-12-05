@@ -350,7 +350,7 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
                              ' status='.($atom!==null?'unchanged':'new').
                              ' atomic='.showHtmlAttrBool(count($subInterfaces)==0).'>');
   
-  $atomName = showKeyAtom($atom, $interface['tgtConcept']); 
+  $atomName = showViewAtom($atom, $interface['tgtConcept']); 
   // TODO: can be done more efficiently if we query the concept atoms once for each concept
 
   emit($html, "<div class=AtomName>".$atomName.'</div>');
@@ -379,16 +379,16 @@ function genEditableConceptInfo($interface) {
   
   $editableConcepts = $allInterfaceObjects[$interface]['editableConcepts'];
   
-  $atomKeyMap = array ();
+  $atomViewMap = array ();
   foreach ($editableConcepts as $editableConcept) {
     $allAtoms = getAllConceptAtoms($editableConcept);
     $atomsAndKeys = array ();
     foreach ($allAtoms as $atom) {
-      $atomsAndKeys[] = array ('atom' => $atom, 'key' => showKeyAtom($atom, $editableConcept));
+      $atomsAndKeys[] = array ('atom' => $atom, 'key' => showViewAtom($atom, $editableConcept));
     }
-    $atomKeyMap[$editableConcept] = array ('hasKey' => getKey($editableConcept)!=null, 'atomKeyMap' => $atomsAndKeys);
+    $atomViewMap[$editableConcept] = array ('hasKey' => getView($editableConcept)!=null, 'atomViewMap' => $atomsAndKeys);
   }
-  $atomKeyMapJson = json_encode( $atomKeyMap );
+  $atomKeyMapJson = json_encode( $atomViewMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";
   echo "  return $atomKeyMapJson;\n";
   echo "}\n";
