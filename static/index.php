@@ -382,11 +382,11 @@ function genEditableConceptInfo($interface) {
   $atomViewMap = array ();
   foreach ($editableConcepts as $editableConcept) {
     $allAtoms = getAllConceptAtoms($editableConcept);
-    $atomsAndKeys = array ();
+    $atomsAndViews = array ();
     foreach ($allAtoms as $atom) {
-      $atomsAndKeys[] = array ('atom' => $atom, 'key' => showViewAtom($atom, $editableConcept));
+      $atomsAndViews[] = array ('atom' => $atom, 'view' => showViewAtom($atom, $editableConcept));
     }
-    $atomViewMap[$editableConcept] = array ('hasKey' => getView($editableConcept)!=null, 'atomViewMap' => $atomsAndKeys);
+    $atomViewMap[$editableConcept] = array ('hasView' => getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
   }
   $atomKeyMapJson = json_encode( $atomViewMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";

@@ -139,7 +139,7 @@ function showViewAtom($atom, $concept) {
 	$r = getCoDomainAtoms($atom, $viewSegment['expSQL']);
 	$txt = count($r) ? $r[0] : "<View relation not total>";
         $viewStrs[] = htmlSpecialChars($txt);
-        // this can happen in a create-new interface when the key fields have not yet been 
+        // this can happen in a create-new interface when the view fields have not yet been 
         // filled out, while the atom is shown (but hidden by css) at the top. 
       }
     return implode($viewStrs);

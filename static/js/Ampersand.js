@@ -676,7 +676,7 @@ function addClickEvent($item, interface, atom) {
 //Keys
 
 function conceptHasView(concept) {
-  return getEditableConceptInfo()[concept]['hasKey'];
+  return getEditableConceptInfo()[concept]['hasView'];
 }
 
 // return the atom for key, or null if the key is not in the atomViewMap
@@ -903,7 +903,7 @@ function getAllConceptAtoms(concept) {
   var atomViewMap = getEditableConceptInfo()[concept]["atomViewMap"];
   var atoms = new Array();
   for (var i=0; i<atomViewMap.length; i++) {
-    atoms.push( atomViewMap[i]["key"] ); // if the concept has no key, "key" contains the atom name.
+    atoms.push( atomViewMap[i]['view'] ); // if the concept has no view, "view" contains the atom name.
   }
   return atoms;
 }
