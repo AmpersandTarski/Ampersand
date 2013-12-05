@@ -6,7 +6,6 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import Data.List
-import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
