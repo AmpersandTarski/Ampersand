@@ -102,7 +102,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs :: [Expression]
         totsurs
          = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
-                    , (conj,dnfClauses)<-cl_conjNF (qClauses q), Dnf antcs conss<-dnfClauses
+                    , (_,dnfClauses)<-cl_conjNF (qClauses q), Dnf antcs conss<-dnfClauses
                     , let antc = conjNF (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
                     , cons<-map exprCps2list conss
@@ -394,7 +394,7 @@ while maintaining all invariants.
    allClauses flags rule = Clauses [(dnf2expr dnfClause,allShifts flags dnfClause) | dnfClause<-conjuncts rule] rule
 
    allShifts :: Options -> DnfClause -> [DnfClause]
-   allShifts flags conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
+   allShifts _ conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
     where
     {-
@@ -455,9 +455,11 @@ while maintaining all invariants.
       --  ass =  [ r;s , r;r ]
       --  css =  [ x;y ]
        move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-       move [] css = [] -- was [([EDcI (target (last css))],css)]
-       move ass css
-        = (ass,css):
+       move ass css = 
+        case ass of
+         [] -> [] -- was [([EDcI (target (last css))],css)]
+         _  -> 
+          (ass,css):
           if and [ (not.isEDcI) as | as<-ass]
           then [ts | let headEs = map headECps ass
                    , length (eqClass (==) headEs) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
@@ -608,6 +610,9 @@ while maintaining all invariants.
      cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
      cascade  _  (Nop m)          = (False, Nop m)
      cascade  _  (Blk m)          = (False, Blk m)
+     cascade  _  (Let _ _ _)  = fatal 611 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
+     cascade  _  (Ref _)      = fatal 612 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
+        
    conjuncts :: Rule -> [DnfClause]
    conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
    disjuncts :: Expression -> DnfClause
@@ -962,11 +967,9 @@ CHC [ if isRel e
         visible _ = True
 
 -- Auxiliaries
-   chop :: [t] -> [([t], [t])]
-   chop [_]    = []
-   chop (x:xs) = ([x],xs): [(x:l, r) | (l,r)<-chop xs]
-   chop []     = []
-
+   chop :: [a] -> [([a], [a])]
+   chop xs = [ splitAt i xs | i <- [1..length xs-1]]
+   
    deltaK0 :: t -> InsDel -> t1 -> t
    deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)
    deltaK0 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x* leeg is)
