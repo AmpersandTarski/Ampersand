@@ -92,18 +92,26 @@ primitives expr =
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
 deMorganERad :: Expression -> Expression
+deMorganERad (ECpl (ERad (l,r)))
+  = notCpl (deMorganERad l) .:. notCpl (deMorganERad r)
 deMorganERad (ERad (l,r))
   = notCpl (notCpl (deMorganERad l) .:. notCpl (deMorganERad r))
 deMorganERad e = e
 deMorganECps :: Expression -> Expression
+deMorganECps (ECpl (ECps (l,r)))
+  = notCpl (deMorganECps l) .!. notCpl (deMorganECps r)
 deMorganECps (ECps (l,r))
   = notCpl (notCpl (deMorganECps l) .!. notCpl (deMorganECps r))
 deMorganECps e = e
 deMorganEUni :: Expression -> Expression
+deMorganEUni (ECpl (EUni (l,r)))
+  = notCpl (deMorganEUni l) ./\. notCpl (deMorganEUni r)
 deMorganEUni (EUni (l,r))
   = notCpl (notCpl (deMorganEUni l) ./\. notCpl (deMorganEUni r))
 deMorganEUni e = e
 deMorganEIsc :: Expression -> Expression
+deMorganEIsc (ECpl (EIsc (l,r)))
+  = notCpl (deMorganEIsc l) .\/. notCpl (deMorganEIsc r)
 deMorganEIsc (EIsc (l,r))
   = notCpl (notCpl (deMorganEIsc l) .\/. notCpl (deMorganEIsc r))
 deMorganEIsc e = e
