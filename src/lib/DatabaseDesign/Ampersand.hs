@@ -6,6 +6,10 @@ module DatabaseDesign.Ampersand
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..), RelConceptDef(..)
    , A_Concept(..), A_Gen
    , Sign(..), ConceptDef(..), ConceptStructure(..)
+   , Activity(..)
+   , AMeaning(..)
+   , Quad(..)
+   , ECArule(..)
    , Pattern(..)
    , Declaration(..)
    , IdentityDef(..)
@@ -17,11 +21,14 @@ module DatabaseDesign.Ampersand
    , Fspc(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Rule(..), ruleviolations, violationsexpr
-   , Prop(..)
+   , Process(..) , FProcess(..)
+   , Prop(..), RuleOrigin(..)
    , Lang(..)
+   , SqlFieldUsage(..)
+   , DnfClause(..), Clauses(..)
    , Options(..), DocTheme(..)
    , Picture(..), writePicture, DrawingType(..)
-   , Origin(..)
+   , FilePos(..), Origin(..), Pos(Pos)
    , FPA(..), FPcompl(..)
    , mkPair
    -- * Classes:

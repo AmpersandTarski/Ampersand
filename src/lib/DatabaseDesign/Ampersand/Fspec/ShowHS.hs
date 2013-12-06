@@ -26,14 +26,15 @@ where
            = "{-# OPTIONS_GHC -Wall #-}"
              ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
-             ++"\n  import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner"
-             ++"\n  import DatabaseDesign.Ampersand.Core.ParseTree"
-             ++"\n  import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree"
-             ++"\n  import DatabaseDesign.Ampersand.Fspec.ShowHS (showHS)"
-             ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
-             ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
-             ++"\n  import DatabaseDesign.Ampersand.Basics"
-             ++"\n  import DatabaseDesign.Ampersand.Classes"
+--             ++"\n  import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner"
+--             ++"\n  import DatabaseDesign.Ampersand.Core.ParseTree"
+--             ++"\n  import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree"
+--             ++"\n  import DatabaseDesign.Ampersand.Fspec.ShowHS (showHS)"
+--             ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
+--             ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
+--             ++"\n  import DatabaseDesign.Ampersand.Basics"
+--             ++"\n  import DatabaseDesign.Ampersand.Classes"
+             ++"\n  import DatabaseDesign.Ampersand"
              ++"\n  import Text.Pandoc hiding (Meta)"
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
@@ -313,7 +314,6 @@ where
            ,wrap ", vConceptDefs  = " indentA (\_->showHSName) (vConceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
-           ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
            ,wrap ", userDefPops   = " indentA (showHS flags)   (userDefPops fspec)
            ,wrap ", allViolations = " indentA showViolatedRule (allViolations fspec)
            ,"}" 
@@ -321,7 +321,7 @@ where
        indent++"where"++
        indent++" isa' :: [(A_Concept, A_Concept)]"++
        indent++" isa'  = "++    showHSName (fsisa fspec)++
-       indent++" gE = genE isa'"++
+--       indent++" gE = genE isa'"++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
        indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showHSName (interfaceS fspec))++indentB++"]")++
@@ -637,7 +637,7 @@ where
         ,"  , rrmsg  = " ++ showHS flags "" (rrmsg  r)
         ,"  , rrviol = " ++ showHS flags "" (rrviol r)
         ,"  , rrtyp  = " ++ showHS flags "" (rrtyp  r)
-        ,"  , rrdcl  = " ++ showHS flags "" (rrdcl  r)
+        ,"  , rrdcl  = " ++ showHSName (rrdcl r) 
         ,"  , r_env  = " ++ show (r_env  r)
         ,"  , r_usr  = " ++ show (r_usr  r)
         ,"  , r_sgl  = " ++ show (r_sgl  r)
@@ -769,7 +769,7 @@ where
 
 -- In order to share Expressions in Haskell, expressions can be numbered. This replaces  "instance ShowHSName Expression". It is used for giving conjuncts a name.
    showConjName :: (String, Int) -> String
-   showConjName (ruleNm,i) = "conj_"++ruleNm++show i
+   showConjName (ruleNm,i) = haskellIdentifier("conj_"++ruleNm++show i)
 
    instance ShowHS Expression where
     showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
@@ -837,7 +837,7 @@ where
                         ,"   , decpat  = " ++ show (decpat d)
                         ,"   , decplug = " ++ show (decplug d)
                         ]++"}"
-          Isn{}     -> "Isn{ detyp   = " ++ showHS flags "" (detyp d)++"}"
+          Isn{}     -> "Isn{ detyp   = " ++ showHSName (detyp d)++"}"
           Vs{}      -> "Vs { decsgn  = " ++ showHS flags "" (sign d)++"}"
 
 -- \***********************************************************************
@@ -859,7 +859,7 @@ where
     showHSName c = haskellIdentifier ("cpt_"++name c) 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
-                       PlainConcept{} -> "PlainConcept "++show (name c) ++ " gE "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
+                       PlainConcept{} -> "PlainConcept "++show (name c) ++ " "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
                        ONE -> "ONE"
 
    instance ShowHS FPcompl where
@@ -868,17 +868,20 @@ where
    instance ShowHS FPA where
     showHS _ _ (FPA t c) = "FPA "++show t++" "++show c
    
-   instance ShowHS Prop where
-    showHS _ _ Uni = "Uni"
-    showHS _ _ Inj = "Inj"
-    showHS _ _ Sur = "Sur"
-    showHS _ _ Tot = "Tot"
-    showHS _ _ Sym = "Sym"
-    showHS _ _ Asy = "Asy"
-    showHS _ _ Trn = "Trn"
-    showHS _ _ Rfx = "Rfx"
-    showHS _ _ Irf = "Irf"
+   instance ShowHSName Prop where
+    showHSName Uni = "Uni"
+    showHSName Inj = "Inj"
+    showHSName Sur = "Sur"
+    showHSName Tot = "Tot"
+    showHSName Sym = "Sym"
+    showHSName Asy = "Asy"
+    showHSName Trn = "Trn"
+    showHSName Rfx = "Rfx"
+    showHSName Irf = "Irf"
 
+   instance ShowHS Prop where
+    showHS _ _ = showHSName
+    
    instance ShowHS FilePos where
     showHS _ _ (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
