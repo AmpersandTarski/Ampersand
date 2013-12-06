@@ -488,7 +488,7 @@ while maintaining all invariants.
      headECps expr = f expr
       where f (ECps (l@ECps{},_)) = f l
             f (ECps (l,_)) = l
-            f _ = EDcI (source expr)
+            f _ = expr
 
      tailECps :: Expression -> Expression
      tailECps expr = f expr
@@ -506,7 +506,7 @@ while maintaining all invariants.
      lastECps expr = f expr
       where f (ECps (_,r@ECps{})) = f r
             f (ECps (_,r)) = r
-            f _ = EDcI (target expr)
+            f _ = expr
 
      isEDcI :: Expression -> Bool
      isEDcI EDcI{} = True

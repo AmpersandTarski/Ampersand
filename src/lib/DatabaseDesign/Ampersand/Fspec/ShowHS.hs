@@ -8,7 +8,7 @@ where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
---   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
+   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
 --   import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
    import Data.List
    import DatabaseDesign.Ampersand.Classes
@@ -259,8 +259,8 @@ where
    instance ShowHS DnfClause where
     showHS flags indent (Dnf antcs conss)
       = intercalate indent
-          [ wrap "Dnf " (indent++"   ") (\_->showHS flags (indent++"   ")) antcs
-          , wrap "    " (indent++"   ") (\_->showHS flags (indent++"   ")) conss
+          [ wrap "Dnf " (indent++"   ") (\_->showHS flags (indent++"      ")) antcs
+          , wrap "    " (indent++"   ") (\_->showHS flags (indent++"      ")) conss
           ]
 
 
@@ -305,7 +305,7 @@ where
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
-           ,wrap ", vconjs        = " indentA (\_->showConjName) [(name rul, i) | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses, (i,_)<-zip [0..] (cl_conjNF clauses)] -- Conjuncts are numbered rather than named.
+           ,wrap ", vconjs        = " indentA (\_->showConjName) (nub [(name rul, i) | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses, (i,_)<-zip [0..] (cl_conjNF clauses)]) -- Conjuncts are numbered rather than named.
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
@@ -377,11 +377,13 @@ where
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
        )++
        (if null (vconjs fspec ) then "" else
+        let showCommented indent dnfCl = " -- "++showADL (dnf2expr dnfCl)++indent++"  "++showHS flags (indent++"  ") dnfCl in
         "\n -- *** Conjuncts (total: "++(show.length.vconjs) fspec++" conjuncts) ***: "++
-        concat [ indent++" "++showConjName (ruleNm, i)++indent++"  = "++showHS flags (indent++"    ") conj
+        concat [ indent++" "++showConjName (ruleNm, i)++"  -- "++showADL conj++indent++"  = ( "++showHS flags (indent++"      ") conj++
+                 indent++"    , "++wrap "" (indent++"      ") (showHS flags) dnfClss++")"
                | cl<-eqCl fst [(name rul,zip [0..] (cl_conjNF clauses))
                               | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses]
-               , (ruleNm,iCls)<-take 1 cl, (i,conj)<-iCls
+               , (ruleNm,iCls)<-take 1 cl, (i,(conj,dnfClss))<-iCls
                ]++"\n"
 
        )++
@@ -769,7 +771,7 @@ where
 
 -- In order to share Expressions in Haskell, expressions can be numbered. This replaces  "instance ShowHSName Expression". It is used for giving conjuncts a name.
    showConjName :: (String, Int) -> String
-   showConjName (ruleNm,i) = haskellIdentifier("conj_"++ruleNm++show i)
+   showConjName (ruleNm,i) = haskellIdentifier("conj_"++ruleNm++"_"++show i)
 
    instance ShowHS Expression where
     showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
