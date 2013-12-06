@@ -269,6 +269,8 @@ instance ShowADL Expression where
           showchar (EDif (l,r)) = showchar l++diff ++showchar r
           showchar (ELrs (l,r)) = showchar l++lresi++showchar r
           showchar (ERrs (l,r)) = showchar l++rresi++showchar r
+          showchar (ECps (EEps{},r)) = showchar  r
+          showchar (ECps (l,EEps{})) = showchar l
           showchar (ECps (l,r)) = showchar l++rMul++showchar r
           showchar (ERad (l,r)) = showchar l++rAdd++showchar r
           showchar (EPrd (l,r)) = showchar l++rPrd++showchar r
@@ -279,7 +281,7 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar  EEps{}      = "" -- Epsilon doesn't show in ADL.
+          showchar  EEps{}      = fatal 284 "Epsilon must not show up."
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 
