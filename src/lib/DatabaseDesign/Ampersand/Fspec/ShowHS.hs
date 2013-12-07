@@ -748,7 +748,7 @@ where
 
    instance ShowHS SubInterface where
     showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n 
-    showHS flags indent (Box x objs) = "Box "++showHS flags indent x++indent++"     ("++showHS flags (indent++"     ") objs++")" 
+    showHS flags indent (Box x objs) = "Box ("++showHS flags indent x++")"++indent++"     ("++showHS flags (indent++"     ") objs++")" 
 
    instance ShowHS Expression where
     showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
@@ -769,7 +769,7 @@ where
     showHS _     _      (EDcD dcl  ) = "EDcD "++showHSName dcl
     showHS flags _      (EDcI c    ) = "EDcI ("++showHS flags "" c++")"
     showHS flags _      (EEps i sgn) = "EEps ("++showHS flags "" i++") ("++showHS flags "" sgn++")"
-    showHS flags _      (EDcV sgn  ) = "EDcV "++showHS flags "" sgn
+    showHS flags _      (EDcV sgn  ) = "EDcV ("++showHS flags "" sgn++")"
     showHS flags _      (EMp1 a c  ) = "EMp1 ("++show a++") ("++showHS flags "" c++")"
 
 -- \***********************************************************************
