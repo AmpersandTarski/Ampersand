@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Activity(..)
    , AMeaning(..)
-   , Quad(..)
+   , Quad(..), RuleClause(..)
    , ECArule(..)
    , Pattern(..)
    , Declaration(..)

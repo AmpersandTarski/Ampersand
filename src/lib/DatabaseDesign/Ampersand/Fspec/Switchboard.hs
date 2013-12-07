@@ -176,7 +176,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
         toRels :: [Declaration]
         toRels       = nub (actAffect act)
         conjuncts    = nub [(cl_rule ccrs,c)
-                           | Quad _ ccrs<-actQuads act, (c,_)<-cl_conjNF ccrs]
+                           | Quad _ ccrs<-actQuads act, c<- map rc_conjunct (cl_conjNF ccrs)]
         --DESCR -> The relations from which changes can come
         inMorNodes    = [ DotNode { nodeID         = nameINode fromRels r
                                   , nodeAttributes = [Label (StrLabel (fromString (showADL r)))]

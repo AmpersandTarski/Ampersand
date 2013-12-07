@@ -16,10 +16,9 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
-   import Data.List (nub,intercalate,intersect,partition,group,delete)
+   import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
-
    head :: [a] -> a
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
@@ -54,7 +53,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , grules       = gRules
                  , invars       = invariants context
                  , allRules     = allrules
-                 , vconjs       = nub [conj | Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
+                 , vconjs       = let equalOnConjunct a b = rc_conjunct a == rc_conjunct b
+                                  in nubBy equalOnConjunct (concatMap (cl_conjNF.qClauses)allQuads)
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
@@ -102,7 +102,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs :: [Expression]
         totsurs
          = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
-                    , (_,dnfClauses)<-cl_conjNF (qClauses q), Dnf antcs conss<-dnfClauses
+                    , x<-cl_conjNF (qClauses q), Dnf antcs conss<-rc_dnfClauses x
                     , let antc = conjNF (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
                     , cons<-map exprCps2list conss
@@ -378,20 +378,17 @@ while maintaining all invariants.
 --            , qRule = rule
 --            , debugStr = (show.conjNF .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
 --            }
-    = [ Quad d (Clauses [ (dnf2expr conj,allShifts flags conj)
-                        | conj<-conjuncts rule  -- conj :: DnfClause. It has the form  Dnf antcs conss
-      --                , (not.null.lambda Ins (ERel r ??)) conj  -- causes infinite loop
-      --                , not (checkMono conj Ins r)         -- causes infinite loop
-      --                , let conj' = subst (r, actSem Ins r (delta (sign r))) conj
-      --                , (not.isTrue.dnfClauseNF) (notCpl conj .\/. conj') -- the system must act to restore invariance     
-                        ]
-                        rule)
+    = [ Quad d (allClauses flags rule)
       | rule<-rs, d<-relsUsedIn rule, visible d
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
    allClauses :: Options -> Rule -> Clauses
-   allClauses flags rule = Clauses [(dnf2expr dnfClause,allShifts flags dnfClause) | dnfClause<-conjuncts rule] rule
+   allClauses flags rule = Clauses [RC { rc_int = i
+                                       , rc_rulename = name rule
+                                       , rc_conjunct = dnf2expr dnfClause
+                                       , rc_dnfClauses = allShifts flags dnfClause
+                                       } | (dnfClause,i)<-zip (conjuncts rule) [0..] ] rule
 
    allShifts :: Options -> DnfClause -> [DnfClause]
    allShifts _ conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
@@ -531,7 +528,7 @@ while maintaining all invariants.
        -- rul    is the rule from which the above have been derived (for traceability)
        -- these quadruples are organized per relation.
        -- This puts together all dnf clauses we need for each relation.
-       relEqCls = eqCl fst4 [(dcl,dnfClauses,conj,cl_rule ccrs) | Quad dcl ccrs<-qs, (conj,dnfClauses)<-cl_conjNF ccrs]
+       relEqCls = eqCl fst4 [(dcl,rc_dnfClauses x,rc_conjunct x,cl_rule ccrs) | Quad dcl ccrs<-qs, x <-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
         = [ ECA (On ev dcl) delt act
@@ -961,7 +958,7 @@ CHC [ if isRel e
         qs :: [Quad]
         qs        = quads flags visible (invariants fSpec)
         ecas      = assembleECAs qs
-        conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
+        conjs     = nub [ (cl_rule ccrs,rc_conjunct x) | Quad _ ccrs<-qs, x<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
         eventsOut = nub [On tOp dcl | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, EDcD dcl<-[EDcD e, flp $ EDcD e]] -- TODO (SJ 26-01-2013) silly code: ERel rel _<-[ERel e (sign e), flp $ ERel e (sign e)] Why is this?
         visible _ = True
