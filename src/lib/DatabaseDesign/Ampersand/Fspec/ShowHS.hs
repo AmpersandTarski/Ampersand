@@ -243,15 +243,14 @@ where
          shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS flags newindent'' conj++newindent++"   )"
 
    instance ShowHS Clauses where
-    showHS _ indent c
+    showHS flags indent c
       = intercalate indent
-          [ "Clauses{ cl_conjNF = "++wrap "" ind (\_->showConjName) [ (ruleNm,i) | (i,_)<-zip [0..] (cl_conjNF c) ]
-          , "       , cl_rule   = " ++ ruleNm
+          [ "Clauses{ cl_conjNF = " ++ showHS flags newindent (cl_conjNF c)
+          , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
           ]
        where 
-         ind = indent ++ "                     "
-         ruleNm = showHSName (cl_rule c)
+         newindent = indent ++ "                     "
 
    instance ShowHS DnfClause where
     showHS flags indent (Dnf antcs conss)
@@ -261,7 +260,7 @@ where
           ]
 
    instance ShowHSName RuleClause where
-    showHSName x = haskellIdentifier (rc_rulename x++"["++show (rc_int x)++"]")
+    showHSName x = haskellIdentifier ("conj_"++rc_rulename x++"["++show (rc_int x)++"]")
     
    instance ShowHS RuleClause where
     showHS flags indent x
@@ -289,7 +288,7 @@ where
            ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
---         ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
+           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
            ,wrap ", fActivities   = " indentA (\_->showHS flags (indentA++"  ")) (fActivities fspec)
            ,     ", fRoleRels     = " ++
                  case fRoleRels fspec of
@@ -312,7 +311,7 @@ where
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
-           ,wrap ", vconjs        = " indentA (\_->showConjName) (nub [(name rul, i) | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses, (i,_)<-zip [0..] (cl_conjNF clauses)]) -- Conjuncts are numbered rather than named.
+           ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fspec)
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
@@ -328,7 +327,6 @@ where
        indent++"where"++
        indent++" isa' :: [(A_Concept, A_Concept)]"++
        indent++" isa'  = "++    showHSName (fsisa fspec)++
---       indent++" gE = genE isa'"++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
        indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showHSName (interfaceS fspec))++indentB++"]")++
@@ -384,16 +382,8 @@ where
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
        )++
        (if null (vconjs fspec ) then "" else
-        let showCommented indent dnfCl = " -- "++showADL (dnf2expr dnfCl)++indent++"  "++showHS flags (indent++"  ") dnfCl in
         "\n -- *** Conjuncts (total: "++(show.length.vconjs) fspec++" conjuncts) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<- vconjs     fspec ]++"\n"
---        concat [ indent++" "++showConjName (ruleNm, i)++"  -- "++showADL conj++indent++"  = ( "++showHS flags (indent++"      ") conj++
---                 indent++"    , "++wrap "" (indent++"      ") (showHS flags) dnfClss++")"
---               | cl<-eqCl fst [(name rul,zip [0..] (cl_conjNF clauses))
---                              | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses]
---               , (ruleNm,iCls)<-take 1 cl, (i,(conj,dnfClss))<-iCls
---               ]++"\n"
-  --     concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-iCls ]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vconjs     fspec ]++"\n"
        )++
        (if null (vquads fspec ) then "" else
         "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
@@ -536,6 +526,7 @@ where
            [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
            rs          -> "     , prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
         , wrap ", prcIds = " indentB (showHS flags) (prcIds prc)
+        , wrap ", prcVds = " indentB (showHS flags) (prcVds prc)
         , wrap ", prcXps = " indentB (showHS flags) (prcXps prc)
         , "}"
         ] where indentA = indent ++"      "     -- adding the width of "FProc "
@@ -647,7 +638,9 @@ where
         ,"  , rrmsg  = " ++ showHS flags "" (rrmsg  r)
         ,"  , rrviol = " ++ showHS flags "" (rrviol r)
         ,"  , rrtyp  = " ++ showHS flags "" (rrtyp  r)
-        ,"  , rrdcl  = " ++ showHSName (rrdcl r) 
+        ,"  , rrdcl  = " ++ case rrdcl r of
+                              Just (p,d) -> "Just ("++showHSName p++", "++showHSName d++" )"
+                              Nothing    -> "Nothing"
         ,"  , r_env  = " ++ show (r_env  r)
         ,"  , r_usr  = " ++ show (r_usr  r)
         ,"  , r_sgl  = " ++ show (r_sgl  r)
@@ -712,10 +705,6 @@ where
     showHS _     _      (ViewHtml str) = "ViewHtml "++show str
     showHS flags indent (ViewExp objDef) = "ViewExp ("++ showHS flags indent objDef ++ ")"
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: P_Population                    ***
--- \***********************************************************************
-
    instance ShowHS UserDefPop where
     showHS _ indent pop
      = case pop of 
@@ -730,10 +719,6 @@ where
              ++indent++"                    ]"
              ++indent++"         }"
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
--- \***********************************************************************
-
    instance ShowHSName ObjectDef where
     showHSName obj = haskellIdentifier ("oDef_"++name obj)
 
@@ -746,10 +731,6 @@ where
            ,"   , objmsub = " ++ showHS flags (indent++"                    ") (objmsub r)
            ,"   , objstrs = " ++ show(objstrs r)
            ]++indent++"   }"
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Interface                     ***
--- \***********************************************************************
 
    instance ShowHSName Interface where
     showHSName obj = haskellIdentifier ("ifc_"++name obj)
@@ -765,21 +746,9 @@ where
            , "    , ifcPrp    = " ++ show(ifcPrp ifc)
            ]++indent++"    }"
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: SubInterface                  ***
--- \***********************************************************************
-
    instance ShowHS SubInterface where
     showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n 
     showHS flags indent (Box x objs) = "Box "++showHS flags indent x++indent++"     ("++showHS flags (indent++"     ") objs++")" 
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Expression                    ***
--- \***********************************************************************
-
--- In order to share Expressions in Haskell, expressions can be numbered. This replaces  "instance ShowHSName Expression". It is used for giving conjuncts a name.
-   showConjName :: (String, Int) -> String
-   showConjName (ruleNm,i) = haskellIdentifier("conj_"++ruleNm++"_"++show i)
 
    instance ShowHS Expression where
     showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
