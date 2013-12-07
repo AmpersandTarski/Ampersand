@@ -759,8 +759,8 @@ daBasicsSection lev fSpec flags = theBlocks
           where irs = [ dnf2expr dc
                       | Quad r ccrs<-vquads fSpec
                       , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
-                      , (_,dnfClauses)<-cl_conjNF ccrs
-                      , dc@(Dnf [EDcD nega] _)<-dnfClauses
+                      , x<-cl_conjNF ccrs
+                      , dc@(Dnf [EDcD nega] _)<-rc_dnfClauses x
                       , r==nega
                       ]
                 pcpts = case p of

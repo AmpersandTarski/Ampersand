@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations
-          , DnfClause(..), dnf2expr, events
+          , RuleClause(..),DnfClause(..), dnf2expr, events
           )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -63,7 +63,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
-                 , vconjs ::       [Expression]             -- ^ All conjuncts generated (by ADL2Fspec)
+                 , vconjs ::       [RuleClause]             -- ^ All conjuncts generated (by ADL2Fspec)
                  , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
                  , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
                  , vrels ::        [Declaration]            -- ^ All user defined and generated declarations plus all defined and computed totals.
@@ -290,11 +290,15 @@ dnf2expr (Dnf antcs conss)
     (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
 data Clauses  = Clauses
-                  { cl_conjNF :: [(Expression
-                                  ,[DnfClause])]   -- The list of pairs (conj, dnfClauses) in which conj is a conjunct of the rule
+                  { cl_conjNF :: [RuleClause]   -- The list of pairs (conj, dnfClauses) in which conj is a conjunct of the rule
                                                     -- and dnfClauses contains all derived expressions to be used for eca-rule construction.
                   , cl_rule :: Rule -- The rule that is restored by this clause (for traceability purposes)
                   }
+data RuleClause = RC { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
+                     , rc_rulename   :: String -- the name of the rule
+                     , rc_conjunct   :: Expression
+                     , rc_dnfClauses :: [DnfClause]
+                     }
 instance Eq Clauses where
   cl==cl' = cl_rule cl==cl_rule cl'
     
