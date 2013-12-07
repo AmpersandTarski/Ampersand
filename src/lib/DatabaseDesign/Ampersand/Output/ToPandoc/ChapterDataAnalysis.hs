@@ -788,7 +788,12 @@ primExpr2pandocMath flags e =
            case language flags of
              Dutch -> text "de identiteitsrelatie van " 
              English -> text "the identityrelation of "
-        <> math (name srcTable) 
+        <> math (name srcTable)
+  (EDcI c) ->
+            case language flags of
+             Dutch -> text "de identiteitsrelatie van " 
+             English -> text "the identityrelation of "
+        <> math (name c)
   _   -> fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show e) 
   
   
