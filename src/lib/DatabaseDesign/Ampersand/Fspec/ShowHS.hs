@@ -82,9 +82,6 @@ where
   
    
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Plug                          ***
--- \***********************************************************************
    instance ShowHSName PlugSQL where
     showHSName plug = haskellIdentifier ("plug_"++name plug)
 
@@ -263,10 +260,20 @@ where
           , wrap "    " (indent++"   ") (\_->showHS flags (indent++"      ")) conss
           ]
 
+   instance ShowHSName RuleClause where
+    showHSName x = haskellIdentifier (rc_rulename x++"["++show (rc_int x)++"]")
+    
+   instance ShowHS RuleClause where
+    showHS flags indent x
+      = intercalate (indent ++"  ")
+          [   "RC{ rc_int        = " ++ show (rc_int x)
+          ,     ", rc_rulename   = " ++ show (rc_rulename x)
+          ,     ", rc_conjunct   = " ++ showHS flags indentA (rc_conjunct x)
+          ,wrap ", rc_dnfClauses = " indentA (\_->showHS flags (indentA++"  ")) (rc_dnfClauses x)
+          ,     "}" 
+          ]
+        where indentA = indent ++"                    "
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Fspc                          ***
--- \***********************************************************************
    instance ShowHSName Fspc where
     showHSName fspec = haskellIdentifier ("fSpc_"++name fspec)
    
@@ -379,13 +386,14 @@ where
        (if null (vconjs fspec ) then "" else
         let showCommented indent dnfCl = " -- "++showADL (dnf2expr dnfCl)++indent++"  "++showHS flags (indent++"  ") dnfCl in
         "\n -- *** Conjuncts (total: "++(show.length.vconjs) fspec++" conjuncts) ***: "++
-        concat [ indent++" "++showConjName (ruleNm, i)++"  -- "++showADL conj++indent++"  = ( "++showHS flags (indent++"      ") conj++
-                 indent++"    , "++wrap "" (indent++"      ") (showHS flags) dnfClss++")"
-               | cl<-eqCl fst [(name rul,zip [0..] (cl_conjNF clauses))
-                              | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses]
-               , (ruleNm,iCls)<-take 1 cl, (i,(conj,dnfClss))<-iCls
-               ]++"\n"
-
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<- vconjs     fspec ]++"\n"
+--        concat [ indent++" "++showConjName (ruleNm, i)++"  -- "++showADL conj++indent++"  = ( "++showHS flags (indent++"      ") conj++
+--                 indent++"    , "++wrap "" (indent++"      ") (showHS flags) dnfClss++")"
+--               | cl<-eqCl fst [(name rul,zip [0..] (cl_conjNF clauses))
+--                              | q<-vquads fspec, let clauses=qClauses q, let rul=cl_rule clauses]
+--               , (ruleNm,iCls)<-take 1 cl, (i,(conj,dnfClss))<-iCls
+--               ]++"\n"
+  --     concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-iCls ]++"\n"
        )++
        (if null (vquads fspec ) then "" else
         "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++

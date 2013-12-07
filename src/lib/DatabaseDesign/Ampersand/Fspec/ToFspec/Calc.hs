@@ -15,7 +15,7 @@ where
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.ADL1.Expression                 (subst,isNeg)
    import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Quad(..),ECArule(..),InsDel(..),PAclause(..), DnfClause(..), dnf2expr)
+   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),RuleClause(..),Quad(..),ECArule(..),InsDel(..),PAclause(..), DnfClause(..), dnf2expr)
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
@@ -100,12 +100,12 @@ where
         [ [            Str "When relation ", Str (showADL rel), Str " is changed,"
           , LineBreak, Str (showADL r)
           ]++ (if length (cl_conjNF ccrs)<=1 then [Space] else [Str " (", Str (show (length (cl_conjNF ccrs))), Str " conjuncts)"]) ++
-          [ Str " must be restored.", LineBreak, Str "This quad has conjunct: ", Str (showADL conj)
-          , Str " and ", Str (show (length dnfClauses)), Str " dnf clauses."
+          [ Str " must be restored.", LineBreak, Str "This quad has conjunct: ", Str (showADL (rc_conjunct x))
+          , Str " and ", Str (show (length (rc_dnfClauses x))), Str " dnf clauses."
           ]++
           [ inl
-          | dc<-dnfClauses, inl<-[LineBreak, Str "Dnf clause ", Str (showADL dc)]]
-        | Quad rel ccrs<-qs, let r=cl_rule ccrs , (conj,dnfClauses)<-cl_conjNF ccrs ]
+          | dc<-(rc_dnfClauses x), inl<-[LineBreak, Str "Dnf clause ", Str (showADL dc)]]
+        | Quad rel ccrs<-qs, let r=cl_rule ccrs , x<-cl_conjNF ccrs ]
       ++
       [ LineBreak, Str "-- end ------------", LineBreak, LineBreak, Str "Second step: assemble dnf clauses."
       , LineBreak, Str "-- first dnf clause ------------", LineBreak]
@@ -122,7 +122,7 @@ where
           ]
           | (ms,dc,r)<-
               [ (nub [ dcl |(dcl,_,_)<-cl],dc,r)
-              | cl<-eqCl (\(_,_,dc)->dc) [(dcl,dc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, (_,dnfClauses)<-cl_conjNF ccrs, dc<-dnfClauses]
+              | cl<-eqCl (\(_,_,dc)->dc) [(dcl,dc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, x<-cl_conjNF ccrs, dc<-rc_dnfClauses x]
               , let (_,dc,r) = head cl
               ]
          ]
@@ -246,10 +246,10 @@ where
            )++
            [ LineBreak, Str "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     " ]++
            (disjProof. notCpl. rrexp) rule++[ LineBreak, LineBreak ] ++
-           concat [ [LineBreak, Str "Conjunct: ", Space, Space, Space, Space, Space, Str (showADL conjunct)]++
-                    concat [ [LineBreak, Str "This conjunct has ", Str (show (length dnfClauses)), Str " clauses:"] | length dnfClauses>1 ]++
-                    concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-dnfClauses]++[ LineBreak]++
-                    concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length dnfClauses>1 ]++
+           concat [ [LineBreak, Str "Conjunct: ", Space, Space, Space, Space, Space, Str (showADL (rc_conjunct x))]++
+                    concat [ [LineBreak, Str "This conjunct has ", Str (show (length (rc_dnfClauses x))), Str " clauses:"] | length (rc_dnfClauses x)>1 ]++
+                    concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-(rc_dnfClauses x)]++[ LineBreak]++
+                    concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length (rc_dnfClauses x)>1 ]++
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause), Str " may be affected by the following events:",LineBreak]++
                              concat [ [Str "event = ", Str (show ev), Space, Str (showADL dcl), Str " means doing the following substitution", LineBreak ] ++
                                       [Str (showADL clause++"["++showADL dcl++":="++showADL (actSem ev dcl (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
@@ -275,9 +275,9 @@ where
                         --                           then conjNF poss
                         --                           else conjNF (notCpl negs)
                                     ]
-                           | clause@(Dnf antcs conss) <- dnfClauses
+                           | clause@(Dnf antcs conss) <- rc_dnfClauses x
                            , let expr = dnf2expr clause, let sgn = sign expr ]
-                  | let Clauses ts r = allClauses flags rule, (conjunct, dnfClauses)<-ts] ++
+                  | let Clauses ts r = allClauses flags rule, x <-ts] ++
            [LineBreak]
 {-
            [ Str ("Available code fragments on rule "++name rule++":", LineBreak ]++
