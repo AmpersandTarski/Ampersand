@@ -250,7 +250,7 @@ where
           , "       }"
           ]
        where 
-         newindent = indent ++ "                     "
+         newindent = indent ++ "                    "
 
    instance ShowHS DnfClause where
     showHS flags indent (Dnf antcs conss)
@@ -767,10 +767,10 @@ where
     showHS flags indent (ECpl e    ) = "ECpl ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EBrk e    ) = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS _     _      (EDcD dcl  ) = "EDcD "++showHSName dcl
-    showHS flags _      (EDcI c    ) = "EDcI ("++showHS flags "" c++")"
+    showHS flags _      (EDcI c    ) = "EDcI "++showHSName c
     showHS flags _      (EEps i sgn) = "EEps ("++showHS flags "" i++") ("++showHS flags "" sgn++")"
     showHS flags _      (EDcV sgn  ) = "EDcV ("++showHS flags "" sgn++")"
-    showHS flags _      (EMp1 a c  ) = "EMp1 ("++show a++") ("++showHS flags "" c++")"
+    showHS flags _      (EMp1 a c  ) = "EMp1 ("++show a++") "++showHSName c
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***
@@ -838,7 +838,7 @@ where
     showHSName c = haskellIdentifier ("cpt_"++name c) 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
-                       PlainConcept{} -> "PlainConcept "++show (name c) ++ " "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
+                       PlainConcept{} -> "PlainConcept "++show (name c) ++ " "++ show (cpttp c) ++ " ["++intercalate ", " (map showHSName (cptdf c))++"]"
                        ONE -> "ONE"
 
    instance ShowHS FPcompl where
