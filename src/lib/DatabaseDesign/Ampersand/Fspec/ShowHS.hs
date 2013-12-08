@@ -479,13 +479,13 @@ where
         , ", ptdcs = [" ++intercalate ", " [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++"]"
         , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
         , case ptrruls pat of
-           []          -> "     , ptrruls = [] {- no role-rule assignments -}"
-           [(rol,rul)] -> "     , ptrruls = [ ("++show rol++", "++showHSName rul++") ]"
-           rs          -> "     , ptrruls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
+           []          -> ", ptrruls = [] {- no role-rule assignments -}"
+           [(rol,rul)] -> ", ptrruls = [ ("++show rol++", "++showHSName rul++") ]"
+           rs          -> ", ptrruls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
         , case ptrrels pat of
-           []          -> "     , ptrrels = [] {- no role-relation assignments -}"
-           [(rol,rel)] -> "     , ptrrels = [ ("++show rol++", "++showHS flags "" rel++") ]"
-           rs          -> "     , ptrrels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
+           []          -> ", ptrrels = [] {- no role-relation assignments -}"
+           [(rol,rel)] -> ", ptrrels = [ ("++show rol++", "++showHS flags "" rel++") ]"
+           rs          -> ", ptrrels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
         , wrap ", ptids = " indentB (showHS flags) (ptids pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         , "}"
@@ -751,26 +751,26 @@ where
     showHS flags indent (Box x objs) = "Box ("++showHS flags indent x++")"++indent++"     ("++showHS flags (indent++"     ") objs++")" 
 
    instance ShowHS Expression where
-    showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EImp (l,r)) = "EImp ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EIsc (l,r)) = "EIsc ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EUni (l,r)) = "EUni ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EDif (l,r)) = "EDif ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ELrs (l,r)) = "ELrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ERrs (l,r)) = "ERrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ECps (l,r)) = "ECps ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ERad (l,r)) = "ERad ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EPrd (l,r)) = "EPrd ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EEqu (l,r)) = "EEqu ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EImp (l,r)) = "EImp ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EIsc (l,r)) = "EIsc ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EUni (l,r)) = "EUni ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EDif (l,r)) = "EDif ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ELrs (l,r)) = "ELrs ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ERrs (l,r)) = "ERrs ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ECps (l,r)) = "ECps ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ERad (l,r)) = "ERad ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EPrd (l,r)) = "EPrd ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
     showHS flags indent (EKl0 e    ) = "EKl0 ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EKl1 e    ) = "EKl1 ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EFlp e    ) = "EFlp ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ECpl e    ) = "ECpl ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EBrk e    ) = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS _     _      (EDcD dcl  ) = "EDcD "++showHSName dcl
-    showHS flags _      (EDcI c    ) = "EDcI "++showHSName c
+    showHS _     _      (EDcI c    ) = "EDcI "++showHSName c
     showHS flags _      (EEps i sgn) = "EEps ("++showHS flags "" i++") ("++showHS flags "" sgn++")"
     showHS flags _      (EDcV sgn  ) = "EDcV ("++showHS flags "" sgn++")"
-    showHS flags _      (EMp1 a c  ) = "EMp1 ("++show a++") "++showHSName c
+    showHS _     _      (EMp1 a c  ) = "EMp1 ("++show a++") "++showHSName c
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***
