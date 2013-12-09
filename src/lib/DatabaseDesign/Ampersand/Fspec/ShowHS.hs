@@ -245,7 +245,7 @@ where
    instance ShowHS Clauses where
     showHS flags indent c
       = intercalate indent
-          [ "Clauses{ cl_conjNF = " ++ showHS flags newindent (cl_conjNF c)
+          [ "Clauses{ cl_conjNF = " ++ showHSName (cl_conjNF c)
           , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
           ]
