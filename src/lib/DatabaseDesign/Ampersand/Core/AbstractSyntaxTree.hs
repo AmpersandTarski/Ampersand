@@ -531,7 +531,7 @@ data A_Concept
          { cptnm :: String         -- ^The name of this Concept
          , cpttp :: String         -- ^The (SQL) type of this Concept
          , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
-         }  -- ^PlainConcept nm gE cs represents the set of instances cs by name nm.
+         }  -- ^PlainConcept nm tp cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
 
 instance Eq A_Concept where
