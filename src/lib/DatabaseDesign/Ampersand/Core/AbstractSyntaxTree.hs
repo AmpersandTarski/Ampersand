@@ -298,6 +298,7 @@ instance Traced A_Gen where
   origin = genfp
 
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
+--   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
 smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 smallerConcepts gens cpt 
   = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller 

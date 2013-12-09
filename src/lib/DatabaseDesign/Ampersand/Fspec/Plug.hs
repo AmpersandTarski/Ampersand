@@ -231,8 +231,8 @@ showSQL (SQLId       ) = "INT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLBool     ) = "BOOLEAN"
           
---every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL
---isPlugIndex refers to UNIQUE key
+-- Every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL (which has one column only)
+-- isPlugIndex refers to UNIQUE key -- TODO: this is wrong
 --isPlugIndex may contain NULL, but their key (the entityfield of the plug) must be unique for a kernel field (isPlugIndex=True)
 --the field that is isIdent and isPlugIndex (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE key
 --IdentityDefs define UNIQUE key (fld1,fld2,..,fldn)
@@ -351,6 +351,7 @@ plugpath p srcfld trgfld =
                 ++"\nplugname: "++(show.name) p
                 ++"\nsrcfld: "++(show.fldname) srcfld
                 ++"\ntrgfld: "++(show.fldname) trgfld
+                ++"\nisPlugIndex p trgfld: "++(show.isPlugIndex p) trgfld
                 ++"\neLkpTbl ("++(show.length.eLkpTbl) p++" rows):\n"
                 ++intercalate "\n***\n" (sort [trace (showRow (es,s,t)) (showRow (es,s,t)) | (es,s,t) <- eLkpTbl p])
   --paths from s to t by connecting r from mLkpTbl
