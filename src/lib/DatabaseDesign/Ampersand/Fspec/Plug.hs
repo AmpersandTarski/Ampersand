@@ -317,43 +317,35 @@ composeCheck l r
  = if target l/=source r then fatal 316 ("\nl: "++show l++"with target "++show (target l)++"\nl: "++show r++"with source "++show (source r)) else
    l .:. r
  
---composition from srcfld to trgfld
-plugpath :: PlugSQL -> SqlField -> SqlField -> Expression
+--composition from srcfld to trgfld, if there is an expression for that
+plugpath :: PlugSQL -> SqlField -> SqlField -> Maybe Expression
 plugpath p srcfld trgfld =
  case p of
   BinSQL{}
    | srcfld==trgfld -> let tm=mLkp p --(note: mLkp p is the relation from fst to snd column of BinSQL)
                        in if srcfld==fst(columns p) 
-                          then tm .:. flp tm --domain of r
-                          else flp tm .:. tm --codomain of r
-   | srcfld==fst(columns p) && trgfld==snd(columns p) -> fldexpr trgfld
-   | trgfld==fst(columns p) && srcfld==snd(columns p) -> flp(fldexpr srcfld)
+                          then Just$ tm .:. flp tm --domain of r
+                          else Just$ flp tm .:. tm --codomain of r
+   | srcfld==fst(columns p) && trgfld==snd(columns p) -> Just$ fldexpr trgfld
+   | trgfld==fst(columns p) && srcfld==snd(columns p) -> Just$ flp(fldexpr srcfld)
    | otherwise -> fatal 444 $ "BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p)
   ScalarSQL{}
-   | srcfld==trgfld -> fldexpr trgfld
+   | srcfld==trgfld -> Just$ fldexpr trgfld
    | otherwise -> fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
   TblSQL{}  
-   | srcfld==trgfld && isPlugIndex p trgfld -> EDcI (target (fldexpr trgfld))
-   | srcfld==trgfld && not(isPlugIndex p trgfld) -> composeCheck (flp (fldexpr srcfld)) (fldexpr trgfld) --codomain of r of morAtt
+   | srcfld==trgfld && isPlugIndex p trgfld -> Just$ EDcI (target (fldexpr trgfld))
+   | srcfld==trgfld && not(isPlugIndex p trgfld) -> Just$ composeCheck (flp (fldexpr srcfld)) (fldexpr trgfld) --codomain of r of morAtt
    | (not . null) (paths srcfld trgfld)
       -> case head (paths srcfld trgfld) of
           []    -> fatal 338 ("Empty head (paths srcfld trgfld) should be impossible.")
-          ps    -> foldr1 composeCheck ps
+          ps    -> Just$ foldr1 composeCheck ps
    --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
    --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
    --      because these kernel fields connect to themselves by r=I[X] (i.e. end of path).
    --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
-   | (not.null) (pathsoverIs srcfld trgfld) ->      foldr1 composeCheck (head (pathsoverIs srcfld trgfld))
-   | (not.null) (pathsoverIs trgfld srcfld) -> flp (foldr1 composeCheck (head (pathsoverIs trgfld srcfld)))
-   | otherwise 
-        -> let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " ++intercalate "\n     " (map show es)
-           in fatal 406 $ "no kernelpath:"
-                ++"\nplugname: "++(show.name) p
-                ++"\nsrcfld: "++(show.fldname) srcfld
-                ++"\ntrgfld: "++(show.fldname) trgfld
-                ++"\nisPlugIndex p trgfld: "++(show.isPlugIndex p) trgfld
-                ++"\neLkpTbl ("++(show.length.eLkpTbl) p++" rows):\n"
-                ++intercalate "\n***\n" (sort [trace (showRow (es,s,t)) (showRow (es,s,t)) | (es,s,t) <- eLkpTbl p])
+   | (not.null) (pathsoverIs srcfld trgfld) -> Just$      foldr1 composeCheck (head (pathsoverIs srcfld trgfld))
+   | (not.null) (pathsoverIs trgfld srcfld) -> Just$ flp (foldr1 composeCheck (head (pathsoverIs trgfld srcfld)))
+   | otherwise -> Nothing
   --paths from s to t by connecting r from mLkpTbl
   --the (r,srcfld,trgfld) from mLkpTbl form paths longer paths if connected: (trgfld m1==srcfld m2) => (m1;m2,srcfld m1,trgfld m2)
   where
