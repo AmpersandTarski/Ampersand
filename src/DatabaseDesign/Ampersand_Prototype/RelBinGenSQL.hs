@@ -433,7 +433,7 @@ sqlPlugFields p e' =
         [(fld0,fld1)
         | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
         , fld1<-[f |f<-plugFields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
-        , let plugexpr = plugpath p fld0 fld1 --the smallest expression from fld0 to fld1 (both in same plug)
+        , Just plugexpr <- [plugpath p fld0 fld1] --the smallest expression from fld0 to fld1 (both in same plug)
         , let se = fldexpr fld0
               te = fldexpr fld1
               bs = (isTrue.disjNF) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
