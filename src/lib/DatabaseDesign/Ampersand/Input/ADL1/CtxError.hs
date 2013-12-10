@@ -24,7 +24,7 @@ import DatabaseDesign.Ampersand.Basics
 import Data.List  (intercalate, partition)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
-import DatabaseDesign.Ampersand.Core.ParseTree (P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
+import DatabaseDesign.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
 
 fatal,_notUsed :: Int -> String -> a
@@ -65,9 +65,10 @@ instance GetOneGuarded Declaration where
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
   getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++(showFullOrig$origin l) | l<-lst]]
 
-cannotDisambRel :: (Traced a1, ShowADL a1, ShowADL a2, Association a2) => a1 -> [a2] -> Guarded a
+cannotDisambRel :: (ShowADL a2, Association a2) => (TermPrim) -> [a2] -> Guarded a
 cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
-cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
+cannotDisambRel o@Prel{} lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
+cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature.\n  You may have intended one of these:"++concat ["\n  "++showADL l|l<-lst]]
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 

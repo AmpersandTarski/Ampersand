@@ -163,16 +163,15 @@ performUpdate ((t,unkn), (srcs',tgts'))
  = case unkn of
      Known _ -> pure (t,unkn)
      Rel xs  -> determineBySize (\x -> if length x == length xs then pure (Rel xs) else impure (Rel x))
-                                id $
-                (findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
-                `orWhenEmpty` xs
-     Ident   -> determineBySize' (\ _ -> pure unkn) (\a -> EDcI (findConceptOrONE a))
-                  possibleConcs
-     Mp1 s   -> determineBySize' (\ _ -> pure unkn) (\a -> EMp1 s (findConceptOrONE a))
-                  possibleConcs
-     Vee     -> determineBySize (\ _ -> pure unkn) (\(a,b) -> (EDcV (Sign (findConceptOrONE a) (findConceptOrONE b))))
-                  [(a,b) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
+                ((findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
+                 `orWhenEmpty` xs)
+     Ident   -> determineBySize suggest (map (\a -> EDcI (findConceptOrONE a)) (Set.toList possibleConcs))
+     Mp1 s   -> determineBySize suggest (map (\a -> EMp1 s (findConceptOrONE a)) (Set.toList possibleConcs))
+     Vee     -> determineBySize (const (pure unkn))
+                  [EDcV (Sign (findConceptOrONE a) (findConceptOrONE b)) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
  where
+   suggest [] = pure unkn
+   suggest lst = impure (Rel lst) -- TODO: find out whether it is equivalent to put "pure" here (which could be faster).
    possibleConcs = (mustBeSrc `isc` mustBeTgt) `orWhenEmptyS`
                    (mustBeSrc `uni` mustBeTgt) `orWhenEmptyS`
                    (mayBeSrc  `isc` mayBeTgt ) `orWhenEmptyS`
@@ -193,9 +192,8 @@ performUpdate ((t,unkn), (srcs',tgts'))
    mayBe  xs = Set.fromList [gc sot x | (Rel x' , sot) <- xs, x<-x']
    orWhenEmptyS a b = if (Set.null a) then b else a
    orWhenEmpty a b = if (null a) then b else a
-   determineBySize' err ok s = determineBySize err ok (Set.toList s)
-   determineBySize _   ok [a] = impure (t,Known (ok a))
-   determineBySize err _  lst = fmap ((,) t) (err lst)
+   determineBySize _   [a] = impure (t,Known a)
+   determineBySize err lst = fmap ((,) t) (err lst)
    impure x = Change x False
    isc = Set.intersection
    uni = Set.union
