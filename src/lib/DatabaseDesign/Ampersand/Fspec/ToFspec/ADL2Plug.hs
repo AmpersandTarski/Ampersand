@@ -192,7 +192,8 @@ rel2fld kernel
    -- otherwise it is the relation between this kernel field and some other kernel field)
    maybenull expr
     | length(map target kernel) > length(nub(map target kernel))
-       = fatal 146 "more than one kernel field for the same concept"
+       = fatal 146 $"more than one kernel field for the same concept:\n    expr = " ++(show expr)++
+           intercalate "\n  *** " ( "" : (map (name.target) kernel)) 
     | otherwise = case expr of
                    EDcD dcl
                         | (not.isTot) dcl -> True
