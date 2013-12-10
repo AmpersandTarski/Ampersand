@@ -191,7 +191,7 @@ pCtx2aCtx
               -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
                     r  -> if (name c) `elem` r
-                          then pure (obj (addEpsilonLeft (name c) r (gc Tgt (fst expr)) (fst expr), snd expr) (Just$ b))
+                          then pure (obj (addEpsilonRight' (name c) (fst expr), snd expr) (Just$ b))
                           else mustBeBound (origin o) [(Tgt,fst expr)]
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
