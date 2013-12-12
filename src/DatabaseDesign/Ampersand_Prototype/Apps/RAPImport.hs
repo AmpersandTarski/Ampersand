@@ -273,12 +273,12 @@ makeRAPPops fSpec flags usrfiles pics
     ]
    where
    pairsOf :: Declaration -> [(String,String)]
-   pairsOf d = case filter theDecl (userDefPops fSpec) of
+   pairsOf d = case filter theDecl (initialPops fSpec) of
                  []    -> []
                  [pop] -> popps pop
                  _     -> fatal 273 "Multiple entries found in populationTable"
      where
-       theDecl :: UserDefPop -> Bool
+       theDecl :: Population -> Bool
        theDecl p = popdcl p == d
    
    --SPEC PropertyRule ISA Rule
@@ -287,8 +287,8 @@ makeRAPPops fSpec flags usrfiles pics
    userdeclarations = filter decusr (declarations fSpec)
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (island,x)
    atoms = [(island , c , x) 
-           | island<-islands, c<-island, x<-atomsOf (userDefPops fSpec) c
-           , x `notElem` concat [atomsOf (userDefPops fSpec) s | s<-island, s < c]]
+           | island<-islands, c<-island, x<-atomsOf (initialPops fSpec) c
+           , x `notElem` concat [atomsOf (initialPops fSpec) s | s<-island, s < c]]
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
    isanm island = intercalate "/" (map name (maxima island))
    --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated

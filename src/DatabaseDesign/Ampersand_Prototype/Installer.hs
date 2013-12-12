@@ -7,7 +7,12 @@ import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
-  
+import DatabaseDesign.Ampersand_Prototype.Version 
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Installer"
+
+
 --  import Debug.Trace
 
 installer :: Fspc -> Options -> String
@@ -78,11 +83,10 @@ installer fSpec flags = intercalate "\n  "
         ++
         ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
-        , let relExpr = EDcD d
-        , let dbrel = sqlRelPlugs fSpec relExpr
-        , not(null dbrel)
-        , let (_,src,trg) = head dbrel
-        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) (fldname src) (fldname trg) d)]
+        , let dbrel = sqlRelPlugs fSpec (EDcD d)
+        , if null dbrel then fatal 82 "null dbrel" else True
+        , let (_,srcField,trgField) = head dbrel
+        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d)]
         ++
         ["  fwrite($dumpfile, \"ENDCONTEXT\");"
         ,"  fclose($dumpfile);"
@@ -148,12 +152,12 @@ createTablesPHP fSpec =
          = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-           ++ if null $ tblcontents (gens fSpec)(userDefPops fSpec) plug then [] else
+           ++ if null $ tblcontents (gens fSpec)(initialPops fSpec) plug then [] else
                [ "else"
                                , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
                                ]++ indentBlock 12
                                                  [ comma++ " (" ++valuechain md++ ")"
-                                                 | (md,comma)<-zip (tblcontents (gens fSpec)(userDefPops fSpec) plug) ("VALUES":repeat "      ,")
+                                                 | (md,comma)<-zip (tblcontents (gens fSpec) (initialPops fSpec) plug) ("VALUES":repeat "      ,")
                                                  ]
                                                
                                ++ ["            \");"

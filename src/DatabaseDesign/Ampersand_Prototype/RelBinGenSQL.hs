@@ -303,7 +303,7 @@ selectExprBrac fSpec i src trg expr
         EDcV{} -> leafCode
         _      -> phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    where 
-     leafCode = listToMaybe ([quote (name p) |(p,s,t)<-sqlRelPlugs fSpec expr,quote (fldname s)==quote src,quote (fldname t)==quote trg]
+     leafCode = listToMaybe ([quote (name plug) |(plug,s,t)<-sqlRelPlugs fSpec expr,quote (fldname s)==quote src,quote (fldname t)==quote trg]
              ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg expr+++" )"))
      unquoted [] = False
      unquoted (x:_) = x /= '`'
@@ -362,8 +362,8 @@ selectExprRelation fSpec i srcAS trgAS dcl =
    where
      leafCode expr =  -- made for both Rel and I
        case sqlRelPlugs fSpec expr of
-         []        -> fatal 344 $ "No plug for expression "++show expr
-         (p,s,t):_ -> Just $ selectGeneric i (quote (fldname s),srcAS) (quote (fldname t),trgAS) (quote (name p)) (quote (fldname s)++" IS NOT NULL AND "++quote (fldname t)++" IS NOT NULL")
+         []           -> fatal 344 $ "No plug for expression "++show expr
+         (plug,s,t):_ -> Just $ selectGeneric i (quote (fldname s),srcAS) (quote (fldname t),trgAS) (quote (name plug)) (quote (fldname s)++" IS NOT NULL AND "++quote (fldname t)++" IS NOT NULL")
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
                
@@ -399,9 +399,11 @@ selectSelItem (att,alias)
        afterPoint s = if myafterPoint s == "" then s else myafterPoint s
 
 --WHY bestaat sqlRelPlugs?
--- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
+-- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin (primitieve) expressie e is opgeslagen.
+-- | sqlRelPlugs wordt alleen gebruikt voor primitieve expressies EDcl, EDcI, en EDcV
 -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
 -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
+-- | Opletten dus, met de nieuwe ISA-structuur van 2013, omdat daarin tabellen bestaan met disjuncte verzamelingen...
 sqlRelPlugs :: Fspc -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
 sqlRelPlugs fSpec e
    =  
@@ -418,9 +420,8 @@ getDeclarationTableInfo fSpec decl =
       case sqlRelPlugs fSpec (EDcD decl) of
             [plugInfo] -> Just plugInfo
             []         -> Nothing
-            plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show decl
-                      -- TODO: currently this fatal is disabled because some relations return multiple plugs
-                      --       (see ticket #217)
+            plugInfo:_ -> fatal 62 $ "Multiple plugs for relation "++ show decl
+                      -- TODO: some relations return multiple plugs (see ticket #217)
    _     -> fatal 420 $ "getDeclarationTableInfo must not be used on this type of declaration!"
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr

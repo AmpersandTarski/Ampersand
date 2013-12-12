@@ -27,7 +27,7 @@ odbcinstall flags fSpec dsn =
       verboseLn flags "Creating tables..."
       _ <- creates conn (historytbl : sessiontbl : [plug2tbl p |InternalPlug p<-plugInfos fSpec])
       verboseLn flags "Populating tables..."
-      _ <- inserts conn (gens fSpec)(userDefPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
+      _ <- inserts conn (gens fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
       commit conn
       verboseLn flags "Committed."
       disconnect conn
@@ -41,7 +41,7 @@ drops conn (x:xs)  =
       drops conn xs
 
 --insert population
-inserts :: (IConnection conn) => conn -> [A_Gen] -> [UserDefPop] -> [PlugSQL] -> IO Integer
+inserts :: (IConnection conn) => conn -> [A_Gen] -> [Population] -> [PlugSQL] -> IO Integer
 inserts _ _ _ [] = return 1
 inserts conn a_gens udp (plug:plugs) = 
    do stmt<- prepare conn
