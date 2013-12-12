@@ -275,7 +275,7 @@ makeEntityTables flags allDcls isas conceptss exclusions
         "\nattRels:" ++     concat ["\n  "++showHS flags "    " e  | e<-attRels]++
         "\n"
     rootss = map (rootConcepts isas) conceptss
-    kernels = [ roots++(nub.concat) [ smallerConcepts isas c | c <- roots ]
+    kernels = [ nub (roots++concat [ smallerConcepts isas c | c <- roots ])
               | roots<-rootss ]
     kernelsWithAttributes = dist attRels kernels []
       where 
