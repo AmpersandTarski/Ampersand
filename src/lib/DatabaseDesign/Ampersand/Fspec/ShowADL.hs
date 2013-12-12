@@ -424,7 +424,7 @@ instance ShowADL P_Population where
 showPaire :: Paire -> String
 showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
 
-instance ShowADL UserDefPop where
+instance ShowADL Population where
  showADL pop
   = "POPULATION "
   ++ case pop of

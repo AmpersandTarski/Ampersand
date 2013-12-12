@@ -39,7 +39,7 @@ where
 
    --WHY -> why isn't this implemented as contents (violationsexpr r)?
    --ANSWER -> to avoid performance issues, probably only in most cases (ticket #319)
-   ruleviolations :: [A_Gen] -> [UserDefPop] -> Rule -> Pairs
+   ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
    ruleviolations gens pt r = case rrexp r of
         EEqu{} -> (cra >- crc) ++ (crc >- cra)
         EImp{} -> cra >- crc
