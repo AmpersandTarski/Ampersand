@@ -74,7 +74,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vConceptDefs :: [ConceptDef]             -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
-                 , userDefPops ::    [UserDefPop]           -- all user defined populations of relations and concepts
+                 , initialPops ::    [Population]           -- all user defined populations of relations and concepts
                  , allViolations ::  [(Rule,[Paire])]       -- all rules with violations.
                  }
 metaValues :: String -> Fspc -> [String]
@@ -181,8 +181,8 @@ instance Identified Activity where
 --   The rule is taken along for traceability.
        
 instance ConceptStructure Activity where
- concs     act = concs (actRule act) `uni` concs (actAffect act)
- expressionsIn  act = expressionsIn (actRule act)
+ concs         act = concs (actRule act) `uni` concs (actAffect act)
+ expressionsIn act = expressionsIn (actRule act)
 
 data Quad
      = Quad

@@ -450,7 +450,7 @@ plugFields plug = case plug of
     ScalarSQL{} -> [sqlColumn plug]
 
 type TblRecord = [String]
-tblcontents :: [A_Gen] -> [UserDefPop] -> PlugSQL -> [TblRecord]
+tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
 tblcontents gens udp plug@ScalarSQL{}
    = [[x] | x<-atomsOf gens udp (cLkp plug)]
 tblcontents gens udp plug@BinSQL{}
