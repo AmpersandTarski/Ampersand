@@ -330,7 +330,7 @@ chpNatLangReqs lev fSpec flags =
                  ) ++
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (language flags) dcl
-                       samplePop = take 3 (fullContents (gens fSpec) (userDefPops fSpec) dcl)
+                       samplePop = take 3 (fullContents (gens fSpec) (initialPops fSpec) dcl)
                        sampleSentences =
                          [ Para $ mkSentence (development flags) dcl srcViewAtom tgtViewAtom 
                          | (srcAtom,tgtAtom)<-samplePop
@@ -396,7 +396,7 @@ showViewAtom fSpec mDec cncpt atom =
      where showViewSegment (ViewText str) = str
            showViewSegment (ViewHtml str) = str
            showViewSegment (ViewExp objDef) = 
-             case [ tgtAtom | (srcAtom, tgtAtom) <- fullContents (gens fSpec)(userDefPops fSpec)(objctx objDef), atom == srcAtom ] of
+             case [ tgtAtom | (srcAtom, tgtAtom) <- fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcAtom ] of
                []         -> ""
                viewAtom:_ -> viewAtom  
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]

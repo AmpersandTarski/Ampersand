@@ -30,7 +30,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , RoleRelation(..)
  , Sign(..)
- , UserDefPop(..)
+ , Population(..)
  , GenR
  , Signaling(..)
  , Association(..)
@@ -65,7 +65,7 @@ data A_Context
          , ctxprocs :: [Process]     -- ^ The processes defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The declarations defined in this context, outside the scope of patterns
-         , ctxpopus :: [UserDefPop]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
+         , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
@@ -101,7 +101,7 @@ data Process = Proc { prcNm :: String
                     , prcRules :: [Rule]
                     , prcGens :: [A_Gen]
                     , prcDcls :: [Declaration]
-                    , prcUps :: [UserDefPop]  -- ^ The user defined populations in this process
+                    , prcUps :: [Population]  -- ^ The user defined populations in this process
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
                     , prcRRels :: [(String,Declaration)] -- ^ The assignment of roles to Relations.
                     , prcIds :: [IdentityDef]            -- ^ The identity definitions defined in this process
@@ -131,7 +131,7 @@ data Pattern
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
-           , ptups :: [UserDefPop]  -- ^ The user defined populations in this pattern
+           , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptrruls :: [(String,Rule)]         -- ^ The assignment of roles to rules.
            , ptrrels :: [(String,Declaration)]  -- ^ The assignment of roles to Relations.
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
@@ -366,7 +366,7 @@ instance Eq Purpose where
 instance Traced Purpose where
   origin = explPos
 
-data UserDefPop -- The user defined populations
+data Population -- The user defined populations
   = PRelPopu { popdcl :: Declaration
              , popps ::  Pairs     -- The user-defined pairs that populate the relation
              }

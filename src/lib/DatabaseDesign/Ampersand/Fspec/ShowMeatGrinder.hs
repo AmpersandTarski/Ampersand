@@ -132,9 +132,9 @@ instance MetaPopulations Fspc where
   )
    where
     allAtoms :: [Atom]
-    allAtoms = nub (concatMap atoms (userDefPops fSpec))
+    allAtoms = nub (concatMap atoms (initialPops fSpec))
       where 
-        atoms :: UserDefPop -> [Atom]
+        atoms :: Population -> [Atom]
         atoms udp = case udp of
           PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).fst) (popps udp) 
                       ++ map (mkAtom ((target.popdcl) udp).snd) (popps udp) 

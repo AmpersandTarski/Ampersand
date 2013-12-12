@@ -8,7 +8,7 @@ where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
+--   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
 --   import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
    import Data.List
    import DatabaseDesign.Ampersand.Classes
@@ -243,14 +243,12 @@ where
          shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS flags newindent'' conj++newindent++"   )"
 
    instance ShowHS Clauses where
-    showHS flags indent c
+    showHS _ indent c
       = intercalate indent
           [ "Clauses{ cl_conjNF = " ++ showHSName (cl_conjNF c)
           , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
           ]
-       where 
-         newindent = indent ++ "                    "
 
    instance ShowHS DnfClause where
     showHS flags indent (Dnf antcs conss)
@@ -320,7 +318,7 @@ where
            ,wrap ", vConceptDefs  = " indentA (\_->showHSName) (vConceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
-           ,wrap ", userDefPops   = " indentA (showHS flags)   (userDefPops fspec)
+           ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fspec)
            ,wrap ", allViolations = " indentA showViolatedRule (allViolations fspec)
            ,"}" 
            ] ++   
@@ -414,7 +412,7 @@ where
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
-                              "-- atoms: "++(show.sort) (atomsOf (gens fspec)(userDefPops fspec) c)
+                              "-- atoms: "++(show.sort) (atomsOf (gens fspec)(initialPops fspec) c)
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
@@ -705,7 +703,7 @@ where
     showHS _     _      (ViewHtml str) = "ViewHtml "++show str
     showHS flags indent (ViewExp objDef) = "ViewExp ("++ showHS flags indent objDef ++ ")"
    
-   instance ShowHS UserDefPop where
+   instance ShowHS Population where
     showHS _ indent pop
      = case pop of 
          PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)

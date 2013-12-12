@@ -13,11 +13,11 @@ where
    class Populated a where
     -- | this function returns the pairs as content of a specific a, given a list of populations. 
     --   The list of populations should contain all user-defined populations. 
-    fullContents :: [A_Gen] -> [UserDefPop] -> a -> Pairs
+    fullContents :: [A_Gen] -> [Population] -> a -> Pairs
    
    -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
    atomsOf :: [A_Gen]      -- the generalisation relations from the context
-           -> [UserDefPop] -- the user defined populations in the context
+           -> [Population] -- the user defined populations in the context
            -> A_Concept    -- the concept from which the population is requested
            -> [String]     -- the elements in the concept's set of atoms
    atomsOf gens pt c =

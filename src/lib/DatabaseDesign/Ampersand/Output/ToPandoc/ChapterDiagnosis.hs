@@ -557,7 +557,7 @@ chpDiagnosis fSpec flags
 --        ]
 --     | length ps>1 ]
 --     where
---      ps  = [p | p<-userDefPops fSpec
+--      ps  = [p | p<-initialPops fSpec
 --               , null (themes fSpec) || (decpat.popdcl) p `elem` themes fSpec  -- restrict if the documentation is partial.
 --               , (not.null.popps) p]
 --      cs  = [c | c@C{}<-ccs, (not.null.atomsOf) c]
@@ -567,9 +567,9 @@ chpDiagnosis fSpec flags
   wipReport
    = [ Para (case (language flags, concat popwork,popwork) of
               (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | (not.null.userDefPops) fSpec ]
+                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is dit correct? Waarom?
               (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | (not.null.userDefPops) fSpec ]
+                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is this correct? Why
               (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count flags (length ps) "taak"++" zien.") ]
               (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count flags (length ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]

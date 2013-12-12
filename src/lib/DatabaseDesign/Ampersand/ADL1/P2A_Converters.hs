@@ -85,14 +85,14 @@ pCtx2aCtx
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaces          --  The interfaces defined in this context, outside the scope of patterns
       <*> traverse pPurp2aPurp p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
-      <*> traverse pPop2aPop p_pops                --  [UserDefPop]
+      <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
   where
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
-    genRules = [ ( Set.singleton (name$ gen_spc x), Set.fromList (map name$ gen_concs x))
+    genRules = [ ( Set.singleton (name (gen_spc x)), Set.fromList (map name (gen_concs x)))
                | x <- p_gens ++ concat (map pt_gns p_patterns ++ map procGens p_processes)
                ]
     genLattice :: Op1EqualitySystem String
@@ -126,7 +126,7 @@ pCtx2aCtx
     accumDecl :: Declaration -> Declaration -> Declaration
     accumDecl a _ = a
     
-    pPop2aPop :: P_Population -> Guarded UserDefPop
+    pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = findConcept cnm, popas = ps }
     pPop2aPop orig@(P_RelPopu { p_rnme = rnm, p_popps = ps })
@@ -140,12 +140,6 @@ pCtx2aCtx
     pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
      where tpda = disambiguate termPrimDisAmb x
      
-    {- not used. Reason: in all places where this may have been used, the term itself is required/used for disambiguation. In P_Rule, for instance, the expression is used to disambiguate the VIOL statements.
-    term2Expr :: (Term TermPrim) -> Guarded Expression
-    term2Expr x = fmap fst (typecheckTerm tpda)
-      where tpda = disambiguate termPrimDisAmb x
-    -}
-    
     pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
     pViewDef2aViewDef x = typecheckViewDef tpda
      where tpda = disambiguate termPrimDisAmb x
