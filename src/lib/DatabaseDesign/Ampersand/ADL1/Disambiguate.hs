@@ -22,6 +22,8 @@ findConceptOrONE :: String -> A_Concept
 findConceptOrONE "ONE" = ONE
 findConceptOrONE x = findConcept x
 
+-- TODO: Can we use Uniplate in place of disambiguatable?
+
 findConcept :: String -> A_Concept
 -- SJC: ONE should be tokenized, so it cannot occur as a string
 -- especially because we require that concepts are identifiable by their name
