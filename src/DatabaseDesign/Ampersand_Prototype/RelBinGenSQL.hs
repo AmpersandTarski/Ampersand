@@ -420,10 +420,15 @@ getDeclarationTableInfo fSpec decl =
       case sqlRelPlugs fSpec (EDcD decl) of
             [plugInfo] -> Just plugInfo
             []         -> Nothing
-            pinfos     -> fatal 62 $ "Multiple plugs for relation "++ show decl ++"\n" ++
+            [(t1,src1,trg1),(t2,src2,trg2)]
+               -> if t1 ==t2 && src1 == trg2 && trg1 == src2
+                  then Just (t1,src1,trg1)
+                  else fatal 426 $ "Multiple plugs for relation "++ show decl ++"\n" ++
+                            intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
+            pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
                             intercalate "\n\n" (map showPInfo pinfos)
                       -- TODO: some relations return multiple plugs (see ticket #217) 
-   _     -> fatal 420 $ "getDeclarationTableInfo must not be used on this type of declaration!"
+   _     -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
    where
     showPInfo (tab, src, trg) = intercalate "  \n"
                                  [ "Table: "++name tab
