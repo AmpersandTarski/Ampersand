@@ -21,7 +21,7 @@ module DatabaseDesign.Ampersand
    , Fspc(..)
    , Fswitchboard(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
-   , Rule(..), ruleviolations, violationsexpr
+   , Rule(..)
    , Process(..) , FProcess(..)
    , Prop(..), RuleOrigin(..)
    , Lang(..)

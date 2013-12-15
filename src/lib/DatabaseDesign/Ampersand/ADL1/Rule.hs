@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.Rule    (
-                consequent, antecedent, rulefromProp, ruleviolations, violationsexpr, hasantecedent)
+                consequent, antecedent, rulefromProp, ruleviolations, hasantecedent)
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics
@@ -32,8 +32,6 @@ where
         EImp (_,re) -> re
         x           -> x
 
-   --WHY -> why isn't this implemented as contents (violationsexpr r)?
-   --ANSWER -> to avoid performance issues, probably only in most cases (ticket #319)
    ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
    ruleviolations gens pt r = case rrexp r of
         EEqu{} -> (cra >- crc) ++ (crc >- cra)
@@ -41,8 +39,6 @@ where
         _      -> fullContents gens pt (EDcV (sign (consequent r))) >- crc  --everything not in con
         where cra = fullContents gens pt (antecedent r)
               crc = fullContents gens pt (consequent r)
-   violationsexpr :: Rule -> Expression
-   violationsexpr r = EDcV (rrtyp r) .-. rrexp r
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all declarations is provided, in order to generate shorter names if possible.
