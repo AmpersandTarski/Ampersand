@@ -62,5 +62,5 @@ import DatabaseDesign.Ampersand.ADL1.Expression as X (
 import DatabaseDesign.Ampersand.ADL1.ECArule as X (
          isAll, isCHC, isBlk, isNop, isDo, dos)
 import DatabaseDesign.Ampersand.ADL1.Rule as X (
-          rulefromProp, ruleviolations, violationsexpr
+          rulefromProp, ruleviolations
          ,consequent,antecedent,hasantecedent)
