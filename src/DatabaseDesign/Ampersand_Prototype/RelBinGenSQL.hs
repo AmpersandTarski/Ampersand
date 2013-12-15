@@ -420,9 +420,16 @@ getDeclarationTableInfo fSpec decl =
       case sqlRelPlugs fSpec (EDcD decl) of
             [plugInfo] -> Just plugInfo
             []         -> Nothing
-            plugInfo:_ -> fatal 62 $ "Multiple plugs for relation "++ show decl
-                      -- TODO: some relations return multiple plugs (see ticket #217)
+            pinfos     -> fatal 62 $ "Multiple plugs for relation "++ show decl ++"\n" ++
+                            intercalate "\n\n" (map showPInfo pinfos)
+                      -- TODO: some relations return multiple plugs (see ticket #217) 
    _     -> fatal 420 $ "getDeclarationTableInfo must not be used on this type of declaration!"
+   where
+    showPInfo (tab, src, trg) = intercalate "  \n"
+                                 [ "Table: "++name tab
+                                 , "  sourceField: "++fldname src
+                                 , "  targetField: "++fldname trg
+                                 ]
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
