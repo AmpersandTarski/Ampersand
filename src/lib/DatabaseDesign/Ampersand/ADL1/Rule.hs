@@ -1,9 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.Rule    (
-                consequent, antecedent, rulefromProp, isaRule, ruleviolations, violationsexpr, hasantecedent)
+                consequent, antecedent, rulefromProp, ruleviolations, violationsexpr, hasantecedent)
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Input.ADL1.FilePos
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Core.ParseTree        ( Prop(..))
    import DatabaseDesign.Ampersand.Classes.Populated              ( Populated(..))
@@ -12,10 +11,6 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "ADL1.Rule"
 
-
-   isaRule :: Rule -> Bool    -- tells whether this rule was declared as an ISA rule
-   isaRule Ru{rrfps=FileLoc(FilePos(_,_,str))} = str == "ISA"
-   isaRule _ = False
 
    hasantecedent :: Rule -> Bool
    hasantecedent r
