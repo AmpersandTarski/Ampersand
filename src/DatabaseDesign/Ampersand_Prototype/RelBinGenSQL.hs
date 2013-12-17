@@ -169,7 +169,7 @@ selectExpr fSpec i src trg expr
                                    (selectExprBrac fSpec i src' trg' expr'+++" AS fst")
                                    (Just$"fst."++src'++" = \\'"++atom++"\\'")
           (e:EDcV _:f:fx) -- prevent calculating V in this case
-             | src==trg && not (isProp e) -> fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
+             | src==trg && not (isProp e) -> fatal 172 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
              | otherwise -> let expr' = foldr1 (.:.) (f:fx)
                                 src' = sqlExprSrc fSpec e
                                 mid' = sqlExprTrg fSpec e

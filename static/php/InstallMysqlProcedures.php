@@ -85,7 +85,7 @@ for ($r = 0; $r < count($allRoles); $r++)
                procDBGecho(" --Expression is <u>not</u> flipped");
             }
             
-            if(array_view_exists($expression, $relationTableInfo))
+            if(array_key_exists($expression, $relationTableInfo))
             {
                procDBGecho(" --Expression exists in relationTableInfo as $expression");
                $relation = $expression; // $expression exists in $relationTableInfo, so we call it a $relation

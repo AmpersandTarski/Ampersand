@@ -461,10 +461,10 @@ function startAtomEditing($atom) {
   if ($atom.attr('status')=='deleted')
     return;
       
-  $textfield = $('<textarea>'+$atomName.text()+'</textarea>');
-// SJ 4 nov 2013; was:
-//  $textfield = $('<input type=text size=1 style="width:100%" value="'+$atomName.text()+'"/>');
-// This change was made to allow larger input fields.
+  $textfield = $('<input type=text size=1 style="width:100%" value="'+$atomName.text()+'"/>');
+// SJ 4 nov 2013; For Blobs, this should be:
+//  $textfield = $('<textarea>'+$atomName.text()+'</textarea>');
+// to allow larger input fields.
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
   $atomName.after($form);
@@ -506,10 +506,10 @@ function stopAtomEditing($atom) {
   var atom = $atom.attr('atom');
   
   var $form = $('#atomEditor');
-  var newAtomText = $form.children().filter('textarea').val();
-// SJ 4 nov 2013; was:
-//  var newAtomText = $form.children().filter('input').attr('value');
-// This change was made when <input type=text...  was substituted by <textarea...  .
+  var newAtomText = $form.children().filter('input').attr('value');
+// SJ 4 nov 2013; just for blobs, this should be something like:
+//  var newAtomText = $form.children().filter('textarea').val();
+// in order to allow textareas rather than inputs.
   $form.remove();
 
   // todo if newAtom is keyed and has no atom, don't do anything

@@ -78,23 +78,23 @@ function processCommand($command)
 { if (!isset($command->dbCmd)) error("Malformed command, missing 'dbCmd'");
   switch ($command->dbCmd)
   { case 'addToConcept':
-      if (array_view_exists('atom', $command) && array_view_exists('concept', $command))
+      if (array_key_exists('atom', $command) && array_key_exists('concept', $command))
         editAddToConcept($command->atom, $command->concept);
       else 
         error("Command $command->dbCmd is missing parameters");
       break;
     case 'update':
-      if (array_view_exists('relation', $command) && array_view_exists('isFlipped', $command) &&
-          array_view_exists('parentAtom', $command) && array_view_exists('childAtom', $command) &&
-          array_view_exists('parentOrChild', $command) && array_view_exists('originalAtom', $command))
+      if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
+          array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
+          array_key_exists('parentOrChild', $command) && array_key_exists('originalAtom', $command))
         editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom
                   ,$command->parentOrChild, $command->originalAtom);
       else 
         error("Command $command->dbCmd is missing parameters");
       break;
     case 'delete':
-      if (array_view_exists('relation', $command) && array_view_exists('isFlipped', $command) &&
-          array_view_exists('parentAtom', $command) && array_view_exists('childAtom', $command))
+      if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
+          array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command))
         editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
       else 
         error("Command $command->dbCmd is missing parameters");
@@ -117,7 +117,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   emitLog("editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
 /* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
   // check if $relation appears in $relationTableInfo
-  if (array_view_exists($relation, $relationTableInfo))
+  if (array_key_exists($relation, $relationTableInfo))
   { foreach($relationTableInfo as $key => $arr)
      if($key == $relation)
      { if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
