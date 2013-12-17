@@ -12,7 +12,7 @@ build-type:     Custom
 license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
-bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
+bug-reports:    http://sourceforge.net/apps/trac/ampersand/report/12
 tested-with:    GHC == 7.6.3
 data-files:     
                 AmpersandData/Examples/Delivery/Delivery.adl, 
@@ -56,7 +56,7 @@ flag library
 library
   hs-source-dirs:    src/lib
   build-depends:    graphviz >= 2999.16.0.0 && <= 2999.17,
-                    base >= 4.5.0.0,
+                    base >= 4.5.0.0 && < 5,
                     containers >= 0.5,
                     utf8-string >= 0.3.7 && < 0.4,
                     bytestring >= 0.9.2.1,
