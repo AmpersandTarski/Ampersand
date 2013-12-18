@@ -100,8 +100,9 @@ staticFileModuleName = "DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated
 
 getStaticFilesModuleContents :: IO String
 getStaticFilesModuleContents =
- do { staticFiles       <- readStaticFiles False "static" ""
-    ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
+ do { -- staticFiles       <- readStaticFiles False "static" ""
+    --; 
+      staticFilesBinary <- readStaticFiles True "staticBinary" ""
     ; return $ "module "++staticFileModuleName++" where\n"++
                "\n"++
                "import Data.Time.Calendar\n"++
