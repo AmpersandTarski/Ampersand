@@ -57,39 +57,49 @@ where
             ELrs (l,r) -> [(y,x) | x <- case source l of
                                           sl@PlainConcept{} -> atomsOf gens pt sl
                                           sl     -> fatal 68 ("source l should be PlainConcept instead of "++show sl++".")
-                                 , y <- case source r of
-                                          sr@PlainConcept{} -> atomsOf gens pt sr
-                                          sr     -> fatal 71 ("source r should be PlainConcept instead of "++show sr++".")
                             --   Derivation:
-                            --   , and      [(x,z) `elem` contents l <- (y,z) `elem` contents r          |z<- atomsOf gens pt (target l `join` target r)]
-                            --   , and      [(x,z) `elem` contents l || (y,z) `notElem` contents r       |z<- atomsOf gens pt (target l `join` target r)]
-                            --   , (not.or) [not ((x,z) `elem` contents l || (y,z) `notElem` contents r) |z<- atomsOf gens pt (target l `join` target r)]
-                            --   , (not.or) [     (x,z) `notElem` contents l && (y,z) `elem` contents r  |z<- atomsOf gens pt (target l `join` target r)]
-                            --   , (not.null) [ () |z<- atomsOf gens pt (target l `join` target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
-                                 , (not.null) [ () |z<- atomsOf gens pt (target l) `uni` atomsOf gens pt (target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
-                                 ]   -- equals contents (ERrs (flp r, flp l))
+                            --      y <- atomsOf gens pt (source r), and      [(y,z) `elem` contents r    -> (x,z) `elem` contents l       | z<- atomsOf gens pt (target l `join` target r)]
+                            --   = { implication  }
+                            --      y <- atomsOf gens pt (source r), and      [(y,z) `notElem` contents r || (x,z) `elem` contents l       | z<- atomsOf gens pt (target l `join` target r)]
+                            --   = { De Morgan }
+                            --      y <- atomsOf gens pt (source r), (not.or) [not ((y,z) `notElem` contents r || (x,z) `elem` contents l) | z<- atomsOf gens pt (target l `join` target r)]
+                            --   = { De Morgan }
+                            --      y <- atomsOf gens pt (source r), (not.or) [     (y,z) `elem` contents r && (x,z) `notElem` contents l  | z<- atomsOf gens pt (target l `join` target r)]
+                            --   = { LET P(z)=(y,z) `elem` contents r && (x,z) `notElem` contents l, and use:  or [P(z) | z<-xs ] = null [() | z<-xs, P(z)]  }
+                            --      y <- atomsOf gens pt (source r), (not.null) [ () | z<- atomsOf gens pt (target l `join` target r), (y,z) `elem` contents r && (x,z) `notElem` contents l]
+                            --   =
+                            --      y <- atomsOf gens pt (source r), (not.null) [ () | z<- atomsOf gens pt (target l `join` target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]
+                            --   = { since map snd (contents r) is a subset of atomsOf gens pt (source l `join` source r) }
+                            --      y <- atomsOf gens pt (source r), (not.null) [ () | (y,z)<-contents r, (x,z) `notElem` contents l]
+                            --   =
+                                 ,  (y,z)<-contents r, (x,z) `notElem` contents l ]
             -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
-            ERrs (l,r) -> [(x,y) | x <- case target l of
-                                          tl@PlainConcept{} -> atomsOf gens pt tl
-                                          tl     -> fatal 83 ("target l should be PlainConcept instead of "++show tl++".")
-                                 , y <- case target r of
+            ERrs (l,r) -> [(x,y) | y <- case target r of
                                           tr@PlainConcept{} -> atomsOf gens pt tr
                                           tr     -> fatal 86 ("target r should be PlainConcept instead of "++show tr++".")
                             --   Derivation:
-                            --     and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       |z<- atomsOf gens pt (source l `join` source r)]
-                            --     and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       |z<- atomsOf gens pt (source l `join` source r)]
-                            --     (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) |z<- atomsOf gens pt (source l `join` source r)]
-                            --     (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  |z<- atomsOf gens pt (source l `join` source r)]
-                            --     (not.null) [ () |z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
-                                 , (not.null) [ () |z<- atomsOf gens pt (source l) `uni` atomsOf gens pt (source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
-                                 ]   -- equals contents (ELrs (flp r, flp l))
+                            --        x<-atomsOf gens pt (target l), and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       | z<- atomsOf gens pt (source l `join` source r)]
+                            --   = { implication  }
+                            --        x<-atomsOf gens pt (target l), and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       | z<- atomsOf gens pt (source l `join` source r)]
+                            --   = { De Morgan }
+                            --        x<-atomsOf gens pt (target l), (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) | z<- atomsOf gens pt (source l `join` source r)]
+                            --   = { De Morgan }
+                            --        x<-atomsOf gens pt (target l), (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  | z<- atomsOf gens pt (source l `join` source r)]
+                            --   = { LET P(z)=(z,x) `elem` contents l && (z,y) `notElem` contents r, and use:  or [P(z) | z<-xs ] = null [() | z<-xs, P(z)]  }
+                            --        x<-atomsOf gens pt (target l), (not.null) [ () | z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l && (z,y) `notElem` contents r]
+                            --   =
+                            --        x<-atomsOf gens pt (target l), (not.null) [ () | z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
+                            --   = { since map fst (contents l) is a subset of atomsOf gens pt (source l `join` source r) }
+                            --        x<-atomsOf gens pt (target l), (not.null) [ () | (z,x)<-contents l, (z,y) `notElem` contents r]
+                            --   =
+                                 ,    (z,x)<-contents l, (z,y) `notElem` contents r] 
             ERad (l,r) -> [(x,y) | x <- case source l of
                                           sl@PlainConcept{} -> atomsOf gens pt sl
                                           sl     -> fatal 97 ("source l should be PlainConcept instead of "++show sl++".")
                                  , y <- case target r of
                                           tr@PlainConcept{} -> atomsOf gens pt tr
                                           tr     -> fatal 100 ("target r should be PlainConcept instead of "++show tr++".")
-                                 , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf gens pt (target l) `uni` atomsOf gens pt (source r)]
+                                 , and [(x,z) `elem` contents l || (z,y) `elem` contents r | z<- atomsOf gens pt (target l) `uni` atomsOf gens pt (source r)]
                                  ]
             EPrd (l,r) -> [ (a,b) | a <- atomsOf gens pt (source l), b <- atomsOf gens pt (target r) ]
             ECps (l,r) -> contents l `kleenejoin` contents r
