@@ -105,7 +105,7 @@ where
             EDcI c     -> [mkPair a a | a <- atomsOf gens pt c]
             EEps i _   -> [mkPair a a | a <- atomsOf gens pt i]
             EDcV sgn   -> [mkPair s t | s <- atomsOf gens pt (source sgn), t <- atomsOf gens pt (target sgn) ]
-            EMp1 a c   -> if name c=="SESSION" then [fatal 111 ("cannot produce the SESSION atom "++a++"["++show c++"]")] else [mkPair a a] -- prevent populating SESSION
+            EMp1 a c   -> if name c=="SESSION" then [fatal 108 ("(Known problem) You have an atom of type SESSION called \""++a++"\". You should not give names to session atoms, because they are named by the computer.")] else [mkPair a a] -- prevent populating SESSION
 
 {- Derivation of contents (ERrs (l,r)):
 Let cL = contents l
