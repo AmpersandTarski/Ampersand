@@ -39,7 +39,20 @@ require_once __DIR__.'/php/loadplugins.php'; // make ExecEngine plugins availabl
 
 function init() {
         initialize();
-	
+
+// het onderstaande maakt het mogelijk om blokjes te kleuren. Hiervan wordt bijvoorbeeld gebruik gemaakt door de app 'ISTAR'
+  $(".AtomName:contains('Green')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "green").find("div").css("color", "white");
+  $(".AtomName:contains('Red')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "red").find("div").css("color", "white");
+  $(".AtomName:contains('Yellow')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "yellow").find("div").css("color", "black");
+  $(".AtomName:contains('Orange')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "orange").find("div").css("color", "black");
+  $(".AtomName:contains('White')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "white").find("div").css("color", "black");
+  $(".AtomName:contains('Black')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "black").find("div").css("color", "white");
+  $(".AtomName:contains('Grey')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "grey").find("div").css("color", "white");
+  $(".AtomName:contains('Blue')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "blue").find("div").css("color", "white");
+  
+  $(".AtomName:contains('Green'), .AtomName:contains('Red'), .AtomName:contains('Yellow'), .AtomName:contains('Orange'), .AtomName:contains('White'), .AtomName:contains('Black'), .AtomName:contains('Grey'), .AtomName:contains('Blue')").closest(".AtomList[concept='Status']").closest(".Interface").hide();
+// Einde van de code om blokjes te kleuren.
+
 	var label;
 	var value;
 	label = $('div[label~="Ingelogde"]').attr('label');
@@ -77,7 +90,8 @@ echo '<select id=RoleSelector onchange="changeRole()">';
 echo '<option value="-1"'.($selectedRoleNr==-1 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
 for ($i=0; $i<count($allRoles); $i++)
 { $roleNm = $allRoles[$i]['name'];
-  if ($roleNm != 'ExecEngine' && $roleNm != 'DATABASE')
+//if ($roleNm != 'ExecEngine' && $roleNm != 'DATABASE')
+  if ($roleNm != 'DATABASE')
   { echo '<option value="'.$i.'"'.($selectedRoleNr==$i ? ' selected=yes' : '').'>'.$roleNm.'</option>';
   }
 }
