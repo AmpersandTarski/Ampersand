@@ -372,7 +372,7 @@ data Population -- The user defined populations
              }
   | PCptPopu { popcpt :: A_Concept
              , popas ::  [String]  -- The user-defined atoms that populate the concept
-             }
+             } deriving Eq
 
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
