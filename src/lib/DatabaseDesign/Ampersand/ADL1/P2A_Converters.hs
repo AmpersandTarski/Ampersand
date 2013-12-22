@@ -19,6 +19,7 @@ import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Maybe
+import Data.List(nub)
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -61,21 +62,20 @@ pCtx2aCtx
             , ctxlang = deflangCtxt
             , ctxmarkup = deffrmtCtxt
             , ctxthms = n3
-            , ctxpats = pats               --  The patterns defined in this context
-            , ctxprocs = procs             --  The processes defined in this context
-            , ctxrs = rules                --  All user defined rules in this context, outside the scope of patterns and processes
-            , ctxds = ctxDecls             --  The declarations defined in this context, outside the scope of patterns
-            , ctxpopus = udpops            --  The user defined populations of relations defined in this context, outside the scope of patterns and processes
-            , ctxcds = p_conceptdefs       --  The concept definitions defined in this context, outside the scope of patterns and processes
-            , ctxks = identdefs            --  The identity definitions defined in this context, outside the scope of patterns
-            , ctxvs = viewdefs             --  The view definitions defined in this context, outside the scope of patterns
-            , ctxgs = map pGen2aGen p_gens --  The specialization statements defined in this context, outside the scope of patterns
-            , ctxgenconcs = map (map findConcept) (concGroups ++ map (:[]) soloConcs) --  A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
-                                           --  for each class<-ctxgenconcs context: c,c'<-class:   c `join` c' exists (although there is not necessarily a concept d=c `join` c'    ...)
-            , ctxifcs = interfaces         --  The interfaces defined in this context, outside the scope of patterns
-            , ctxps = purposes             --  The purposes of objects defined in this context, outside the scope of patterns
-            , ctxsql = sqldefs             --  user defined sqlplugs, taken from the Ampersand script
-            , ctxphp = phpdefs             --  user defined phpplugs, taken from the Ampersand script
+            , ctxpats = pats
+            , ctxprocs = procs
+            , ctxrs = rules
+            , ctxds = ctxDecls
+            , ctxpopus = nub (udpops++ dclPops)
+            , ctxcds = p_conceptdefs
+            , ctxks = identdefs
+            , ctxvs = viewdefs
+            , ctxgs = map pGen2aGen p_gens
+            , ctxgenconcs = map (map findConcept) (concGroups ++ map (:[]) soloConcs)
+            , ctxifcs = interfaces
+            , ctxps = purposes
+            , ctxsql = sqldefs
+            , ctxphp = phpdefs
             , ctxmetas = p_metas
             }
     ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
@@ -108,8 +108,10 @@ pCtx2aCtx
     deflangCtxt = fromMaybe English lang
     deffrmtCtxt = fromMaybe HTML pandocf
 
-    decls = ctxDecls++patDecls++patProcs
-    ctxDecls = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
+    (decls,dclPops)= unzip dps
+    (ctxDecls,_ ) = unzip ctxDecls'
+    dps = ctxDecls'++patDecls++patProcs
+    ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
     patDecls = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
     patProcs = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
       
@@ -368,13 +370,14 @@ pCtx2aCtx
                       , procPop = pops
                       }
      = (\ ruls' rels' pops' idefs' viewdefs' purposes'
-            ->  Proc { prcNm = nm
+         ->  let (decls',dPops) = unzip [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
+             in Proc { prcNm = nm
                      , prcPos = orig
                      , prcEnd = posEnd
                      , prcRules = map snd ruls'
                      , prcGens = map pGen2aGen gens
-                     , prcDcls = [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
-                     , prcUps = pops'
+                     , prcDcls = decls'
+                     , prcUps = nub $ pops' ++ dPops
                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                      , prcIds = idefs'
@@ -393,19 +396,20 @@ pCtx2aCtx
      = f <$> parRuls ppat <*> parKeys ppat <*> parPops ppat <*> parViews ppat <*> parPrps ppat <*> sequenceA rrels
        where
         f prules keys' pops' views' xpls rrels'
-         = A_Pat { ptnm  = name ppat
-                 , ptpos = pt_pos ppat
-                 , ptend = pt_end ppat
-                 , ptrls = map snd prules
-                 , ptgns = agens'
-                 , ptdcs = [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
-                 , ptups = pops'
-                 , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
-                 , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
-                 , ptids = keys'
-                 , ptvds = views'
-                 , ptxps = xpls
-                 }
+           = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
+             in A_Pat { ptnm  = name ppat
+                      , ptpos = pt_pos ppat
+                      , ptend = pt_end ppat
+                      , ptrls = map snd prules
+                      , ptgns = agens'
+                      , ptdcs = decls'
+                      , ptups = nub $ pops' ++ dPops
+                      , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
+                      , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
+                      , ptids = keys'
+                      , ptvds = views'
+                      , ptxps = xpls
+                      }
         agens'   = map pGen2aGen (pt_gns ppat)
         parRuls  = traverse (\x -> pRul2aRul' [rol | prr <- pt_rus ppat, rul<-mRules prr, name x == rul, rol<-mRoles prr] (name ppat) x) . pt_rls
         rrels :: [Guarded RoleRelation]
@@ -557,24 +561,25 @@ pDecl2aDecl ::
      String         -- The name of the pattern
   -> Lang           -- The default language 
   -> PandocFormat   -- The default pandocFormat
-  -> P_Declaration -> Declaration
+  -> P_Declaration -> (Declaration, Population)
 pDecl2aDecl patNm defLanguage defFormat pd
- = Sgn { decnm   = dec_nm pd
-       , decsgn  = pSign2aSign (dec_sign pd)
-       , decprps = dec_prps pd
-       , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-       , decprL  = dec_prL pd
-       , decprM  = dec_prM pd
-       , decprR  = dec_prR pd
-       , decMean = AMeaning [ pMarkup2aMarkup defLanguage defFormat meaning | PMeaning meaning<-dec_Mean pd ]
-       , decConceptDef = dec_conceptDef pd
-       , decfpos = dec_fpos pd 
-       , decissX = True
-       , decusrX = True
-       , decISA  = False
-       , decpat  = patNm
-       , decplug = dec_plug pd
-       }
+ = let dcl = Sgn { decnm   = dec_nm pd
+                 , decsgn  = pSign2aSign (dec_sign pd)
+                 , decprps = dec_prps pd
+                 , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
+                 , decprL  = dec_prL pd
+                 , decprM  = dec_prM pd
+                 , decprR  = dec_prR pd
+                 , decMean = AMeaning [ pMarkup2aMarkup defLanguage defFormat meaning | PMeaning meaning<-dec_Mean pd ]
+                 , decConceptDef = dec_conceptDef pd
+                 , decfpos = dec_fpos pd 
+                 , decissX = True
+                 , decusrX = True
+                 , decISA  = False
+                 , decpat  = patNm
+                 , decplug = dec_plug pd
+                 }
+   in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd})
 
 pSign2aSign :: P_Sign -> Sign
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
