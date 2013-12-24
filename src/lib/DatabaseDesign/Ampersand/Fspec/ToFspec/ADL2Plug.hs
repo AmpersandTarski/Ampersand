@@ -289,7 +289,7 @@ makeEntityTables flags allDcls isas conceptss exclusions
     kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
     kernel2Plug (kernel, attsAndIsaRels)
      =  TblSQL 
-             { sqlname = name (head 289 (head 288 conceptss)) -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
+             { sqlname = name (head 289 kernel) -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
              , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable ++ isaLookuptable
