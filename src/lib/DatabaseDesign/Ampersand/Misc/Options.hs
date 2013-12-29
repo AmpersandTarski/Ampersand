@@ -88,7 +88,7 @@ data Options = Options { showVersion :: Bool
                        , sqlLogin :: Maybe String  -- pass login name to the database server
                        , sqlPwd :: Maybe String  -- pass password on to the database server
                        , parserVersion :: ParserVersion
-                       } deriving Show
+                       } -- deriving Show
   
 defaultFlags :: Options 
 defaultFlags = Options {genTime       = fatal 81 "No monadic options available."

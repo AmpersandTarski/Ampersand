@@ -281,19 +281,21 @@ data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String derivin
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa orig (C "Person") (C "Employee")
---   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig [C "Employee",C "Student"] (C "Workingstudent")
+--   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
 data A_Gen = Isa { genfp :: Origin          -- ^ the position of the GEN-rule
-                 , gengen :: A_Concept      -- ^ generic concept
                  , genspc :: A_Concept      -- ^ specific concept
+                 , gengen :: A_Concept      -- ^ generic concept
                  }
            | IsE { genfp :: Origin          -- ^ the position of the GEN-rule
-                 , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  , genspc :: A_Concept      -- ^ specific concept
+                 , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  }
 instance Show A_Gen where
   -- This show is used in error messages. It should therefore not display the term's type
-  showsPrec _ g@(Isa{}) = showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
-  showsPrec _ g@(IsE{}) = showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show $ genrhs g))
+  showsPrec _ g =
+    case g of
+     Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
+     IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
 instance Traced A_Gen where
   origin = genfp
 

@@ -425,9 +425,6 @@ where
    instance ShowHS Meta where
     showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val 
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: PlugInfo   ***
--- \***********************************************************************
 
    instance ShowHSName PlugInfo where
     showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
@@ -439,9 +436,6 @@ where
     showHS flags ind (ExternalPlug o)
      = "ExternalPlug "++showHS flags (ind++"    ") o
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: RoleRelation   ***
--- \***********************************************************************
 
    instance ShowHS RoleRelation where
     showHS flags ind rr
@@ -459,9 +453,6 @@ where
     showHS _ _ (FS_id nm) 
       = "(FS_id " ++ show nm ++ ")"
      
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Pattern                       ***
--- \***********************************************************************
 
    instance ShowHSName Pattern where
     showHSName pat = haskellIdentifier ("pat_"++name pat)
@@ -530,9 +521,6 @@ where
         ] where indentA = indent ++"      "     -- adding the width of "FProc "
                 indentB = indentA++"             " -- adding the width of ", prcRules = "
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Activity                         ***
--- \***********************************************************************
 
    instance ShowHS Activity where
     showHS flags indent act = 
@@ -608,9 +596,6 @@ where
         ,"        , amPandoc = "++ show (amPandoc m)
         ,"        }"
         ]
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: PairView                      ***
--- \***********************************************************************
 
    instance ShowHS (PairView Expression) where
      showHS flags indent (PairView pvs) = "PairView "++showHS flags indent pvs
@@ -619,9 +604,6 @@ where
      showHS _     _ (PairViewText txt) = "PairViewText "++show txt
      showHS flags _ (PairViewExp srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS flags "" e++")"
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Rule                          ***
--- \***********************************************************************
 
    instance ShowHSName Rule where
     showHSName r = haskellIdentifier ("rule_"++ rrnm r)
@@ -649,17 +631,11 @@ where
    instance ShowHS AMeaning where
      showHS flags indent (AMeaning x) = "AMeaning " ++ showHS flags indent x 
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: RuleType                      ***
--- \***********************************************************************
    instance ShowHS RuleType where
      showHS _ _ Truth          = "Truth"
      showHS _ _ Equivalence    = "Equivalence"
      showHS _ _ Implication    = "Implication"
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: IdentityDef                        ***
--- \***********************************************************************
 
    instance ShowHSName IdentityDef where
     showHSName identity = haskellIdentifier ("identity_"++name identity)
@@ -669,19 +645,11 @@ where
      = "Id ("++showHS flags "" (idPos identity)++") "++show (idLbl identity)++" ("++showHSName (idCpt identity)++")"
        ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ identityAts identity)++indent++"  ]"
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: IdentitySegment                        ***
--- \***********************************************************************
 
-   --instance ShowHSName IdentitySegment where
-   -- showHSName identitySeg = haskellIdentifier ("identitySegment_"++name identitySeg)
    
    instance ShowHS IdentitySegment where
     showHS flags indent (IdentityExp objDef) = "IdentityExp ("++ showHS flags indent objDef ++ ")"
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ViewDef                        ***
--- \***********************************************************************
 
    instance ShowHSName ViewDef where
     showHSName vd = haskellIdentifier ("vdef_"++name vd)
@@ -691,9 +659,6 @@ where
      = "Vd ("++showHS flags "" (vdpos vd)++") "++show (vdlbl vd)++" ("++showHSName (vdcpt vd)++")"
        ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ vdats vd)++indent++"  ]"
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ViewSegment                        ***
--- \***********************************************************************
 
    --instance ShowHSName ViewSegment where
    -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
@@ -770,20 +735,14 @@ where
     showHS flags _      (EDcV sgn  ) = "EDcV ("++showHS flags "" sgn++")"
     showHS _     _      (EMp1 a c  ) = "EMp1 ("++show a++") "++showHSName c
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Sign                           ***
--- \***********************************************************************
-
    instance ShowHS Sign where
     showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Isa                           ***
--- \***********************************************************************
-
    instance ShowHS A_Gen where
-    showHS flags _ gen@Isa{} = "Isa ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "
-    showHS flags _ gen@IsE{} = "IsE ("++showHS flags "" (genfp gen)++") ["++intercalate ", " (map showHSName (genrhs gen))++"] ("++showHSName (genspc gen)++") "
+    showHS flags _ gen =
+      case gen of 
+        Isa{} -> "Isa ("++showHS flags "" (genfp gen)++") ("++showHSName (genspc gen)++") ("++showHSName (gengen gen)++") "
+        IsE{} -> "IsE ("++showHS flags "" (genfp gen)++") ("++showHSName (genspc gen)++") ["++intercalate ", " (map showHSName (genrhs gen))++"] "
    
    instance ShowHSName Declaration where
     showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
@@ -817,9 +776,6 @@ where
           Isn{}     -> "Isn{ detyp   = " ++ showHSName (detyp d)++"}"
           Vs{}      -> "Vs { decsgn  = " ++ showHS flags "" (sign d)++"}"
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
--- \***********************************************************************
 
    instance ShowHSName ConceptDef where
     showHSName cd = haskellIdentifier ("cDef_"++cdcpt cd)
@@ -828,9 +784,6 @@ where
     showHS flags _ cd
      = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Concept                     ***
--- \***********************************************************************
    instance ShowHSName A_Concept where
     showHSName ONE = haskellIdentifier "cptOne"
     showHSName c = haskellIdentifier ("cpt_"++name c) 
@@ -882,23 +835,14 @@ where
       = "SomewhereNear "++show s
 
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Block                         ***
--- \***********************************************************************
 
    instance ShowHS Block where
     showHS _ _   = show
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Inline                        ***
--- \***********************************************************************
 
    instance ShowHS Inline where
     showHS _ _   = show
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: InfTree                       ***
--- \***********************************************************************
 --   instance ShowHS InfTree where
 --    showHS flags indent itree =
 --        case itree of
