@@ -51,7 +51,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDe
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
-import Data.List (intercalate,nub)
+import Data.List (intercalate,nub,delete)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
 
@@ -302,12 +302,12 @@ instance Traced A_Gen where
 smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 smallerConcepts gens cpt 
   = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller 
-  where oneSmaller = nub$[ genspc g | g@Isa{}<-gens, gengen g==cpt ]++[ genspc g | g@IsE{}<-gens, cpt `elem` genrhs g ]
+  where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gens, gengen g==cpt ]++[ genspc g | g@IsE{}<-gens, cpt `elem` genrhs g ]
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
 largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 largerConcepts gens cpt 
  = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
-  where oneLarger  = nub$[ gengen g | g@Isa{}<-gens, genspc g==cpt ]++[ c | g@IsE{}<-gens, genspc g==cpt, c<-genrhs g ] 
+  where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gens, genspc g==cpt ]++[ c | g@IsE{}<-gens, genspc g==cpt, c<-genrhs g ] 
 
 -- | this function returns the most generic concepts in the class of a given concept
 rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
