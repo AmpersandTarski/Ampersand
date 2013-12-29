@@ -23,15 +23,8 @@ customCssPath = "css/Custom.css"
 
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec flags =
- do { writePrototypeFile "Generics.php" . genPhp "Generate.hs" "Generics.php" . intercalate [""] $ 
-        [ generateConstants flags
-        , generateSpecializations fSpec
-        , generateTableInfos fSpec
-        , generateRules fSpec flags
-        , generateRoles fSpec
-        , generateViews fSpec flags
-        , generateInterfaces fSpec flags ]
-    
+ do { verboseLn flags (unlines genericsPhpContent)
+    ; writePrototypeFile "Generics.php" . genPhp "Generate.hs" "Generics.php" $ genericsPhpContent
     ; case customCssFile flags of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
@@ -61,6 +54,16 @@ generateAll fSpec flags =
           }
     }
   where
+    genericsPhpContent :: [String]
+    genericsPhpContent =  
+      intercalate [""] 
+        [ generateConstants flags
+        , generateSpecializations fSpec
+        , generateTableInfos fSpec
+        , generateRules fSpec flags
+        , generateRoles fSpec
+        , generateViews fSpec flags
+        , generateInterfaces fSpec flags ]
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
