@@ -162,10 +162,6 @@ where
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
             }   deriving (Show,Eq)
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
--- \***********************************************************************
- --  instance Show ConceptDef
    instance Traced ConceptDef where
     origin = cdpos
    instance Identified ConceptDef where
