@@ -5,9 +5,9 @@ module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfa
 where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..),maxima)
+--import DatabaseDesign.Ampersand.Core.Poset (Poset(..),maxima)
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
+--import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
 import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
@@ -17,7 +17,7 @@ import qualified GHC.Exts (sortWith)
 import Control.Monad
 import Data.List (intercalate)
 import Data.List.Split (splitOn)
-import DatabaseDesign.Ampersand.Basics
+import DatabaseDesign.Ampersand
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RAPImport"
@@ -34,11 +34,11 @@ importfspec fspec flags
           usrfiles <- getUsrFiles flags
           return (makeRAPPops fspec flags usrfiles pics)
 
-importfailed :: Either ParseError P_Context -> Options -> IO [P_Population]
-importfailed imperr flags 
+importfailed :: Either ParseError P_Context -> String -> Options -> IO [P_Population]
+importfailed imperr script flags 
  = do verbose flags "Getting all uploaded adl-files of RAP user... "
       usrfiles <- getUsrFiles flags
-      return (makeFailedPops imperr flags usrfiles)
+      return (makeFailedPops imperr script flags usrfiles)
 
 -----------------------------------------------------------------------------
 --common local functions-----------------------------------------------------
@@ -90,20 +90,56 @@ makepopu (r,src,trg) xys
 --make population functions--------------------------------------------------
 -----------------------------------------------------------------------------
 --make population for the import that failed due to a parse or type error
-makeFailedPops :: Either ParseError P_Context -> Options -> [(String,ClockTime)] -> [P_Population]
-makeFailedPops imperr flags usrfiles 
+makeFailedPops :: Either ParseError P_Context -> String -> Options -> [(String,ClockTime)] -> [P_Population]
+makeFailedPops imperr script flags usrfiles 
  =   --see trunk/apps/Atlas/RAP.adl
      (case imperr of 
-         Left (Msg (a, pos, expr)) -> [makepopu ("parseerror","File","ParseError")          [(fid      , errid fid)]
-                                      ,makepopu ("pe_action","ParseError","String")         [(errid fid, nonsid a)]
-                                      ,makepopu ("pe_position","ParseError","String")       [(errid fid, nonsid pos)]
-                                      ,makepopu ("pe_expecting","ParseError","String")      [(errid fid, nonsid (show expr))]
+         Left (Msg (a, pos, expr)) -> [makepopu ("parseerror","File","ParseError")          [(fid      , perrid fid)]
+                                      ,makepopu ("pe_action","ParseError","String")         [(perrid fid, nonsid a)]
+                                      ,makepopu ("pe_position","ParseError","String")       [(perrid fid, nonsid pos)]
+                                      ,makepopu ("pe_expecting","ParseError","String")      [(perrid fid, nonsid (show expr))]
                                       ]
-         Right pctx -> makepopu ("typeerror","File","TypeError")    [(fid, errid fid)]
-                        :makeCtxErrorPops flags usrfiles (errid fid) pctx
+         Right (c,ce) ->  concat [te c ix | ix<-zip [1..] (errs id ce)]
      )
     ++makeFilePops flags usrfiles []
     where fid = fileid (srcfile flags)
+          errs pce (Cxes ces) = concat [errs pce ce | ce<-ces]
+          errs pce (CxeOrig ch tp nm o) = map pce (errs (\x->CxeOrig x tp nm o) ch)
+          errs pce (Cxe ch ce) = map pce (errs (\x->Cxe x ce) ch)
+          errs pce CxeNone = [pce CxeNone]
+          errs _ _ = []
+          msg (Cxe CxeNone ce) = ce
+          msg (Cxe ch _) = msg ch
+          msg (CxeOrig ch _ _ _) = msg ch
+          msg (Cxes ces) = if null ces then "" else msg(head ces)
+          msg _ = ""
+          orig att ce@(CxeOrig (Cxe CxeNone _) _ _ _) = att ce
+          orig att ce@(CxeOrig CxeNone _ _ _) = att ce
+          orig att (CxeOrig ch _ _ _) = orig att ch
+          orig att (Cxe ch _) = orig att ch
+          orig att (Cxes ces) = if null ces then "" else orig att (head ces)
+          orig _   _ = ""
+          origline (CxeOrig (Cxe CxeNone _) _ _ p) = linenr p
+          origline (CxeOrig CxeNone _ _ p) = linenr p
+          origline (CxeOrig ch _ _ _) = origline ch
+          origline (Cxe ch _) = origline ch
+          origline (Cxes ces) = if null ces then 0 else origline (head ces)
+          origline _ = 0
+          te c (i,x) = makepopu ("typeerror","File","TypeError")          [(fid, eid)]
+                      :makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (msg x))]
+                      :makepopu ("te_position","TypeError","String")      [(eid,nonsid ("line "++show(origline x)))]
+                      :makepopu ("te_origtype","TypeError","String")      [(eid,nonsid (orig cxetype x))]
+                      :makepopu ("te_origname","TypeError","String")      [(eid,nonsid getline)]
+                      :(if nocxe es 
+                        then makeRAPPops (makeFspec opts cx) opts usrfiles []
+                        else [])
+                       where getline = let xs = drop ((origline x)-1) (lines script) in if null xs then "" else head xs
+                             eid = terrid i fid 
+                             (cx,es) = typeCheck nc []
+                             nc = PCtx (ctx_nm c) (ctx_pos c) (ctx_lang c) (ctx_markup c) [] 
+                                       [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats c]
+                                       [] [] [] [] [] [] [] [] [] [] [] [] False
+
 {-
 compilererror::File*CompilerError[UNI]
 parseerror ::   CompilerError * ParseError[UNI]
@@ -117,15 +153,15 @@ te_position :: TypeError * String [UNI]
 te_origtype :: TypeError * String [UNI]
 te_origname :: TypeError * String [UNI]
  - -}
-makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> [P_Population]
-makeCtxErrorPops flags usrfiles eid pctx
- = case cx of
-      Checked c -> makepopu ("te_message","TypeError","ErrorMessage") [] : makeRAPPops (makeFspec flags c) flags usrfiles []
-      Errors x ->  [makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))]]
-   where (cx,_,_) = typeCheck nc []
-         nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) [] 
-                   [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
-                   [] [] [] [] [] [] [] [] [] [] [] [] []
+--makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> [P_Population]
+--makeCtxErrorPops flags usrfiles eid pctx
+-- = case cx of
+--      Checked c -> makepopu ("te_message","TypeError","ErrorMessage") [] : makeRAPPops (makeFspec flags c) flags usrfiles []
+--      Errors x ->  [makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))]]
+--   where (cx,_,_) = typeCheck nc []
+--         nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) [] 
+--                   [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
+--                   [] [] [] [] [] [] [] [] [] [] [] [] []
 {-makeCtxErrorPops eid c (Cxes xs) = []
 makeCtxErrorPops eid c (CxeOrig cxe t nm o)
    | null cxe                                    = []
@@ -225,15 +261,25 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fSpec), patid p)         | p<-patterns fSpec]
     ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fSpec]
     ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, r<-udefrules p]
-    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp pr d]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, d<-declarations p,decusr d, pr<-rapmults d, let r=rulefromProp pr d]
     ,makepopu ("ptgns","Pattern","Isa")         [(patid p      , genid g)         | p<-patterns fSpec, g<-gens p]
     ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fSpec, d<-declarations p,decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(patid p, nonsid (aMarkup2String (explMarkup ex)))
                                                                                   | p<-patterns fSpec, ex<-explanations fSpec, explForObj p (explObj ex)]
+    --RAP only knows PATTERN elements from a PROCESS, and reduces a PROCESS to a PATTERN with a name PROCESS_<name>
+    ,makepopu ("ptpic","Pattern","Image")       [(prcid p    , imageid pic)       | pic<-pics, pType pic==PTProcess, p<-vprocesses fs, name p==origName pic]
+    ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), prcid p)         | p<-vprocesses fs]
+    ,makepopu ("ptnm","Pattern","Conid")        [(prcid p      , nonsid ("PROCESS_"++name p)) | p<-vprocesses fs]
+    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, r<-rules (fpProc p)]
+    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, d<-declarations (fpProc p),decusr d, pr<-rapmults d, let r=rulefromProp pr d]
+    ,makepopu ("ptgns","Pattern","Gen")         [(prcid p      , genid g)         | p<-vprocesses fs, g<-gens (fpProc p)]
+    ,makepopu ("ptdcs","Pattern","Declaration") [(prcid p      , decid d)         | p<-vprocesses fs, d<-declarations (fpProc p),decusr d]
+    ,makepopu ("ptxps","Pattern","Blob")        [(prcid p, nonsid (aMarkup2String (explMarkup ex)))
+                                                                                  | p<-vprocesses fs, ex<-explanations fs, explForObj (fpProc p) (explObj ex)]
     ,makepopu ("decnm","Declaration","Varid")               [(decid d , nonsid(name d))   | d<-userdeclarations]
     ,makepopu ("decsgn","Declaration","Sign")               [(decid d , sgnid (sign d))   | d<-userdeclarations]
-    ,makepopu ("decprps","Declaration","PropertyRule")      [(decid d , ruleid r)         | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp p d]
-    ,makepopu ("declaredthrough","PropertyRule","Property") [(ruleid r, nonsid(show p))   | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp p d]
+    ,makepopu ("decprps","Declaration","PropertyRule")      [(decid d , ruleid r)         | d<-userdeclarations, p<-rapmults d, let r=rulefromProp p d]
+    ,makepopu ("declaredthrough","PropertyRule","Property") [(ruleid r, nonsid(show p))   | d<-userdeclarations, p<-rapmults d, let r=rulefromProp p d]
     ,makepopu ("decprL","Declaration","String")             [(decid d , nonsid(decprL d)) | d<-userdeclarations]
     ,makepopu ("decprM","Declaration","String")             [(decid d , nonsid(decprM d)) | d<-userdeclarations]
     ,makepopu ("decprR","Declaration","String")             [(decid d , nonsid(decprR d)) | d<-userdeclarations]
@@ -282,7 +328,8 @@ makeRAPPops fSpec flags usrfiles pics
        theDecl p = popdcl p == d
    
    --SPEC PropertyRule ISA Rule
-   raprules = udefrules fSpec ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
+   raprules = udefrules fSpec ++ [rulefromProp p d | d<-userdeclarations, p<-rapmults d]
+   rapmults = decprps
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
    userdeclarations = filter decusr (declarations fSpec)
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (island,x)
