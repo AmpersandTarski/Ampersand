@@ -230,13 +230,13 @@ selectExpr fSpec i src trg expr
                                  sql:_ -> Just sql 
     (EDcI c)             -> sqlcomment i ("I["++name c++"]") 
                                 ( case c of
-                                    ONE -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
-                                    _   -> selectExprRelation fSpec i src trg (Isn c)
+                                    ONE            -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
+                                    PlainConcept{} -> selectExprRelation fSpec i src trg (Isn c)
                                 )
     (EEps inter sgn)     -> sqlcomment i ("epsilon "++name inter++" "++showSign sgn)  -- showSign yields:   "["++(name.source) sgn++"*"++(name.target) sgn++"]"
                                 ( case inter of -- select the population of the most specific concept, which is the source.
-                                    ONE -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
-                                    c   -> selectExprRelation fSpec i src trg (Isn inter)
+                                    ONE            -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
+                                    PlainConcept{} -> selectExprRelation fSpec i src trg (Isn inter)
                                 )
     (EDcD d)             -> selectExprRelation fSpec i src trg d
 

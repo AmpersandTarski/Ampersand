@@ -165,13 +165,13 @@ generateRules fSpec flags =
     (indent 4
       (blockParenthesize  "(" ")" ","
          [ [ (showPhpStr.rrnm) rule ++ " =>"
-           , "  array ( 'name' => "      ++(showPhpStr.rrnm)              rule
-           , "        , 'ruleAdl' => "   ++(showPhpStr.show.rrexp)        rule
-           , "        , 'origin' => "    ++(showPhpStr.show.rrfps)        rule
-           , "        , 'meaning' => "   ++(showPhpStr.showMeaning)       rule
-           , "        , 'message' => "   ++(showPhpStr.showMessage)       rule
-           , "        , 'srcConcept' => "++(showPhpStr.name.source.rrexp) rule
-           , "        , 'tgtConcept' => "++(showPhpStr.name.target.rrexp) rule
+           , "  array ( 'name'          => "++(showPhpStr.rrnm)              rule
+           , "        , 'ruleAdl'       => "++(showPhpStr.showADL.rrexp)     rule
+           , "        , 'origin'        => "++(showPhpStr.show.rrfps)        rule
+           , "        , 'meaning'       => "++(showPhpStr.showMeaning)       rule
+           , "        , 'message'       => "++(showPhpStr.showMessage)       rule
+           , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
+           , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
            ] ++
            ( if violExpr /= violationsExpr && verboseP flags
              then   ["        // Normalization steps:"]
@@ -184,7 +184,7 @@ generateRules fSpec flags =
                                                           (selectExpr fSpec 26 "src" "tgt" violationsExpr)
                                              ++"'" 
            ] ++
-           [ "        , 'contentsSQL' => '" ++
+           [ "        , 'contentsSQL'   => '" ++
              let contentsExpr = conjNF rExpr in
              fromMaybe
                ("/*ERROR: no sql generated for " ++
@@ -194,7 +194,7 @@ generateRules fSpec flags =
            | development flags -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
            ] ++
-           [ "        , 'pairView' =>" -- a list of sql queries for the pair-view segments 
+           [ "        , 'pairView'      =>" -- a list of sql queries for the pair-view segments 
            , "            array" 
            ] ++
            indent 14 
