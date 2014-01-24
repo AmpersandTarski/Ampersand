@@ -31,7 +31,8 @@ tempDbName = "TemporaryValidationDatabase"
 
 validateRuleSQL :: Fspc -> Options -> IO Bool
 validateRuleSQL fSpec flags =
- do { removeTempDatabase flags -- in case it exists when we start, just drop it
+ do { when (invalidPopulation fSpec) ( error "The population would violate invariants. Could not generate your database.")
+    ; removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
     ; putStrLn "Initializing temporary database"
@@ -59,6 +60,12 @@ validateRuleSQL fSpec flags =
                   ; return False
                   } 
     }
+
+invalidPopulation :: Fspc -> Bool
+invalidPopulation fSpec = (not. null) (filter isInvariant (allViolations fSpec))
+  where isInvariant :: (Rule,[Paire]) -> Bool
+        isInvariant (r,_) = (not . r_sgl) r
+
 
 -- functions for extracting all expressions from the context
 
