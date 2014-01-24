@@ -7,6 +7,7 @@ import Data.List
 import Data.Maybe
 import Control.Monad
 import System.Process
+import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
 import DatabaseDesign.Ampersand_Prototype.CoreImporter hiding (putStr, origin)
@@ -31,7 +32,9 @@ tempDbName = "TemporaryValidationDatabase"
 
 validateRuleSQL :: Fspc -> Options -> IO Bool
 validateRuleSQL fSpec flags =
- do { when (invalidPopulation fSpec) ( error "The population would violate invariants. Could not generate your database.")
+ do { when (invalidPopulation fSpec) (do { putStrLn "The population would violate invariants. Could not generate your database."
+                                         ; exitWith $ ExitFailure 10
+                                         })
     ; removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
