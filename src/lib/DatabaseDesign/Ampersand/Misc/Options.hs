@@ -195,7 +195,8 @@ getOptions =
           then return flags 
           else case fNames of
                 []      -> error $ "no file to parse" ++usage
-                [fName] -> verboseLn flags "Checking output directories..."
+                [fName] -> checkInvalidOptionCombinations flags
+                        >> verboseLn flags "Checking output directories..."
                         >> checkLogName flags
                         >> checkDirOutput flags
                         --REMARK -> checkExecOpts in comments because it is redundant
@@ -220,6 +221,10 @@ getOptions =
                 x:xs    -> error $ "too many files: "++ intercalate ", " (x:xs) ++usage
        
        where
+          checkInvalidOptionCombinations :: Options -> IO ()
+          checkInvalidOptionCombinations f
+            | development f && validateSQL f = error "--dev and --validate must not be used at the same time." --(Reason: see ticket #378)
+            | otherwise = return()  
           checkLogName :: Options -> IO ()
           checkLogName   f = createDirectoryIfMissing True (takeDirectory (logName f))
           checkDirOutput :: Options -> IO ()

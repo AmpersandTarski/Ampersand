@@ -203,10 +203,10 @@ where
      nM True   (ECps (r,EIsc (s,q))) _          | not eq = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
      nM _      (ECps (EUni (q,s),r)) _                   = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
      nM _      (ECps (l,EUni (q,s))) _                   = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
---     nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")                   -- HJ 20140119 TODO: These rules must not be used when normalizing on violation expressions. (see ticket #378)
---     nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")                   -- HJ 20140119 TODO: These rules must not be used when normalizing on violation expressions. (see ticket #378)
---     nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>") -- HJ 20140119 TODO: These rules must not be used when normalizing on violation expressions. (see ticket #378)
---     nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")      -- HJ 20140119 TODO: These rules must not be used when normalizing on violation expressions. (see ticket #378)
+     nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
+     nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
+     nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
+     nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
      nM posCpl (ECps (l,r))           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posCpl l []
                                                                        (f,steps',equ'') = nM posCpl r (l:rs)
@@ -322,10 +322,6 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
- -- Jumping Beetles!   The following alternative is incorrect. It should yield t .\/. f (instead of now: t ./\. f)
- -- However, it covers a more serious mistake in the generation of ECA-rules,
- -- which causes the Sentinel to flip. So we keep it covered until that mistake is fixed.
- -- SJC 24 nov 2013: I care not! I've repaired this. Please fix whatever needs to be fixed instead of covering up the occurence!
          | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posCpl l []
                (f,steps',equ'') = nM posCpl r (l:rs)
