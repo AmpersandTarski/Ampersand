@@ -18,7 +18,8 @@ import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
 
 main :: IO ()
 main =
- do flags <- getOptions
+ do flags' <- getOptions
+    let flags = flags'{genPrototype=True}
     if showVersion flags || showHelp flags
     then mapM_ putStr (helpNVersionTexts prototypeVersionStr flags)
     else do gFspec <- createFspec flags
