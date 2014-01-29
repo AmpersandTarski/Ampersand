@@ -209,14 +209,11 @@ generateRules fSpec flags =
          ]
     ) ) ++
   [ ""
-  , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");" ]
+  , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) (invars fSpec)) ++");" ]
  where showMeaning rule = maybe "" aMarkup2String (meaning (language flags) rule)
        showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language flags ] of
                             []    -> ""
                             markup:_ -> aMarkup2String markup
-       rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
-       processRuleNames = nub $ concatMap snd rulesPerRole
-       invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
        
        genMPairView Nothing                  = []
        genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs

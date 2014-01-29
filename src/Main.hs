@@ -50,7 +50,7 @@ generateProtoStuff flags fSpec | export2adl flags && fileformat flags==Adl1PopFo
     ; verboseLn flags $ "Population of context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
     }
 generateProtoStuff flags fSpec | otherwise        =
- do { verboseLn flags "Generating..."
+ do { verboseLn flags "Generating prototype artifacts..."
     ; when (genPrototype flags) $ doGenProto fSpec flags
     ; when (genBericht flags)   $ doGenBericht fSpec flags
     ; case testRule flags of 
