@@ -378,12 +378,9 @@ while maintaining all invariants.
    -- The rule is carried along for traceability.
    quads :: Options -> (Declaration->Bool) -> [Rule] -> [Quad]
    quads flags visible rs
---    = [ LoopSearchQuad 
---            { qDcl  = d
---            , qRule = rule
---            , debugStr = (show.conjNF .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
---            }
-    = [ Quad d (allClauses flags rule)
+    = [ Quad { qDcl     = d
+             , qClauses = allClauses flags rule
+             }
       | rule<-rs, d<-relsUsedIn rule, visible d
       ]
 
