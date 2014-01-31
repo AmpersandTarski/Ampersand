@@ -37,7 +37,7 @@ fatal = fatalMsg "Components"
 --    takes the Fspc as its input, and spits out everything the user requested.
 generateAmpersandOutput :: Options -> Fspc -> IO ()
 generateAmpersandOutput flags fSpec = 
- do { verboseLn flags "Generating..."
+ do { verboseLn flags "Generating common Ampersand artifacts..."
     ; when (genXML flags)      $ doGenXML      fSpec flags
     ; when (genUML flags)      $ doGenUML      fSpec flags 
     ; when (haskell flags)     $ doGenHaskell  fSpec flags 
@@ -45,7 +45,7 @@ generateAmpersandOutput flags fSpec =
     ; when (genFspec flags)    $ doGenDocument fSpec flags 
     ; when (genFPAExcel flags) $ doGenFPAExcel fSpec flags
     ; when (proofs flags)      $ doGenProofs   fSpec flags
-    ; when (genMeat flags && not (includeRap flags))  -- When rap is included, the file is created there.
+    ; when (genMeat flags && (not . includeRap) flags)  -- When rap is included, the file is created there.
         $ doGenMeatGrinder fSpec flags
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
