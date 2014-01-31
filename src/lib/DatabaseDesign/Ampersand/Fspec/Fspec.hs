@@ -186,13 +186,8 @@ instance ConceptStructure Activity where
 
 data Quad
      = Quad
-          { qDcl :: Declaration        -- The relation that, when affected, triggers a restore action.
-          , qClauses :: Clauses         -- The clauses
-          }
-     | LoopSearchQuad  -- HJO: 2013-11-23: Temporary constructor, because of suspection of quads in generation of loops: just testing with it.
-          { qDcl  :: Declaration
-          , qRule :: Rule
-          , debugStr :: String 
+          { qDcl :: Declaration   -- The relation that, when affected, triggers a restore action.
+          , qClauses :: Clauses   -- The clauses
           } deriving Eq
  
 instance Eq Activity where
