@@ -340,14 +340,16 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable (EDcD d)          = d `elem` [d' | EDcD d' <- editableRels]
+ where isEditable (EDcD d) = d `elem` [d' | EDcD d' <- editableRels]
+       isEditable (EFlp e) = isEditable e
        isEditable _                   = False
        normalizedInterfaceExp = conjNF $ objctx object
        getEditableConcepts obj = (let e = objctx obj in
                                   case e of
-                                   EDcD d        | isEditable e -> [target d]
-                                   EFlp (EDcD d) | isEditable e -> [source d]
-                                   _                                -> [])
+                                   EDcD d        | isEditable e       -> [target d]
+                                   EFlp (EDcD d) | isEditable (flp e) -> [source d]
+                                   _                                  -> []
+                                 )
                                  ++ concatMap getEditableConcepts (objAts obj)
   
 generateMSubInterface :: Fspc -> Options -> [Expression] -> Int -> Maybe SubInterface -> [String] 
