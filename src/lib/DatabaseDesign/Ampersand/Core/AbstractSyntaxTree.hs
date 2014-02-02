@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Rule(..)
  , RuleType(..)
  , RuleOrigin(..)
- , Declaration(..),
+ , Declaration(..)
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
