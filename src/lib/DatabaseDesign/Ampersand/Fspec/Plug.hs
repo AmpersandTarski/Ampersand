@@ -9,32 +9,21 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      ,SqlType(..)
      ,showSQL
      ,requiredFields,requires,plugpath,eLkpTbl
-     ,plugFields
+     
      ,tblcontents
---     ,entityfield
      ,fldauto
      ,isPlugIndex,kernelrels,attrels,bijectivefields
      ,PlugSQL(..)
      )
 where
 import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),atomsOf,ConceptStructure(..),Relational(..))
+import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),atomsOf,Relational(..))
 import DatabaseDesign.Ampersand.Basics
-import Data.List(elemIndex,nub,intercalate,sort)
+import Data.List(elemIndex,nub)
 import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
-import Prelude hiding (Ordering(..),head)
-
--- import Debug.Trace  
--- Dummy trace function.
-trace :: String -> a -> a  
-trace _ a = a
-
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
-
+import Prelude hiding (Ordering(..))
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Plug"
@@ -63,16 +52,6 @@ instance Plugable PlugSQL where
   makePlug (InternalPlug p) = p
   makePlug (ExternalPlug _) = fatal 112 "external plug is not Plugable"
  
-instance FPAble PlugInfo where
-  fpa (InternalPlug _) = fatal 55 "FPA analysis of internal plugs is currently not supported"
-  fpa (ExternalPlug _)  = fatal 56 "FPA analysis of external plugs is currently not supported"
-
-instance ConceptStructure PlugInfo where
-  concs   (InternalPlug psql) = concs   psql
-  concs   (ExternalPlug obj)  = concs   obj
-  expressionsIn (InternalPlug psql) = expressionsIn psql
-  expressionsIn (ExternalPlug obj)  = expressionsIn obj
-   
 
 
 ----------------------------------------------
@@ -137,29 +116,9 @@ instance ConceptStructure PlugInfo where
 --                   | NonMainKey            -- Key value of an Specialization of the Primary key. (field could be null)
 --                   | UserDefinedUsage
 --                   | FillInLater          -- Must be filled in later....
-entityfield :: PlugSQL -> SqlField
-entityfield p
-  = Fld { fldname = name (entityconcept p)
-        , fldexpr = EDcI (concept p)
-        , fldtype = SQLId
-        , flduse  = PrimKey (concept p)  -- SJ 4 nov 2013:  TODO: is this correct?? (this field may have been subject to bit rot...
-        , fldnull = False
-        , flduniq = True
-        }
+
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
-entityconcept :: PlugSQL -> A_Concept
-entityconcept BinSQL{} --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
-  = PlainConcept
-      { cptnm = "ID"
-      , cpttp = []
-      , cptdf = []
-      }
-entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
-  = case concept p of
-     PlainConcept{} -> (concept p){cptnm=name(concept p)++ "ID"} 
-     _   ->  fatal 225 $ "entityconcept error in PlugSQL: "++name p++"."
-
 
 
 
@@ -423,31 +382,6 @@ clusterBy f cs xs
      | null (c1++c2) = fatal 547 "clusters are not expected to be empty at this point."
      | otherwise = head c1==head c2
 
---TODO151210 -> revise ConceptStructure SqlField & PlugSQL
---   concs f = [target e' |let e'=fldexpr f,isSur e']
---   concs p = concs     (fields p)
---   this implies that concs of p are only the targets of kernel fields i.e. kernel concepts  
---   class ConceptStructure describes concs as "the set of all concepts used in data structure a"
---   The question arises (and should be answered in this comment and implemented)
---      WHAT IS THE DATA STRUCTURE PlugSQL?
---I expect that instance ConceptStructure SqlField is only used for instance ConceptStructure PlugSQL as its implementation 
---is tailored to the needs of PlugSQL as a data structure, not SqlField as a Data structure!
---For convenience, I implemented localfunction, which should be removed at revision
-instance ConceptStructure SqlField where
-  concs     f = [target e' |let e'=fldexpr f,isSur e']
-  expressionsIn   f = expressionsIn   (fldexpr f)
-  mp1Exprs = fatal 452 "mp1Exprs is not meant to be for a plug."
-
-instance ConceptStructure PlugSQL where
-  concs     p = concs   (plugFields p)
-  expressionsIn   p = expressionsIn (plugFields p)
-  mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
-
-plugFields::PlugSQL->[SqlField]
-plugFields plug = case plug of
-    TblSQL{}    -> fields plug
-    BinSQL{}    -> [fst(columns plug),snd(columns plug)]
-    ScalarSQL{} -> [sqlColumn plug]
 
 type TblRecord = [String]
 tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
