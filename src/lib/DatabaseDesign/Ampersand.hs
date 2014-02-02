@@ -54,7 +54,6 @@ module DatabaseDesign.Ampersand
    , (<==>),meet,join,sortWith,atomsOf
    , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on declarations
-   , decusr
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
