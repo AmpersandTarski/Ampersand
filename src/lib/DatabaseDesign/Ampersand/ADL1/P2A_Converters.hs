@@ -450,20 +450,20 @@ pCtx2aCtx
              , r_env = env
              , r_usr = UserDefined
              , r_sgl = not (null sgl)
-             , srrel = Sgn{ decnm = nm
-                          , decsgn = (sign exp')
+             , srrel = Sgn{ decnm   = nm
+                          , decsgn  = (sign exp')
                           , decprps = []
                           , decprps_calc = Nothing
-                          , decprL = ""
-                          , decprM = ""
-                          , decprR = ""
+                          , decprL  = ""
+                          , decprM  = ""
+                          , decprR  = ""
                           , decMean = pMean2aMean deflangCtxt deffrmtCtxt meanings
                           , decConceptDef = Nothing
                           , decfpos = orig
-                          , decissX = True
-                          , decusrX = False
-                          , decISA = False
-                          , decpat = env
+                          , deciss  = True
+                          , decusr  = False
+                          , decISA  = False
+                          , decpat  = env
                           , decplug = False
                           }
              }
@@ -573,8 +573,8 @@ pDecl2aDecl patNm defLanguage defFormat pd
                  , decMean = AMeaning [ pMarkup2aMarkup defLanguage defFormat meaning | PMeaning meaning<-dec_Mean pd ]
                  , decConceptDef = dec_conceptDef pd
                  , decfpos = dec_fpos pd 
-                 , decissX = True
-                 , decusrX = True
+                 , deciss  = True
+                 , decusr  = True
                  , decISA  = False
                  , decpat  = patNm
                  , decplug = dec_plug pd

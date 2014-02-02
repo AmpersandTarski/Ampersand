@@ -230,7 +230,7 @@ where
                         Isn{} -> "Isn"
                         Vs{} -> "Vs"
                   extraAtts = case d of
-                                Sgn{} -> [mkAttr "IsSignal" (show (decissX d))]
+                                Sgn{} -> [mkAttr "IsSignal" (show (deciss d))]
                                 _     -> []
             
      mkXmlTree d = Elem (mkTag d)

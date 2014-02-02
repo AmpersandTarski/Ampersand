@@ -91,8 +91,8 @@ rulesFromIdentity identity
                                           ]
                             , decConceptDef = Nothing
                             , decfpos = origin identity
-                            , decissX = False
-                            , decusrX = False
+                            , deciss  = False
+                            , decusr  = False
                             , decISA  = False
                             , decpat  = ""
                             , decplug = False
