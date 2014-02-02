@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , Event(..)
           , PAclause(..)
           , Activity(..)
-          , PlugSQL(..)
+          , PlugSQL(..),plugFields
           , lookupCpt
           , metaValues
           , SqlField(..)
@@ -205,9 +205,7 @@ instance Eq (ECArule) where
    
 data Event = On { eSrt :: InsDel
                 , eDcl :: Declaration
-                } deriving (Show)
-instance Eq Event where
- q == q' = fatal 260 "TODO Han: Eq moet worden teruggezet voor Event"
+                } deriving (Show,Eq)
 
 data PAclause
               = CHC { paCls :: [PAclause]
@@ -331,6 +329,16 @@ data PlugInfo = InternalPlug PlugSQL
 instance Identified PlugInfo where
   name (InternalPlug psql) = name psql
   name (ExternalPlug obj)  = name obj
+instance ConceptStructure PlugInfo where
+  concs   (InternalPlug psql) = concs   psql
+  concs   (ExternalPlug obj)  = concs   obj
+  expressionsIn (InternalPlug psql) = expressionsIn psql
+  expressionsIn (ExternalPlug obj)  = expressionsIn obj
+instance ConceptStructure PlugSQL where
+  concs     p = concs   (plugFields p)
+  expressionsIn   p = expressionsIn (plugFields p)
+  mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
+   
 
 data PlugSQL
    -- | stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
@@ -378,6 +386,13 @@ instance Eq PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
+plugFields::PlugSQL->[SqlField]
+plugFields plug = case plug of
+    TblSQL{}    -> fields plug
+    BinSQL{}    -> [fst(columns plug),snd(columns plug)]
+    ScalarSQL{} -> [sqlColumn plug]
+
+
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated 
 lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
@@ -403,6 +418,11 @@ data SqlField = Fld { fldname :: String
 
 instance Ord SqlField where
   compare x y = compare (fldname x) (fldname y)
+instance ConceptStructure SqlField where
+  concs     f = [target e' |let e'=fldexpr f,isSur e']
+  expressionsIn   f = expressionsIn   (fldexpr f)
+  mp1Exprs = fatal 452 "mp1Exprs is not meant to be for a plug."
+
                     
                     
 data SqlType = SQLChar    Int
