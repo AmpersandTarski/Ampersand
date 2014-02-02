@@ -73,7 +73,7 @@ makeLinkTable dcl totsurs =
         -> BinSQL
              { sqlname = name dcl
              , columns = ( -- The source field:
-                           Fld { fldname = ["s" | isEndo dcl]++name (source trgExpr)                       
+                           Fld { fldname = concat["s" | isEndo dcl]++name (source trgExpr)                       
                                , fldexpr = srcExpr
                                , fldtype = sqlTypeOf (target srcExpr)
                                , flduse  = ForeignKey (target srcExpr)
@@ -81,7 +81,7 @@ makeLinkTable dcl totsurs =
                                , flduniq = isUni trgExpr
                                } 
                          , -- The target field:
-                           Fld { fldname = ["t" | isEndo dcl]++name (target trgExpr)                       
+                           Fld { fldname = concat["t" | isEndo dcl]++name (target trgExpr)                       
                                , fldexpr = trgExpr
                                , fldtype = sqlTypeOf (target trgExpr)
                                , flduse  = ForeignKey (target trgExpr)
