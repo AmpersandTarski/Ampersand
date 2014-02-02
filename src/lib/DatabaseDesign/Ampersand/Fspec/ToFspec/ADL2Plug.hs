@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import DatabaseDesign.Ampersand.Core.Poset as Poset hiding (sortWith)
-import Prelude hiding (Ord(..),head)
+import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
@@ -25,10 +25,6 @@ trace _ a = a
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
-
-head :: Int -> [a] -> a
-head i [] = fatal i "head must not be used on an empty list!"
-head _ (a:_) = a
 
 
 makeGeneratedSqlPlugs :: Options
@@ -71,23 +67,23 @@ makeLinkTable :: Declaration -> [Expression] -> PlugSQL
 makeLinkTable dcl totsurs = 
   case dcl of
     Sgn{} 
-     | Inj `elem` multiplicities dcl || Uni `elem` multiplicities dcl 
+     | isInj dcl || isUni dcl 
         -> fatal 55 $ "unexpected call of makeLinkTable("++show dcl++"), because it is injective or univalent."
      | otherwise 
         -> BinSQL
              { sqlname = name dcl
              , columns = ( -- The source field:
-                           Fld { fldname = srcNm                       
+                           Fld { fldname = ["s" | isEndo dcl]++name (source trgExpr)                       
                                , fldexpr = srcExpr
-                               , fldtype = makeSqlType (target srcExpr)
+                               , fldtype = sqlTypeOf (target srcExpr)
                                , flduse  = ForeignKey (target srcExpr)
                                , fldnull = isTot trgExpr
                                , flduniq = isUni trgExpr
                                } 
                          , -- The target field:
-                           Fld { fldname = trgNm                       
+                           Fld { fldname = ["t" | isEndo dcl]++name (target trgExpr)                       
                                , fldexpr = trgExpr
-                               , fldtype = makeSqlType (target trgExpr)
+                               , fldtype = sqlTypeOf (target trgExpr)
                                , flduse  = ForeignKey (target trgExpr)
                                , fldnull = isSur trgExpr
                                , flduniq = isInj trgExpr
@@ -97,12 +93,10 @@ makeLinkTable dcl totsurs =
              , mLkp    = trgExpr
           --   , sqlfpa  = NO
              }
-    _  -> fatal 90 "Do not call makeLinkTable on relations other than Rel{}"
+    _  -> fatal 90 "Do not call makeLinkTable on relations other than Sgn{}"
    where
-    r_is_Tot = Tot `elem` multiplicities dcl || dcl `elem` [ d |       EDcD d  <- totsurs]
-    r_is_Sur = Sur `elem` multiplicities dcl || dcl `elem` [ d | EFlp (EDcD d) <- totsurs]
-    srcNm = (if isEndo dcl then "s" else "")++name (source trgExpr)
-    trgNm = (if isEndo dcl then "t" else "")++name (target trgExpr)
+    r_is_Tot = isTot dcl || dcl `elem` [ d |       EDcD d  <- totsurs]
+    r_is_Sur = isSur dcl || dcl `elem` [ d | EFlp (EDcD d) <- totsurs]
     --the expr for the source of r
     srcExpr
      | r_is_Tot = EDcI (source dcl)
@@ -141,7 +135,7 @@ rel2fld kernel
         
  = Fld { fldname = fldName 
        , fldexpr = e
-       , fldtype = makeSqlType (target e)
+       , fldtype = sqlTypeOf (target e)
        , flduse  =  
           let f expr =
                  case expr of
@@ -225,7 +219,7 @@ rel2fld kernel
                           (nub [c | c<-nub (map source xs), c'<-nub (map target xs), c==c'])
          f :: [[Expression]] -> A_Concept -> [[Expression]]
          f q x = q ++ [ls ++ rs | ls <- q, x == target (last ls)
-                                , rs <- q, x == source (head 233 rs), null (ls `isc` rs)]
+                                , rs <- q, x == source (head rs), null (ls `isc` rs)]
                   
 -- ^ Explanation:  rel is a relation from some kernel field k to f
 -- ^ (fldexpr k) is the relation from the plug's ID to k
@@ -289,7 +283,7 @@ makeEntityTables flags allDcls isas conceptss exclusions
     kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
     kernel2Plug (kernel, attsAndIsaRels)
      =  TblSQL 
-             { sqlname = name (head 289 kernel) -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
+             { sqlname = name (head kernel) -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
              , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable ++ isaLookuptable
@@ -307,9 +301,7 @@ makeEntityTables flags allDcls isas conceptss exclusions
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
                                   [(e,lookupC (source e),fld e) | e <-plugMors] 
-          lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
-                                  then fatal 209 "null cLkptable."
-                                  else (head 301) [f |(c',f)<-conceptLookuptable, cpt==c']
+          lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
           fld a                 = rel2fld mainkernel atts a
           isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]    
 -- attRels contains all relations that will be attribute of a kernel.
@@ -396,18 +388,16 @@ makeUserDefinedSqlPlug _ obj
    fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
-   lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
-                           then fatal 300 "null cLkptable."
-                           else (head 377) [f |(c',f)<-conceptLookuptable, cpt==c']
+   lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
-   sqltp att = (head 379) $ [makeSqltype' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
+   sqltp att = head $ [sqlTypeOf' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                       ++[SQLVarchar 255]
 
-makeSqlType :: A_Concept -> SqlType
-makeSqlType ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
-makeSqlType c = makeSqltype' (cpttp c)
-makeSqltype' :: String -> SqlType
-makeSqltype' str = case str of
+sqlTypeOf :: A_Concept -> SqlType
+sqlTypeOf ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
+sqlTypeOf c = sqlTypeOf' (cpttp c)
+sqlTypeOf' :: String -> SqlType
+sqlTypeOf' str = case str of
        ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
        "Pass" -> SQLPass
        ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
