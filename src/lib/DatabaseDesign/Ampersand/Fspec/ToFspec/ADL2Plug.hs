@@ -10,7 +10,7 @@ import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec.Plug
+import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
 import Data.Maybe

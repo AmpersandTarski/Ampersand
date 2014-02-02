@@ -115,7 +115,7 @@ fspec2Workbook fSpec flags =
        [ emptyCell
        , (string.name) plug
        , string (case plug of
-                  InternalPlug p -> showLang lang (fpa p)
+                  InternalPlug p -> showFPA lang p
                   ExternalPlug _ -> "???"
                 )
        , (number.fromIntegral) (case plug of
@@ -137,7 +137,7 @@ fspec2Workbook fSpec flags =
     showDetailsOfFunction ifc =
        [ emptyCell
        , (string.name.ifcObj) ifc
-       , string (showLang lang (fpa ifc))
+       , string (showFPA lang ifc)
        , (number.fromIntegral.fPoints) ifc
        ]
     

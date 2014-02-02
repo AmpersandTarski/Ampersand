@@ -1,20 +1,26 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.FPA 
-
+    (FPAble(..)
+    )
 where
    
 import DatabaseDesign.Ampersand.Misc (Lang(..))
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Classes
+import DatabaseDesign.Ampersand.Basics
 
--------------- Function Points ------------------
+fatal :: Int -> String -> a
+fatal = fatalMsg "Fspec.ToFspec.Calc"
+
 
 class FPAble a where
   fpa :: a->FPA
   fPoints :: a ->Int
   fPoints x = fPoints'(fpa x)
-  
+  showFPA :: Lang -> a -> String
+  showFPA l x = showLang l (fpa x)
+   
 instance FPAble PlugSQL where
   fpa x = FPA 
     ILGV -- It is assumed that all persistent storage of information is done withing the scope of the system.
@@ -44,7 +50,10 @@ instance FPAble Interface where
          = case si of
              Box _ os       -> 1 + maximum (map depth os) 
              InterfaceRef{} -> 1
-                  
+
+instance FPAble PlugInfo where
+  fpa (InternalPlug _) = fatal 55 "FPA analysis of internal plugs is currently not supported"
+  fpa (ExternalPlug _)  = fatal 56 "FPA analysis of external plugs is currently not supported"
 
 class ShowLang a where
   showLang :: Lang -> a -> String
@@ -67,6 +76,8 @@ instance ShowLang FPtype where
  
 instance ShowLang FPA where
  showLang lang x = showLang lang (fpType x)++" "++showLang lang (complexity x)
+                  
+ 
 
 -- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL) 
 fPoints' :: FPA -> Int

@@ -5,7 +5,7 @@ maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 homepage:       ampersand.sourceforge.net
-category:       Database Design
+category:       Database Design 
 stability:      alpha
 cabal-version:  >= 1.10
 build-type:     Custom
