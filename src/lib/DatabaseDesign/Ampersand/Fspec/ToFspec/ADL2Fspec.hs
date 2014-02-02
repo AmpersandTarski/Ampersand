@@ -646,9 +646,9 @@ while maintaining all invariants.
                                       ]
                  , decConceptDef = Nothing
                  , decfpos = Origin ("generated relation (Delta "++show sgn++")")
-                 , decissX = True
-                 , decusrX = False
-                 , decISA = False
+                 , deciss  = True
+                 , decusr  = False
+                 , decISA  = False
                  , decpat  = ""
                  , decplug = True
                  } 

@@ -296,7 +296,7 @@ I got fatal 330 in RAP.adl, when generating a functional specification, so I hes
 instance ShowADL Declaration where
  showADL decl = 
   case decl of
-     Sgn{decusrX = False} -> fatal 323 "call to ShowADL for declarations may be done on user defined relations only." 
+     Sgn{decusr = False} -> fatal 323 "call to ShowADL for declarations may be done on user defined relations only." 
      Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
               (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
                if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++
