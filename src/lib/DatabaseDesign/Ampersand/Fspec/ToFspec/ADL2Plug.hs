@@ -347,12 +347,12 @@ makeEntityTables flags allDcls isas conceptss exclusions
 -- | Make a sqlplug from an ObjectDef (user-defined sql plug)
 makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeUserDefinedSqlPlug _ obj
- | null(objatsLegacy obj) && isIdent(objctx obj)
+ | null(attributes obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = name obj
                 , sqlColumn = rel2fld [EDcI c] [] (EDcI c)
                 , cLkp      = c
                 } 
- | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
+ | null(attributes obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
  | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
    = {- The following may be useful for debugging:
@@ -373,7 +373,7 @@ makeUserDefinedSqlPlug _ obj
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
      = source(objctx obj) 
    rels --fields are user-defined as one deep objats with objctx=r. note: type incorrect or non-relation objats are ignored
-     = [(objctx att,sqltp att) | att<-objatsLegacy obj, source (objctx att)==c]   
+     = [(objctx att,sqltp att) | att<-attributes obj, source (objctx att)==c]   
    kernel --I[c] and every non-endo r or r~ which is at least uni,inj,sur are kernel fields 
           --REMARK -> endo r or r~ which are at least uni,inj,sur are inefficient in a way
           --          if also TOT than r=I => duplicates, 

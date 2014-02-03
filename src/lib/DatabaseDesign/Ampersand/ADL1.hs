@@ -44,8 +44,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
          ,ViewDef(..)
          ,ViewSegment(..)
          ,ObjectDef(..)
-         ,objAts
-         ,objatsLegacy
          ,SubInterface(..)
          ,Declaration(..),decusr
          ,Interface(..)

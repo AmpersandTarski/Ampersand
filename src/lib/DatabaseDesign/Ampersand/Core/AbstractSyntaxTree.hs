@@ -20,8 +20,8 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Interface(..)
  , SubInterface(..)
  , ObjectDef(..)
+ , Object(..)
  , objAts
- , objatsLegacy -- for use in legacy code only
  , Purpose(..)
  , ExplObj(..)
  , Expression(..)
@@ -325,14 +325,22 @@ instance Traced Interface where
   origin = ifcPos
 
 objAts :: ObjectDef -> [ObjectDef]
-objAts Obj{ objmsub=Nothing } = []
-objAts Obj{ objmsub=Just (InterfaceRef _) } = []
-objAts Obj{ objmsub=Just (Box _ objs) } = objs
+objAts obj 
+  = case objmsub obj of
+     Nothing       -> []
+     Just (InterfaceRef _) -> []
+     Just (Box _ objs)     -> objs
 
-objatsLegacy :: ObjectDef -> [ObjectDef]
-objatsLegacy Obj{ objmsub=Nothing } = []
-objatsLegacy Obj{ objmsub=Just (Box _ objs) } = objs
-objatsLegacy Obj{ objmsub=Just (InterfaceRef _) } = fatal 301 $ "Using functionality that has not been extended to InterfaceRefs"
+class Object a where
+ concept :: a -> A_Concept        -- the type of the object
+ attributes :: a -> [ObjectDef]   -- the objects defined within the object    
+ contextOf :: a -> Expression     -- the context expression
+
+instance Object ObjectDef where
+ concept obj = target (objctx obj)
+ attributes  = objAts
+ contextOf   = objctx
+
 
 data ObjectDef = Obj { objnm ::   String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                      , objpos ::  Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)

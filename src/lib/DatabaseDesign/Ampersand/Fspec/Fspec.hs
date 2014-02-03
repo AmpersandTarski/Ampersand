@@ -19,6 +19,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , lookupCpt
           , metaValues
           , SqlField(..)
+          , Object(..)
           , FPA(..)
           , FPtype(..)
           , FPcompl(..)
