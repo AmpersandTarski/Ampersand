@@ -39,7 +39,6 @@ module DatabaseDesign.Ampersand
    , ProcessStructure(..)
    , ObjectDef(..)
    , Relational(..)
-   , objAts, objatsLegacy
    , Interface(..)
    , SubInterface(..)
    , Object(..)

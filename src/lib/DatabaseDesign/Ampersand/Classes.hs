@@ -4,7 +4,6 @@ import DatabaseDesign.Ampersand.Classes.Populated as X
        (Populated(..),atomsOf)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure as X
        (ConceptStructure(..))
-import DatabaseDesign.Ampersand.Classes.Object as X (Object(..))
 import DatabaseDesign.Ampersand.Classes.Relational as X
        (Relational(..))
 import DatabaseDesign.Ampersand.Classes.ViewPoint as X
