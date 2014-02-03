@@ -76,7 +76,7 @@ getAllInterfaceExps :: Fspc -> [ValidationExp]
 getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc 
                                    | ifc <- interfaceS fSpec ++ interfaceG fSpec ]
  where getObjExps iName objDef = (objctx objDef, "interface " ++ show iName) :
-                                 concatMap (getObjExps iName) (objAts objDef)
+                                 concatMap (getObjExps iName) (attributes objDef)
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: Fspc -> [ValidationExp]

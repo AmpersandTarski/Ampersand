@@ -3,6 +3,7 @@
 	<name>ampersand-prototype</name>
 	<comment></comment>
 	<projects>
+		<project>ampersand</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

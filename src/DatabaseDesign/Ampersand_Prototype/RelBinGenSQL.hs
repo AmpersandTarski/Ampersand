@@ -454,7 +454,7 @@ sqlPlugFields p e' =
         , --reasons why e is equivalent to plugexpr:
            --because e and plugexpr are equal
            e==plugexpr
-     -- || because1 e fld0 fld1              
+     --   || because1 e fld0 fld1              
      --OR e is equivalent to plugexpr for some other reason (requires reasoning)
         || bs && bt     ]                                          --       e = se~;te
         {- the above should be enough.. but the relation algebra calculations

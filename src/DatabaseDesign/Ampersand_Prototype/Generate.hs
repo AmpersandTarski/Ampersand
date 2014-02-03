@@ -350,7 +350,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                                    EFlp (EDcD d) | isEditable (flp e) -> [source d]
                                    _                                  -> []
                                  )
-                                 ++ concatMap getEditableConcepts (objAts obj)
+                                 ++ concatMap getEditableConcepts (attributes obj)
   
 generateMSubInterface :: Fspc -> Options -> [Expression] -> Int -> Maybe SubInterface -> [String] 
 generateMSubInterface fSpec flags editableRels depth subIntf =
