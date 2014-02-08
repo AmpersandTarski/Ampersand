@@ -51,6 +51,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDe
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
+import Debug.Trace
 import Data.List (intercalate,nub,delete)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -424,7 +425,7 @@ infixl 8 .:.    -- composition    -- .;. was unavailable, because Haskell's scan
 infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
 
--- SJ 2013118: The fatals are superfluous, but only if the type checker works correctly. Once we have sufficient confidence, they can be removed for performance reasons.
+-- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. Once we have sufficient confidence, they can be removed for performance reasons.
 l .==. r = if source l/=source r ||  target l/=target r then fatal 424 ("Cannot equate (with operator \"==\") expression\n   "++show l++"\n   with "++show r++".") else
            EEqu (l,r)
 l .|-. r = if source l/=source r ||  target l/=target r then fatal 426 ("Cannot include (with operator \"|-\") expression\n   "++show l++"\n   with "++show r++".") else
@@ -443,7 +444,7 @@ l .:. r  = if source r/=target l then fatal 438 ("Cannot compose (with operator 
            ECps (l,r)
 l .!. r  = if source r/=target l then fatal 440 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
            ERad (l,r)
-l .*. r  = -- SJC: should always fit! No fatal here..
+l .*. r  = -- SJC: always fits! No fatal here..
            EPrd (l,r)
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
