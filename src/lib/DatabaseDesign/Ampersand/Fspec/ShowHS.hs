@@ -26,14 +26,6 @@ where
            = "{-# OPTIONS_GHC -Wall #-}"
              ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
---             ++"\n  import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner"
---             ++"\n  import DatabaseDesign.Ampersand.Core.ParseTree"
---             ++"\n  import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree"
---             ++"\n  import DatabaseDesign.Ampersand.Fspec.ShowHS (showHS)"
---             ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
---             ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
---             ++"\n  import DatabaseDesign.Ampersand.Basics"
---             ++"\n  import DatabaseDesign.Ampersand.Classes"
              ++"\n  import DatabaseDesign.Ampersand"
              ++"\n  import Text.Pandoc hiding (Meta)"
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
@@ -603,7 +595,7 @@ where
         ["Ru{ rrnm   = " ++ show (rrnm   r)
         ,"  , rrexp  = " ++ showHS flags (indent++"             ") (rrexp  r)
         ,"  , rrfps  = " ++ showHS flags "" (rrfps  r)
-        ,"  , rrmean = " ++ showHS flags "" (rrmean r)
+        ,"  , rrmean = " ++ showHS flags (indent++"             ") (rrmean r)
         ,"  , rrmsg  = " ++ showHS flags "" (rrmsg  r)
         ,"  , rrviol = " ++ showHS flags "" (rrviol r)
         ,"  , rrtyp  = " ++ showHS flags "" (rrtyp  r)
@@ -618,7 +610,7 @@ where
         ]
 
    instance ShowHS AMeaning where
-     showHS flags indent (AMeaning x) = "AMeaning " ++ showHS flags indent x 
+     showHS flags indent (AMeaning x) = "AMeaning " ++ showHS flags (indent++"        ") x 
 
    instance ShowHS RuleType where
      showHS _ _ Truth          = "Truth"
@@ -703,16 +695,16 @@ where
     showHS flags indent (Box x objs) = "Box ("++showHS flags indent x++")"++indent++"     ("++showHS flags (indent++"     ") objs++")" 
 
    instance ShowHS Expression where
-    showHS flags indent (EEqu (l,r)) = "EEqu ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EImp (l,r)) = "EImp ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EIsc (l,r)) = "EIsc ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EUni (l,r)) = "EUni ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EDif (l,r)) = "EDif ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ELrs (l,r)) = "ELrs ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ERrs (l,r)) = "ERrs ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ECps (l,r)) = "ECps ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ERad (l,r)) = "ERad ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EPrd (l,r)) = "EPrd ("++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EEqu (l,r)) = "EEqu ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (EImp (l,r)) = "EImp ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (EIsc (l,r)) = "EIsc ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (EUni (l,r)) = "EUni ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (EDif (l,r)) = "EDif ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (ELrs (l,r)) = "ELrs ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (ERrs (l,r)) = "ERrs ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (ECps (l,r)) = "ECps ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (ERad (l,r)) = "ERad ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (EPrd (l,r)) = "EPrd ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
     showHS flags indent (EKl0 e    ) = "EKl0 ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EKl1 e    ) = "EKl1 ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EFlp e    ) = "EFlp ("++showHS flags (indent++"      ") e++")"
