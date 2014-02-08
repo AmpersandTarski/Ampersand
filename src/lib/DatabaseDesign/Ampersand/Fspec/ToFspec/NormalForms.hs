@@ -279,7 +279,7 @@ where
          | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posCpl l []
                (f,steps',equ'') = nM posCpl r (l:rs)
-               absorbClasses = eqClass (==) (rs++exprIsc2list l++exprIsc2list r)
+               absorbClasses = eqClass (==) (exprIsc2list l++exprIsc2list r)
                incons = [conjunct |conjunct<-exprIsc2list r,conjunct==notCpl l]
                absor0  = [disjunct | disjunct<-exprUni2list l, f'<-rs++exprIsc2list r, disjunct==f']
                absor0' = [disjunct | disjunct<-exprUni2list r, f'<-rs++exprIsc2list l, disjunct==f']
