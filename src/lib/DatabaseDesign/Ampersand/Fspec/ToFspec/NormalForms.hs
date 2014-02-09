@@ -326,7 +326,7 @@ where
          where (t,steps, equ')  = nM posCpl l []
                (f,steps',equ'') = nM posCpl r (l:rs)
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
-               absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
+               absorbClasses = eqClass (==) (exprUni2list l++exprUni2list r)
             -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
                tauts = [t' |disjunct<-exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
                absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
