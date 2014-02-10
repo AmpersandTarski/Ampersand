@@ -5,7 +5,7 @@ BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"
     ,"concepts" : V[ONE*Context];ctxcs
     ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
     ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
---    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule]-I[PropertyRule])
+    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "Validate" FOR Student: I[ONE]
 BOX ["Click to commit and validate":V[ONE*Context];savecontext
@@ -16,17 +16,19 @@ BOX ["loaded into Atlas" : V[ONE*Context]
     BOX ["CONTEXT":I,"source file (click to edit)":sourcefile \/ includes,"operations (click to perform)":sourcefile;applyto~]
     ,"overview of files" : V[ONE*User]
     BOX [ "open new source file" : newfile
-        , "source files" : uploaded;I[AdlFile] BOX ["file name (click to edit)":I[AdlFile],"created at":filetime,"operations (click to perform)":applyto~]
+        , "source files" : uploaded[User*AdlFile];I[AdlFile] BOX ["file name (click to edit)":I,"created at":filetime,"operations (click to perform)":applyto~]
         ]
     ]
 
 --css refers to this interface
 INTERFACE "Diagnosis" FOR Student: I[ONE]
-BOX [ "concepts without definition": V[ONE*PlainConcept];(I[PlainConcept]-(cptdf;cptdf~))
+BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- THIS IS A THIRD CHOICE expression!!
+--SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
+--FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
     , "relations without MEANING": V[ONE*Declaration];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
-    , "RULEs without MEANING": V[ONE*Rule];(I[Rule]-(rrmean;rrmean~)) -- -(V[ONE*Blob];rrmean~)
-    , "populated relations": V[ONE*RelPopu];decpopu~
-    , "unpopulated relations": V[ONE*Declaration];(I-(decpopu;decpopu~)) -- -(V[ONE*PairID];decpopu~)
+    , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I) -- -(V[ONE*Blob];rrmean~)
+    , "populated relations": V[ONE*PairID];decpopu~
+    , "unpopulated relations": V[ONE*Declaration];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*PairID];decpopu~)
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;rels;reldcl)
     ]
 
@@ -134,7 +136,7 @@ INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
---    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File]-I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
+    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I,"created at":filetime]
     ]
 
 INTERFACE "CONTEXT" FOR Student: I[Context]
@@ -143,12 +145,12 @@ BOX ["name" : ctxnm
     ,"concepts" : ctxcs 
     ,"ISA-relations" : ctxpats;ptgns 
     ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": decprps;declaredthrough]
---    ,"RULEs" : ctxpats;ptrls;(I[Rule]-I[PropertyRule]) 
+    ,"RULEs" : ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule]) 
     ]
 INTERFACE "PATTERN" FOR Student: I[Pattern]
 BOX ["PURPOSEs" :ptxps
     ,"name" :ptnm
---    ,"RULEs" :ptrls;(I[Rule]-I[PropertyRule])
+    ,"RULEs" :ptrls;(I[Rule] /\ -I[PropertyRule])
     ,"relations" :ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough]
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
@@ -158,22 +160,21 @@ BOX ["SPEC" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~
     ]
-INTERFACE "Concept"(popas,atomvalue) FOR Student: I[PlainConcept]
+INTERFACE "Concept"(cptos,atomvalue) FOR Student: I[Concept]
 BOX ["PURPOSEs" :cptpurpose
     ,"CONCEPT definition" :cptdf
     ,"name" :cptnm
-    ,"POPULATION" :popcpt~;popas BOX ["atom":atomvalue]
+    ,"POPULATION" :cptos BOX ["atom":atomvalue]
     ,"POPULATION (through ISA)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
-    BOX ["more specific concept":I[PlainConcept], "POPULATION":popcpt~;popas;atomvalue]
+    BOX ["more specific concept":I, "POPULATION":cptos;atomvalue]
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
---    ,"comparable atoms":order;order~;popas BOX ["atom":atomvalue, "of concept":popas~]
+--    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
     ,"used in relations": (decsgn;(src \/ trg))~
---    ,"used in RULEs": (rrexp;rels;decsgn;(src \/ trg))~;(I[Rule]-I[PropertyRule])
+    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
-INTERFACE "Atom"(atomvalue) FOR Student: I[Atom]
-BOX ["atom": atomvalue
-    ,"in POPULATION of": popas~]
+INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
+BOX ["in POPULATION of": cptos~]
 INTERFACE Relation(decpopu,left,right) FOR Student: I[Declaration]
 BOX ["PURPOSEs" :decpurpose
     ,"MEANING" :decmean
@@ -182,15 +183,15 @@ BOX ["PURPOSEs" :decpurpose
     ,"type" :decsgn BOX ["source":src , "target":trg]
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
-    ,"POPULATION" :decpopu;popps BOX ["source":left , "target":right] --select existing atoms only!
---    ,"used in RULEs": (rrexp;rels)~;(I[Rule]-I[PropertyRule])
+    ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
+    ,"used in RULEs": (rrexp;rels;reldcl)~;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :rrpurpose
     ,"MEANING" :rrmean
     ,"name" :rrnm
     ,"assertion" :rrexp
-    ,"uses":rrexp;rels BOX ["relation":I, "with properties": decprps;declaredthrough, "source":decsgn;src, "target":decsgn;trg]
+    ,"uses":rrexp;rels BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]

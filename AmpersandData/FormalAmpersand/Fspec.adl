@@ -4,20 +4,20 @@ INCLUDE "AST.adl"
 PATTERN Image
 imageurl :: Image*URL
 MEANING IN ENGLISH "The location of an image on the Internet."
-VIEW Image: Image(PRIMHTML "<img src='", imageurl , PRIMHTML "'>")
+KEY Image: Image(PRIMHTML "<img src='", imageurl , PRIMHTML "'>")
 ENDPATTERN
 
 PATTERN Conceptual
 ptpic::Pattern*Image[UNI]
 MEANING IN ENGLISH "A conceptual diagram for a pattern."
-cptpic::PlainConcept*Image[UNI]
+cptpic::Concept*Image[UNI]
 MEANING IN ENGLISH "A conceptual diagram for a concept."
 rrpic::Rule*Image[UNI]
 MEANING IN ENGLISH "A conceptual diagram for a rule."
 ENDPATTERN
 
 PATTERN RuleEnforcement
-SPEC Violation ISA Pair
+SPEC Violation ISA PairID
 rrviols::Rule*Violation
 MEANING IN ENGLISH "The violations of a rule."
 ENDPATTERN
