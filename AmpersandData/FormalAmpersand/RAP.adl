@@ -1,12 +1,11 @@
 CONTEXT RAP 
---INCLUDE "student_AST_interfaces.adl"
---INCLUDE "admin_interfaces.adl"
+INCLUDE "student_AST_interfaces.adl"
+INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
-INCLUDE "ASTdocumentation.adl"
-IN ENGLISH
-LATEX
+--IN ENGLISH
+--LATEX
 
-PROCESS AtlasLoad1
+PROCESS AtlasLoad
 ROLE Student MAINTAINS parseerror,typeerror,popchanged
 --TODO -> BUG1 => only  inios = cptos does not imply  inios |- cptos, thus removal of concept population is not detected by conceptwijzigingen.
 -- workaround = two rules
@@ -23,19 +22,18 @@ ROLE Student MAINTAINS parseerror,typeerror,popchanged
 RULE "popchanged": inipopu = decpopu
 --RULE "popchanged": (-((left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue) \/ (inileft~;(inipopu~;inipopu /\ I);iniright)) /\ (-(inileft~;(inipopu~;inipopu /\ I);iniright) \/ ((left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue))
 MESSAGE "<br/>You entered change(s) on the screen. You can: <br/> 1) <b>enter more</b> change(s), or; <br/> 2) <b>undo</b> your changes <b>by (re)loading</b> any CONTEXT into Atlas, or;<br/> 3) <a href='index.php?interface=Validate&atom=1&role=0'>click here</a> to <b>commit</b> the change(s) <b>and update</b> violations on your rules."
-VIOLATION (TXT "added or deleted pair ",TGT I[RelPopu], TXT " of ", TGT (inipopu\/decpopu)~)
+VIOLATION (TXT "added or deleted pair ",TGT I, TXT " of ", TGT (inipopu\/decpopu)~)
 
 
-RULE "parseerror": parseerror |- V[File*ParseError]-parseerror
+RULE "parseerror": parseerror |- -parseerror
 MESSAGE "<span class='errsignal'>A syntax error was encountered in your script.</span> No CONTEXT screen could be generated."
-VIOLATION (TGT I[ParseError], TXT " Open ", SRC I[File],TXT " to fix error.")
+VIOLATION (TGT I, TXT " Open ", SRC I,TXT " to fix error.")
 
-RULE "typeerror": typeerror |- V[File*TypeError]-typeerror
+RULE "typeerror": typeerror |- -typeerror
 MESSAGE "<span class='errsignal'>Type error(s) were encountered in your script.</span> A CONTEXT screen was generated with concepts and relation declarations only, which may be useful to understand and fix the errors"
-VIOLATION (TGT I[TypeError], TXT ". Open ", SRC I[File],TXT " to fix error.")
+VIOLATION (TGT I, TXT ". Open ", SRC I,TXT " to fix error.")
 ENDPROCESS
 
-{-
 PROCESS Student
 ROLE Student MAINTAINS otherviolations, multviolations1,multviolations2,multviolations3, homoviolations
 
@@ -47,30 +45,27 @@ ROLE Student MAINTAINS otherviolations, multviolations1,multviolations2,multviol
 --MESSAGE "<span class='warnsignal'>Atom(s) of a concept that is a specialization have the same name(s) as atom(s) of a more general concept.</span> The integrity rules demand that no two atoms in the population of a concept have the same name. If you commit and validate on the <a href='index.php?interface=Validate&atom=1&role=0'>Validate-screen</a> then Ampersand records that the atoms with identical names refer to the same real-world object. If the atoms refer to different real-world objects, then you must change the name of at least one atom before validating."
 --VIOLATION (TXT "Atom ", TGT I, TXT "will become the most specific concept")
 
---HJO, 20130723: Temporarily disabled the following rules, for they give problems. (and besides, what is the meaning of the rules????, there is no explicit purpose!)
-RULE "multviolations1": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
+RULE "multviolations1": -((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
-VIOLATION (TXT "RULE ", SRC I[Rule], TXT " is violated by the atom ", TGT I[Violation];left, TXT ".")
+VIOLATION (TXT "RULE ", SRC I, TXT " is violated by the atom ", TGT left, TXT ".")
 
-RULE "multviolations2": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('UNI' \/ 'INJ');declaredthrough~);rrviols)
+RULE "multviolations2": -((I[PropertyRule] /\ declaredthrough;('UNI' \/ 'INJ');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or INJective multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
-VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 
-RULE "multviolations3": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;'->';declaredthrough~);rrviols)
+RULE "multviolations3": -((I[PropertyRule] /\ declaredthrough;'->';declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or TOTal multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
-VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 
-RULE "homoviolations": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
+RULE "homoviolations": -((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A rule for homogeneous relation(s) is violated.</span> Add or delete tuple(s) in the relation(s) to correct the violation(s)."
-VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 
-RULE "otherviolations": V[Rule*Violation]-((I[Rule]-I[PropertyRule]);rrviols)
+RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A business rule that involves several relations is violated.</span> Add or delete tuple(s) in one or more of the relation(s) to correct the violation(s)."
-VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
-
-
+VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 ENDPROCESS
--}
+
 PROCESS Admin
 --no signals for admin yet
 RULE dummy: firstloadedwith |- firstloadedwith
@@ -78,19 +73,19 @@ ROLE Admin MAINTAINS dummy
 ENDPROCESS
 
 
-PATTERN AtlasLoad2
+PATTERN AtlasLoad
 firstloadedwith :: AdlFile * AdlVersion [UNI]
 MEANING IN ENGLISH "The version of the Ampersand compiler with which the rule specification file was loaded for the first time."
-inios::Concept*CptPopu
+inios::Concept*AtomID
 MEANING IN ENGLISH "The initial population of a concept from a rule specification file."
-inipopu::Declaration*RelPopu
+inipopu::Declaration*PairID
 MEANING IN ENGLISH "The initial population of a relation from a rule specification file."
 inileft::PairID*Atom
 MEANING IN ENGLISH "The initial source of a relationship from the initial population of a relation from a rule specification file."
 iniright::PairID*Atom
 MEANING IN ENGLISH "The initial target of a relationship from the initial population of a relation from a rule specification file."
 CONCEPT ErrorMessage "An error message is a description of an error." TYPE "Blob"
-VIEW ParseError: ParseError(TXT "Click here for error details.")
+KEY ParseError: ParseError(TXT "Click here for error details.")
 parseerror   :: File * ParseError[UNI]
 MEANING IN ENGLISH "The parse error resulting from the parser of the Ampersand compiler when the rule specification file was loaded for the first time."
 pe_action    :: ParseError -> String
@@ -99,7 +94,7 @@ pe_position  :: ParseError -> String
 MEANING IN ENGLISH "The position of a parse error."
 pe_expecting :: ParseError -> ErrorMessage
 MEANING IN ENGLISH "A message of what was expected by the parser."
-VIEW TypeError: TypeError(TXT "Click here for details of error at ", te_position)
+KEY TypeError: TypeError(TXT "Click here for details of error at ", te_position)
 typeerror   :: File * TypeError
 MEANING IN ENGLISH "The type error resulting from the type checker of the Ampersand compiler when the rule specification file was loaded for the first time."
 te_message  :: TypeError * ErrorMessage [UNI]
@@ -119,8 +114,8 @@ filename :: File->FileName
 MEANING IN ENGLISH "The name of a file"
 filepath :: File*FilePath[UNI]
 MEANING IN ENGLISH "The path of a file"
-VIEW File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
-RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I[File]
+KEY File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
+RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I
 MEANING IN ENGLISH "Each file has its own location on the file system."
 
 filetime :: File*CalendarTime[UNI]
@@ -134,6 +129,7 @@ RULE "user roles": 'Student' \/ 'StudentDesigner' \/ 'Designer' |- I[Role]
 MEANING IN ENGLISH "There are three roles: Student, StudentDesigner and Designer"
 
 SPEC AdlFile ISA File
+--KEY AdlFile: inherit from File
 sourcefile::Context->AdlFile
 MEANING IN ENGLISH "The rule specification file in which a context is defined."
 includes  ::Context*File
@@ -145,28 +141,27 @@ functionname :: G->String
 MEANING IN ENGLISH "The description of the application of an Ampersand compiler function to a rule specification file."
 operation :: G->Int
 MEANING IN ENGLISH "The operation number of an Ampersand compiler function."
-VIEW G: G(PRIMHTML "<a href='../../index.php?operation=",operation
-         ,PRIMHTML "&file=", applyto;filepath , applyto;filename
-         ,PRIMHTML "&userrole=", applyto;uploaded~;userrole
-         ,PRIMHTML "'>", functionname, PRIMHTML "</a>"
-         )
+KEY G: G(PRIMHTML "<a href='../../index.php?operation=",operation
+        ,PRIMHTML "&file=", applyto;filepath , applyto;filename
+        ,PRIMHTML "&userrole=", applyto;uploaded[User*AdlFile]~;userrole
+        ,PRIMHTML "'>", functionname, PRIMHTML "</a>")
 
 
 SPEC NewAdlFile ISA AdlFile
-VIEW NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",I[NewAdlFile];filename,PRIMHTML"</a>")
+KEY NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename[NewAdlFile*FileName],PRIMHTML"</a>")
 newfile::User->NewAdlFile
 MEANING IN ENGLISH "The predefined rule specification file with an empty context, which is copied to create a new file requested by a student."
 
 SPEC SavePopFile ISA File
-VIEW SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", I[SavePopFile];filepath , I[SavePopFile];filename
-                            ,PRIMHTML "'>", I[SavePopFile];filename ,PRIMHTML "</a>")
+KEY SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", filepath[SavePopFile*FilePath] , filename[SavePopFile*FileName]
+                            ,PRIMHTML "'>", filename[SavePopFile*FileName] ,PRIMHTML "</a>")
 savepopulation::Context->SavePopFile
 MEANING IN ENGLISH "The file, which will be created to export the population of a context when requested by a student."
 
 SPEC SaveAdlFile ISA AdlFile
-VIEW SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", I[SaveAdlFile];filepath , I[SaveAdlFile];filename
-                            ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded~;userrole
-                            ,PRIMHTML "'>", I[SaveAdlFile];filename, PRIMHTML "</a>")
+KEY SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath[SaveAdlFile*FilePath] , filename[SaveAdlFile*FileName]
+                            ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded[User*AdlFile]~;userrole
+                            ,PRIMHTML "'>", filename[SaveAdlFile*FileName], PRIMHTML "</a>")
 savecontext::Context->SaveAdlFile
 MEANING IN ENGLISH "The rule specification file, which will be created to commit and upload changes in the loaded context when requested by a student."
 ENDPATTERN
