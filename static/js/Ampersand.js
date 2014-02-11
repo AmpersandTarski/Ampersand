@@ -679,14 +679,14 @@ function conceptHasView(concept) {
   return getEditableConceptInfo()[concept]['hasView'];
 }
 
-// return the atom for key, or null if the key is not in the atomViewMap
-function getAtomForView(key, concept) {
-  var conceptAtomKeyMap = getEditableConceptInfo()[concept]['atomViewMap'];
+// return the atom for view, or null if the view is not in the atomViewMap
+function getAtomForView(view, concept) {
+  var conceptAtomViewMap = getEditableConceptInfo()[concept]['atomViewMap'];
   
   var atom = null;
-  for (var i=0; i<conceptAtomKeyMap.length; i++)
-    if (conceptAtomKeyMap[i].key == key) {
-      atom = conceptAtomKeyMap[i].atom;
+  for (var i=0; i<conceptAtomViewMap.length; i++)
+    if (conceptAtomViewMap[i].view == view) {
+      atom = conceptAtomViewMap[i].atom;
       break;
     }
   
