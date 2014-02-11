@@ -168,7 +168,7 @@ performUpdate ((t,unkn), (srcs',tgts'))
                 ((findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
                  `orWhenEmpty` xs)
      Ident   -> determineBySize suggest (map (\a -> EDcI (findConceptOrONE a)) (Set.toList possibleConcs))
-     Mp1 s   -> determineBySize suggest (map (\a -> EMp1 s (findConceptOrONE a)) (Set.toList possibleConcs))
+     Mp1 s   -> determineBySize suggest (map (\a -> EMp1 s (findConceptOrONE a)) (Set.toList possibleConcs)) -- SJ20140211 @SJC: TODO hier moeten wellicht SESSION atomen worden uitgesloten. Kun jij deze TODO oplossen en verwijderen?
      Vee     -> determineBySize (const (pure unkn))
                   [EDcV (Sign (findConceptOrONE a) (findConceptOrONE b)) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
  where
