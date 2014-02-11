@@ -30,9 +30,9 @@ require_once __DIR__.'/php/loadplugins.php'; // make ExecEngine plugins availabl
 <link href="css/Ampersand.css" rel="stylesheet" type="text/css"/>
 <link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 
-<link href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
-<script src="js/jquery-1.6.2.min.js"></script>
-<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
+<link href="css/smoothness/jquery-ui-1.10.4.custom.min.css" rel="stylesheet" type="text/css"/>
+<script src="js/jquery-1.10.2.js"></script>
+<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
 
 <script src="js/Ampersand.js"></script>
 <script type="text/javascript">
