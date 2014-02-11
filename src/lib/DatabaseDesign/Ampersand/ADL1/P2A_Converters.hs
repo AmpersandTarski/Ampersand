@@ -529,6 +529,7 @@ pCtx2aCtx
     conceptDefs = p_conceptdefs++concat (map pt_cds p_patterns)++concat (map procCds p_processes)
     
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
+-- SJ 20140211 @SJC: TODO graag een fout genereren voor een SESSION atoom anders dan _SESSION.
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
