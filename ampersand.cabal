@@ -16,9 +16,11 @@ bug-reports:    http://sourceforge.net/apps/trac/ampersand/report/12
 tested-with:    GHC == 7.6.3
 data-files:     
                 AmpersandData/Examples/Delivery/Delivery.adl, 
+                AmpersandData/FormalAmpersand/ADLTool.adl, 
                 AmpersandData/FormalAmpersand/admin_interfaces.adl, 
                 AmpersandData/FormalAmpersand/AST.adl, 
                 AmpersandData/FormalAmpersand/ASTdocumentation.adl, 
+                AmpersandData/FormalAmpersand/FormalAmpersand.adl, 
                 AmpersandData/FormalAmpersand/Fspec.adl, 
                 AmpersandData/FormalAmpersand/RAP.adl, 
                 AmpersandData/FormalAmpersand/README.txt, 
