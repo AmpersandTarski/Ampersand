@@ -136,7 +136,8 @@ instance Language A_Context where
 
 instance ProcessStructure A_Context where
   processes            = ctxprocs
-  roles        context = nub [r | proc<-ctxprocs context, r <- roles proc]
+  roles        context = nub ([r | proc<-ctxprocs context, r <- roles proc]++
+                              [r | interface<-ctxifcs context, r <- ifcRoles interface])
   interfaces           = ctxifcs
   objDefs      context = [ifcObj s | s<-ctxifcs context]
   processRules context = [r |r<-udefrules context, (not.null) [role | (role, rul) <-maintains context, name r == name rul ] ]

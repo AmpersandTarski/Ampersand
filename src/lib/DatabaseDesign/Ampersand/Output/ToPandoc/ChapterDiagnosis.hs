@@ -51,7 +51,7 @@ chpDiagnosis fSpec flags
   roleRuleTable :: [Block]
   roleRuleTable
     | null ruls = []
-    | null (fRoleRuls fSpec) && null(fRoleRels fSpec) = 
+    | null (fRoles fSpec) = 
         case language flags of
           Dutch    -> [Para [ Str $ upCap (name fSpec)++" specificeert geen rollen. " ]]
           English  -> [Para [ Str $ upCap (name fSpec)++" does not define any roles. " ]]
@@ -67,18 +67,16 @@ chpDiagnosis fSpec flags
                             , Str "The following table shows the rules that are being maintained by a given role."]
         ) :
         [Table []  -- the table containing the role-rule assignments
-        (AlignLeft:[AlignCenter |_<-rs])
-        (0.0:[0.0 |_<-rs])
+        (AlignLeft:[AlignCenter |_<-fRoles fSpec])
+        (0.0:[0.0 |_<-fRoles fSpec])
         (( case language flags of
           Dutch   -> [Plain [Str "regel"]] 
           English -> [Plain [Str "rule" ]] 
-        ) :    [ [Plain [Str r]] | r <- rs ]
+        ) :    [ [Plain [Str r]] | r <- fRoles fSpec ]
         )
-        [ [Plain [Str (name rul)]]:[f r rul | r<-rs] | rul<-ruls ] 
+        [ [Plain [Str (name rul)]]:[f r rul | r<-fRoles fSpec] | rul<-ruls ] 
         ]
      where
-      rs = nub ( [r | (r,_) <- fRoleRuls fSpec]++
-                 [r | (r,_) <- fRoleRels fSpec] )
       ruls = if null (themes fSpec)
              then [r | r<-vrules fSpec, isSignal r ]
              else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ] ++

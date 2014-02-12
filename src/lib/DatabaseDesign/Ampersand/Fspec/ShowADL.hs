@@ -226,8 +226,9 @@ instance ShowADL RoleRule where
 instance ShowADL Interface where
  showADL ifc 
   = "INTERFACE "++showstr(name ifc)
-          ++(if null (ifcParams ifc) then [] else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
-          ++(if null (ifcArgs ifc) then [] else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
+          ++(if null (ifcParams ifc) then "" else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
+          ++(if null (ifcArgs ifc) then "" else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
+          ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " [ r | r<-ifcRoles ifc])
           ++showADL (ifcObj ifc)
 
 instance ShowADL IdentityDef where

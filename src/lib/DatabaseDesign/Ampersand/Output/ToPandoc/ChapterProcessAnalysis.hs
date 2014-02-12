@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 -- In that case it will not be printed. To detect whether this is the case, we can look whether the
 -- mayEdit attributes remain empty.
 noProcesses :: Fspc -> Bool
-noProcesses fSpec = null (fRoleRels fSpec) && null (fRoleRuls fSpec)
+noProcesses fSpec = null (fRoles fSpec)
 
 chpProcessAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpProcessAnalysis lev fSpec flags
@@ -34,14 +34,14 @@ chpProcessAnalysis lev fSpec flags
      purposes2Blocks flags purps ++ -- This explains the purpose of this context.
      [ case language flags of
          Dutch   ->
-            Plain [ Str $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
+            Plain [ Str $ upCap (name fSpec)++" benoemt geen enkele rol. "
                   , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
                   ]
          English ->
-            Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
+            Plain [ Str $ upCap (name fSpec)++" does not mention any role. "
                   , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
                   ]
-     | null (fRoleRuls fSpec)] ++
+     | null (fRoles fSpec)] ++
      [ case language flags of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "

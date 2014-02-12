@@ -53,6 +53,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
                  , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
                  , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
+                 , fRoles ::       [String]                 -- ^ All roles mentioned in this context.
                  , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                  , invars ::       [Rule]                   -- ^ All invariant rules
