@@ -78,7 +78,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         initialpops = userDefPops++singletonpops
         userDefPops = ctxpopus context
         singletonpops = [ PCptPopu{ popcpt = head [c | EMp1 _ c<-cl ]
-                                  , popas  =      [a | EMp1 a _<-cl ] 
+                                  , popas  =      [a | EMp1 a c<-cl, not (name c=="SESSION") ] 
                                   } 
                         | cl<-eqCl (\(EMp1 _ c)->c) (mp1Exprs context)]
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
