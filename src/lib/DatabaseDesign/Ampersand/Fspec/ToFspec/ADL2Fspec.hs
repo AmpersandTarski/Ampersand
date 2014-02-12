@@ -49,6 +49,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fActivities  = [ makeActivity fSpec rul | rul <-processRules context]
                  , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
                  , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
+                 , fRoles       = roles context
                  , vrules       = vRules
                  , grules       = gRules
                  , invars       = invariants context
@@ -476,12 +477,12 @@ while maintaining all invariants.
       -- ( [ r;s , r;r ] , [ x;y ] ): move [ s , r ] [ r~;x;y ]
       -- ( [ r;s , r;r ] , [ x;y ] ): ( [ s , r ]  , [ r~;x;y ] ) : []
       -- [ [ r;s , r;r ] , [ x;y ] ), ( [ s , r ]  , [ r~;x;y ] ) ]
-       diagnostic
-         = "\n  antcs: [ "++intercalate "\n         , " [showADL a | a<-antcs ]++"\n       ]"++
-           "\n  conss: [ "++intercalate "\n         , " [showADL c | c<-conss ]++"\n       ]"++
-           "\n  move:  [ "++intercalate "\n         , " ["("++sh " /\\ " as++"\n           ,"++sh " \\/ " cs++")" | (as,cs)<-move antcs conss ]++"\n       ]"
-       sh :: String -> [Expression] -> String
-       sh str es = intercalate str [ showADL e | e<-es] 
+      --  diagnostic
+      --    = "\n  antcs: [ "++intercalate "\n         , " [showADL a | a<-antcs ]++"\n       ]"++
+      --      "\n  conss: [ "++intercalate "\n         , " [showADL c | c<-conss ]++"\n       ]"++
+      --      "\n  move:  [ "++intercalate "\n         , " ["("++sh " /\\ " as++"\n           ,"++sh " \\/ " cs++")" | (as,cs)<-move antcs conss ]++"\n       ]"
+      --  sh :: String -> [Expression] -> String
+      --  sh str es = intercalate str [ showADL e | e<-es] 
 
      headECps :: Expression -> Expression
      headECps expr = f expr
