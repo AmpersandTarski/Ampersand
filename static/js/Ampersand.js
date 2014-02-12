@@ -512,18 +512,18 @@ function stopAtomEditing($atom) {
 // in order to allow textareas rather than inputs.
   $form.remove();
 
-  // todo if newAtom is keyed and has no atom, don't do anything
+  // todo if newAtom is viewed and has no atom, don't do anything
   var newAtom;
-  if (conceptHasView(concept)) { // if concept has a key, we map the key back onto an atom (todo: use autocomplete selection, so we don't need this lookup)
+  if (conceptHasView(concept)) { // if concept has a view, we map the view back onto an atom (todo: use autocomplete selection, so we don't need this lookup)
     newAtom = getAtomForView(newAtomText, concept);
     
-    if (!newAtom) { // If the entered key does not correspond to an atom, the edit operation is ignored.
+    if (!newAtom) { // If the entered view does not correspond to an atom, the edit operation is ignored.
       $atomName.attr('style',''); // Undo the hide() action from above. We don't use show, because that sets a style attribute on the div,
                                   // which overrides all stylesheets
       return;
     }
   } else {
-    newAtom = newAtomText; // if concept has no key, then newAtom is simply atomText
+    newAtom = newAtomText; // if concept has no view, then newAtom is simply atomText
   }
   $atom.attr('atom',newAtom);
   
@@ -673,7 +673,7 @@ function addClickEvent($item, interface, atom) {
 }
 
 
-//Keys
+//Views
 
 function conceptHasView(concept) {
   return getEditableConceptInfo()[concept]['hasView'];

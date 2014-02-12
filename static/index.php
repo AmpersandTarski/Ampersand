@@ -402,9 +402,9 @@ function genEditableConceptInfo($interface) {
     }
     $atomViewMap[$editableConcept] = array ('hasView' => getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
   }
-  $atomKeyMapJson = json_encode( $atomViewMap );
+  $atomViewMapJson = json_encode( $atomViewMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";
-  echo "  return $atomKeyMapJson;\n";
+  echo "  return $atomViewMapJson;\n";
   echo "}\n";
   
 }
