@@ -1,4 +1,6 @@
 CONTEXT RAP 
+-- HJO, 20140212: Begin gemaakt met het 'ontmantelen' van dit bestand. Het is de bedoeling om het te splitsen in het 'core' deel van Ampersand (FormalAmpersand.adl) en het overige deel, dat nodig is voor de Repository tool (ADLTool.adl)
+
 INCLUDE "student_AST_interfaces.adl"
 INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
