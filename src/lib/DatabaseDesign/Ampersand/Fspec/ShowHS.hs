@@ -279,6 +279,7 @@ where
                    []        -> "[]"
                    [(r,rul)] -> "[ ("++show r++", "++showHSName rul++") ]"
                    _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
+           ,wrap ", fRoles        = " indentA (\_->id) (fRoles fspec)
            ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fspec)
            ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
            ,wrap ", invars        = " indentA (\_->showHSName) (invars fspec)
