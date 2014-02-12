@@ -244,7 +244,7 @@ generateRoles fSpec =
          | (role,rulez) <- rulesPerRole ]
     ) )
         
- where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
+ where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- fRoles fSpec ]
        
 generateViews :: Fspc -> Options -> [String]
 generateViews fSpec flags =
