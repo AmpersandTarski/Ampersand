@@ -13,11 +13,11 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis"
 
 chpConceptualAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
-chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> caIntro <> caBlocks, pictures)
+chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAnalysis <> caIntro <> caBlocks, pictures)
   where
   caIntro :: Blocks
   caIntro
-   = fromList $ (case language flags of
+   = fromList $ (case fsLang fSpec of
         Dutch   -> [Para
                     [ Str "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
                     , Quoted  SingleQuote [Str (name fSpec)]
@@ -38,7 +38,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
                     , Str "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     , Str "correspond to the formal rules and definitions. "
                     ]])
-     ++ purposes2Blocks flags (purposesDefinedIn fSpec (language flags) fSpec) -- This explains the purpose of this context.
+     ++ purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
      
   caBlocks = fromList $ concat(map caSection (patterns fSpec))
   pictures =        map pict      (patterns fSpec)
@@ -46,7 +46,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
   -- the Picture that represents this pattern's conceptual graph
   pict :: Pattern -> Picture
   pict pat = (makePicture flags fSpec Plain_CG pat)
-                {caption = case language flags of
+                {caption = case fsLang fSpec of
                             Dutch   ->"Conceptdiagram van "++name pat
                             English ->"Concept diagram of "++name pat}
   caSection :: Pattern -> [Block]
@@ -54,9 +54,9 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
    =    -- new section to explain this pattern  
         toList ( labeledThing flags (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
         -- The section starts with the reason why this pattern exists 
-     ++ purposes2Blocks flags (purposesDefinedIn fSpec (language flags) pat)
+     ++ purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat)
         -- followed by a conceptual model for this pattern
-     ++ ( case (genGraphics flags, language flags) of
+     ++ ( case (genGraphics flags, fsLang fSpec) of
                (True,Dutch  ) -> -- announce the conceptual diagram
                                  [Para [Str "Figuur ", xrefReference (pict pat), Str " geeft een conceptueel diagram van dit pattern."]
                                  -- draw the conceptual diagram
@@ -65,7 +65,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
                                  ,Plain (xrefFigure1 (pict pat))]
                _              -> [])
         -- now provide the text of this pattern.
-     ++ (case language flags of
+     ++ (case fsLang fSpec of
            Dutch   -> [Para [Str "De definities van concepten zijn te vinden in de index."]
                       ]++
                       toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
@@ -77,7 +77,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
                       ++
                       [Para [Str "This section itemizes the declared relations with properties and a meaning."]])
      ++ [DefinitionList blocks | let blocks = map caRelation (declarations pat), not(null blocks)]
-     ++ (case language flags of
+     ++ (case fsLang fSpec of
            Dutch   -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
                       ++
                       [Plain [Str "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."]]
@@ -88,12 +88,12 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
 
   caRelation :: Declaration -> ([Inline], [[Block]])
   caRelation d 
-        = let purp = purposes2Blocks flags [p | p<-purposesDefinedIn fSpec (language flags) d]
+        = let purp = purposes2Blocks flags [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d]
           in ([]
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( if null purp
-                  then [ Plain$[ Str ("De volgende "++nladjs d++" relatie is gedeclareerd ")      | language flags==Dutch]
-                            ++ [ Str ("The following "++ukadjs d++" relation has been declared ") | language flags==English] ]
+                  then [ Plain$[ Str ("De volgende "++nladjs d++" relatie is gedeclareerd ")      | fsLang fSpec==Dutch]
+                            ++ [ Str ("The following "++ukadjs d++" relation has been declared ") | fsLang fSpec==English] ]
                   else purp ) -- If there is a purpose, its text should introduce the declaration and the generator remains silent.
                   -- Then the declaration of the relation with its properties and its intended meaning 
                ++ pandocEqnArray 
@@ -101,12 +101,14 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
                        , ":"
                        , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
                        )  ]
-               ++ [Plain$[Str "(Geen betekenis gespecificeerd)"| language flags==Dutch]
-                      ++ [Str "(No meaning has been specified)"  | language flags==English]
-                  | null (meaning2Blocks (language flags) d)]
-               ++ meaning2Blocks (language flags) d
+               ++ [Plain$[Str $ let langs=commaNL "en" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=Dutch] in
+                                if null langs then "(Geen betekenis gespecificeerd)" else "(Geen betekenis gespecificeerd, maar wel in het "++langs++")"| fsLang fSpec==Dutch]++
+                         [Str $ let langs=commaEng "and" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=Dutch] in
+                                if null langs then "(No meaning has been specified)" else "(No meaning has been specified, except in "++langs++")"| fsLang fSpec==English]
+                  | null (meaning2Blocks (fsLang fSpec) d)]
+               ++ meaning2Blocks (fsLang fSpec) d
               ])
-  ukadjs d = intercalate ", " (map ukadj (multiplicities d))
+  ukadjs d  = commaEng "and" (map ukadj (multiplicities d))
   ukadj Uni = "univalent"
   ukadj Inj = "injective"
   ukadj Sur = "surjective"
@@ -116,7 +118,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
   ukadj Trn = "transitive"
   ukadj Rfx = "reflexive"
   ukadj Irf = "irreflexive"
-  nladjs d = intercalate ", " (map nladj (multiplicities d))
+  nladjs d  = commaNL "en" (map nladj (multiplicities d))
   nladj Uni = "univalente"
   nladj Inj = "injectieve"
   nladj Sur = "surjectieve"
@@ -128,28 +130,28 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
   nladj Irf = "irreflexieve"
   caRule :: Rule -> ([Inline], [[Block]])
   caRule r 
-        = let purp = purposes2Blocks flags (purposesDefinedIn fSpec (language flags) r)
+        = let purp = purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) r)
           in ( []
              , [  -- First the reason why the rule exists, if any..
                   purp  
                   -- Then the rule as a requirement
                ++ [Plain$[if null purp then Str "De volgende afspraak is gesteld in paragraaf " 
-                                       else Str "Daarom is als afspraak gesteld in paragraaf " | language flags==Dutch]
+                                       else Str "Daarom is als afspraak gesteld in paragraaf " | fsLang fSpec==Dutch]
                       ++ [if null purp then Str "The following requirement has been defined in section " 
-                                       else Str "Therefore the following requirement has been defined in section " | language flags==English]
+                                       else Str "Therefore the following requirement has been defined in section " | fsLang fSpec==English]
                       ++ [RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "~"
                          ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqRef r
                          ,Str " p."
                          ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "~"
                          ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqPageRef r
                          ,Str ": "]]
-               ++ meaning2Blocks (language flags) r
+               ++ meaning2Blocks (fsLang fSpec) r
                   -- then the formal rule
-               ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | language flags==Dutch]
-                      ++ [Str "This is formalized - using relations "     | language flags==English]
+               ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | fsLang fSpec==Dutch]
+                      ++ [Str "This is formalized - using relations "     | fsLang fSpec==English]
                       ++ intercalate [Str ", "] [[RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symDefRef d] | d@Sgn{}<-declsUsedIn r]
-                      ++ [Str " - als " | language flags==Dutch]
-                      ++ [Str " - as "     | language flags==English]]
+                      ++ [Str " - als " | fsLang fSpec==Dutch]
+                      ++ [Str " - as "     | fsLang fSpec==English]]
                ++ (if showPredExpr flags
                    then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
                    else pandocEquation (showMath r++symDefLabel r)

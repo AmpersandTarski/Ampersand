@@ -36,7 +36,7 @@ chpInterfacesBlocks lev fSpec flags =
     = purposes2Blocks flags purps
       ++ifcAutoRules act++
       (if genEcaDoc flags then ifcEcaRules act else [])
-      where purps = purposesDefinedIn fSpec (language flags) fSpec
+      where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
 
 {-
   ifcInsDelConcepts :: [Block]
@@ -44,7 +44,7 @@ chpInterfacesBlocks lev fSpec flags =
    = let ics = fsv_creating act>-fsv_deleting act
          dcs = fsv_deleting act>-fsv_creating act
          ucs = fsv_deleting act `isc` fsv_creating act
-     in case language flags of
+     in case fsLang fSpec of
       Dutch -> [Plain [Space]]++
           if null ics && null dcs && null ucs then [Plain $ [Str "Deze interface maakt of verwijdert geen objecten langs geautomatiseerde weg."]] else
           if null ics && null dcs             then [Plain $ [Str "Om regels te handhaven, mogen instanties van "]++commaNLPandoc (Str "en") (map (Str . name) ucs)++[Str " door deze interface geautomatiseerd worden aangemaakt en verwijderd."]] else
@@ -71,7 +71,7 @@ chpInterfacesBlocks lev fSpec flags =
 
    ifcAutoRules :: Activity -> [Block]
    ifcAutoRules act
-    = case language flags of
+    = case fsLang fSpec of
        Dutch ->   [Plain ([Str "Activiteit",Space, Quoted SingleQuote [(Str . name . actRule) act], Space,Str "moet door een gebruiker met rol "]++commaNLPandoc (Str "of") rols++[Str" worden uitgevoerd."] ++
                           case length auts of
                            0 -> []
@@ -90,7 +90,7 @@ chpInterfacesBlocks lev fSpec flags =
 
    ifcEcaRules :: Activity -> [Block]
    ifcEcaRules act
-    = ( case (language flags, actEcas act) of
+    = ( case (fsLang fSpec, actEcas act) of
          (Dutch,[])   -> [Plain [Str "Alle veranderingen die een gebruiker uitvoert zijn handmatig. Er is geen geautomatiseerde functionaliteit in deze activiteit."]]
          (English,[]) -> [Plain [Str "All changes a user makes are done by hand. There is no automated functionality in this activity."]]
          (Dutch,_)    -> [Plain [Str "De volgende tabel laat zien welke edit-acties welke functie aanroepen."]]
@@ -98,7 +98,7 @@ chpInterfacesBlocks lev fSpec flags =
       )++
       if length (actEcas act)<1 then [] else
       [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
-        ( case language flags of
+        ( case fsLang fSpec of
            Dutch   ->
                [[Plain [Str "actie"]]
                ,[Plain [Str "relatie"]]
@@ -134,13 +134,13 @@ chpInterfacesBlocks lev fSpec flags =
   ifcFieldTables
    = if null (fsv_fields act) then [] else
      if length (fsv_fields act)==1
-     then [ Para  $ [ case language flags of
+     then [ Para  $ [ case fsLang fSpec of
                        Dutch   -> Str "In deze interface is het volgende veld zichtbaar: "
                        English -> Str "This interface has one field: "
                     ]
           , head [b | BulletList [bs]<-[flds], b<-bs]
           ]
-     else [ Para  $ [ case language flags of
+     else [ Para  $ [ case fsLang fSpec of
                        Dutch   -> Str "In deze interface zijn de volgende velden zichtbaar. "
                        English -> Str "This interface has the following fields. "
                     ]
@@ -170,7 +170,7 @@ chpInterfacesBlocks lev fSpec flags =
 
    txtKnowledgeGraph :: Activity -> [Block]
    txtKnowledgeGraph act
-    = (case language flags of                                     -- announce the knowledge graph
+    = (case fsLang fSpec of                                     -- announce the knowledge graph
            Dutch   -> [Para [ Str "Figuur ", xrefReference (picKnowledgeGraph flags fSpec act) 
                             , Str " geeft de kennisgraaf weer voor deze interface."]]
            English -> [Para [ Str "Figure ", xrefReference (picKnowledgeGraph flags fSpec act)
@@ -181,7 +181,7 @@ chpInterfacesBlocks lev fSpec flags =
    txtSwitchboard :: Activity ->[Block]
    txtSwitchboard act
     = (if name act==name (head (fActivities fSpec)) then switchboardIntro else [])++
-     (case language flags of                                     -- announce the switchboard diagram
+     (case fsLang fSpec of                                     -- announce the switchboard diagram
            Dutch   -> [Para [ Str "Figuur ", xrefReference (picSwitchboard flags fSpec act)
                             , Str " geeft het schakelpaneel (switchboard diagram) weer voor deze interface."]]
            English -> [Para [ Str "Figure ", xrefReference (picSwitchboard flags fSpec act)
@@ -192,7 +192,7 @@ chpInterfacesBlocks lev fSpec flags =
    switchboardIntro :: [Block]
    switchboardIntro
     = if not (graphic flags) then [] else
-     [ Para $ case language flags of                             -- tells us for who this interface exists
+     [ Para $ case fsLang fSpec of                             -- tells us for who this interface exists
         Dutch   -> [ Str "Iedere sectie in dit hoofdstuk beschrijft één activiteit. "
                    , Str "Tijdens het uitvoeren van een activiteit zal een gebruiker populatie invoegen of verwijderen in verschillende relaties. "
                    , Str "Hierdoor kunnen invarianten potentieel worden overtreden. "
@@ -228,7 +228,7 @@ chpInterfacesBlocks lev fSpec flags =
 picKnowledgeGraph :: Options -> Fspc -> Activity ->Picture
 picKnowledgeGraph flags fSpec act
     = (makePicture flags fSpec Plain_CG act)  -- the Picture that represents this interface's knowledge graph
-        {caption = case language flags of
+        {caption = case fsLang fSpec of
                     Dutch   ->"Taaldiagram van "++name act
                     English ->"Language diagram of "++name act}
 --     where
@@ -238,7 +238,7 @@ picKnowledgeGraph flags fSpec act
 picSwitchboard :: Options -> Fspc -> Activity -> Picture
 picSwitchboard flags fSpec act
     = (makePicture flags fSpec Plain_CG (switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
-        {caption = case language flags of
+        {caption = case fsLang fSpec of
                     Dutch   ->"Schakelpaneel van "++name act
                     English ->"Switchboard of "++name act}
 --     where

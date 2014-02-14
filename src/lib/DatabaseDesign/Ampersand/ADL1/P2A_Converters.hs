@@ -105,15 +105,15 @@ pCtx2aCtx
     soloConcs :: [String]
     soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
     
-    deflangCtxt = fromMaybe English lang
+    deflangCtxt = fromMaybe English lang  -- explanation: if lang==Nothing, then English, if lang==Just l then l
     deffrmtCtxt = fromMaybe HTML pandocf
 
     (decls,dclPops)= unzip dps
     (ctxDecls,_ ) = unzip ctxDecls'
     dps = ctxDecls'++patDecls++patProcs
     ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
-    patDecls = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
-    patProcs = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
+    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
+    patProcs  = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
       
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
@@ -500,16 +500,16 @@ pCtx2aCtx
                         ) <?> typecheckTerm x
 
     pPurp2aPurp :: PPurpose -> Guarded Purpose
-    pPurp2aPurp PRef2 { pexPos = orig
-                      , pexObj = objref
-                      , pexMarkup= pmarkup
-                      , pexRefID = refId
+    pPurp2aPurp PRef2 { pexPos    = orig     -- :: Origin
+                      , pexObj    = objref   -- :: PRefObj
+                      , pexMarkup = pmarkup  -- :: P_Markup
+                      , pexRefID  = refId    -- :: String
                       }
-     = (\ obj -> Expl { explPos = orig
-                      , explObj = obj
-                      , explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup
+     = (\ obj -> Expl { explPos      = orig
+                      , explObj      = obj
+                      , explMarkup   = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup
                       , explUserdefd = True
-                      , explRefId = refId
+                      , explRefId    = refId
                       })
        <$> pRefObj2aRefObj objref
     pRefObj2aRefObj :: PRef2Obj -> Guarded ExplObj
@@ -536,19 +536,19 @@ pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 pMean2aMean :: Lang           -- The default language 
-  -> PandocFormat   -- The default pandocFormat
-  -> [PMeaning] -> AMeaning
-pMean2aMean a b xs = AMeaning (map (\(PMeaning c) -> pMarkup2aMarkup a b c) xs)
+            -> PandocFormat   -- The default pandocFormat
+            -> [PMeaning] -> AMeaning
+pMean2aMean defLanguage defFormat pmeanings
+ = AMeaning [ pMarkup2aMarkup defLanguage defFormat pmarkup | PMeaning pmarkup <-pmeanings ]
 pMess2aMess :: Lang           -- The default language 
-  -> PandocFormat   -- The default pandocFormat
-  -> PMessage -> A_Markup
-pMess2aMess a b (PMessage x) = pMarkup2aMarkup a b x
-pMarkup2aMarkup :: 
-     Lang           -- The default language 
-  -> PandocFormat   -- The default pandocFormat
-  -> P_Markup -> A_Markup 
+            -> PandocFormat   -- The default pandocFormat
+            -> PMessage -> A_Markup
+pMess2aMess defLanguage defFormat (PMessage x) = pMarkup2aMarkup defLanguage defFormat x
+pMarkup2aMarkup :: Lang           -- The default language 
+                -> PandocFormat   -- The default pandocFormat
+                -> P_Markup -> A_Markup 
 pMarkup2aMarkup defLanguage defFormat
-   P_Markup  { mLang = ml
+   P_Markup  { mLang   = ml
              , mFormat = mpdf
              , mString = str
              }
@@ -571,7 +571,7 @@ pDecl2aDecl patNm defLanguage defFormat pd
                  , decprL  = dec_prL pd
                  , decprM  = dec_prM pd
                  , decprR  = dec_prR pd
-                 , decMean = AMeaning [ pMarkup2aMarkup defLanguage defFormat meaning | PMeaning meaning<-dec_Mean pd ]
+                 , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                  , decConceptDef = dec_conceptDef pd
                  , decfpos = dec_fpos pd 
                  , deciss  = True
