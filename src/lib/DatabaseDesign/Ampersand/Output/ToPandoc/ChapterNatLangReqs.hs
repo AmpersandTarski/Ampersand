@@ -25,7 +25,7 @@ chpNatLangReqs lev fSpec flags =
    fromList (header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else [])
   where
   header :: [Block]
-  header = toList (chptHeader flags SharedLang)
+  header = toList (chptHeader (fsLang fSpec) SharedLang)
   legalRefs :: [Block]
   legalRefs = toList (labeledThing flags (lev+1) "LegalRefs" sectionTitle) ++
               [  Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $  unlines $
@@ -45,7 +45,7 @@ chpNatLangReqs lev fSpec flags =
                getArtikelen ref = reverse . dropWhile (`elem` " ,") .dropWhile (/=' ') . reverse $ ref 
                -- the article is everything but the law (and we also drop any trailing commas)
                (sectionTitle, lawHeader, articleHeader, separator) = 
-                 case language flags of
+                 case fsLang fSpec of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "en")
                    English -> ("Reference table", "Law", "Article", "and")
                
@@ -79,7 +79,7 @@ chpNatLangReqs lev fSpec flags =
 
   dpIntro :: [Block]
   dpIntro = 
-    case language flags of
+    case fsLang fSpec of
         Dutch   -> [ Para
                      [ Str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
                      , Quoted  SingleQuote [Str (name fSpec)]
@@ -118,12 +118,12 @@ chpNatLangReqs lev fSpec flags =
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
               = [ (c, pps)
                 | c@PlainConcept{cptdf = Cd{cddef=_:_}:_ } <-concs fSpec
-                , let pps = [p | p <- purposesDefinedIn fSpec (language flags) c, explUserdefd p]
+                , let pps = [p | p <- purposesDefinedIn fSpec (fsLang fSpec) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
               = [ d | d <- declarations fSpec
                 , decusr d
-                , not . null $ purposesDefinedIn fSpec (language flags) d
+                , not . null $ purposesDefinedIn fSpec (fsLang fSpec) d
                 ]
                  
       printThemes :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
@@ -207,7 +207,7 @@ chpNatLangReqs lev fSpec flags =
                                                                        Nothing ->  "_LooseEnds"
                                                                        _       -> themeName
                                               )
-                                          (case (mTheme,language flags) of
+                                          (case (mTheme,fsLang fSpec) of
                                               (Nothing, Dutch  ) -> "Losse eindjes..."
                                               (Nothing, English) -> "Loose ends..."
                                               _                  -> themeName
@@ -217,18 +217,18 @@ chpNatLangReqs lev fSpec flags =
               explainsPat
                = case mTheme of
                          Nothing  -> [Para 
-                                      (case language flags of
+                                      (case fsLang fSpec of
                                         Dutch   -> [Str "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."]
                                         English -> [Str "This paragraph shows remaining fact types and concepts "
                                                    ,Str "that have not been described in previous paragraphs."]
                                       )]
                          Just pat -> purposes2Blocks flags purps
-                                     where purps = purposesDefinedIn fSpec (language flags) pat
+                                     where purps = purposesDefinedIn fSpec (fsLang fSpec) pat
 
               printIntro :: [(A_Concept, [Purpose])] -> [(String, String, Origin)] -> [Block]
               printIntro [] [] = []
               printIntro ccds relConcpts
-                = case language flags of
+                = case fsLang fSpec of
                               Dutch   ->  [Para$ (case ([Emph [Str $ unCap cname] | cname<-map (name . fst) ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
@@ -247,7 +247,7 @@ chpNatLangReqs lev fSpec flags =
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
                                                    (_          , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst3) cs)++[Str " meerdere definities. "]
-                                                   ([(_,cds,_)], True ) -> [ Str $ "Deze heeft "++count flags (length cds) "definitie"++". " ]
+                                                   ([(_,cds,_)], True ) -> [ Str $ "Deze heeft "++count Dutch (length cds) "definitie"++". " ]
                                                    (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
@@ -269,7 +269,7 @@ chpNatLangReqs lev fSpec flags =
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
                                                    (_          , False) -> [ Str "Of those concepts "]++commaEngPandoc (Str "and") (map (Str . name . fst3) cs)++[Str " have multiple definitions. "]
-                                                   ([(_,cds,_)], True ) -> [ Str $ "It has "++count flags (length cds) "definition"++". " ]
+                                                   ([(_,cds,_)], True ) -> [ Str $ "It has "++count English (length cds) "definition"++". " ]
                                                    (_          , True ) -> [ Str "Each one has several definitions. "]
                                                  )
                                           ]
@@ -290,7 +290,7 @@ chpNatLangReqs lev fSpec flags =
               -- | make a block for a concept definition
               cdBlock :: (Counter,String) -> (String,String,String,String) -> Block
               cdBlock (cnt,xcnt) (nm,lbl,def,ref) = DefinitionList 
-                                        [( [ Str (case language flags of
+                                        [( [ Str (case fsLang fSpec of
                                                                  Dutch   -> "Definitie "
                                                                  English -> "Definition ")
                                            , Str (show (getEisnr cnt)++xcnt)
@@ -312,16 +312,16 @@ chpNatLangReqs lev fSpec flags =
                = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
                  purposes2Blocks flags purps
                  ++ 
-                 [ DefinitionList [ ( [ Str (case language flags of
+                 [ DefinitionList [ ( [ Str (case fsLang fSpec of
                                                       Dutch   -> "Afspraak "
                                                       English -> "Agreement ")
                                      , Str (show(getEisnr cnt))
                                      ,if development flags && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
                                    , [ Plain [RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel dcl]:
-                                       meaning2Blocks (language flags) dcl
+                                       meaning2Blocks (fsLang fSpec) dcl
                                      ]
                                    )] ]++
-                 ( case (language flags, length samplePop) of
+                 ( case (fsLang fSpec, length samplePop) of
                         (_      , 0) -> []
                         (Dutch  , 1) -> [Para [Str "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"]]
                         (English, 1) -> [Para [Str "A phrase that can be formed is for instance:"]]
@@ -329,7 +329,7 @@ chpNatLangReqs lev fSpec flags =
                         (English, _) -> [Para [Str "Phrases that can be made are for instance:"]]
                  ) ++
                  sampleSentences
-                 where purps     = purposesDefinedIn fSpec (language flags) dcl
+                 where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
                        samplePop = take 3 (fullContents (gens fSpec) (initialPops fSpec) dcl)
                        sampleSentences =
                          [ Para $ mkSentence (development flags) dcl srcViewAtom tgtViewAtom 
@@ -347,18 +347,18 @@ chpNatLangReqs lev fSpec flags =
    =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
       purposes2Blocks flags purps
       ++
-      [ DefinitionList [ ( [ Str (case language flags of
+      [ DefinitionList [ ( [ Str (case fsLang fSpec of
                                     Dutch   -> "Afspraak "
                                     English -> "Agreement ")
                            , Str (show(getEisnr cnt))
                            , if development flags && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
                          , [ Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel rul] :
-                                       meaning2Blocks (language flags) rul
+                                       meaning2Blocks (fsLang fSpec) rul
                            ]
                          )
                        ] 
-      | not (null$meaning2Blocks (language flags) rul)]
-   where purps = purposesDefinedIn fSpec (language flags) rul
+      | not (null$meaning2Blocks (fsLang fSpec) rul)]
+   where purps = purposesDefinedIn fSpec (fsLang fSpec) rul
           
   mkSentence :: Bool -> Declaration -> String -> String -> [Inline]
   mkSentence isDev decl srcAtom tgtAtom

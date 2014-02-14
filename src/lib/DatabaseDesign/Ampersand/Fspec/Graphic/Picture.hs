@@ -51,11 +51,12 @@ picType2prefix pt = case pt of
                       PTFinterface   -> "Serv_"
 
 makePictureObj :: Options
+               -> Lang
                -> String           -- Name of the picture
                -> PictType         -- Type of the picture
                -> DotGraph String  -- The dot source. Should be canonnical.
                -> Picture  -- The ADT of a picture
-makePictureObj flags nm pTyp dotsource
+makePictureObj flags lang nm pTyp dotsource
     = Pict { origName    = nm
            , uniqueName  = cdName
            , dotSource   = dotsource
@@ -74,7 +75,7 @@ makePictureObj flags nm pTyp dotsource
                      PTClassDiagram -> Dot
                      PTSwitchBoard  -> Dot
                      _              -> Fdp
-           , caption     = case (pTyp,language flags) of
+           , caption     = case (pTyp,lang) of
                            (PTClassDiagram,English) -> "Class Diagram of " ++ nm
                            (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
                            (PTPattern     ,English) -> "Concept diagram of the rules in " ++ nm

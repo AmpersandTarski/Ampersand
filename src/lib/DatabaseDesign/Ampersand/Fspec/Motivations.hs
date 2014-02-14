@@ -356,14 +356,14 @@ instance Meaning Rule where
   meaning l r = case filter isLang (ameaMrk (rrmean r)) of
                   []   -> Nothing 
                   [m]  -> Just m
-                  _    -> fatal 381 ("Too many meanings given for rule "++name r ++".")
+                  _    -> fatal 381 ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
                   where isLang m = l == amLang m
   
 instance Meaning Declaration where
   meaning l d = case filter isLang (ameaMrk (decMean d)) of
                   []   -> Nothing 
                   [m]  -> Just m
-                  _    -> fatal 388 ("Too many meanings given for declaration "++name d ++".")
+                  _    -> fatal 388 ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
                   where isLang m = l == amLang m
    
 instance Motivated Fspc where

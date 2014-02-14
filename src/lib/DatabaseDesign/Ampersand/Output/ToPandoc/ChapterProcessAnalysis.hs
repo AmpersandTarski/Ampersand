@@ -18,7 +18,7 @@ chpProcessAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpProcessAnalysis lev fSpec flags
  = if null procs
    then (mempty,[])
-   else (fromList $ header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
+   else (fromList $ headerBlocks ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
  where
   pictures = [pict | (_,picts)<-procSections procs,pict<-picts]
   procs = if null (themes fSpec)
@@ -28,11 +28,11 @@ chpProcessAnalysis lev fSpec flags
   processSections
    = [block | (bs,_)<-procSections procs, block<-bs]
 
-  header :: [Block]
-  header
-   = toList (chptHeader flags ProcessAnalysis) ++
+  headerBlocks :: [Block]
+  headerBlocks
+   = toList (chptHeader (fsLang fSpec) ProcessAnalysis) ++
      purposes2Blocks flags purps ++ -- This explains the purpose of this context.
-     [ case language flags of
+     [ case fsLang fSpec of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" benoemt geen enkele rol. "
                   , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
@@ -42,7 +42,7 @@ chpProcessAnalysis lev fSpec flags
                   , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
                   ]
      | null (fRoles fSpec)] ++
-     [ case language flags of
+     [ case fsLang fSpec of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
                   , Str ""
@@ -52,12 +52,12 @@ chpProcessAnalysis lev fSpec flags
                   , Str ""
                   ]
      | null (fRoleRels fSpec)]
-     where purps = purposesDefinedIn fSpec (language flags) fSpec
+     where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
 
   roleRuleBlocks :: [Block]
   roleRuleBlocks
    = if null (fRoleRuls fSpec) && (not.null.udefrules) fSpec then [] else
-     [ case language flags of
+     [ case fsLang fSpec of
           Dutch   ->
             Para [ Str $ upCap (name fSpec)++" kent regels aan rollen toe. "
                  , Str "De volgende tabel toont de regels die door een bepaalde rol worden gehandhaafd."
@@ -68,7 +68,7 @@ chpProcessAnalysis lev fSpec flags
                  ]
 -- the table containing the role-rule assignments
      , Para  $ [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
-               , case language flags of
+               , case fsLang fSpec of
                   Dutch   -> RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "Rol&Regel\\\\ \\hline\n"
                   English -> RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "Role&Rule\\\\ \\hline\n"
                ]++
@@ -87,7 +87,7 @@ chpProcessAnalysis lev fSpec flags
   roleRelationBlocks :: [Block]
   roleRelationBlocks
    = if null (fRoleRels fSpec) then [] else
-     [ case language flags of
+     [ case fsLang fSpec of
           Dutch   ->
             Para [ Str $ upCap (name fSpec)++" kent rollen aan relaties toe. "
                  , Str "De volgende tabel toont de relaties waarvan de inhoud gewijzigd kan worden door iemand die een bepaalde rol vervult."
@@ -98,7 +98,7 @@ chpProcessAnalysis lev fSpec flags
                  ]
      , Para  $ [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
                , RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex")
-                    (case  language flags of
+                    (case  fsLang fSpec of
                        Dutch   -> "Rol&Relatie\\\\ \\hline\n"
                        English -> "Role&Relation\\\\ \\hline\n")
                ]++
@@ -136,7 +136,7 @@ chpProcessAnalysis lev fSpec flags
        where
          sctMotivation
           = purposes2Blocks flags purps
-         purps = purposesDefinedIn fSpec (language flags) fproc
+         purps = purposesDefinedIn fSpec (fsLang fSpec) fproc
          sctRules :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
@@ -144,7 +144,7 @@ chpProcessAnalysis lev fSpec flags
   txtLangModel fp
    = if not (genGraphics flags) then [] else
      -- (if name ifc==name (head (fActivities fSpec)) then processModelIntro else [])++
-      [Para (case language flags of                                     -- announce the conceptual diagram
+      [Para (case fsLang fSpec of                                     -- announce the conceptual diagram
              Dutch   -> [ Str "Het conceptueel diagram in figuur ", xrefReference pict
                         , Str " geeft een overzicht van de taal waarin dit proces wordt uitgedrukt."]
              English -> [ Str "The conceptual diagram of figure ", xrefReference pict
@@ -156,7 +156,7 @@ chpProcessAnalysis lev fSpec flags
   txtProcessModel p
    = if not (genGraphics flags) then [] else
      -- (if name ifc==name (head (fActivities fSpec)) then processModelIntro else [])++
-     [Para (case language flags of                                     -- announce the processModel diagram
+     [Para (case fsLang fSpec of                                     -- announce the processModel diagram
              Dutch   -> [ Str "Figuur ", xrefReference pict
                         , Str " geeft het procesmodel weer."]
              English -> [ Str "Figure ", xrefReference pict
@@ -166,8 +166,8 @@ chpProcessAnalysis lev fSpec flags
 
   picLangModel :: FProcess->Picture
   picLangModel fproc
-   = ((makePictureObj flags (name fproc) PTProcLang . conceptualGraph fSpec flags Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
-                {caption = case language flags of
+   = ((makePictureObj flags (fsLang fSpec) (name fproc) PTProcLang . conceptualGraph fSpec flags Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
+                {caption = case fsLang fSpec of
                             Dutch   ->"Basiszinnen van "++name fproc
                             English ->"Basic sentences of "++name fproc}
 

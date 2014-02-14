@@ -15,10 +15,10 @@ fpAnalysis :: Fspc -> Options ->  Blocks
 fpAnalysis fSpec flags = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
   header :: Blocks
-  header = chptHeader flags SoftwareMetrics
+  header = chptHeader (fsLang fSpec) SoftwareMetrics
   caIntro :: [Block]
   caIntro = 
-   case language flags of
+   case fsLang fSpec of
       Dutch   -> [Para
                   [ Str "De specificatie van "
                   , Quoted  SingleQuote [Str (name fSpec)]
@@ -40,7 +40,7 @@ fpAnalysis fSpec flags = mempty -- if null (themes fSpec) then header ++ caIntro
   fpa2Blocks' :: [Block]
   fpa2Blocks' = []
 --   = [ Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
---             ( case language flags of
+--             ( case fsLang fSpec of
 --                 Dutch   -> [ [Plain [Str "gegevensverzameling"]]
 --                            , [Plain [Str "analyse"]]
 --                            , [Plain [Str "FP"]]]
@@ -55,7 +55,7 @@ fpAnalysis fSpec flags = mempty -- if null (themes fSpec) then header ++ caIntro
 --             | plug<-plugInfos fSpec, fPoints (fpa plug)>0
 --             ]
 --     , Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
---             ( case language flags of
+--             ( case fsLang fSpec of
 --                Dutch   ->
 --                    [ [Plain [Str "interface"]]
 --                    , [Plain [Str "analyse"]]

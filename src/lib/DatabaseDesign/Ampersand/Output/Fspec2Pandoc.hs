@@ -69,7 +69,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
     myDoc = 
       ( (setTitle  
            (text
-             (case (language flags, diagnosisOnly flags) of
+             (case (fsLang fSpec, diagnosisOnly flags) of
                (Dutch  , False) -> "Functionele Specificatie van "
                (English, False) -> "Functional Specification of "
                (Dutch  ,  True) -> "Diagnose van "
@@ -80,12 +80,12 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
            )
         )
       . (setAuthors (case metaValues "authors" fSpec of
-                [] -> case language flags of
+                [] -> case fsLang fSpec of
                         Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
                         English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
                 xs -> map text (nub xs))  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
         )
-      . (setDate (text (formatTime (lclForLang flags) "%-d %B %Y" (genTime flags))))
+      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime flags))))
       ) 
       (doc (foldr (<>) mempty docContents))
     docContents :: [Blocks]
