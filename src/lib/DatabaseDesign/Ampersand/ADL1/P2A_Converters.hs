@@ -40,8 +40,8 @@ pCtx2aCtx
       , ctx_pos    = n2
       , ctx_lang   = lang
       , ctx_markup = pandocf
-      , ctx_thms   = n3
-      , ctx_pats   = p_patterns     -- The patterns defined in this context
+      , ctx_thms   = p_themes       --  The themes that are specified by the user to be documented.
+      , ctx_pats   = p_patterns     --  The patterns defined in this context
       , ctx_PPrcs  = p_processes    --  The processes as defined by the parser
       , ctx_rs     = p_rules        --  All user defined rules in this context, but outside patterns and outside processes
       , ctx_ds     = p_declarations --  The declarations defined in this context, outside the scope of patterns
@@ -61,7 +61,7 @@ pCtx2aCtx
             , ctxpos = n2
             , ctxlang = deflangCtxt
             , ctxmarkup = deffrmtCtxt
-            , ctxthms = n3
+            , ctxthms = p_themes
             , ctxpats = pats
             , ctxprocs = procs
             , ctxrs = rules

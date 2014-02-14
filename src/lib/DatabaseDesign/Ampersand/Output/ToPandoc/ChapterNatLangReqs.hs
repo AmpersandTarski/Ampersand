@@ -12,6 +12,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
@@ -111,13 +112,16 @@ chpNatLangReqs lev fSpec flags =
                       then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
                       else printThemes toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
                                                                        [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
-      toBeProcessedStuff = ( conceptsWith
+      toBeProcessedStuff = ( trace ("conceptsWith "++intercalate ", " [ name c | (c, pps)<-conceptsWith]++"\n"++
+                                    "concepts "++intercalate ", " [ showHS flags "\n     " c | c@PlainConcept{}<-concs fSpec]++"\n"
+                                   )
+                           $ conceptsWith
                            , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
          where
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
               = [ (c, pps)
-                | c@PlainConcept{cptdf = Cd{cddef=_:_}:_ } <-concs fSpec
+                | c@PlainConcept{} <-concs fSpec
                 , let pps = [p | p <- purposesDefinedIn fSpec (fsLang fSpec) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.

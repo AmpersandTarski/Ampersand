@@ -426,9 +426,9 @@ daBasicsSection lev fSpec flags = theBlocks
         -- a declaration is considered relevant iff it is declared or used in one of the relevant themes.
          [d | d<-declarations fSpec
          , decusr d
-         , (  decpat d `elem` relevantThemes fSpec  
-               || d `elem` declsUsedIn [p | p<-            patterns fSpec   , name p `elem` relevantThemes fSpec]
-               || d `elem` declsUsedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` relevantThemes fSpec]
+         , (  decpat d `elem` themes fSpec  
+               || d `elem` declsUsedIn [p | p<-            patterns fSpec   , name p `elem` themes fSpec]
+               || d `elem` declsUsedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` themes fSpec]
            )
          ]
       toRow :: Declaration -> [Blocks]
@@ -797,15 +797,3 @@ primExpr2pandocMath lang e =
              English -> text "the identityrelation of "
         <> math (name c)
   _   -> fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show e) 
-  
-  
-  
--- | The user can specify that only specific themes should be taken into account 
---   in the output. However, when no themes are specified, all themes are relevant.
-relevantThemes :: Fspc -> [String]
-relevantThemes fSpec = if null (themes fSpec)
-                       then map name (patterns fSpec) ++ map name (vprocesses fSpec)
-                       else themes fSpec
-  
-                          
-  
