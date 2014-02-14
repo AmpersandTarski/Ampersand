@@ -80,13 +80,13 @@ chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
                                      ]
 
 -- | This function returns a header of a chapter
-chptHeader :: Options -> Chapter -> Blocks
-chptHeader flags cpt 
- = header 1 (chptTitle flags cpt )
+chptHeader :: Lang -> Chapter -> Blocks
+chptHeader lang cpt 
+ = header 1 (chptTitle lang cpt )
  
-chptTitle :: Options -> Chapter -> Inlines
-chptTitle flags cpt =
-     (case (cpt,language flags) of
+chptTitle :: Lang -> Chapter -> Inlines
+chptTitle lang cpt =
+     (case (cpt,lang) of
         (Intro             , Dutch  ) -> text "Inleiding"
         (Intro             , English) -> text "Introduction"
         (SharedLang        , Dutch  ) -> text "Gemeenschappelijke taal"
@@ -213,9 +213,9 @@ dpRule fSpec flags = dpR
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( [Str (name r)]
-         , [ let purps = purposesDefinedIn fSpec (language flags) r in            -- Als eerste de uitleg van de betreffende regel..
+         , [ let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
              purposes2Blocks flags purps ++
-             purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (language flags) d] ++  -- Dan de uitleg van de betreffende relaties
+             purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d] ++  -- Dan de uitleg van de betreffende relaties
              [ Plain text1 | not (null nds)] ++
              pandocEqnArray [ ( texOnly_Id(name d)
                               , ":"
@@ -237,15 +237,15 @@ dpRule fSpec flags = dpR
        )
        where
         text1
-         = case (length nds,language flags) of
+         = case (length nds,fsLang fSpec) of
              (1,Dutch)   -> let d = head nds in
                             [Str ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d,Str "):"]
              (1,English) -> let d = head nds in
                             [Str "In order to formalize this, a ", Str (if isFunction d then "function" else "relation"), Space, Str (name d),Str " is introduced (",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d,Str "):"]
-             (l,Dutch)   -> [Str "Om te komen tot de formalisatie in vergelijking",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (" zijn de volgende "++count flags l "relatie"++" nodig.")]
-             (l,English) -> [Str "To arrive at the formalization in equation",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (", the following "++count flags l "relation"++" are introduced.")]
+             (l,Dutch)   -> [Str "Om te komen tot de formalisatie in vergelijking",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (" zijn de volgende "++count Dutch l "relatie"++" nodig.")]
+             (l,English) -> [Str "To arrive at the formalization in equation",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (", the following "++count English l "relation"++" are introduced.")]
         text2
-         = (case (length nds,length rds,language flags) of
+         = (case (length nds,length rds,fsLang fSpec) of
              (0,1,Dutch)   -> [Str "Definitie ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
              (0,1,English) -> [Str "We use definition ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
              (0,_,Dutch)   -> Str "We gebruiken definities ":commaNLPandoc (Str "en") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
@@ -255,25 +255,25 @@ dpRule fSpec flags = dpR
              (_,_,Dutch)   -> Str "Ook gebruiken we definities ":commaNLPandoc (Str "en") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
              (_,_,English) -> Str "We also use definitions ":commaEngPandoc (Str "and") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
            )++
-           (case (length nds,language flags) of
+           (case (length nds,fsLang fSpec) of
              (1,Dutch)   -> [Str " om eis",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " (pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ") te formaliseren:"]
              (1,English) -> [Str " to formalize requirement",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " (page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str "):"]
              _           -> [Str ". "]
            )
         text3
-         = case (language flags,isSignal r) of
+         = case (fsLang fSpec,isSignal r) of
             (Dutch  ,False) -> [Str "De regel luidt: "]
             (English,False) -> [Str "This means: "]
             (Dutch  ,True)  -> [Str "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "]
             (English,True)  -> [Str "Activities that are defined by this rule are finished when: "]
         text4
-         = case language flags of
+         = case fsLang fSpec of
                  Dutch   -> [Str " Deze activiteiten worden opgestart door:"]
                  English -> [Str " These activities are signalled by:"]
         text5
-         = case (language flags,isSignal r) of
-             (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
-             (English,False) -> [ Plain [ Str "This corresponds to the requirement on page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
+         = case (fsLang fSpec,isSignal r) of
+             (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (fsLang fSpec) r
+             (English,False) -> [ Plain [ Str "This corresponds to the requirement on page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (fsLang fSpec) r
              (Dutch  ,True)  -> [ Plain [ Str "Dit komt overeen met "
                                         , Quoted  SingleQuote [Str (name r)]
                                         , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
@@ -339,9 +339,9 @@ isMissing mp =
     Nothing -> True
     Just p  -> (not . explUserdefd) p
 
-lclForLang :: Options -> TimeLocale
-lclForLang flags = defaultTimeLocale { months =
-         case language flags of
+lclForLang :: Lang -> TimeLocale
+lclForLang lang = defaultTimeLocale { months =
+         case lang of
            Dutch   -> [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr")
                       , ("mei","mei"),("juni","jun"),("juli","jul"),("augustus","aug")
                       , ("september","sep"),("oktober","okt"),("november","nov"),("december","dec")]

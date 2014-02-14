@@ -39,7 +39,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
                        , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                        , "CLASSIFY"
-                       , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
+                       , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
                        , "ONE"
                        , "BYPLUG"
@@ -64,8 +64,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                             <*> optional pTextMarkup 
                             <*> pList pContextElement <* pKey "ENDCONTEXT"
      where
-       rebuild :: Origin -> String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
-       rebuild pos' nm includeFileNames lang fmt ces = 
+       rebuild :: Origin -> String -> [String] ->   Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+       rebuild    pos'      nm     includeFileNames lang          fmt                   ces = 
           (PCtx{ ctx_nm     = nm
                , ctx_pos    = [pos']
                , ctx_lang   = lang
@@ -500,7 +500,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                <*> ((pKey "REF" *> pString) `opt` [])
                                <*> pExpl      
         where
-          rebuild orig obj lang fmt ref str
+          rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> String -> String -> PPurpose
+          rebuild    orig      obj         lang          fmt                   ref       str
               = PRef2 orig obj (P_Markup lang fmt str) ref
           pRef2Obj :: Parser Token PRef2Obj
           pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
@@ -518,7 +519,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
        where
          prelpop :: Origin -> TermPrim -> Pairs -> P_Population
-         prelpop orig (Prel _ nm) contents
+         prelpop    orig     (Prel _ nm)  contents
           = P_RelPopu { p_rnme   = nm
                       , p_orig   = orig
                       , p_popps  = contents
@@ -531,7 +532,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                       }
          prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
          pcptpop :: Origin -> String -> [String] -> P_Population
-         pcptpop orig cnm contents 
+         pcptpop    orig      cnm       contents 
           = P_CptPopu { p_cnme   = cnm
                       , p_orig   = orig
                       , p_popas  = contents
@@ -559,14 +560,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                       <*> optional pLanguageRef
                       <*> optional pTextMarkup
                       <*> (pString <|> pExpl)
-      where rebuild lang fmt mkup =
+      where rebuild :: Maybe Lang -> Maybe PandocFormat -> String -> PMeaning
+            rebuild    lang          fmt                   mkup   =
                PMeaning (P_Markup lang fmt mkup)
    pMessage :: Parser Token PMessage
    pMessage = rebuild <$ pKey "MESSAGE" 
                       <*> optional pLanguageRef
                       <*> optional pTextMarkup
                       <*> (pString <|> pExpl)
-      where rebuild lang fmt mkup =
+      where rebuild :: Maybe Lang -> Maybe PandocFormat -> String -> PMessage
+            rebuild    lang          fmt                   mkup   =
                PMessage (P_Markup lang fmt mkup)
                               
 {-  Basically we would have the following expression syntax:

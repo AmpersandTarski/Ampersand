@@ -47,7 +47,7 @@ fatal = fatalMsg "Output.PandocAux"
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: Options -> Fspc -> [(String , String)]
 defaultWriterVariables flags fSpec
-  = [ ("title", (case (language flags, diagnosisOnly flags) of
+  = [ ("title", (case (fsLang fSpec, diagnosisOnly flags) of
                         (Dutch  , False) -> "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
                         (Dutch  ,  True) -> "Diagnose van "
@@ -58,10 +58,10 @@ defaultWriterVariables flags fSpec
  --   , ("monofont",
  --   , ("mathfont",
     , ("fontsize", "10pt,a4paper")   --can be overridden by geometry package (see below)
-    , ("lang"    , case language flags of
+    , ("lang"    , case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")
-    , ("mainlang", case language flags of
+    , ("mainlang", case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")
     , ("documentclass","report")
@@ -265,9 +265,9 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
 
 -----Linguistic goodies--------------------------------------
 
-count :: Options -> Int -> String -> String
-count flags n x
- = case (language flags, n) of
+count :: Lang -> Int -> String -> String
+count    lang    n      x
+ = case (lang, n) of
       (Dutch  , 0) -> "geen "++plural Dutch x
       (Dutch  , 1) -> "één "++x
       (Dutch  , 2) -> "twee "++plural Dutch x

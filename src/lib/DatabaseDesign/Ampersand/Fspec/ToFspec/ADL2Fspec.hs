@@ -292,8 +292,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
            | ifcc<-step4a
            , let c   = source(objctx (ifcObj ifcc))
                  nm'::Int->String
-                 nm' 0  = plural (language flags)(name c)
-                 nm' i  = plural (language flags)(name c) ++ show i
+                 nm' 0  = plural (fsLang fSpec) (name c)
+                 nm' i  = plural (fsLang fSpec) (name c) ++ show i
                  nms = [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)]
                  nm
                    | theme flags == StudentTheme = name c

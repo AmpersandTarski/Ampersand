@@ -227,7 +227,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
           lexExpl' str c p ('{':'-':s) = lexNest fn (lexExpl' str c) (advc 2 p) s
           lexExpl' str c p ('-':'-':s) = lexExpl' str c  p (dropWhile (/= '\n') s)
           lexExpl' str c p (x:s)       = lexExpl' (str++[x]) c (adv p x) s
-          lexExpl' _ _ _ []            = [ errToken "Unterminated EXPLAIN section" pos fn ]
+          lexExpl' _ _ _ []            = [ errToken "Unterminated PURPOSE section" pos fn ]
 
    scanString []            = ("",0,[])
    scanString ('\\':'&':xs) = let (str,w,r) = scanString xs

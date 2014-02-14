@@ -7,12 +7,12 @@ import Data.Time.Format
 
 chpIntroduction :: Fspc -> Options -> Blocks
 chpIntroduction fSpec flags =
-      chptHeader flags Intro
+      chptHeader (fsLang fSpec) Intro
    <> fromList purposesOfContext  -- the motivation(s) of this context 
    <> readingGuide                -- tells what can be expected in this document.
   where 
     readingGuide 
-      = case (language flags) of
+      = case fsLang fSpec of
           Dutch
             -> para ( text "Dit document"
                    <> (note.para.text) ("Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++".")
@@ -27,7 +27,7 @@ chpIntroduction fSpec flags =
                               then text "Deze afspraken staan opgesomd in hoofdstuk "
                                 <> xRefReference flags SharedLang
                               else text "Deze afspraken staan opgesomd in het hoofdstuk genaamd "
-                                <> (doubleQuoted.chptTitle flags) SharedLang
+                                <> (doubleQuoted.chptTitle (fsLang fSpec)) SharedLang
                             ) <> text ", geordend op thema. "
                        else text "Deze afspraken zijn niet opgenomen in dit document."
                       )
@@ -37,7 +37,7 @@ chpIntroduction fSpec flags =
                            then text "De diagnose in hoofdstuk "
                              <> xRefReference flags Diagnosis
                            else text "De diagnose in het hoofdstuk genaamd"
-                             <> (doubleQuoted.chptTitle flags) Diagnosis
+                             <> (doubleQuoted.chptTitle (fsLang fSpec)) Diagnosis
                           ) <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                          )
                else mempty
@@ -46,7 +46,7 @@ chpIntroduction fSpec flags =
                              then text "De conceptuele analyse in hoofdstuk "
                                <> xRefReference flags ConceptualAnalysis
                              else text "De conceptuele analyse in het hoofdstuk genaamd"
-                               <> (doubleQuoted.chptTitle flags) ConceptualAnalysis
+                               <> (doubleQuoted.chptTitle (fsLang fSpec)) ConceptualAnalysis
                            ) <> text " is bedoeld voor requirements engineers en architecten om de gemaakte afspraken"
                              <> text " te valideren en te formaliseren. "
                              <> text "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
@@ -62,7 +62,7 @@ chpIntroduction fSpec flags =
                              then text "De gegevensanalyse in hoofdstuk "
                                <> xRefReference flags DataAnalysis
                              else text "De gegevensanalyse in het hoofdstuk genaamd"
-                               <> (doubleQuoted.chptTitle flags) DataAnalysis
+                               <> (doubleQuoted.chptTitle (fsLang fSpec)) DataAnalysis
                            )
                         <> text " beschrijft de gegevensverzamelingen waarop "
                         <> (singleQuoted.text.name) fSpec
@@ -93,7 +93,7 @@ chpIntroduction fSpec flags =
                                 <> xRefReference flags SharedLang
                                 <> text ", ordered by theme. "
                               else text "Those rules are listed in the chapter named "
-                                <> (doubleQuoted.chptTitle flags) SharedLang
+                                <> (doubleQuoted.chptTitle (fsLang fSpec)) SharedLang
                             ) <> text ", ordered by theme. " 
                        else text "Those rules are not included in this document."
                       )
@@ -103,7 +103,7 @@ chpIntroduction fSpec flags =
                            then text "The diagnosis in chapter "
                              <> xRefReference flags Diagnosis
                            else text "The diagnosis in the chapter named "
-                             <> (doubleQuoted.chptTitle flags) Diagnosis
+                             <> (doubleQuoted.chptTitle (fsLang fSpec)) Diagnosis
                           ) <> text " is meant to help the authors identify shortcomings in their Ampersand script."
                          )
                else mempty
@@ -112,7 +112,7 @@ chpIntroduction fSpec flags =
                              then text "The conceptual analysis in chapter "
                                <> xRefReference flags ConceptualAnalysis
                              else text "The conceptual analysis in the chapter named "
-                               <> (doubleQuoted.chptTitle flags) ConceptualAnalysis
+                               <> (doubleQuoted.chptTitle (fsLang fSpec)) ConceptualAnalysis
                            ) <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
                              <> text "It is also meant for testers to come up with correct test cases. "
                              <> text "The formalization in this chapter makes consistency of the functional specification provable. "
@@ -127,7 +127,7 @@ chpIntroduction fSpec flags =
                              then text "The data analysis in chapter "
                                <> xRefReference flags DataAnalysis
                              else text "The data analysis in the chapter named "
-                               <> (doubleQuoted.chptTitle flags) DataAnalysis
+                               <> (doubleQuoted.chptTitle (fsLang fSpec)) DataAnalysis
                            )
                         <> text " describes the data sets upon which "
                         <> (singleQuoted.text.name) fSpec
@@ -142,9 +142,9 @@ chpIntroduction fSpec flags =
                          )
                else mempty
       
-    date = formatTime (lclForLang flags) "%-d-%-m-%Y" (genTime flags)
-    time = formatTime (lclForLang flags) "%H:%M:%S" (genTime flags)
+    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" (genTime flags)
+    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" (genTime flags)
  
-    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (language flags) fSpec]
+    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (fsLang fSpec) fSpec]
     
  

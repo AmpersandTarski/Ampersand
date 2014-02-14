@@ -25,7 +25,7 @@ fspec2Workbook fSpec flags =
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
   where
-    lang = language flags
+    lang = fsLang fSpec
     wsResume =
       Worksheet { worksheetName =
                             Name $ case lang of

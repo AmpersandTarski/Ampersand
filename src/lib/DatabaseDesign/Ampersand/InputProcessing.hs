@@ -138,7 +138,7 @@ parse1File2pContext (fPath, fContent) =
          msgs-> Errors (map PE msgs)
   where
   normalize ::FilePath -> FilePath
-  normalize name = (takeDirectory fPath) </> name
+  normalize name = takeDirectory fPath </> name
 
 
  
@@ -150,7 +150,11 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs
               (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
   PCtx{ ctx_nm  = if null nm1 then nm2 else nm1
       , ctx_pos = pos1 ++ pos2
-      , ctx_lang = lang1
+      , ctx_lang = case (lang1, lang2) of
+                    (Nothing, Nothing) -> Nothing
+                    (Nothing, Just l2) -> Just l2
+                    (Just l1, Nothing) -> Just l1
+                    (Just l1, Just l2) -> Just l1
       , ctx_markup = markup1
       , ctx_thms = thms1 ++ thms2
       , ctx_pats = pats1 ++ pats2

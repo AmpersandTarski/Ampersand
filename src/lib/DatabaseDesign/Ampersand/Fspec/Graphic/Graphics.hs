@@ -73,8 +73,8 @@ class Identified a => Dotable a where
 {- This instance of Dotable is meant for drawing data models -}
 instance Dotable ClassDiag where
    conceptualGraph _ _ _ _ = fatal 58 "TODO: ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd."
-   makePicture flags _ _ cd =
-          makePictureObj flags (name cd) PTClassDiagram (classdiagram2dot flags cd) 
+   makePicture flags fSpec _ cd =
+          makePictureObj flags (fsLang fSpec) (name cd) PTClassDiagram (classdiagram2dot flags cd) 
 
 instance Dotable A_Concept where
    conceptualGraph fSpec flags _ c = conceptual2Dot flags (name c) cpts rels idgs
@@ -89,7 +89,7 @@ instance Dotable A_Concept where
                      , not (isProp r)    -- r is not a property
                      ]
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTConcept . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (fsLang fSpec) (name x) PTConcept . conceptualGraph fSpec flags variant) x
 
 instance Dotable Pattern where
    -- | The Plain_CG of pat makes a picture of at least the declsUsedIn within pat; 
@@ -135,7 +135,7 @@ instance Dotable Pattern where
                  f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
                                      where result' = result++new
    makePicture flags fSpec variant pat =
-          (makePictureObj flags (name pat) PTPattern . conceptualGraph fSpec flags variant) pat
+          (makePictureObj flags (fsLang fSpec) (name pat) PTPattern . conceptualGraph fSpec flags variant) pat
 
 instance Dotable FProcess where
    conceptualGraph fSpec flags _ fproc = conceptual2Dot flags (name fproc) cpts rels idgs
@@ -148,11 +148,11 @@ instance Dotable FProcess where
           rels  = [r | r@Sgn{}<-declsUsedIn (fpProc fproc), decusr r
                      , not (isProp r)    -- r is not a property
                      ]
-   makePicture flags _ _ x =
-          (makePictureObj flags (name x) PTProcess . processModel) x
+   makePicture flags fSpec _ x =
+          (makePictureObj flags (fsLang fSpec) (name x) PTProcess . processModel) x
 {- inspired by:
-   makePicture flags _ _ cd =
-          makePictureObj flags (name cd) PTClassDiagram (classdiagram2dot flags cd) -}
+   makePicture flags fSpec _ cd =
+          makePictureObj flags (fsLang fSpec) (name cd) PTClassDiagram (classdiagram2dot flags cd) -}
 
 instance Dotable Activity where
    conceptualGraph fSpec flags _ ifc = conceptual2Dot flags (name ifc) cpts rels idgs
@@ -170,12 +170,12 @@ instance Dotable Activity where
                     , not (isProp r)    -- r is not a property
                     ]
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTFinterface . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (fsLang fSpec) (name x) PTFinterface . conceptualGraph fSpec flags variant) x
 
 instance Dotable SwitchBdDiagram where
    conceptualGraph _ _ _ = sbdotGraph
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTSwitchBoard . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (fsLang fSpec) (name x) PTSwitchBoard . conceptualGraph fSpec flags variant) x
 
 instance Dotable Rule where
    conceptualGraph fSpec flags _ r = conceptual2Dot flags (name r) cpts rels idgs
@@ -187,7 +187,7 @@ instance Dotable Rule where
                , not (isProp d)    -- d is not a property
                ]
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x)  PTRule . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (fsLang fSpec) (name x)  PTRule . conceptualGraph fSpec flags variant) x
 
 -- Chapter 2: Formation of a conceptual graph as a DotGraph data structure.
 conceptual2Dot :: Options                   -- ^ the flags 
