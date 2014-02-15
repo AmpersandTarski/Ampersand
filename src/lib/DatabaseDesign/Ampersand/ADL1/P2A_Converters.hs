@@ -1,10 +1,6 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
 {-# LANGUAGE RelaxedPolyRec #-}
-module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
-     -- * Exported functions
-     pCtx2aCtx, showErr,
-     Guarded(..)
-     )
+module DatabaseDesign.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..) )
 where
 import DatabaseDesign.Ampersand.ADL1.Disambiguate
 import DatabaseDesign.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
@@ -128,6 +124,55 @@ pCtx2aCtx
     accumDecl :: Declaration -> Declaration -> Declaration
     accumDecl a _ = a
     
+    pDecl2aDecl :: 
+         String         -- The name of the pattern
+      -> Lang           -- The default language 
+      -> PandocFormat   -- The default pandocFormat
+      -> P_Declaration -> (Declaration, Population)
+    pDecl2aDecl patNm defLanguage defFormat pd
+     = let dcl = Sgn { decnm   = dec_nm pd
+                     , decsgn  = pSign2aSign (dec_sign pd)
+                     , decprps = dec_prps pd
+                     , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
+                     , decprL  = dec_prL pd
+                     , decprM  = dec_prM pd
+                     , decprR  = dec_prR pd
+                     , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
+                     , decConceptDef = dec_conceptDef pd
+                     , decfpos = dec_fpos pd 
+                     , deciss  = True
+                     , decusr  = True
+                     , decISA  = False
+                     , decpat  = patNm
+                     , decplug = dec_plug pd
+                     }
+       in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd})
+    
+    pSign2aSign :: P_Sign -> Sign
+    pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
+
+    pGen2aGen :: P_Gen -> A_Gen
+    pGen2aGen pg@PGen{}
+       = Isa{genfp  = gen_fp pg
+            ,gengen = pCpt2aCpt (gen_gen pg)
+            ,genspc = pCpt2aCpt (gen_spc pg)
+            }
+    pGen2aGen pg@P_Cy{}
+       = IsE { genfp = gen_fp pg
+             , genrhs = map pCpt2aCpt (gen_rhs pg)
+             , genspc = pCpt2aCpt (gen_spc pg)
+             }
+    
+    pCpt2aCpt :: P_Concept -> A_Concept
+    pCpt2aCpt pc
+        = case pc of
+            PCpt{} -> PlainConcept 
+                        {cptnm = p_cptnm pc
+                        ,cpttp = [] -- fatal 588 "Types of concepts are not defined here"
+                        ,cptdf = [ cd | cd<-conceptDefs, p_cptnm pc==cdcpt cd]
+                        }
+            P_Singleton -> ONE   
+
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = findConcept cnm, popas = ps }
@@ -558,32 +603,6 @@ pMarkup2aMarkup defLanguage defFormat
             }
      where
        fmt = fromMaybe defFormat mpdf
-pDecl2aDecl :: 
-     String         -- The name of the pattern
-  -> Lang           -- The default language 
-  -> PandocFormat   -- The default pandocFormat
-  -> P_Declaration -> (Declaration, Population)
-pDecl2aDecl patNm defLanguage defFormat pd
- = let dcl = Sgn { decnm   = dec_nm pd
-                 , decsgn  = pSign2aSign (dec_sign pd)
-                 , decprps = dec_prps pd
-                 , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                 , decprL  = dec_prL pd
-                 , decprM  = dec_prM pd
-                 , decprR  = dec_prR pd
-                 , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
-                 , decConceptDef = dec_conceptDef pd
-                 , decfpos = dec_fpos pd 
-                 , deciss  = True
-                 , decusr  = True
-                 , decISA  = False
-                 , decpat  = patNm
-                 , decplug = dec_plug pd
-                 }
-   in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd})
-
-pSign2aSign :: P_Sign -> Sign
-pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
 -- helpers for generating a lattice, not having to write `Atom' all the time
 mjoin,mIsc :: a -> a -> FreeLattice a
@@ -595,18 +614,6 @@ resolve es (p,f)
  = case (p,f es) of
   (Src,(e,(b,_))) -> (Src,(e,b))
   (Tgt,(e,(_,b))) -> (Tgt,(e,b))
-
-pGen2aGen :: P_Gen -> A_Gen
-pGen2aGen pg@PGen{}
-   = Isa{genfp  = gen_fp pg
-        ,gengen = pCpt2aCpt (gen_gen pg)
-        ,genspc = pCpt2aCpt (gen_spc pg)
-        }
-pGen2aGen pg@P_Cy{}
-   = IsE { genfp = gen_fp pg
-         , genrhs = map pCpt2aCpt (gen_rhs pg)
-         , genspc = pCpt2aCpt (gen_spc pg)
-         }
 
 findSign :: String -> String -> Sign
 findSign a b = Sign (findConceptOrONE a) (findConceptOrONE b)

@@ -121,7 +121,7 @@ chpNatLangReqs lev fSpec flags =
          where
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
               = [ (c, pps)
-                | c@PlainConcept{} <-concs fSpec
+                | c@PlainConcept{cptdf = Cd{cddef=_:_}:_ } <-concs fSpec
                 , let pps = [p | p <- purposesDefinedIn fSpec (fsLang fSpec) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
