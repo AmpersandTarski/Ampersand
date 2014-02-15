@@ -21,6 +21,7 @@ import System.FilePath
 import Paths_ampersand
 import Control.Monad
 import Data.Traversable (sequenceA)
+import Control.Applicative
 
 fatal :: Int -> String -> a
 fatal = Basics.fatalMsg "InputProcessing"
@@ -90,7 +91,7 @@ type FileContent = (FilePath, String) -- The name and its contents
 type ParseResult = (P_Context, [FilePath]) -- A positive parse of a single file deliverse a P_Context and a list of includedes
 
 parseWithIncluded :: Options -> FilePath -> IO(Guarded P_Context)
-parseWithIncluded flags f = tailRounds [] (emptyContext,[f])
+parseWithIncluded flags fp = tailRounds [] (emptyContext,[fp])
  where
     tailRounds :: [FileContent] -- the files already processed
                -> ParseResult   -- the result so far.  
@@ -106,21 +107,20 @@ parseWithIncluded flags f = tailRounds [] (emptyContext,[f])
                              Checked (pCtx',included)
                                 -> tailRounds (nub ( dones++fs)) (pCtx', included)
     readFiles :: [FilePath] -> IO [FileContent]
-    readFiles fs = mapM readFile fs
+    readFiles fs = mapM readFile' fs
      where
-       readFile f = 
+       readFile' f = 
           do verboseLn flags ("reading "++f)
              content <- Basics.readFile f
              return (f,content)
-    oneRound :: [FileContent] -> [FileContent] -> P_Context -> IO(Guarded ParseResult)
-    oneRound todos dones pCtx = 
-      do return (parseNext todos dones pCtx)
+    oneRound :: [FileContent] -- Files that have not been parsed yet
+             -> [FileContent] -- Files that have been parsed already
+             -> P_Context     -- The result so far from previous parsed files
+             -> IO(Guarded ParseResult)
+    oneRound todos dones pCtx = pure parseNext
      where 
-       parseNext :: [FileContent] -- Files that have not been parsed yet
-                 -> [FileContent] -- Files that have been parsed already
-                 -> P_Context     -- The result so far from previous parsed files
-                 -> Guarded ParseResult
-       parseNext todos dones pCtx =
+       parseNext :: Guarded ParseResult
+       parseNext  =
          case nub [f | f <- todos, f `notElem` dones] of
            [] -> Checked (pCtx,[])
            fs -> case sequenceA (map parse1File2pContext fs) of
@@ -148,28 +148,30 @@ emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] []
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
               (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
-  PCtx{ ctx_nm  = if null nm1 then nm2 else nm1
-      , ctx_pos = pos1 ++ pos2
-      , ctx_lang = case (lang1, lang2) of
-                    (Nothing, Nothing) -> Nothing
-                    (Nothing, Just l2) -> Just l2
-                    (Just l1, Nothing) -> Just l1
-                    (Just l1, Just l2) -> Just l1
-      , ctx_markup = markup1
-      , ctx_thms = thms1 ++ thms2
-      , ctx_pats = pats1 ++ pats2
-      , ctx_PPrcs = pprcs1 ++ pprcs2
-      , ctx_rs = rs1 ++ rs2
-      , ctx_ds = ds1 ++ ds2
-      , ctx_cs = cs1 ++ cs2
-      , ctx_ks = ks1 ++ ks2
-      , ctx_vs = vs1 ++ vs2
-      , ctx_gs = gs1 ++ gs2
-      , ctx_ifcs = ifcs1 ++ ifcs2
-      , ctx_ps = ps1 ++ ps2
-      , ctx_pops = pops1 ++ pops2
-      , ctx_sql = sql1 ++ sql2
-      , ctx_php = php1 ++ php2
-      , ctx_metas = metas1 ++ metas2
+  PCtx{ ctx_nm     = if null nm1 then nm2 else nm1
+      , ctx_pos    = pos1 ++ pos2
+      , ctx_lang   = lang1   `orElse` lang2   `orElse` Nothing
+      , ctx_markup = markup1 `orElse` markup2 `orElse` Nothing
+      , ctx_thms   = thms1 ++ thms2
+      , ctx_pats   = pats1 ++ pats2
+      , ctx_PPrcs  = pprcs1 ++ pprcs2
+      , ctx_rs     = rs1 ++ rs2
+      , ctx_ds     = ds1 ++ ds2
+      , ctx_cs     = cs1 ++ cs2
+      , ctx_ks     = ks1 ++ ks2
+      , ctx_vs     = vs1 ++ vs2
+      , ctx_gs     = gs1 ++ gs2
+      , ctx_ifcs   = ifcs1 ++ ifcs2
+      , ctx_ps     = ps1 ++ ps2
+      , ctx_pops   = pops1 ++ pops2
+      , ctx_sql    = sql1 ++ sql2
+      , ctx_php    = php1 ++ php2
+      , ctx_metas  = metas1 ++ metas2
       }
+
+-- | Left-biased choice on maybes
+orElse :: Maybe a -> Maybe a -> Maybe a
+x `orElse` y = case x of
+                 Just _  -> x
+                 Nothing -> y
 
