@@ -57,7 +57,7 @@ where
     nodes (OOAggr _ s t) = map name [s,t]
 
    instance CdNode Generalization where
-    nodes (OOGener g ss) = map name (g:ss)
+    nodes g = map name ((concs.genAgen) g)
 
    -- | This function makes the classification diagram.
    -- It focuses on generalizations and specializations.
@@ -71,41 +71,18 @@ where
                                             } | c<-cpts]
                       , assocs  = []
                       , aggrs   = []
-                      , geners  = nub [ OOGener c (map snd gs)
-                                      | gs<-eqCl fst (fsisa fSpec)
-                                      , let c=fst (head gs), c `elem` cpts -- select only those generalisations whose specific concept is part of the themes to be printed.
-                        ]
+                      , geners  = map OOGener (gensInScope fSpec)
                       , ooCpts  = concs fSpec
                       }
 
     where
-       rels       = [EDcD r | r@Sgn{} <- declarations fSpec, decusr r]
-       relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
-       cpts       = nub [ specific
-                        | specific <-map fst (fsisa fSpec)
-                         -- select only those generalisations whose specific concept is part of the themes to be printed.
-                        , specific `elem` (concs [declsUsedIn (pattsInScope fSpec) 
-                                            `uni` declsUsedIn (procsInScope fSpec)
-                                                 ])
-                        , (not.null) [ r | r<-relsAtts, source r==specific ] ||  -- c is either a concept that has attributes or
-                               null  [ r | r<-relsAtts, target r==specific ]     --      it does not occur as an attribute.
-                        ]
-
+       cpts       = concs (gensInScope fSpec)
        attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  name (target (fldexpr fld))) (fldnull fld)
                     | plug<-lookup' c, fld<-tail (plugFields plug), not (inKernel fld), source (fldexpr fld)==c]
                     where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
        lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
         
-   pattsInScope :: Fspc -> [Pattern]
-   pattsInScope fSpec = if null (themes fSpec)
-                        then patterns fSpec
-                        else [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ]
-   procsInScope :: Fspc -> [Process]
-   procsInScope fSpec = if null (themes fSpec)
-                        then map fpProc (vprocesses fSpec)
-                        else [ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
-
 
 
    -- | This function, cdAnalysis, generates a conceptual data model.
@@ -406,11 +383,13 @@ where
   --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead 
   -------------------------------
           generalization2edges :: Generalization -> [DotEdge String]
-          generalization2edges ooGen = map (sub2edge (genGen ooGen)) (genSubs ooGen)
+          generalization2edges ooGen = sub2edges (genAgen ooGen)
            where
-             sub2edge g s = DotEdge
-                              { fromNode = name g
-                              , toNode   = name s
+             sub2edges gen = 
+               case gen of
+                 Isa{} -> [DotEdge
+                              { fromNode = name (gengen gen)
+                              , toNode   = name (genspc gen)
                               , edgeAttributes 
                                          = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                            , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
@@ -420,7 +399,7 @@ where
                                              then [Style [SItem Dashed []]]
                                              else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                            )
-                              }
+                              }]
              
 
 
@@ -467,9 +446,8 @@ where
                                   , aggSrc :: A_Concept           --
                                   , aggTrg :: A_Concept           --
                                   } deriving (Show, Eq)
-   data Generalization = OOGener  { genGen :: A_Concept             --
-                                  , genSubs:: [A_Concept]           --
-                                  } deriving (Show, Eq)
+   data Generalization = OOGener  { genAgen :: A_Gen             --
+                                  } deriving (Show)
 
 
 

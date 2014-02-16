@@ -32,12 +32,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         fSpec =
             Fspc { fsName       = name context
                  , fspos        = ctxpos context
-                   -- interfaceS contains the interfaces defined in the Ampersand script.
-                   -- interfaces are meant to create user interfaces, programming interfaces and messaging interfaces.
-                   -- A generic user interface (the Lonneker interface) is already available.
-                 , themes       = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                                  then map name (patterns context) ++ map name allProcs
-                                  else ctxthms context
+                 , themes       = themesInScope
+                 , pattsInScope = pattsInThemesInScope
+                 , procsInScope = procsInThemesInScope
+                 , rulesInScope = rulesInThemesInScope
+                 , declsInScope = declsInThemesInScope
+                 , cDefsInScope = concsInThemesInScope
+                 , gensInScope  = gensInThemesInScope
                  , fsLang       = ctxlang context      -- The default language for this specification, if specified at all.
                  , vprocesses   = allProcs
                  , vplugInfos   = definedplugs
@@ -62,10 +63,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
-                 , allDecls     = alldecls
+                 , allDecls     = declarations context
                  , allConcepts  = concs context
                  , kernels      = constructKernels
-                 , fsisa        = []
+                 , fsisa        = let f gen = case gen of 
+                                               Isa{} -> [(genspc gen, gengen gen)]
+                                               IsE{} -> [(genspc gen, x ) | x<-(genrhs gen)]
+                                  in concatMap f (gens context)
                  , vpatterns    = patterns context
                  , vgens        = gens context
                  , vIndices     = identities context
@@ -76,7 +80,21 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , initialPops  = initialpops
                  , allViolations = [(r,vs) |r<- allrules, not (isSignal r), let vs = ruleviolations (gens context) initialpops r,  not (null vs)]
                  }
-        alldecls = declarations context
+        themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                        then map name (patterns context) ++ map name allProcs
+                        else ctxthms context
+        pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context) 
+        procsInThemesInScope = filter (\p -> name p `elem` themesInScope) (ctxprocs context)
+        rulesInThemesInScope = ctxrs context `uni` concatMap prcRules procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
+        declsInThemesInScope = ctxds context `uni` concatMap prcDcls  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
+        cDefsInThemesInScope = filter isInTheme (ctxcds context)
+          where
+            isInTheme (_ ,mn) = case mn of
+                                 Nothing -> True
+                                 Just n  -> n `elem` ("":themesInScope)
+        concsInThemesInScope = concs (ctxrs context) `uni` concs      procsInThemesInScope `uni` concs   pattsInThemesInScope
+        gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
+
         allQuads = quads flags (\_->True) allrules
         initialpops = userDefPops++singletonpops
         userDefPops = ctxpopus context
@@ -99,7 +117,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         calcProps d = d{decprps_calc = Just calculated}
             where calculated = decprps d `uni` [Tot | d `elem` totals]
                                          `uni` [Sur | d `elem` surjectives]
-        calculatedDecls = map calcProps alldecls
+        calculatedDecls = map calcProps (declarations context)
         constructKernels = foldl f (group (delete ONE (concs context))) (gens context)
             where f disjuncLists g = concat haves : nohaves
                     where

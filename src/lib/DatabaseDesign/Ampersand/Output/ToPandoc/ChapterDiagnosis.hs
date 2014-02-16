@@ -173,7 +173,7 @@ chpDiagnosis fSpec flags
       (English,xs)  -> [Para $
                        [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " are defined, but not used."]
                      ]
-   where unused = [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (allConcepts fSpec)]
+   where unused = [cd | (cd,_) <-conceptDefs fSpec, name cd `notElem` map name (allConcepts fSpec)]
          
     
   
