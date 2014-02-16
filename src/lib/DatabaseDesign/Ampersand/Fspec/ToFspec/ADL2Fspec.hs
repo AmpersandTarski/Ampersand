@@ -70,7 +70,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vgens        = gens context
                  , vIndices     = identities context
                  , vviews       = viewDefs context
-                 , vConceptDefs = conceptDefs context
+                 , conceptDefs  = ctxcds context
                  , fSexpls      = ctxps context
                  , metas        = ctxmetas context
                  , initialPops  = initialpops

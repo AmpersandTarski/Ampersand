@@ -97,7 +97,6 @@ where
              [ Elem (simpleTag "Rules")        (map mkXmlTree (ptrls pat)) |not (null (ptrls pat))] 
           ++ [ Elem (simpleTag "Gens")         (map mkXmlTree (ptgns pat)) |not (null (ptgns pat))] 
           ++ [ Elem (simpleTag "Declarations") (map mkXmlTree (ptdcs pat)) |not (null (ptdcs pat))] 
-          ++ [ Elem (simpleTag "Concepts")     (map mkXmlTree (conceptDefs pat)) |not (null (conceptDefs pat))] 
           ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptids pat)) |not (null (ptids pat))] 
           ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (ptxps pat)) |not (null (ptxps pat))] 
            )

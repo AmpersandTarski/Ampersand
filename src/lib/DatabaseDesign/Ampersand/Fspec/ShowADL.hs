@@ -149,7 +149,7 @@ instance ShowADL Process where
     ++ (if null (udefrules prc) then "" else "\n  " ++intercalate "\n  " (map showADL (udefrules prc)) ++ "\n")
     ++ (if null (maintains prc) then "" else "\n  " ++                        showRM prc               ++ "\n")
     ++ (if null (mayEdit prc)   then "" else "\n  " ++                        showRR prc               ++ "\n")
-    ++ (if null (conceptDefs prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs prc))    ++ "\n")
+-- concept definitions are not printed, because we have no way of telling where they come from.... 
     ++ (if null (prcIds prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcIds prc))    ++ "\n")
     ++ (if null (prcXps prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcXps prc))    ++ "\n")
     ++ "ENDPROCESS"
@@ -178,7 +178,7 @@ instance ShowADL Pattern where
     ++ (if null (mayEdit pat)   then "" else "\n  " ++                        showRR pat               ++ "\n")
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
     ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
-    ++ (if null (conceptDefs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs pat)) ++ "\n")
+-- concept definitions are not printed, because we have no way of telling where they come from.... 
     ++ (if null (ptids pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptids pat)) ++ "\n")
     ++ "ENDPATTERN"
     where -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work... 
@@ -359,15 +359,11 @@ instance ShowADL A_Context where
     ++ (if null (ctxds context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxds context))   ++ "\n")
     ++ (if null (ctxks context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxks context))   ++ "\n")
     ++ (if null (ctxgs context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxgs context))   ++ "\n")
-    ++ (if null cds                then "" else "\n"      ++intercalate "\n"   (map showADL  cds           )   ++ "\n")
+    ++ (if null (ctxcds context)   then "" else "\n"      ++intercalate "\n"   (map showADL (ctxcds context))  ++ "\n")
     ++ (if null (ctxpopus context) then "" else "\n"      ++intercalate "\n"   (map showADL (ctxpopus context))++ "\n")
     ++ (if null (ctxsql context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxsql context)) ++ "\n")
     ++ (if null (ctxphp context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxphp context)) ++ "\n")
     ++ "\n\nENDCONTEXT"
-    where --showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
-     --                   | d<-declarations context, decusr d, not (null (decpopu d))]
-     --                   ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs context, c/=ONE, not(null (atomsOf c))]
-          cds = conceptDefs context >- (concatMap conceptDefs (ctxpats context) ++ concatMap conceptDefs (ctxprocs context))
 
 instance ShowADL Fspc where
  showADL fSpec
@@ -377,7 +373,7 @@ instance ShowADL Fspc where
         else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
     ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
-    ++ (if null cds then "" else "\n"++intercalate "\n"   (map showADL cds) ++ "\n")
+    ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map showADL (conceptDefs fSpec)) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
     ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
     ++ (if null (declarations fSpec) then "" else "\n"++intercalate "\n"   (map showADL (declarations fSpec >- concatMap declarations (patterns fSpec))) ++ "\n")
@@ -390,7 +386,6 @@ instance ShowADL Fspc where
     where --showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
       --                  | d<-declarations fSpec, decusr d, not (null (decpopu d))]
       --                  ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
-          cds = vConceptDefs fSpec >- (concatMap conceptDefs patts ++ concatMap (conceptDefs.fpProc) procs)
           patts = if null (themes fSpec)
                   then patterns fSpec
                   else [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ]

@@ -18,7 +18,6 @@ fatal = fatalMsg "Classes.ViewPoint"
 
 class Language a where
   objectdef :: a -> ObjectDef        -- ^ The objectdef that characterizes this viewpoint
-  conceptDefs :: a -> [ConceptDef]   -- ^ all concept definitions that are valid within this viewpoint
   declarations :: a -> [Declaration] -- ^ all relations that exist in the scope of this viewpoint.
                                      --   These are user defined declarations and all generated declarations,
                                      --   i.e. one declaration for each GEN and one for each signal rule.
@@ -115,19 +114,18 @@ instance Language A_Context where
                              , objmsub = Just . Box ONE $ map (objectdef) (ctxpats context)
                              , objstrs = []
                              }
-  conceptDefs          = ctxcds
   declarations context = uniteRels (concatMap declarations (patterns context)
                                  ++ concatMap declarations (processes context)
                                  ++ ctxds context)
-                         where
-                         -- declarations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
-                         -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
-                         uniteRels :: [Declaration] -> [Declaration]
-                         uniteRels [] = []
-                         uniteRels ds = [ d | cl<-eqClass (==) ds
-                                            , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
-                                                             , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
-                                                             }]
+     where
+      -- declarations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
+      -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
+      uniteRels :: [Declaration] -> [Declaration]
+      uniteRels [] = []
+      uniteRels ds = [ d | cl<-eqClass (==) ds
+                         , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
+                                          , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
+                                          }]
   udefrules    context = concatMap udefrules  (ctxpats context) ++ concatMap udefrules  (ctxprocs context) ++ ctxrs context
   identities   context = concatMap identities (ctxpats context) ++ concatMap identities (ctxprocs context) ++ ctxks context
   viewDefs     context = concatMap viewDefs   (ctxpats context) ++ concatMap viewDefs   (ctxprocs context) ++ ctxvs context
@@ -152,7 +150,6 @@ instance Language Process where
                          , objmsub = Nothing
                          , objstrs = []
                          }
-  conceptDefs proc  = nub [cd | c<-concs proc,cd<-cptdf c,posIn (prcPos proc) cd (prcEnd proc)]
   declarations proc = prcDcls proc
   udefrules         = prcRules -- all user defined rules in this process
 --  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
@@ -178,7 +175,6 @@ instance Language Pattern where
                          , objmsub = Nothing
                          , objstrs = []
                          }
-  conceptDefs  pat = nub [cd | c<-concs pat,cd<-cptdf c,posIn (ptpos pat) cd (ptend pat)]
   declarations pat = ptdcs pat
   udefrules        = ptrls   -- all user defined rules in this pattern
 --  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
@@ -203,7 +199,6 @@ instance Language Rule where
                        , objmsub = Nothing
                        , objstrs = []
                        }
-  conceptDefs  _ = []
   declarations r = [srrel r | isSignal r] -- a process rule "declares" a new relation to store violations in. That relation is "stored" in that rule. Therefore it counts as a declaration.
   udefrules    r = [r | r_usr r == UserDefined ]
 --  invariants   r = [r | not (isSignal r)]
