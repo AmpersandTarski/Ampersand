@@ -73,11 +73,11 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                                                             --   one declaration for each signal.
                  , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                  , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
-                 , vConceptDefs :: [ConceptDef]             -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
+                 , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
-                 , initialPops ::    [Population]           -- all user defined populations of relations and concepts
-                 , allViolations ::  [(Rule,[Paire])]       -- all rules with violations.
+                 , initialPops ::  [Population]             -- all user defined populations of relations and concepts
+                 , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
                  }
 metaValues :: String -> Fspc -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
@@ -98,7 +98,6 @@ instance Language Fspc where
                            , objmsub = Just . Box ONE $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
-  conceptDefs fSpec = nub (concatMap cptdf (concs fSpec)) --use vConceptDefs to get CDs of concepts not in concs too
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
   udefrules    = vrules -- only user defined rules
@@ -117,7 +116,6 @@ instance Identified FProcess where
 
 instance Language FProcess where
   objectdef    = objectdef.fpProc
-  conceptDefs  = conceptDefs.fpProc
   declarations = declarations.fpProc
   udefrules    = udefrules.fpProc
   invariants   = invariants.fpProc

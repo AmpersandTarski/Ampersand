@@ -112,10 +112,7 @@ chpNatLangReqs lev fSpec flags =
                       then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
                       else printThemes toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
                                                                        [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
-      toBeProcessedStuff = ( trace ("conceptsWith "++intercalate ", " [ name c | (c, pps)<-conceptsWith]++"\n"++
-                                    "concepts "++intercalate ", " [ showHS flags "\n     " c | c@PlainConcept{}<-concs fSpec]++"\n"
-                                   )
-                           $ conceptsWith
+      toBeProcessedStuff = ( conceptsWith
                            , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
          where
