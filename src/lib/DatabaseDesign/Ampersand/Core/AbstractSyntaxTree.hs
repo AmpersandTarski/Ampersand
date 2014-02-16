@@ -67,7 +67,7 @@ data A_Context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The declarations defined in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
-         , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxcds :: [(ConceptDef,Maybe String)]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns

@@ -63,7 +63,7 @@ pCtx2aCtx
             , ctxrs = rules
             , ctxds = ctxDecls
             , ctxpopus = nub (udpops++ dclPops)
-            , ctxcds = allConceptDefs
+            , ctxcds = allConceptDefs'
             , ctxks = identdefs
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
@@ -594,7 +594,11 @@ pCtx2aCtx
     lookupConceptDef s = if null cs then fatal 460 ("There is no concept called "++s++". Please check for typing mistakes.") else head cs
               where cs = [cd | cd<-allConceptDefs, name cd==s]
     allConceptDefs :: [ConceptDef]
-    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns++concatMap procCds p_processes
+    allConceptDefs = map fst allConceptDefs'
+    allConceptDefs' :: [(ConceptDef,Maybe String)]
+    allConceptDefs' = zip p_conceptdefs (repeat Nothing)
+                   ++concatMap (\p -> zip (pt_cds  p) (repeat (Just (name p)))) p_patterns
+                   ++concatMap (\p -> zip (procCds p) (repeat (Just (name p)))) p_processes
     
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 -- SJ 20140211 @SJC: TODO graag een fout genereren voor een SESSION atoom anders dan _SESSION.

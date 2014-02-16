@@ -43,12 +43,18 @@ fatal = fatalMsg "Fspec.Fspec"
 data Fspc = Fspc { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
                  , fspos ::        [Origin]                 -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
                  , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                   , pattsInScope :: [Pattern]
+                   , procsInScope :: [Process]
+                   , rulesInScope :: [Rule]
+                   , declsInScope :: [Declaration]
+                   , cDefsInScope :: [A_Concept]
+                   , gensInScope  :: [A_Gen]
                  , fsLang ::       Lang                     -- ^ The default language for this specification, if specified at all.
                  , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
                  , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                  , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
                  , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
-                 , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology
+                 , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                  , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                  , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
                  , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
@@ -60,6 +66,9 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                  , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fspec
                  , allDecls ::     [Declaration]            -- ^ All declarations in the fspec
+                 , vrels ::        [Declaration]            -- ^ All user defined and generated declarations plus all defined and computed totals.
+                                                            --   The generated declarations are all generalizations and
+                                                            --   one declaration for each signal.
                  , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
                  , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
@@ -68,12 +77,9 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vconjs ::       [RuleClause]             -- ^ All conjuncts generated (by ADL2Fspec)
                  , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
                  , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
-                 , vrels ::        [Declaration]            -- ^ All user defined and generated declarations plus all defined and computed totals.
-                                                            --   The generated declarations are all generalizations and
-                                                            --   one declaration for each signal.
                  , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                  , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
-                 , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
+                 , conceptDefs ::  [(ConceptDef,Maybe String)]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , initialPops ::  [Population]             -- all user defined populations of relations and concepts

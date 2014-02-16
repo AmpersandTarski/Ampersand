@@ -286,16 +286,16 @@ where
            ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
            ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fspec)
            ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
+           ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
            ,wrap ", kernels       = " indentA (\_->showHSName) (kernels fspec)
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
+           ,wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fspec)
            ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fspec)
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
-           ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
-           ,     ", fsisa         = isa'"
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
            ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
@@ -305,8 +305,6 @@ where
            ,"}" 
            ] ++   
        indent++"where"++
-       indent++" isa' :: [(A_Concept, A_Concept)]"++
-       indent++" isa'  = "++    showHSName (fsisa fspec)++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
        indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
                                  "[ "++intercalate (indentB++"  , ") (map showHSName (interfaceS fspec))++indentB++"  ]")++
@@ -765,7 +763,10 @@ where
    instance ShowHS ConceptDef where
     showHS flags _ cd
      = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
-
+   instance ShowHSName Char where
+    showHSName c = show c
+   instance ShowHS Char where
+    showHS _ _ c = show c
    instance ShowHSName A_Concept where
     showHSName ONE = haskellIdentifier "cptOne"
     showHSName c = haskellIdentifier ("cpt_"++name c) 

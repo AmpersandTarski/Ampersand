@@ -392,7 +392,8 @@ instance ShowADL Fspc where
           procs = if null (themes fSpec)
                   then vprocesses fSpec
                   else [ prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
-
+instance ShowADL (Maybe String) where
+  showADL _ = ""
 instance ShowADL ECArule where
   showADL eca = "ECA #"++show (ecaNum eca)
 instance ShowADL Event where
