@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.FilePos
-       ( FilePos(..), Origin(..), Pos(Pos) , Traced(..),posIn)
+       ( FilePos(..), Origin(..), Pos(Pos) , Traced(..))
 where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
 --   import DatabaseDesign.Ampersand.Basics      (fatalMsg)
@@ -13,6 +13,7 @@ where
    data Origin = SomewhereNear String | OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord)
 --line column pos
 
+{- SJ20140216: made obsolete. This was used to tell which concept definitions are declared within a pattern or within a process.
    posIn :: Traced a => Origin -> a -> Origin -> Bool
    posIn (FileLoc (FilePos (f , Pos bl bc, _)))
          x
@@ -21,6 +22,7 @@ where
          | bl==el = bc < colnr x && colnr x < ec
          | otherwise = bl < linenr x && linenr x < el
    posIn _ _ _ = False
+-}
  
    instance Show FilePos where
      show (FilePos (fn,Pos l c,_))

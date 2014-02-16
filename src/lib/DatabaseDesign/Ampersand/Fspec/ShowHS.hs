@@ -297,7 +297,7 @@ where
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
            ,     ", fsisa         = isa'"
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
-           ,wrap ", vConceptDefs  = " indentA (\_->showHSName) (vConceptDefs fspec)
+           ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
            ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fspec)
@@ -382,9 +382,9 @@ where
         "\n -- *** Patterns (total: "++(show.length.vpatterns) fspec++" patterns) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fspec]++"\n"
        )++
-       (if null (vConceptDefs fspec) then "" else
-        "\n -- *** ConceptDefs (total: "++(show.length.vConceptDefs) fspec++" conceptDefs) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-sortBy (comparing showHSName) (vConceptDefs fspec)]++"\n"
+       (if null (conceptDefs fspec) then "" else
+        "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fspec++" conceptDefs) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-sortBy (comparing showHSName) (conceptDefs fspec)]++"\n"
        )++
        (if null (allConcepts fspec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++

@@ -51,7 +51,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDe
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
-import Debug.Trace
+--import Debug.Trace
 import Data.List (intercalate,nub,delete)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"

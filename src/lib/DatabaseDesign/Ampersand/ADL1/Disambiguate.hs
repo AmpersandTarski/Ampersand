@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
 {-# LANGUAGE RelaxedPolyRec #-}
-module DatabaseDesign.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..), findConceptOrONE, findConcept, pCpt2aCpt) where
+module DatabaseDesign.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..)) where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
@@ -33,8 +33,8 @@ findConcept :: String -> A_Concept
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
 findConcept x = PlainConcept 
             {cptnm = x
-            ,cpttp = [] -- fatal 588 "Types of concepts are not defined here"
-            ,cptdf = [] -- fatal 589 "df of concepts are not defined here"
+            ,cpttp = fatal 36 "Types of concepts are not defined here"
+            ,cptdf = fatal 37 "df of concepts are not defined here"
             }
 
 class Disambiguatable d where

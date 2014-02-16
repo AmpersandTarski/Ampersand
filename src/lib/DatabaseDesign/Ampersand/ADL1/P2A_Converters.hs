@@ -15,7 +15,7 @@ import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.List(nub)
+import Data.List(nub, intercalate)
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -63,11 +63,11 @@ pCtx2aCtx
             , ctxrs = rules
             , ctxds = ctxDecls
             , ctxpopus = nub (udpops++ dclPops)
-            , ctxcds = p_conceptdefs
+            , ctxcds = allConceptDefs
             , ctxks = identdefs
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
-            , ctxgenconcs = map (map findConcept) (concGroups ++ map (:[]) soloConcs)
+            , ctxgenconcs = map (map castConcept) (concGroups ++ map (:[]) soloConcs)
             , ctxifcs = interfaces
             , ctxps = purposes
             , ctxsql = sqldefs
@@ -162,20 +162,42 @@ pCtx2aCtx
              , genrhs = map pCpt2aCpt (gen_rhs pg)
              , genspc = pCpt2aCpt (gen_spc pg)
              }
-    
+
+    castSign :: String -> String -> Sign
+    castSign a b = Sign (castConcept a) (castConcept b)
+
+{- SJ20140216: The function castConcept is used in the type system, but looks similar to pCpt2aCpt.
+   However, castConcept makes an erroneous concept, which we should prevent in the first place.
+   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work. 
+-}
+    castConcept :: String -> A_Concept
+    castConcept "ONE" = ONE
+    castConcept x = PlainConcept 
+                {cptnm = x
+                ,cpttp = case nub [ cdtyp cd | cd<-cds] of   -- the SQL type of this concept
+                                   []         -> ""        -- will be interpreted as VARCHAR(255) in translation to SQL
+                                   [ cdType ] -> cdType
+                                   ts@(_:_:_) -> fatal 188 ("Concept "++x++" has multiple types: "++intercalate ", " ts)
+                ,cptdf = [ cd | cd<-allConceptDefs, x==cdcpt cd]
+                } where cds = [ cd | cd<-allConceptDefs, x==cdcpt cd]
+
     pCpt2aCpt :: P_Concept -> A_Concept
     pCpt2aCpt pc
         = case pc of
             PCpt{} -> PlainConcept 
-                        {cptnm = p_cptnm pc
-                        ,cpttp = [] -- fatal 588 "Types of concepts are not defined here"
-                        ,cptdf = [ cd | cd<-conceptDefs, p_cptnm pc==cdcpt cd]
+                        { cptnm = p_cptnm pc
+                        , cpttp = case nub [ cdtyp cd | cd<-cds] of   -- the SQL type of this concept
+                                   []         -> ""        -- will be interpreted as VARCHAR(255) in translation to SQL
+                                   [ cdType ] -> cdType
+                                   ts@(_:_:_) -> fatal 188 ("Concept "++p_cptnm pc++" has multiple types: "++intercalate ", " ts)
+                        , cptdf = cds
                         }
+                      where cds = [ cd | cd<-allConceptDefs, p_cptnm pc==cdcpt cd]
             P_Singleton -> ONE   
 
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
-     = pure PCptPopu{ popcpt = findConcept cnm, popas = ps }
+     = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }
     pPop2aPop orig@(P_RelPopu { p_rnme = rnm, p_popps = ps })
      = fmap (\dcl -> PRelPopu { popdcl = dcl, popps = ps})
             (findDecl orig rnm)
@@ -247,16 +269,16 @@ pCtx2aCtx
     addEpsilonLeft a b c e
      = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
                else if c/=name (source e) then fatal 202 ("addEpsilonLeft glues erroneously: c="++show c++"  and e="++show e++".")
-                    else EEps (findConceptOrONE (head b)) (findSign a c) .:. e
+                    else EEps (castConcept (head b)) (castSign a c) .:. e
     addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
     addEpsilonLeft' a e
-     = if a==name (source e) then e else EEps (findConceptOrONE a) (findSign a (name (source e))) .:. e
+     = if a==name (source e) then e else EEps (castConcept a) (castSign a (name (source e))) .:. e
     addEpsilonRight' a e
-     = if a==name (target e) then e else e .:. EEps (findConceptOrONE a) (findSign (name (target e)) a)
+     = if a==name (target e) then e else e .:. EEps (castConcept a) (castSign (name (target e)) a)
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
-     = (if s==name (source e) then id else (EEps (findConceptOrONE s) (findSign s (name (source e))) .:.)) $
-       (if t==name (target e) then id else (.:. EEps (findConceptOrONE t) (findSign (name (target e)) t))) e
+     = (if s==name (source e) then id else (EEps (castConcept s) (castSign s (name (source e))) .:.)) $
+       (if t==name (target e) then id else (.:. EEps (castConcept t) (castSign (name (target e)) t))) e
     
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
@@ -268,7 +290,7 @@ pCtx2aCtx
                             | (a,False) <- lst
                             , not ((name . source . objctx $ a) `elem` r)
                             ] of
-                            [] -> pure (Box (findConceptOrONE (head r)) (map fst lst))
+                            [] -> pure (Box (castConcept (head r)) (map fst lst))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
        ) <?> (traverse typecheckObjDef l <* uniqueNames l)
     
@@ -358,7 +380,7 @@ pCtx2aCtx
           [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
                    (True,True) -> pure (head' (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
-          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map findConceptOrONE . Set.toList) lst)
+          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
        where head' [] =fatal 321 ("empty list on expressions "++show ((p1,b1,e1),(p2,b2,e2)))
              head' (a:_) = a
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
@@ -570,8 +592,9 @@ pCtx2aCtx
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s = if null cs then fatal 460 ("There is no concept called "++s++". Please check for typing mistakes.") else head cs
-              where cs = [cd | cd<-conceptDefs, name cd==s]
-    conceptDefs = p_conceptdefs++concat (map pt_cds p_patterns)++concat (map procCds p_processes)
+              where cs = [cd | cd<-allConceptDefs, name cd==s]
+    allConceptDefs :: [ConceptDef]
+    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns++concatMap procCds p_processes
     
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 -- SJ 20140211 @SJC: TODO graag een fout genereren voor een SESSION atoom anders dan _SESSION.
@@ -614,9 +637,6 @@ resolve es (p,f)
  = case (p,f es) of
   (Src,(e,(b,_))) -> (Src,(e,b))
   (Tgt,(e,(_,b))) -> (Tgt,(e,b))
-
-findSign :: String -> String -> Sign
-findSign a b = Sign (findConceptOrONE a) (findConceptOrONE b)
 
 maybeOverGuarded :: Applicative f => (t -> f a) -> Maybe t -> f (Maybe a)
 maybeOverGuarded _ Nothing = pure Nothing
