@@ -141,6 +141,18 @@ selectExpr fSpec i src trg expr
 
     EUni{}   -> sqlcomment i ("case: EUni (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
                 Just (intercalate " UNION " [ "(" ++ str ++ phpIndent i ++ ")" | e<-exprUni2list expr , Just str<-[selectExpr fSpec (i+4) src trg e]] )
+    ECps (EDcV (Sign ONE _), ECpl expr')
+             -> let src'  = quote $ sqlAttConcept fSpec (source expr') 
+                    trg'  = quote $ sqlAttConcept fSpec (target expr')
+                    trg2  = quote $ noCollide [src'] (sqlAttConcept fSpec (target expr'))
+                in sqlcomment i ("case:  ECps (EDcV (Sign ONE _), ECpl expr')"++phpIndent (i+3)++showADL expr) $
+                   selectGeneric i ("1",src) (trg',trg)
+                      (sqlConcept fSpec (target expr')+++" AS allAtoms")
+                      ("NOT EXISTS"++phpIndent i++" ("+++
+                             selectExists' (i+2) (selectExprBrac fSpec (i + 2) src' trg2 expr' +++ " AS complemented")
+                                                 ("complemented."++trg2++"=allAtoms."++trg')
+                              +++ ")"
+                         )
     ECps{}  ->
        let es = exprCps2list expr in
        case es of 
@@ -531,7 +543,6 @@ sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represente
 sqlAttConcept :: Fspc -> A_Concept -> String
 sqlAttConcept fSpec c | c==ONE = "ONE"
                       | otherwise
-             = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
+             = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                head cs
                where cs = [fldname f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
-                     appname =  name fSpec
