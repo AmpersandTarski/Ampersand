@@ -185,7 +185,11 @@ plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
  = ( "CREATE TABLE `"++name plug++"`"
    , [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
-     | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]
+     | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
+      case (plug, plugFields plug) of
+           (BinSQL{}, _) -> []
+           (_,    plg:_) -> [", PRIMARY KEY (`"++fldname plg++"`)"]
+           _             -> []
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 dropplug :: PlugSQL -> String
