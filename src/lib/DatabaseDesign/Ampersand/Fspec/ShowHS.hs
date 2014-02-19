@@ -262,6 +262,12 @@ where
            ,wrap ", fspos         = " indentA (showHS flags) (fspos fspec)
            ,     ", fsLang        = " ++ show (fsLang fspec) ++ "  -- the default language for this specification"
            ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
+           ,wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fspec)
+           ,wrap ", procsInScope  = " indentA (\_->showHSName) (procsInScope fspec)
+           ,wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fspec)
+           ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fspec)
+           ,wrap ", cDefsInScope  = " indentA (\_->showHSName) (cDefsInScope fspec)
+           ,wrap ", gensInScope   = " indentA (showHS flags)   (gensInScope fspec)
            ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)
            ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
            ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
@@ -297,7 +303,7 @@ where
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
-           ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fspec)
+           ,wrap ", conceptDefs   = " indentA (\_->showCDTuple) (conceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
            ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fspec)
@@ -313,7 +319,6 @@ where
                                  "[ "++intercalate (indentB++", ") (map showHSName (interfaceG fspec))++indentB++"]")++
        indent++" allMetas = "++(if null (metas fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map (showHS flags (indent ++ "         ")) (metas fspec))++indentB++"]") ++
-       (if null (patterns fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-patterns fspec ]++"\n")++
 
 -- WHY?  staan hier verschillende lijstjes met interfaces?
 -- BECAUSE! Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
@@ -382,7 +387,7 @@ where
        )++
        (if null (conceptDefs fspec) then "" else
         "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fspec++" conceptDefs) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-sortBy (comparing showHSName) (conceptDefs fspec)]++"\n"
+        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | (cd,_)<-sortBy (comparing showHSName) (conceptDefs fspec)]++"\n"
        )++
        (if null (allConcepts fspec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
@@ -636,7 +641,7 @@ where
    
    instance ShowHS ViewDef where
     showHS flags indent vd
-     = "Vd ("++showHS flags "" (vdpos vd)++") "++show (vdlbl vd)++" ("++showHSName (vdcpt vd)++")"
+     = "Vd ("++showHS flags "" (vdpos vd)++") "++show (vdlbl vd)++" "++showHSName (vdcpt vd)
        ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ vdats vd)++indent++"  ]"
    
 
@@ -644,9 +649,9 @@ where
    -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
    
    instance ShowHS ViewSegment where
-    showHS _     _      (ViewText str) = "ViewText "++show str
-    showHS _     _      (ViewHtml str) = "ViewHtml "++show str
-    showHS flags indent (ViewExp objDef) = "ViewExp ("++ showHS flags indent objDef ++ ")"
+    showHS _     _      (ViewText str)   = "ViewText "++show str
+    showHS _     _      (ViewHtml str)   = "ViewHtml "++show str
+    showHS flags indent (ViewExp objDef) = "ViewExp "++ showHS flags (indent++"            ") objDef
    
    instance ShowHS Population where
     showHS _ indent pop
@@ -713,7 +718,7 @@ where
     showHS _     _      (EDcI c    ) = "EDcI "++showHSName c
     showHS flags _      (EEps i sgn) = "EEps ("++showHS flags "" i++") ("++showHS flags "" sgn++")"
     showHS flags _      (EDcV sgn  ) = "EDcV ("++showHS flags "" sgn++")"
-    showHS _     _      (EMp1 a c  ) = "EMp1 ("++show a++") "++showHSName c
+    showHS _     _      (EMp1 a c  ) = "EMp1 " ++show a++" "++showHSName c
 
    instance ShowHS Sign where
     showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
@@ -721,8 +726,8 @@ where
    instance ShowHS A_Gen where
     showHS flags _ gen =
       case gen of 
-        Isa{} -> "Isa ("++showHS flags "" (genfp gen)++") ("++showHSName (genspc gen)++") ("++showHSName (gengen gen)++") "
-        IsE{} -> "IsE ("++showHS flags "" (genfp gen)++") ("++showHSName (genspc gen)++") ["++intercalate ", " (map showHSName (genrhs gen))++"] "
+        Isa{} -> "Isa ("++showHS flags "" (genfp gen)++") "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
+        IsE{} -> "IsE ("++showHS flags "" (genfp gen)++") "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "
    
    instance ShowHSName Declaration where
     showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
@@ -892,4 +897,8 @@ where
    showL :: [String] -> String
    showL xs = "["++intercalate "," xs++"]"
 
-
+   showCDTuple :: (ConceptDef,Maybe String) -> String
+   showCDTuple (cd,x) = "("++showHSName cd ++", "++
+                          (case x of 
+                            Nothing -> "Nothing"
+                            Just s  -> "Just "++show s)++")"
