@@ -432,7 +432,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                      }
                        Nothing ->
                                P_Obj { obj_nm   = ""
-                                     , obj_pos  = Origin "pViewAtt CCv221.hs"
+                                     , obj_pos  = origin attexpr
                                      , obj_ctx  = attexpr 
                                      , obj_msub = Nothing
                                      , obj_strs = []
