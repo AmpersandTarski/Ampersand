@@ -4,7 +4,9 @@ where
    import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair,srcPaire,trgPaire)
    import DatabaseDesign.Ampersand.ADL1.Expression                 (notCpl)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+   import DatabaseDesign.Ampersand.Classes.Relational
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg, Identified(..))   
+   import qualified Data.Map as Map
    import Data.List (nub)
    fatal :: Int -> String -> a
    fatal = fatalMsg "Classes.Populated"
@@ -53,46 +55,18 @@ where
             EUni (l,r) -> contents l `uni` contents r
             EIsc (l,r) -> contents l `isc` contents r
             EDif (l,r) -> contents l >- contents r
-            -- The left residual l/r is defined by: for all x,y:  y(l/r)x  <=>  for all z in X, x l z implies y r z.
-            ELrs (l,r) -> [(y,x) | x <- case source l of
-                                          sl@PlainConcept{} -> atomsOf gens pt sl
-                                          sl     -> fatal 68 ("source l should be PlainConcept instead of "++show sl++".")
-                            --   Derivation:
-                            --      y <- atomsOf gens pt (source r), and      [(y,z) `elem` contents r    -> (x,z) `elem` contents l       | z<- atomsOf gens pt (target l `join` target r)]
-                            --   = { implication  }
-                            --      y <- atomsOf gens pt (source r), and      [(y,z) `notElem` contents r || (x,z) `elem` contents l       | z<- atomsOf gens pt (target l `join` target r)]
-                            --   = { De Morgan }
-                            --      y <- atomsOf gens pt (source r), (not.or) [not ((y,z) `notElem` contents r || (x,z) `elem` contents l) | z<- atomsOf gens pt (target l `join` target r)]
-                            --   = { De Morgan }
-                            --      y <- atomsOf gens pt (source r), (not.or) [     (y,z) `elem` contents r && (x,z) `notElem` contents l  | z<- atomsOf gens pt (target l `join` target r)]
-                            --   = { LET P(z)=(y,z) `elem` contents r && (x,z) `notElem` contents l, and use:  or [P(z) | z<-xs ] = null [() | z<-xs, P(z)]  }
-                            --      y <- atomsOf gens pt (source r), (not.null) [ () | z<- atomsOf gens pt (target l `join` target r), (y,z) `elem` contents r && (x,z) `notElem` contents l]
-                            --   =
-                            --      y <- atomsOf gens pt (source r), (not.null) [ () | z<- atomsOf gens pt (target l `join` target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]
-                            --   = { since map snd (contents r) is a subset of atomsOf gens pt (source l `join` source r) }
-                            --      y <- atomsOf gens pt (source r), (not.null) [ () | (y,z)<-contents r, (x,z) `notElem` contents l]
-                            --   =
-                                 ,  (y,z)<-contents r, (x,z) `notElem` contents l ]
+            -- The left residual l/r is defined by: for all x,y:  x(l/r)y  <=>  for all z in X, y r z implies x l z.
+            ELrs (l,r) -> [(x,y) | let fL = Map.fromListWith (++) ([(a,[z]) | (a,z)<-contents l]++[(a,[]) | not (isTot l), a<-atomsOf gens pt (source l)])
+                                 , let fR = Map.fromListWith (++) ([(b,[z]) | (b,z)<-contents r]++[(b,[]) | not (isTot r), b<-atomsOf gens pt (source r)])
+                                 , x<-atomsOf gens pt (source l), y<-atomsOf gens pt (source r)
+                                 , null (fR Map.! y >- fL Map.! x)
+                                 ]
             -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
-            ERrs (l,r) -> [(x,y) | y <- case target r of
-                                          tr@PlainConcept{} -> atomsOf gens pt tr
-                                          tr     -> fatal 86 ("target r should be PlainConcept instead of "++show tr++".")
-                            --   Derivation:
-                            --        x<-atomsOf gens pt (target l), and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       | z<- atomsOf gens pt (source l `join` source r)]
-                            --   = { implication  }
-                            --        x<-atomsOf gens pt (target l), and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       | z<- atomsOf gens pt (source l `join` source r)]
-                            --   = { De Morgan }
-                            --        x<-atomsOf gens pt (target l), (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) | z<- atomsOf gens pt (source l `join` source r)]
-                            --   = { De Morgan }
-                            --        x<-atomsOf gens pt (target l), (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  | z<- atomsOf gens pt (source l `join` source r)]
-                            --   = { LET P(z)=(z,x) `elem` contents l && (z,y) `notElem` contents r, and use:  or [P(z) | z<-xs ] = null [() | z<-xs, P(z)]  }
-                            --        x<-atomsOf gens pt (target l), (not.null) [ () | z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l && (z,y) `notElem` contents r]
-                            --   =
-                            --        x<-atomsOf gens pt (target l), (not.null) [ () | z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
-                            --   = { since map fst (contents l) is a subset of atomsOf gens pt (source l `join` source r) }
-                            --        x<-atomsOf gens pt (target l), (not.null) [ () | (z,x)<-contents l, (z,y) `notElem` contents r]
-                            --   =
-                                 ,    (z,x)<-contents l, (z,y) `notElem` contents r] 
+            ERrs (l,r) -> [(x,y) | let fLflip = Map.fromListWith (++) ([(a,[z]) | (z,a)<-contents l]++[(a,[]) | not (isSur l), a<-atomsOf gens pt (target l)])
+                                 , let fRflip = Map.fromListWith (++) ([(b,[z]) | (z,b)<-contents r]++[(b,[]) | not (isSur r), b<-atomsOf gens pt (target r)])
+                                 , x<-atomsOf gens pt (target l), y<-atomsOf gens pt (target r)
+                                 , null (fLflip Map.! x >- fRflip Map.! y)
+                                 ]
             ERad (l,r) -> [(x,y) | x <- case source l of
                                           sl@PlainConcept{} -> atomsOf gens pt sl
                                           sl     -> fatal 97 ("source l should be PlainConcept instead of "++show sl++".")
@@ -117,18 +91,3 @@ where
             EDcV sgn   -> [mkPair s t | s <- atomsOf gens pt (source sgn), t <- atomsOf gens pt (target sgn) ]
             EMp1 a c   -> [mkPair a a | name c/="SESSION"] -- prevent populating SESSION
 
-{- Derivation of contents (ERrs (l,r)):
-Let cL = contents l
-    cR = contents r
-  contents (ERrs (l,r))
-= [(x,y) | x<-contents (target l), y<-contents (target r)
-         ,      and [    (z,x) `notElem` cL || (z,y) `elem` cR  | z<-contents (source l)] ]
-= [(x,y) | x<-contents (target l), y<-contents (target r)
-         , not ( or [not((z,x) `notElem` cL || (z,y) `elem` cR) | z<-contents (source l)])]
-= [(x,y) | x<-contents (target l), y<-contents (target r)
-         , not ( or [    (z,x)  `elem` cL && (z,y) `notElem` cR | z<-contents (source l)])]
-= [(x,y) | x<-contents (target l), y<-contents (target r)
-         , null [ () | z<-contents (source l), (z,x)  `elem` cL && (z,y) `notElem` cR]]
-= [(x,y) | x<-contents (target l), y<-contents (target r)
-         , null [ () | (z,x') <- cL, x==x', (z,y) `notElem` cR ]]
--}
