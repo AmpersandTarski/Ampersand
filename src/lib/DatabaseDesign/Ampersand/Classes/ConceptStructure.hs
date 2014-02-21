@@ -157,7 +157,7 @@ where
     expressionsIn _ = fatal 148 "expressionsIn not allowed on Declaration"
 
    instance ConceptStructure Rule where
-    concs r   = concs (rrexp r) ++ concs (rrviol r)
+    concs r   = concs (rrexp r) `uni` concs (rrviol r)
     expressionsIn r = foldr (uni) []
                      [ (expressionsIn.rrexp ) r
                      , (expressionsIn.rrviol) r
@@ -170,16 +170,24 @@ where
    instance ConceptStructure Population where
     concs pop@PRelPopu{} = concs (popdcl pop)
     concs pop@PCptPopu{} = concs (popcpt pop)
-    expressionsIn pop    = []
+    expressionsIn _    = []
 
    instance ConceptStructure Purpose where
     concs pop@Expl{} = concs (explObj pop)
-    expressionsIn pop = []
+    expressionsIn _ = []
 
    instance ConceptStructure ExplObj where
     concs (ExplConceptDef cd) = concs cd
     concs (ExplDeclaration d) = concs d
-    expressionsIn pop = []
+    concs (ExplRule _)        = [{-beware of loops...-}] 
+    concs (ExplIdentityDef _) = [{-beware of loops...-}]
+    concs (ExplViewDef _)     = [{-beware of loops...-}]
+    concs (ExplPattern _)     = [{-beware of loops...-}]
+    concs (ExplProcess _)     = [{-beware of loops...-}]
+    concs (ExplInterface _)   = [{-beware of loops...-}]
+    concs (ExplContext _)     = [{-beware of loops...-}]
+    
+    expressionsIn _ = []
 
    instance ConceptStructure (PairViewSegment Expression) where
     concs       (PairViewText _)  = []
