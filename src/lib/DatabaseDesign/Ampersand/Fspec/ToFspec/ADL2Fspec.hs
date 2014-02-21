@@ -37,7 +37,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , procsInScope = procsInThemesInScope
                  , rulesInScope = rulesInThemesInScope
                  , declsInScope = declsInThemesInScope
-                 , cDefsInScope = concsInThemesInScope
+                 , concsInScope = concsInThemesInScope
+                 , cDefsInScope = cDefsInThemesInScope
                  , gensInScope  = gensInThemesInScope
                  , fsLang       = ctxlang context      -- The default language for this specification, if specified at all.
                  , vprocesses   = allProcs
@@ -64,7 +65,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = declarations context
-                 , allConcepts  = concs context
+                 , allConcepts  = concs context `uni` [ONE]
                  , kernels      = constructKernels
                  , fsisa        = let f gen = case gen of 
                                                Isa{} -> [(genspc gen, gengen gen)]
@@ -85,14 +86,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                         else ctxthms context
         pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context) 
         procsInThemesInScope = filter (\p -> name p `elem` themesInScope) (ctxprocs context)
+        cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
         rulesInThemesInScope = ctxrs context `uni` concatMap prcRules procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
         declsInThemesInScope = ctxds context `uni` concatMap prcDcls  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
-        cDefsInThemesInScope = filter isInTheme (ctxcds context)
-          where
-            isInTheme (_ ,mn) = case mn of
-                                 Nothing -> True
-                                 Just n  -> n `elem` ("":themesInScope)
-        concsInThemesInScope = concs (ctxrs context) `uni` concs      procsInThemesInScope `uni` concs   pattsInThemesInScope
+        concsInThemesInScope = concs (ctxrs context)  `uni`  concs procsInThemesInScope  `uni`  concs pattsInThemesInScope
         gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
 
         allQuads = quads flags (\_->True) allrules

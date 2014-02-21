@@ -63,7 +63,7 @@ pCtx2aCtx
             , ctxrs = rules
             , ctxds = ctxDecls
             , ctxpopus = nub (udpops++ dclPops)
-            , ctxcds = allConceptDefs'
+            , ctxcds = allConceptDefs
             , ctxks = identdefs
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
@@ -89,7 +89,7 @@ pCtx2aCtx
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
     genRules = [ ( Set.singleton (name (gen_spc x)), Set.fromList (map name (gen_concs x)))
-               | x <- p_gens ++ concat (map pt_gns p_patterns ++ map procGens p_processes)
+               | x <- p_gens ++ concatMap pt_gns p_patterns ++ concatMap procGens p_processes
                ]
     genLattice :: Op1EqualitySystem String
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
@@ -172,13 +172,14 @@ pCtx2aCtx
 -}
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
-    castConcept x = PlainConcept 
+    castConcept x
+     = PlainConcept 
                 {cptnm = x
                 ,cpttp = case nub [ cdtyp cd | cd<-cds] of   -- the SQL type of this concept
-                                   []         -> ""        -- will be interpreted as VARCHAR(255) in translation to SQL
-                                   [ cdType ] -> cdType
-                                   ts@(_:_:_) -> fatal 188 ("Concept "++x++" has multiple types: "++intercalate ", " ts)
-                ,cptdf = [ cd | cd<-allConceptDefs, x==cdcpt cd]
+                           []         -> ""                  -- will be interpreted as VARCHAR(255) in translation to SQL
+                           [ cdType ] -> cdType
+                           ts@(_:_:_) -> fatal 188 ("Concept "++x++" has multiple database-types: "++intercalate ", " ts)
+                ,cptdf = cds
                 } where cds = [ cd | cd<-allConceptDefs, x==cdcpt cd]
 
     pCpt2aCpt :: P_Concept -> A_Concept
@@ -591,14 +592,13 @@ pCtx2aCtx
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
-    lookupConceptDef s = if null cs then fatal 460 ("There is no concept called "++s++". Please check for typing mistakes.") else head cs
-              where cs = [cd | cd<-allConceptDefs, name cd==s]
+    lookupConceptDef s
+     = if null cs
+       then Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1}
+       else head cs
+       where cs = [cd | cd<-allConceptDefs, name cd==s]
     allConceptDefs :: [ConceptDef]
-    allConceptDefs = map fst allConceptDefs'
-    allConceptDefs' :: [(ConceptDef,Maybe String)]
-    allConceptDefs' = zip p_conceptdefs (repeat Nothing)
-                   ++concatMap (\p -> zip (pt_cds  p) (repeat (Just (name p)))) p_patterns
-                   ++concatMap (\p -> zip (procCds p) (repeat (Just (name p)))) p_processes
+    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns++concatMap procCds p_processes
     
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 -- SJ 20140211 @SJC: TODO graag een fout genereren voor een SESSION atoom anders dan _SESSION.

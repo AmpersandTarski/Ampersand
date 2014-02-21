@@ -4,6 +4,7 @@ module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStruct
                                                                    )
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
+   import DatabaseDesign.Ampersand.Core.ParseTree (ConceptDef(..))
    import DatabaseDesign.Ampersand.Basics
    import Data.List
    import Data.Maybe
@@ -42,20 +43,32 @@ where
     concs     = nub . concatMap concs
     expressionsIn = foldr ((uni) . expressionsIn) [] 
     
-   instance ConceptStructure A_Context where
-    concs     c =       concs ( ctxds c ++ concatMap ptdcs (ctxpats c)  ++ concatMap prcDcls (ctxprocs c) ) 
-                  `uni` concs ( ctxgs c ++ concatMap ptgns (ctxpats c)  ++ concatMap prcGens (ctxprocs c) )
-                  `uni` [ONE]
-    expressionsIn c = foldr (uni) []
-                      [ (expressionsIn.ctxpats) c
-                      , (expressionsIn.ctxprocs) c
-                      , (expressionsIn.ctxifcs) c
-                      , (expressionsIn.ctxrs) c
-                      , (expressionsIn.ctxks) c
-                      , (expressionsIn.ctxvs) c
-                      , (expressionsIn.ctxsql) c
-                      , (expressionsIn.ctxphp) c
-                      ]
+   instance ConceptStructure A_Context where 
+    concs ctx = foldr uni []
+                [ (concs.ctxpats) ctx
+                , (concs.ctxprocs) ctx
+                , (concs.ctxrs) ctx
+                , (concs.ctxds) ctx
+                , (concs.ctxpopus) ctx
+                , (concs.ctxcds) ctx
+                , (concs.ctxks) ctx
+                , (concs.ctxvs) ctx
+                , (concs.ctxgs) ctx
+                , (concs.ctxifcs) ctx
+                , (concs.ctxps) ctx
+                , (concs.ctxsql) ctx
+                , (concs.ctxphp) ctx
+                ]
+    expressionsIn ctx = foldr uni []
+                        [ (expressionsIn.ctxpats) ctx
+                        , (expressionsIn.ctxprocs) ctx
+                        , (expressionsIn.ctxifcs) ctx
+                        , (expressionsIn.ctxrs) ctx
+                        , (expressionsIn.ctxks) ctx
+                        , (expressionsIn.ctxvs) ctx
+                        , (expressionsIn.ctxsql) ctx
+                        , (expressionsIn.ctxphp) ctx
+                        ]
 
    instance ConceptStructure IdentityDef where
     concs       identity   = [idCpt identity] `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
@@ -75,7 +88,11 @@ where
 
 
    instance ConceptStructure A_Concept where
-    concs   c     = [c]
+    concs         c = [c]
+    expressionsIn _ = []
+
+   instance ConceptStructure ConceptDef where
+    concs        cd = [PlainConcept (cdcpt cd) (cdtyp cd) [cd]]
     expressionsIn _ = []
 
    instance ConceptStructure Sign where
@@ -97,15 +114,31 @@ where
     expressionsIn (InterfaceRef _) = [] 
           
    instance ConceptStructure Pattern where
-    concs       p = concs (ptgns p)   `uni` concs (ptdcs p)   `uni` concs (ptrls p)    `uni` concs (ptids p)
+    concs pat = foldr uni []
+                [ (concs.ptrls) pat
+                , (concs.ptgns) pat
+                , (concs.ptdcs) pat
+                , (concs.ptups) pat
+                , (concs.ptids) pat
+                , (concs.ptxps) pat
+                ]
     expressionsIn p = foldr (uni) []
                        [ (expressionsIn.ptrls) p
                        , (expressionsIn.ptids) p
                        , (expressionsIn.ptvds) p
                        ]
 
+
    instance ConceptStructure Process where
-    concs     p = concs (prcGens p) `uni` concs (prcDcls p) `uni` concs (prcRules p) `uni` concs (prcIds p)
+    concs prc = foldr uni []
+                [ (concs.prcRules) prc
+                , (concs.prcGens) prc
+                , (concs.prcDcls) prc
+                , (concs.prcUps) prc
+                , (concs.prcIds) prc
+                , (concs.prcVds) prc
+                , (concs.prcXps) prc
+                ]
     expressionsIn p = foldr (uni) []
                        [ (expressionsIn.prcRules) p
                        , (expressionsIn.prcIds) p
@@ -133,7 +166,21 @@ where
    instance ConceptStructure (PairView Expression) where
     concs         (PairView ps) = concs         ps
     expressionsIn (PairView ps) = expressionsIn ps
-     
+
+   instance ConceptStructure Population where
+    concs pop@PRelPopu{} = concs (popdcl pop)
+    concs pop@PCptPopu{} = concs (popcpt pop)
+    expressionsIn pop    = []
+
+   instance ConceptStructure Purpose where
+    concs pop@Expl{} = concs (explObj pop)
+    expressionsIn pop = []
+
+   instance ConceptStructure ExplObj where
+    concs (ExplConceptDef cd) = concs cd
+    concs (ExplDeclaration d) = concs d
+    expressionsIn pop = []
+
    instance ConceptStructure (PairViewSegment Expression) where
     concs       (PairViewText _)  = []
     concs       (PairViewExp _ x) = concs x

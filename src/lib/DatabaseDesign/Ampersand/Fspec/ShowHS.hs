@@ -303,7 +303,7 @@ where
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
-           ,wrap ", conceptDefs   = " indentA (\_->showCDTuple) (conceptDefs fspec)
+           ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
            ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fspec)
@@ -387,7 +387,7 @@ where
        )++
        (if null (conceptDefs fspec) then "" else
         "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fspec++" conceptDefs) ***: "++
-        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | (cd,_)<-sortBy (comparing showHSName) (conceptDefs fspec)]++"\n"
+        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | cd<-sortBy (comparing showHSName) (conceptDefs fspec)]++"\n"
        )++
        (if null (allConcepts fspec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
@@ -767,7 +767,7 @@ where
 
    instance ShowHS ConceptDef where
     showHS flags _ cd
-     = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
+     = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
    instance ShowHSName Char where
     showHSName c = show c
    instance ShowHS Char where
@@ -896,9 +896,3 @@ where
 
    showL :: [String] -> String
    showL xs = "["++intercalate "," xs++"]"
-
-   showCDTuple :: (ConceptDef,Maybe String) -> String
-   showCDTuple (cd,x) = "("++showHSName cd ++", "++
-                          (case x of 
-                            Nothing -> "Nothing"
-                            Just s  -> "Just "++show s)++")"
