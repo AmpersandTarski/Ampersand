@@ -91,3 +91,43 @@ where
             EDcV sgn   -> [mkPair s t | s <- atomsOf gens pt (source sgn), t <- atomsOf gens pt (target sgn) ]
             EMp1 a c   -> [mkPair a a | name c/="SESSION"] -- prevent populating SESSION
 
+{- Derivation of contents (ERrs (l,r)):
+The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
+
+Consider the following derivation in terms of list comprehension:
+             and [    (z,x)    `elem` contents l -> (z,y) `elem` contents r  | z<-contents (source l)]
+= 
+             and [    (z,x) `notElem` contents l || (z,y) `elem` contents r  | z<-contents (source l)]
+= 
+        not ( or [not((z,x) `notElem` contents l || (z,y) `elem` contents r) | z<-contents (source l)])
+= 
+        not ( or [    (z,x)  `elem` contents l && (z,y) `notElem` contents r | z<-contents (source l)])
+= 
+        null [ () | z<-contents (source l), (z,x)  `elem` contents l && (z,y) `notElem` contents r]
+= 
+        null [ () | z<-contents (source l), (z,x)  `elem` contents l, (z,y) `notElem` contents r]
+= 
+        null [ () | (z,x') <- contents l, x==x', (z,y) `notElem` contents r ]
+= 
+        null [ () | (z,x') <- contents l, x==x' && (z,y) `notElem` contents r ]
+
+Based on this derivation,
+  contents (ERrs (l,r))
+    = [(x,y) | x<-contents (target l), y<-contents (target r)
+             , null [ () | (z,x') <- contents l, x==x', (z,y) `notElem` contents r ]
+             ]
+
+So we construct the PSEUDO-query:
+
+SELECT x, y FROM CONTtgtL, CONTtgtR
+WHERE NOT EXISTS
+      (SELECT z, x'
+       FROM L
+       WHERE x'=x AND
+             NOT EXISTS
+             (SELECT c, d
+              FROM R
+              WHERE z=c AND y=d
+             )
+      )
+-}

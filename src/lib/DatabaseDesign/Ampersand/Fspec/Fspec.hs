@@ -47,7 +47,8 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                    , procsInScope :: [Process]
                    , rulesInScope :: [Rule]
                    , declsInScope :: [Declaration]
-                   , cDefsInScope :: [A_Concept]
+                   , concsInScope :: [A_Concept]
+                   , cDefsInScope :: [ConceptDef]
                    , gensInScope  :: [A_Gen]
                  , fsLang ::       Lang                     -- ^ The default language for this specification, if specified at all.
                  , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
@@ -79,7 +80,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
                  , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                  , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
-                 , conceptDefs ::  [(ConceptDef,Maybe String)]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
+                 , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , initialPops ::  [Population]             -- all user defined populations of relations and concepts

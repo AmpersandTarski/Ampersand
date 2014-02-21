@@ -157,7 +157,7 @@ chpDiagnosis fSpec flags
    = case (fsLang fSpec, unused) of
       (Dutch,[])  -> [Para
                        [Str "Alle conceptdefinities in dit document worden gebruikt in relaties."]
-                     | (not.null.conceptDefs) fSpec]
+                     | (not.null.cDefsInScope) fSpec]
       (Dutch,[c]) -> [Para
                        [Str "Het concept ", Quoted SingleQuote [Str (name c)], Str " is gedefinieerd, maar wordt niet gebruikt."]
                      ]
@@ -166,14 +166,14 @@ chpDiagnosis fSpec flags
                      ]
       (English,[])  -> [Para 
                         [Str "All concept definitions in this document are used in relations."]
-                     | (not.null.conceptDefs) fSpec]
+                     | (not.null.cDefsInScope) fSpec]
       (English,[c]) -> [Para 
                          [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " is defined, but isn't used."]
                      ]
       (English,xs)  -> [Para $
                        [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " are defined, but not used."]
                      ]
-   where unused = [cd | (cd,_) <-conceptDefs fSpec, name cd `notElem` map name (allConcepts fSpec)]
+   where unused = [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (allConcepts fSpec)]
          
     
   
