@@ -144,7 +144,7 @@ instance MetaPopulations Fspc where
     nullContent _ = False
     -- | the order of declarations is done by an order of the concepts, which is a hardcoded list 
     declOrder ::[Declaration] -> [(Int,Declaration)]
-    declOrder decls = zip [1..] (concat (map (sortBy f) (declGroups conceptOrder decls))) 
+    declOrder decls = zip [1..] (concatMap (sortBy f) (declGroups conceptOrder decls))
       where 
         conceptOrder = ["Pattern"
                        ,"Rule"

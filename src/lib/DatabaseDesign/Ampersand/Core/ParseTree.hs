@@ -160,6 +160,7 @@ where
             , cddef :: String   -- ^ The textual definition of this concept.
             , cdtyp :: String   -- ^ The type of this concept.
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+            , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
             }   deriving (Show,Eq)
 
    instance Traced ConceptDef where

@@ -281,7 +281,7 @@ dpRule fSpec flags = dpR
                                         , Quoted  SingleQuote [Str (name r)]
                                         , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
         ncs = concs r >- seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-ncs, (cd,_)<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
+        cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  =  declsUsedIn r
         nds = [d | d@Sgn{}<-ds >- seenDeclarations]     -- newly seen declarations
         rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen declarations

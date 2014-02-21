@@ -75,7 +75,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_PPrcs  = [p | CPrc p<-ces]       -- The processes as defined by the parser
                , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
                , ctx_ds     = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
-               , ctx_cs     = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
+               , ctx_cs     = [c nm | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
                , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
                , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
                , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
@@ -113,7 +113,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        | CRul (P_Rule TermPrim)
                        | CCfy P_Gen
                        | CRel P_Declaration
-                       | CCon ConceptDef
+                       | CCon (String->ConceptDef)
                        | CGen P_Gen
                        | CIndx P_IdentDef
                        | CView P_ViewDef
@@ -157,7 +157,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 , pt_dcs = [d | Pd d<-pes]
                 , pt_rus = [r | Pm r<-pes]
                 , pt_res = [r | Pl r<-pes]
-                , pt_cds = [c | Pc c<-pes]
+                , pt_cds = [c nm | Pc c<-pes]
                 , pt_ids = [k | Pk k<-pes]
                 , pt_vds = [v | Pv v<-pes]
                 , pt_xps = [e | Pe e<-pes]
@@ -181,7 +181,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 | Pd P_Declaration 
                 | Pm RoleRule
                 | Pl P_RoleRelation
-                | Pc ConceptDef
+                | Pc (String->ConceptDef)
                 | Pg P_Gen
                 | Pk P_IdentDef
                 | Pv P_ViewDef
@@ -203,7 +203,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  , procDcls  = [d  | PrD d <-pes]
                  , procRRuls = [rr | PrM rr<-pes]
                  , procRRels = [rr | PrL rr<-pes]
-                 , procCds   = [cd | PrC cd<-pes]
+                 , procCds   = [cd nm | PrC cd<-pes]
                  , procIds   = [ix | PrI ix<-pes]
                  , procVds   = [vd | PrV vd<-pes]
                  , procXps   = [e  | PrE e <-pes]
@@ -227,7 +227,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  | PrD P_Declaration
                  | PrM RoleRule
                  | PrL P_RoleRelation
-                 | PrC ConceptDef
+                 | PrC (String->ConceptDef)
                  | PrG P_Gen
                  | PrI P_IdentDef
                  | PrV P_ViewDef
@@ -344,7 +344,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                                    [ts,ui] <$ pKey "1"
                                    rbld a b = a++b 
                                        
-   pConceptDef :: Parser Token ConceptDef
+   pConceptDef :: Parser Token (String->ConceptDef)
    pConceptDef       = Cd <$> pKey_pos "CONCEPT"
                           <*> pConceptName           -- the concept name
                           <*> ((True <$ pKey "BYPLUG") `opt` False)
