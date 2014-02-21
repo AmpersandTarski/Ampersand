@@ -209,7 +209,14 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") cnm False cdf "Text" [] []
+       , ctx_cs    = [Cd { cdpos = DBLoc "Atlas(A_ConceptDef)"
+                         , cdcpt = cnm
+                         , cdplug = False
+                         , cddef = cdf
+                         , cdtyp = "Text"
+                         , cdref = []
+                         , cdfrom = ""
+                         }
                      | (cid,cdf)<-r_cptdf, not(null cdf) 
                      , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")]
        , ctx_ks    = []
@@ -242,7 +249,8 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
                     | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
-         , pt_gns = [PGen{gen_fp=(DBLoc "Atlas(Isa)"),gen_gen=(PCpt gnm),gen_spc=(PCpt snm)}  -- TODO: Han, would you please look after the CLASSIFY IS statements?
+         , pt_gns = [PGen{ gen_fp = DBLoc "Atlas(Isa)"
+                          ,gen_gen= PCpt gnm,gen_spc=(PCpt snm)}  -- TODO: Han, would you please look after the CLASSIFY IS statements?
                     | (pid',genid)<-r_ptgns, pid'==pid
                     , let gid = geta r_gengen genid (error "while geta r_gengen.")
                     , let sid = geta r_genspc genid (error "while geta r_genspc.")
@@ -250,6 +258,8 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     , let snm = geta r_cptnm sid (error "while geta r_cptnm for spc.")]
          , pt_dcs = [atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
                     |(i,(pid',rid))<-zip [1..] r_ptdcs, pid==pid']
+         , pt_rus = [] --HJO, 20140221: warning verwijderd, maar bij het herzienen van de Atlas zal dit moeten worden doordacht.
+         , pt_res = [] --HJO, 20140221: warning verwijderd, maar bij het herzienen van de Atlas zal dit moeten worden doordacht.
          , pt_cds = []
          , pt_ids = []
          , pt_vds = []
