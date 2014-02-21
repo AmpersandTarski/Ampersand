@@ -209,9 +209,9 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") False cdf [] [] 
+       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") cnm False cdf "Text" [] []
                      | (cid,cdf)<-r_cptdf, not(null cdf) 
-                     ]
+                     , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")]
        , ctx_ks    = []
        , ctx_vs    = []
        , ctx_gs    = []
