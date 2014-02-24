@@ -1,5 +1,5 @@
 CONTEXT RAP
-
+INCLUDE "ASTdocumentation.adl"
 CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn568"
 CONCEPT String "A string is a pString expected to be less than 256 characters."
