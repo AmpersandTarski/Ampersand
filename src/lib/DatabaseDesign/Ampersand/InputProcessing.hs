@@ -33,11 +33,11 @@ createFspec flags =
   do userCtx <- parseWithIncluded flags (fileName flags)
      bothCtx <- if includeRap flags
                 then do dataDir <- getDataDir
-                        let rapFile = dataDir </> "AmpersandData" </> "RepoRap" </> "RAP.adl" 
+                        let rapFile = dataDir </> "AmpersandData" </> "FormalAmpersand" </> "FormalAmpersand.adl" 
                         exists <- doesFileExist rapFile
-                        when (not exists) (fatal 39 $ "RAP file isn't installed properly. RAP.adl expected at:"
+                        when (not exists) (fatal 39 $ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
                                                     ++"\n  "++show rapFile
-                                                    ++"\n  (You might want to reinstall ampersand...)") 
+                                                    ++"\n  (You might want to re-install ampersand...)") 
                         rapCtx <- parseWithIncluded flags rapFile
                         popsCtx <- popsCtxOf userCtx
                         case sequenceA [userCtx, rapCtx, popsCtx] of
@@ -76,15 +76,6 @@ createFspec flags =
                          (Checked (_,includes)) -> fatal 67 "Meatgrinder returns included file????"
      )
 
-getRapCtxt :: Options ->IO(Guarded P_Context)
-getRapCtxt flags = 
-  do dataDir <- getDataDir
-     let rapFile = dataDir </> "AmpersandData" </> "RepoRap" </> "RAP.adl" 
-     exists <- doesFileExist rapFile
-     when (not exists) (fatal 39 $ "RAP file isn't installed properly. RAP.adl expected at:"
-                              ++"\n  "++show rapFile
-                              ++"\n  (You might want to reinstall ampersand...)") 
-     parseWithIncluded flags rapFile
      
 -------------
 type FileContent = (FilePath, String) -- The name and its contents

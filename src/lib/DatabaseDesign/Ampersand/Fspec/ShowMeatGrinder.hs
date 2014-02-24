@@ -13,7 +13,9 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import DatabaseDesign.Ampersand.ADL1.Pair
 import Data.Hashable
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowMeatGrinder"
@@ -71,7 +73,7 @@ instance AdlId ConceptDef where
 instance AdlId Rule where 
  uri a= "Rul"++techId a
 instance AdlId A_Gen where 
- uri a= "Isa"++(show.hash) g
+ uri a= "Gen"++(show.hash) g
         where g = case a of
                     Isa{} -> ((name.gengen) a++(name.genspc) a)
                     IsE{} -> ((concat.map name.genrhs) a++(name.genspc) a)
@@ -81,6 +83,8 @@ instance AdlId Purpose where
  uri a= "Prp"++(show.hash)((show.origin) a)
 instance AdlId Sign where 
  uri (Sign s t) = "Sgn"++(show.hash) (uri s++uri t)
+instance AdlId Paire where
+ uri (l,r) = "Paire"++(show.hash) (l++"_"++r)
  
 data RelPopuType = InitPop | CurrPop deriving Show
 mkUriRelPopu :: Declaration -> RelPopuType  -> String
@@ -175,11 +179,12 @@ instance MetaPopulations Pattern where
           [(uri pat,uri x) | x <- ptxps pat]
    , Pop "ptnm"    "Pattern" "Conid"
           [(uri pat, ptnm pat)]
-   , Pop "ptctx" "Pattern" "Context"
-          [(uri pat,uri fSpec)]
+-- following fiedls would be double (ptctx = ~ctxpats)
+--   , Pop "ptctx" "Pattern" "Context"
+--          [(uri pat,uri fSpec)]
    , Pop "ptdcs"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptgns"   "Pattern" "Isa"
+   , Pop "ptgns"   "Pattern" "Gen"
           [(uri pat,uri x) | x <- ptgns pat]
 --HJO, 20130728: TODO: De Image (Picture) van het pattern moet worden gegenereerd op een of andere manier:
 --   , Pop "ptpic"   "Pattern" "Image"
@@ -220,9 +225,11 @@ instance MetaPopulations Declaration where
              [(uri dcl, unwords ["PRAGMA",show (decprL dcl),show (decprM dcl),show (decprR dcl)])]
       , Pop "decprps" "Declaration" "PropertyRule"
              [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
-      , Pop "decpopu" "Declaration" "RelPopu"
+      , Pop "declaredthrough" "PropertyRule" "Property" 
+             [(uri rul,show prp) | rul <- filter ofDecl (allRules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
+      , Pop "decpopu" "Declaration" "PairID"
              [(uri dcl,mkUriRelPopu dcl CurrPop)] 
-      , Pop "inipopu" "Declaration" "RelPopu"
+      , Pop "inipopu" "Declaration" "PairID"
              [(uri dcl,mkUriRelPopu dcl InitPop)] 
       , Pop "decsgn" "Declaration" "Sign"
              [(uri dcl,uri (decsgn dcl))]
@@ -236,11 +243,16 @@ instance MetaPopulations Declaration where
              [(uri dcl, name dcl)]
  --TODO HIER GEBLEVEN. (HJO, 20130802)
 
+--      , Pop "cptos" "PlainConcept" "AtomID"
+--      , Pop "exprvalue" "ExpressionID" "Expression"
 --      , Pop "rels" "ExpressionID" "Declaration"
---      , Pop "popdcl" "RelPopu" "Declaration"
-
-
- 
+--relnm : Relation × Varid The name of a relation used as a relation token.
+--relsgn : Relation × Sign The sign of a relation.
+--reldcl : Relation × Declaration A relation token refers to a relation.
+--rrnm : Rule × ADLid The name of a rule.
+--rrexp : Rule × ExpressionID The rule expressed in relation algebra.
+--rrmean : Rule × Blob The meanings of a rule.
+--rrpurpose : Rule × Blob The purposes of a rule.
       ] 
              
      Isn{} -> fatal 157 "Isn is not implemented yet"
@@ -252,25 +264,32 @@ instance MetaPopulations Declaration where
                      Just (_,d) -> d == dcl   
 instance MetaPopulations Atom where
  metaPops _ _ atm = 
-   [ Pop "root"  "Atom" "Concept"
+   [ Pop "root"  "AtomID" "Concept"
           [(uri atm,uri(atmRoot atm))]
-   , Pop "atomvalue"  "Atom" "AtomValue"
+   , Pop "atomvalue"  "AtomID" "AtomValue"
           [(uri atm,atmVal atm)]
    ]
-   
+instance MetaPopulations Paire where
+ metaPops _ _ p =
+  [ Pop "left" "PairID" "AtomID"
+         [(uri p, srcPaire p)]
+  , Pop "right" "PairID" "AtomID"
+         [(uri p, trgPaire p)]
+  ]
 instance MetaPopulations A_Gen where
- metaPops _ _ gen@Isa{} =
-   [ Pop "gengen"  "Isa" "Concept"
-          [(uri gen,uri(gengen gen))]
-   , Pop "genspc"  "Isa" "Concept"
-          [(uri gen,uri(genspc gen))]
-   ]
- metaPops _ _ gen@IsE{} =
-   [ Pop "genrhs"  "Isa" "Concept"
+ metaPops _ _ gen =
+  [ Pop "genspc"  "Gen" "Concept"
+            [(uri gen,uri(genspc gen))]
+  ]++
+  case gen of
+   Isa{} ->
+     [ Pop "gengen"  "Gen" "Concept"
+            [(uri gen,uri(gengen gen))]
+     ] 
+   IsE{} ->
+     [ Pop "genrhs"  "Gen" "Concept"
           [(uri gen,uri c) | c<-genrhs gen]
-   , Pop "genspc"  "Isa" "Concept"
-          [(uri gen,uri (genspc gen))]
-   ]
+     ]
 instance MetaPopulations A_Concept where
  metaPops _ fSpec cpt = 
    case cpt of
@@ -287,8 +306,8 @@ instance MetaPopulations A_Concept where
              [(uri cpt,cpttp cpt) ]
       , Pop "cptdf"      "PlainConcept" "Blob"
              [(uri cpt,showADL x) | x <- cptdf cpt]
---      , Pop "cptpurpose" "PlainConcept" "Blob"
---             [(uri cpt,showADL x) | x <- purposeOf fSpec cpt ]
+      , Pop "cptpurpose" "PlainConcept" "Blob"
+             [(uri cpt,showADL x) | lang <- [English,Dutch], x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
      ONE -> [
             ]
