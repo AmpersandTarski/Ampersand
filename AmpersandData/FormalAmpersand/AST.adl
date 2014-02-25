@@ -20,7 +20,7 @@ ctxnm  ::Context->Conid [INJ]
 MEANING IN ENGLISH "The name of a context."
 ctxpats::Context*Pattern
 MEANING IN ENGLISH "The patterns in a context."
-ctxcs  ::Context*Concept
+ctxcs  ::Context*PlainConcept
 MEANING IN ENGLISH "A concept, mentioned anywhere in a context, is declared."
 ENDPATTERN
 
@@ -48,9 +48,9 @@ KEY Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING IN ENGLISH "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
-gengen :: Gen->Concept
+gengen :: Gen->PlainConcept
 MEANING IN ENGLISH "A generalization rule refers to a more generic concept."
-genspc :: Gen->Concept
+genspc :: Gen->PlainConcept
 MEANING IN ENGLISH "A generalization rule refers to a more specific concept."
 
 ENDPATTERN
@@ -59,15 +59,18 @@ PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
                 "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn568"
 KEY Concept: Concept(cptnm)
+CLASSIFY PlainConcept ISA Concept
 
 cptnm :: Concept->Conid [INJ]
 MEANING IN ENGLISH "The name of a concept."
 cptos :: Concept*AtomID
 MEANING IN ENGLISH "The population of a concept."
-cptdf :: Concept*Blob
+cptdf :: PlainConcept*Blob
 MEANING IN ENGLISH "The definitions of a concept."
-cptpurpose:: Concept*Blob
+cptpurpose:: PlainConcept*Blob
 MEANING IN ENGLISH "The purposes of a concept."
+cpttp:: PlainConcept*Blob
+MEANING IN ENGLISH "The (technical) type of a concept"
 
 CONCEPT Order "The order of the is-a-relation between concepts."
 KEY Order: Order(ordername)
