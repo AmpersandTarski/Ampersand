@@ -221,16 +221,16 @@ instance MetaPopulations Declaration where
              [(uri dcl, show(decMean dcl))]
       , Pop "decpurpose" "Declaration" "Blob"
              [(uri dcl, showADL x) | x <- explanations dcl]
-      , Pop "decexample"    "Declaration" "PragmaSentence"
-             [(uri dcl, unwords ["PRAGMA",show (decprL dcl),show (decprM dcl),show (decprR dcl)])]
+--      , Pop "decexample"    "Declaration" "PragmaSentence"
+--             [(uri dcl, unwords ["PRAGMA",show (decprL dcl),show (decprM dcl),show (decprR dcl)])]
       , Pop "decprps" "Declaration" "PropertyRule"
              [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
       , Pop "declaredthrough" "PropertyRule" "Property" 
              [(uri rul,show prp) | rul <- filter ofDecl (allRules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
       , Pop "decpopu" "Declaration" "PairID"
              [(uri dcl,mkUriRelPopu dcl CurrPop)] 
-      , Pop "inipopu" "Declaration" "PairID"
-             [(uri dcl,mkUriRelPopu dcl InitPop)] 
+--      , Pop "inipopu" "Declaration" "PairID"
+--             [(uri dcl,mkUriRelPopu dcl InitPop)] 
       , Pop "decsgn" "Declaration" "Sign"
              [(uri dcl,uri (decsgn dcl))]
       , Pop "decprL" "Declaration" "String"
@@ -263,12 +263,12 @@ instance MetaPopulations Declaration where
                      Nothing -> False
                      Just (_,d) -> d == dcl   
 instance MetaPopulations Atom where
- metaPops _ _ atm = 
-   [ Pop "root"  "AtomID" "Concept"
-          [(uri atm,uri(atmRoot atm))]
-   , Pop "atomvalue"  "AtomID" "AtomValue"
-          [(uri atm,atmVal atm)]
-   ]
+ metaPops _ _ atm = []
+--   [ Pop "root"  "AtomID" "Concept"
+--          [(uri atm,uri(atmRoot atm))]
+--   , Pop "atomvalue"  "AtomID" "AtomValue"
+--          [(uri atm,atmVal atm)]
+--   ]
 instance MetaPopulations Paire where
  metaPops _ _ p =
   [ Pop "left" "PairID" "AtomID"
@@ -278,16 +278,16 @@ instance MetaPopulations Paire where
   ]
 instance MetaPopulations A_Gen where
  metaPops _ _ gen =
-  [ Pop "genspc"  "Gen" "Concept"
+  [ Pop "genspc"  "Gen" "PlainConcept"
             [(uri gen,uri(genspc gen))]
   ]++
   case gen of
    Isa{} ->
-     [ Pop "gengen"  "Gen" "Concept"
+     [ Pop "gengen"  "Gen" "PlainConcept"
             [(uri gen,uri(gengen gen))]
      ] 
    IsE{} ->
-     [ Pop "genrhs"  "Gen" "Concept"
+     [ Pop "genrhs"  "Gen" "PlainConcept"
           [(uri gen,uri c) | c<-genrhs gen]
      ]
 instance MetaPopulations A_Concept where
@@ -296,12 +296,13 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Comment " "
       , Comment $ "*** Concept `"++name cpt++"` ***"
-      , Pop "ctxcs"   "Context" "Concept"
+      , Pop "ctxcs"   "Context" "PlainConcept"
            [(uri fSpec,uri cpt)]
-      , Pop "cptnm"      "PlainConcept" "Conid"
+      , Pop "cptnm"      "Concept" "Conid"   
              [(uri cpt, name cpt)]
-      , Pop "context"    "PlainConcept" "Context"
-             [(uri cpt,uri fSpec)]
+-- removed: equals ctxcs~
+--     , Pop "context"    "PlainConcept" "Context"
+--             [(uri cpt,uri fSpec)]
       , Pop "cpttp"      "PlainConcept" "Blob"
              [(uri cpt,cpttp cpt) ]
       , Pop "cptdf"      "PlainConcept" "Blob"
