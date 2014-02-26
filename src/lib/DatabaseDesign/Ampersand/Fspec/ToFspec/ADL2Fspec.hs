@@ -16,6 +16,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
+   import Data.Maybe
    import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
@@ -40,7 +41,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , concsInScope = concsInThemesInScope
                  , cDefsInScope = cDefsInThemesInScope
                  , gensInScope  = gensInThemesInScope
-                 , fsLang       = ctxlang context      -- The default language for this specification, if specified at all.
+                 , fsLang       = fromMaybe (ctxlang context) (language flags)  -- The language for printing this specification is taken from the command line options (language flags). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
                  , vprocesses   = allProcs
                  , vplugInfos   = definedplugs
                  , plugInfos    = allplugs

@@ -131,7 +131,7 @@ genUMLAssociation :: Association -> UML
 genUMLAssociation ass = 
  do { assocId <- mkUnlabeledId "Assoc"
     ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd (asslhm ass) assocId (assSrc ass)
-    ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (assTrg ass)
+    ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (assTgt ass)
         
     ; return $
         [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\""++assocId++"\" name=\""++assrhr ass++"\" visibility=\"public\">"

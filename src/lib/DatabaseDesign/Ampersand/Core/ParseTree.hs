@@ -537,11 +537,11 @@ where
     showsPrec _ c = showString (name c)
 
 
-   data P_Sign = P_Sign {pSrc :: P_Concept, pTrg :: P_Concept }
+   data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
 
    instance Show P_Sign where
      showsPrec _ sgn = 
-         showString (   "[" ++ show (pSrc sgn)++"*"++show (pTrg sgn) ++ "]" )
+         showString (   "[" ++ show (pSrc sgn)++"*"++show (pTgt sgn) ++ "]" )
 
    data P_Gen =  P_Cy{ gen_spc :: P_Concept         -- ^ Left hand side concept expression 
                      , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression

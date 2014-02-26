@@ -385,7 +385,7 @@ instance ShowADL P_Population where
  showADL pop
   = "POPULATION "++name pop
   ++ case pop of
-        P_TRelPop{} -> "["++(name.pSrc.p_type) pop++"*"++(name.pTrg.p_type) pop++"]"
+        P_TRelPop{} -> "["++(name.pSrc.p_type) pop++"*"++(name.pTgt.p_type) pop++"]"
         _ -> ""
   ++ " CONTAINS\n"
   ++ if (case pop of
