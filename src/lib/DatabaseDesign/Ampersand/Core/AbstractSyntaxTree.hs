@@ -145,8 +145,8 @@ instance Traced Pattern where
  origin = ptpos
 
 data A_Markup =
-    A_Markup { amLang :: Lang
-             , amFormat :: PandocFormat
+    A_Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
+             , amFormat :: PandocFormat -- Idem: no Maybe in the A-structure.
              , amPandoc :: [Block]
              } deriving Show
 

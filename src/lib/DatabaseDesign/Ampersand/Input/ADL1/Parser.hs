@@ -59,14 +59,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
    pContext :: Parser Token (P_Context, [String]) -- the result is the parsed context and a list of include filenames
    pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConid
-                            <*> pList pIncludeStatement 
                             <*> optional pLanguageRef 
                             <*> optional pTextMarkup 
                             <*> pList pContextElement <* pKey "ENDCONTEXT"
      where
-       rebuild :: Origin -> String -> [String] ->   Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
-       rebuild    pos'      nm     includeFileNames lang          fmt                   ces = 
-          (PCtx{ ctx_nm     = nm
+       rebuild :: Origin -> String -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+       rebuild    pos'      nm        lang          fmt                   ces
+        = (PCtx{ ctx_nm     = nm
                , ctx_pos    = [pos']
                , ctx_lang   = lang
                , ctx_markup = fmt
@@ -75,7 +74,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_PPrcs  = [p | CPrc p<-ces]       -- The processes as defined by the parser
                , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
                , ctx_ds     = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
-               , ctx_cs     = [c nm | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
+               , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
                , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
                , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
                , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
@@ -86,7 +85,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
                , ctx_metas  = [m | CMeta m <-ces]
                }
-          , includeFileNames)
+          , [s | CIncl s<-ces]) -- the INCLUDE filenames
 
        pContextElement :: Parser Token ContextElement
        pContextElement = CMeta    <$> pMeta         <|>
@@ -104,7 +103,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          CPhpPlug <$> pPhpplug      <|>
                          CPrp     <$> pPurpose      <|>
                          CPop     <$> pPopulation   <|>
-                         CThm     <$> pPrintThemes
+                         CThm     <$> pPrintThemes  <|>
+                         CIncl    <$> pIncludeStatement
 
 
    data ContextElement = CMeta Meta
@@ -123,6 +123,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        | CPrp PPurpose
                        | CPop P_Population
                        | CThm [String]    -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
+                       | CIncl String     -- an INCLUDE statement
 
    pIncludeStatement :: Parser Token String
    pIncludeStatement = pKey "INCLUDE" *> pString

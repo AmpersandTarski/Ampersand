@@ -73,7 +73,7 @@ data Options = Options { showVersion :: Bool
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analisys
                        , genBericht :: Bool
                        , genMeat :: Bool  -- Generate the meta-population and output it to an .adl file
-                       , language :: Lang
+                       , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
                        , fileName :: FilePath --the file with the Ampersand context
@@ -135,7 +135,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , genFPAExcel   = False
                       , genBericht    = False
                       , genMeat       = False
-                      , language      = Dutch
+                      , language      = Nothing
                       , progrName     = fatal 118 "No monadic options available."
                       , fileName      = fatal 119 "no default value for fileName."
                       , baseName      = fatal 120 "no default value for baseName."
@@ -439,11 +439,11 @@ diagnosisOpt :: Options -> Options
 diagnosisOpt flags                   = flags{diagnosisOnly = True}
 languageOpt :: String -> Options -> Options
 languageOpt l flags                  = flags{language = case map toUpper l of
-                                                       "NL"  -> Dutch
-                                                       "UK"  -> English
-                                                       "US"  -> English
-                                                       "EN"  -> English
-                                                       _     -> Dutch}
+                                                       "NL"  -> Just Dutch
+                                                       "UK"  -> Just English
+                                                       "US"  -> Just English
+                                                       "EN"  -> Just English
+                                                       _     -> Nothing}
 forceSyntaxOpt :: String -> Options -> Options
 forceSyntaxOpt s flags               = flags{parserVersion = case s of
                                               "1" -> Legacy

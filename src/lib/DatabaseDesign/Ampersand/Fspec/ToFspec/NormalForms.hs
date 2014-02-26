@@ -144,10 +144,10 @@ where
      nM posCpl (EImp (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM (not posCpl) l []
                                                   (f,steps',equ'') = nM posCpl r []
-     nM posCpl (ELrs (l,r)) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
+     nM posCpl (ELrs (l,r)) _             = (t ./. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posCpl l []
                                                   (f,steps',equ'') = nM (not posCpl) r []
-     nM posCpl (ERrs (l,r)) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
+     nM posCpl (ERrs (l,r)) _             = (t .\. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM (not posCpl) l []
                                                   (f,steps',equ'') = nM posCpl r []
      nM posCpl (EUni (EUni (l,k),r)) rs   = nM posCpl (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
@@ -181,13 +181,11 @@ where
      nM posCpl (EBrk e)                _  = nM posCpl e []
      nM posCpl (EFlp (ECpl e))         rs = nM posCpl (notCpl (flp e)) rs
      nM _      x _                | simpl = (x,[],"<=>")
--- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False   --ECpl (EIsc (ECpl (EDcD RELATION r
+-- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
      nM _      (EEqu (l,r)) _                            = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
      nM _      (EImp (x,ELrs (z,y))) _                   = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
      nM _      (EImp (y,ERrs (x,z))) _                   = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
      nM _      (EImp (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
-     nM _      (ELrs (l,r)) _                            = (l .!. notCpl (flp r), ["remove left residual (/)"],"<=>")
-     nM _      (ERrs (l,r)) _                            = (notCpl (flp l) .!. r, ["remove right residual (\\)"],"<=>")
      nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
      nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
      nM _      e@(ECpl (ERad (_,ECpl{}))) _              = (deMorganERad e, ["De Morgan"], "<=>")
@@ -210,16 +208,16 @@ where
      nM posCpl (ECps (l,r))           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posCpl l []
                                                                        (f,steps',equ'') = nM posCpl r (l:rs)
-     nM _      (ERad (l,r)) _                   | isImin l = (r, ["-I;x = x"], "<=>")
-     nM _      (ERad (l,r)) _                   | isImin r = (l, ["x;-I = x"], "<=>")
+     nM _      (ERad (l,r)) _                   | isImin l = (r, ["-I!x = x"], "<=>")
+     nM _      (ERad (l,r)) _                   | isImin r = (l, ["x!-I = x"], "<=>")
 --     nM False  (ERad (ECps (r,s),q)) _            | not eq = (r.:.(s.!.q), ["Peirce: (r;s)!q |- r;(s!q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
 --     nM False  (ERad (r,ECps (s,q))) _            | not eq = ((r.!.s).:.q, ["Peirce: (r!s);q |- r!(s;q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
      nM False  (ERad (EUni (r,s),q)) _            | not eq = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
      nM False  (ERad (r,EUni (s,q))) _            | not eq = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
      nM _      (ERad (EIsc (q,s),r)) _                     = ((q.!.r)./\.(s.!.r), ["distribute ! over /\\"],"<=>")
      nM _      (ERad (l,EIsc (q,s))) _                     = ((l.!.q)./\.(l.!.s), ["distribute ! over /\\"],"<=>")
-     nM _      x@(ERad(ECpl{},_))    _                     = (deMorganERad x, ["De Morgan"], "<=>")
-     nM _      x@(ERad(_,ECpl{}))    _                     = (deMorganERad x, ["De Morgan"], "<=>")
+     nM _      (ERad(ECpl l,r))      _                     = (flp l .\. r, [case l of EFlp{} -> "-l~!r = l\r"; _ -> "-l!r = l~\r"], "<=>")
+     nM _      (ERad(l,ECpl r))      _                     = (l ./. flp r, [case r of EFlp{} -> "l!-r~ = l/r"; _ -> "l!-r = l/r~"], "<=>")
      nM posCpl (ERad (l,r))         rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posCpl l []
                                                                        (f,steps',equ'') = nM posCpl r (l:rs)
