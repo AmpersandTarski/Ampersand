@@ -211,7 +211,7 @@ generateRules fSpec flags =
   [ ""
   , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) (invars fSpec)) ++");" ]
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
-       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language flags ] of
+       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                             []    -> ""
                             markup:_ -> aMarkup2String markup
        
