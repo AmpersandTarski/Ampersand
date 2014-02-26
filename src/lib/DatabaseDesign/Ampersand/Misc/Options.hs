@@ -312,7 +312,7 @@ options = map pp
                                                                           "Generate a Excel workbook (.xls).", Hidden)
           , (Option []        ["bericht"]     (NoArg (\flags -> flags{genBericht = True}))
                                                                           "Generate definitions for 'berichten' (specific to INDOORS project).", Hidden)
-          , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'EN').", Public)
+          , (Option []        ["language"]    (ReqArg languageOpt "lang") "The language to be used in your output. Defaults to the language of your context. ('NL' or 'EN').", Public)
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
           , (Option []        ["rap"]         (NoArg (\flags -> flags{includeRap = True}))
                                                                           "Include RAP into the generated artifacts (experimental)", Hidden)
