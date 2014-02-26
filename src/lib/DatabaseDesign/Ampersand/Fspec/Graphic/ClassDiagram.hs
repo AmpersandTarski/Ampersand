@@ -48,7 +48,7 @@ where
     nodes _ = []
 
    instance CdNode Association where
-    nodes a = map nm [assSrc a,assTrg a]
+    nodes a = map nm [assSrc a,assTgt a]
       where
        nm (Left  c  ) = name c
        nm (Right str) = str
@@ -104,7 +104,7 @@ where
                                  , assSrcPort = (name.head.declsUsedIn) r
                                  , asslhm = (mults.flp) r
                                  , asslhr = ""
-                                 , assTrg = Left (target r)
+                                 , assTgt = Left (target r)
                                  , assrhm = mults r
                                  , assrhr = (name.head.declsUsedIn) r
                                  }
@@ -184,7 +184,7 @@ where
                      , hasRootTarget a
                   ]
         where
-          hasRootTarget a = case assTrg a of
+          hasRootTarget a = case assTgt a of
                                Left c ->  c `elem`  kernelConcepts
                                Right _ -> False
           kernelConcepts = map fst (concatMap cLkpTbl tables)
@@ -197,7 +197,7 @@ where
                                   , assSrcPort = fldname a
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTrg = (Left .target.fldexpr) a
+                                  , assTgt = (Left .target.fldexpr) a
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
@@ -205,7 +205,7 @@ where
                                   , assSrcPort = fldname b
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTrg = (Left .target.fldexpr) b
+                                  , assTgt = (Left .target.fldexpr) b
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
@@ -224,7 +224,7 @@ where
                        , assSrcPort = fldname f
                        , asslhm = (mults.flp) expr
                        , asslhr = fldname f
-                       , assTrg = Left (rootOf (target expr))
+                       , assTgt = Left (rootOf (target expr))
                        , assrhm = mults expr
                        , assrhr = (name.head.declsUsedIn) expr
                        }
@@ -341,7 +341,7 @@ where
              DotEdge { fromNode       = (case assSrc ass of
                                           Left c  -> name c
                                           Right s -> s)
-                     , toNode         = case assTrg ass of
+                     , toNode         = case assTgt ass of
                                           Left c  -> name c
                                           Right s -> s
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
@@ -366,7 +366,7 @@ where
           aggregation2edge :: Aggregation -> DotEdge String
           aggregation2edge agg =
              DotEdge { fromNode       = (name.aggSrc) agg
-                     , toNode         = (name.aggTrg) agg
+                     , toNode         = (name.aggTgt) agg
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
                                         , ArrowTail (AType [(ArrMod (case aggDel agg of 
                                                                       Open -> OpenArrow
@@ -438,13 +438,13 @@ where
                                   , assSrcPort :: String       -- ^ the name of the field in the source table
                                   , asslhm :: Multiplicities   -- ^ left hand side multiplicities
                                   , asslhr :: String           -- ^ left hand side role
-                                  , assTrg :: Either A_Concept String -- ^ target: the right hand side class. In case of a link table, the name of that table.
+                                  , assTgt :: Either A_Concept String -- ^ target: the right hand side class. In case of a link table, the name of that table.
                                   , assrhm :: Multiplicities   -- ^ right hand side multiplicities
                                   , assrhr :: String           -- ^ right hand side role
                                   }  deriving Show
    data Aggregation    = OOAggr   { aggDel :: Deleting         -- 
                                   , aggSrc :: A_Concept           --
-                                  , aggTrg :: A_Concept           --
+                                  , aggTgt :: A_Concept           --
                                   } deriving (Show, Eq)
    data Generalization = OOGener  { genAgen :: A_Gen             --
                                   } deriving (Show)

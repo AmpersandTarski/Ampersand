@@ -601,7 +601,7 @@ pCtx2aCtx
     allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns++concatMap procCds p_processes
     
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
--- SJ 20140211 @SJC: TODO graag een fout genereren voor een SESSION atoom anders dan _SESSION.
+-- SJ 20140211 @SJC: TODO graag een typefout genereren voor een SESSION atoom anders dan _SESSION.
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
@@ -624,12 +624,12 @@ pMarkup2aMarkup defLanguage defFormat
              , mFormat = mpdf
              , mString = str
              }
- = A_Markup { amLang = fromMaybe defLanguage ml
+ = A_Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
             , amFormat = fmt
             , amPandoc = string2Blocks fmt str
             }
      where
-       fmt = fromMaybe defFormat mpdf
+       fmt = fromMaybe defFormat mpdf           -- The pandoc format is always defined; if not by the user, then by default.
 
 -- helpers for generating a lattice, not having to write `Atom' all the time
 mjoin,mIsc :: a -> a -> FreeLattice a

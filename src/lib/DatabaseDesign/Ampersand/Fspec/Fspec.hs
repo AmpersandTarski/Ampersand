@@ -50,7 +50,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                    , concsInScope :: [A_Concept]
                    , cDefsInScope :: [ConceptDef]
                    , gensInScope  :: [A_Gen]
-                 , fsLang ::       Lang                     -- ^ The default language for this specification, if specified at all.
+                 , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                  , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
                  , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                  , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)

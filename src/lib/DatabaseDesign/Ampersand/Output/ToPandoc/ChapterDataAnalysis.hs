@@ -186,7 +186,7 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
              Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
              English -> para ( text (name cl) <> text " has the following associations: ")
         <> orderedList [assocToRow assoc | assoc <- assocs oocd
-                         , assSrc assoc == root || assTrg assoc == root]
+                         , assSrc assoc == root || assTgt assoc == root]
                        
     where
      root = case clcpt cl of
@@ -208,10 +208,10 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
                                      Mult MinOne  MaxOne  -> text " moet " <> rel <> text " precies één "
                                      Mult MinOne  MaxMany -> text " moet " <> rel <> text " ten minste één "
                                   ) 
-                            <> (emph.text.nm.assTrg) assoc 
+                            <> (emph.text.nm.assTgt) assoc 
                             <> text ". Over deze relatie geldt omgekeerd dat "
                             <> text "ieder(e) "
-                            <> (emph.text.nm.assTrg) assoc
+                            <> (emph.text.nm.assTgt) assoc
                             <> (case asslhm assoc of
                                      Mult MinZero MaxOne  -> text " "  <> rel' <> text " maximaal één " 
                                      Mult MinZero MaxMany -> text " "  <> rel' <> text " geen tot meerdere "
@@ -231,10 +231,10 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
                                      Mult MinOne  MaxOne  -> text " must " <> rel <> text " exactly one "
                                      Mult MinOne  MaxMany -> text " must " <> rel <> text " at least one "
                                   ) 
-                            <> (emph.text.nm.assTrg) assoc 
+                            <> (emph.text.nm.assTgt) assoc 
                             <> text ". For the other way round, for this relation holds that "
                             <> text "each "
-                            <> (emph.text.nm.assTrg) assoc
+                            <> (emph.text.nm.assTgt) assoc
                             <> (case asslhm assoc of
                                      Mult MinZero MaxOne  -> text " "  <> rel' <> text " at most one " 
                                      Mult MinZero MaxMany -> text " "  <> rel' <> text " zero or more "
@@ -250,7 +250,7 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
              (para.text) ("assSrc: "++(nm.assSrc) assoc)
           <> (para.text) ("asslhm: "++(show.asslhm) assoc)
           <> (para.text) ("asslhr: "++(     asslhr) assoc)
-          <> (para.text) ("assTrg: "++(nm.assTrg) assoc)
+          <> (para.text) ("assTgt: "++(nm.assTgt) assoc)
           <> (para.text) ("assrhm: "++(show.assrhm) assoc)
           <> (para.text) ("assrhr: "++(     assrhr) assoc)
 
