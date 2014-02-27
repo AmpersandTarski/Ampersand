@@ -612,6 +612,8 @@ sqlPlugFields p e' =
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   we want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TRG" would suffice)
 sqlExprSrc :: Fspc->Expression -> String
+sqlExprSrc fSpec (EDcV (Sign a b)) = quote $ sqlAttConcept fSpec a
+sqlExprSrc fSpec (EDcI c) = quote $ sqlAttConcept fSpec c
 sqlExprSrc fSpec expr
    = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
      case sqlRelPlugs fSpec expr of 
@@ -620,6 +622,8 @@ sqlExprSrc fSpec expr
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: Fspc->Expression -> String
+sqlExprTgt fSpec (EDcV (Sign a b)) = quote $ sqlAttConcept fSpec b
+sqlExprTgt fSpec (EDcI c) = quote $ sqlAttConcept fSpec c
 sqlExprTgt fSpec expr
    = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
      case sqlRelPlugs fSpec expr of 
