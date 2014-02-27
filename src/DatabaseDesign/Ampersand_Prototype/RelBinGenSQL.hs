@@ -9,7 +9,6 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (zipnum,Concatable(..)
 import Data.Maybe
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
-import Debug.Trace
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
@@ -134,7 +133,7 @@ selectExpr fSpec i src trg expr
 -}
                    (_:_:_)   | sqlOk ->  sqlcomment i ("case: (EIsc lst'@(_:_:_))"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
                                          selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
-                                                         (cChain ", " exprbracs) (cChain " AND " wherecl)
+                                                         (cChain (", "++phpIndent (i+5)) exprbracs) (cChain " AND " wherecl)
                              | otherwise -> fatal 71 "sqlOk does not hold"
                    _     -> fatal 123 "A list shorter than 2 cannot occur in the query at all! If it does, we have made a mistake earlier."
 
@@ -211,7 +210,7 @@ selectExpr fSpec i src trg expr
                              ]
                    -- fenceExprs lists the expressions and their SQL-fragments.
                    -- In the poles-and-fences metaphor, they serve as the fences between the poles.
-                   fenceExprs = [ ( n                                                                                -- the serial number of this fence (in between poles n and n+1)
+                   fenceExprs = [ ( n                              -- the serial number of this fence (in between poles n and n+1)
                                   , sqlExpr ++ " AS ECps"++show n
                                   , srcAtt
                                   , trgAtt
@@ -379,35 +378,30 @@ selectExprInFROM fSpec i src trg expr
         EBrk e -> selectExprInFROM fSpec i src trg e
         EDcD{} -> Just $ if srcAlias=="" && tgtAlias==""
                          then declName
-                         else "( SELECT "++sqlExprSrc fSpec expr++srcAlias++", "++sqlExprTgt fSpec expr++tgtAlias++ phpIndent i ++
-                              "  FROM "++declName++
-                              "  WHERE True )"
+                         else "( SELECT "++sqlExprSrc fSpec expr++srcAlias++", "++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+                              "  FROM "++declName++" WHERE True )"
                   where
                    declName = case sqlRelPlugs fSpec expr of
                                 []           -> fatal 371 ("No plug found for expression "++showADL expr)
-                                [(plug,s,t)] -> quote (name plug)
+                                [(plug,_,_)] -> quote (name plug)
                                 _            -> fatal 373 ("Multiple plugs found for expression "++showADL expr)
         EDcI c -> Just $ if cptAlias==""
                          then cpt
-                         else "( SELECT "++sqlAttConcept fSpec c++cptAlias++ phpIndent i ++
-                              "  FROM "++cpt++
-                              "  WHERE True )"
+                         else "( SELECT "++sqlAttConcept fSpec c++cptAlias++ phpIndent (i+5) ++
+                              "  FROM "++cpt++" WHERE True )"
                   where
-                   cptAlias = if src==sqlAttConcept fSpec c then "" else " AS "++src
+                   cptAlias = if unquote src==unquote (sqlAttConcept fSpec c) then "" else " AS "++src
                    cpt = sqlConcept fSpec c
-        EDcV{} -> Just $ if srcAlias=="" && tgtAlias==""
-                         then sqlConcept fSpec (source expr)++", "++sqlConcept fSpec (target expr)
-                         else "SELECT "++sqlExprSrc fSpec expr++srcAlias++", "++sqlExprTgt fSpec expr++tgtAlias++ phpIndent i ++
-                              "FROM "++sqlConcept fSpec (source expr)++", "++sqlConcept fSpec (target expr)++
-                              "WHERE True"
+        EDcV{} -> Just $ "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", "++rC++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+                         "  FROM "++leftConcept++", "++rightConcept ++(if rightConcept==rC then "" else " AS "++rC)++" WHERE True )"
                   where
+                   leftConcept = sqlConcept fSpec (source expr) ; rightConcept = sqlConcept fSpec (target expr); rC = noCollide' [leftConcept] rightConcept
         _      -> phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    where 
      unquoted [] = False
      unquoted (x:_) = x /= '`'
-     srcAlias = if src==sqlExprSrc fSpec expr then "" else " AS "++src
-     tgtAlias = if trg==sqlExprTgt fSpec expr then "" else " AS "++trg
-     
+     srcAlias = if unquote src==unquote (sqlExprSrc fSpec expr) then "" else " AS "++src
+     tgtAlias = if unquote trg==unquote (sqlExprTgt fSpec expr) then "" else " AS "++trg
      
 -- (selectSelItem (aSrc,src)) (selectSelItem (aTgt,trg))
 
@@ -612,7 +606,7 @@ sqlPlugFields p e' =
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   we want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TRG" would suffice)
 sqlExprSrc :: Fspc->Expression -> String
-sqlExprSrc fSpec (EDcV (Sign a b)) = quote $ sqlAttConcept fSpec a
+sqlExprSrc fSpec (EDcV (Sign a _)) = quote $ sqlAttConcept fSpec a
 sqlExprSrc fSpec (EDcI c) = quote $ sqlAttConcept fSpec c
 sqlExprSrc fSpec expr
    = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
@@ -622,7 +616,7 @@ sqlExprSrc fSpec expr
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: Fspc->Expression -> String
-sqlExprTgt fSpec (EDcV (Sign a b)) = quote $ sqlAttConcept fSpec b
+sqlExprTgt fSpec (EDcV (Sign _ b)) = quote $ sqlAttConcept fSpec b
 sqlExprTgt fSpec (EDcI c) = quote $ sqlAttConcept fSpec c
 sqlExprTgt fSpec expr
    = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
