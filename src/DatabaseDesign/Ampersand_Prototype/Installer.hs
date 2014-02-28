@@ -86,7 +86,7 @@ installer fSpec flags = intercalate "\n  "
         , let dbrel = sqlRelPlugs fSpec (EDcD d)
         , if null dbrel then fatal 82 "null dbrel" else True
         , let (_,srcField,trgField) = head dbrel
-        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d)]
+        , let qry = fromMaybe "" (selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d)]
         ++
         ["  fwrite($dumpfile, \"ENDCONTEXT\");"
         ,"  fclose($dumpfile);"
