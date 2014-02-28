@@ -384,7 +384,11 @@ selectExprInFROM fSpec i src trg expr
                    declName = case sqlRelPlugs fSpec expr of
                                 []           -> fatal 371 ("No plug found for expression "++showADL expr)
                                 [(plug,_,_)] -> quote (name plug)
-                                _            -> fatal 373 ("Multiple plugs found for expression "++showADL expr)
+                                [(plug,s,t),(plug',s',t')]  --This can be the case for a Prop -relation.
+                                             -> if plug == plug' && s == t' && t == s'
+                                                then quote (name plug)
+                                                else fatal 390 ("Multiple plugs found for expression "++showADL expr)
+                                _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
         EDcI c -> Just $ if cptAlias==""
                          then cpt
                          else "( SELECT "++sqlAttConcept fSpec c++cptAlias++ phpIndent (i+5) ++
