@@ -510,10 +510,10 @@ where
         PRef2Context str -> str
         PRef2Fspc str -> str
 
-   data PPurpose = PRef2 { pexPos :: Origin     -- the position in the Ampersand script of this purpose definition
-                         , pexObj :: PRef2Obj   -- the reference to the object whose purpose is explained
-                         , pexMarkup:: P_Markup   -- the piece of text, including markup and language info
-                         , pexRefID :: String     -- the reference (for traceability)
+   data PPurpose = PRef2 { pexPos :: Origin      -- the position in the Ampersand script of this purpose definition
+                         , pexObj :: PRef2Obj    -- the reference to the object whose purpose is explained
+                         , pexMarkup:: P_Markup  -- the piece of text, including markup and language info
+                         , pexRefIDs :: [String] -- the references (for traceability)
                          } deriving Show
 
    instance Identified PPurpose where

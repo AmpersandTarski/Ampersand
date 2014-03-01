@@ -14,6 +14,7 @@ where
    import Data.Time.LocalTime
    import DatabaseDesign.Ampersand.Fspec.Plug 
    import DatabaseDesign.Ampersand.Misc.TinyXML 
+   import Data.List
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowXMLtiny"
@@ -176,7 +177,7 @@ where
             atts ::  [XAtt]
             atts = [mkAttr "Explains" (name expl)
                    ,mkAttr "Markup" (show(pexMarkup expl))
-                   ,mkAttr "Ref" (pexRefID expl)]
+                   ,mkAttr "Ref" (intercalate ";" (pexRefIDs expl))]
      mkXmlTree expl 
          = Elem (mkTag expl) [PlainText (show (pexMarkup expl))]
 
@@ -184,7 +185,7 @@ where
      mkTag _ = Tag "Purp" [mkAttr "TODO" "Generate XML code for Purpose"] 
                            --  [mkAttr "Purpose" (show expl)
                            --  ,mkAttr "Markup" (show (explMarkup expl))
-                           --  ,mkAttr "Ref" (explRefId expl)]
+                           --  ,mkAttr "Ref" (intersperse ";" (explRefIds expl))]
 
 --        = case expl of
 --                ExplConceptDef  cdef  lang ref _ -> Tag "ExplConceptDef"  (atts cdef lang ref)

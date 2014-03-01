@@ -177,7 +177,7 @@ genCustomProfileElements =
     reqUML :: ReqValue2 -> String
     reqUML (xmiId, req) = intercalate "\n"
      ( ["   <thecustomprofile:Functional base_Requirement="++show xmiId++"/>"]++
-       [tagUML xmiId count puprtxt reftxt | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String (explMarkup p), explRefId p) | p <- reqPurposes req]]
+       [tagUML xmiId count puprtxt reftxt | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String (explMarkup p), intercalate ";" (explRefIds p)) | p <- reqPurposes req]]
      )
     tagUML xmiId nr value reftxt = intercalate "\n"
       [ "     <thecustomprofile:"++keyMeaning++" base_Requirement="++show xmiId++" "++keyMeaning++"="++show value++"/>"
