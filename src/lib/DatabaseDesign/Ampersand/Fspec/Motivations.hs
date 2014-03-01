@@ -71,11 +71,11 @@ instance Motivated Declaration where
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang d
---   = [Expl { explPos   = decfpos d                       -- the position in the Ampersand script of this purpose definition
---           , explObj   = ExplDeclaration d               -- The object that is explained.
---           , explLang  = Just lang                       -- The language of the explanation
---           , explRefId = ""                              -- The reference of the explaination
---           , explCont  = [Para langInlines]              -- The actual explanation
+--   = [Expl { explPos   = decfpos d
+--           , explObj   = ExplDeclaration d 
+--           , explLang  = Just lang
+--           , explRefIds = []
+--           , explCont  = [Para langInlines]
 --           } ] 
 --     where 
 --      langInlines =
@@ -314,11 +314,11 @@ instance Motivated Rule where
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang r
---   = [Expl { explObj   = ExplRule (name r)                                -- The object that is explained.
+--   = [Expl { explObj   = ExplRule (name r)
 --           , explPos   = origin r
---           , explLang  = Just lang                                        -- The language of the explaination
---           , explRefId = ""                                               -- The reference of the explaination
---           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]] -- The actual explanation.
+--           , explLang  = Just lang
+--           , explRefIds = []
+--           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]] 
 --           } ] 
 
 instance Motivated Theme where

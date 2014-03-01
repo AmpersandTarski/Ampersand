@@ -362,7 +362,7 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explObj :: ExplObj    -- ^ The object that is explained.
                      , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
-                     , explRefId :: String     -- ^ The reference of the explaination
+                     , explRefIds :: [String]     -- ^ The references of the explaination
                      } 
 instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 && 

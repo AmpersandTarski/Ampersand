@@ -12,33 +12,33 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
 fpAnalysis :: Fspc -> Options ->  Blocks
-fpAnalysis fSpec flags = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
+fpAnalysis _ _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
-  header :: Blocks
-  header = chptHeader (fsLang fSpec) SoftwareMetrics
-  caIntro :: [Block]
-  caIntro = 
-   case fsLang fSpec of
-      Dutch   -> [Para
-                  [ Str "De specificatie van "
-                  , Quoted  SingleQuote [Str (name fSpec)]
-                  , Str " is geanalyseerd door middel van een functiepuntentelling"
-                  , xrefCitation "IFPUG"
-                  , Str ". "
-                  , Str $ "Dit heeft geresulteerd in een geschat totaal van "++(show.nFpoints) fSpec++" functiepunten."
-                  ]]
-      English -> [Para
-                  [ Str "The specification of "
-                  , Quoted  SingleQuote [Str (name fSpec)]
-                  , Str " has been analysed by counting function points"
-                  , xrefCitation "IFPUG"
-                  , Str ". "
-                  , Str $ "This has resulted in an estimated total of "++(show.nFpoints) fSpec++" function points."
-                  ]]
-   
-
-  fpa2Blocks' :: [Block]
-  fpa2Blocks' = []
+--  header :: Blocks
+--  header = chptHeader (fsLang fSpec) SoftwareMetrics
+--  caIntro :: [Block]
+--  caIntro = 
+--   case fsLang fSpec of
+--      Dutch   -> [Para
+--                  [ Str "De specificatie van "
+--                  , Quoted  SingleQuote [Str (name fSpec)]
+--                  , Str " is geanalyseerd door middel van een functiepuntentelling"
+--                  , xrefCitation "IFPUG"
+--                  , Str ". "
+--                  , Str $ "Dit heeft geresulteerd in een geschat totaal van "++(show.nFpoints) fSpec++" functiepunten."
+--                  ]]
+--      English -> [Para
+--                  [ Str "The specification of "
+--                  , Quoted  SingleQuote [Str (name fSpec)]
+--                  , Str " has been analysed by counting function points"
+--                  , xrefCitation "IFPUG"
+--                  , Str ". "
+--                  , Str $ "This has resulted in an estimated total of "++(show.nFpoints) fSpec++" function points."
+--                  ]]
+--   
+--
+--  fpa2Blocks' :: [Block]
+--  fpa2Blocks' = []
 --   = [ Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
 --             ( case fsLang fSpec of
 --                 Dutch   -> [ [Plain [Str "gegevensverzameling"]]

@@ -102,7 +102,7 @@ instance ShowADL Purpose where
  showADL expl = "PURPOSE "++showADL (explObj expl)
                 ++showADL (amLang (explMarkup expl))
                 ++showADL (amFormat (explMarkup expl))
-                ++(if null (explRefId expl) then "" else " REF "++explRefId expl)
+                ++(if null (explRefIds expl) then "" else " REF "++intercalate ";" (explRefIds expl))
                 ++ "{+"++aMarkup2String (explMarkup expl)++"-}"
 
 instance ShowADL PandocFormat where

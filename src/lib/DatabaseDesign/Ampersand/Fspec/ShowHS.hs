@@ -522,11 +522,11 @@ where
              indentB = indentA++replicate (length ", actAffect = ") ' '
 
    instance ShowHS PPurpose where
-    showHS flags _ expla = 
-       "PRef2 ("++showHS flags "" (pexPos     expla)++") "++
-             "("++showHS flags "" (pexObj     expla)++") "++
-             "("++showHS flags "" (pexMarkup  expla)++") "
-                ++show (pexRefID expla)++" "
+    showHS flags _ expl = 
+       "PRef2 ("++showHS flags "" (pexPos     expl)++") "++
+             "("++showHS flags "" (pexObj     expl)++") "++
+             "("++showHS flags "" (pexMarkup  expl)++") "
+                ++show (intercalate ";" (pexRefIDs expl))++" "
                 
    instance ShowHS PRef2Obj where
     showHS _ _ peObj
@@ -550,7 +550,7 @@ where
               ++"("++showHS flags "" (explObj expla)++") "
                    ++showHS flags "" (explMarkup  expla)++" "
                    ++show (explUserdefd expla)++" "
-                   ++show (explRefId expla)++" "
+                   ++show (explRefIds expla)++" "
 
    instance ShowHS ExplObj where
     showHS _ {-flags-} _ {-i-} peObj = case peObj of                     -- SJ: names of variables commented out to prevent warnings.
