@@ -311,8 +311,9 @@ purposes2Blocks flags ps
            Just p  -> amPandoc p
    where   -- The reference information, if available for this purpose, is put
     ref purp = case fspecFormat flags of
-                FLatex | (not.null.explRefId) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]
-                _                                 -> []
+                FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") 
+                                                         ("\\marge{"++intercalate "; " (map latexEscShw (explRefIds purp))++"}\n")]
+                _                                  -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
  = case eqCl f es of

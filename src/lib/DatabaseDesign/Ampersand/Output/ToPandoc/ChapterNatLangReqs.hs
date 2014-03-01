@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
-import Debug.Trace
+--import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
@@ -23,88 +23,63 @@ fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
 -}
 chpNatLangReqs :: Int -> Fspc -> Options ->  Blocks
 chpNatLangReqs lev fSpec flags = 
-   fromList (header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else [])
-  where
-  header :: [Block]
-  header = toList (chptHeader (fsLang fSpec) SharedLang)
-  legalRefs :: [Block]
-  legalRefs = toList (labeledThing flags (lev+1) "LegalRefs" sectionTitle) ++
-              [  Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $  unlines $
-                         [ "\\begin{longtable}{lp{10cm}}"
-                         , "\\hline "
-                         , "{\\bf "++lawHeader ++ "} & {\\bf " ++ articleHeader ++"} \\\\"
-                         , "\\hline"
-                         , "\\endhead\n" ] ++ 
-                         [ wet ++ " & " ++ art ++"\\\\\n"
-                         | (wet, art) <- allRefs 
-                         ] ++
-                         [ "\\end{longtable}" ]
-                       ]
-                         
-              ]
-         where getWet ref = reverse . takeWhile (/=' ') . reverse $ ref --  the law is the last word in the ref
-               getArtikelen ref = reverse . dropWhile (`elem` " ,") .dropWhile (/=' ') . reverse $ ref 
-               -- the article is everything but the law (and we also drop any trailing commas)
-               (sectionTitle, lawHeader, articleHeader, separator) = 
-                 case fsLang fSpec of
-                   Dutch   -> ("Referentietabel", "Wet", "Artikel", "en")
-                   English -> ("Reference table", "Law", "Article", "and")
-               
-               sortedScannedRefs :: [(String, [Either String Int])]
-               sortedScannedRefs = sort . nub $
-                             [ (getWet ref, scanRef $ trimSpaces art) 
-                             | refStr <- filter (not . null) . map explRefId $ explanations fSpec 
-                             , ref <- splitOn ";" refStr
-                             , art <- splitOn (" "++separator++" ") $ getArtikelen ref
-                             ]
-                    where trimSpaces = let f = reverse . dropWhile (' '==)
-                                       in f . f
-                             
-               allRefs = map (\(w,a) -> (w, unscanRef a)) sortedScannedRefs
-               
-               -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)              
-               scanRef :: String -> [Either String Int]
-               scanRef "" = []
-               scanRef str@(c:_) | isDigit c = scanRefInt str
-                                 | otherwise = scanRefTxt str
-               scanRefTxt "" = []
-               scanRefTxt str = let (txt, rest) = break isDigit str
-                                in  Left txt : scanRefInt rest
-
-               scanRefInt "" = []
-               scanRefInt str = let (digits, rest) = break (not . isDigit) str
-                                in  Right (read digits) : scanRefTxt rest
-
-               unscanRef :: [Either String Int] -> String
-               unscanRef scannedRef = concat $ map (either id show) scannedRef
-
-  dpIntro :: [Block]
-  dpIntro = 
+      -- *** Header ***
+   chptHeader (fsLang fSpec) SharedLang
+   <> -- *** Intro  ***
     case fsLang fSpec of
-        Dutch   -> [ Para
-                     [ Str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
-                     , Quoted  SingleQuote [Str (name fSpec)]
-                     , Str " kunnen worden besproken en uitgedrukt. "
-                     , Str "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
-                     , Str "De taal van ", Quoted  SingleQuote [Str (name fSpec)], Str " bestaat uit begrippen en basiszinnen, "
-                     , Str "waarin afspraken worden uitgedrukt. "
-                     , Str "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
-                     , Str "althans voor zover het ", Quoted  SingleQuote [Str (name fSpec)], Str " betreft, "
-                     , Str "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
-                     , Str "Alle definities zijn genummerd omwille van de traceerbaarheid. "
-                     ]]
-        English -> [ Para
-                     [ Str "This chapter defines the natural language, in which functional requirements of "
-                     , Quoted  SingleQuote [Str (name fSpec)]
-                     , Str " can be discussed and expressed. "
-                     , Str "The purpose of this chapter is to create shared understanding among stakeholders. "
-                     , Str "The language of ", Quoted  SingleQuote [Str (name fSpec)], Str " consists of concepts and basic sentences. "
-                     , Str "All functional requirements are expressed in these terms. "
-                     , Str "When stakeholders can agree upon this language, "
-                     , Str "at least within the scope of ", Quoted  SingleQuote [Str (name fSpec)], Str ", "
-                     , Str "they share precisely enough language to have meaningful discussions about functional requirements. "
-                     , Str "All definitions have been numbered for the sake of traceability. "
-                     ]]
+        Dutch   -> para
+                     ( str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
+                     <> (singleQuoted.str.name) fSpec
+                     <> str " kunnen worden besproken en uitgedrukt. "
+                     <> str "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
+                     <> str "De taal van "
+                     <> (singleQuoted. str. name) fSpec
+                     <> str " bestaat uit begrippen en basiszinnen, "
+                     <> str "waarin afspraken worden uitgedrukt. "
+                     <> str "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
+                     <> str "althans voor zover het "
+                     <> (singleQuoted. str. name) fSpec
+                     <> str " betreft, "
+                     <> str "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
+                     <> str "Alle definities zijn genummerd omwille van de traceerbaarheid. "
+                     )
+        English -> para
+                     ( str "This chapter defines the natural language, in which functional requirements of "
+                     <> (singleQuoted.str.name) fSpec
+                     <> str " can be discussed and expressed. "
+                     <> str "The purpose of this chapter is to create shared understanding among stakeholders. "
+                     <> str "The language of "
+                     <> (singleQuoted.str.name) fSpec
+                     <> str " consists of concepts and basic sentences. "
+                     <> str "All functional requirements are expressed in these terms. "
+                     <> str "When stakeholders can agree upon this language, "
+                     <> str "at least within the scope of "
+                     <> (singleQuoted.str.name) fSpec
+                     <> str ", they share precisely enough language to have meaningful discussions about functional requirements. "
+                     <> str "All definitions have been numbered for the sake of traceability. "
+                     )
+   <> -- *** Requirements ***
+   fromList dpRequirements 
+   <> -- *** Legal Refs ***
+     if (not.genLegalRefs) flags then mempty else
+       legalRefs
+   
+  where
+  legalRefs :: Blocks
+  legalRefs = (labeledThing flags (lev+1) "LegalRefs" sectionTitle) 
+            <> table (str caption')
+                     [(AlignLeft,1/4),(AlignLeft,3/4)]
+                     [(plain.str) lawHeader, (plain.str) articleHeader]  --headers
+                     [ [(para.str.aOlLaw) art  , (para.str.unscanRef.aOlArt) art]
+                     | art <-(sort.nub.concatMap getArticlesOfLaw.getRefs) fSpec  ]
+                     
+         where (sectionTitle, lawHeader, articleHeader, caption') = 
+                 case fsLang fSpec of
+                   Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
+                   English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
+               getRefs ::Fspc ->  [LawRef]
+               getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
+
   dpRequirements :: [Block]
   dpRequirements = theBlocks
     where
@@ -415,3 +390,44 @@ getView fSpec cncpt =
   case filter ((== cncpt) .  vdcpt) (vviews fSpec) of
     []       -> Nothing 
     viewDef:_ -> Just viewDef 
+    
+data LawRef = LawRef { lawRef :: String}
+data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String
+                                 , aOlArt :: [Either String Int]
+                                 } deriving Eq
+toLawRef:: String -> Maybe LawRef
+toLawRef s = case s of
+              [] -> Nothing
+              _  -> (Just . LawRef) s
+getLaw :: ArticleOfLaw -> Inlines
+getLaw x = (str.aOlLaw) x
+
+-- the article is everything but the law (and we also drop any trailing commas)
+getArticlesOfLaw :: LawRef -> [ArticleOfLaw]
+getArticlesOfLaw ref = map buildLA  ((splitOn ", ".unwords.init.words.lawRef) ref)
+   where 
+     buildLA art = ArticleOfLaw ((last.words.lawRef) ref) (scanRef art)
+       where
+    -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)              
+         scanRef :: String -> [Either String Int]
+         scanRef "" = []
+         scanRef str@(c:_) | isDigit c = scanRefInt str
+                           | otherwise = scanRefTxt str
+         scanRefTxt "" = []
+         scanRefTxt str = let (txt, rest) = break isDigit str
+                          in  Left txt : scanRefInt rest
+
+         scanRefInt "" = []
+         scanRefInt str = let (digits, rest) = break (not . isDigit) str
+                          in  Right (read digits) : scanRefTxt rest
+               
+  
+instance Ord ArticleOfLaw where
+ compare a b =
+   case compare (aOlLaw a) (aOlLaw b) of
+     EQ  -> compare (aOlArt a) (aOlArt b)
+     ord -> ord
+
+unscanRef :: [Either String Int] -> String
+unscanRef scannedRef = concat $ map (either id show) scannedRef
+             

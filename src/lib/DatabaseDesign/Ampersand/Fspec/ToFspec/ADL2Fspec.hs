@@ -347,7 +347,7 @@ while maintaining all invariants.
                                                              , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
                                                              }
                                      , explUserdefd = False
-                                     , explRefId = "Regel "++name rul
+                                     , explRefIds = ["Regel "++name rul]
                                      }
                                ,Expl { explPos = OriginUnknown
                                      , explObj = ExplRule (name rul)
@@ -356,7 +356,7 @@ while maintaining all invariants.
                                                              , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
                                                              }
                                      , explUserdefd = False
-                                     , explRefId = "Regel "++name rul
+                                     , explRefIds = ["Regel "++name rul]
                                      }
                                ]
                  } in s

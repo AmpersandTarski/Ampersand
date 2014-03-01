@@ -571,13 +571,13 @@ pCtx2aCtx
     pPurp2aPurp PRef2 { pexPos    = orig     -- :: Origin
                       , pexObj    = objref   -- :: PRefObj
                       , pexMarkup = pmarkup  -- :: P_Markup
-                      , pexRefID  = refId    -- :: String
+                      , pexRefIDs  = refIds  -- :: [String]
                       }
      = (\ obj -> Expl { explPos      = orig
                       , explObj      = obj
                       , explMarkup   = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup
                       , explUserdefd = True
-                      , explRefId    = refId
+                      , explRefIds   = refIds
                       })
        <$> pRefObj2aRefObj objref
     pRefObj2aRefObj :: PRef2Obj -> Guarded ExplObj

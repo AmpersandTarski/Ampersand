@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    (pContext, pPopulations,pTerm, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
-            , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger)
+            , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
             (Parser
             , (<$>) , (<$), (<*>), (<*), (*>), (<|>), (<??>)
@@ -14,7 +14,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
             )
    import DatabaseDesign.Ampersand.Basics  (fatalMsg,Collection(..))
    import DatabaseDesign.Ampersand.Core.ParseTree    
-   import Data.List (nub,sort)
+   import Data.List
    import Data.Maybe
    
    fatal :: Int -> String -> a
@@ -498,12 +498,18 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                <*> pRef2Obj
                                <*> optional pLanguageRef
                                <*> optional pTextMarkup
-                               <*> ((pKey "REF" *> pString) `opt` [])
+                               <*> ((pKey "REF" *> (pList1Sep pSemi pString)) `opt` [])
                                <*> pExpl      
         where
-          rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> String -> String -> PPurpose
-          rebuild    orig      obj         lang          fmt                   ref       str
-              = PRef2 orig obj (P_Markup lang fmt str) ref
+          rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
+          rebuild    orig      obj         lang          fmt                   refs       str
+              = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
+                 where splitOn :: Eq a => [a] -> [a] -> [[a]]
+                       splitOn [] s = [s]
+                       splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
+                                        Nothing -> [t]
+                                        Just i  -> [take i t]  ++ splitOn s (drop (i+length s) t)
+
           pRef2Obj :: Parser Token PRef2Obj
           pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
                      PRef2Declaration <$ pKey "RELATION"  <*> pRelSign     <|>

@@ -6,7 +6,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.ADL1
 
 chpECArules :: Fspc -> Options ->  Blocks
-chpECArules fSpec flags
+chpECArules fSpec _
  =   chptHeader (fsLang fSpec) EcaRules
   <> ecaIntro
   <> ifcECA

@@ -415,7 +415,7 @@ chpDiagnosis fSpec flags
                             , show nrOfRules, show nrOfRefRules, showPercentage nrOfRules nrOfRefRules 
                             ]
         
-          hasRef x = maybe False (any  ((/="").explRefId)) (purposeOf fSpec (fsLang fSpec) x)
+          hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)
           
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%" 
           
