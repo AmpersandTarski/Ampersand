@@ -370,7 +370,7 @@ selectExprInFROM :: Fspc
                -> Expression  -- ^ Whatever expression to generate an SQL query for
                -> Maybe String
 selectExprInFROM fSpec i src trg expr
-   | src == trg = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
+   | src == trg && (not.isIdent) expr = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
    | unquoted src = selectExprInFROM fSpec i (quote src) trg         expr
    | unquoted trg = selectExprInFROM fSpec i src         (quote trg) expr
    | otherwise = 
