@@ -370,6 +370,7 @@ selectExprInFROM :: Fspc
                -> Expression  -- ^ Whatever expression to generate an SQL query for
                -> Maybe String
 selectExprInFROM fSpec i src trg expr
+   | src == trg = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
    | unquoted src = selectExprInFROM fSpec i (quote src) trg         expr
    | unquoted trg = selectExprInFROM fSpec i src         (quote trg) expr
    | otherwise = 
@@ -399,7 +400,9 @@ selectExprInFROM fSpec i src trg expr
         EDcV{} -> Just $ "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", "++rC++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
                          "  FROM "++leftConcept++", "++rightConcept ++(if rightConcept==rC then "" else " AS "++rC)++" WHERE True )"
                   where
-                   leftConcept = sqlConcept fSpec (source expr) ; rightConcept = sqlConcept fSpec (target expr); rC = noCollide' [leftConcept] rightConcept
+                    leftConcept  = sqlConcept fSpec (source expr) 
+                    rightConcept = sqlConcept fSpec (target expr)
+                    rC  = noCollide' [leftConcept] rightConcept
         _      -> phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    where 
      unquoted [] = False

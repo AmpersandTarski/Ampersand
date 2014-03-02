@@ -70,7 +70,7 @@ generateAll fSpec flags =
                       return "")
     writePrototypeFile fname content =
      do { verboseLn flags ("  Generating "++fname)
-        --; verboseLn flags $ content
+        ; verboseLn flags $ content
         ; writeFile (combine (dirPrototype flags) fname) content
         }
 
@@ -179,8 +179,9 @@ generateRules fSpec flags =
                   ++["        // "]
              else   []
            ) ++
-           [ "        // Normalized complement (== violationsSQL): "++ (escapePhpStr.show) violationsExpr
-           , "        , 'violationsSQL' => '"++ fromMaybe (fatal 100 ( "No sql generated for "++showHS flags "" violationsExpr))
+           [ "        // Normalized complement (== violationsSQL): " ] ++
+           (lines ( "        // "++(showHS flags "\n        // ") violationsExpr))++
+           [ "        , 'violationsSQL' => '"++ fromMaybe (fatal 100 ( "No sql generated for "++showHS flags "" violationsExpr))
                                                           (selectExpr fSpec 26 "src" "tgt" violationsExpr)
                                              ++"'" 
            ] ++
