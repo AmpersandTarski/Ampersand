@@ -71,6 +71,7 @@ data Options = Options { showVersion :: Bool
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analisys
+                       , genStaticFiles :: Bool-- Generate the static files into the prototype
                        , genBericht :: Bool
                        , genMeat :: Bool  -- Generate the meta-population and output it to an .adl file
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
@@ -133,6 +134,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , genLegalRefs  = False
                       , genUML        = False
                       , genFPAExcel   = False
+                      , genStaticFiles= True
                       , genBericht    = False
                       , genMeat       = False
                       , language      = Nothing
@@ -319,6 +321,8 @@ options = map pp
           , (Option []        ["meta"]        (NoArg (\flags -> flags{genMeat = True}))
                                                                           "Generate meta-population in an .adl file (experimental)", Hidden)
           , (Option []        ["pango"]       (OptArg pangoOpt "fontname") "specify font name for Pango in graphics.", Hidden)
+          , (Option []   ["no-static-files"]  (NoArg  (\flags -> flags{genStaticFiles = False}))
+                                                                          "Do not generate static files into the prototype directory", Public)
           , (Option []        ["sqlHost"]     (OptArg sqlHostOpt "name")  "specify database host name.", Hidden)
           , (Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "name") "specify database login name.", Hidden)
           , (Option []        ["sqlPwd"]      (OptArg sqlPwdOpt "str")    "specify database password.", Hidden)
