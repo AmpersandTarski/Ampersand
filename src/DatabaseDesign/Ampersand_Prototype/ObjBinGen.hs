@@ -65,7 +65,9 @@ doGenAtlas fSpec flags =
     }             
                 
 writeStaticFiles :: Options -> IO()
-writeStaticFiles flags =  
+writeStaticFiles flags =
+  if genStaticFiles flags
+  then 
  do {
 #ifdef MIN_VERSION_MissingH 
       verboseLn flags "Updating static files"
@@ -74,7 +76,9 @@ writeStaticFiles flags =
 #endif
     ; sequence_ [ writeWhenMissingOrOutdated flags sf (writeStaticFile flags sf) | sf <- allStaticFiles ]
     }
-    
+  else
+      verboseLn flags "Skipping static files (because of command line argument)"
+          
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
 writeWhenMissingOrOutdated flags staticFile act =
 #ifdef MIN_VERSION_MissingH 
