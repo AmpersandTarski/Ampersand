@@ -1,0 +1,211 @@
+@CHARSET "UTF-8";
+
+/* Coming from Milan style sheet */
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #333333;
+}
+a {
+    text-decoration: none;
+}
+#Header { 
+    width: 100%;
+    height: 116px;
+    background-color: white;
+    padding:0px;
+    margin:0px;
+}
+#Decoration {
+    float: right;
+    height: 116px;
+    width: 529px;
+    background: url(../images/header_decoration.jpg) no-repeat;
+}
+
+button.Button {
+    border:none;
+    font-size:80%;
+    width: 120px;
+    height: 30px;
+    background: url(../images/EditButton.png) no-repeat 0px 0px;
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+    margin: 5px 10px 0 10px;
+}
+button.Button:hover {
+    background-position: 0px -30px;
+    color: white;
+}
+
+
+/* General */
+
+#ScrollPane {
+    top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more diffs */
+    padding-top: 30px;
+    padding-left: 10px;    
+}
+
+
+/* Atom name */  
+
+.AtomName {
+    display: block;  
+    float: left; /* so the dotted underline for multiple interfaces doesn't stretch */
+    font-family: Arial;
+    font-style: bold;
+    font-size: 13px;
+    border-bottom-width: 1px;
+    border-bottom-style: dotted; /* only specifying the width does not reserve space for the border */
+    border-bottom-color: transparent; /* so we switch it on and off with the color */
+/* following line has been commented out to support Blobs (as in CONCEPT X "<definition>" TYPE "Blob"
+/*    height: 16px; /* not great to have a fixed height, but otherwise the label height alternates slightly because of yet unknown reasons */
+}
+
+/* AtomName for atoms without subinterfaces (atomic=true) */
+[editing=false] .Atom[atomic=true][hasInterface] > .AtomName {
+    cursor: pointer;
+    color: #1A9AEA;
+}
+[editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName {
+    cursor: pointer;
+    color: #1A9AEA;
+    border-bottom-color: #1A9AEA;
+}
+[editing=false] .Atom[atomic=true][hasInterface] > .AtomName:hover {
+    color: #BF1E74;
+}
+[editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName:hover {
+    border-bottom: 1px dotted #BF1E74;
+}
+[editing=true] .Atom[atomic=true] > .AtomName {
+    color: black;
+    float: none;  /* so the background that signifies editability does stretch */
+}
+
+/* AtomName for atoms with subinterfaces (atomic=false)
+   These get a button for navigation and are not displayed while navigating 
+   
+   IE8 does not support color: transparent. A workaround with 'after' pseudo elements is also not possible in IE8,
+   since it does not allow an 'after' element to have different visibility or transparency from its parent. Hence, it is
+   not possible to hide the name and show the image in IE without adding a div. IE8 users are advised to upgrade or use Firefox.
+   
+   */
+[editing=false] .Atom[atomic=false] > .AtomName {
+    color: transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    float: right;
+    margin-right: 5px;
+    margin-top: -7px;
+    width: 15px;
+    background-repeat:no-repeat;
+    background-position: 0px 0px;
+}
+[editing=false] .Atom[atomic=false][hasInterface] > .AtomName {
+    background-image: url('../images/NavigationButton.png');
+}
+[editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName {
+     background-image: url('../images/NavigationButtonMulti.png');
+}
+[editing=false] .Atom[atomic=false][hasInterface] > .AtomName:hover {
+    background-image: url('../images/NavigationButtonHover.png');
+} 
+[editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName:hover {
+     background-image: url('../images/NavigationButtonMultiHover.png');
+}
+
+/* when we are editing, hide the atom name completely, since we don't want a button now */
+[editing=true] .Atom[atomic=false] > .AtomName {
+    display: none;
+}
+
+/* unless the atom is deleted and we have dev=true, because then we want to see a crossed out name */
+[dev=true][editing=true] .Atom[atomic=false][status=deleted] > .AtomName {
+    display: block;
+}
+
+
+/* DeleteStub */
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
+  	background-position: 3px 4px;
+  	width: 22px;
+}
+[editing=true] .AtomList[relation] { /* in this case, the delete stub will serve as the padding */
+    padding-left: 0px;
+}
+
+
+/* Special behavior for top level elements */
+
+#ScrollPane > .Atom > .AtomName {
+    display: none;
+} 
+#ScrollPane > .Atom > .InterfaceList {
+    border: none;
+    padding: 0px;
+} 
+
+#ScrollPane > .Atom > .InterfaceList > .Interface> .Label {
+    font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px;
+} 
+
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList {
+    display: block;
+    margin: 0px;
+    border-width: 0px;
+} 
+
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow[rowType=Normal] {
+    display: block;
+} 
+
+#ScrollPane > .Atom > .InterfaceList> .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .AtomName {
+    display: none;
+} 
+
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList {
+    border: none;
+    padding: 0px;
+} 
+
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface {
+    float: left;
+    border-style: solid;
+    border-color: #CDD8DE;
+    border-width: 1px;
+    -moz-border-radius: 5px;  /* rounded corners for Firefox */
+    -webkit-border-radius: 5px;  /* rounded corners for Safari */
+    padding: 10px;
+    margin-left: 0px;
+    margin-right: 20px;
+}
+    
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface > .Label {
+    font-size: 16px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
+}
+    
+
+/* Spacing */
+.Label {
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+.AtomList {
+    margin: 0px;
+    padding-bottom: 2px;
+    border: 0px;
+}
+.AtomListElt {
+    padding: 0px;
+    padding-bottom: 6px;
+}
+.InterfaceList {
+    margin-top: 10px;
+    padding: 5px;
+} 
+.Interface {
+    margin-bottom: 0px;
+}

@@ -1,0 +1,21 @@
+@import url("Oblomilan.css");
+
+#Header { 
+    width: 100%;
+    height: 80px;
+    background: white;
+    padding:0px;
+    margin:0px;
+}
+#Logo {
+    float: left;
+    height: 80px;
+    width: 300px;
+    background: url("../images/apptitle.png") no-repeat;
+}
+#Decoration {
+/*  float: right; */
+    width: 380px;
+    height: 80px;
+    background: url("../images/i-World_Lab_Logo.png") no-repeat;
+}

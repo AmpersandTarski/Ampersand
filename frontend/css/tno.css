@@ -1,0 +1,46 @@
+body {
+	padding-top: 0px;
+}
+
+.mainview {
+	padding: 100px 15px 0px 15px;
+}
+
+.fullview {
+	padding: 80px 10px 0px 10px;
+}
+
+.navbar-fixed-top {
+	top: 3px;
+}
+
+.tno {
+	margin: 0;
+	padding: 0;
+	height: 40px;
+	background-image: url('../images/bg.png');
+	background-repeat: repeat-x;
+}
+
+svg {
+	border: 1px solid black;
+}
+
+#ScrollPane {
+	top: 0px;
+	padding: 0px;
+}
+
+
+#violations {
+	//float: right !important;
+}
+#invariants {
+
+}
+
+.alert {
+	margin-bottom :	2px;
+	padding-top : 5px;
+	padding-bottom : 5px;
+}

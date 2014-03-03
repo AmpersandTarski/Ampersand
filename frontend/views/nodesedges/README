@@ -1,0 +1,25 @@
+Readme for the CyberSA display function
+=======================================
+
+
+Architecture:
+-------------
+
+[Database]
+Contains the view information, including the nodes and edges
+
+[Config file]
+Contains the view to display, as well as colour and image details
+
+[JSON.php]
+Reads the config file and the database and returns json-formatted view data
+
+[creategraph.js]
+Reads the view data from JSON.php and turns it into a fancy display
+
+[index.php]
+Includes creategraph.js and can display the graph in a templated page
+
+
+
+
