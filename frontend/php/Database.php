@@ -3,6 +3,7 @@ error_reporting(E_ALL ^ E_DEPRECATED);
 ini_set("display_errors", 1);
 
 require __DIR__.'/../Generics.php';
+require_once __DIR__.'/../dbsettings.php';
 require_once __DIR__.'/DatabaseUtils.php';
 
 if (!isset($execEngineSays))    // should have been set in 'pluginsettings.php'

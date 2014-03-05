@@ -22,11 +22,13 @@ class Database
 	private function __construct()
 	{
 		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
+		$this->dbname = $DB_name;
 		
-		$this->dblink = mysql_connect($DB_host, $DB_user, $DB_pass) or die("Username / password are probably incorrect.");
+		$this->dblink = mysql_connect($DB_host, $DB_user, $DB_pass);
+		if (mysql_error()) throw new Exception(mysql_error());
 		
-		$this->dbname = $DB_name; // from config.php
 		mysql_select_db($this->dbname, $this->dblink);
+		if (mysql_error()) throw new Exception(mysql_error());
 	}
 	
 	// Prevent any copy of this object
@@ -43,9 +45,9 @@ class Database
 
 	public function Exe($query)
 	{
-		$result = mysql_query($query,$this->dblink) OR die ("<br />\n<span style=\"color:red\">Query: $query UNsuccessful :</span> " . mysql_error() . "\n<br />");
-		
-		// oude code: if ($error) die; // throw exception("<div class=InternalError>$error</div>");
+		$result = mysql_query($query,$this->dblink);
+
+		if (mysql_error()) throw new Exception(mysql_error());
 
 		if ($result === false) return false;
 		if ($result === true) return true;

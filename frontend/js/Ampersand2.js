@@ -582,8 +582,8 @@ function initializeAutocomplete($textfield, $atom) {
 
 function navigateTo(interface, atom) {
   window.location.href = '?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
-                                            'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '');
-                                        // +'&role='+getSelectedRole();
+                                            'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '')
+											+'&role='+getSelectedRole();
   // the check for undefined is necessary for when navigateTo is called on a role change from the Main page
 }
 
@@ -932,7 +932,13 @@ function attrBoolValue(attrStr) {
 }
 
 function getSelectedRole() {
-  return $('#RoleSelector').val();
+  return getUrlVars('role');
+}
+
+function getUrlVars( item ) {
+        var vars = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) { vars[key] = value; });
+        return vars[item];
 }
 
 // a replacement of get that uses ajax to disable any caching (as html meta tags do not always succeed in disabling the cache)

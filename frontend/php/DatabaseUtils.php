@@ -1,8 +1,5 @@
 <?php
-require __DIR__.'/../dbSettings.php';
-// We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
-// Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
-// by php/Database.php, we would need '../dbSettings.php'.
+require_once __DIR__.'/../dbSettings.php';
 
 // let PHP also report undefined variable references
 function terminate_missing_variables($errno, $errstr, $errfile, $errline)

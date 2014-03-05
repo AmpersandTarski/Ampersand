@@ -5,12 +5,31 @@ ini_set("display_errors", 1);
 $debug = false;
 
 require_once (__DIR__.'/Generics.php'); // loading the Ampersand model
+require_once (__DIR__.'/inc/ErrorHandling.php');
+require_once (__DIR__.'/inc/Session.php');
+require_once (__DIR__.'/inc/RuleEngine.php');
 require_once (__DIR__.'/db/Database.php');
 require_once (__DIR__.'/plugins/execEngine/execEngine.php'); // make ExecEngine functions available
 
-require_once (__DIR__.'/dbsettings.php');
+try {
+	$db = Database::singleton();
+} catch (Exception $e) {
+	ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
+}
+
+if(isset($_REQUEST['role'])) $_SESSION['role'] = $_REQUEST['role'];
+if(!isset($_SESSION['role'])) $_SESSION['role'] = null;
+
+// $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : null; // role=-1 (or not specified) means no role is selected
+$selectedRoleNr = $_SESSION['role']; // TODO
+
+$session = new Session($_SESSION['role']);
+
+RuleEngine::checkRules($_SESSION['role']);
 
 initSession(); // initialize both a PHP session and an Ampersand session as soon as we can...
+
+
 
 ?>
 <!DOCTYPE html>
@@ -43,7 +62,7 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 		<script type="text/javascript">
 
 			<?php 
-			$selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
+			
 			generateInterfaceMap();
 			if (isset($_REQUEST['interface'])) genEditableConceptInfo($_REQUEST['interface']);
 			?>
@@ -52,47 +71,111 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 	</head>
 	<body onload="initialize()">
 		
-		<?php include (__DIR__.'/skins/tno/header.php');?>
+		<div class="navbar navbar-default navbar-fixed-top">
+			<div class="tno">
+				<div class="container">
+					<img src="images/tnotimeline.png" alt="TNO" />
+				</div>
+			</div>
+			<div class="container">
+				<ul class="nav nav-pills">
+					<li id="overview">
+						<a href="?interface="><?php echo $dbName;?></a>
+					</li>
+					
+					<?php foreach($session->getInterfaces(true) as $interface) 
+									echo '<li id="'.escapeHtmlAttrStr(escapeURI($interface['name'])).'">' // the interface attribute is there so we can style specific menu items with css
+										.'<a href="?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'
+										.'<span class="glyphicon glyphicon-list-alt"></span> '.htmlSpecialChars($interface['name']).'</a>'
+										.'</li>';
+					?>
+					
+					<li class="dropdown pull-right">
+						<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-plus"></span></a>
+						<ul class="dropdown-menu" role="menu">
+						  <?php foreach($session->getInterfaces(false) as $interface) echo '<li><a href="?interface='.$interface['name'].'&atom='.$interface['srcConcept'].'_'.time().'">'.htmlSpecialChars($interface['srcConcept'] . '(' . $interface['name'] . ')').'</a></li>';?>
+						</ul>
+					</li>
+					
+					<li class="dropdown pull-right">
+						<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span></a>
+						<ul class="dropdown-menu" role="menu">
+						  <?php  foreach($session->getRoles() as $role) echo '<li><a href="?role='.$role->id.'">'.htmlSpecialChars($role->name).'</a></li>'; ?>
+						</ul>
+					</li>
+					
+					<li id="viewer" class="pull-right">
+						<a href="views/"><span class="glyphicon glyphicon-eye-open"></span></a>
+					</li>
+					
+					<li id="MenuBarReset" class="pull-right">
+						<a href="installer.php"><span class="glyphicon glyphicon-trash"></span></a>
+					</li>
+
+				</ul>
+			</div>
+		</div>
 		
 		<div class="container mainview">
 			<div id="errors">
+				<?php
+				foreach (ErrorHandling::getErrors() as $error){
+				?>
 				<div class="alert alert-danger alert-dismissable">
 					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-					<strong>Error!</strong> Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>.
+					<strong>Error!</strong> <?php echo $error;?>
 				</div>
-			</div>
-			<div id="violations">
-				<?php // $violations = getViolations($selectedRoleNr);?>
-				<div class="alert alert-warning alert-dismissable">
-					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-					<strong>Violation!</strong> <a href="#" class="alert-link">Test</a>
-				</div>
+				<?php } ?>
 			</div>
 			<div id="invariants">
+				<?php
+				foreach (ErrorHandling::getInvariants() as $invariant){
+				?>
 				<div class="alert alert-danger alert-dismissable">
 					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-					<strong>Invariant!</strong> <a href="#" class="alert-link">Test</a>
+					<strong>Invariant!</strong> <?php echo $invariant;?>
 				</div>
+				<?php } ?>
 			</div>
+			<div id="violations">
+				<?php
+				foreach (ErrorHandling::getViolations() as $violation){
+				?>
+				<div class="alert alert-warning alert-dismissable">
+					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+					<strong>Violation!</strong> <?php echo $violation;?>
+				</div>
+				<?php } ?>
+			</div>
+			<div id="notifications">
+				<?php
+				foreach (ErrorHandling::getNotifications() as $notification){
+				?>
+				<div class="alert alert-info alert-dismissable">
+					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+					<strong>Notification!</strong> <?php echo $notification;?>
+				</div>
+				<?php } ?>
+			</div>
+			<div id="notifications">
+				<?php
+				foreach (ErrorHandling::getSuccesses() as $success){
+				?>
+				<div class="alert alert-success alert-dismissable">
+					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+					<strong>Success!</strong> <?php echo $success;?>
+				</div>
+				<?php } ?>
+			</div>
+			
 			
 		<?php
 
-		$timeStamp = getTimestamp($err); // access database to see if it is there
-		if ($err){
-			echo '<br/>Cannot access database. Make sure the MySQL server is running, or <a href="javascript:resetDatabase()">create a new database</span></a>.';  
-		} else if (isset ($_REQUEST['Login'])){
-			echo '<div id=AmpersandRoot>';
-				Login();
-			echo '</div>';
-		} else if (isset ($_REQUEST['CheckLogin'])){
-			echo '<div id=AmpersandRoot>';
-				CheckLogin();
-			echo '</div>';
-		} else if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
+		 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 
 			// Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
 			// This will be obsolete once these and other properties are in a separate div. 
-			echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".$timeStamp."\">"; 
+			echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp($err)."\">"; 
 			echo "</div>";
 
 		} else {
@@ -107,15 +190,8 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 			    .' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept'])
 				.' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false')
 				." refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($selectedRoleNr))
-				.' timestamp="'.$timeStamp.'">';
+				.' timestamp="'.getTimestamp($err).'">';
 
-			echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
-			echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
-
-			echo '<div id=SignalAndPhpLogs>';
-			echo '<div class=LogWindow id=PhpLog minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
-					genSignalLogWindow($selectedRoleNr);
-			echo '</div>';
 
 			if  (!empty($allInterfaceObjects[$interface]['editableConcepts'])){
 				echo '<div class="container">';
@@ -162,42 +238,6 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 </html>
 
 <?php 
-
-function topLevelInterfaceLinks() {
-	global $allInterfaceObjects;
-	global $selectedRoleNr;
-	
-	foreach($allInterfaceObjects as $interface) {
-		if ($interface['srcConcept']=='ONE' && isInterfaceForRole($interface, $selectedRoleNr)){
-			echo '<li id="'.escapeHtmlAttrStr(escapeURI($interface['name'])) // the interface attribute is there so we can style specific menu items with css
-				.'"><a href="?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
-				.'"><span class="glyphicon glyphicon-list-alt"></span> '.htmlSpecialChars($interface['name']).'</a></li>';
-		}
-	}
-}
-
-function genRolesDropDownMenu(){
-	global $allRoles;
-	
-	foreach($allRoles as $key => $role) {
-		$roleNm = $role['name'];
-		echo '<li><a href="?role='.$key.'">'.htmlSpecialChars($roleNm).'</a></li>';
-	}
-}
-
-function genNewAtomDropDownMenu() {
-	global $allInterfaceObjects;
-	global $selectedRoleNr;
-
-	foreach($allInterfaceObjects as $interface) {
-		if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
-			$interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
-			$conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
-			echo '<li><a href="?interface='.$interfaceStr.'&atom='.$conceptStr.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '').'">'.htmlSpecialChars($interface['srcConcept'] . '(' . $interface['name'] . ')').'</a></li>';
-		}
-	}
-
-}
 
 
 function generateInterfaceMap() {
@@ -332,13 +372,6 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
 	return $html;
 }
 
-function genSignalLogWindow($selectedRoleNr) {
-	echo "<div class=LogWindow id=SignalLog minimized=false><div class=MinMaxButton></div><div class=Title>"
-		.($selectedRoleNr==-1 ? "All signals" : "Signals for ".getRoleName($selectedRoleNr))
-		."</div>";
-		checkRoleRules($selectedRoleNr);
-	echo "</div>";
-}
 
 function genEditableConceptInfo($interface) {
 	global $allInterfaceObjects;

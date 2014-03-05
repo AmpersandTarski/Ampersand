@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../dbSettings.php';
 
 // let PHP also report undefined variable references
 function terminate_missing_variables($errno, $errstr, $errfile, $errline)
