@@ -10,6 +10,7 @@ import Data.Maybe
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -73,10 +74,9 @@ selectExpr fSpec i src trg expr
                   sgn        = sign expr
                   sqlOk      = all isJust exprbracs'
                   exprbracs  = catMaybes exprbracs'
-                  src'       = sqlExprSrc fSpec fstm
-                  trgC       = sqlExprTgt fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
-                  trg'       = noCollideUnlessTm' fstm [src'] trgC
-                  fstm       = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
+                  src'       = sqlExprSrc fSpec firstTerm
+                  trg'       = sqlExprTgt fSpec firstTerm
+                  firstTerm  = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
                   mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},EDcV _,EMp1{}] <- [exprCps2list t]]
                   lst        = [t |t<-lst', t `notElem` mp1Tm]
                   posTms     = if null posTms' then map notCpl (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
@@ -88,7 +88,7 @@ selectExpr fSpec i src trg expr
                                   Nothing->Nothing
                                | (n,l)<-zipnum posTms
                                , let src''=sqlExprSrc fSpec l
-                               , let trg''=noCollideUnlessTm' l [src''] (sqlExprTgt fSpec l)
+                               , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                                ]
                   wherecl   = [Just$ if isIdent l
                                then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is longer
@@ -96,7 +96,7 @@ selectExpr fSpec i src trg expr
                                ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
                               | (n,l)<-tail (zipnum posTms) -- not empty because of definition of posTms
                               , src''<-[sqlExprSrc fSpec l]
-                              , trg''<-[noCollideUnlessTm' l [src''] (sqlExprTgt fSpec l)]
+                              , trg''<-[noCollide' [src''] (sqlExprTgt fSpec l)]
                               ]++
                               [Just$ "isect0."++src'++" = \\'"++atom++"\\'" -- source and target are equal because this is the case with EMp1{}
                               | (EMp1 atom _) <- mp1Tm
@@ -113,7 +113,7 @@ selectExpr fSpec i src trg expr
                                                   )+++")"
                               | (_,l)<-zipnum negTms
                               , src''<-[sqlExprSrc fSpec l]
-                              , trg''<-[noCollideUnlessTm' l [src''] (sqlExprTgt fSpec l)]
+                              , trg''<-[noCollide' [src''] (sqlExprTgt fSpec l)]
                               ]++[Just$ "isect0."++src'++" IS NOT NULL",Just$ "isect0."++trg'++" IS NOT NULL"]
               in case lst' of
 {- The story:
@@ -129,7 +129,7 @@ selectExpr fSpec i src trg expr
                     SELECT DISTINCT isect0.`A`, isect0.`B`
                      FROM ( SELECT bladibla) AS isect0       representing plaats~;locatie
                     WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
-                      AND NOT EXISTS (SELECT foo)            representing neven
+                      AND NOT EXISTS (SELECT bar)            representing neven
 -}
                    (_:_:_)   | sqlOk ->  sqlcomment i ("case: (EIsc lst'@(_:_:_))"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
                                          selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
@@ -157,7 +157,7 @@ selectExpr fSpec i src trg expr
        case es of 
           (EDcV (Sign ONE _):fs@(_:_))
              -> let expr' = foldr1 (.:.) fs
-                    src'  = noCollideUnlessTm' expr' [trg'] (sqlExprSrc fSpec expr')
+                    src'  = noCollide' [trg'] (sqlExprSrc fSpec expr')
                     trg'  = sqlExprTgt fSpec expr'
                 in sqlcomment i ("case:  (EDcV (Sign ONE _): fs@(_:_))"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("1",src) ("fst."++trg',trg)
@@ -174,7 +174,7 @@ selectExpr fSpec i src trg expr
           (e@(EMp1 atom _):f:fx)
              -> let expr' = foldr1 (.:.) (f:fx)
                     src' = sqlExprSrc fSpec e
-                    trg' = noCollideUnlessTm' expr' [src'] (sqlExprTgt fSpec expr')
+                    trg' = noCollide' [src'] (sqlExprTgt fSpec expr')
                 in sqlcomment i ("case:  (EMp1{}: f: fx)"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                                    (selectExprInFROM fSpec i src' trg' expr'+++" AS fst")
@@ -185,7 +185,7 @@ selectExpr fSpec i src trg expr
                                 src' = sqlExprSrc fSpec e
                                 mid' = sqlExprTgt fSpec e
                                 mid2'= sqlExprSrc fSpec f
-                                trg' = noCollideUnlessTm' expr' [mid2'] (sqlExprTgt fSpec expr')
+                                trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
                             in sqlcomment i ("case:  (e:ERel (V _) _:f:fx)"++phpIndent (i+3)++showADL e) $
                                    selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                                                     ((selectExprInFROM fSpec i src' mid' e)+++" AS fst,"++phpIndent (i+5)+++(selectExprInFROM fSpec i mid2' trg' f)+++" AS snd")
@@ -202,28 +202,34 @@ selectExpr fSpec i src trg expr
                    mainTgt = selectSelItem ("ECps"++show n++"."++sqlTgt,trg) 
                              where (n,_,_,sqlTgt) = last fenceExprs
                    selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
-                   fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExprs ]
+                   fromClause   = "FROOM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExprs ]
                    whereClause
                            = "WHERE " ++ intercalate (phpIndent i++"  AND ")
-                             [ "ECps"++show n++"."++lSQLtrg++"=ECps"++show (n+1)++"."++rSQLsrc
-                             | ((n,_,_,lSQLtrg),(_,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
+                             [ "ECps"++show n++"."++lSQLtrg++"=ECps"++show m++"."++rSQLsrc
+                             | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
                              ]
                    -- fenceExprs lists the expressions and their SQL-fragments.
                    -- In the poles-and-fences metaphor, they serve as the fences between the poles.
                    fenceExprs = [ ( n                              -- the serial number of this fence (in between poles n and n+1)
-                                  , sqlExpr ++ " AS ECps"++show n
+                                  , sqlExpr++" AS ECps"++show n
                                   , srcAtt
                                   , trgAtt
                                   )
                                 | (n, e) <- zip [(0::Int)..] es
-                                , srcAtt<-[sqlExprSrc fSpec e]
-                                , trgAtt<-[noCollideUnlessTm' e [srcAtt] (sqlExprTgt fSpec e)]
-                                , let Just sqlExpr = selectExprInFROM fSpec i srcAtt trgAtt e
+                                , trace ("es = ["++intercalate ", " (map showADL es)++"]\n") True
+                                , let srcAtt = sqlExprSrc fSpec e
+                                , let trgAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
+                                , trace ("e: "++showADL e++"\n :: "++srcAtt++"\n*"++trgAtt++"\n") True
+                                , let Just sqlExpr = trace "selectExprInFROM is being called\n" (selectExprInFROM fSpec i srcAtt trgAtt e)
+                                , trace ("sqlExpr: "++sqlExpr++"\n") True
                                 ]
-               in sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr) $
+               in ( trace ("fenceExprs 2 "++show (fenceExprs!!2)++"\n") .
+                    trace ("fenceExprs 0 "++show (fenceExprs!!0)++"\n") .
+                    trace ("fenceExprs 1 "++show (fenceExprs!!1)++"\n") )
+                  ( sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr) $
                   Just $ phpIndent i++selectClause ++
                          phpIndent i++fromClause   ++
-                         phpIndent i++whereClause 
+                         phpIndent i++whereClause )
           _  -> fatal 215 "impossible outcome of exprCps2list"
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
@@ -255,19 +261,24 @@ selectExpr fSpec i src trg expr
 
     (ECpl (EDcV _))      -> sqlcomment i ("case: ECpl (EDcV _)  with signature "++show (sign expr))$   -- yields empty
                                  toM(selectGeneric i ("1",src) ("1",trg) "(SELECT 1) AS a" "0")
+    (ECpl (EDcI c))      -> trace "\n\n\nBoe\n\n\n" $ sqlcomment i ("case: ECpl (EDcI "++name c++")") $
+                            selectGeneric i ("concept0."++concpt,src) ("concept1."++concpt,trg)
+                                            (Just $ sqlConcept fSpec c ++ " AS concept0, " ++ sqlConcept fSpec c ++ " AS concept1")
+                                            (Just $ "concept0." ++ concpt ++ " <> concept1."++concpt)
+                                            where concpt = quote $ sqlAttConcept fSpec c
     (ECpl e)
       -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
          selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
-                         (sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)+++selectExprInFROM fSpec (i+5) trg' trg' (EDcI (target e))+++" AS csnd")
+                         (Just $ sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)++sqlConcept fSpec (target e)++" AS csnd")
                          ("NOT EXISTS"++phpIndent i++" ("+++
                              selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e +++ " AS cp")
                                                  ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
                               +++ ")"
                          )
                          where src' = quote $ sqlAttConcept fSpec (source e) 
-                               trg' = quote $ noCollide [src'] (sqlAttConcept fSpec (target e))
+                               trg' = quote $ sqlAttConcept fSpec (target e)
                                src2 = sqlExprSrc fSpec e
-                               trg2 = noCollideUnlessTm' e [src2] (sqlExprTgt fSpec e)
+                               trg2 = noCollide [src2] (sqlExprTgt fSpec e)
     (EKl0 _) -> fatal 249 "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
     (EKl1 _) -> fatal 249 "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
     (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
@@ -371,14 +382,14 @@ selectExprInFROM :: Fspc
                -> Maybe String
 selectExprInFROM fSpec i src trg expr
    | src == trg && (not.isIdent) expr = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
-   | unquoted src = selectExprInFROM fSpec i (quote src) trg         expr
-   | unquoted trg = selectExprInFROM fSpec i src         (quote trg) expr
-   | otherwise = 
-      case expr of 
+   | unquoted src = trace ("In selectExprInFROM with expr="++show expr++", src="++src++", trg="++trg++", srcAlias="++srcAlias++", tgtAlias="++tgtAlias) $selectExprInFROM fSpec i (quote src) trg         expr
+   | unquoted trg = trace ("In selectExprInFROM with expr="++show expr++", src="++src++", trg="++trg++", srcAlias="++srcAlias++", tgtAlias="++tgtAlias) $selectExprInFROM fSpec i src         (quote trg) expr
+   | otherwise    = trace ("In selectExprInFROM with expr="++show expr++", src="++src++", trg="++trg++", srcAlias="++srcAlias++", tgtAlias="++tgtAlias) $
+      case expr of
         EFlp e -> selectExprInFROM fSpec i trg src e
         EBrk e -> selectExprInFROM fSpec i src trg e
         EDcD{} -> Just $ if srcAlias=="" && tgtAlias==""
-                         then declName
+                         then  declName
                          else "( SELECT "++sqlExprSrc fSpec expr++srcAlias++", "++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
                               "  FROM "++declName++" WHERE True )"
                   where
@@ -423,11 +434,11 @@ unquote xs = xs
 noCollide :: [String] -- ^ forbidden names
           -> String -- ^ preferred name
           -> String -- ^ a unique name (does not occur in forbidden names)
-noCollide names nm | nm `elem` names = noCollide names (namepart (reverse nm) ++ changeNr (numberpart (reverse nm)))
+noCollide names nm | unquote nm `elem` map unquote names = noCollide names (namepart nm ++ changeNr (numberpart nm))
                    | otherwise = nm
  where
-   namepart str   = reverse (dropWhile isDigit str)
-   numberpart str = reverse (takeWhile isDigit str)
+   namepart       = reverse . dropWhile isDigit . reverse
+   numberpart     = reverse . takeWhile isDigit . reverse
    changeNr x     = int2string (string2int x+1)
    --  changeNr x = show (read x +1)
    string2int :: String -> Int
@@ -437,16 +448,6 @@ noCollide names nm | nm `elem` names = noCollide names (namepart (reverse nm) ++
    int2string :: Int -> String
    int2string 0 = "0"
    int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10) |n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
-
-noCollideUnlessTm' :: Expression 
-                  -> [String]
-                  -> String
-                  -> String
-
-noCollideUnlessTm' (EDcD{}) _ nm = quote nm
-noCollideUnlessTm' (EDcI{}) _ nm = quote nm
-noCollideUnlessTm' (EDcV{}) _ nm = quote nm
-noCollideUnlessTm' _  names nm = noCollide' names nm
 
 selectExprRelation :: Fspc
                    -> Int    -- ^ Indentation
