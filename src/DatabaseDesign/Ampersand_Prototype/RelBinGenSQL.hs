@@ -197,9 +197,13 @@ selectExpr fSpec i src trg expr
     To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
 -}
           _:_:_  -- in this case, it is certain that there are at least two elements in es.
-            -> let mainSrc = selectSelItem ("ECps"++show n++"."++sqlSrc,src)
+            -> let mainSrc = (trace ("Regel 200:\n").
+                              trace ((show.head) fenceExprs)
+                             ) $ selectSelItem ("ECps"++show n++"."++sqlSrc,src)
                              where (n,_,sqlSrc,_) = head fenceExprs
-                   mainTgt = selectSelItem ("ECps"++show n++"."++sqlTgt,trg) 
+                   mainTgt = (trace ("Regel 204:\n").
+                              trace ((show.last) fenceExprs)
+                             ) $ selectSelItem ("ECps"++show n++"."++sqlTgt,trg) 
                              where (n,_,_,sqlTgt) = last fenceExprs
                    selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
                    fromClause   = "FROOM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExprs ]
@@ -220,16 +224,17 @@ selectExpr fSpec i src trg expr
                                 , let srcAtt = sqlExprSrc fSpec e
                                 , let trgAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
                                 , trace ("e: "++showADL e++"\n :: "++srcAtt++"\n*"++trgAtt++"\n") True
-                                , let Just sqlExpr = trace "selectExprInFROM is being called\n" (selectExprInFROM fSpec i srcAtt trgAtt e)
+                                , let sqlExpr = trace "selectExprInFROM is being called\n" 
+                                                (fromMaybe (fatal 224 "Nothing returned!") (selectExprInFROM fSpec i srcAtt trgAtt e))
                                 , trace ("sqlExpr: "++sqlExpr++"\n") True
                                 ]
                in ( trace ("fenceExprs 2 "++show (fenceExprs!!2)++"\n") .
                     trace ("fenceExprs 0 "++show (fenceExprs!!0)++"\n") .
                     trace ("fenceExprs 1 "++show (fenceExprs!!1)++"\n") )
-                  ( sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr) $
-                  Just $ phpIndent i++selectClause ++
+                  ( sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr) (
+                  Just ( phpIndent i++selectClause ++
                          phpIndent i++fromClause   ++
-                         phpIndent i++whereClause )
+                         phpIndent i++whereClause )))
           _  -> fatal 215 "impossible outcome of exprCps2list"
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
