@@ -133,7 +133,9 @@ selectExpr fSpec i src trg expr
     EUni{}   -> sqlcomment i ("case: EUni (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
                 intercalate " UNION " [ "(" ++ str ++ phpIndent i ++ ")" | e<-exprUni2list expr , str<-[selectExpr fSpec (i+4) src trg e]]
     ECps (EDcV (Sign ONE _), ECpl expr')
-             -> let src'  = quote $ sqlAttConcept fSpec (source expr') 
+     -> case target expr' of
+         ONE -> fatal 137 "TODO: sqlConcept not defined for ONE"
+         _   -> let src'  = quote $ sqlAttConcept fSpec (source expr') 
                     trg'  = quote $ sqlAttConcept fSpec (target expr')
                     trg2  = quote $ noCollide [src'] (sqlAttConcept fSpec (target expr'))
                 in sqlcomment i ("case:  ECps (EDcV (Sign ONE _), ECpl expr')"++phpIndent (i+3)++showADL expr) $
@@ -249,12 +251,17 @@ selectExpr fSpec i src trg expr
       -> case e of
            EDcV _        -> sqlcomment i ("case: ECpl (EDcV _)  with signature "++show (sign expr)) $  -- yields empty
                             selectGeneric i ("1",src) ("1",trg) "(SELECT 1) AS a" "0"
+           EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
            EDcI c        -> sqlcomment i ("case: ECpl (EDcI "++name c++")") $
                             selectGeneric i ("concept0."++concpt,src) ("concept1."++concpt,trg)
                                             (sqlConcept fSpec c ++ " AS concept0, " ++ sqlConcept fSpec c ++ " AS concept1")
                                             ("concept0." ++ concpt ++ " <> concept1."++concpt)
                             where concpt = quote $ sqlAttConcept fSpec c
-           _             -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+           _              
+              | source e == ONE -> fatal 261 "ONE is unexpected here as source of an expression"
+              | target e == ONE -> fatal 262 "ONE is unexpected here as target of an expression"
+              | otherwise       
+                         -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
                             selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                                             (sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)++sqlConcept fSpec (target e)++" AS csnd")
                                             ("NOT EXISTS"++phpIndent i++" ("++
@@ -322,6 +329,9 @@ Based on this derivation:
              ]
 -}
       -> let rResiduClause
+              | target l == ONE = fatal 332 ("ONE is unexpected as target of "++showADL l)
+              | target r == ONE = fatal 333 ("ONE is unexpected as target of "++showADL r)
+              | otherwise
                =              "SELECT " ++ srcAlias++"."++mainSrc++" AS "++src++", " ++tgtAlias++"."++mainTgt++" AS "++trg++
                  phpIndent i++"FROM " ++ sqlConcept fSpec (target l) ++ " AS "++srcAlias++", " ++ sqlConcept fSpec (target r) ++ " AS "++tgtAlias++
                  phpIndent i++"WHERE NOT EXISTS"++
@@ -388,6 +398,7 @@ selectExprInFROM fSpec i src trg expr
                                                 then quote (name plug)
                                                 else fatal 390 ("Multiple plugs found for expression "++showADL expr)
                                 _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
+        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
         EDcI c -> if cptAlias==""
                   then cpt
                   else "( SELECT "++sqlAttConcept fSpec c++cptAlias++ phpIndent (i+5) ++
@@ -395,7 +406,11 @@ selectExprInFROM fSpec i src trg expr
                   where
                    cptAlias = if unquote src==unquote (sqlAttConcept fSpec c) then "" else " AS "++src
                    cpt = sqlConcept fSpec c
-        EDcV{} -> "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", "++rC++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+        EDcV{} 
+          | source expr == ONE -> fatal 410 "ONE is not expected at this place"
+          | target expr == ONE -> fatal 411 "ONE is not expected at this place"
+          | otherwise
+               -> "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", "++rC++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
                   "  FROM "++leftConcept++", "++rightConcept ++(if rightConcept==rC then "" else " AS "++rC)++" WHERE True )"
                   where
                     leftConcept  = sqlConcept fSpec (source expr) 
@@ -449,7 +464,11 @@ selectExprRelation fSpec i srcAS trgAS dcl =
   case dcl of
     Sgn{}  -> leafCode (EDcD dcl)
     Isn{}  -> leafCode (EDcI (source dcl))
-    Vs sgn -> let src="vfst."++sqlAttConcept fSpec (source sgn)
+    Vs sgn 
+     | source sgn == ONE -> fatal 468 "ONE is not expected at this place"
+     | target sgn == ONE -> fatal 469 "ONE is not expected at this place"
+     | otherwise
+           -> let src="vfst."++sqlAttConcept fSpec (source sgn)
                   trg="vsnd."++sqlAttConcept fSpec (target sgn)
               in selectGeneric i (src,srcAS) (trg,trgAS)
                   (sqlConcept fSpec (source sgn) ++ " AS vfst, "++sqlConcept fSpec (target sgn)++ " AS vsnd")
