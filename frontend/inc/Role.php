@@ -47,7 +47,11 @@ class Role {
 				}
 			}else{
 				if(isset($srcConcept)){
-					if(Session::getInterface($interfaceName)['srcConcept'] == $srcConcept) $interfaces[$interfaceName] = Session::getInterface($interfaceName);
+					if(Session::getInterface($interfaceName)['srcConcept'] == $srcConcept 
+						|| in_array($srcConcept, Concept::getSpecializations(Session::getInterface($interfaceName)['srcConcept'])) ) 
+					{
+						$interfaces[$interfaceName] = Session::getInterface($interfaceName);
+					}
 				}else{
 					$interfaces[$interfaceName] = Session::getInterface($interfaceName);
 				}

@@ -19,20 +19,15 @@ try {
 	ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
 }
 
-initSession(); // initialize both a PHP session and an Ampersand session as soon as we can...
+// SESSION handling
+$session = Session::singleton(); // initialize both a PHP session and an Ampersand session as soon as we can.
+if(isset($_REQUEST['resetSession'])){ // TODO: reset working not working properly. Refresh of page needed before reset has effect.
+	$session->destroySession();	// unset $_SESSION variables and Ampersand SESSION atom
+	unset($session); // delete Session object
+	$session = Session::singleton(); // initialize new session
+}
 
-if(isset($_REQUEST['role'])) $_SESSION['role'] = $_REQUEST['role'];
-
-// $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : null; // role=-1 (or not specified) means no role is selected
-$selectedRoleNr = $_SESSION['role']; // TODO
-
-$session = Session::singleton();
-
-RuleEngine::checkRules($_SESSION['role']);
-
-
-
-
+RuleEngine::checkRules($session->role->id);
 
 ?>
 <!DOCTYPE html>
@@ -193,11 +188,11 @@ RuleEngine::checkRules($_SESSION['role']);
 
 			$isNew = $concept!='ONE' && !Concept::isAtomInConcept($atom,$concept);
 
-			echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom)
-			    .' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept'])
-				.' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false')
-				." refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr($session->role->name)
-				.' timestamp="'.$db->getLatestUpdateTime.'">';
+			echo '<div id=AmpersandRoot interface="'.escapeHtmlAttrStr($interface).'" atom="'.escapeHtmlAttrStr($atom)
+			    .'" concept="'.escapeHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept'])
+				.'" editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false')
+				." refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role="'.escapeHtmlAttrStr($session->role->name)
+				.'" timestamp="'.$db->getLatestUpdateTime.'">';
 
 
 			if  (!empty($allInterfaceObjects[$interface]['editableConcepts'])){
@@ -250,7 +245,6 @@ RuleEngine::checkRules($_SESSION['role']);
 function generateInterfaceMap() {
 	global $session;
 	global $allInterfaceObjects;
-	global $selectedRoleNr;
 
 	echo 'function getInterfacesMap() {'; // TODO: use Json for this
 	echo '  var interfacesMap = new Array();';
@@ -258,7 +252,7 @@ function generateInterfaceMap() {
 			$conceptOrSpecs = array_merge(array($interface['srcConcept']), Concept::getSpecializations($interface['srcConcept']));
 
 			foreach ($conceptOrSpecs as $concept) 
-			echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($concept).', '.showHtmlAttrStr($interface['name']).');';
+			echo '  mapInsert(interfacesMap, "'.escapeHtmlAttrStr($concept).'", "'.escapeHtmlAttrStr($interface['name']).'");';
 	}
 	echo '  return interfacesMap;';
 	echo '}';
@@ -280,16 +274,19 @@ function generateInterface($interface, $srcAtom, $isRef=false) {
 	 *   </AtomList>
 	 * </Interface> 
 	 */
+	 
+	 $database = Database::singleton();
   
 	$html = "";
 	
-	emit($html, '<div class=Interface label='.showHtmlAttrStr($interface['name']).' isRef='.showHtmlAttrBool($isRef).'>');
+	emit($html, '<div class=Interface label="'.escapeHtmlAttrStr($interface['name']).'" isRef="'.var_export($isRef, true).'">');
 	emit($html, "<div class=Label>".htmlSpecialChars($interface['name']).'</div>');
 
 	if ($srcAtom == null){
 		$codomainAtoms = array (); // in case the table would contain (null, some atom)  
 	}else{
-		$codomainAtoms = array_filter(getCoDomainAtoms($srcAtom, $interface['expressionSQL']), 'notNull'); // filter, in case table contains ($srcAtom, null)
+		
+		$codomainAtoms = array_column($database->Exe("SELECT DISTINCT `tgt` FROM (".$interface['expressionSQL'].") AS results WHERE src='".addslashes($srcAtom)."' AND `tgt` IS NOT NULL"), 'tgt'); // IS NOT NULL to filter for contains ($srcAtom, null)
 	}
 	
 	if (count($codomainAtoms)==0 && isset($interface['min']) && $interface['min']=='One'){ // 'min' is only defined for editable relations  
@@ -300,11 +297,11 @@ function generateInterface($interface, $srcAtom, $isRef=false) {
 
 	$nrOfAtoms = count($codomainAtoms)-1; // disregard the null for the NewAtomTemplate
 
-	$relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrBool($interface['relationIsFlipped'])
-												.' min='.showHtmlAttrStr($interface['min']).' max='.showHtmlAttrStr($interface['max'])
-												.' nrOfAtoms='.showHtmlAttrStr($nrOfAtoms); // 
+	$relationAttrs = $interface['relation']=='' ? '' : ' relation="'.escapeHtmlAttrStr($interface['relation']).'" relationIsFlipped="'.var_export($interface['relationIsFlipped'], true)
+												.'" min="'.escapeHtmlAttrStr($interface['min']).'" max="'.escapeHtmlAttrStr($interface['max'])
+												.'" nrOfAtoms="'.escapeHtmlAttrStr($nrOfAtoms).'"'; // 
 	
-	emit($html, '<div class="AtomList" concept='.showHtmlAttrStr($interface['tgtConcept']).$relationAttrs.'>');
+	emit($html, '<div class="AtomList" concept="'.escapeHtmlAttrStr($interface['tgtConcept']).'"'.$relationAttrs.'>');
 
 	foreach($codomainAtoms as $i => $tgtAtom) { // null is the NewAtomTemplate
 		emit($html, '<div class=AtomRow rowType='.($tgtAtom===null ?'NewAtomTemplate': 'Normal').'><div class=DeleteStub>&nbsp;</div>'.'<div class=AtomListElt>');
@@ -332,7 +329,7 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
 	 * 
 	 * if $atom is null, we are presenting a template. Because ""==null and "" denotes an empty atom, we check with === (since "" !== null)
 	 */
-	global $selectedRoleNr;
+	global $session;
 	global $allInterfaceObjects;
 
 
@@ -355,12 +352,12 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
 	}
 	
 	// note that the assignments below are about interfaces for the atom, not about the subinterfaces 
-	$nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $selectedRoleNr));
+	$nrOfInterfaces = count($session->role->getInterfaces(null, $interface['tgtConcept']));
 	$hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
 
-	emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.
+	emit($html, '<div class=Atom atom="'.escapeHtmlAttrStr($atom).'"'.$hasInterfaces.
 		' status='.($atom!==null?'unchanged':'new').
-		' atomic='.showHtmlAttrBool(count($subInterfaces)==0).'>');
+		' atomic="'.var_export(count($subInterfaces)==0, true).'">');
 
 	$atomName = Viewer::viewAtom($atom, $interface['tgtConcept']); 
 	

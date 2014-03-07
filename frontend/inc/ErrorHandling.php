@@ -17,6 +17,7 @@ class ErrorHandling {
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
 		
+		// TODO: move output related things to viewer. Move ErrorHandling to Session??
 		$violationMessage = $rule['message'] ? $rule['messsage'] : "Violation of rule '".$rule['name']."'";
 		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))['name'].'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
 		
