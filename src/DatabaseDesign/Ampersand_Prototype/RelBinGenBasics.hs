@@ -2,13 +2,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
- ,addSlashes,zipnum,Concatable(..),(+++)
+ ,addSlashes,zipnum
  ,indentBlock,addToLast
  ,pDebug,indentBlockBetween,quote
- ,cChain,filterEmpty,phpIndent
+ ,phpIndent
  ) where
    import Data.Char(isAlphaNum,isDigit)
-   import Data.Maybe
    import Data.List
    import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -20,39 +19,6 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    
    pDebug :: Bool
    pDebug = True
-
-   class Concatable a where
-     toM :: a -> Maybe String
-     (+<+) :: a -> String -> a
-     (+>+) :: String -> a -> a
-     (+|+) :: a -> a -> a
-   instance Concatable [Char] where
-     toM   = Just  
-     (+<+) = (++)
-     (+>+) = (++)
-     (+|+) = (++)
-   instance Concatable (Maybe [Char]) where
-     toM a = a
-     (+<+) = (+++)
-     (+>+) = (+++)
-     (+|+) = (+++)
-   
-   infixr 4 +++
-   infixr 4 +>+
-   infixr 4 +<+
-   infixr 4 +|+
-   
-   (+++) :: (Concatable a,Concatable b) => a->b->Maybe String
-   (+++) a b = listToMaybe [a'++b' |Just a'<-[toM a],Just b'<-[toM b]]
-   
-   filterEmpty :: (Eq a) => [Maybe [a]] -> [Maybe [a]]
-   filterEmpty = filter (not . (==) (Just []))
-   
-   
-   cChain :: (Concatable t, Concatable a) => a -> [t] -> Maybe String
-   cChain _ [] = Just []
-   cChain _ [b] = toM b
-   cChain a (f:fs) = f+++a+++ cChain a fs
 
    quote :: String->String
    quote [] = []

@@ -136,8 +136,7 @@ evaluateExpSQL :: Fspc -> Options -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec flags exp =
   fmap sort (performQuery flags violationsQuery)
  where violationsExpr = conjNF exp
-       violationsQuery = fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" violationsExpr)
-                                   (selectExpr fSpec 26 "src" "tgt" violationsExpr) 
+       violationsQuery = selectExpr fSpec 26 "src" "tgt" violationsExpr
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =

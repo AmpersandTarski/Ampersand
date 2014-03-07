@@ -106,8 +106,7 @@ generateTableInfos fSpec =
                                         ++", 'srcCol' => "++showPhpStr (fldname srcCol)
                                         ++", 'tgtCol' => "++showPhpStr (fldname tgtCol)++")"] 
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
-         , let (table,srcCol,tgtCol) = fromMaybe (fatal 105 $ "No table info for declaration " ++ show decl)
-                                                 (getDeclarationTableInfo fSpec decl)
+         , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
          ])) ++
   [ ""
   , "$conceptTableInfo ="
@@ -181,16 +180,12 @@ generateRules fSpec flags =
            ) ++
            [ "        // Normalized complement (== violationsSQL): " ] ++
            (lines ( "        // "++(showHS flags "\n        // ") violationsExpr))++
-           [ "        , 'violationsSQL' => '"++ fromMaybe (fatal 100 ( "No sql generated for "++showHS flags "" violationsExpr))
-                                                          (selectExpr fSpec 26 "src" "tgt" violationsExpr)
+           [ "        , 'violationsSQL' => '"++ selectExpr fSpec 26 "src" "tgt" violationsExpr
                                              ++"'" 
            ] ++
            [ "        , 'contentsSQL'   => '" ++
              let contentsExpr = conjNF rExpr in
-             fromMaybe
-               ("/*ERROR: no sql generated for " ++
-                  escapePhpStr (showHS flags "" contentsExpr) ++ "*/")
-               (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+              selectExpr fSpec 26 "src" "tgt" contentsExpr
                ++ "'"
            | development flags -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
@@ -225,8 +220,7 @@ generateRules fSpec flags =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" exp)
-                                      (selectExpr fSpec 33 "src" "tgt" exp)++"'"
+         , "          '" ++ selectExpr fSpec 33 "src" "tgt" exp ++"'"
          , "      )"
          ] 
        
@@ -271,8 +265,7 @@ generateViews fSpec flags =
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                      , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
-                                     , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" (objctx objDef))
-                                                                (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)++"'"
+                                     , "          '" ++ selectExpr fSpec 33 "src" "tgt" (objctx objDef)++"'"
                                      , "      )"
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
@@ -334,8 +327,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => '" ++ fromMaybe (fatal 151 ("No sql generated for "++showHS flags "" normalizedInterfaceExp))
-                                                (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp) 
+  , "      , 'expressionSQL' => '" ++ selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp
                                    ++ "'"                                                  
   ] 
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
