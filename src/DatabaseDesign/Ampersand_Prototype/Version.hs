@@ -7,7 +7,9 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter (ampersandVersionStr, amp
 
 fatalMsg :: String -> Int -> String -> a
 fatalMsg haskellModuleName lineNr msg
- = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++prototypeVersionWithoutBuildtimeStr++")\n  "++msg)
+ = error ("!fatal "++show lineNr++" (module "++haskellModuleName++", "++prototypeVersionWithoutBuildtimeStr++")\n  "++msg)
+ -- Please do not print anything in between "!fatal " and the line number that follows. So do not turn this into "!fatal error " for example.
+ -- Why? The error message says for instance "fatal 384", which can be ^C'ed and used for searching within the editor.
 
 prototypeVersionStr :: String
 prototypeVersionStr = prototypeOnlyVersionStr++", build time: "++buildTimeStr++ " (lib: "++ampersandVersionStr++")"

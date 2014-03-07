@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (quote,addSlashes,phpI
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
---import Debug.Trace
+-- import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -100,8 +100,8 @@ selectExpr fSpec i src trg expr
                               ]++
                               [if isIdent l
                                then  "isect0."++src'++" <> isect0."++trg' -- this code will calculate ../\-I
-                               else  "NOT EXISTS ("++(selectExists' (i+12)
-                                                                    ((selectExprInFROM fSpec (i+12) src'' trg'' l) ++ " AS cp")
+                               else  "NOT EXISTS ("++(selectExists' (i+18)
+                                                                    ((selectExprInFROM fSpec (i+13) src'' trg'' l) ++ " AS cp")
                                                                     ("isect0."++src' ++ "=cp."++src''++" AND isect0."++ trg'++"=cp."++trg'')
                                                   )++")"
                               | (_,l)<-zip [(0::Int)..] negTms
@@ -611,8 +611,9 @@ sqlExprSrc fSpec expr@EDcD{}
    = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
      case sqlRelPlugs fSpec expr of 
       [(_,s,_)] -> fldname s
-      []        -> fatal 619 ("No plug for relation "++showADL expr)
-      _         -> fatal 620 ("Multiple plugs for relation "++showADL expr)
+      []        -> fatal 614 ("No plug for relation "++showADL expr)
+      [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname s
+      _  -> fatal 616 ("Multiple plugs for relation "++showADL expr)
 sqlExprSrc _ expr = quote $ "Src"++name (source expr)
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
@@ -624,8 +625,9 @@ sqlExprTgt fSpec expr@EDcD{}
    = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
      case sqlRelPlugs fSpec expr of 
       [(_,_,t)] -> fldname t
-      []        -> fatal 632 ("No plug for relation "++showADL expr)
-      _         -> fatal 633 ("Multiple plugs for relation "++showADL expr)
+      []        -> fatal 628 ("No plug for relation "++showADL expr)
+      [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname t
+      _  -> fatal 630 ("Multiple plugs for relation "++showADL expr)
 sqlExprTgt _ expr = quote $ "Tgt"++name (target expr)
 
 
