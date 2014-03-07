@@ -88,8 +88,8 @@ selectExpr fSpec i src trg expr
                                else "(isect0."++src'++" = isect"++show n++"."++src''
                                ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
                               | (n,l)<-tail (zip [(0::Int)..] posTms) -- not empty because of definition of posTms
-                              , src''<-[sqlExprSrc fSpec l]
-                              , trg''<-[noCollide' [src''] (sqlExprTgt fSpec l)]
+                              , let src''=sqlExprSrc fSpec l
+                              , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                               ]++
                               [ "isect0."++src'++" = \\'"++atom++"\\'" -- source and target are equal because this is the case with EMp1{}
                               | (EMp1 atom _) <- mp1Tm
@@ -105,8 +105,8 @@ selectExpr fSpec i src trg expr
                                                                     ("isect0."++src' ++ "=cp."++src''++" AND isect0."++ trg'++"=cp."++trg'')
                                                   )++")"
                               | (_,l)<-zip [(0::Int)..] negTms
-                              , src''<-[sqlExprSrc fSpec l]
-                              , trg''<-[noCollide' [src''] (sqlExprTgt fSpec l)]
+                              , let src''=sqlExprSrc fSpec l
+                              , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                               ]++[ "isect0."++src'++" IS NOT NULL", "isect0."++trg'++" IS NOT NULL"]
               in case lst' of
 {- The story:
@@ -265,7 +265,7 @@ selectExpr fSpec i src trg expr
                             where src' = quote $ sqlAttConcept fSpec (source e) 
                                   trg' = quote $ sqlAttConcept fSpec (target e)
                                   src2 = sqlExprSrc fSpec e
-                                  trg2 = noCollide [src2] (sqlExprTgt fSpec e)
+                                  trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
     (EKl0 _) -> fatal 249 "SQL cannot create closures EKl0" ("SELECT * FROM NotExistingKl0")
     (EKl1 _) -> fatal 249 "SQL cannot create closures EKl1" ("SELECT * FROM NotExistingKl1")
     (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
@@ -422,9 +422,10 @@ unquote xs = xs
 noCollide :: [String] -- ^ forbidden names
           -> String -- ^ preferred name
           -> String -- ^ a unique name (does not occur in forbidden names)
-noCollide names nm | unquote nm `elem` map unquote names = noCollide names (namepart nm ++ changeNr (numberpart nm))
-                   | otherwise = nm
+noCollide names nm' | nm `elem` map unquote names = noCollide names (namepart nm ++ changeNr (numberpart nm))
+                    | otherwise = nm'
  where
+   nm             = unquote nm'
    namepart       = reverse . dropWhile isDigit . reverse
    numberpart     = reverse . takeWhile isDigit . reverse
    changeNr x     = int2string (string2int x+1)
@@ -612,7 +613,7 @@ sqlExprSrc fSpec expr@EDcD{}
       [(_,s,_)] -> fldname s
       []        -> fatal 619 ("No plug for relation "++showADL expr)
       _         -> fatal 620 ("Multiple plugs for relation "++showADL expr)
-sqlExprSrc _ expr = "Src"++name (source expr)
+sqlExprSrc _ expr = quote $ "Src"++name (source expr)
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: Fspc->Expression -> String
@@ -625,7 +626,7 @@ sqlExprTgt fSpec expr@EDcD{}
       [(_,_,t)] -> fldname t
       []        -> fatal 632 ("No plug for relation "++showADL expr)
       _         -> fatal 633 ("Multiple plugs for relation "++showADL expr)
-sqlExprTgt _ expr = "Tgt"++name (target expr)
+sqlExprTgt _ expr = quote $ "Tgt"++name (target expr)
 
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
