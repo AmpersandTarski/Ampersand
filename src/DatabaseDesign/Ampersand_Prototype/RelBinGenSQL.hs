@@ -407,8 +407,13 @@ selectExprInFROM fSpec i src trg expr
                    cptAlias = if unquote src==unquote (sqlAttConcept fSpec c) then "" else " AS "++src
                    cpt = sqlConcept fSpec c
         EDcV{} 
-          | source expr == ONE -> fatal 410 "ONE is not expected at this place"
-          | target expr == ONE -> fatal 411 "ONE is not expected at this place"
+          | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
+          | source expr == ONE 
+               -> "( SELECT 1, "++rightConcept++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+                  "  FROM "++rightConcept ++" )"
+          | target expr == ONE
+               -> "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", 1"++ phpIndent (i+5) ++
+                  "  FROM "++leftConcept ++" )"
           | otherwise
                -> "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", "++rC++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
                   "  FROM "++leftConcept++", "++rightConcept ++(if rightConcept==rC then "" else " AS "++rC)++" WHERE True )"
