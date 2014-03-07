@@ -5,11 +5,13 @@ ini_set("display_errors", 1);
 $debug = false;
 
 require_once (__DIR__.'/Generics.php'); // loading the Ampersand model
+//TODO: include all /inc/ files automatically
 require_once (__DIR__.'/inc/ErrorHandling.php');
 require_once (__DIR__.'/inc/Session.php');
 require_once (__DIR__.'/inc/RuleEngine.php');
+require_once (__DIR__.'/inc/Concept.php');
 require_once (__DIR__.'/db/Database.php');
-require_once (__DIR__.'/plugins/execEngine/execEngine.php'); // make ExecEngine functions available
+// require_once (__DIR__.'/plugins/execEngine/execEngine.php'); // make ExecEngine functions available
 
 try {
 	$db = Database::singleton();
@@ -17,17 +19,18 @@ try {
 	ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
 }
 
+initSession(); // initialize both a PHP session and an Ampersand session as soon as we can...
+
 if(isset($_REQUEST['role'])) $_SESSION['role'] = $_REQUEST['role'];
-if(!isset($_SESSION['role'])) $_SESSION['role'] = null;
 
 // $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : null; // role=-1 (or not specified) means no role is selected
 $selectedRoleNr = $_SESSION['role']; // TODO
 
-$session = new Session($_SESSION['role']);
+$session = Session::singleton();
 
 RuleEngine::checkRules($_SESSION['role']);
 
-initSession(); // initialize both a PHP session and an Ampersand session as soon as we can...
+
 
 
 
@@ -83,9 +86,9 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 						<a href="?interface="><?php echo $dbName;?></a>
 					</li>
 					
-					<?php foreach($session->getInterfaces(true) as $interface) 
-									echo '<li id="'.escapeHtmlAttrStr(escapeURI($interface['name'])).'">' // the interface attribute is there so we can style specific menu items with css
-										.'<a href="?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'
+					<?php foreach($session->role->getInterfaces(true) as $interface) 
+									echo '<li id="'.escapeHtmlAttrStr($interface['name']).'">' // the interface attribute is there so we can style specific menu items with css
+										.'<a href="?interface='.escapeHtmlAttrStr($interface['name']).'&atom=1">'
 										.'<span class="glyphicon glyphicon-list-alt"></span> '.htmlSpecialChars($interface['name']).'</a>'
 										.'</li>';
 					?>
@@ -93,7 +96,7 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 					<li class="dropdown pull-right">
 						<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-plus"></span></a>
 						<ul class="dropdown-menu" role="menu">
-						  <?php foreach($session->getInterfaces(false) as $interface) echo '<li><a href="?interface='.$interface['name'].'&atom='.$interface['srcConcept'].'_'.time().'">'.htmlSpecialChars($interface['srcConcept'] . '(' . $interface['name'] . ')').'</a></li>';?>
+						  <?php foreach($session->role->getInterfaces(false) as $interface) echo '<li><a href="?interface='.$interface['name'].'&atom='.$interface['srcConcept'].'_'.time().'">'.htmlSpecialChars($interface['srcConcept'] . ' (' . $interface['name'] . ')').'</a></li>';?>
 						</ul>
 					</li>
 					
@@ -139,11 +142,15 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 			</div>
 			<div id="violations">
 				<?php
-				foreach (ErrorHandling::getViolations() as $violation){
+				foreach (ErrorHandling::getViolations() as $violationMessage => $rows){
 				?>
-				<div class="alert alert-warning alert-dismissable">
-					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-					<strong>Violation!</strong> <?php echo $violation;?>
+				<div class="panel panel-warning ">
+					<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation<?php $key;?>">
+						<div class="text-left"><strong>Violation!</strong> <?php echo $violationMessage;?></div>
+					</div>
+					<ul class="list-group collapse" id="violation<?php $key;?>">
+						<?php foreach ($rows as $row) echo '<li class="list-group-item">'.$row.'</li>'; ?>
+					</ul>
 				</div>
 				<?php } ?>
 			</div>
@@ -175,7 +182,7 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 
 			// Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
 			// This will be obsolete once these and other properties are in a separate div. 
-			echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp($err)."\">"; 
+			echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".$db->getLatestUpdateTime()."\">"; 
 			echo "</div>";
 
 		} else {
@@ -184,13 +191,13 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 
 			$concept = $allInterfaceObjects[$interface]['srcConcept'];
 
-			$isNew = $concept!='ONE' && !isAtomInConcept($atom,$concept);
+			$isNew = $concept!='ONE' && !Concept::isAtomInConcept($atom,$concept);
 
 			echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom)
 			    .' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept'])
 				.' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false')
-				." refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($selectedRoleNr))
-				.' timestamp="'.getTimestamp($err).'">';
+				." refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr($session->role->name)
+				.' timestamp="'.$db->getLatestUpdateTime.'">';
 
 
 			if  (!empty($allInterfaceObjects[$interface]['editableConcepts'])){
@@ -212,8 +219,8 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 			// TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we enocode a session number
 			//       in the unique atom name. But since the atom names are based on microseconds, the chances of a problem are pretty slim.
 			if ($isNew){
-				DB_doquer('START TRANSACTION');
-				addAtomToConcept($atom, $concept);
+				$db->Exe("START TRANSACTION"); // TODO: vervangen door database transaction function
+				$db->addAtomToConcept($atom, $concept);
 			}
 
 			// we need an extra ScrollPane div because the log windows need to be outside scroll area but inside ampersand root
@@ -226,7 +233,7 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 			echo '<div id=Rollback></div>'; // needs to be outside AmpersandRoot, so it's easy to address all interface elements not in the Rollback
 
 			if ($isNew) {
-				DB_doquer('ROLLBACK');
+				$db->Exe("ROLLBACK"); // TODO: vervangen door database transaction function
 			}
 		} 
 		
@@ -241,18 +248,17 @@ initSession(); // initialize both a PHP session and an Ampersand session as soon
 
 
 function generateInterfaceMap() {
+	global $session;
 	global $allInterfaceObjects;
 	global $selectedRoleNr;
 
 	echo 'function getInterfacesMap() {'; // TODO: use Json for this
 	echo '  var interfacesMap = new Array();';
-	foreach($allInterfaceObjects as $interface) {
-		if (isInterfaceForRole($interface, $selectedRoleNr)) {
-			$conceptOrSpecs = array_merge(array($interface['srcConcept']), getSpecializations($interface['srcConcept']));
+	foreach($session->role->getInterfaces() as $interface) {
+			$conceptOrSpecs = array_merge(array($interface['srcConcept']), Concept::getSpecializations($interface['srcConcept']));
 
 			foreach ($conceptOrSpecs as $concept) 
 			echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($concept).', '.showHtmlAttrStr($interface['name']).');';
-		}
 	}
 	echo '  return interfacesMap;';
 	echo '}';
@@ -356,7 +362,7 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
 		' status='.($atom!==null?'unchanged':'new').
 		' atomic='.showHtmlAttrBool(count($subInterfaces)==0).'>');
 
-	$atomName = showViewAtom($atom, $interface['tgtConcept']); 
+	$atomName = Viewer::viewAtom($atom, $interface['tgtConcept']); 
 	
 	// TODO: can be done more efficiently if we query the concept atoms once for each concept
 
@@ -382,13 +388,13 @@ function genEditableConceptInfo($interface) {
 	$atomViewMap = array ();
 	
 	foreach ($editableConcepts as $editableConcept) {
-		$allAtoms = getAllConceptAtoms($editableConcept);
+		$allAtoms = Concept::getAllAtoms($editableConcept);
 		$atomsAndViews = array ();
 		
 		foreach ($allAtoms as $atom) {
-			$atomsAndViews[] = array ('atom' => $atom, 'view' => showViewAtom($atom, $editableConcept));
+			$atomsAndViews[] = array ('atom' => $atom, 'view' => Viewer::viewAtom($atom, $editableConcept));
 		}
-		$atomViewMap[$editableConcept] = array ('hasView' => getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
+		$atomViewMap[$editableConcept] = array ('hasView' => Viewer::getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
 	}
 	
 	$atomViewMapJson = json_encode( $atomViewMap );

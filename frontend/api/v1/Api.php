@@ -86,6 +86,18 @@ class Api
 			
 		}
     }
+
+/**************************** POST ****************************/
+	/**
+     * @url POST transaction/
+     */
+    public function processCommands($jsonCommands)
+    {
+		$database = Database::singleton();
+		
+		return $database->transaction(json_decode($jsonCommands));
+		
+    }
 	
 }
 

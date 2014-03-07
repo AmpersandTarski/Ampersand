@@ -21,11 +21,13 @@ class RuleEngine {
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
 				ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
-			}else{
-				ErrorHandling::addViolation("Violation of rule '".$rule['name']."'");
+			}else{				
+				foreach($result as $violation) {
+					ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);
+				}
 			}
 		}catch (Exception $e){
-			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->message);
+			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage);
 		}
 	}
 	public static function checkInvariantRule($rule){
@@ -33,12 +35,14 @@ class RuleEngine {
 		try{
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
-				ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
+				// ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
+				return true;
 			}else{
 				ErrorHandling::addInvariant("Violation of rule '".$rule['name']."'");
+				return false;
 			}
 		}catch (Exception $e){
-			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->message);
+			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage);
 		}
 	}
 

@@ -582,8 +582,8 @@ function initializeAutocomplete($textfield, $atom) {
 
 function navigateTo(interface, atom) {
   window.location.href = '?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
-                                            'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '')
-											+'&role='+getSelectedRole();
+                                            'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '');
+											// +'&role='+getSelectedRole();
   // the check for undefined is necessary for when navigateTo is called on a role change from the Main page
 }
 

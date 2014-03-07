@@ -3,6 +3,7 @@
 require_once (__DIR__.'/../Generics.php'); // loading the Ampersand model
 require_once (__DIR__.'/../db/Database.php');
 require_once (__DIR__.'/Role.php');
+require_once (__DIR__.'/Viewer.php');
 
 
 class Session {
@@ -12,7 +13,12 @@ class Session {
 	public $role;
 	public $newAtomInterfaces;
 	
-	public function __construct($roleId = null, $interfaceName = null){
+	private static $_instance = null;
+	
+	// prevent any outside instantiation of this object
+	private function __construct(){
+	
+		$roleId = $_SESSION['role'];
 		
 		if($roleId != null){
 			$this->role = new Role($roleId);
@@ -20,6 +26,18 @@ class Session {
 		}
 		
 		// TODO interface aanmaken
+	}
+	
+	// Prevent any copy of this object
+	private function __clone()
+	{
+		
+	}
+	
+	public static function singleton()
+	{
+		if(!is_object (self::$_instance) ) self::$_instance = new Session();
+		return self::$_instance;
 	}
 	
 	public static function getRoles(){

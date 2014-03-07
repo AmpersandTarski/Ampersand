@@ -14,8 +14,13 @@ class ErrorHandling {
 	public static function addInvariant($message){
 		self::$invariants[] = $message;
 	}
-	public static function addViolation($message){
-		self::$violations[] = $message;
+	public static function addViolation($rule, $srcAtom, $tgtAtom){
+		$session = Session::singleton();
+		
+		$violationMessage = $rule['message'] ? $rule['messsage'] : "Violation of rule '".$rule['name']."'";
+		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))['name'].'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
+		
+		self::$violations[$violationMessage][] = $rowMessage;
 	}
 	public static function addNotification($message){
 		self::$notifications[] = $message;

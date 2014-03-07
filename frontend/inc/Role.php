@@ -13,10 +13,10 @@ class Role {
 		
 		$this->id = $id;
 		$this->name = $allRoles[$id]['name'];
-		$this->maintains = $allRoles[$id]['ruleNames'];
+		$this->maintains = (array)$allRoles[$id]['ruleNames'];
 		
 		foreach ($allInterfaceObjects as $interfaceName => $interface){
-			if (in_array($this->name, $interface['interfaceRoles'])) $this->interfaces[] = $interfaceName;
+			if (in_array($this->name, $interface['interfaceRoles']) or empty($interface['interfaceRoles'])) $this->interfaces[] = $interfaceName;
 		}
 		
 	}
@@ -31,24 +31,34 @@ class Role {
 		return $rules;
 	}
 	
-	public function getInterfaces($srcConceptONE = null){
+	public function getInterfaces($srcConceptONE = null, $srcConcept = null){
 		$interfaces = array();
 		
 		foreach($this->interfaces as $interfaceName){
-			switch ($srcConceptONE){
-				case true :
-					if(Session::getInterface($interfaceName)['srcConcept'] == 'ONE') $interfaces[$interfaceName] = Session::getInterface($interfaceName);
-					break;
-				case false :
-					if(Session::getInterface($interfaceName)['srcConcept'] != 'ONE') $interfaces[$interfaceName] = Session::getInterface($interfaceName);
-					break;
-				case null :
+			if(isset($srcConceptONE)){
+				switch ($srcConceptONE){
+					case true :
+						if(Session::getInterface($interfaceName)['srcConcept'] == 'ONE') $interfaces[$interfaceName] = Session::getInterface($interfaceName);
+						break;
+					case false :
+						if(Session::getInterface($interfaceName)['srcConcept'] != 'ONE') $interfaces[$interfaceName] = Session::getInterface($interfaceName);
+						break;
+					
+				}
+			}else{
+				if(isset($srcConcept)){
+					if(Session::getInterface($interfaceName)['srcConcept'] == $srcConcept) $interfaces[$interfaceName] = Session::getInterface($interfaceName);
+				}else{
 					$interfaces[$interfaceName] = Session::getInterface($interfaceName);
-					break;
-			}			
+				}
+			}
 		}
 		
 		return $interfaces;
+	}
+	
+	public function isInterfaceForRole($interfaceName){
+		return in_array($interfaceName, $this->interfaces);
 	}
 
 }
