@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
- ,addSlashes,zipnum
+ ,addSlashes
  ,indentBlock,addToLast
  ,pDebug,indentBlockBetween,quote
  ,phpIndent
@@ -14,9 +14,6 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    fatal :: Int -> String -> a
    fatal = fatalMsg "RelBinGenBasics"
 
-   zipnum :: [b] -> [(Int, b)]
-   zipnum = zip [(0::Int)..]
-   
    pDebug :: Bool
    pDebug = True
 

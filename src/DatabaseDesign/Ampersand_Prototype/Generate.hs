@@ -70,7 +70,6 @@ generateAll fSpec flags =
                       return "")
     writePrototypeFile fname content =
      do { verboseLn flags ("  Generating "++fname)
-        ; verboseLn flags $ content
         ; writeFile (combine (dirPrototype flags) fname) content
         }
 
@@ -242,7 +241,7 @@ generateRoles fSpec =
  where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- fRoles fSpec ]
        
 generateViews :: Fspc -> Options -> [String]
-generateViews fSpec flags =
+generateViews fSpec _ =
   [ "//$allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView())."
   , "$allViews ="
   , "  array" 

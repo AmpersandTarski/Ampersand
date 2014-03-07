@@ -8,12 +8,11 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.AutoInstaller (odbcinstall)
 import Database.HDBC.ODBC 
 import Database.HDBC
-import Data.Maybe (fromMaybe)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
-import DatabaseDesign.Ampersand_Prototype.Version 
+-- import DatabaseDesign.Ampersand_Prototype.Version 
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "RAP"
+-- fatal :: Int -> String -> a
+-- fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"
 ------
 dsnatlas::String
 dsnatlas = "DSN=RAPv1"
@@ -240,7 +239,7 @@ atlas2pattern :: (AtomVal,AtomVal) -> Lang -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Pattern 
 atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns          
-                             r_gengen r_genspc r_genrhs
+                             r_gengen r_genspc _ {- r_genrhs -}
                              r_cptnm
                              r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
                              r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
