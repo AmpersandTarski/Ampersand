@@ -15,7 +15,7 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
-import Data.List (nub,intercalate,partition)
+import Data.List (nub,intercalate,intersect,partition,group,delete)
 import GHC.Exts (sortWith)
 
 --import Debug.Trace  
@@ -37,8 +37,8 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = trace ("---\nStart makeEntityTables with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n") 
-                         (makeEntityTables flags entityDcls (ctxgs context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
+        gPlugs   = -- trace ("---\nStart makeEntityTables with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n") 
+                         (makeEntityTables flags context entityDcls (ctxgs context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable dcl totsurs
@@ -250,13 +250,14 @@ rel2fld kernel
 -}
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: Options 
+                -> A_Context
                 -> [Declaration] -- ^ all relations in scope
                 -> [A_Gen]
                 -> [[A_Concept]] -- ^ concepts `belonging' together.
                                  --   for each class<-conceptss: c,c'<-class:   c `join` c' exists (although there is not necessarily a concept d=c `join` c'    ...)
                 -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs. 
                 -> [PlugSQL]
-makeEntityTables flags allDcls isas conceptss exclusions
+makeEntityTables flags context allDcls isas conceptss exclusions
  = sortWith ((0-).length.plugFields)
     (map kernel2Plug kernelsWithAttributes)
    where
@@ -268,8 +269,13 @@ makeEntityTables flags allDcls isas conceptss exclusions
         "\nattRels:" ++     concat ["\n  "++showHS flags "    " e  | e<-attRels]++
         "\n"
     rootss = map (rootConcepts isas) conceptss
-    kernels = [ nub (roots++concat [ smallerConcepts isas c | c <- roots ])
-              | roots<-rootss ]
+-- Obsolete:  (because kernels are found in the fSpec)
+--    kernels = [ nub (roots++concat [ smallerConcepts isas c | c <- roots ])
+--              | roots<-rootss ]
+    kernels = foldl f (group (delete ONE (concs context))) (gens context)
+            where f disjuncLists g = concat haves : nohaves
+                    where
+                      (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
     kernelsWithAttributes = dist attRels kernels []
       where 
         dist :: (Association attrib, Show attrib) => [attrib] -> [[A_Concept]] -> [([A_Concept], [attrib])] -> [([A_Concept], [attrib])]
@@ -307,29 +313,21 @@ makeEntityTables flags allDcls isas conceptss exclusions
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
     attRels = mapMaybe attExprOf (allDcls>- exclusions)
-    attExprOf :: Declaration -> Maybe Expression
-    attExprOf d =
-     case d of  --make explicit what happens with each possible decl...
-       Isn{} -> Nothing -- These relations are already in the kernel
-       Vs{}  -> Nothing -- Vs are not implemented at all
-       Sgn{} ->
-            case (isInj d, isUni d, isSur d, isTot d) of
-                 (False  , False  , _      , _      ) --Will become a link-table
-                     -> Nothing 
-                 (False  , True   , _      , _      )
-                     -> Just $      EDcD d
-                 (True   , False  , _      , _      )
-                     -> Just $ flp (EDcD d)
-                 (True   , True   , False  , False  )
-                     -> Just $      EDcD d
-                 (True   , True   , False  , True   ) --Equivalent to CLASSIFY t ISA s, however, it is named, so it must be stored in a plug!
-                     -> Just $      EDcD d
-                 (True   , True   , True   , False  ) --Equivalent to CLASSIFY s ISA t, however, it is named, so it must be stored in a plug!
-                     -> Just $ flp (EDcD d)
-                 (True   , True   , True   , True   ) --An interesting relation indeed. However, it must be implemented, for it is relevant: i.e. `successor` relation on weekdays.
-                     -> Just $      EDcD d
-
-
+     where
+       attExprOf :: Declaration -> Maybe Expression
+       attExprOf d =
+        case d of  --make explicit what happens with each possible decl...
+          Isn{} -> Nothing -- These relations are already in the kernel
+          Vs{}  -> Nothing -- Vs are not implemented at all
+          Sgn{} ->
+               case (isInj d, isUni d, isTot d, isSur d) of
+                    (False  , False  , _      , _      ) --Will become a link-table
+                        -> Nothing 
+                    (True   , False  , _      , _      )
+                        -> Just $ flp (EDcD d)
+                    (True   , True   , True   , False  ) --Equivalent to CLASSIFY s ISA t, however, it is named, so it must be stored in a plug!
+                        -> Just $ flp (EDcD d)
+                    _   -> Just $      EDcD d
 
 -----------------------------------------
 --makeUserDefinedSqlPlug

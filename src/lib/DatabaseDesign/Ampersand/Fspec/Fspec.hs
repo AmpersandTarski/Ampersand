@@ -393,7 +393,7 @@ instance Eq PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
-plugFields::PlugSQL->[SqlField]
+plugFields :: PlugSQL->[SqlField]
 plugFields plug = case plug of
     TblSQL{}    -> fields plug
     BinSQL{}    -> [fst(columns plug),snd(columns plug)]
@@ -419,8 +419,8 @@ data SqlField = Fld { fldname :: String
                     , fldexpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
                     , fldtype :: SqlType
                     , flduse ::  SqlFieldUsage
-                    , fldnull :: Bool           -- ^ can there be empty field-values? (intended for data dictionary of DB-implementation)
-                    , flduniq :: Bool           -- ^ are all field-values unique? (intended for data dictionary of DB-implementation)
+                    , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
+                    , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
                     } deriving (Eq, Show)
 
 instance Ord SqlField where

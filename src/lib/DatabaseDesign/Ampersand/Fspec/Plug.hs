@@ -389,7 +389,7 @@ tblcontents gens udp plug@ScalarSQL{}
 tblcontents gens udp plug@BinSQL{}
    = [[x,y] |(x,y)<-fullContents gens udp (mLkp plug)]
 tblcontents gens udp plug@TblSQL{}
- --TODO151210 -> remove the assumptions (see comment data PlugSQL)
+ --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other, 
  --where NULL in a kernel field implies NULL in the following kernel fields
  --and the first field is unique and not null
