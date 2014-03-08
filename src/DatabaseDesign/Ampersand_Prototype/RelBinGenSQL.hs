@@ -197,7 +197,7 @@ selectExpr fSpec i src trg expr
                                 where (n,_,sqlSrc,_) = head fenceExprs
                       mainTgt = selectSelItem ("ECps"++show n++"."++sqlTgt,trg) 
                                 where (n,_,_,sqlTgt) = last fenceExprs
-                   fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExprs ]
+                   fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
                    whereClause
                            = "WHERE " ++ intercalate (phpIndent i++"  AND ")
                              [ "ECps"++show n++"."++lSQLtrg++"=ECps"++show m++"."++rSQLsrc
@@ -206,13 +206,13 @@ selectExpr fSpec i src trg expr
                    -- fenceExprs lists the expressions and their SQL-fragments.
                    -- In the poles-and-fences metaphor, they serve as the fences between the poles.
                    fenceExprs = [ ( n                              -- the serial number of this fence (in between poles n and n+1)
-                                  , selectExprInFROM fSpec i srcAtt trgAtt e++" AS ECps"++show n
+                                  , selectExprInFROM fSpec i srcAtt trgAtt e
                                   , srcAtt
                                   , trgAtt
                                   )
                                 | (n, e) <- zip [(0::Int)..] es
                                 , let srcAtt = sqlExprSrc fSpec e
-                                , let trgAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
+                                , let trgAtt = sqlExprTgt fSpec e
                                 ]
                in sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
                   (phpIndent i++selectClause ++
@@ -628,32 +628,31 @@ sqlPlugFields p e' =
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   we want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TRG" would suffice)
 sqlExprSrc :: Fspc->Expression -> String
-sqlExprSrc fSpec (EDcV (Sign a _)) = quote $ sqlAttConcept fSpec a
-sqlExprSrc fSpec (EDcI c) = quote $ sqlAttConcept fSpec c
-sqlExprSrc fSpec (EFlp e) = sqlExprTgt fSpec e
-sqlExprSrc fSpec expr@EDcD{}
-   = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
-     case sqlRelPlugs fSpec expr of 
-      [(_,s,_)] -> fldname s
-      []        -> fatal 614 ("No plug for relation "++showADL expr)
-      [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname s
-      _  -> fatal 616 ("Multiple plugs for relation "++showADL expr)
-sqlExprSrc _ expr = quote $ "Src"++name (source expr)
+sqlExprSrc fSpec (EDcV (Sign a _))   = quote $ sqlAttConcept fSpec a
+sqlExprSrc fSpec (EDcI c)            = quote $ sqlAttConcept fSpec c
+sqlExprSrc fSpec (EEps _ (Sign a _)) = quote $ sqlAttConcept fSpec a
+sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
+sqlExprSrc fSpec expr@EDcD{}         = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
+                                       case sqlRelPlugs fSpec expr of 
+                                        [(_,s,_)] -> fldname s
+                                        []        -> fatal 614 ("No plug for relation "++showADL expr)
+                                        [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname s
+                                        _  -> fatal 616 ("Multiple plugs for relation "++showADL expr)
+sqlExprSrc _     expr                = quote $ "Src"++name (source expr)
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: Fspc->Expression -> String
-sqlExprTgt fSpec (EDcV (Sign _ b)) = quote $ sqlAttConcept fSpec b
-sqlExprTgt fSpec (EDcI c) = quote $ sqlAttConcept fSpec c
-sqlExprTgt fSpec (EFlp e) = sqlExprSrc fSpec e
-sqlExprTgt fSpec expr@EDcD{}
-   = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
-     case sqlRelPlugs fSpec expr of 
-      [(_,_,t)] -> fldname t
-      []        -> fatal 628 ("No plug for relation "++showADL expr)
-      [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname t
-      _  -> fatal 630 ("Multiple plugs for relation "++showADL expr)
-sqlExprTgt _ expr = quote $ "Tgt"++name (target expr)
-
+sqlExprTgt fSpec (EDcV (Sign _ b))   = quote $ sqlAttConcept fSpec b
+sqlExprTgt fSpec (EDcI c)            = quote $ sqlAttConcept fSpec c
+sqlExprTgt fSpec (EEps _ (Sign _ b)) = quote $ sqlAttConcept fSpec b
+sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
+sqlExprTgt fSpec expr@EDcD{}         = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
+                                       case sqlRelPlugs fSpec expr of 
+                                        [(_,_,t)] -> fldname t
+                                        []        -> fatal 628 ("No plug for relation "++showADL expr)
+                                        [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname t
+                                        _  -> fatal 630 ("Multiple plugs for relation "++showADL expr)
+sqlExprTgt _     expr                = quote $ "Tgt"++name (target expr)
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: Fspc -> A_Concept -> String
