@@ -314,7 +314,7 @@ options = map pp
                                                                           "Generate a Excel workbook (.xls).", Hidden)
           , (Option []        ["bericht"]     (NoArg (\flags -> flags{genBericht = True}))
                                                                           "Generate definitions for 'berichten' (specific to INDOORS project).", Hidden)
-          , (Option []        ["language"]    (ReqArg languageOpt "lang") "The language to be used in your output. Defaults to the language of your context. ('NL' or 'EN').", Public)
+          , (Option []        ["language"]    (ReqArg languageOpt "lang") "Pick 'NL' for Dutch or 'EN' for English,\nas the language to be used in your output.\nWithout this option, output is written in the language of your context.", Public)
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
           , (Option []        ["rap"]         (NoArg (\flags -> flags{includeRap = True}))
                                                                           "Include RAP into the generated artifacts (experimental)", Hidden)
@@ -326,7 +326,7 @@ options = map pp
           , (Option []        ["sqlHost"]     (OptArg sqlHostOpt "name")  "specify database host name.", Hidden)
           , (Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "name") "specify database login name.", Hidden)
           , (Option []        ["sqlPwd"]      (OptArg sqlPwdOpt "str")    "specify database password.", Hidden)
-          , (Option []        ["forceSyntax"] (ReqArg forceSyntaxOpt "versionNumber") "version number of the syntax to be used, ('1' or '2'). Without this, ampersand will guess the version used.", Public) 
+          , (Option []        ["forceSyntax"] (ReqArg forceSyntaxOpt "versionNumber") "version number of the syntax to be used, ('1' or '2'). Without this, Ampersand will guess the version used.", Hidden) 
           ]
      where pp :: (OptDescr (Options -> Options), DisplayMode) -> (OptDescr (Options -> Options), DisplayMode)
            pp (Option a b' c d,e) = (Option a b' c d',e)
