@@ -177,7 +177,7 @@ selectExpr fSpec i src trg expr
              | src==trg && not (isProp e) -> fatal 172 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
              | otherwise -> let expr' = foldr1 (.:.) (f:fx)
                                 src' = sqlExprSrc fSpec e
-                                mid' = sqlExprTgt fSpec e
+                                mid' = noCollide' [src'] (sqlExprTgt fSpec e)
                                 mid2'= sqlExprSrc fSpec f
                                 trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
                             in sqlcomment i ("case:  (e:ERel (V _) _:f:fx)"++phpIndent (i+3)++showADL e) $
@@ -212,7 +212,7 @@ selectExpr fSpec i src trg expr
                                   )
                                 | (n, e) <- zip [(0::Int)..] es
                                 , let srcAtt = sqlExprSrc fSpec e
-                                , let trgAtt = sqlExprTgt fSpec e
+                                , let trgAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
                                 ]
                in sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
                   (phpIndent i++selectClause ++
@@ -350,9 +350,9 @@ Based on this derivation:
              srcAlias = noCollide relNames "RResLeft"
              tgtAlias = noCollide relNames "RResRight"
              lsrc = sqlExprSrc fSpec l
-             ltrg = sqlExprTgt fSpec l
+             ltrg = noCollide' [lsrc] (sqlExprTgt fSpec l)
              rsrc = sqlExprSrc fSpec r
-             rtrg = sqlExprTgt fSpec r
+             rtrg = noCollide' [rsrc] (sqlExprTgt fSpec r)
              lCode = selectExprInFROM fSpec (i+13) lsrc ltrg l
              rCode = selectExprInFROM fSpec (i+21) rsrc rtrg r
          in sqlcomment i ("case: ERrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")")
