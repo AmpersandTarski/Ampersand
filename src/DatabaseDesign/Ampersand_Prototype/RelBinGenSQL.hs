@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTgt,sqlExprSrc,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where 
@@ -100,10 +101,10 @@ selectExpr fSpec i src trg expr
                               ]++
                               [if isIdent l
                                then  "isect0."++src'++" <> isect0."++trg' -- this code will calculate ../\-I
-                               else  "NOT EXISTS ("++(selectExists' (i+18)
-                                                                    ((selectExprInFROM fSpec (i+13) src'' trg'' l) ++ " AS cp")
-                                                                    ("isect0."++src' ++ "=cp."++src''++" AND isect0."++ trg'++"=cp."++trg'')
-                                                  )++")"
+                               else  "NOT EXISTS ("++selectExists' (i+18)
+                                                                   (selectExprInFROM fSpec (i+13) src'' trg'' l ++ " AS cp")
+                                                                   ("isect0."++src' ++ "=cp."++src''++" AND isect0."++ trg'++"=cp."++trg'')
+                                                   ++")"
                               | (_,l)<-zip [(0::Int)..] negTms
                               , let src''=sqlExprSrc fSpec l
                               , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
@@ -181,9 +182,11 @@ selectExpr fSpec i src trg expr
                                 mid2'= sqlExprSrc fSpec f
                                 trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
                             in sqlcomment i ("case:  (e:ERel (V _) _:f:fx)"++phpIndent (i+3)++showADL e) $
-                                   selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
-                                                    ((selectExprInFROM fSpec i src' mid' e)++" AS fst,"++phpIndent (i+5)++(selectExprInFROM fSpec i mid2' trg' f)++" AS snd")
-                                                    ("fst."++src'++" IS NOT NULL")
+                                   selectGeneric i ("fst."++src',src) 
+                                                   ("snd."++trg',trg)
+                                                   (  selectExprInFROM fSpec i src'  mid' e++" AS fst,"++phpIndent (i+5)++
+                                                      selectExprInFROM fSpec i mid2' trg' f++" AS snd")
+                                                   ("fst."++src'++" IS NOT NULL")
 {-  The ECps is treated as poles-and-fences.
     Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
     In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
@@ -197,7 +200,7 @@ selectExpr fSpec i src trg expr
                                 where (n,_,sqlSrc,_) = head fenceExprs
                       mainTgt = selectSelItem ("ECps"++show n++"."++sqlTgt,trg) 
                                 where (n,_,_,sqlTgt) = last fenceExprs
-                   fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
+                   fromClause   = "FROM " ++ intercalate (',':phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
                    whereClause
                            = "WHERE " ++ intercalate (phpIndent i++"  AND ")
                              [ "ECps"++show n++"."++lSQLtrg++"=ECps"++show m++"."++rSQLsrc
@@ -245,7 +248,7 @@ selectExpr fSpec i src trg expr
                                 )
     (EDcD d)             -> selectExprRelation fSpec i src trg d
 
-    (EBrk e) -> selectExpr fSpec i src trg e
+    (EBrk e)             -> selectExpr fSpec i src trg e
 
     (ECpl e)
       -> case e of
@@ -273,8 +276,8 @@ selectExpr fSpec i src trg expr
                                   trg' = quote $ sqlAttConcept fSpec (target e)
                                   src2 = sqlExprSrc fSpec e
                                   trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
-    (EKl0 _) -> fatal 249 "SQL cannot create closures EKl0" ("SELECT * FROM NotExistingKl0")
-    (EKl1 _) -> fatal 249 "SQL cannot create closures EKl1" ("SELECT * FROM NotExistingKl1")
+    EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
+    EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
     (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
                                     (selectExpr fSpec i src trg (notCpl x))
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
@@ -356,7 +359,7 @@ Based on this derivation:
              lCode = selectExprInFROM fSpec (i+13) lsrc ltrg l
              rCode = selectExprInFROM fSpec (i+21) rsrc rtrg r
          in sqlcomment i ("case: ERrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")")
-                         (rResiduClause)
+                         rResiduClause
     ELrs (l,r)
       -> sqlcomment i ("case: ELrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
          selectExpr fSpec i trg src (flp r .\. flp l)

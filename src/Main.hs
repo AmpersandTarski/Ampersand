@@ -31,31 +31,31 @@ main =
                              >> generateProtoStuff flags fspc
 
 generateProtoStuff :: Options -> Fspc -> IO ()
-generateProtoStuff flags fSpec | validateSQL flags =
- do { verboseLn flags "Validating SQL expressions..."
-    ; isValid <- validateRuleSQL fSpec flags
-    ; unless isValid $
-        exitWith $ ExitFailure 30
-    }
-generateProtoStuff flags fSpec | export2adl flags && fileformat flags==Adl1Format =
- do { verboseLn flags "Exporting Atlas DB content to .adl-file..."
-    ; cx<-atlas2context fSpec flags
-    ; writeFile (combine (dirOutput flags) (outputfile flags)) (showADL cx)
-    ; verboseLn flags $ "Context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
-    }
-generateProtoStuff flags fSpec | export2adl flags && fileformat flags==Adl1PopFormat =
- do { verboseLn flags "Exporting Atlas DB content to .pop-file..."
-    ; cxstr<-atlas2populations fSpec flags
-    ; writeFile (combine (dirOutput flags) (outputfile flags)) cxstr
-    ; verboseLn flags $ "Population of context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
-    }
-generateProtoStuff flags fSpec | otherwise        =
- do { verboseLn flags "Generating prototype artifacts..."
-    ; when (genPrototype flags) $ doGenProto fSpec flags
-    ; when (genBericht flags)   $ doGenBericht fSpec flags
-    ; case testRule flags of 
-        Just ruleName -> ruleTest fSpec flags ruleName
-        Nothing       -> return ()
+generateProtoStuff flags fSpec 
+  | validateSQL flags =
+      do { verboseLn flags "Validating SQL expressions..."
+         ; isValid <- validateRuleSQL fSpec flags
+         ; unless isValid (exitWith (ExitFailure 30))
+         }
+  | export2adl flags && fileformat flags==Adl1Format =
+      do { verboseLn flags "Exporting Atlas DB content to .adl-file..."
+         ; cx<-atlas2context fSpec flags
+         ; writeFile (combine (dirOutput flags) (outputfile flags)) (showADL cx)
+         ; verboseLn flags $ "Context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
+         }
+  | export2adl flags && fileformat flags==Adl1PopFormat =
+      do { verboseLn flags "Exporting Atlas DB content to .pop-file..."
+         ; cxstr<-atlas2populations fSpec flags
+         ; writeFile (combine (dirOutput flags) (outputfile flags)) cxstr
+         ; verboseLn flags $ "Population of context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
+         }
+  | otherwise =
+      do { verboseLn flags "Generating prototype artifacts..."
+         ; when (genPrototype flags) $ doGenProto fSpec flags
+         ; when (genBericht flags)   $ doGenBericht fSpec flags
+         ; case testRule flags of 
+             Just ruleName -> ruleTest fSpec flags ruleName
+             Nothing       -> return ()
     ; when ((not . null $ allViolations fSpec) && (development flags || theme flags==StudentTheme)) $
         verboseLn flags "\nWARNING: There are rule violations (see above)."
     ; verboseLn flags "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
@@ -74,7 +74,6 @@ doGenProto fSpec flags =
       else do { verboseLn flags "Generating prototype..."
               ; phpObjInterfaces fSpec flags  
               ; verboseLn flags $ "Prototype files have been written to " ++ dirPrototype flags ++ "."
-              ; if test flags then verboseLn flags $ show (vplugInfos fSpec) else verboseLn flags ""
               }
     }
  where reportViolations []    = verboseLn flags "No violations found."
