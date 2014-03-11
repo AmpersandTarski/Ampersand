@@ -193,7 +193,7 @@ selectExpr fSpec i src trg expr
     The "outer poles" correspond to the source and target of the entire expression.
     To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
 -}
-          _:_:_  -- in this case, it is certain that there are at least two elements in es.
+          e1:e2:e3  -- in this case, it is certain that there are at least two elements in es.
             -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
                     where
                       mainSrc = selectSelItem ("ECps"++show n++"."++sqlSrc,src)
@@ -217,10 +217,19 @@ selectExpr fSpec i src trg expr
                                 , let srcAtt = sqlExprSrc fSpec e
                                 , let trgAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
                                 ]
-               in sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
-                  (phpIndent i++selectClause ++
-                   phpIndent i++fromClause   ++
-                   phpIndent i++whereClause )
+                   fencesSQL = 
+                     sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
+                       (phpIndent i++selectClause ++
+                        phpIndent i++fromClause   ++
+                        phpIndent i++whereClause )
+               in 
+                 case es of
+                    [EEps c1 s1, EDcI c2, EEps c3 s3] 
+                       -> if s1 == flp s3 && c1 == c3
+                          then sqlcomment i ("case:  [EEps c1 s1, EDcI c2, EEps c3 s3]"++phpIndent (i+3)++showADL expr) $
+                                  selectExprRelation fSpec i src trg (Isn c2)
+                          else fencesSQL
+                    _ -> fencesSQL
           _  -> fatal 215 "impossible outcome of exprCps2list"
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
