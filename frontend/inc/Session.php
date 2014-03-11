@@ -1,12 +1,6 @@
 <?php
 
-require_once (__DIR__.'/../Generics.php'); // loading the Ampersand model
-require_once (__DIR__.'/../db/Database.php');
-require_once (__DIR__.'/Role.php');
-require_once (__DIR__.'/Viewer.php');
-
 define("EXPIRATION_TIME", 60*60 ); // expiration time in seconds
-
 
 class Session {
 	
@@ -14,6 +8,7 @@ class Session {
 	
 	private $database;
 	public $role;
+	public $interface;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -37,7 +32,7 @@ class Session {
 			}
 			
 			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-			$expiredSessionsAtoms = array_column($database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < ".time() - EXPIRATION_TIME), 1);
+			$expiredSessionsAtoms = array_column($database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < ".time() - EXPIRATION_TIME), 'SESSION');
 			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
 			
 			// Create a new Ampersand session if $_SESSION['sessionAtom'] is not set (browser started a new session or Ampersand session was expired
@@ -62,7 +57,17 @@ class Session {
 		$this->role = new Role($roleId);
 		
 		
-		// TODO interface aanmaken
+		// INTERFACE
+		if(isset($_REQUEST['interface'])){ // new interface selected
+			$interfaceName = $_REQUEST['interface'];
+		}elseif(isset($_SESSION['interface'])){ // interface already selected
+			$interfaceName = $_SESSION['interface'];
+		}else{ // default interface
+			$interfaceName = '';
+		}
+		
+		$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
+		if(!empty($interfaceName)) $this->interface = new UserInterface($interfaceName);
 	}
 	
 	// Prevent any copy of this object
@@ -95,18 +100,7 @@ class Session {
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
 	
 	}
-	
-	public static function getRoles(){
-		$roles = array();
-		global $allRoles; // from Generics.php
 		
-		foreach((array)$allRoles as $key => $arr){
-			$roles[$key] = new Role($key);
-		}
-		
-		return $roles;
-	}
-	
 	/******* Rules *******/
 	
 	public static function getInvariantRules(){
@@ -127,31 +121,6 @@ class Session {
 		return $allRulesSql[$ruleName];
 	}
 	
-	/******* Interfaces *******/
-	
-	public function getInterfaces($srcConceptONE = null){ // $srcConceptONE: true, false, null (=all)
-		global $allInterfaceObjects; // from Generics.php
-		
-		if($this->role){
-			return $this->role->getInterfaces($srcConceptONE);
-		}else{			
-			return $allInterfaceObjects;
-		}	
-	}
-	
-	
-	// TODO: make separate class for Interface
-	public static function getInterface($interfaceName){
-		global $allInterfaceObjects; // from Generics.php
-		
-		return $allInterfaceObjects[$interfaceName];
-	
-	}
-	
-	
-
 }
-
-
 
 ?>

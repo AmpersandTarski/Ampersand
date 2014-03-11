@@ -44,3 +44,17 @@ svg {
 	padding-top : 5px;
 	padding-bottom : 5px;
 }
+
+.panel {
+	margin-bottom :	2px;
+}
+
+.panel-heading {
+	padding-top : 5px;
+	padding-bottom : 5px;
+}
+
+.panel .list-group-item {
+	padding-top : 5px;
+	padding-bottom : 5px;
+}

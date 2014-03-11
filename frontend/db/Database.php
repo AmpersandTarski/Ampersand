@@ -1,10 +1,8 @@
 <?php
 error_reporting(E_ALL ^ E_DEPRECATED ^ E_NOTICE);
-ini_set("display_errors", 1);
+ini_set("display_errors", 1); // TODO: error handling instellen
 
-require_once __DIR__.'/../Generics.php';
-require_once __DIR__.'/DatabaseUtils.php';
-require_once __DIR__.'/config.php';
+require_once (__DIR__ . '/config.php');
 
 class Database
 {	
@@ -54,7 +52,7 @@ class Database
 		
 	}
 	
-	public function transaction($commandArray){
+	public function transaction($commandArray, $roleId){
 		
 		$this->Exe("START TRANSACTION"); // start database transaction
 		
@@ -78,7 +76,7 @@ class Database
 					break;
 				case 'delete':
 					if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) && array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command))
-						editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
+						$this->editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
 					else 
 						throw new Exception("Command " .$command->dbCmd . " is missing parameters");
 					break;
@@ -95,8 +93,11 @@ class Database
 		// Doing so AFTER running the ExecEngine allows any problems with stored procedures to be 'fixed'
 		// 2do this: create a rule with the same ruleexpression and handle the violation with th ExecEngine
 		// runAllProcedures();
-
-		$invariantRulesHold = checkInvariantRules();
+		
+		RuleEngine::checkProcessRules($roleId);
+		
+		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
+		$invariantRulesHold = RuleEngine::checkInvariantRules();
 
 		if ($invariantRulesHold) {
 			$this->setLatestUpdateTime();
@@ -146,7 +147,7 @@ class Database
 			// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one for checking the existence of a concept
 			$firstConceptColEsc = addslashes($conceptCols[0]);
 
-			$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), 1); // no need to filter duplicates and NULLs
+			$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), $firstConceptColEsc); // no need to filter duplicates and NULLs
 
 			if (!in_array($newAtom, $existingAtoms)) {
 				$allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';

@@ -28,21 +28,12 @@ function initializeAtoms() {
 }
 
 function resetSession() {
-  $.ajax({ url: 'php/Database.php/php/Database.php?resetSession',
+  $.ajax({ url: '?resetSession',
            cache: false,
            success: function(data){ window.location.reload(); }
   });
 }
 
-function loginSession()
-{ $.ajax({ url: 'php/main_login.php',
-           cache: false,
-           success: function(data)
-                    { alert('something happend.');
-                    },
-           error: function(data){ alert('Something went wrong.'); }
-  });
-}
 
 function resetDatabase() {
   $.ajax({ url: 'Installer.php',
@@ -123,7 +114,7 @@ function commitEditing() {
 }
 
 function sendCommands(dbCommands) {
-  $.post('php/Database.php',  
+  $.post('api/v1/transaction/',  
   { commands: JSON.stringify(dbCommands), role: getSelectedRole() },
   function(data) {
     $results = $(data);
@@ -755,26 +746,6 @@ function setLogItems($logWindow, $logItems) {
 }
 
 
-// Roles
-
-function changeRole() {
-  if ($('#AmpersandRoot').attr('isNew')=='true') {
-    // Role changes are events in the history, so for create new, this means the old create-new page remains in the
-    // history and will be shown after save or cancel. Unfortunately, it is not reloaded, so it's still in edit mode showing empty fields.
-    // Forcing a refresh after going back, or removing the current history item and moving to a different page is not possible using normal page navigation,
-    // so until we have an ajax-based implementation, this is not supported. Disabling the cache to force a refresh even on a normal browser back could
-    // also solve the problem, but this seems to be very tricky.
-    alert('Role changes during create new are currently not supported.');
-    return;
-  } else {
-    var interface = $('#AmpersandRoot').attr('interface');
-  
-    var atom = $('#AmpersandRoot').attr('atom');
-    navigateTo(interface, atom); // navigate to takes the role from the updated selector
-  }
-}
-
-
 // Refresh timer
 
 function startRefreshTimer() {
@@ -929,10 +900,6 @@ function mapInsert(map, key, value) {
 
 function attrBoolValue(attrStr) {
   return attrStr.toLowerCase()=="true" ? true : false;
-}
-
-function getSelectedRole() {
-  return getUrlVars('role');
 }
 
 function getUrlVars( item ) {

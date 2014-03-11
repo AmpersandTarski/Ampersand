@@ -1,7 +1,12 @@
 <?php
 
-
 class Concept {
+
+	public static function getAllConcepts(){
+		global $conceptTableInfo; // from Generics.php
+		
+		return array_keys($conceptTableInfo);
+	}
 
 	public static function getSpecializations($concept) {
 		global $allSpecializations;
@@ -19,7 +24,7 @@ class Concept {
 		$conceptTableEsc = addslashes($conceptTable);
 		$conceptColEsc = addslashes($conceptCol);
 
-		return array_column($database->Exe("SELECT DISTINCT `$conceptColEsc` FROM `$conceptTableEsc` WHERE `$conceptColEsc` IS NOT NULL"),1);
+		return array_column($database->Exe("SELECT DISTINCT `$conceptColEsc` FROM `$conceptTableEsc` WHERE `$conceptColEsc` IS NOT NULL"),$conceptColEsc);
 	}
 	
 	public static function isAtomInConcept($atom, $concept) {

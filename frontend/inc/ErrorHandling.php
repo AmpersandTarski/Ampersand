@@ -17,9 +17,9 @@ class ErrorHandling {
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
 		
-		// TODO: move output related things to viewer. Move ErrorHandling to Session??
+		// TODO: move output related things to Viewer. Move ErrorHandling to Session??
 		$violationMessage = $rule['message'] ? $rule['messsage'] : "Violation of rule '".$rule['name']."'";
-		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))['name'].'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
+		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
 		
 		self::$violations[$violationMessage][] = $rowMessage;
 	}
@@ -44,6 +44,18 @@ class ErrorHandling {
 	}
 	public static function getSuccesses(){
 		return self::$successes;
+	}
+	
+	// TODO: can be deleted when ErrorHandling is not static anymore but instantiated in Session class.
+	public static function getAll(){
+		$all['errors'] = self::$errors;
+		$all['invariants'] = self::$invariants;
+		$all['violations'] = self::$violations;
+		$all['notifications'] = self::$notifications;
+		$all['successes'] = self::$successes;
+		
+		return $all;
+		
 	}
 	
 

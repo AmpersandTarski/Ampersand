@@ -16,11 +16,22 @@ class Role {
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];
 		
 		foreach ($allInterfaceObjects as $interfaceName => $interface){
-			if (in_array($this->name, $interface['interfaceRoles']) or empty($interface['interfaceRoles'])) $this->interfaces[] = $interfaceName;
+			if (UserInterface::isInterfaceForRole($this->name, $interfaceName)) $this->interfaces[] = $interfaceName;
 		}
 		
 	}
 		
+	public static function getAllRoles(){
+		$roles = array();
+		global $allRoles; // from Generics.php
+		
+		foreach((array)$allRoles as $key => $arr){
+			$roles[$key] = new Role($key);
+		}
+		
+		return $roles;
+	}
+	
 	public function getRules(){
 		$rules = array();
 		
@@ -31,29 +42,30 @@ class Role {
 		return $rules;
 	}
 	
-	public function getInterfaces($srcConceptONE = null, $srcConcept = null){
+	public function getInterfaces($srcConceptONE = null, $srcConcept = null){ // $srcConceptONE: true, false, null (=all), $srcConcept: <concept> or null (=all)
 		$interfaces = array();
 		
 		foreach($this->interfaces as $interfaceName){
+			$interface = new UserInterface($interfaceName);
+			
 			if(isset($srcConceptONE)){
 				switch ($srcConceptONE){
 					case true :
-						if(Session::getInterface($interfaceName)['srcConcept'] == 'ONE') $interfaces[$interfaceName] = Session::getInterface($interfaceName);
+						if($interface->srcConcept == 'ONE') $interfaces[$interfaceName] = $interface;
 						break;
 					case false :
-						if(Session::getInterface($interfaceName)['srcConcept'] != 'ONE') $interfaces[$interfaceName] = Session::getInterface($interfaceName);
+						if($interface->srcConcept != 'ONE') $interfaces[$interfaceName] = $interface;
 						break;
-					
 				}
 			}else{
 				if(isset($srcConcept)){
-					if(Session::getInterface($interfaceName)['srcConcept'] == $srcConcept 
-						|| in_array($srcConcept, Concept::getSpecializations(Session::getInterface($interfaceName)['srcConcept'])) ) 
-					{
-						$interfaces[$interfaceName] = Session::getInterface($interfaceName);
+					if($interface->srcConcept == $srcConcept 
+						|| in_array($srcConcept, Concept::getSpecializations($interface->srcConcept)) ) {
+						
+						$interfaces[$interfaceName] = $interface;
 					}
 				}else{
-					$interfaces[$interfaceName] = Session::getInterface($interfaceName);
+					$interfaces[$interfaceName] = $interface;
 				}
 			}
 		}

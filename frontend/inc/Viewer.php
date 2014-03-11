@@ -1,13 +1,11 @@
 <?php
 
-require_once (__DIR__.'/../Generics.php'); // loading the Ampersand model
-
 class Viewer {
 	
 	// TODO: make non static or private function
 	public static function viewInterface($interface){
 		
-	
+		
 	}
 	
 	public static function getView($concept){
@@ -43,7 +41,45 @@ class Viewer {
 		}
 		return $atom; // in case no view exists for this $srcConcept
 	}
+	
+	public static function escapeHtmlAttrStr($str) {
+		return str_replace(array('"', '&'), array('&quot;', '%26'), $str); // we do escapeSQL and replace \" by &quot; and \' by '
+	}
+	
+	// TODO: can be deleted when not using Ampersand.js anymore
+	public static function genEditableConceptInfo($interfaceName) {
+		$atomViewMap = array ();
+		$interface = new UserInterface($interfaceName);
+		
+		foreach ($interface->editableConcepts as $editableConcept) {
+			$atomsAndViews = array ();
+			
+			foreach (Concept::getAllAtoms($editableConcept) as $atom) {
+				$atomsAndViews[] = array ('atom' => $atom, 'view' => Viewer::viewAtom($atom, $editableConcept));
+			}
+			$atomViewMap[$editableConcept] = array ('hasView' => Viewer::getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
+		}
+		
+		$atomViewMapJson = json_encode( $atomViewMap );
+		
+		return "function getEditableConceptInfo() { return ".$atomViewMapJson."; }";
+	}
+	
+	// TODO: can be deleted when not using Ampersand.js anymore
+	public static function generateInterfaceMap(){
+		$session = Session::singleton();
+		
+		$interfaceMap = 'function getInterfacesMap() { var interfacesMap = new Array();'; // TODO: use Json for this
+		foreach($session->role->getInterfaces() as $interface) {
+				$conceptOrSpecs = array_merge(array($interface->srcConcept), Concept::getSpecializations($interface->srcConcept));
 
+				foreach ($conceptOrSpecs as $concept) 
+				$interfaceMap .= '  mapInsert(interfacesMap, "'.Viewer::escapeHtmlAttrStr($concept).'", "'.Viewer::escapeHtmlAttrStr($interface->name).'");';
+		}
+		$interfaceMap .= '  return interfacesMap; }';
+		
+		return $interfaceMap;
+	}
 }
 
 ?>

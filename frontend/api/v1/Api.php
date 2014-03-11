@@ -1,6 +1,5 @@
 <?php
 
-
 class Api
 {
 
@@ -10,7 +9,7 @@ class Api
      */
     public function getConcepts()
     {
-        return "List of all concepts";
+        return Concept::getAllConcepts(); // "Return list of all concepts"
     }
 	
 	/**
@@ -18,7 +17,7 @@ class Api
      */
     public function getAtoms($concept)
     {
-        return "List of all atoms for $concept";
+        return Concept::getAllAtoms($concept); // "Return list of all atoms for $concept"
     }
 	
 	/**
@@ -26,7 +25,7 @@ class Api
      */
     public function getAtom($concept, $atom)
     {
-        return "All attributes of atom $atom of concept $concept";
+        return "Return all attributes of atom $atom of concept $concept";
     }
 	
 	/**
@@ -35,7 +34,7 @@ class Api
      */
     public function getLinks($concept, $atom, $direction = "both")
     {
-        return "All links (direction: $direction) atom $atom of concept $concept";
+        return "Return all links (direction: $direction) atom $atom of concept $concept";
     }
 	
 	/**
@@ -44,45 +43,80 @@ class Api
      */
     public function getRelations($concept, $direction = "both")
     {
-        return "List of all relations (direction: $direction) for $concept";
+        return "Return list of all relations (direction: $direction) for $concept";
     }
 	
 /**************************** RULES AND VIOLATIONS ****************************/
 	
 	/**
      * @url GET rules/
-	 * @url GET role/{role}/rules/
+	 * @url GET rule/{ruleName}/
      */
-    public function getRules($role = NULL)
+    public function getRules($ruleName = NULL)
     {
-        if($role){
-			return "List of rules that are maintained by role $role";
+		if(isset($ruleName)){
+			
+			return Session::getRule($ruleName); // "Return rule with name $ruleName";
 		}else{
-			return "List of all rules";
+			return "Return list of all rules";
 		}
     }
 	
 	/**
-     * @url GET rule/{rule}/violations/
+     * @url GET rule/{ruleName}/violations/
      */
-    public function getViolations($rule)
+    public function getViolations($ruleName)
     {
-        return "List of violations (tuples of src, tgt atom) for rule $rule";
+		$rule = Session::getRule($ruleName);
+        return RuleEngine::checkProcessRule($rule); // "Return list of violations (tuples of src, tgt atom) for rule $rule"
     }
 	
 /**************************** ROLES ****************************/
 	
 	/**
      * @url GET roles/
-	 * @url GET rule/{rule}/roles/
+	 * @url GET role/{roleNr}/
      */
-    public function getRoles($rule = NULL)
+    public function getRoles($roleNr = NULL)
     {
-		
-        if($rule){
-			return "List of all roles that maintain rule $rule";
+        if($roleNr !== NULL){	// do not use isset(), because roleNr can be 0.		
+			return new Role($roleNr); // "Return role with properties as defined in class Role"
 		}else{
-			return Session::getRoles();
+			return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
+			
+		}
+    }
+	
+	/**
+	 * @url GET role/{roleNr}/interfaces
+	 * @url GET role/{roleNr}/interface/{interfaceName}
+     */
+	public function getRoleInterfaces($roleNr, $interfaceName = NULL)
+	{
+		$role = new Role($roleNr);
+		
+		if(isset($interfaceName)){
+			if(!$role->isInterfaceForRole($interfaceName)) return false; // Interface is not for specified role
+			
+			return new UserInterface($interfaceName);
+		}else{
+			return $role->interfaces;
+		}
+	}
+	
+/**************************** INTERFACES ****************************/
+	
+	/**
+     * @url GET interfaces/
+	 * @url GET interface/{interfaceName}/
+     */
+    public function getInterfaces($interfaceName = NULL)
+    {
+        if($interfaceName !== NULL){
+			
+			return new UserInterface($interfaceName); // "Return interface with properties as defined in class UserInterfae"
+		}else{
+			return UserInterface::getAllInterfaces(); // "Return list of all interfaces"
 			
 		}
     }
@@ -91,11 +125,13 @@ class Api
 	/**
      * @url POST transaction/
      */
-    public function processCommands($jsonCommands)
+    public function processCommands($commands, $role)
     {
 		$database = Database::singleton();
 		
-		return $database->transaction(json_decode($jsonCommands));
+		$database->transaction(json_decode($commands), $role);
+		
+		return ErrorHandling::getAll();
 		
     }
 	
