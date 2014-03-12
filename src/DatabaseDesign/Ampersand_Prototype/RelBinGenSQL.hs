@@ -224,11 +224,12 @@ selectExpr fSpec i src trg expr
                         phpIndent i++whereClause )
                in 
                  case es of
-                    [EEps c1 s1, EDcI c2, EEps c3 s3] 
-                       -> if s1 == flp s3 && c1 == c3
-                          then sqlcomment i ("case:  [EEps c1 s1, EDcI c2, EEps c3 s3]"++phpIndent (i+3)++showADL expr) $
-                                  selectExprRelation fSpec i src trg (Isn c2)
-                          else fencesSQL
+-- HJO, 20140312: @Stef: Onderstaand verwijdert de symptomen van Try31, maar zoals vanochtend besproken zit er meer achter. Vandaar uitgecommentarieerd.
+--                    [EEps c1 s1, EDcI c2, EEps c3 s3] 
+--                       -> if s1 == flp s3 && c1 == c3
+--                          then sqlcomment i ("case:  [EEps c1 s1, EDcI c2, EEps c3 s3]"++phpIndent (i+3)++showADL expr) $
+--                                  selectExprRelation fSpec i src trg (Isn c2)
+--                          else fencesSQL
                     _ -> fencesSQL
           _  -> fatal 215 "impossible outcome of exprCps2list"
 
