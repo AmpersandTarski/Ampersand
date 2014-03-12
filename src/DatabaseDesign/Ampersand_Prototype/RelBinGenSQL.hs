@@ -231,7 +231,7 @@ selectExpr fSpec i src trg expr
 --                          else fencesSQL
                     _ -> fencesSQL
           [e]-> selectExpr fSpec i src trg e -- apparently, some EEps expressions were removed, yielding fewer than two subexpressions. So selectExpr is called recursively.
-          _  -> fatal 215 "impossible outcome of exprCps2list: "
+          _  -> fatal 215 ("impossible outcome of exprCps2list: "++showADL expr)
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x

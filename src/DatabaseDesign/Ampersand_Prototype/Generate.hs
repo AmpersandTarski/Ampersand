@@ -23,7 +23,8 @@ customCssPath = "css/Custom.css"
 
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec flags =
- do { writePrototypeFile "Generics.php" . genPhp "Generate.hs" "Generics.php" $ genericsPhpContent
+ do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
+    ; writePrototypeFile "Generics.php" filecontent
     ; case customCssFile flags of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
