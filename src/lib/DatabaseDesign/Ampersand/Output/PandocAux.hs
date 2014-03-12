@@ -400,6 +400,10 @@ instance ShowMath Expression where
           showExpr (EDif (l,r)) = showExpr l++texOnly_bx ++showExpr r
           showExpr (ELrs (l,r)) = showExpr l++texOnly_lRes++showExpr r
           showExpr (ERrs (l,r)) = showExpr l++texOnly_rRes++showExpr r
+          showExpr (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showExpr  r
+                                         | otherwise                    = showExpr (ECps (EDcI i,r))
+          showExpr (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showExpr  l
+                                         | otherwise                    = showExpr (ECps (l,EDcI i))
           showExpr (ECps (l,r)) = showExpr l++texOnly_compose++showExpr r
           showExpr (ERad (l,r)) = showExpr l++texOnly_relAdd++showExpr r
           showExpr (EPrd (l,r)) = showExpr l++texOnly_crtPrd++showExpr r
@@ -410,7 +414,7 @@ instance ShowMath Expression where
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = "\\id{"++name d++"}"
           showExpr (EDcI c)     = "I_{\\id{"++name c++"}}"
-          showExpr  EEps{}      = ""
+          showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{\\id{"++show (source sgn)++"}\times\\id{"++show (target sgn)++"}}"
           showExpr (EMp1 a _)   = "'{\tt "++a++"}'"
 
