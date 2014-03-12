@@ -193,8 +193,14 @@ where
      nM _      e@(ECpl (ECps (ECpl{},ECpl{}))) _         = (deMorganECps e, ["De Morgan"], "<=>")
      nM posCpl (ECpl e) _                                = (notCpl res',steps,equ')
                                                            where (res',steps,equ') = nM (not posCpl) e []
-     nM _      (ECps (l,r)) _                | isIdent l = (r, ["I;x = x"], "<=>")
-     nM _      (ECps (l,r)) _                | isIdent r = (l, ["x;I = x"], "<=>")
+     nM _      (ECps (l,EEps c (Sign s t))) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c,                       [], "<=>")
+     nM _      (ECps (l,EEps c (Sign s t))) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
+     nM _      (ECps (l,ECps (EEps c (Sign s t),r)) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c .:. r,                       [], "<=>")
+     nM _      (ECps (l,ECps (EEps c (Sign s t),r)) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t) .:. r, [], "<=>")
+     nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c==s = (EDcI c .:. EEps c (Sign c t), [], "<=>")
+     nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c/=t = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
+     nM _      (ECps (l,r)) _                | isIdent l && not (isEEps r) = (r, ["I;x = x"], "<=>")
+     nM _      (ECps (l,r)) _                | isIdent r && not (isEEps l) = (l, ["x;I = x"], "<=>")
      nM True   (ECps (r,ERad (s,q))) _          | not eq = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
      nM True   (ECps (ERad (r,s),q)) _          | not eq = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
      nM True   (ECps (EIsc (r,s),q)) _          | not eq = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
@@ -344,7 +350,10 @@ where
    exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
    exprRad2list r            = [r]
 
-
+   isEEps :: Expression -> Bool
+   isEEps EEps{} = True
+   isEEps _      = False
+   
    fEqu :: [String] -> String
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 

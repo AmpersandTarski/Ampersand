@@ -286,7 +286,7 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar (EEps i sgn) = "Eps{"++name i++"}"++lbr++name (source sgn)++star++name (target sgn)++rbr -- fatal 289 "EEps may occur only in combination with composition ("++show expr++")."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
+          showchar (EEps i sgn) = "Eps{"++name i++"}"
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 
@@ -303,7 +303,7 @@ instance ShowADL Expression where
           insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
           insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
           insPar i (ERrs (l,r)) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r))
-          insPar i (ECps (l,r)) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r))
+          insPar i (ECps (l,r)) = wrap i     8 (ECps (insPar 8 l, insPar 8 r))
           insPar i (ERad (l,r)) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r))
           insPar i (EPrd (l,r)) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r))
           insPar _ (EKl0 e)     = EKl0 (insPar 10 e)

@@ -170,6 +170,14 @@ pCtx2aCtx
    However, castConcept makes an erroneous concept, which we should prevent in the first place.
    So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work. 
 -}
+    leastConcept :: A_Concept -> String -> A_Concept
+    leastConcept c str
+     = case (name c `elem` leastConcepts, str `elem` leastConcepts) of
+         (True, _) -> c
+         (_, True) -> castConcept str
+         (_, _)    -> fatal 178 ("Either "++name c++" or "++str++" should be a subset of the other." )
+       where
+         leastConcepts = findExact genLattice (Atom (name c) `Meet` (Atom str))
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x
@@ -273,13 +281,13 @@ pCtx2aCtx
                     else EEps (castConcept (head b)) (castSign a c) .:. e
     addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
     addEpsilonLeft' a e
-     = if a==name (source e) then e else EEps (castConcept a) (castSign a (name (source e))) .:. e
+     = if a==name (source e) then e else EEps (leastConcept (source e) a) (castSign a (name (source e))) .:. e
     addEpsilonRight' a e
-     = if a==name (target e) then e else e .:. EEps (castConcept a) (castSign (name (target e)) a)
+     = if a==name (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (name (target e)) a)
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
-     = (if s==name (source e) then id else (EEps (castConcept s) (castSign s (name (source e))) .:.)) $
-       (if t==name (target e) then id else (.:. EEps (castConcept t) (castSign (name (target e)) t))) e
+     = (if s==name (source e) then id else (EEps (leastConcept (source e) s) (castSign s (name (source e))) .:.)) $
+       (if t==name (target e) then id else (.:. EEps (leastConcept (target e) t) (castSign (name (target e)) t))) e
     
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
