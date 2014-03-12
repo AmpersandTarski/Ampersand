@@ -262,8 +262,8 @@ instance ShowADL Expression where
    where 
      showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
-     showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
-      = showchar
+     showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
+      = showchar (insA_Parentheses expr)
         where
           showchar (EEqu (l,r)) = showchar l++equi++showchar r
           showchar (EImp (l,r)) = showchar l++impl++showchar r
@@ -272,8 +272,10 @@ instance ShowADL Expression where
           showchar (EDif (l,r)) = showchar l++diff ++showchar r
           showchar (ELrs (l,r)) = showchar l++lresi++showchar r
           showchar (ERrs (l,r)) = showchar l++rresi++showchar r
-          showchar (ECps (EEps{},r)) = showchar  r
-          showchar (ECps (l,EEps{})) = showchar l
+{-          showchar (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showchar  r
+                                         | otherwise                    = showchar (ECps (EDcI i,r))
+          showchar (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showchar  l
+                                         | otherwise                    = showchar (ECps (l,EDcI i)) -}
           showchar (ECps (l,r)) = showchar l++rMul++showchar r
           showchar (ERad (l,r)) = showchar l++rAdd++showchar r
           showchar (EPrd (l,r)) = showchar l++rPrd++showchar r
@@ -284,9 +286,32 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar  EEps{}      = ""
+          showchar (EEps i sgn) = "Eps{"++name i++"}"++lbr++name (source sgn)++star++name (target sgn)++rbr -- fatal 289 "EEps may occur only in combination with composition ("++show expr++")."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
+
+     insA_Parentheses :: Expression -> Expression
+     insA_Parentheses = insPar 0
+        where
+          wrap :: Integer -> Integer -> Expression -> Expression
+          wrap i j e' = if i<=j then e' else EBrk e'
+          insPar :: Integer -> Expression -> Expression
+          insPar i (EEqu (l,r)) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r))
+          insPar i (EImp (l,r)) = wrap i     0 (EImp (insPar 1 l, insPar 1 r))
+          insPar i (EIsc (l,r)) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r))
+          insPar i (EUni (l,r)) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r))
+          insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
+          insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
+          insPar i (ERrs (l,r)) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r))
+          insPar i (ECps (l,r)) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r))
+          insPar i (ERad (l,r)) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r))
+          insPar i (EPrd (l,r)) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r))
+          insPar _ (EKl0 e)     = EKl0 (insPar 10 e)
+          insPar _ (EKl1 e)     = EKl1 (insPar 10 e)
+          insPar _ (EFlp e)     = EFlp (insPar 10 e)
+          insPar _ (ECpl e)     = ECpl (insPar 10 e)
+          insPar i (EBrk e)     = insPar i e
+          insPar _ x            = x
 
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
@@ -363,15 +388,6 @@ instance ShowADL Fspc where
 --    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
     ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
     ++ "\n\nENDCONTEXT"
-    where --showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
-      --                  | d<-declarations fSpec, decusr d, not (null (decpopu d))]
-      --                  ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
-          patts = if null (themes fSpec)
-                  then patterns fSpec
-                  else [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ]
-          procs = if null (themes fSpec)
-                  then vprocesses fSpec
-                  else [ prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
 instance ShowADL (Maybe String) where
   showADL _ = ""
 instance ShowADL ECArule where
