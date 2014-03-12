@@ -108,7 +108,7 @@ selectExpr fSpec i src trg expr
                               | (_,l)<-zip [(0::Int)..] negTms
                               , let src''=sqlExprSrc fSpec l
                               , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
-                              ]++[ "isect0."++src'++" IS NOT NULL", "isect0."++trg'++" IS NOT NULL"]
+                              ]++nub [ "isect0."++src'++" IS NOT NULL", "isect0."++trg'++" IS NOT NULL"]
               in case lst' of
 {- The story:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
@@ -148,8 +148,8 @@ selectExpr fSpec i src trg expr
                               ++ ")"
                          )
     ECps{}  ->
-       let es = exprCps2list expr in
-       case es of 
+       let es = [ e | e<-exprCps2list expr, case e of EEps inter sgn -> inter/=source sgn&&inter/=target sgn; _ -> True ] in
+       case es of
           (EDcV (Sign ONE _):fs@(_:_))
              -> let expr' = foldr1 (.:.) fs
                     src'  = noCollide' [trg'] (sqlExprSrc fSpec expr')
@@ -165,7 +165,6 @@ selectExpr fSpec i src trg expr
           [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]-- this will occur quite often because of doSubsExpr
              -> sqlcomment i ("case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]"++phpIndent (i+3)++showADL expr) $
                  "SELECT \\'"++atomSrc++"\\' AS "++src++", \\'"++atomTgt++"\\' AS "++trg
-
           (e@(EMp1 atom _):f:fx)
              -> let expr' = foldr1 (.:.) (f:fx)
                     src' = sqlExprSrc fSpec e
@@ -193,7 +192,7 @@ selectExpr fSpec i src trg expr
     The "outer poles" correspond to the source and target of the entire expression.
     To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
 -}
-          e1:e2:e3  -- in this case, it is certain that there are at least two elements in es.
+          _:_:_  -- in this case, it is certain that there are at least two elements in es.
             -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
                     where
                       mainSrc = selectSelItem ("ECps"++show n++"."++sqlSrc,src)
@@ -231,7 +230,8 @@ selectExpr fSpec i src trg expr
 --                                  selectExprRelation fSpec i src trg (Isn c2)
 --                          else fencesSQL
                     _ -> fencesSQL
-          _  -> fatal 215 "impossible outcome of exprCps2list"
+          [e]-> selectExpr fSpec i src trg e -- apparently, some EEps expressions were removed, yielding fewer than two subexpressions. So selectExpr is called recursively.
+          _  -> fatal 215 "impossible outcome of exprCps2list: "
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
@@ -251,6 +251,7 @@ selectExpr fSpec i src trg expr
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
                                     PlainConcept{} -> selectExprRelation fSpec i src trg (Isn c)
                                 )
+    -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
     (EEps inter sgn)     -> sqlcomment i ("epsilon "++name inter++" "++showSign sgn)  -- showSign yields:   "["++(name.source) sgn++"*"++(name.target) sgn++"]"
                                 ( case inter of -- select the population of the most specific concept, which is the source.
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
@@ -477,10 +478,9 @@ selectExprRelation :: Fspc
                    -> String -- ^ Alias of target
                    -> Declaration
                    -> String
-
 selectExprRelation fSpec i srcAS trgAS dcl =
   case dcl of
-    Sgn{}  -> leafCode (EDcD dcl)
+    Sgn{}  -> leafCode (EDcD dcl) 
     Isn{}  -> leafCode (EDcI (source dcl))
     Vs sgn 
      | source sgn == ONE -> fatal 468 "ONE is not expected at this place"
@@ -495,7 +495,9 @@ selectExprRelation fSpec i srcAS trgAS dcl =
      leafCode expr =  -- made for both Rel and I
        case sqlRelPlugs fSpec expr of
          []           -> fatal 344 $ "No plug for expression "++show expr
-         (plug,s,t):_ -> selectGeneric i (quote (fldname s),srcAS) (quote (fldname t),trgAS) (quote (name plug)) (quote (fldname s)++" IS NOT NULL AND "++quote (fldname t)++" IS NOT NULL")
+         (plug,s,t):_ -> selectGeneric i (quote (fldname s),srcAS) (quote (fldname t),trgAS)
+                                         (quote (name plug))
+                                         (intercalate " AND " [quote (fldname c)++" IS NOT NULL" | c<-nub [s,t]])
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
                
