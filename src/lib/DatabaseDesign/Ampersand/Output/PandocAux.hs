@@ -578,8 +578,12 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-uniquecds :: A_Concept -> [(String,ConceptDef)]
-uniquecds c = [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
+uniquecds :: Fspc -> A_Concept -> [(String,ConceptDef)]
+uniquecds fSpec c
+ = [ (if length cDefs==1 then cdcpt cd else cdcpt cd++show i , cd)
+   | let cDefs=concDefs fSpec c
+   , (i,cd)<-zip [(1::Integer)..] cDefs ]
+-- was: [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
 
 makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
 makeDefinition flags i nm lbl defin ref =

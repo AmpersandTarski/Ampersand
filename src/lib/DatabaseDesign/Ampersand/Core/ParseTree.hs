@@ -158,7 +158,7 @@ where
             , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
             , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
             , cddef :: String   -- ^ The textual definition of this concept.
-            , cdtyp :: String   -- ^ The type of this concept.
+            , cdtyp :: String   -- ^ The (SQL) type of this concept.
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
             , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
             }   deriving (Show,Eq)

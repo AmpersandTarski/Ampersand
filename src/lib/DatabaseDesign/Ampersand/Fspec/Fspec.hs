@@ -8,7 +8,8 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show Fspc.
 -}
 module DatabaseDesign.Ampersand.Fspec.Fspec 
-          ( Fspc(..), Fswitchboard(..),  Clauses(..), Quad(..)
+          ( Fspc(..), concDefs
+          , Fswitchboard(..),  Clauses(..), Quad(..)
           , FSid(..), FProcess(..)
           , InsDel(..)
           , ECArule(..)
@@ -65,12 +66,12 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                  , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
-                 , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fspec
-                 , allDecls ::     [Declaration]            -- ^ All declarations in the fspec
+                 , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fSpec
+                 , allDecls ::     [Declaration]            -- ^ All declarations in the fSpec
                  , vrels ::        [Declaration]            -- ^ All user defined and generated declarations plus all defined and computed totals.
                                                             --   The generated declarations are all generalizations and
                                                             --   one declaration for each signal.
-                 , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
+                 , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                  , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
@@ -88,7 +89,9 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  }
 metaValues :: String -> Fspc -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
-  
+
+concDefs :: Fspc -> A_Concept -> [ConceptDef]
+concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
@@ -105,7 +108,7 @@ instance Language Fspc where
                            , objmsub = Just . Box ONE $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
-   --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
+   --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
   udefrules    = vrules -- only user defined rules
   invariants   = invars

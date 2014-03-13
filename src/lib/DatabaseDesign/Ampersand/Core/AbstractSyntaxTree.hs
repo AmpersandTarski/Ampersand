@@ -83,8 +83,7 @@ instance Show A_Context where
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
 instance Identified A_Context where
-  name  = ctxnm 
-
+  name  = ctxnm
 
 data Theme = PatternTheme Pattern | ProcessTheme Process
 
@@ -534,7 +533,6 @@ data A_Concept
    = PlainConcept   
          { cptnm :: String         -- ^The name of this Concept
          , cpttp :: String         -- ^The (SQL) type of this Concept
-         , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
          }  -- ^PlainConcept nm tp cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
 

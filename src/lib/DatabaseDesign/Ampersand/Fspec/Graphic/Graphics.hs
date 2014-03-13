@@ -105,7 +105,7 @@ instance Dotable Pattern where
           rels = [r | r@Sgn{}<-declsUsedIn pat
                     , not (isProp r)    -- r is not a property
                     ]
-          -- extra rels to connect concepts without rels in this picture, but with rels in the fspec
+          -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
           xrels = let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
                   in nub [r | c<-orphans, r@Sgn{}<-declarations fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
