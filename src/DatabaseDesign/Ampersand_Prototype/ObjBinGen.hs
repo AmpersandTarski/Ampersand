@@ -29,6 +29,7 @@ phpObjInterfaces fSpec flags =
     ; verboseLn flags "---------------------------"
     ; verboseLn flags "Generating php Object files with Ampersand"
     ; verboseLn flags "---------------------------"
+--  ; verboseLn flags (installer fSpec flags)  -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
     ; write "Installer.php"             (installer fSpec flags)
     
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
