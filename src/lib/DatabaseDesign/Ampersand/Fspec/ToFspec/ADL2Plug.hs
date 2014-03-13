@@ -38,7 +38,7 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
                          (makeEntityTables flags context entityDcls (ctxgs context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
-        gLinkTables = [ makeLinkTable dcl totsurs
+        gLinkTables = [ makeLinkTable context dcl totsurs
                       | dcl<-entityDcls
                       , Inj `notElem` multiplicities dcl
                       , Uni `notElem` multiplicities dcl]
@@ -60,8 +60,8 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
 
 
 -- | Make a binary sqlplug for a relation that is neither inj nor uni
-makeLinkTable :: Declaration -> [Expression] -> PlugSQL
-makeLinkTable dcl totsurs = 
+makeLinkTable :: A_Context -> Declaration -> [Expression] -> PlugSQL
+makeLinkTable context dcl totsurs = 
   case dcl of
     Sgn{} 
      | isInj dcl || isUni dcl 
@@ -72,7 +72,7 @@ makeLinkTable dcl totsurs =
              , columns = ( -- The source field:
                            Fld { fldname = concat["Src" | isEndo dcl]++name (source trgExpr)                       
                                , fldexpr = srcExpr
-                               , fldtype = sqlTypeOf (target srcExpr)
+                               , fldtype = sqlTypeOf context (target srcExpr)
                                , flduse  = ForeignKey (target srcExpr)
                                , fldnull = isTot trgExpr
                                , flduniq = isUni trgExpr
@@ -80,7 +80,7 @@ makeLinkTable dcl totsurs =
                          , -- The target field:
                            Fld { fldname = concat["Tgt" | isEndo dcl]++name (target trgExpr)                       
                                , fldexpr = trgExpr
-                               , fldtype = sqlTypeOf (target trgExpr)
+                               , fldtype = sqlTypeOf context (target trgExpr)
                                , flduse  = ForeignKey (target trgExpr)
                                , fldnull = isSur trgExpr
                                , flduniq = isInj trgExpr
@@ -122,16 +122,18 @@ makeLinkTable dcl totsurs =
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
 
 -- | Create field for TblSQL or ScalarSQL plugs 
-rel2fld :: [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r)) that may be represented as attributes of this entity.
+rel2fld :: A_Context
+        -> [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r)) that may be represented as attributes of this entity.
         -> [Expression] -- ^ all relations (in the form either EDcD r or EFlp (EDcD r)) that are defined as attributes by the user.
         -> Expression   -- ^ either EDcD r, EDcI c or EFlp (EDcD r), representing the relation from some kernel field k1 to f1
         -> SqlField
-rel2fld kernel
+rel2fld context
+        kernel
         plugAtts
         e
  = Fld { fldname = fldName 
        , fldexpr = e
-       , fldtype = sqlTypeOf (target e)
+       , fldtype = sqlTypeOf context (target e)
        , flduse  =  
           let f expr =
                  case expr of
@@ -304,7 +306,7 @@ makeEntityTables flags context allDcls isas conceptss exclusions
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
                                   [(e,lookupC (source e),fld e) | e <-plugMors] 
           lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-          fld a                 = rel2fld mainkernel atts a
+          fld a                 = rel2fld context mainkernel atts a
           isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]    
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
@@ -340,10 +342,10 @@ makeEntityTables flags context allDcls isas conceptss exclusions
 
 -- | Make a sqlplug from an ObjectDef (user-defined sql plug)
 makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
-makeUserDefinedSqlPlug _ obj
+makeUserDefinedSqlPlug context obj
  | null(attributes obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = name obj
-                , sqlColumn = rel2fld [EDcI c] [] (EDcI c)
+                , sqlColumn = rel2fld context [EDcI c] [] (EDcI c)
                 , cLkp      = c
                 } 
  | null(attributes obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
@@ -375,11 +377,11 @@ makeUserDefinedSqlPlug _ obj
      = [(EDcI c,sqltp obj)] 
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isSur r]
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isTot r, not (isSur r)]
-   attRels --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))
+   attRels --all user-defined non-kernel fields are attributes of (rel2fld context (objctx c))
      = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
    plugfields            = [fld r tp | (r,tp)<-plugMors] 
-   fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype
+   fld r tp              = (rel2fld context (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
@@ -387,9 +389,14 @@ makeUserDefinedSqlPlug _ obj
    sqltp att = head $ [sqlTypeOf' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                       ++[SQLVarchar 255]
 
-sqlTypeOf :: A_Concept -> SqlType
-sqlTypeOf ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
-sqlTypeOf c = sqlTypeOf' (cpttp c)
+sqlTypeOf :: A_Context -> A_Concept -> SqlType
+sqlTypeOf _ ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
+sqlTypeOf context c
+    = case nub [ cdtyp cdef | cdef<-ctxcds context, name c==name cdef ] of
+       [str] -> sqlTypeOf' str
+       []    -> sqlTypeOf' ""
+       _     -> fatal 396 ("Multiple SQL types defined for concept "++name c)
+       
 sqlTypeOf' :: String -> SqlType
 sqlTypeOf' str = case str of
        ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
