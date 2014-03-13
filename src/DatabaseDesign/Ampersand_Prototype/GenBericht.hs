@@ -66,7 +66,7 @@ doGenBericht fSpec flags =
                   -- otherwise take the definition of the concept itself
                   def rel = if relTargetDef /= "" 
                             then relTargetDef 
-                            else case cptdf $ target rel of
+                            else case concDefs fSpec (target rel) of
                                      Cd {cddef=def'} : _ | def' /= "" -> def'
                                      _                                -> "** NO DEFINITION **"
                    where relTargetDef = case rel of -- target def of relation, or source def if relation is flipped

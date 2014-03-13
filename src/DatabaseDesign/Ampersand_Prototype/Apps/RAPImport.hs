@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
---import an fspec into the RAP specification
+--import an fSpec into the RAP specification
 -- USE -> cmd: ampersand --importfile=some.adl --importformat=adl RAP.adl
 module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
@@ -26,13 +26,13 @@ fatal = fatalMsg "RAPImport"
 --exported functions---------------------------------------------------------
 -----------------------------------------------------------------------------
 importfspec ::  Fspc -> Options -> IO [P_Population]
-importfspec fspec flags 
- = let pics = picturesForAtlas flags fspec
+importfspec fSpec flags 
+ = let pics = picturesForAtlas flags fSpec
    in  do verbose flags "Writing pictures for RAP... "
           sequence_ [writePicture flags pict | pict <- pics]
           verbose flags "Getting all uploaded adl-files of RAP user... "
           usrfiles <- getUsrFiles flags
-          return (makeRAPPops fspec flags usrfiles pics)
+          return (makeRAPPops fSpec flags usrfiles pics)
 
 importfailed :: Either ParseError P_Context -> String -> Options -> IO [P_Population]
 importfailed imperr script flags 
@@ -197,7 +197,7 @@ makeFilePops flags usrfiles savefiles
     ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op))          | (_   ,fn, _  )<-adlfiles, (op,_ )<-operations flags]
     ]
 
---the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
+--the fSpec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fSpec
 makeRAPPops :: Fspc -> Options -> [(String,ClockTime)] -> [Picture] -> [P_Population]
 makeRAPPops fSpec flags usrfiles pics
  = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
@@ -252,7 +252,6 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("atomvalue","AtomID","Atom")   [(atomidid x (isanm island) , nonsid x)                  | (island, _ ,x)<-atoms]
     ,makepopu ("cptpurpose","Concept","Blob") [(cptid c      , nonsid (aMarkup2String (explMarkup ex)))
                                                                                        | c<-concs fSpec, ex<-explanations fSpec, explForObj c (explObj ex)]
-    ,makepopu ("cptdf","Concept","Blob")      [(cptid c      , nonsid(cddef cd))       | c<-concs fSpec, cd<-cptdf c]
     ,makepopu ("ordername","Order","String")  [(nonsid (isanm island) , nonsid (isanm island)) | island<-islands]
     ,makepopu ("order","Concept","Order")     [(cptid c            , nonsid (isanm island)) | island<-islands, c<-island]
     ,makepopu ("gengen","Isa","Concept") [(genid g, cptid (gengen g)) | g@Isa{}<-gens fSpec]
@@ -338,7 +337,7 @@ makeRAPPops fSpec flags usrfiles pics
            , x `notElem` concat [atomsOf (initialPops fSpec) s | s<-island, s < c]]
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
    isanm island = intercalate "/" (map name (maxima island))
-   --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
+   --get the concept from the fSpec, not the isa-order, because the one in the isa-order is not populated
    (_,islands,_,_,_) = case [c | c@C{} <- concs fSpec] of
                            []  -> (undef,[],undef,undef,undef)
                            c:_ -> case c of 

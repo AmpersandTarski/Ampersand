@@ -120,7 +120,7 @@ atlas2context fSpec flags =
       --Concept--
       r_cptnm           <- selectdecl conn fSpec "cptnm" --cptnm :: Concept->Conid
       r_cptpurpose      <- selectdecl conn fSpec "cptpurpose" --cptpurpose:: Concept*Blob
-      r_cptdf           <- selectdecl conn fSpec "cptdf" --cptdf :: Concept*Blob
+--    r_cptdf           <- selectdecl conn fSpec "cptdf" --cptdf :: Concept*Blob
       r_cptos           <- selectdecl conn fSpec "cptos" --cptos :: Concept*AtomID
       r_atomvalue       <- selectdecl conn fSpec "atomvalue" --atomvalue::AtomID->Atom
       --Relation--
@@ -158,7 +158,7 @@ atlas2context fSpec flags =
       actx <- makectx r_ctxnm (fsLang fSpec)
                      r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
                      r_gengen r_genspc r_genrhs
-                     r_cptnm r_cptpurpose r_cptdf r_cptos r_atomvalue      
+                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue      
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
                      r_decpopu r_left r_right          
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
@@ -178,13 +178,13 @@ atlas2context fSpec flags =
               
 makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> {- RelTbl -> -} RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> IO (Guarded A_Context)
 makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
                      r_gengen r_genspc r_genrhs
-                     r_cptnm r_cptpurpose r_cptdf r_cptos r_atomvalue      
+                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue      
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
                      r_decpopu r_left r_right          
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
@@ -208,7 +208,8 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd { cdpos = DBLoc "Atlas(A_ConceptDef)"
+       , ctx_cs    = [{- TODO: Han, please fix this:
+                      Cd { cdpos = DBLoc "Atlas(A_ConceptDef)"
                          , cdcpt = cnm
                          , cdplug = False
                          , cddef = cdf
@@ -217,7 +218,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                          , cdfrom = ""
                          }
                      | (cid,cdf)<-r_cptdf, not(null cdf) 
-                     , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")]
+                     , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")  -} ]
        , ctx_ks    = []
        , ctx_vs    = []
        , ctx_gs    = []
