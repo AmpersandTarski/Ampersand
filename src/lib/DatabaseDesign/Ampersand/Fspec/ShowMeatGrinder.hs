@@ -303,10 +303,12 @@ instance MetaPopulations A_Concept where
 -- removed: equals ctxcs~
 --     , Pop "context"    "PlainConcept" "Context"
 --             [(uri cpt,uri fSpec)]
-      , Pop "cpttp"      "PlainConcept" "Blob"
-             [(uri cpt,cpttp cpt) ]
-      , Pop "cptdf"      "PlainConcept" "Blob"
-             [(uri cpt,showADL x) | x <- cptdf cpt]
+-- removed:
+--    , Pop "cpttp"      "PlainConcept" "Blob"
+--           [(uri cpt,cpttp cpt) ]
+-- removed:
+--    , Pop "cptdf"      "PlainConcept" "Blob"
+--           [(uri cpt,showADL x) | x <- cptdf cpt]
       , Pop "cptpurpose" "PlainConcept" "Blob"
              [(uri cpt,showADL x) | lang <- [English,Dutch], x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]

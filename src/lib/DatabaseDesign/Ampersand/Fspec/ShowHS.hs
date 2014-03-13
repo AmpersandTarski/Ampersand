@@ -253,72 +253,72 @@ where
         where indentA = indent ++"                    "
 
    instance ShowHSName Fspc where
-    showHSName fspec = haskellIdentifier ("fSpc_"++name fspec)
+    showHSName fSpec = haskellIdentifier ("fSpc_"++name fSpec)
    
    instance ShowHS Fspc where
-    showHS flags indent fspec
+    showHS flags indent fSpec
      = intercalate (indent ++"    ") 
-           [ "Fspc{ fsName        = " ++ show (name fspec)
-           ,wrap ", fspos         = " indentA (showHS flags) (fspos fspec)
-           ,     ", fsLang        = " ++ show (fsLang fspec) ++ "  -- the default language for this specification"
-           ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
-           ,wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fspec)
-           ,wrap ", procsInScope  = " indentA (\_->showHSName) (procsInScope fspec)
-           ,wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fspec)
-           ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fspec)
-           ,wrap ", cDefsInScope  = " indentA (\_->showHSName) (cDefsInScope fspec)
-           ,wrap ", gensInScope   = " indentA (showHS flags)   (gensInScope fspec)
-           ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)
-           ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
-           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
+           [ "Fspc{ fsName        = " ++ show (name fSpec)
+           ,wrap ", fspos         = " indentA (showHS flags) (fspos fSpec)
+           ,     ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
+           ,     ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
+           ,wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fSpec)
+           ,wrap ", procsInScope  = " indentA (\_->showHSName) (procsInScope fSpec)
+           ,wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fSpec)
+           ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
+           ,wrap ", cDefsInScope  = " indentA (\_->showHSName) (cDefsInScope fSpec)
+           ,wrap ", gensInScope   = " indentA (showHS flags)   (gensInScope fSpec)
+           ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fSpec)
+           ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fSpec)
+           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fSpec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
-           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
-           ,wrap ", fActivities   = " indentA (\_->showHS flags (indentA++"  ")) (fActivities fspec)
+           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fSpec)
+           ,wrap ", fActivities   = " indentA (\_->showHS flags (indentA++"  ")) (fActivities fSpec)
            ,     ", fRoleRels     = " ++
-                 case fRoleRels fspec of
+                 case fRoleRels fSpec of
                    []        -> "[]"
                    [(r,rel)] -> "[ ("++show r++", "++showHS flags "" rel++") ]"
-                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags "" rel++")" | (r,rel)<-fRoleRels fspec]++indentA++"]"
+                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
            ,     ", fRoleRuls     = " ++
-                 case fRoleRuls fspec of
+                 case fRoleRuls fSpec of
                    []        -> "[]"
                    [(r,rul)] -> "[ ("++show r++", "++showHSName rul++") ]"
-                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
-           ,wrap ", fRoles        = " indentA (\_->id) (fRoles fspec)
-           ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fspec)
-           ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
-           ,wrap ", invars        = " indentA (\_->showHSName) (invars fspec)
-           ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
-           ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fspec)
-           ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
-           ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
-           ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
-           ,wrap ", kernels       = " indentA (\_->showHSName) (kernels fspec)
-           ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
-           ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
-           ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
-           ,wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fspec)
-           ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fspec)
-           ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
-           ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
-           ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
-           ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fspec)
-           ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
+                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fSpec]++indentA++"]"
+           ,wrap ", fRoles        = " indentA (\_->id) (fRoles fSpec)
+           ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
+           ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
+           ,wrap ", invars        = " indentA (\_->showHSName) (invars fSpec)
+           ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fSpec)
+           ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
+           ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
+           ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
+           ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
+           ,wrap ", kernels       = " indentA (\_->showHSName) (kernels fSpec)
+           ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
+           ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
+           ,wrap ", vgens         = " indentA (showHS flags)   (vgens fSpec)
+           ,wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fSpec)
+           ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fSpec)
+           ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
+           ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
+           ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fSpec)
+           ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fSpec)
+           ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fSpec)
            ,     ", metas         = allMetas"
-           ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fspec)
-           ,wrap ", allViolations = " indentA showViolatedRule (allViolations fspec)
+           ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fSpec)
+           ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
            ,"}" 
            ] ++   
        indent++"where"++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
-       indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
-                                 "[ "++intercalate (indentB++"  , ") (map showHSName (interfaceS fspec))++indentB++"  ]")++
+       indent++" interfaceS' = "++(if null (interfaceS fSpec) then "[]" else
+                                 "[ "++intercalate (indentB++"  , ") (map showHSName (interfaceS fSpec))++indentB++"  ]")++
         "\n -- ***Activities Generated by the Ampersand compiler ***: " ++
-       indent++" interfaceG' = "++(if null (interfaceG fspec) then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map showHSName (interfaceG fspec))++indentB++"]")++
-       indent++" allMetas = "++(if null (metas fspec) then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map (showHS flags (indent ++ "         ")) (metas fspec))++indentB++"]") ++
+       indent++" interfaceG' = "++(if null (interfaceG fSpec) then "[]" else
+                                 "[ "++intercalate (indentB++", ") (map showHSName (interfaceG fSpec))++indentB++"]")++
+       indent++" allMetas = "++(if null (metas fSpec) then "[]" else
+                                 "[ "++intercalate (indentB++", ") (map (showHS flags (indent ++ "         ")) (metas fSpec))++indentB++"]") ++
 
 -- WHY?  staan hier verschillende lijstjes met interfaces?
 -- BECAUSE! Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
@@ -329,75 +329,75 @@ where
 --          Heb je eenmaal een goed werkend pakket interfaces, dan wil je wellicht alleen de door jezelf gespecificeerde interfaces
 --          gebruiken. Dat gebeurt in interfaceS.
 
-       (if null  (interfaceS fspec) then ""  else
-        "\n -- *** User defined interfaces (total: "++(show.length.interfaceS) fspec++" interfaces) ***: "++
-        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s | s<-interfaceS fspec]++"\n"
+       (if null  (interfaceS fSpec) then ""  else
+        "\n -- *** User defined interfaces (total: "++(show.length.interfaceS) fSpec++" interfaces) ***: "++
+        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s | s<-interfaceS fSpec]++"\n"
        )++
-       (if null (interfaceG fspec ) then "" else
-        "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fspec++" interfaces) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n"
+       (if null (interfaceG fSpec ) then "" else
+        "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fSpec++" interfaces) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fSpec ]++"\n"
        )++        
-       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fspec `uni` nub (map qDcl (vquads fs)) in
-        if null (ds fspec)     then "" else
-        "\n -- *** Declarations (total: "++(show.length.ds) fspec++" declarations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fspec]++"\n"
+       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fSpec `uni` nub (map qDcl (vquads fs)) in
+        if null (ds fSpec)     then "" else
+        "\n -- *** Declarations (total: "++(show.length.ds) fSpec++" declarations) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fSpec]++"\n"
        ) ++
-       (if null (vIndices fspec)     then "" else
-        "\n -- *** Indices (total: "++(show.length.vIndices) fspec++" indices) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vIndices fspec]++"\n"
+       (if null (vIndices fSpec)     then "" else
+        "\n -- *** Indices (total: "++(show.length.vIndices) fSpec++" indices) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vIndices fSpec]++"\n"
        ) ++
-       (if null (vviews fspec)     then "" else
-        "\n -- *** Views (total: "++(show.length.vviews) fspec++" views) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vviews fspec]++"\n"
+       (if null (vviews fSpec)     then "" else
+        "\n -- *** Views (total: "++(show.length.vviews) fSpec++" views) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vviews fSpec]++"\n"
        ) ++
-       (if null (vprocesses fspec ) then "" else
-        "\n -- *** Processes (total: "++(show.length.vprocesses) fspec++" processes) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fspec ]++"\n"
+       (if null (vprocesses fSpec ) then "" else
+        "\n -- *** Processes (total: "++(show.length.vprocesses) fSpec++" processes) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fSpec ]++"\n"
        )++
-       (if null (vrules   fspec ) then "" else
-        "\n -- *** User defined rules (total: "++(show.length.vrules) fspec++" rules) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrules     fspec ]++"\n"++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (vrules fspec)]++"\n"
+       (if null (vrules   fSpec ) then "" else
+        "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrules     fSpec ]++"\n"++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (vrules fSpec)]++"\n"
        )++
-       (if null (grules   fspec ) then "" else
-        "\n -- *** Generated rules (total: "++(show.length.grules) fspec++" rules) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fspec ]++"\n"++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
+       (if null (grules   fSpec ) then "" else
+        "\n -- *** Generated rules (total: "++(show.length.grules) fSpec++" rules) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fSpec ]++"\n"++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fSpec)]++"\n"
        )++
-       (if null (vconjs fspec ) then "" else
-        "\n -- *** Conjuncts (total: "++(show.length.vconjs) fspec++" conjuncts) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vconjs     fspec ]++"\n"
+       (if null (vconjs fSpec ) then "" else
+        "\n -- *** Conjuncts (total: "++(show.length.vconjs) fSpec++" conjuncts) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vconjs     fSpec ]++"\n"
        )++
-       (if null (vquads fspec ) then "" else
-        "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n"
+       (if null (vquads fSpec ) then "" else
+        "\n -- *** Quads (total: "++(show.length.vquads) fSpec++" quads) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fSpec ]++"\n"
        )++
-       (if null (vEcas fspec ) then "" else
-        "\n -- *** ECA rules (total: "++(show.length.vEcas) fspec++" ECA rules) ***: "++
-        concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
-        concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map ecaDelta (vEcas fspec)) ]++"\n"
+       (if null (vEcas fSpec ) then "" else
+        "\n -- *** ECA rules (total: "++(show.length.vEcas) fSpec++" ECA rules) ***: "++
+        concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fSpec ]++"\n"++
+        concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map ecaDelta (vEcas fSpec)) ]++"\n"
        )++
-       (if null (plugInfos fspec ) then "" else
-        "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fspec++" plugInfos) ***: "++
-        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-sortBy (compare `on` name) (plugInfos fspec) ]++"\n"
+       (if null (plugInfos fSpec ) then "" else
+        "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fSpec++" plugInfos) ***: "++
+        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-sortBy (compare `on` name) (plugInfos fSpec) ]++"\n"
        )++
-       (if null (vpatterns fspec) then "" else
-        "\n -- *** Patterns (total: "++(show.length.vpatterns) fspec++" patterns) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fspec]++"\n"
+       (if null (vpatterns fSpec) then "" else
+        "\n -- *** Patterns (total: "++(show.length.vpatterns) fSpec++" patterns) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fSpec]++"\n"
        )++
-       (if null (conceptDefs fspec) then "" else
-        "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fspec++" conceptDefs) ***: "++
-        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | cd<-sortBy (comparing showHSName) (conceptDefs fspec)]++"\n"
+       (if null (conceptDefs fSpec) then "" else
+        "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fSpec++" conceptDefs) ***: "++
+        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | c<-concs fSpec, cd<-concDefs fSpec c]++"\n"
        )++
-       (if null (allConcepts fspec) then "" else
-        "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
+       (if null (allConcepts fSpec) then "" else
+        "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x
-             ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
+             ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
        )
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
-                              "-- atoms: "++(show.sort) (atomsOf (gens fspec)(initialPops fspec) c)
+                              "-- atoms: "++(show.sort) (atomsOf (gens fSpec)(initialPops fSpec) c)
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
@@ -777,7 +777,7 @@ where
     showHSName c = haskellIdentifier ("cpt_"++name c) 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
-                       PlainConcept{} -> "PlainConcept "++show (name c) ++ " "++ show (cpttp c) ++ " ["++intercalate ", " (map showHSName (cptdf c))++"]"
+                       PlainConcept{} -> "PlainConcept "++show (name c)
                        ONE -> "ONE"
 
    instance ShowHS FPcompl where

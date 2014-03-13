@@ -21,5 +21,5 @@ chpGlossary _ fSpec flags
                  [ [Plain [Str "term"]] , [Plain [Str "definition"]], [Plain [Str "source"]]]
           )
           [ [ [Plain [(Str . name)  c]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
-          | c<-concs fSpec, cd<-cptdf c
+          | c<-concs fSpec, cd<-concDefs fSpec c
           ]]
