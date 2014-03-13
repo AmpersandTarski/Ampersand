@@ -20,6 +20,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
+-- import Debug.Trace
    head :: [a] -> a
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a

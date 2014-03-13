@@ -17,11 +17,7 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 import GHC.Exts (sortWith)
-
---import Debug.Trace  
--- Dummy trace function.
-trace :: String -> a -> a  
-trace _ a = a
+--import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
@@ -37,7 +33,8 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = -- trace ("---\nStart makeEntityTables with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n") 
+        gPlugs   = --trace "---\nStart makeEntityTables " $
+                   --trace ("with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n")
                          (makeEntityTables flags context entityDcls (ctxgs context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
