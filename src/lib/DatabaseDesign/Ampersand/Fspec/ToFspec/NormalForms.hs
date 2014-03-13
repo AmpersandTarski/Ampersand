@@ -195,8 +195,8 @@ where
                                                            where (res',steps,equ') = nM (not posCpl) e []
      nM _      (ECps (l,EEps c (Sign s t))) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c,                       [], "<=>")
      nM _      (ECps (l,EEps c (Sign s t))) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
-     nM _      (ECps (l,ECps (EEps c (Sign s t),r)) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c .:. r,                       [], "<=>")
-     nM _      (ECps (l,ECps (EEps c (Sign s t),r)) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t) .:. r, [], "<=>")
+     nM _      (ECps (l,ECps (EEps c (Sign s t),r))) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c .:. r,                       [], "<=>")
+     nM _      (ECps (l,ECps (EEps c (Sign s t),r))) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t) .:. r, [], "<=>")
      nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c==s = (EDcI c .:. EEps c (Sign c t), [], "<=>")
      nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c/=t = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
      nM _      (ECps (l,r)) _                | isIdent l && not (isEEps r) = (r, ["I;x = x"], "<=>")
