@@ -195,7 +195,7 @@ data Quad
      = Quad
           { qDcl :: Declaration   -- The relation that, when affected, triggers a restore action.
           , qClauses :: Clauses   -- The clauses
-          } deriving Eq
+          } deriving (Eq, Show)
  
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
@@ -293,15 +293,15 @@ data Clauses  = Clauses
                   { cl_conjNF :: [RuleClause]   -- The list of pairs (conj, dnfClauses) in which conj is a conjunct of the rule
                                                     -- and dnfClauses contains all derived expressions to be used for eca-rule construction.
                   , cl_rule :: Rule -- The rule that is restored by this clause (for traceability purposes)
-                  }
+                  } deriving Show
 data RuleClause = RC { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
                      , rc_rulename   :: String -- the name of the rule
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
-                     }
+                     } deriving Show
 instance Eq Clauses where
   cl==cl' = cl_rule cl==cl_rule cl'
-    
+
 {-
    showClauses :: Fspc -> Clauses -> String
    showClauses _ cl

@@ -80,7 +80,7 @@ doGenProofs fSpec flags =
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags =
  do { verboseLn flags $ "Generating Haskell source code for "++name fSpec
---    ; verboseLn flags $ fSpec2Haskell fSpec flags
+--  ; verboseLn flags $ fSpec2Haskell fSpec flags  -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
     ; writeFile outputFile (fSpec2Haskell fSpec flags) 
     ; verboseLn flags $ "Haskell written into " ++ outputFile ++ "."
     }
