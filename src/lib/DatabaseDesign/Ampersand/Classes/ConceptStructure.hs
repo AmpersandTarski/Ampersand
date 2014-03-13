@@ -92,7 +92,7 @@ where
     expressionsIn _ = []
 
    instance ConceptStructure ConceptDef where
-    concs        cd = [PlainConcept (cdcpt cd) (cdtyp cd)]
+    concs        cd = [PlainConcept (cdcpt cd)]
     expressionsIn _ = []
 
    instance ConceptStructure Sign where
