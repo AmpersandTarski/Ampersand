@@ -186,14 +186,15 @@ selectExpr fSpec i src trg expr
                                                    (  selectExprInFROM fSpec i src'  mid' e++" AS fst,"++phpIndent (i+5)++
                                                       selectExprInFROM fSpec i mid2' trg' f++" AS snd")
                                                    ("fst."++src'++" IS NOT NULL")
-{-  The ECps is treated as poles-and-fences.
+          [e]-> selectExpr fSpec i src trg e -- apparently, some EEps expressions were removed, yielding fewer than two subexpressions. So selectExpr is called recursively.
+          [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
+{-  Now there are at least two elements in es. So we treat the ECps expressions as poles-and-fences.
     Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
     In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
     The "outer poles" correspond to the source and target of the entire expression.
     To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
 -}
-          _:_:_  -- in this case, it is certain that there are at least two elements in es.
-            -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
+          _ -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
                     where
                       mainSrc = selectSelItem ("ECps"++show n++"."++sqlSrc,src)
                                 where (n,_,sqlSrc,_) = head fenceExprs
@@ -221,17 +222,7 @@ selectExpr fSpec i src trg expr
                        (phpIndent i++selectClause ++
                         phpIndent i++fromClause   ++
                         phpIndent i++whereClause )
-               in 
-                 case es of
--- HJO, 20140312: @Stef: Onderstaand verwijdert de symptomen van Try31, maar zoals vanochtend besproken zit er meer achter. Vandaar uitgecommentarieerd.
---                    [EEps c1 s1, EDcI c2, EEps c3 s3] 
---                       -> if s1 == flp s3 && c1 == c3
---                          then sqlcomment i ("case:  [EEps c1 s1, EDcI c2, EEps c3 s3]"++phpIndent (i+3)++showADL expr) $
---                                  selectExprRelation fSpec i src trg (Isn c2)
---                          else fencesSQL
-                    _ -> fencesSQL
-          [e]-> selectExpr fSpec i src trg e -- apparently, some EEps expressions were removed, yielding fewer than two subexpressions. So selectExpr is called recursively.
-          _  -> fatal 215 ("impossible outcome of exprCps2list: "++showADL expr)
+               in fencesSQL
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
