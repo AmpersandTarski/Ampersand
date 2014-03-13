@@ -199,8 +199,27 @@ where
      nM _      (ECps (l,ECps (EEps c (Sign s t),r))) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t) .:. r, [], "<=>")
      nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c==s = (EDcI c .:. EEps c (Sign c t), [], "<=>")
      nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c/=t = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
-     nM _      (ECps (l,r)) _                | isIdent l && not (isEEps r) = (r, ["I;x = x"], "<=>")
-     nM _      (ECps (l,r)) _                | isIdent r && not (isEEps l) = (l, ["x;I = x"], "<=>")
+     nM _      (ECps (EEps c (Sign s _),EEps c' (Sign _  t'))) _ | c ==c' = (EEps c  (Sign s t'), [], "<=>")
+     nM _      (ECps (EEps c (Sign s t),EEps c' (Sign _  t'))) _ | c ==t  = (EEps c' (Sign s t'), [], "<=>")
+     nM _      (ECps (EEps c (Sign s _),EEps c' (Sign s' t'))) _ | s'==c' = (EEps c  (Sign s t'), [], "<=>")
+     nM _      (ECps (EEps c (Sign s _),ECps(EEps c' (Sign _  t'),r))) _ | c ==c' = (ECps (EEps c  (Sign s t'),r), [], "<=>")
+     nM _      (ECps (EEps c (Sign s t),ECps(EEps c' (Sign _  t'),r))) _ | c ==t  = (ECps (EEps c' (Sign s t'),r), [], "<=>")
+     nM _      (ECps (EEps c (Sign s _),ECps(EEps c' (Sign s' t'),r))) _ | s'==c' = (ECps (EEps c  (Sign s t'),r), [], "<=>")
+     nM _      (EEps i sgn) _   | source sgn==i && i==target sgn = (EDcI i, [], "<=>")
+     nM _      (ERrs (y,ERrs (x,z))) _                   = (ERrs (ECps (x,y),z), ["Jipsen&Tsinakis: xy\\z = y\\(x\\z)"], "<=>")
+     nM _      (ELrs (ELrs (x,z),y)) _                   = (ELrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>")
+     nM _      (ECps (ERrs (x,e),y)) _ | not eq && isIdent e = (ERrs (x,y), ["Jipsen&Tsinakis: (x\\I);y |- x\\y"], "==>")
+     nM _      (ECps (x,ELrs (e,y))) _ | not eq && isIdent e = (ELrs (x,y), ["Jipsen&Tsinakis: x;(I/y) |- x/y"], "==>")
+     nM _      (ECps (ERrs (x,y),z)) _          | not eq = (ERrs (x,ECps (y,z)), ["Jipsen&Tsinakis: (x\\y);z |- x\\(y;z)"], "==>")
+     nM _      (ECps (x,ELrs (y,z))) _          | not eq = (ERrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x;(y/z) |- (x;y)/z"], "==>")
+     nM _      (ECps (ERrs (x,y),ERrs (y',z))) _ | y==y' && x==y && x==z = (ERrs (x,z), ["Jipsen&Tsinakis: (x\\x);(x\\x) = x\\x"], "<=>")
+     nM _      (ECps (ELrs (x,y),ELrs (y',z))) _ | y==y' && x==y && x==z = (ERrs (x,z), ["Jipsen&Tsinakis: (x/x);(x/x) = x/x"], "<=>")
+     nM _      (ECps (ERrs (x,y),ERrs (y',z))) _ | not eq && y==y' = (ERrs (x,z), ["Jipsen&Tsinakis: (x\\y);(y\\z) |- x\\z"], "==>")
+     nM _      (ECps (ELrs (x,y),ELrs (y',z))) _ | not eq && y==y' = (ERrs (x,z), ["Jipsen&Tsinakis: (x/y);(y/z) |- x/z"], "==>")
+     nM _      (ECps (x,ERrs (y,z))) _    | x==y && x==z = (x, ["Jipsen&Tsinakis: x;(x\\x) = x"], "<=>")
+     nM _      (ECps (ELrs (x,y),z)) _    | x==z && y==z = (x, ["Jipsen&Tsinakis: (x/x);x = x"], "<=>")
+     nM _      (ECps (l,r)) _                | isIdent l = (r, ["I;x = x"], "<=>")
+     nM _      (ECps (l,r)) _                | isIdent r = (l, ["x;I = x"], "<=>")
      nM True   (ECps (r,ERad (s,q))) _          | not eq = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
      nM True   (ECps (ERad (r,s),q)) _          | not eq = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
      nM True   (ECps (EIsc (r,s),q)) _          | not eq = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
@@ -350,10 +369,6 @@ where
    exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
    exprRad2list r            = [r]
 
-   isEEps :: Expression -> Bool
-   isEEps EEps{} = True
-   isEEps _      = False
-   
    fEqu :: [String] -> String
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 
