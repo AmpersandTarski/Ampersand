@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand
    , ViewSegment(..)
    , Expression(..)
    , Population(..)
-   , Fspc(..)
+   , Fspc(..), concDefs
    , Fswitchboard(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Rule(..)
