@@ -34,7 +34,6 @@ findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
 findConcept x = PlainConcept 
             {cptnm = x
             ,cpttp = fatal 36 "Types of concepts are not defined here"
-            ,cptdf = fatal 37 "df of concepts are not defined here"
             }
 
 class Disambiguatable d where

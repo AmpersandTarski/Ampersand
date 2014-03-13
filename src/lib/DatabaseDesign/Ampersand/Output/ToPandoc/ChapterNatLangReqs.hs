@@ -93,7 +93,8 @@ chpNatLangReqs lev fSpec flags =
          where
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
               = [ (c, pps)
-                | c@PlainConcept{cptdf = Cd{cddef=_:_}:_ } <-concs fSpec
+                | c@PlainConcept{} <- concs fSpec
+                , (not.null) (concDefs fSpec c)
                 , let pps = [p | p <- purposesDefinedIn fSpec (fsLang fSpec) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
@@ -218,7 +219,7 @@ chpNatLangReqs lev fSpec flags =
                                                                   commaNLPandoc (Str "en") cs++
                                                                   [ Str ". "]
                                                  )++
-                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = cptdf c,length cds>1] in
+                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = concDefs fSpec c,length cds>1] in
                                                   case (cs, length cs==length ccds) of
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
@@ -240,7 +241,7 @@ chpNatLangReqs lev fSpec flags =
                                                                   commaEngPandoc (Str "and") cs++
                                                                   [ Str ". "]
                                                  )++
-                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = cptdf c, length cds>1] in
+                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = concDefs fSpec c, length cds>1] in
                                                   case (cs, length cs==length ccds) of
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
@@ -254,15 +255,15 @@ chpNatLangReqs lev fSpec flags =
               -- | the origin of c is the origin of the head of uniquecds c
               --   after sorting by origin the counter will be applied
               printConcepts :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
-              printConcepts = let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
+              printConcepts = let mborigin c = if null (uniquecds fSpec c) then OriginUnknown else (origin . snd . head . uniquecds fSpec) c
                       in map (\(c,exps) -> (mborigin c, cptBlock (c,exps)))
               -- | make a block for a c with all its purposes and definitions
               cptBlock :: (A_Concept, [Purpose]) -> Counter -> [Block]
               cptBlock (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
                   ++ zipWith cdBlock
-                       (if length (uniquecds c) == 1 then [(cnt, "")] else
+                       (if length (uniquecds fSpec c) == 1 then [(cnt, "")] else
                           [(cnt, '.' : show i) | i <- [(1 :: Int) ..]])
-                       [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds c ]
+                       [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds fSpec c ]
               -- | make a block for a concept definition
               cdBlock :: (Counter,String) -> (String,String,String,String) -> Block
               cdBlock (cnt,xcnt) (nm,lbl,def,ref) = DefinitionList 

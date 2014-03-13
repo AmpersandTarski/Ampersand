@@ -385,24 +385,23 @@ where
           generalization2edges :: Generalization -> [DotEdge String]
           generalization2edges ooGen = sub2edges (genAgen ooGen)
            where
-             sub2edges gen = 
-               case gen of
-                 Isa{} -> [DotEdge
-                              { fromNode = name (gengen gen)
-                              , toNode   = name (genspc gen)
-                              , edgeAttributes 
-                                         = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
-                                           , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
-                                           , ArrowSize  2.0
-                                           ] ++
-                                           ( if blackWhite flags
-                                             then [Style [SItem Dashed []]]
-                                             else [GVcomp.Color [WC (X11Color Red) Nothing]]
-                                           )
-                              }]
-             
-
-
+             sub2edges gen
+              = [DotEdge { fromNode = name gener
+                         , toNode   = name spec
+                         , edgeAttributes 
+                                    = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
+                                      , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
+                                      , ArrowSize  2.0
+                                      ] ++
+                                      ( if blackWhite flags
+                                        then [Style [SItem Dashed []]]
+                                        else [GVcomp.Color [WC (X11Color Red) Nothing]]
+                                      )
+                         }
+                | (spec,gener)<-splits gen]
+             splits gen = case gen of 
+                                  Isa{} -> [(genspc gen, gengen gen)]
+                                  IsE{} -> [(genspc gen, x ) | x<-(genrhs gen)]
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {cdName :: String

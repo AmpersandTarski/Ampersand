@@ -187,7 +187,6 @@ pCtx2aCtx
                            []         -> ""                  -- will be interpreted as VARCHAR(255) in translation to SQL
                            [ cdType ] -> cdType
                            ts@(_:_:_) -> fatal 188 ("Concept "++x++" has multiple database-types: "++intercalate ", " ts)
-                ,cptdf = cds
                 } where cds = [ cd | cd<-allConceptDefs, x==cdcpt cd]
 
     pCpt2aCpt :: P_Concept -> A_Concept
@@ -199,7 +198,6 @@ pCtx2aCtx
                                    []         -> ""        -- will be interpreted as VARCHAR(255) in translation to SQL
                                    [ cdType ] -> cdType
                                    ts@(_:_:_) -> fatal 188 ("Concept "++p_cptnm pc++" has multiple types: "++intercalate ", " ts)
-                        , cptdf = cds
                         }
                       where cds = [ cd | cd<-allConceptDefs, p_cptnm pc==cdcpt cd]
             P_Singleton -> ONE   

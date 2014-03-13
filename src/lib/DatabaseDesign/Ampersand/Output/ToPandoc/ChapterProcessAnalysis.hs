@@ -7,7 +7,7 @@ import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Output.PandocAux
 
---DESCR -> the process analysis contains a section for each process in the fspec
+--DESCR -> the process analysis contains a section for each process in the fSpec
 -- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
 -- In that case it will not be printed. To detect whether this is the case, we can look whether the
 -- mayEdit attributes remain empty.

@@ -145,12 +145,10 @@ chpDiagnosis fSpec flags
                        [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " remain without a purpose."]
                      ]
    where missing = [c | c <-ccs
-                      , cd <- cptdf c
+                      , cd <- concDefs fSpec c
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
-                   [c | c <-ccs
-                      , null (cptdf c)
-                   ]
+                   [c | c <-ccs, null (concDefs fSpec c)]
          ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
   unusedConceptDefs :: [Block]
   unusedConceptDefs

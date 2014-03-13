@@ -54,7 +54,7 @@ generateAmpersandOutput flags fSpec =
     }
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.
--- Q: Should we disambiguate the exprs in the fspec i.e. mapexprs disambiguate fSpec fSpec?
+-- Q: Should we disambiguate the exprs in the fSpec i.e. mapexprs disambiguate fSpec fSpec?
 --    Or do we assume a correct implementation with unambiguous expressions only?
 -- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
 --    So the answer is: we assume a correct implementation with unambiguous expressions only.
