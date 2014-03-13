@@ -181,25 +181,12 @@ pCtx2aCtx
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x
-     = PlainConcept 
-                {cptnm = x
-                ,cpttp = case nub [ cdtyp cd | cd<-cds] of   -- the SQL type of this concept
-                           []         -> ""                  -- will be interpreted as VARCHAR(255) in translation to SQL
-                           [ cdType ] -> cdType
-                           ts@(_:_:_) -> fatal 188 ("Concept "++x++" has multiple database-types: "++intercalate ", " ts)
-                } where cds = [ cd | cd<-allConceptDefs, x==cdcpt cd]
+     = PlainConcept {cptnm = x}
 
     pCpt2aCpt :: P_Concept -> A_Concept
     pCpt2aCpt pc
         = case pc of
-            PCpt{} -> PlainConcept 
-                        { cptnm = p_cptnm pc
-                        , cpttp = case nub [ cdtyp cd | cd<-cds] of   -- the SQL type of this concept
-                                   []         -> ""        -- will be interpreted as VARCHAR(255) in translation to SQL
-                                   [ cdType ] -> cdType
-                                   ts@(_:_:_) -> fatal 188 ("Concept "++p_cptnm pc++" has multiple types: "++intercalate ", " ts)
-                        }
-                      where cds = [ cd | cd<-allConceptDefs, p_cptnm pc==cdcpt cd]
+            PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
             P_Singleton -> ONE   
 
     pPop2aPop :: P_Population -> Guarded Population

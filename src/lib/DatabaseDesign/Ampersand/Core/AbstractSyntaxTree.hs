@@ -530,10 +530,7 @@ showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 -- It is called Concept, meaning "type checking concept"
 
 data A_Concept
-   = PlainConcept   
-         { cptnm :: String         -- ^The name of this Concept
-         , cpttp :: String         -- ^The (SQL) type of this Concept
-         }  -- ^PlainConcept nm tp cs represents the set of instances cs by name nm.
+   = PlainConcept { cptnm :: String }  -- ^PlainConcept nm represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
 
 instance Eq A_Concept where
