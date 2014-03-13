@@ -8,7 +8,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression 
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
--- import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
+   import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Data.List (nub {- , intercalate -} )
 --   import Debug.Trace
    import Prelude hiding (head)
@@ -144,12 +144,6 @@ where
      nM posCpl (EImp (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM (not posCpl) l []
                                                   (f,steps',equ'') = nM posCpl r []
-     nM posCpl (ELrs (l,r)) _             = (t ./. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM posCpl l []
-                                                  (f,steps',equ'') = nM (not posCpl) r []
-     nM posCpl (ERrs (l,r)) _             = (t .\. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM (not posCpl) l []
-                                                  (f,steps',equ'') = nM posCpl r []
      nM posCpl (EUni (EUni (l,k),r)) rs   = nM posCpl (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
      nM posCpl (EUni (l,r)) rs    | simpl = (t .\/. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posCpl l []
@@ -163,6 +157,12 @@ where
      nM posCpl (ECps (l,r)) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
                                              where (t,steps, equ')  = nM posCpl l []
                                                    (f,steps',equ'') = nM posCpl r (l:rs)
+     nM posCpl (ELrs (l,r)) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM posCpl l []
+                                                  (f,steps',equ'') = nM (not posCpl) r []
+     nM posCpl (ERrs (l,r)) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM (not posCpl) l []
+                                                  (f,steps',equ'') = nM posCpl r []
      nM posCpl (ERad (ERad (l,k),r)) rs   = nM posCpl (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
      nM posCpl (ERad (l,r)) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')    = nM posCpl l []
@@ -175,7 +175,7 @@ where
                                             where (res',steps,equ') = nM posCpl e []
      nM posCpl (EKl1 e)              _    = (EKl1 res', steps, equ')
                                             where (res',steps,equ') = nM posCpl e []
-     nM posCpl (ECpl (ECpl e))         rs = nM (not posCpl) e rs
+     nM posCpl (ECpl (ECpl e))         rs = nM posCpl e rs
      nM posCpl (ECpl e) _         | simpl = (notCpl res',steps,equ')
                                             where (res',steps,equ') = nM (not posCpl) e []
      nM posCpl (EBrk e)                _  = nM posCpl e []
@@ -193,29 +193,20 @@ where
      nM _      e@(ECpl (ECps (ECpl{},ECpl{}))) _         = (deMorganECps e, ["De Morgan"], "<=>")
      nM posCpl (ECpl e) _                                = (notCpl res',steps,equ')
                                                            where (res',steps,equ') = nM (not posCpl) e []
-     nM _      (ECps (l,EEps c (Sign s t))) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c,                       [], "<=>")
-     nM _      (ECps (l,EEps c (Sign s t))) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
-     nM _      (ECps (l,ECps (EEps c (Sign s t),r))) _| isIdent l && c==t = (EEps c (Sign s c) .:. EDcI c .:. r,                       [], "<=>")
-     nM _      (ECps (l,ECps (EEps c (Sign s t),r))) _| isIdent l && c/=s = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t) .:. r, [], "<=>")
-     nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c==s = (EDcI c .:. EEps c (Sign c t), [], "<=>")
-     nM _      (ECps (EEps c (Sign s t),r)) _| isIdent r && c/=t = (EEps c (Sign s c) .:. EDcI c .:. EEps c (Sign c t), [], "<=>")
      nM _      (ECps (EEps c (Sign s _),EEps c' (Sign _  t'))) _ | c ==c' = (EEps c  (Sign s t'), [], "<=>")
      nM _      (ECps (EEps c (Sign s t),EEps c' (Sign _  t'))) _ | c ==t  = (EEps c' (Sign s t'), [], "<=>")
      nM _      (ECps (EEps c (Sign s _),EEps c' (Sign s' t'))) _ | s'==c' = (EEps c  (Sign s t'), [], "<=>")
      nM _      (ECps (EEps c (Sign s _),ECps(EEps c' (Sign _  t'),r))) _ | c ==c' = (ECps (EEps c  (Sign s t'),r), [], "<=>")
      nM _      (ECps (EEps c (Sign s t),ECps(EEps c' (Sign _  t'),r))) _ | c ==t  = (ECps (EEps c' (Sign s t'),r), [], "<=>")
      nM _      (ECps (EEps c (Sign s _),ECps(EEps c' (Sign s' t'),r))) _ | s'==c' = (ECps (EEps c  (Sign s t'),r), [], "<=>")
-     nM _      (EEps i sgn) _   | source sgn==i && i==target sgn = (EDcI i, [], "<=>")
-     nM _      (ERrs (y,ERrs (x,z))) _                   = (ERrs (ECps (x,y),z), ["Jipsen&Tsinakis: xy\\z = y\\(x\\z)"], "<=>")
-     nM _      (ELrs (ELrs (x,z),y)) _                   = (ELrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>")
      nM _      (ECps (ERrs (x,e),y)) _ | not eq && isIdent e = (ERrs (x,y), ["Jipsen&Tsinakis: (x\\I);y |- x\\y"], "==>")
      nM _      (ECps (x,ELrs (e,y))) _ | not eq && isIdent e = (ELrs (x,y), ["Jipsen&Tsinakis: x;(I/y) |- x/y"], "==>")
      nM _      (ECps (ERrs (x,y),z)) _          | not eq = (ERrs (x,ECps (y,z)), ["Jipsen&Tsinakis: (x\\y);z |- x\\(y;z)"], "==>")
      nM _      (ECps (x,ELrs (y,z))) _          | not eq = (ERrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x;(y/z) |- (x;y)/z"], "==>")
-     nM _      (ECps (ERrs (x,y),ERrs (y',z))) _ | y==y' && x==y && x==z = (ERrs (x,z), ["Jipsen&Tsinakis: (x\\x);(x\\x) = x\\x"], "<=>")
-     nM _      (ECps (ELrs (x,y),ELrs (y',z))) _ | y==y' && x==y && x==z = (ERrs (x,z), ["Jipsen&Tsinakis: (x/x);(x/x) = x/x"], "<=>")
      nM _      (ECps (ERrs (x,y),ERrs (y',z))) _ | not eq && y==y' = (ERrs (x,z), ["Jipsen&Tsinakis: (x\\y);(y\\z) |- x\\z"], "==>")
      nM _      (ECps (ELrs (x,y),ELrs (y',z))) _ | not eq && y==y' = (ERrs (x,z), ["Jipsen&Tsinakis: (x/y);(y/z) |- x/z"], "==>")
+     nM _      (ECps (ERrs (x,y),ERrs (y',z))) _ | y==y' && x==y && x==z = (ERrs (x,z), ["Jipsen&Tsinakis: (x\\x);(x\\x) = x\\x"], "<=>")
+     nM _      (ECps (ELrs (x,y),ELrs (y',z))) _ | y==y' && x==y && x==z = (ERrs (x,z), ["Jipsen&Tsinakis: (x/x);(x/x) = x/x"], "<=>")
      nM _      (ECps (x,ERrs (y,z))) _    | x==y && x==z = (x, ["Jipsen&Tsinakis: x;(x\\x) = x"], "<=>")
      nM _      (ECps (ELrs (x,y),z)) _    | x==z && y==z = (x, ["Jipsen&Tsinakis: (x/x);x = x"], "<=>")
      nM _      (ECps (l,r)) _                | isIdent l = (r, ["I;x = x"], "<=>")
@@ -230,9 +221,18 @@ where
      nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
      nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
      nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
-     nM posCpl (ECps (l,r))           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
-                                                                 where (t,steps, equ')  = nM posCpl l []
-                                                                       (f,steps',equ'') = nM posCpl r (l:rs)
+     nM posCpl (ECps (l,r))           rs                   = (t .:. f, steps++steps', fEqu [equ',equ''])
+                                                               where (t,steps, equ')  = nM posCpl l []
+                                                                     (f,steps',equ'') = nM posCpl r (l:rs)
+     nM _      x@(EEps i sgn) _ | source sgn==i && i==target sgn = (EDcI i, ["source and target are equal to "++name i++", so "++showADL x++"="++showADL (EDcI i)], "<=>")
+     nM _      (ELrs (ELrs (x,z),y)) _                     = (ELrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>")
+     nM posCpl (ELrs (l,r)) _                              = (t ./. f, steps++steps', fEqu [equ',equ''])
+                                                             where (t,steps, equ')  = nM posCpl l []
+                                                                   (f,steps',equ'') = nM (not posCpl) r []
+     nM _      (ERrs (y,ERrs (x,z))) _                     = (ERrs (ECps (x,y),z), ["Jipsen&Tsinakis: xy\\z = y\\(x\\z)"], "<=>")
+     nM posCpl (ERrs (l,r)) _                              = (t .\. f, steps++steps', fEqu [equ',equ''])
+                                                             where (t,steps, equ')  = nM (not posCpl) l []
+                                                                   (f,steps',equ'') = nM posCpl r []
      nM _      (ERad (l,r)) _                   | isImin l = (r, ["-I!x = x"], "<=>")
      nM _      (ERad (l,r)) _                   | isImin r = (l, ["x!-I = x"], "<=>")
 --     nM False  (ERad (ECps (r,s),q)) _            | not eq = (r.:.(s.!.q), ["Peirce: (r;s)!q |- r;(s!q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
@@ -252,8 +252,6 @@ where
                                                                        (f,steps',equ'') = nM posCpl r []
      nM _      (EIsc (EUni (l,k),r)) _           | dnf     = ((l./\.r) .\/. (k./\.r), ["distribute /\\ over \\/"],"<=>")
      nM _      (EIsc (l,EUni (k,r))) _           | dnf     = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
-     nM _      (EUni (EIsc (l,k),r)) _           | not dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
-     nM _      (EUni (l,EIsc (k,r))) _           | not dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
@@ -313,6 +311,8 @@ where
                absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
                absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
                eList  = rs++exprIsc2list l++exprIsc2list r
+     nM _      (EUni (EIsc (l,k),r)) _           | not dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM _      (EUni (l,EIsc (k,r))) _           | not dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
          | or [length cl>1 |cl<-absorbClasses]   -- yields False if absorbClasses is empty
