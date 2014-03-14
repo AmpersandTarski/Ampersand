@@ -1,6 +1,6 @@
 <?php 
 
-require_once (__DIR__.'/../Generics.php');
+require_once (__DIR__.'/../ampersand/Generics.php');
 
 $DB_host = 'localhost';
 $DB_user = 'root';

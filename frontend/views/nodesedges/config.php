@@ -2,7 +2,7 @@
 // Config file that determines how the ampersand database is used to display edges and nodes
 
 require_once (__DIR__.'/../../db/Database.php');
-require_once (__DIR__.'/../../Generics.php');
+require_once (__DIR__.'/../../ampersand/Generics.php');
 
 $mappingViewConcepts =  array ( 'ProjectMembers'   => array ('Project', 'Person')
 							  , 'ProjectTypes' => array ('Project', 'Type')

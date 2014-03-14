@@ -1,6 +1,6 @@
 <?php
 
-require_once (__DIR__ . '/../Generics.php'); // loading the Ampersand model
+require_once (__DIR__ . '/../ampersand/Generics.php'); // loading the Ampersand model
 require_once (__DIR__ . '/../localSettings.php');
 
 require_once (__DIR__ . '/../db/Database.php');

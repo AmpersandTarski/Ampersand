@@ -7,7 +7,7 @@ set_time_limit(60);
 error_reporting(E_ALL ^ (E_DEPRECATED | E_NOTICE));
 ini_set("display_errors", 1);
 
-// require __DIR__.'/../Generics.php'; // wordt al geladen, alleen nodig voor stand-alone executie
+// require __DIR__.'/../ampersand/Generics.php'; // wordt al geladen, alleen nodig voor stand-alone executie
 require_once 'Database.php'; 
 require_once 'DatabaseUtils.php';
 require_once 'loadplugins.php';
