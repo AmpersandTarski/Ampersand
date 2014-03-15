@@ -23,9 +23,9 @@ fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
 -}
 chpNatLangReqs :: Int -> Fspc -> Options ->  Blocks
 chpNatLangReqs lev fSpec flags = 
-      -- *** Header ***
+      --  *** Header ***
    chptHeader (fsLang fSpec) SharedLang
-   <> -- *** Intro  ***
+   <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
                      ( str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
@@ -58,9 +58,9 @@ chpNatLangReqs lev fSpec flags =
                      <> str ", they share precisely enough language to have meaningful discussions about functional requirements. "
                      <> str "All definitions have been numbered for the sake of traceability. "
                      )
-   <> -- *** Requirements ***
+   <> --  *** Requirements ***
    fromList dpRequirements 
-   <> -- *** Legal Refs ***
+   <> --  *** Legal Refs ***
      if (not.genLegalRefs) flags then mempty else
        legalRefs
    
