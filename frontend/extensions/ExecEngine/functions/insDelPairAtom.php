@@ -36,10 +36,10 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	}
 	
 	// if srcAtom is specified as NULL, a new atom of srcConcept is created
-    if($srcAtom == "NULL") $srcAtom = $database->createNewAtom($srcConcept);
+    if($srcAtom == "NULL") $srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
 	
 	// if tgtAtom is specified as NULL, a new atom of tgtConcept is created
-	if($tgtAtom == "NULL") $tgtAtom = $database->createNewAtom($tgtConcept);
+	if($tgtAtom == "NULL") $tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
 	
 	$database->editUpdate($relation, false, $srcAtom, $tgtAtom, 'child', '');
 }
@@ -151,7 +151,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 function InsAtom($concept){ 
 	$database = Database::singleton();
  
-	return $database->createNewAtom($concept); // insert new atom in database
+	return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
 	
 }
 

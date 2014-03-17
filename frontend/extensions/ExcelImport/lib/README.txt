@@ -4,9 +4,9 @@ This stuff is currently still under development.
 
 WHAT HAVE WE HERE
 =================
-- "class.importexcel.php" contains PHP code for parsing the Excel file contents and filling the database
+- "ExcelImport.php" contains PHP code for parsing the Excel file contents and filling the database
 - "excel_import.php" outputs HTML for creating a form within which you can specify the file to upload
-- "excel_parse.php" receives the file and calls the class.importexcel code to fill the database
+- "excel_parse.php" receives the file and calls the ExcelImport class to fill the database
 - the 'excel\' directory (and subdirs) contain all the library code that is needed.
 
 

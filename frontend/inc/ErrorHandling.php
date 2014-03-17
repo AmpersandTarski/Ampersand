@@ -1,12 +1,13 @@
 <?php
 
-class ErrorHandling {
+class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error handling system
 	
 	static $errors = array();
 	static $invariants = array();
 	static $violations = array();
 	static $notifications = array();	
 	static $successes = array();
+	static $logs = array();
 	
 	public static function addError($message){
 		self::$errors[] = $message;
@@ -30,6 +31,10 @@ class ErrorHandling {
 		self::$successes[] = $message;
 	}
 	
+	public static function addLog($message){
+		self::$logs[] = $message;
+	}
+	
 	public static function getErrors(){
 		return self::$errors;
 	}
@@ -44,6 +49,9 @@ class ErrorHandling {
 	}
 	public static function getSuccesses(){
 		return self::$successes;
+	}
+	public static function getLogs(){
+		return self::$logs;
 	}
 	
 	// TODO: can be deleted when ErrorHandling is not static anymore but instantiated in Session class.

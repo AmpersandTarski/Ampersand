@@ -42,7 +42,7 @@ RuleEngine::checkRules($session->role->id);
 		<link href="css/Ampersand2.css" rel="stylesheet" type="text/css"/>
 		<link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 		<link href="css/tno.css" rel="stylesheet" media="screen">
-		<link href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+		<link href="css/smoothness/jquery-ui-1.10.4.custom.css" rel="stylesheet" type="text/css"/>
 
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script src="js/jquery-ui-1.10.4.custom.js"></script>
@@ -92,12 +92,25 @@ RuleEngine::checkRules($session->role->id);
 						</ul>
 					</li>
 					
-					<li id="viewer" class="pull-right">
-						<a href="views/"><span class="glyphicon glyphicon-eye-open"></span></a>
+					<?php if(isset($GLOBALS['apps'])){ ?>
+						<li class="dropdown pull-right">
+							<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-th"></span></a>
+							<ul class="dropdown-menu" role="menu">
+							  <?php  foreach($GLOBALS['apps'] as $app) echo '<li><a href="'.$app['link'].'"><span class="'.$app['icon'].'"></span> '.htmlSpecialChars($app['name']).'</a></li>'; ?>
+							</ul>
+						</li>
+					<?php } ?>
+					
+					<li id="installer" class="pull-right">
+						<a href="installer.php"><span class="glyphicon glyphicon-trash"></span></a>
 					</li>
 					
-					<li id="MenuBarReset" class="pull-right">
-						<a href="installer.php"><span class="glyphicon glyphicon-trash"></span></a>
+					<li id="viewer" class="pull-right">
+						<a href="viewers/"><span class="glyphicon glyphicon-eye-open"></span></a>
+					</li>
+					
+					<li id="violations" class="pull-right">
+						<a href="#"><span class="glyphicon glyphicon-bell"></span></a>
 					</li>
 
 				</ul>

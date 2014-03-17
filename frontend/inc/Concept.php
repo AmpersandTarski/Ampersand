@@ -30,6 +30,13 @@ class Concept {
 	public static function isAtomInConcept($atom, $concept) {
 		return in_array( $atom, Concept::getAllAtoms($concept) );
 	}
+	
+	public static function createNewAtom($concept){
+		$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+		$atom = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
+		
+		return $atom;
+	}
 }
 
 ?>

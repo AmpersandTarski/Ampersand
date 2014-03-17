@@ -40,6 +40,7 @@ class Database
 	{
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
 		$result = mysql_query($query,$this->dblink);
+		ErrorHandling::addLog('QUERY: ' . $query);
 
 		if (mysql_error()) throw new Exception(mysql_error());
 
@@ -52,7 +53,7 @@ class Database
 		
 	}
 	
-	public function transaction($commandArray, $roleId){
+	public function transaction($commandArray, $roleId = null){
 		
 		$this->Exe("START TRANSACTION"); // start database transaction
 		
@@ -94,10 +95,10 @@ class Database
 		// 2do this: create a rule with the same ruleexpression and handle the violation with th ExecEngine
 		// runAllProcedures();
 		
-		RuleEngine::checkProcessRules($roleId);
-		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		$invariantRulesHold = RuleEngine::checkInvariantRules();
+		
+		if(isset($roleId)) RuleEngine::checkProcessRules($roleId);
 
 		if ($invariantRulesHold) {
 			$this->setLatestUpdateTime();
@@ -119,14 +120,6 @@ class Database
 	public function error()
 	{
 		return mysql_error($this->dblink);
-	}
-	
-	public function createNewAtom($concept){
-		$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-		$atom = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
-		
-		$this->addAtomToConcept($atom, $concept);
-		return $atom;
 	}
 	
 	// TODO: make private function

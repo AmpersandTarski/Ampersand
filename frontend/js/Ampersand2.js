@@ -6,7 +6,6 @@ function initialize() {
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
                      // initialize and initializeAtoms (the latter also being called from sendCommands).
-  startRefreshTimer();
 }
 
 function tweakLayout() {
@@ -744,117 +743,6 @@ function setLogItems($logWindow, $logItems) {
   clearLogItems($logWindow);
   addLogItems($logWindow, $logItems);
 }
-
-
-// Refresh timer
-
-function startRefreshTimer() {
-  var refreshInterval = $('#AmpersandRoot').attr('refresh');
-
-  if (refreshInterval>0) {
-    setRefreshTimer(refreshInterval*1000);
-  }
-}
-
-function setRefreshTimer(ms) {  
-  timer = setTimeout('checkDbUpdates()',ms);
-}
-
-function stopRefreshTimer() {
-  clearTimeout(timer);
-}
-
-function checkDbUpdates() {
-  if ($('#AmpersandRoot').attr('editing') == 'true') // no refresh during editing  
-    startRefreshTimer();
-  else {
-    var currentTimestamp = $('#AmpersandRoot').attr('timestamp');
-    
-    // todo: is this okay without nocache?
-    $.post("php/Database.php?getTimestamp",function(data){
-      var dbTimestamp = $(data).attr('timestamp');
-      var dbIsModified = dbTimestamp != currentTimestamp;
-      log(currentTimestamp + ' vs '+dbTimestamp + ' ' + (dbIsModified ? 'modified' : 'not modified'));        
-      
-      // If the timestamp on the server is different, it must be newer, so we need a refresh
-      if (dbIsModified) {
-        getNoCache(window.location.href, function(data){
-          $newPage = $('<div>').html(data);
-          // NOTE: need to be careful here not to put elements with id's in the DOM before removing the old ones
-
-          // replace the root Atom with the new one
-          var $oldRootAtom = $('#ScrollPane > .Atom'); // save the old atom so we can do a diff below
-          $('#ScrollPane > .Atom').remove();  
-          $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
-
-          // update the signals
-          $signals = $(data).find('#SignalLog > .AmpersandErr');
-          setLogItems($('#SignalLog'), $signals);
-
-          // update the timestamp
-          $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
-
-          initializeAtoms();   
-          startRefreshTimer();
-          markDifference($('#ScrollPane > .Atom'), $oldRootAtom);
-        });
-      }
-      else
-        startRefreshTimer();
-    });
-  }
-}
-
-function markDifference($newAtom, $oldAtom) {
-  $diffRoot = getDiffRoot($newAtom, $oldAtom);
-  if ($diffRoot)
-    animateDifference($diffRoot);
-}
-
-function getDiffRoot($newAtom, $oldAtom) {
-  //log ($newAtom.attr('atom') + ' vs ' + $oldAtom.attr('atom'));
-  if ($newAtom.find('>.AtomName').text() != $oldAtom.find('>.AtomName').text())
-    return $newAtom.find('>.AtomName');
-  else {
-    var $newChildInterfaces = $newAtom.find('>.InterfaceList>.Interface'); 
-    var $oldChildInterfaces = $oldAtom.find('>.InterfaceList>.Interface');
-    
-    for (var j=0; j<$newChildInterfaces.length; j++) { 
-      // interfaces won't change, but we need to traverse them to be able to create markers at the AtomList level
-        
-      var $newChildAtoms = $newChildInterfaces.eq(j).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
-      var $oldChildAtoms = $oldChildInterfaces.eq(j).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
-      
-      if ($newChildAtoms.length != $oldChildAtoms.length)
-        return $newChildInterfaces.eq(j);
-      else {
-        for (var i=0; i<$newChildAtoms.length; i++) {
-          //log ('child '+i);
-          var $differentElt = getDiffRoot($newChildAtoms.eq(i), $oldChildAtoms.eq(i));
-          if ($differentElt)
-            return $differentElt;
-        }
-      }
-    }
-    return null;
-  }
-}
-
-function animateTo($elt, color, k) {
-  $elt.animate({ backgroundColor: color }, 500, null, k);
-}
-
-function animateDifference( $elt ) {
-  var color = "red"; 
-  animateTo($elt, color, function () {
-  animateTo($elt, "transparent", function () {
-  animateTo($elt, color, function () {
-  animateTo($elt, "transparent", function () {
-  animateTo($elt, color, function () {
-  animateTo($elt, "transparent", function () {
-  }); }); }); }); }); });
-}
-
 
 // Utils
 

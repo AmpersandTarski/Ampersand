@@ -37,7 +37,7 @@ class Session {
 			
 			// Create a new Ampersand session if $_SESSION['sessionAtom'] is not set (browser started a new session or Ampersand session was expired
 			if (!Concept::isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')){ 
-				$_SESSION['sessionAtom']  = $database->createNewAtom('SESSION'); // TODO: change to PHP SESSION ID??
+				$_SESSION['sessionAtom']  = $database->addAtomToConcept(Concept::createNewAtom('SESSION'), 'SESSION'); // TODO: change to PHP SESSION ID??
 			}
 
 			$database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$_SESSION[sessionAtom]."', '".time()."')".
