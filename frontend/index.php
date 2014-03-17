@@ -4,19 +4,7 @@ ini_set("display_errors", 1);
 
 $debug = false;
 
-//ERROR HANDLING
-/* let PHP also report undefined variable references
-function terminate_missing_variables($errno, $errstr, $errfile, $errline)
-{ if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
-  echo ("$errstr in $errfile line $errline");
-
-  return false; // Let the PHP error handler handle all the rest
-}
-set_error_handler("terminate_missing_variables");
-*/
-
 require_once (__DIR__ . '/inc/includes.php');
-
 
 try {
 	$db = Database::singleton();

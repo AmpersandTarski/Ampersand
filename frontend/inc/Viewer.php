@@ -3,8 +3,29 @@
 class Viewer {
 	
 	// TODO: make non static or private function
-	public static function viewInterface($interface){
+	public static function viewInterface($interface, $atomId = null){
+		$output = '';
+		$atomsAndLinks = $interface->getAtomsAndLinks($atomId);
 		
+		foreach ($atomsAndLinks as $atomId => $atom){
+			$output .= '<atom id="'.$atomId.'">'.$atomId.'</atom>';
+			
+			foreach ($atom as $interfaceName => $interface){
+				$output .= '<interface name="'.$interfaceName.'">';
+					
+					foreach ($interface as $item) {
+						if(is_array($item)) {
+							
+						}else{ 
+							$output .= '<atom id="'.$item.'">'.$item.'</atom>';
+						}
+					}
+				
+				$output .= '</interface>';
+			}
+		}
+		
+		return $output;
 		
 	}
 	

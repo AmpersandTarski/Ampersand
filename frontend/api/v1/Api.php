@@ -13,6 +13,15 @@ class Api
     }
 	
 	/**
+     * @url GET concept/{concept}/
+	 * @param string $direction the direction of the relations: "from", "to", "both".
+     */
+    public function getConcept($concept, $direction = "both")
+    {
+        return "Return all attributes and relations (direction: $direction) of concept $concept";
+    }
+	
+	/**
      * @url GET concept/{concept}/atoms/
      */
     public function getAtoms($concept)
@@ -22,28 +31,11 @@ class Api
 	
 	/**
      * @url GET concept/{concept}/atom/{atom}/
+	 * @param sting $depth the number of levels of linked atoms to return
      */
-    public function getAtom($concept, $atom)
+    public function getAtom($concept, $atom, $depth = "1")
     {
-        return "Return all attributes of atom $atom of concept $concept";
-    }
-	
-	/**
-     * @url GET concept/{concept}/atom/{atom}/links/
-	 * @param string $direction the direction of the requested links: "from", "to", "both".
-     */
-    public function getLinks($concept, $atom, $direction = "both")
-    {
-        return "Return all links (direction: $direction) atom $atom of concept $concept";
-    }
-	
-	/**
-     * @url GET concept/{concept}/relations/
-	 * @param string $direction the direction of the requested relations: "from", "to", "both".
-     */
-    public function getRelations($concept, $direction = "both")
-    {
-        return "Return list of all relations (direction: $direction) for $concept";
+        return "Return all attributes and links (depth: $depth) of atom $atom of concept $concept";
     }
 	
 /**************************** RULES AND VIOLATIONS ****************************/
@@ -109,17 +101,29 @@ class Api
 	/**
      * @url GET interfaces/
 	 * @url GET interface/{interfaceName}/
+	 * @url GET interface/{interfaceName}/atom/{atom}
      */
-    public function getInterfaces($interfaceName = NULL)
+    public function getInterfaces($interfaceName = NULL, $atom = "1")
     {
         if($interfaceName !== NULL){
-			
-			return new UserInterface($interfaceName); // "Return interface with properties as defined in class UserInterfae"
+			$interface = new UserInterface($interfaceName);
+			return $interface->getAtomsAndLinks($atom); // "Return interface with properties as defined in class UserInterfae"
 		}else{
 			return UserInterface::getAllInterfaces(); // "Return list of all interfaces"
 			
 		}
     }
+	
+	/**
+	 * @url GET viewer/{viewerName}/interface/{interfaceName}/
+	 * @url GET viewer/{viewerName}/interface/{interfaceName}/atom/{atom}
+     */	
+	public function getInterfaceWithView($viewerName, $interfaceName, $atom = "1")
+	{
+		$interface = new UserInterface($interfaceName);
+		return Viewer::viewInterface($interface, $atom);
+	
+	}
 
 /**************************** POST ****************************/
 	/**
@@ -138,4 +142,3 @@ class Api
 }
 
 ?>
-

@@ -159,7 +159,7 @@ class Database
 		}
 	}
 	
-	// NOTE: if $originalAtom == '', editUpdate means insert
+	// NOTE: if $originalAtom == '', editUpdate means insert for n-ary relations
 	// TODO: make private function
 	public function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom)
 	{ 
@@ -167,19 +167,21 @@ class Database
 		global $tableColumnInfo;
 
 		/* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
+		
 		// check if $relation appears in $relationTableInfo
-		if (array_key_exists($relation, $relationTableInfo))
-		{ foreach($relationTableInfo as $key => $arr)
-		if($key == $relation)
-		{ if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
-		{ $table = $arr['table'];
-		$srcCol = $arr['srcCol'];
-		$tgtCol = $arr['tgtCol'];
-		echo "<br>[FOUND: table=$table, srcCol=$srcCol, tgtCol=$tgtCol]";
-		}
-		}
-		} else
-		{ echo "ERROR: Relation $relation does not exist (in table info)";
+		if (array_key_exists($relation, $relationTableInfo)){
+			foreach($relationTableInfo as $key => $arr){
+				if($key == $relation){ 
+					if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept){ 
+						$table = $arr['table'];
+						$srcCol = $arr['srcCol'];
+						$tgtCol = $arr['tgtCol'];
+						echo "<br>[FOUND: table=$table, srcCol=$srcCol, tgtCol=$tgtCol]";
+					}
+				}
+			}
+		}else{ 
+			echo "ERROR: Relation $relation does not exist (in table info)";
 		}
 		*/
 		$table = $relationTableInfo[$rel]['table'];
@@ -230,6 +232,7 @@ class Database
 		$parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
 		$modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
 		// emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
+		
 		$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
 		// TODO: errors here are not reported correctly
 	}
