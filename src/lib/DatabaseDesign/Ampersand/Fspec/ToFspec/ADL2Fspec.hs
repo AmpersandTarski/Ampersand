@@ -15,6 +15,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
+   import DatabaseDesign.Ampersand.ADL1.Expression
    import Text.Pandoc
    import Data.Maybe
    import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
@@ -585,6 +586,7 @@ while maintaining all invariants.
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
                                                else conjNF (notCpl negs)
+                                , (not.isMp1) toExpr, (not.isTrue) toExpr&&ev==Del, (not.isFalse) toExpr&&ev==Ins
                                 ]
                                 [(conj,causes)]  -- to supply motivations on runtime
                           | conjEq <- eqCl snd3 [(dnfClauses,conj,rule) | (_,dnfClauses,conj,rule)<-relEq]
