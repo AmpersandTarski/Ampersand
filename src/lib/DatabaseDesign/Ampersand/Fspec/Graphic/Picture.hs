@@ -30,7 +30,7 @@ data Picture = Pict { origName :: String              -- ^ The original name of 
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 data PictType = PTClassDiagram -- a UML class diagram, or something that comes close
-              | PTPattern      -- a conceptual diagram with the relations that are USED in a pattern
+              | PTPattern      -- a conceptual diagram with the relations USED in a pattern
               | PTFullPat      -- a conceptual diagram with the relations DECLARED in a pattern
               | PTProcess      -- a process diagram, that shows dependencies between activities
               | PTProcLang     -- a conceptual diagram that shows the language of a process
