@@ -33,7 +33,7 @@ Executable prototype
                     time == 1.4.0.1,
                     graphviz >=2999.16.0.0
   default-language: Haskell2010
-  ghc-options:      -rtsopts
+  ghc-options:      -rtsopts +RTS -K4000000000 -RTS
 
 
   -- Unfortunately, unix and MissingH are not available on windows
