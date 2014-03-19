@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Data.Char (toLower)
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (exprUni2list, exprIsc2list, exprCps2list, exprRad2list)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list)
    import DatabaseDesign.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
    fatal :: Int -> String -> a
