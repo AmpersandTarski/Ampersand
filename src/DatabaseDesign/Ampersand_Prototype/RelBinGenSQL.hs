@@ -261,23 +261,43 @@ selectExpr fSpec i src trg expr
                             selectGeneric i ("concept0."++concpt,src) ("concept1."++concpt,trg)
                                             (sqlConcept fSpec c ++ " AS concept0, " ++ sqlConcept fSpec c ++ " AS concept1")
                                             ("concept0." ++ concpt ++ " <> concept1."++concpt)
-                            where concpt = quote $ sqlAttConcept fSpec c
-           _              
-              | source e == ONE -> fatal 261 ("ONE is unexpected here as source of an expression inside: "++showADL expr)
-              | target e == ONE -> fatal 262 ("ONE is unexpected here as source of an expression inside: "++showADL expr)
-              | otherwise       
-                         -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
-                            selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
-                                            (sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)++sqlConcept fSpec (target e)++" AS csnd")
-                                            ("NOT EXISTS"++phpIndent i++" ("++
-                                                selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
-                                                                    ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
-                                                 ++ ")"
-                                            )
-                            where src' = quote $ sqlAttConcept fSpec (source e) 
-                                  trg' = quote $ sqlAttConcept fSpec (target e)
-                                  src2 = sqlExprSrc fSpec e
-                                  trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+                             where concpt = quote $ sqlAttConcept fSpec c
+           _ | source e == ONE -> sqlcomment i ("case: source e == ONE"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+                                  selectGeneric i (src',src) (trg',trg)
+                                                  (sqlConcept fSpec (target e))
+                                                  ("NOT EXISTS"++phpIndent i++" ("++
+                                                      selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
+                                                                          ("TRUE")
+                                                       ++ ")"
+                                                  )
+                                  where src' = "1"
+                                        trg' = quote $ sqlAttConcept fSpec (target e)
+                                        src2 = sqlExprSrc fSpec e
+                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+           _ | target e == ONE -> sqlcomment i ("case: target e == ONE"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+                                  selectGeneric i (src',src) (trg',trg)
+                                                  (sqlConcept fSpec (source e))
+                                                  ("NOT EXISTS"++phpIndent i++" ("++
+                                                      selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
+                                                                          ("TRUE")
+                                                       ++ ")"
+                                                  )
+                                  where src' = quote $ sqlAttConcept fSpec (source e) 
+                                        trg' = "1"
+                                        src2 = sqlExprSrc fSpec e
+                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+           _ | otherwise       -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+                                  selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
+                                                  (sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)++sqlConcept fSpec (target e)++" AS csnd")
+                                                  ("NOT EXISTS"++phpIndent i++" ("++
+                                                      selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
+                                                                          ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
+                                                       ++ ")"
+                                                  )
+                                  where src' = quote $ sqlAttConcept fSpec (source e) 
+                                        trg' = quote $ sqlAttConcept fSpec (target e)
+                                        src2 = sqlExprSrc fSpec e
+                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
     EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
     (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
