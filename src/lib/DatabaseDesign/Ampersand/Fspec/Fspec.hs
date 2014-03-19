@@ -205,10 +205,10 @@ instance Eq Activity where
 
 data InsDel   = Ins | Del
                  deriving (Show,Eq)
-data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is activated
+data ECArule= ECA { ecaTriggr :: Event     -- The event on which this rule is activated
                   , ecaDelta :: Declaration  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
-                  , ecaAction :: PAclause    -- The action to be taken when triggered.
-                  , ecaNum :: Int            -- A unique number that identifies the ECArule within its scope.
+                  , ecaAction :: PAclause  -- The action to be taken when triggered.
+                  , ecaNum :: Int       -- A unique number that identifies the ECArule within its scope.
                   }
 instance Eq (ECArule) where
    e==e' = ecaNum e==ecaNum e'
