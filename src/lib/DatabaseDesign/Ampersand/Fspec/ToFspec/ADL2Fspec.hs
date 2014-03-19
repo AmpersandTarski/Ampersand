@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
--- import Debug.Trace
+--   import Debug.Trace
    head :: [a] -> a
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
@@ -63,7 +63,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vconjs       = let equalOnConjunct a b = rc_conjunct a == rc_conjunct b
                                   in nubBy equalOnConjunct (concatMap (cl_conjNF.qClauses)allQuads)
                  , vquads       = allQuads
-                 , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+                 , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = declarations context
@@ -536,7 +536,7 @@ while maintaining all invariants.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: [Quad] -> [ECArule]
    assembleECAs qs
-    = [] -- [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
+    = [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
       where
        -- the quads that are derived for this fSpec contain dnf clauses.
        -- A dnf clause dc that is generated from rule r contains the information how to restore the truth of r.
