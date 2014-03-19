@@ -93,7 +93,7 @@ selectExpr fSpec i src trg expr
                               , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                               ]++
                               [ "isect0."++src'++" = \\'"++atom++"\\'" -- source and target are equal because this is the case with EMp1{}
-                              | (EMp1 atom _) <- mp1Tm
+                              | EMp1 atom _ <- mp1Tm
                               ]++
                               [ "isect0."++src'++" = \\'"++atom1++"\\'" -- source and target are unequal
                                 ++ " AND isect0."++trg'++" = \\'"++atom2++"\\'" -- source and target are unequal
@@ -263,8 +263,8 @@ selectExpr fSpec i src trg expr
                                             ("concept0." ++ concpt ++ " <> concept1."++concpt)
                             where concpt = quote $ sqlAttConcept fSpec c
            _              
-              | source e == ONE -> fatal 261 "ONE is unexpected here as source of an expression"
-              | target e == ONE -> fatal 262 "ONE is unexpected here as target of an expression"
+              | source e == ONE -> fatal 261 ("ONE is unexpected here as source of an expression inside: "++showADL expr)
+              | target e == ONE -> fatal 262 ("ONE is unexpected here as source of an expression inside: "++showADL expr)
               | otherwise       
                          -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
                             selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
