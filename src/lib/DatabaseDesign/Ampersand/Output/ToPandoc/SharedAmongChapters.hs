@@ -62,7 +62,7 @@ chaptersInDoc :: Options -> [Chapter]
 chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
  where
    -- temporarily switch off chapters that need too much refactoring, but keep this Haskell code compilable.
-    disabled = [EcaRules,Interfaces]
+    disabled = [Interfaces]
     chapters
      | test flags                  = [SharedLang]
      | diagnosisOnly flags         = [Diagnosis]
