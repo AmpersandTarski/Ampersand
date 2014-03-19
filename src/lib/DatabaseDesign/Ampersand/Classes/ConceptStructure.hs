@@ -18,7 +18,7 @@ where
     declsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
     declsUsedIn a = [ d | EDcD d@Sgn{}<-(nub.concatMap primitives.expressionsIn) a]
     relsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-    relsUsedIn a = [ prim2dcl e | e<-(nub.concatMap primitives.expressionsIn) a, not (isMp1 e) ]
+    relsUsedIn a = [ prim2dcl e | e<-nub ((concatMap primitives.expressionsIn) a++(map EDcI . concs) a), not (isMp1 e) ]
       where prim2dcl expr =
              case expr of
                EDcD d@Sgn{} -> d

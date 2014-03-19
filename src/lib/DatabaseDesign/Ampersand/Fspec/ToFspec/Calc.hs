@@ -19,7 +19,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,exprIsc2list, exprUni2list, exprCps2list, exprRad2list) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
    import Prelude hiding (head)
@@ -193,7 +193,7 @@ where
       where 
   --     visible _  = True -- We take all quads into account.
        qs         = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
-          --   assembleECAs :: [Quad] -> [ECArule]
+          --   assembleECAs :: (Relation Concept->Bool) -> [Quad] -> [ECArule]
        ecaRs      = assembleECAs qs  -- this creates all ECA rules from the available quads. They are still raw (unoptimized).
 
   --     relEqCls = eqCl fst4 [(rel,dnfClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,dnfClauses)<-cl_conjNF ccrs]
@@ -253,33 +253,27 @@ where
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause), Str " may be affected by the following events:",LineBreak]++
                              concat [ [Str "event = ", Str (show ev), Space, Str (showADL dcl), Str " means doing the following substitution", LineBreak ] ++
                                       [Str (showADL clause++"["++showADL dcl++":="++showADL (actSem ev dcl (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
-                                      [Str ("clause' = "++showADL ex') ] ++
-                                      (if clause'==ex'
-                                       then [Str (", which is already in conjunctive normal form."), LineBreak]
-                                       else [LineBreak, Str ("which has CNF: "++showADL clause'), LineBreak] ) ++
-                                      [Str ("Computing the violations means to negate the result (clause'): "++showADL notClau), LineBreak ] ++
+                                      [Str ("clause' = "++showADL ex'), LineBreak ] ++
+                                      concat [ [Str ("which has CNF: "++showADL ex'), LineBreak] | clause'/=ex'] ++
+                                      [Str ("Computing the violations means to negate the conjunct: "++showADL (notClau)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notClau/=viols] ++
-                                      if impact
-                                      then [ LineBreak, Str "Since we cannot conclude that clause' is true, a reaction is be computed to compensate...", LineBreak ]++
-                                           (showProof showADL. cfProof showADL) (notCpl (expr .|-. clause'))
-                                      else [Str "Now try to derive whether clause |- clause' is true... ", LineBreak] ++
-                                           (showProof showADL. cfProof showADL) (expr .|-. clause')
+                                      [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (notClau .\/. clause')), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
                                     | dcl <-relsUsedIn r
                                     , ev<-[Ins,Del]
-                                    , let ex'     = subst (dcl, actSem ev dcl (delta (sign dcl))) expr -- the clause after the edit action
-                                    , let clause' = conjNF ex'                                         -- its CNF
-                                    , let notClau = notCpl clause'                                     -- the violations after the edit action
-                                    , let impact  = (isFalse.conjNF) (expr .|-. clause')
-                                    , let viols   = conjNF (expr./\.notClau)                           -- the violations after the edit action
+                                    , let ex'     = subst (dcl, actSem ev dcl (delta (sign dcl))) expr
+                                    , let clause' = conjNF ex'
+                                    , let notClau = notCpl clause'
+                                    , let step    = conjNF (notClau .\/. clause')
+                                    , let viols   = conjNF (notClau)
                                     , let negs    = foldr (./\.) (EDcV sgn) antcs
                                     , let poss    = foldr (.\/.) (notCpl (EDcV sgn)) conss
                                     , let frExpr  = if ev==Ins
                                                     then conjNF negs
                                                     else conjNF poss
                                     , dcl `elem` relsUsedIn frExpr
-                                    , let toExpr = if ev==Ins
-                                                   then conjNF poss
-                                                   else conjNF (notCpl negs)
+                        --            , let toExpr = if ev==Ins
+                        --                           then conjNF poss
+                        --                           else conjNF (notCpl negs)
                                     ]
                            | clause@(Dnf antcs conss) <- rc_dnfClauses x
                            , let expr = dnf2expr clause, let sgn = sign expr ]
@@ -312,7 +306,7 @@ where
                                                 "An appropriate reaction on this event is required."
                                            --     showECA fSpec "\n  " (ECA (On ev rel) delt (genPAclause visible Ins r viols conj [rule]) 0)
                                      )
-                                   | rel<-relsUsedIn r   -- nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
+                                   | rel<-nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]

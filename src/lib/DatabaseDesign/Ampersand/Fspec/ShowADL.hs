@@ -9,7 +9,7 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module DatabaseDesign.Ampersand.Fspec.ShowADL
-    ( ShowADL(..), LanguageDependent(..), exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list)
+    ( ShowADL(..), LanguageDependent(..))
 where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -18,7 +18,6 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import Data.List hiding (head)
 import Prelude hiding (head)
---import Debug.Trace
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -27,18 +26,6 @@ head (a:_) = a
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowADL"
-
-exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
-exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
-exprIsc2list r            = [r]
-exprUni2list (EUni (l,r)) = exprUni2list l++exprUni2list r
-exprUni2list r            = [r]
-exprCps2list (ECps (l,r)) = exprCps2list l++exprCps2list r
-exprCps2list r            = [r]
-exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
-exprRad2list r            = [r]
-exprPrd2list (EPrd (l,r)) = exprPrd2list l++exprPrd2list r
-exprPrd2list r            = [r]
 
 class ShowADL a where
  showADL :: a -> String
@@ -307,62 +294,24 @@ instance ShowADL Expression where
      insA_Parentheses = insPar 0
         where
           wrap :: Integer -> Integer -> Expression -> Expression
-          wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
+          wrap i j e' = if i<=j then e' else EBrk e'
           insPar :: Integer -> Expression -> Expression
-          insPar i  (EEqu (l,r)) = wrap i 0 (EEqu (insPar 1 l, insPar 1 r))
-          insPar i  (EImp (l,r)) = wrap i 0 (EImp (insPar 1 l, insPar 1 r))
-          insPar i x@EIsc{}      = wrap i 2 (foldr1 f [insPar 3 e | e<-exprIsc2list x ]) where f y z = EIsc (y,z)
-          insPar i x@EUni{}      = wrap i 2 (foldr1 f [insPar 3 e | e<-exprUni2list x ]) where f y z = EUni (y,z)
-          insPar i  (EDif (l,r)) = wrap i 4 (EDif (insPar 5 l, insPar 5 r))
-          insPar i  (ELrs (l,r)) = wrap i 6 (ELrs (insPar 7 l, insPar 7 r))
-          insPar i  (ERrs (l,r)) = wrap i 6 (ERrs (insPar 7 l, insPar 7 r))
-          insPar i x@ECps{}      = wrap i 8 (foldr1 f [insPar 9 e | e<-exprCps2list x ]) where f y z = ECps (y,z)
-          insPar i x@ERad{}      = wrap i 8 (foldr1 f [insPar 9 e | e<-exprRad2list x ]) where f y z = ERad (y,z)
-          insPar i x@EPrd{}      = wrap i 8 (foldr1 f [insPar 9 e | e<-exprPrd2list x ]) where f y z = EPrd (y,z)
-          insPar _  (EKl0 e)     = EKl0 (insPar 10 e)
-          insPar _  (EKl1 e)     = EKl1 (insPar 10 e)
-          insPar _  (EFlp e)     = EFlp (insPar 10 e)
-          insPar _  (ECpl e)     = ECpl (insPar 10 e)
-          insPar i  (EBrk e)     = insPar i e
-          insPar _  x            = x
-
-{-
-   insPar 0 (r/\s/\t/\x/\y|-p)
-=
-   wrap 0 0 (insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p)
-=
-   insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p
-=
-   wrap 1 2 (foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ]) |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 e | e<-[r,s,t,x,y] ] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 r,insPar 3 s,insPar 3 t,insPar 3 x,insPar 3 y] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [r,s,t,x,y] |- p   where f x y = EIsc (x,y)
-=
-   r/\s/\t/\x/\y |- p
-
-
-
-   insPar 0 (r;s;t;x;y|-p)
-=
-   wrap 0 0 (insPar 1 (r;s;t;x;y) |- insPar 1 p)
-=
-   insPar 1 (r;s;t;x;y) |- insPar 1 p
-=
-   wrap 1 8 (insPar 8 r ; insPar 8 (s;t;x;y)) |- p
-=
-   r; insPar 8 (s;t;x;y) |- p
-=
-   r; wrap 8 8 (insPar 8 s; insPar 8 (t;x;y)) |- p
-=
-   r; insPar 8 s; insPar 8 (t;x;y) |- p
-=
-   r; s; insPar 8 (t;x;y) |- p
--}
+          insPar i (EEqu (l,r)) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r))
+          insPar i (EImp (l,r)) = wrap i     0 (EImp (insPar 1 l, insPar 1 r))
+          insPar i (EIsc (l,r)) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r))
+          insPar i (EUni (l,r)) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r))
+          insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
+          insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
+          insPar i (ERrs (l,r)) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r))
+          insPar i (ECps (l,r)) = wrap i     8 (ECps (insPar 8 l, insPar 8 r))
+          insPar i (ERad (l,r)) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r))
+          insPar i (EPrd (l,r)) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r))
+          insPar _ (EKl0 e)     = EKl0 (insPar 10 e)
+          insPar _ (EKl1 e)     = EKl1 (insPar 10 e)
+          insPar _ (EFlp e)     = EFlp (insPar 10 e)
+          insPar _ (ECpl e)     = ECpl (insPar 10 e)
+          insPar i (EBrk e)     = insPar i e
+          insPar _ x            = x
 
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
@@ -377,8 +326,8 @@ instance ShowADL Declaration where
                " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
                ++ concatMap meaning (ameaMrk (decMean decl))
                ++ maybe "" (\(RelConceptDef srcOrTgt def) -> " DEFINE "++showADL srcOrTgt ++ " " ++ def) (decConceptDef decl)
-     Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
-     Vs{}  -> "V"++show (decsgn decl)      -- Vs{}  is of type Declaration and it is implicitly defined
+     Isn{} -> "DECLARE I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
+     Vs{}  -> "DECLARE V"++show (decsgn decl)      -- Vs{}  is of type Declaration and it is implicitly defined
    where
      meaning :: A_Markup -> String
      meaning pmkup = " MEANING "++showADL pmkup
