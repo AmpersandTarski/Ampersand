@@ -586,7 +586,7 @@ while maintaining all invariants.
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
                                                else conjNF (notCpl negs)
-                                , (not.isMp1) toExpr, (not.isTrue) toExpr&&ev==Del, (not.isFalse) toExpr&&ev==Ins
+                                , (not.isMp1) toExpr, (not.isEEps) toExpr, (not.isTrue) toExpr&&ev==Del, (not.isFalse) toExpr&&ev==Ins
                                 ]
                                 [(conj,causes)]  -- to supply motivations on runtime
                           | conjEq <- eqCl snd3 [(dnfClauses,conj,rule) | (_,dnfClauses,conj,rule)<-relEq]
@@ -952,6 +952,8 @@ CHC [ if isRel e
 -}
           (Del, e@EUni{}) -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, e@EIsc{}) -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
+          (Ins, e@(EDif (l,r))) -> CHC [ genPAcl deltaX Ins l motiv, genPAcl deltaX Del r motiv ] motiv
+          (Del, e@(EDif (l,r))) -> CHC [ genPAcl deltaX Del l motiv, genPAcl deltaX Ins r motiv ] motiv
 -- Op basis van De Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
           (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorganERad e) motiv
           (_  , EPrd{})   -> fatal 896 "TODO"

@@ -3,7 +3,7 @@
 module DatabaseDesign.Ampersand.ADL1.Expression (
                        subst
                       ,foldlMapExpression,foldrMapExpression
-                      ,primitives,isMp1
+                      ,primitives,isMp1, isEEps
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl)
 where
 import DatabaseDesign.Ampersand.Basics (uni)
@@ -133,3 +133,7 @@ isNeg = not . isPos
 isMp1 :: Expression -> Bool
 isMp1 EMp1{} = True
 isMp1 _ = False
+
+isEEps :: Expression -> Bool
+isEEps EEps{} = True
+isEEps _ = False
