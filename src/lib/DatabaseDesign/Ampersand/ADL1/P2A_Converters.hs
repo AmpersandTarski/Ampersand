@@ -15,7 +15,7 @@ import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.List(nub, intercalate)
+import Data.List(nub)
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -438,7 +438,7 @@ pCtx2aCtx
                      , prcRules = map snd ruls'
                      , prcGens = map pGen2aGen gens
                      , prcDcls = decls'
-                     , prcUps = nub $ pops' ++ dPops
+                     , prcUps = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                      , prcIds = idefs'
@@ -464,7 +464,7 @@ pCtx2aCtx
                       , ptrls = map snd prules
                       , ptgns = agens'
                       , ptdcs = decls'
-                      , ptups = nub $ pops' ++ dPops
+                      , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
                       , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
                       , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                       , ptids = keys'

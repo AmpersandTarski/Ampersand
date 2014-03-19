@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
--- import Debug.Trace
+--   import Debug.Trace
    head :: [a] -> a
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
@@ -63,7 +63,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vconjs       = let equalOnConjunct a b = rc_conjunct a == rc_conjunct b
                                   in nubBy equalOnConjunct (concatMap (cl_conjNF.qClauses)allQuads)
                  , vquads       = allQuads
-                 , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+                 , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = declarations context
@@ -95,13 +95,20 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
 
         allQuads = quads flags (\_->True) allrules
-        initialpops = userDefPops++singletonpops
-        userDefPops = ctxpopus context
-        singletonpops = [ PCptPopu{ popcpt = head [c | EMp1 _ c<-cl ]
-                                  , popas  =      [a | EMp1 a c<-cl, not (name c=="SESSION") ] 
-                                  } 
-                        | cl<-eqCl (\(EMp1 _ c)->c) (mp1Exprs context)]
-        isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
+        initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
+                                , popps  = (nub.concat) [ popps pop | pop<-eqclass ] 
+                                } 
+                      | eqclass<-eqCl popdcl [ pop | pop@PRelPopu{}<-populations ] ] ++
+                      [ PCptPopu{ popcpt = popcpt (head eqclass)
+                                , popas  = (nub.concat) [ popas pop | pop<-eqclass ] 
+                                } 
+                      | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
+          where populations   = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)++singletonpops
+                singletonpops = [ PCptPopu{ popcpt = head [c | EMp1 _ c<-cl ]
+                                          , popas  = nub  [a | EMp1 a c<-cl, not (name c=="SESSION") ] 
+                                          } 
+                                | cl<-eqCl (\(EMp1 _ c)->c) (mp1Exprs context)]
+--      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
         allrules = vRules ++ gRules
         vRules = udefrules context   -- all user defined rules
         gRules = multrules context++identityRules context
@@ -536,7 +543,7 @@ while maintaining all invariants.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: [Quad] -> [ECArule]
    assembleECAs qs
-    = [] -- [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
+    = [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
       where
        -- the quads that are derived for this fSpec contain dnf clauses.
        -- A dnf clause dc that is generated from rule r contains the information how to restore the truth of r.
@@ -948,9 +955,8 @@ CHC [ if isRel e
           (_  , EPrd{})   -> fatal 896 "TODO"
           (_  , EKl0 x )  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x )  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , e@(EDcD d)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
-                                   -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
-                                 if editAble d then Do tOp d deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
+          (_  , e@(EDcD d)) -> if editAble d then Do tOp d deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
+          (_  , e@(EDcI c)) -> if editAble (Isn c) then Do tOp (Isn c) deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
 
 -- HJO, 20130423: *LET OP!! De volgende code is er bij gefreubeld om geen last te hebben van de fatal767, maar is niet goed. *****
 -- Dit is in overleg met Stef, die deze hele code toch compleet wil herzien, i.v.m. de nieuwe typechecker.

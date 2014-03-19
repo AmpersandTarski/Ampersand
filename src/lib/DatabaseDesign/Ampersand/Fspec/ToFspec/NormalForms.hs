@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
-  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,exprIsc2list, exprUni2list, exprCps2list, exprRad2list)
+module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
+  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list)
 where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.ECArule
@@ -259,12 +259,15 @@ where
                 , [shw e++" /\\ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
                 , "<=>"
                 )
+-- Absorb True:    r/\V  --> r
+         | isTrue l                      = (r, ["V/\\x = x"], "<=>")
+         | isTrue r                      = (l, ["x/\\V = x"], "<=>")
 -- Inconsistency:    r/\-r   -->  False
          | not (null incons)
               = let i = head incons in (notCpl (EDcV (sign i)), [shw (notCpl i)++" /\\ "++shw i++" = V-"], "<=>")
 -- Inconsistency:    x/\\V-  -->  False
-         | (not.null) [t' |t'<-exprIsc2list l++exprIsc2list r, isFalse t']
-              = (notCpl (EDcV (sign x)), ["x/\\V- = V-"], "<=>")
+         | isFalse l                     = (notCpl (EDcV (sign x)), ["-V/\\x = -V"], "<=>")
+         | isFalse r                     = (notCpl (EDcV (sign x)), ["x/\\-V = -V"], "<=>")
 -- Absorb if r is antisymmetric:    r/\r~ --> I
          | not eq && or [length cl>1 |cl<-absorbAsy]
               = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsy, let e=head cl] 
@@ -358,16 +361,6 @@ where
                absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, exprIsc2list r>-[e]) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
      nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
      nM _ x _               = (x,[],"<=>")
-
-   exprIsc2list, exprUni2list, exprCps2list, exprRad2list :: Expression -> [Expression]
-   exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
-   exprIsc2list r            = [r]
-   exprUni2list (EUni (l,r)) = exprUni2list l++exprUni2list r
-   exprUni2list r            = [r]
-   exprCps2list (ECps (l,r)) = exprCps2list l++exprCps2list r
-   exprCps2list r            = [r]
-   exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
-   exprRad2list r            = [r]
 
    fEqu :: [String] -> String
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
