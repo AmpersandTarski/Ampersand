@@ -1,6 +1,10 @@
-<div class="interface" editable="{{editable}}">{{interface}}</div>
-<div class="atomList">
-	{{#atoms}}
-		{{>default_atom}}
-	{{/atoms}}
+<div class="interface" editable="{{editable}}"><h4>{{interface}}</h4>
+	<form role="form">
+		{{#atoms}}
+		<div class="form-group">
+			<input type="text" class="form-control" id="exampleInputEmail1" placeholder="{{atom}}">
+			{{>default_atom}}
+		</div>
+		{{/atoms}}
+	</form>
 </div>

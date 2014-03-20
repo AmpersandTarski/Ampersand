@@ -51,8 +51,7 @@ class Session {
 			$roleId = $_SESSION['role'];
 		}else{	// default role
 			$roleId = -1;	// TODO: how to handle no role selected
-		}
-		
+		}		
 		$_SESSION['role'] = $roleId;	// store roleId in $_SESSION['role'] 
 		$this->role = new Role($roleId);
 		
@@ -64,20 +63,19 @@ class Session {
 			$interfaceName = $_SESSION['interface'];
 		}else{ // default interface
 			$interfaceName = '';
-		}
-		
+		}		
 		$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
 		
-		if(!empty($interfaceName)) $this->interface = new UserInterface($interfaceName); // TODO: can be deleted when not needed anymore for Viewer::genEditableConceptInfo($session->interface->name) in index.php??
 		
 		// ATOM
 		if(isset($_REQUEST['atom'])){ // new atom selected
 			$atomId = $_REQUEST['atom'];
-		}elseif(isset($_SESSION['atom'])){ // interface already selected
+		}elseif(isset($_SESSION['atom'])){ // atom already selected
 			$atomId = $_SESSION['atom'];
-		}else{ // default interface
+		}else{ // default atom
 			$atomId = null;
-		}
+		}		
+		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
 		
 		// VIEWER
 		if(isset($_REQUEST['viewer'])){ // new viewer selected
@@ -85,9 +83,8 @@ class Session {
 		}elseif(isset($_SESSION['viewer'])){ // viewer already selected
 			$viewerName = $_SESSION['viewer'];
 		}else{ // default viewer
-			$viewerName = 'DefaultViewer'; // TODO: config instelling van maken
-		}
-		
+			$viewerName = 'AmpersandViewer'; // TODO: config instelling van maken
+		}		
 		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
 		
 		$viewerClass = $GLOBALS['viewers'][$viewerName]['class'];
