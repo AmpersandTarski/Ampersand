@@ -4,11 +4,11 @@ define("EXPIRATION_TIME", 60*60 ); // expiration time in seconds
 
 class Session {
 	
-	/******* Roles *******/
-	
 	private $database;
 	public $role;
 	public $interface;
+	public $viewer;
+	public $atom;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -67,7 +67,32 @@ class Session {
 		}
 		
 		$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
-		if(!empty($interfaceName)) $this->interface = new UserInterface($interfaceName);
+		
+		if(!empty($interfaceName)) $this->interface = new UserInterface($interfaceName); // TODO: can be deleted when not needed anymore for Viewer::genEditableConceptInfo($session->interface->name) in index.php??
+		
+		// ATOM
+		if(isset($_REQUEST['atom'])){ // new atom selected
+			$atomId = $_REQUEST['atom'];
+		}elseif(isset($_SESSION['atom'])){ // interface already selected
+			$atomId = $_SESSION['atom'];
+		}else{ // default interface
+			$atomId = null;
+		}
+		
+		// VIEWER
+		if(isset($_REQUEST['viewer'])){ // new viewer selected
+			$viewerName = $_REQUEST['viewer'];
+		}elseif(isset($_SESSION['viewer'])){ // viewer already selected
+			$viewerName = $_SESSION['viewer'];
+		}else{ // default viewer
+			$viewerName = 'DefaultViewer'; // TODO: config instelling van maken
+		}
+		
+		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
+		
+		$viewerClass = $GLOBALS['viewers'][$viewerName]['class'];
+		if(!class_exists($viewerClass)) throw new Exception('Specified viewer: '.$viewerName.' does not exists');
+		$this->viewer = new $viewerClass($interfaceName, $atomId);
 	}
 	
 	// Prevent any copy of this object

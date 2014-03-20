@@ -66,11 +66,7 @@ RuleEngine::checkRules($session->role->id);
 				</div>
 			</div>
 			<div class="container">
-				<ul class="nav nav-pills">
-					<li id="overview">
-						<a href="?interface="><?php echo $dbName;?></a>
-					</li>
-					
+				<ul class="nav nav-pills">					
 					<?php foreach($session->role->getInterfaces(true) as $interface) 
 									echo '<li id="'.Viewer::escapeHtmlAttrStr($interface->name).'">' // the interface attribute is there so we can style specific menu items with css
 										.'<a href="?interface='.Viewer::escapeHtmlAttrStr($interface->name).'&atom=1">'
@@ -174,9 +170,10 @@ RuleEngine::checkRules($session->role->id);
 				<?php } ?>
 			</div>
 			
-			
 		<?php
-
+		
+		// print $session->viewer->getView();
+		
 		 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 
 			// Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.

@@ -2,7 +2,7 @@
 date_default_timezone_set('Europe/London');
 require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
-$apps[] = array('name' => 'Excel import', 'link' => IP . '/extensions/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload');
+$apps['ExcelImport'] = array('name' => 'Excel import', 'link' => IP . '/extensions/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
 
 class ImportExcel
 {

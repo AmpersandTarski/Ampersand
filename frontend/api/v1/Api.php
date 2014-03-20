@@ -102,12 +102,9 @@ class Api
      * @url GET interfaces/
 	 * @url GET interface/{interfaceName}/
 	 * @url GET interface/{interfaceName}/atom/{atom}
-	 * @view views/default.mustache
      */
     public function getInterfaces($interfaceName = NULL, $atom = "1")
     {
-		// HtmlFormat::$view = 'default.mustache';
-		
         if($interfaceName !== NULL){
 			$interface = new UserInterface($interfaceName);
 			return $interface->getAtomsAndLinks($atom); // "Return interface with properties as defined in class UserInterfae"
@@ -115,6 +112,7 @@ class Api
 			return UserInterface::getAllInterfaces(); // "Return list of all interfaces"
 			
 		}
+		
     }
 	
 	/**
@@ -123,8 +121,7 @@ class Api
      */	
 	public function getInterfaceWithView($viewerName, $interfaceName, $atom = "1")
 	{
-		$interface = new UserInterface($interfaceName);
-		return Viewer::viewInterface($interface, $atom);
+		return "TODO: implement viewer api";
 	
 	}
 

@@ -37,6 +37,15 @@ class Concept {
 		
 		return $atom;
 	}
+	
+	public static function getView($concept){
+		global $allViews;
+		
+		foreach ((array)$allViews as $view){
+			if ($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept']))) return $view;
+		}
+		return null;
+	}
 }
 
 ?>

@@ -111,6 +111,6 @@ use Luracast\Restler\Restler;
 
 $r = new Restler();
 $r->setSupportedFormats('JsonFormat', 'XmlFormat', 'HtmlFormat');
-$r->addAPIClass('Api');
+$r->addAPIClass('Api','');
 $r->handle();
 ?>

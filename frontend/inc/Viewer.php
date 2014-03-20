@@ -3,42 +3,6 @@
 class Viewer {
 	
 	// TODO: make non static or private function
-	public static function viewInterface($interface, $atomId = null){
-		$output = '';
-		$atomsAndLinks = $interface->getAtomsAndLinks($atomId);
-		
-		foreach ($atomsAndLinks as $atomId => $atom){
-			$output .= '<atom id="'.$atomId.'">'.$atomId.'</atom>';
-			
-			foreach ($atom as $interfaceName => $interface){
-				$output .= '<interface name="'.$interfaceName.'">';
-					
-					foreach ($interface as $item) {
-						if(is_array($item)) {
-							
-						}else{ 
-							$output .= '<atom id="'.$item.'">'.$item.'</atom>';
-						}
-					}
-				
-				$output .= '</interface>';
-			}
-		}
-		
-		return $output;
-		
-	}
-	
-	public static function getView($concept){
-		global $allViews;
-		
-		foreach ((array)$allViews as $view){
-			if ($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept']))) return $view;
-		}
-		return null;
-	}
-	
-	// TODO: make non static or private function
 	public static function viewAtom($atom, $srcConcept){
 		global $allViews; // from Generics.php
 		$database = Database::singleton();
@@ -78,7 +42,7 @@ class Viewer {
 			foreach (Concept::getAllAtoms($editableConcept) as $atom) {
 				$atomsAndViews[] = array ('atom' => $atom, 'view' => Viewer::viewAtom($atom, $editableConcept));
 			}
-			$atomViewMap[$editableConcept] = array ('hasView' => Viewer::getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
+			$atomViewMap[$editableConcept] = array ('hasView' => Concept::getView($editableConcept)!=null, 'atomViewMap' => $atomsAndViews);
 		}
 		
 		$atomViewMapJson = json_encode( $atomViewMap );
