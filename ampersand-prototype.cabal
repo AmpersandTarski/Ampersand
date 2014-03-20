@@ -33,7 +33,7 @@ Executable prototype
                     time == 1.4.0.1,
                     graphviz >=2999.16.0.0
   default-language: Haskell2010
-  ghc-options:      -rtsopts +RTS -K4000000000 -RTS
+  ghc-options:      -rtsopts +RTS -K4000000000 -RTS --HJO 20140320: Sentinel does not use this. Why is that???
 
 
   -- Unfortunately, unix and MissingH are not available on windows
