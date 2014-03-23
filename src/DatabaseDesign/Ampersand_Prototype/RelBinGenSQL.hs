@@ -563,18 +563,21 @@ selectGeneric i src trg tbl whr
                    | snd src=="tgt"    = "SELECT DISTINCT " ++ selectSelItem trg ++", "++selectSelItem src  -- added because of flipped expression (see ticket #342) 
                    | otherwise         = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
 selectSelItem :: (String, String) -> String
-selectSelItem (att,alias)
-  | unquote (afterPoint att) == unquote alias = quote att
-  | att == "1"                                = att++" AS "++alias
-  | otherwise                                 = quote att++" AS "++alias
- where myafterPoint ('.':xs) = xs
-       myafterPoint ( _ :xs) = myafterPoint xs
-       myafterPoint []       = []
-       afterPoint s = if myafterPoint s == "" then s else myafterPoint s
-       {- Examples:
-          afterPoint "person.name" = "name"
-          afterPoint "name" = "name"
-       -}
+selectSelItem (att',alias') = selectSelItemUnquoted (unquote att',unquote alias')
+    where
+        selectSelItemUnquoted :: (String, String) -> String
+        selectSelItemUnquoted (att,alias)
+          | unquote (afterPoint att) == alias = quote att
+          | att == "1"                        = att++" AS "++quote alias
+          | otherwise                         = quote att++" AS "++quote alias
+         where myafterPoint ('.':xs) = xs
+               myafterPoint ( _ :xs) = myafterPoint xs
+               myafterPoint []       = []
+               afterPoint s = if myafterPoint s == "" then s else myafterPoint s
+               {- Examples:
+                  afterPoint "person.name" = "name"
+                  afterPoint "name" = "name"
+               -}
 
 --WHY bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin (primitieve) expressie e is opgeslagen.
