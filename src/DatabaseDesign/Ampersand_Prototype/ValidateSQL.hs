@@ -159,7 +159,7 @@ performQuery flags queryStr =
                 ]
     ; queryResult <- executePHP . showPHP $ php 
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then do verboseLn flags{verboseP=True} ("******Problematic query:\n"++queryStr++"\n******")
+      then do verboseLn flags{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
               fatal 141 $ "PHP/SQL problem: "++queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
