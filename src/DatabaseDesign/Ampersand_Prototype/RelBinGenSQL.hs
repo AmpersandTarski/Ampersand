@@ -565,7 +565,8 @@ selectGeneric i src trg tbl whr
 selectSelItem :: (String, String) -> String
 selectSelItem (att,alias)
   | unquote (afterPoint att) == unquote alias = quote att
-  | otherwise                                 = quote att++" AS "++quote alias
+  | att == "1"                                = att++" AS "++alias
+  | otherwise                                 = quote att++" AS "++alias
  where myafterPoint ('.':xs) = xs
        myafterPoint ( _ :xs) = myafterPoint xs
        myafterPoint []       = []
