@@ -148,8 +148,7 @@ selectExpr fSpec i src trg expr
                               ++ ")"
                          )
     ECps{}  ->
-       let es = [ e | e<-exprCps2list expr, case e of EEps inter sgn -> inter/=source sgn&&inter/=target sgn; _ -> True ] in
-       case es of
+       case exprCps2list expr of
           (EDcV (Sign ONE _):fs@(_:_))
              -> let expr' = foldr1 (.:.) fs
                     src'  = noCollide' [trg'] (sqlExprSrc fSpec expr')
@@ -186,43 +185,69 @@ selectExpr fSpec i src trg expr
                                                    (  selectExprInFROM fSpec i src'  mid' e++" AS fst,"++phpIndent (i+5)++
                                                       selectExprInFROM fSpec i mid2' trg' f++" AS snd")
                                                    ("fst."++src'++" IS NOT NULL")
-          [e]-> selectExpr fSpec i src trg e -- apparently, some EEps expressions were removed, yielding fewer than two subexpressions. So selectExpr is called recursively.
           [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
-{-  Now there are at least two elements in es. So we treat the ECps expressions as poles-and-fences.
+          [e]-> selectExpr fSpec i src trg e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
+{-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
     Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
     In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
     The "outer poles" correspond to the source and target of the entire expression.
     To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
+SELECT DISTINCT ECps0.`C` AS `SrcC`, ECps0.`A` AS `TgtA`
+FROM `r` AS ECps0, `A`AS ECps2
+WHERE ECps0.`A`<>ECps2.`A
 -}
-          _ -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
-                    where
+          es -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
+                     where
                       mainSrc = selectSelItem ("ECps"++show n++"."++sqlSrc,src)
                                 where (n,_,sqlSrc,_) = head fenceExprs
                       mainTgt = selectSelItem ("ECps"++show n++"."++sqlTgt,trg) 
                                 where (n,_,_,sqlTgt) = last fenceExprs
-                   fromClause   = "FROM " ++ intercalate (',':phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
-                   whereClause
-                           = "WHERE " ++ intercalate (phpIndent i++"  AND ")
-                             [ "ECps"++show n++"."++lSQLtrg++"=ECps"++show m++"."++rSQLsrc
-                             | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
-                             ]
-                   -- fenceExprs lists the expressions and their SQL-fragments.
-                   -- In the poles-and-fences metaphor, they serve as the fences between the poles.
-                   fenceExprs = [ ( n                              -- the serial number of this fence (in between poles n and n+1)
-                                  , selectExprInFROM fSpec i srcAtt trgAtt e
-                                  , srcAtt
-                                  , trgAtt
-                                  )
-                                | (n, e) <- zip [(0::Int)..] es
-                                , let srcAtt = sqlExprSrc fSpec e
-                                , let trgAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
-                                ]
-                   fencesSQL = 
-                     sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
-                       (phpIndent i++selectClause ++
-                        phpIndent i++fromClause   ++
-                        phpIndent i++whereClause )
-               in fencesSQL
+                    fromClause   = "FROM " ++ intercalate (',':phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
+                    whereClause
+                            = "WHERE " ++ intercalate (phpIndent i++"  AND ")
+                              [ "ECps"++show n++"."++lSQLtrg++(if m==n+1 then "=" else "<>")++"ECps"++show m++"."++rSQLsrc
+                              | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
+                              ]
+                    -- fenceExprs lists the expressions and their SQL-fragments.
+                    -- In the poles-and-fences metaphor, they serve as the fences between the poles.
+                    fenceExprs = -- the first part introduces a 'pole' that consists of the source concept.
+                                 [ ( length es
+                                   , sqlConcept fSpec c
+                                   , cAtt
+                                   , cAtt
+                                   )
+                                 | length es>1, e@(ECpl (EDcI c)) <- [head es]
+                                 , let cAtt = (quote.sqlAttConcept fSpec.source) e
+                                 ]++
+                                 -- the second part is the main part, which does most of the work (parts 1 and 3 are rarely used)
+                                 [ ( n                              -- the serial number of this fence (in between poles n and n+1)
+                                   , selectExprInFROM fSpec i srcAtt tgtAtt e
+                                   , srcAtt
+                                   , tgtAtt
+                                   )
+                                 | (n, e) <- zip [(0::Int)..] es
+                                 , case e of
+                                    ECpl (EDcI _) -> False
+                                    EDcI _        -> False  -- if the normalizer works correctly, this case will never be visited.
+                                    _             -> True
+                                 , let srcAtt = sqlExprSrc fSpec e
+                                 , let tgtAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
+                                 ]++
+                                 -- the third part introduces a 'pole' that consists of the target concept.
+                                 [ ( length es
+                                   , sqlConcept fSpec c
+                                   , cAtt
+                                   , cAtt
+                                   )
+                                 | length es>1, e@(ECpl (EDcI c)) <- [last es]
+                                 , let cAtt = (quote.sqlAttConcept fSpec.target) e
+                                 ]
+                    fencesSQL = 
+                      sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
+                        (phpIndent i++selectClause ++
+                         phpIndent i++fromClause   ++
+                         phpIndent i++whereClause )
+                in fencesSQL
 
     (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
@@ -240,13 +265,16 @@ selectExpr fSpec i src trg expr
     (EDcI c)             -> sqlcomment i ("I["++name c++"]") 
                                 ( case c of
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
-                                    PlainConcept{} -> selectExprRelation fSpec i src trg (Isn c)
+                                    PlainConcept{} -> let cAtt = sqlAttConcept fSpec c in
+                                                      "  SELECT "++selectSelItem (cAtt,src)++", "++selectSelItem (cAtt,trg)++phpIndent (i+2)++"FROM "++sqlConcept fSpec c++phpIndent (i+2)++"WHERE "++cAtt++" IS NOT NULL"
+                      -- obsolete:  PlainConcept{} -> selectExprRelation fSpec i src trg (Isn c)
                                 )
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
     (EEps inter sgn)     -> sqlcomment i ("epsilon "++name inter++" "++showSign sgn)  -- showSign yields:   "["++(name.source) sgn++"*"++(name.target) sgn++"]"
                                 ( case inter of -- select the population of the most specific concept, which is the source.
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
-                                    PlainConcept{} -> selectExprRelation fSpec i src trg (Isn inter)
+                                    PlainConcept{} -> let cAtt = sqlAttConcept fSpec inter in
+                                                      "  SELECT "++selectSelItem (cAtt,src)++", "++selectSelItem (cAtt,trg)++phpIndent (i+2)++"FROM "++sqlConcept fSpec inter++phpIndent (i+2)++"WHERE "++cAtt++" IS NOT NULL"
                                 )
     (EDcD d)             -> selectExprRelation fSpec i src trg d
 
@@ -357,7 +385,7 @@ Based on this derivation:
               | target l == ONE = fatal 332 ("ONE is unexpected as target of "++showADL l)
               | target r == ONE = fatal 333 ("ONE is unexpected as target of "++showADL r)
               | otherwise
-               =              "SELECT " ++ srcAlias++"."++mainSrc++" AS "++src++", " ++tgtAlias++"."++mainTgt++" AS "++trg++
+               =              "SELECT " ++ srcAlias++"."++selectSelItem (mainSrc,src)++", " ++tgtAlias++"."++selectSelItem (mainTgt,trg)++
                  phpIndent i++"FROM " ++ sqlConcept fSpec (target l) ++ " AS "++srcAlias++", " ++ sqlConcept fSpec (target r) ++ " AS "++tgtAlias++
                  phpIndent i++"WHERE NOT EXISTS"++
                  phpIndent i++"      ( SELECT *"++
@@ -429,7 +457,7 @@ selectExprInFROM fSpec i src trg expr
                   else "( SELECT "++sqlAttConcept fSpec c++cptAlias++ phpIndent (i+5) ++
                        "  FROM "++cpt++" WHERE True )"
                   where
-                   cptAlias = if unquote src==unquote (sqlAttConcept fSpec c) then "" else " AS "++src
+                   cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
                    cpt = sqlConcept fSpec c
         EDcV{} 
           | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
