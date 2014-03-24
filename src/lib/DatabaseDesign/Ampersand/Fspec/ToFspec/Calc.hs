@@ -13,13 +13,13 @@ where
    import GHC.Exts (sortWith)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
    import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.ADL1.Expression                 (subst,isNeg)
+   import DatabaseDesign.Ampersand.ADL1.Expression
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),RuleClause(..),Quad(..),ECArule(..),InsDel(..),PAclause(..), DnfClause(..), dnf2expr)
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
    import Prelude hiding (head)
