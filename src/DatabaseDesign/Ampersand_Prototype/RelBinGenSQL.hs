@@ -535,7 +535,7 @@ selectExprRelation fSpec i srcAS trgAS dcl =
        case sqlRelPlugs fSpec expr of
          []           -> fatal 344 $ "No plug for expression "++show expr
          (plug,s,t):_ -> selectGeneric i ("",fldname s,srcAS) ("",fldname t,trgAS)
-                                         (name plug)
+                                         (quote (name plug))
                                          (intercalate " AND " [quote (fldname c)++" IS NOT NULL" | c<-nub [s,t]])
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
