@@ -55,8 +55,10 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
          ,Purpose(..), ExplObj(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
          )
-import DatabaseDesign.Ampersand.ADL1.Expression as X (
-         notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc)
+import DatabaseDesign.Ampersand.ADL1.Expression as X
+         ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
+         , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
+         , insParentheses)
 import DatabaseDesign.Ampersand.ADL1.ECArule as X (
          isAll, isCHC, isBlk, isNop, isDo, dos)
 import DatabaseDesign.Ampersand.ADL1.Rule as X (

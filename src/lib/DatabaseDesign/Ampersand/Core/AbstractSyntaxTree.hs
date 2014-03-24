@@ -40,7 +40,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , smallerConcepts, largerConcepts, rootConcepts
  , showSign
  , aMarkup2String
- , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
 )where
@@ -273,14 +272,12 @@ instance Traced ViewDef where
 data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
---   CLASSIFY Employee ISA Person   translates to Isa orig (C "Person") (C "Employee")
+--   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
-data A_Gen = Isa { genfp :: Origin          -- ^ the position of the GEN-rule
-                 , genspc :: A_Concept      -- ^ specific concept
+data A_Gen = Isa { genspc :: A_Concept      -- ^ specific concept
                  , gengen :: A_Concept      -- ^ generic concept
                  }
-           | IsE { genfp :: Origin          -- ^ the position of the GEN-rule
-                 , genspc :: A_Concept      -- ^ specific concept
+           | IsE { genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  }
 instance Show A_Gen where
@@ -289,8 +286,6 @@ instance Show A_Gen where
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
-instance Traced A_Gen where
-  origin = genfp
 
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
@@ -473,33 +468,6 @@ instance Flippable Expression where
                EEps i sgn -> EEps i (flp sgn)
                EDcV sgn   -> EDcV (flp sgn)
                EMp1{}     -> expr
-
-insParentheses :: Expression -> Expression
-insParentheses = insPar 0
-      where
-       wrap :: Integer -> Integer -> Expression -> Expression
-       wrap i j e' = if i<=j then e' else EBrk e'
-       insPar :: Integer -> Expression -> Expression
-       insPar i (EEqu (l,r)) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r))
-       insPar i (EImp (l,r)) = wrap i     0 (EImp (insPar 1 l, insPar 1 r))
-       insPar i (EUni (l,r)) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r))
-       insPar i (EIsc (l,r)) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r))
-       insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
-       insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
-       insPar i (ERrs (l,r)) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r))
-       insPar i (ECps (l,r)) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r))
-       insPar i (ERad (l,r)) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r))
-       insPar i (EPrd (l,r)) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r))
-       insPar _ (EKl0 e)     = EKl0 (insPar 10 e)
-       insPar _ (EKl1 e)     = EKl1 (insPar 10 e)
-       insPar _ (EFlp e)     = EFlp (insPar 10 e)
-       insPar _ (ECpl e)     = ECpl (insPar 10 e)
-       insPar i (EBrk f)     = insPar i f
-       insPar _ e@EDcD{}     = e
-       insPar _ e@EDcI{}     = e
-       insPar _ e@EEps{}     = e
-       insPar _ e@EDcV{}     = e
-       insPar _ e@EMp1{}     = e
 
 instance Association Expression where
  sign (EEqu (l,r)) = Sign (source l) (target r)

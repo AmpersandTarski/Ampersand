@@ -9,12 +9,13 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module DatabaseDesign.Ampersand.Fspec.ShowADL
-    ( ShowADL(..), LanguageDependent(..), exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list)
+    ( ShowADL(..), LanguageDependent(..))
 where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
 import DatabaseDesign.Ampersand.Classes
+import DatabaseDesign.Ampersand.ADL1 (insParentheses)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import Data.List hiding (head)
 import Prelude hiding (head)
@@ -27,18 +28,6 @@ head (a:_) = a
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowADL"
-
-exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
-exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
-exprIsc2list r            = [r]
-exprUni2list (EUni (l,r)) = exprUni2list l++exprUni2list r
-exprUni2list r            = [r]
-exprCps2list (ECps (l,r)) = exprCps2list l++exprCps2list r
-exprCps2list r            = [r]
-exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
-exprRad2list r            = [r]
-exprPrd2list (EPrd (l,r)) = exprPrd2list l++exprPrd2list r
-exprPrd2list r            = [r]
 
 class ShowADL a where
  showADL :: a -> String
@@ -270,13 +259,14 @@ instance ShowADL ViewSegment where
 -- showADL rel = show rel
 
 instance ShowADL Expression where
- showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+ showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]")
 -- NOTE: retain space after \\, because of unexpected side effects if it is used just before an 'r' or 'n'....
    where 
      showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
      showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
-      = showchar (insA_Parentheses expr)
+      = --let c = PlainConcept "A" in trace (showchar (insParentheses (ECps (ECps (EDcI c,EDcI c),ECps (EDcI c,EDcI c))))) $
+        showchar (insParentheses expr)
         where
           showchar (EEqu (l,r)) = showchar l++equi++showchar r
           showchar (EImp (l,r)) = showchar l++impl++showchar r
@@ -285,10 +275,6 @@ instance ShowADL Expression where
           showchar (EDif (l,r)) = showchar l++diff ++showchar r
           showchar (ELrs (l,r)) = showchar l++lresi++showchar r
           showchar (ERrs (l,r)) = showchar l++rresi++showchar r
-{-          showchar (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showchar  r
-                                         | otherwise                    = showchar (ECps (EDcI i,r))
-          showchar (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showchar  l
-                                         | otherwise                    = showchar (ECps (l,EDcI i)) -}
           showchar (ECps (l,r)) = showchar l++rMul++showchar r
           showchar (ERad (l,r)) = showchar l++rAdd++showchar r
           showchar (EPrd (l,r)) = showchar l++rPrd++showchar r
@@ -302,67 +288,6 @@ instance ShowADL Expression where
           showchar (EEps i _)   = "Eps{"++name i++"}"
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
-
-     insA_Parentheses :: Expression -> Expression
-     insA_Parentheses = insPar 0
-        where
-          wrap :: Integer -> Integer -> Expression -> Expression
-          wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
-          insPar :: Integer -> Expression -> Expression
-          insPar i  (EEqu (l,r)) = wrap i 0 (EEqu (insPar 1 l, insPar 1 r))
-          insPar i  (EImp (l,r)) = wrap i 0 (EImp (insPar 1 l, insPar 1 r))
-          insPar i x@EIsc{}      = wrap i 2 (foldr1 f [insPar 3 e | e<-exprIsc2list x ]) where f y z = EIsc (y,z)
-          insPar i x@EUni{}      = wrap i 2 (foldr1 f [insPar 3 e | e<-exprUni2list x ]) where f y z = EUni (y,z)
-          insPar i  (EDif (l,r)) = wrap i 4 (EDif (insPar 5 l, insPar 5 r))
-          insPar i  (ELrs (l,r)) = wrap i 6 (ELrs (insPar 7 l, insPar 7 r))
-          insPar i  (ERrs (l,r)) = wrap i 6 (ERrs (insPar 7 l, insPar 7 r))
-          insPar i x@ECps{}      = wrap i 8 (foldr1 f [insPar 9 e | e<-exprCps2list x ]) where f y z = ECps (y,z)
-          insPar i x@ERad{}      = wrap i 8 (foldr1 f [insPar 9 e | e<-exprRad2list x ]) where f y z = ERad (y,z)
-          insPar i x@EPrd{}      = wrap i 8 (foldr1 f [insPar 9 e | e<-exprPrd2list x ]) where f y z = EPrd (y,z)
-          insPar _  (EKl0 e)     = EKl0 (insPar 10 e)
-          insPar _  (EKl1 e)     = EKl1 (insPar 10 e)
-          insPar _  (EFlp e)     = EFlp (insPar 10 e)
-          insPar _  (ECpl e)     = ECpl (insPar 10 e)
-          insPar i  (EBrk e)     = insPar i e
-          insPar _  x            = x
-
-{-
-   insPar 0 (r/\s/\t/\x/\y|-p)
-=
-   wrap 0 0 (insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p)
-=
-   insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p
-=
-   wrap 1 2 (foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ]) |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 e | e<-[r,s,t,x,y] ] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [insPar 3 r,insPar 3 s,insPar 3 t,insPar 3 x,insPar 3 y] |- p   where f x y = EIsc (x,y)
-=
-   foldr1 f [r,s,t,x,y] |- p   where f x y = EIsc (x,y)
-=
-   r/\s/\t/\x/\y |- p
-
-
-
-   insPar 0 (r;s;t;x;y|-p)
-=
-   wrap 0 0 (insPar 1 (r;s;t;x;y) |- insPar 1 p)
-=
-   insPar 1 (r;s;t;x;y) |- insPar 1 p
-=
-   wrap 1 8 (insPar 8 r ; insPar 8 (s;t;x;y)) |- p
-=
-   r; insPar 8 (s;t;x;y) |- p
-=
-   r; wrap 8 8 (insPar 8 s; insPar 8 (t;x;y)) |- p
-=
-   r; insPar 8 s; insPar 8 (t;x;y) |- p
-=
-   r; s; insPar 8 (t;x;y) |- p
--}
 
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)

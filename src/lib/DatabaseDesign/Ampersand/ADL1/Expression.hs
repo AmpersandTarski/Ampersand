@@ -4,10 +4,14 @@ module DatabaseDesign.Ampersand.ADL1.Expression (
                        subst
                       ,foldlMapExpression,foldrMapExpression
                       ,primitives,isMp1, isEEps
-                      ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl)
+                      ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
+                      ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
+                      ,insParentheses)
 where
 import DatabaseDesign.Ampersand.Basics (uni)
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+--import Debug.Trace
+import Data.List
 
 -- fatal :: Int -> String -> a
 -- fatal = fatalMsg "ADL1.Expression"
@@ -137,3 +141,77 @@ isMp1 _ = False
 isEEps :: Expression -> Bool
 isEEps EEps{} = True
 isEEps _ = False
+
+exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
+exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
+exprIsc2list r            = [r]
+exprUni2list (EUni (l,r)) = exprUni2list l++exprUni2list r
+exprUni2list r            = [r]
+exprCps2list (ECps (l,r)) = exprCps2list l++exprCps2list r
+exprCps2list r            = [r]
+exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
+exprRad2list r            = [r]
+exprPrd2list (EPrd (l,r)) = exprPrd2list l++exprPrd2list r
+exprPrd2list r            = [r]
+
+insParentheses :: Expression -> Expression
+insParentheses expr = insPar 0 expr
+   where
+     wrap :: Integer -> Integer -> Expression -> Expression
+     wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
+     insPar :: Integer -> Expression -> Expression
+     insPar i  (EEqu (l,r)) = wrap i 0 (insPar 1 l .==. insPar 1 r)
+     insPar i  (EImp (l,r)) = wrap i 0 (insPar 1 l .|-. insPar 1 r)
+     insPar i x@EIsc{}      = wrap i 2 (foldr1 (./\.) [insPar 3 e | e<-exprIsc2list x ])
+     insPar i x@EUni{}      = wrap i 2 (foldr1 (.\/.) [insPar 3 e | e<-exprUni2list x ])
+     insPar i  (EDif (l,r)) = wrap i 4 (insPar 5 l .-. insPar 5 r)
+     insPar i  (ELrs (l,r)) = wrap i 6 (insPar 7 l ./. insPar 7 r)
+     insPar i  (ERrs (l,r)) = wrap i 6 (insPar 7 l .\. insPar 7 r)
+     insPar i x@ECps{}      = wrap i 8 (foldr1 (.:.) [insPar 9 e | e<-exprCps2list x ])
+     insPar i x@ERad{}      = wrap i 8 (foldr1 (.!.) [insPar 9 e | e<-exprRad2list x ])
+     insPar i x@EPrd{}      = wrap i 8 (foldr1 (.*.) [insPar 9 e | e<-exprPrd2list x ])
+     insPar _  (EKl0 e)     = EKl0 (insPar 10 e)
+     insPar _  (EKl1 e)     = EKl1 (insPar 10 e)
+     insPar _  (EFlp e)     = EFlp (insPar 10 e)
+     insPar _  (ECpl e)     = ECpl (insPar 10 e)
+     insPar i  (EBrk e)     = insPar i e
+     insPar _  x            = x
+
+{-
+   insPar 0 (r/\s/\t/\x/\y |- p)
+=
+   wrap 0 0 (insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p)
+=
+   insPar 1 (r/\s/\t/\x/\y) |- insPar 1 p
+=
+   wrap 1 2 (foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ]) |- p   where f x y = EIsc (x,y)
+=
+   foldr1 f [insPar 3 e | e<-exprIsc2list (r/\s/\t/\x/\y) ] |- p   where f x y = EIsc (x,y)
+=
+   foldr1 f [insPar 3 e | e<-[r,s,t,x,y] ] |- p   where f x y = EIsc (x,y)
+=
+   foldr1 f [insPar 3 r,insPar 3 s,insPar 3 t,insPar 3 x,insPar 3 y] |- p   where f x y = EIsc (x,y)
+=
+   foldr1 f [r,s,t,x,y] |- p   where f x y = EIsc (x,y)
+=
+   r/\s/\t/\x/\y |- p
+
+
+
+   insPar 0 (r;s;t;x;y |- p)
+=
+   wrap 0 0 (insPar 1 (r;s;t;x;y) |- insPar 1 p)
+=
+   insPar 1 (r;s;t;x;y) |- insPar 1 p
+=
+   wrap 1 8 (insPar 8 r ; insPar 8 (s;t;x;y)) |- p
+=
+   r; insPar 8 (s;t;x;y) |- p
+=
+   r; wrap 8 8 (insPar 8 s; insPar 8 (t;x;y)) |- p
+=
+   r; insPar 8 s; insPar 8 (t;x;y) |- p
+=
+   r; s; insPar 8 (t;x;y) |- p
+-}
+

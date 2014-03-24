@@ -81,8 +81,8 @@ chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
 
 -- | This function returns a header of a chapter
 chptHeader :: Lang -> Chapter -> Blocks
-chptHeader lang cpt 
- = header 1 (chptTitle lang cpt )
+chptHeader lang chap 
+ = header 1 (chptTitle lang chap ) <> singleton (Para [xrefLabel chap])
  
 chptTitle :: Lang -> Chapter -> Inlines
 chptTitle lang cpt =

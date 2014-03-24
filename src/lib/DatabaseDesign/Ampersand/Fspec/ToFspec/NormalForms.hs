@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list)
+  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify)
 where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.ECArule

@@ -153,13 +153,11 @@ pCtx2aCtx
 
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg@PGen{}
-       = Isa{genfp  = gen_fp pg
-            ,gengen = pCpt2aCpt (gen_gen pg)
+       = Isa{gengen = pCpt2aCpt (gen_gen pg)
             ,genspc = pCpt2aCpt (gen_spc pg)
             }
     pGen2aGen pg@P_Cy{}
-       = IsE { genfp = gen_fp pg
-             , genrhs = map pCpt2aCpt (gen_rhs pg)
+       = IsE { genrhs = map pCpt2aCpt (gen_rhs pg)
              , genspc = pCpt2aCpt (gen_spc pg)
              }
 

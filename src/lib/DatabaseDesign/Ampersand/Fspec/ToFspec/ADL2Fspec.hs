@@ -11,11 +11,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (conjNF,disjNF,normPA, exprUni2list, exprIsc2list, exprCps2list)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (conjNF,disjNF,normPA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
-   import DatabaseDesign.Ampersand.ADL1.Expression
    import Text.Pandoc
    import Data.Maybe
    import Data.List (nub,nubBy,intercalate,intersect,partition,group,delete)
