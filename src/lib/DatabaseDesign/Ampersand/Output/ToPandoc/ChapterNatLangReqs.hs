@@ -212,7 +212,7 @@ chpNatLangReqs lev fSpec flags =
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
                                                                   commaNLPandoc (Str "en") cs++
-                                                                  [ Str ". Daarna worden de basiszinnen en regels geïntroduceerd."]
+                                                                  [ Str ". Daarna worden de afspraken geïntroduceerd."]
                                                        ([c],_) -> [ Str "Deze sectie introduceert het concept "
                                                                   , c]
                                                        (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
@@ -234,7 +234,7 @@ chpNatLangReqs lev fSpec flags =
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "At this point, the definitions of "]++
                                                                   commaEngPandoc (Str "and") cs++
-                                                                  [ Str " are given. Directly after that, the basic sentences and rules are introduced."]
+                                                                  [ Str " are given. Directly after that, the agreements are introduced."]
                                                        ([c],_) -> [ Str "This section introduces concept "
                                                                   , Emph [c]]
                                                        (cs ,_) -> [ Str "This section introduces concepts "]++

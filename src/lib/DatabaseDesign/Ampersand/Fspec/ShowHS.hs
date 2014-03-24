@@ -8,7 +8,7 @@ where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
---   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
+   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
 --   import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
    import Data.List
    import DatabaseDesign.Ampersand.Classes
@@ -597,7 +597,7 @@ where
     showHS flags indent r@(Ru _ _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
       = intercalate indent 
         ["Ru{ rrnm   = " ++ show (rrnm   r)
-        ,"  , rrexp  = " ++ showHS flags (indent++"             ") (rrexp  r)
+        ,"  , rrexp  = -- " ++ showADL (rrexp  r) ++ indent++"             " ++ showHS flags (indent++"             ") (rrexp  r)
         ,"  , rrfps  = " ++ showHS flags "" (rrfps  r)
         ,"  , rrmean = " ++ showHS flags (indent++"             ") (rrmean r)
         ,"  , rrmsg  = " ++ showHS flags "" (rrmsg  r)
@@ -726,8 +726,8 @@ where
    instance ShowHS A_Gen where
     showHS flags _ gen =
       case gen of 
-        Isa{} -> "Isa ("++showHS flags "" (genfp gen)++") "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
-        IsE{} -> "IsE ("++showHS flags "" (genfp gen)++") "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "
+        Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
+        IsE{} -> "IsE "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "
    
    instance ShowHSName Declaration where
     showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation

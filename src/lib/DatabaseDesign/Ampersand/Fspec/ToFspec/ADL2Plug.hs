@@ -17,7 +17,7 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 import GHC.Exts (sortWith)
---import Debug.Trace
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
@@ -35,7 +35,7 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
         gPlugs :: [PlugSQL]
         gPlugs   = --trace "---\nStart makeEntityTables " $
                    --trace ("with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n")
-                         (makeEntityTables flags context entityDcls (ctxgs context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
+                         (makeEntityTables flags context entityDcls (gens context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable context dcl totsurs
@@ -267,14 +267,29 @@ makeEntityTables flags context allDcls isas conceptss exclusions
         "\nexclusions:" ++  concat ["\n  "++showHSName r           | r<-exclusions]++
         "\nattRels:" ++     concat ["\n  "++showHS flags "    " e  | e<-attRels]++
         "\n"
-    rootss = map (rootConcepts isas) conceptss
--- Obsolete:  (because kernels are found in the fSpec)
---    kernels = [ nub (roots++concat [ smallerConcepts isas c | c <- roots ])
---              | roots<-rootss ]
-    kernels = foldl f (group (delete ONE (concs context))) (gens context)
-            where f disjuncLists g = concat haves : nohaves
-                    where
-                      (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
+-- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
+    kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
+    kernPartition specialzs
+     = foldl f (group (delete ONE (concs context))) specialzs
+       where f disjuncLists g = concat haves : nohaves
+               where
+                 (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
+    preKernels = kernPartition (gens context) -- ^ Step 1: compute the kernels from the isa-pairs from the context
+    extraIsas  -- Step 2: Maybe extra isa-pairs are needed to ensure that each kernel has precisely one largest concept
+       = concat
+         [ case [c | c<-kernel, null (largerConcepts isas c)] of -- determine how many concepts in one kernel are largest
+             [_] -> []
+             rs  -> [ Isa{gengen=rootConcept, genspc=c} | c<-rs ]
+         | (rootConcept,kernel) <- zip [rc | i<-[0::Int ..]
+                                           , let rc=PlainConcept ("rootConcept"++show i)
+                                           , rc `notElem` concs context ]
+                                       preKernels
+         ]
+    kernels     -- Step 3: compute the kernels
+     = [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
+       | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernels with the extra isa-pairs.
+       , let largerCs = [c | c<-kernel, null (largerConcepts isas c)]   -- get the set of largest concepts (each kernel has precisely one)
+       ]
     kernelsWithAttributes = dist attRels kernels []
       where 
         dist :: (Association attrib, Show attrib) => [attrib] -> [[A_Concept]] -> [([A_Concept], [attrib])] -> [([A_Concept], [attrib])]
