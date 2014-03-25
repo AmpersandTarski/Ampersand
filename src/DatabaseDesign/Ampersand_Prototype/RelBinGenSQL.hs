@@ -252,7 +252,7 @@ WHERE ECps0.`A`<>ECps2.`A
     (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
     (EMp1 atom _) -> sqlcomment i "case: EMp1 atom."
-                      ("SELECT "++quote(show atom)++" AS "++src++", "++quote(show atom)++" AS "++trg)
+                      ("SELECT "++show atom++" AS "++src++", "++show atom++" AS "++trg)
     (EDcV (Sign s t))    -> let concNames pfx c = [([],"","1") |c==ONE]++[([quote (name p) ++ " AS "++pfx],pfx,quote (fldname s')) | (p,s',_) <- sqlRelPlugs fSpec (EDcI c)]
                             in sqlcomment i ("case: (EDcV (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (srcPrefix,src',src) (tgtPrefix,trg',trg) tbls "1"
