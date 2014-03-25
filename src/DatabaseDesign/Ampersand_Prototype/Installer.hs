@@ -6,11 +6,11 @@ import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
-import DatabaseDesign.Ampersand_Prototype.Version 
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprPrimitive)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Installer"
+--import DatabaseDesign.Ampersand_Prototype.Version 
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Installer"
 
 
 --  import Debug.Trace
@@ -81,12 +81,8 @@ installer fSpec flags = intercalate "\n  "
         ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
         ]
         ++
-        ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
-        | d<-declarations fSpec, decusr d
-        , let dbrel = sqlRelPlugs fSpec (EDcD d)
-        , if null dbrel then fatal 82 "null dbrel" else True
-        , let (_,srcField,trgField) = head dbrel
-        , let qry = selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d]
+        ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++selectExprPrimitive fSpec (-1) "" "" (EDcD d)++"\"));" 
+        | d<-declarations fSpec, decusr d ]
         ++
         ["  fwrite($dumpfile, \"ENDCONTEXT\");"
         ,"  fclose($dumpfile);"
