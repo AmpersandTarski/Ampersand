@@ -41,7 +41,7 @@ selectdecl :: (IConnection conn) => conn
 selectdecl conn fSpec dclName
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where stmt = selectExprPrimitive fSpec (-1) "fld1" "fld2" (EDcD dcl)
+   where stmt = selectExprRelation fSpec (-1) "fld1" "fld2" dcl
          dcl = therel dclName "" ""
          therel ::String -> String -> String -> Declaration 
          therel relname relsource reltarget 
