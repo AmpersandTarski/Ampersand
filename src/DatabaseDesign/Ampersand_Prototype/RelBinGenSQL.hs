@@ -454,9 +454,9 @@ selectExprInFROM fSpec i src trg expr
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
         EDcI c -> if cptAlias==""
                   then cpt
-                  else "( SELECT "++sqlAttConcept fSpec c++cptAlias++ phpIndent (i+5) ++
-                       "  FROM "++quote cpt++ phpIndent (i+5) ++
-                       "  WHERE True )"
+                  else "( /* Case EDcI "++name c++" */" ++ phpIndent (i+5) ++
+                       "  SELECT "++sqlAttConcept fSpec c++" AS "++cptAlias++ phpIndent (i+5) ++
+                       "  FROM "++quote cpt++" )"
                   where
                    cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
                    cpt = sqlConcept fSpec c
