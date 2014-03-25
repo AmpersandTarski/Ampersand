@@ -11,7 +11,6 @@ where
 import DatabaseDesign.Ampersand.Basics (uni)
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
-import Data.List
 
 -- fatal :: Int -> String -> a
 -- fatal = fatalMsg "ADL1.Expression"
