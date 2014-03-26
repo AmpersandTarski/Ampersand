@@ -14,7 +14,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 
 chpInterfacesPics :: Fspc -> Options -> [Picture]
 chpInterfacesPics fSpec flags =
-   concat [picKnowledgeGraph flags fSpec act : [picSwitchboard flags fSpec act | graphic flags] | act <- fActivities fSpec ]
+   concat [picKnowledgeGraph flags fSpec (name act++"KnowledgeGraph") act : [picSwitchboard flags fSpec (name act++"Switchboard") act | graphic flags] | act <- fActivities fSpec ]
 chpInterfacesBlocks :: Int -> Fspc -> Options -> Blocks
 chpInterfacesBlocks lev fSpec flags =
    foldr (<>) mempty (map interfaceChap (fActivities fSpec))  
@@ -171,23 +171,23 @@ chpInterfacesBlocks lev fSpec flags =
    txtKnowledgeGraph :: Activity -> [Block]
    txtKnowledgeGraph act
     = (case fsLang fSpec of                                     -- announce the knowledge graph
-           Dutch   -> [Para [ Str "Figuur ", xrefReference (picKnowledgeGraph flags fSpec act) 
+           Dutch   -> [Para [ Str "Figuur ", xrefReference (picKnowledgeGraph flags fSpec (name act++"KnowledgeGraph") act) 
                             , Str " geeft de kennisgraaf weer voor deze interface."]]
-           English -> [Para [ Str "Figure ", xrefReference (picKnowledgeGraph flags fSpec act)
+           English -> [Para [ Str "Figure ", xrefReference (picKnowledgeGraph flags fSpec (name act++"KnowledgeGraph") act)
                             , Str " shows the knowledge graph of this interface."]]
       )
-      ++ [Plain (xrefFigure1 (picKnowledgeGraph flags fSpec act))]    -- draw the knowledge graph
+      ++ [Plain (xrefFigure1 (picKnowledgeGraph flags fSpec (name act++"KnowledgeGraph") act))]    -- draw the knowledge graph
 
    txtSwitchboard :: Activity ->[Block]
    txtSwitchboard act
     = (if name act==name (head (fActivities fSpec)) then switchboardIntro else [])++
      (case fsLang fSpec of                                     -- announce the switchboard diagram
-           Dutch   -> [Para [ Str "Figuur ", xrefReference (picSwitchboard flags fSpec act)
+           Dutch   -> [Para [ Str "Figuur ", xrefReference (picSwitchboard flags fSpec (name act++"Switchboard") act)
                             , Str " geeft het schakelpaneel (switchboard diagram) weer voor deze interface."]]
-           English -> [Para [ Str "Figure ", xrefReference (picSwitchboard flags fSpec act)
+           English -> [Para [ Str "Figure ", xrefReference (picSwitchboard flags fSpec (name act++"Switchboard") act)
                             , Str " shows the switchboard diagram of this interface."]]
      )
-     ++ [Plain (xrefFigure1 (picSwitchboard flags fSpec act))]        -- draw the switchboard
+     ++ [Plain (xrefFigure1 (picSwitchboard flags fSpec (name act++"Switchboard") act))]        -- draw the switchboard
 
    switchboardIntro :: [Block]
    switchboardIntro
@@ -225,22 +225,22 @@ chpInterfacesBlocks lev fSpec flags =
                    ]
      ]
 
-picKnowledgeGraph :: Options -> Fspc -> Activity ->Picture
-picKnowledgeGraph flags fSpec act
-    = (makePicture flags fSpec Plain_CG act)  -- the Picture that represents this interface's knowledge graph
+picKnowledgeGraph :: Options -> Fspc -> String -> Activity ->Picture
+picKnowledgeGraph flags fSpec nm act
+    = (makePicture flags fSpec nm Plain_CG act)  -- the Picture that represents this interface's knowledge graph
         {caption = case fsLang fSpec of
-                    Dutch   ->"Taaldiagram van "++name act
-                    English ->"Language diagram of "++name act}
+                    Dutch   ->"Taaldiagram van "++nm
+                    English ->"Language diagram of "++nm}
 --     where
---      knGph = conceptualGraph fSpec flags Plain_CG act         -- the DotGraph String that represents this interface's knowledge graph
+--      knGph = conceptualGraph fSpec flags nm Plain_CG act         -- the DotGraph String that represents this interface's knowledge graph
 --      kn    = printDotGraph knGph                     -- the String that represents this interface's knowledge graph
 
-picSwitchboard :: Options -> Fspc -> Activity -> Picture
-picSwitchboard flags fSpec act
-    = (makePicture flags fSpec Plain_CG (switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
+picSwitchboard :: Options -> Fspc -> String -> Activity -> Picture
+picSwitchboard flags fSpec nm act
+    = (makePicture flags fSpec nm Plain_CG (switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
         {caption = case fsLang fSpec of
-                    Dutch   ->"Schakelpaneel van "++name act
-                    English ->"Switchboard of "++name act}
+                    Dutch   ->"Schakelpaneel van "++nm
+                    English ->"Switchboard of "++nm}
 --     where
 --      sbGph = switchboardAct fSpec act                              -- the DotGraph String that represents this interface's knowledge graph
 --      sb    = printDotGraph sbGph                                -- the String that represents this interface's knowledge graph

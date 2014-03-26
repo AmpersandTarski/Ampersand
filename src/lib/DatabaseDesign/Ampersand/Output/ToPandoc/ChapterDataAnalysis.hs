@@ -94,7 +94,7 @@ classificationSection lev fSpec flags = (theBlocks,pict)
   classificationModel = clAnalysis fSpec flags
 
   pict :: Picture
-  pict = (makePicture flags fSpec Gen_CG classificationModel)
+  pict = (makePicture flags fSpec (name fSpec++"Classification") Gen_CG classificationModel)
           {caption = case fsLang fSpec of
                        Dutch   ->"Classificatie van "++name fSpec
                        English ->"Classification of "++name fSpec}
@@ -138,7 +138,7 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
 
   pict :: Picture
-  pict = (makePicture flags fSpec Plain_CG oocd)
+  pict = (makePicture flags fSpec (name fSpec++"LogicalDataModel") Plain_CG oocd)
            {caption = case fsLang fSpec of
                         Dutch   -> "Logisch gegevensmodel van "++name fSpec
                         English -> "Logical data model of "++name fSpec}      
@@ -382,7 +382,7 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
                          )
                      )
    pict :: Picture
-   pict = (makePicture flags fSpec Plain_CG oocd)
+   pict = (makePicture flags fSpec (name fSpec++"TechnicalDataModel") Plain_CG oocd)
             {caption = case fsLang fSpec of
                          Dutch   -> "Technisch gegevensmodel van "++name fSpec
                          English -> "Technical data model of "++name fSpec}      

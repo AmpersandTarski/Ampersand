@@ -17,8 +17,9 @@ import DatabaseDesign.Ampersand.Basics (fatalMsg,eqCl,Collection(..),Identified(
 import DatabaseDesign.Ampersand.Fspec.Graphic.Picture
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (ClassDiag,classdiagram2dot)
 import Data.GraphViz.Attributes.Complete
-import Data.List (nub)
+import Data.List -- (nub)
 import Data.String
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Graphic.Graphics"
@@ -55,9 +56,10 @@ data DrawingType
       | Gen_CG     -- Conceptual graph that focuses on generalizations
 
 -- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
-class Identified a => Dotable a where
+class Dotable a where
    conceptualGraph :: Fspc
                       -> Options              -- the options
+                      -> String               -- the name of the conceptual graph
                       -> DrawingType          -- this parameter allows for different alternative graphs for the same a
                       -> a -> DotGraph String -- yields a function that maps a to a DotGraph
    -- makePicture is an abbreviation of three steps:
@@ -66,6 +68,7 @@ class Identified a => Dotable a where
    --  3. makePictureObj:   creates a Picture data structure, containing the required metadata needed for production.
    makePicture :: Options
                -> Fspc
+               -> String  -- the name of the picture
                -> DrawingType
                -> a
                -> Picture
@@ -73,11 +76,11 @@ class Identified a => Dotable a where
 {- This instance of Dotable is meant for drawing data models -}
 instance Dotable ClassDiag where
    conceptualGraph _ _ _ _ = fatal 58 "TODO: ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd."
-   makePicture flags fSpec _ cd =
-          makePictureObj flags (fsLang fSpec) (name cd) PTClassDiagram (classdiagram2dot flags cd) 
+   makePicture flags fSpec nm _ cd =
+          makePictureObj flags (fsLang fSpec) nm PTClassDiagram (classdiagram2dot flags nm cd) 
 
 instance Dotable A_Concept where
-   conceptualGraph fSpec flags _ c = conceptual2Dot flags (name c) cpts rels idgs
+   conceptualGraph fSpec flags nm _ c = conceptual2Dot flags nm cpts rels idgs
          where 
           rs    = [r | r<-udefrules fSpec, c `elem` concs r]
           idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
@@ -88,14 +91,14 @@ instance Dotable A_Concept where
           rels  = [r | r<-declsUsedIn rs   -- the use of "declsUsedIn" restricts relations to those actually used in rs
                      , not (isProp r)    -- r is not a property
                      ]
-   makePicture flags fSpec variant x =
-          (makePictureObj flags (fsLang fSpec) (name x) PTConcept . conceptualGraph fSpec flags variant) x
+   makePicture flags fSpec nm variant x =
+          (makePictureObj flags (fsLang fSpec) nm PTConcept . conceptualGraph fSpec flags nm variant) x
 
 instance Dotable Pattern where
    -- | The Plain_CG of pat makes a picture of at least the declsUsedIn within pat; 
    --   extended with a limited number of more general concepts;
    --  and rels to prevent disconnected concepts, which can be connected given the entire context.
-   conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) cpts (rels `uni` xrels) idgs
+   conceptualGraph fSpec flags nm Plain_CG pat = conceptual2Dot flags nm cpts (rels `uni` xrels) idgs
         where 
          --DESCR -> get concepts and arcs from pattern
           idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
@@ -112,16 +115,18 @@ instance Dotable Pattern where
                         , source r /= target r, decusr r
                         ]
    -- | The Rel_CG of pat makes a picture of declarations and gens within pat only 
-   conceptualGraph fSpec flags Rel_CG pat = conceptual2Dot flags (name pat) cpts rels idgs
+   conceptualGraph fSpec flags nm Rel_CG pat
+    = conceptual2Dot flags nm cpts rels idgs
         where 
          --DESCR -> get concepts and arcs from pattern
           idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-          gs   = fsisa fSpec 
-          cpts = concs (declarations pat) `uni` concs (gens pat)
-          rels = [r | r@Sgn{}<-declarations pat
+          gs   = fsisa fSpec
+          decs = declarations pat `uni` declsUsedIn (udefrules pat)
+          cpts = concs decs `uni` concs (gens pat)
+          rels = [r | r@Sgn{}<-decs
                     , not (isProp r), decusr r    -- r is not a property
                     ]
-   conceptualGraph fSpec flags Gen_CG pat = conceptual2Dot flags (name pat) cpts [] edges
+   conceptualGraph fSpec flags nm Gen_CG pat = conceptual2Dot flags nm cpts [] edges
         where 
          --DESCR -> get concepts and arcs from pattern
           idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
@@ -134,11 +139,11 @@ instance Dotable Pattern where
                  f  _   []  result = result
                  f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
                                      where result' = result++new
-   makePicture flags fSpec variant pat =
-          (makePictureObj flags (fsLang fSpec) (name pat) PTPattern . conceptualGraph fSpec flags variant) pat
+   makePicture flags fSpec nm variant pat =
+          (makePictureObj flags (fsLang fSpec) nm PTPattern . conceptualGraph fSpec flags nm variant) pat
 
 instance Dotable FProcess where
-   conceptualGraph fSpec flags _ fproc = conceptual2Dot flags (name fproc) cpts rels idgs
+   conceptualGraph fSpec flags nm _ fproc = conceptual2Dot flags nm cpts rels idgs
         where 
          --DESCR -> get concepts and arcs from process
           idgs  = [(s,g) |(s,g)<-gs,  g `elem` cpts']  --  all isa edges
@@ -148,14 +153,14 @@ instance Dotable FProcess where
           rels  = [r | r@Sgn{}<-declsUsedIn (fpProc fproc), decusr r
                      , not (isProp r)    -- r is not a property
                      ]
-   makePicture flags fSpec _ x =
-          (makePictureObj flags (fsLang fSpec) (name x) PTProcess . processModel) x
+   makePicture flags fSpec nm _ x =
+          (makePictureObj flags (fsLang fSpec) nm PTProcess . processModel) x
 {- inspired by:
-   makePicture flags fSpec _ cd =
-          makePictureObj flags (fsLang fSpec) (name cd) PTClassDiagram (classdiagram2dot flags cd) -}
+   makePicture flags fSpec nm _ cd =
+          makePictureObj flags (fsLang fSpec) nm PTClassDiagram (classdiagram2dot flags nm cd) -}
 
 instance Dotable Activity where
-   conceptualGraph fSpec flags _ ifc = conceptual2Dot flags (name ifc) cpts rels idgs
+   conceptualGraph fSpec flags nm _ ifc = conceptual2Dot flags nm cpts rels idgs
          where
          -- involve all rules from the specification that are affected by this interface
           rs         = [r | r<-udefrules fSpec, affected r]
@@ -169,16 +174,16 @@ instance Dotable Activity where
           rels = [r | r@Sgn{}<-declsUsedIn ifc, decusr r
                     , not (isProp r)    -- r is not a property
                     ]
-   makePicture flags fSpec variant x =
-          (makePictureObj flags (fsLang fSpec) (name x) PTFinterface . conceptualGraph fSpec flags variant) x
+   makePicture flags fSpec nm variant x =
+          (makePictureObj flags (fsLang fSpec) nm PTFinterface . conceptualGraph fSpec flags nm variant) x
 
 instance Dotable SwitchBdDiagram where
-   conceptualGraph _ _ _ = sbdotGraph
-   makePicture flags fSpec variant x =
-          (makePictureObj flags (fsLang fSpec) (name x) PTSwitchBoard . conceptualGraph fSpec flags variant) x
+   conceptualGraph _ _ _ _ = sbdotGraph
+   makePicture flags fSpec nm variant x =
+          (makePictureObj flags (fsLang fSpec) nm PTSwitchBoard . conceptualGraph fSpec flags nm variant) x
 
 instance Dotable Rule where
-   conceptualGraph fSpec flags _ r = conceptual2Dot flags (name r) cpts rels idgs
+   conceptualGraph fSpec flags nm _ r = conceptual2Dot flags nm cpts rels idgs
     where 
      idgs = [(s,g) | (s,g)<-fsisa fSpec
                    , g `elem` concs r || s `elem` concs r]  --  all isa edges
@@ -186,8 +191,8 @@ instance Dotable Rule where
      rels = [d | d@Sgn{}<-declsUsedIn r, decusr d
                , not (isProp d)    -- d is not a property
                ]
-   makePicture flags fSpec variant x =
-          (makePictureObj flags (fsLang fSpec) (name x)  PTRule . conceptualGraph fSpec flags variant) x
+   makePicture flags fSpec nm variant x =
+          (makePictureObj flags (fsLang fSpec) nm PTRule . conceptualGraph fSpec flags nm variant) x
 
 -- Chapter 2: Formation of a conceptual graph as a DotGraph data structure.
 conceptual2Dot :: Options                   -- ^ the flags 
