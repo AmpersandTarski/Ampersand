@@ -2,7 +2,7 @@
 -- This module is for the definition of Picture and PictureList.
 module DatabaseDesign.Ampersand.Fspec.Graphic.Picture
     ( Picture(origName,uniqueName,caption,relPng,pType,scale) -- Other fields are hidden, for there is no need for them outside this module...
-    , Pictures,PictType(..),uniquePicName
+    , Pictures,PictType(..)
     , makePictureObj,writePicture
     )
 where
@@ -94,13 +94,11 @@ makePictureObj flags lang nm pTyp dotsource
                     | otherwise = dirOutput flags  </> relImgPath
          relImgPath | genAtlas flags = "images" 
                     | otherwise = []
-         cdName = uniquePicName pTyp nm
+         cdName = escapeNonAlphaNum (picType2prefix pTyp++nm)
 --GMI voor Han -> (isAlpha c) verwijdert uit lijst comprehensie, dit gooit nummers (bv. rule nummers) uit de naam weg
 --       zodat alle ongelabelde rules de naam RUL_Rule hebben, dat is niet uniek.
 --       Deze functie garandeert sowieso geen uniekheid, is die garantie nodig?
 --       unieke namen voor (ConceptualGraph) datatypes zouden moeten worden gegarandeerd op het datatype als dat nodig is
-uniquePicName :: PictType -> String -> String
-uniquePicName pt nm = escapeNonAlphaNum (picType2prefix pt++nm)
 
 --         relImgPath = "img" </> user </> (baseName flags)
 --         user = takeWhile (/='.') (userAtlas flags)

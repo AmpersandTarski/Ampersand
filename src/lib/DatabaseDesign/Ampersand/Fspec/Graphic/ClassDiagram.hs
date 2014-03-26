@@ -244,11 +244,11 @@ where
 --       isPropty r = null([Sym,Asy]>-multiplicities r)
        
    -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture. 
-   classdiagram2dot :: Options -> ClassDiag -> DotGraph String
-   classdiagram2dot flags cd
-    = DotGraph { strictGraph   = False
-               , directedGraph = True
-               , graphID       = Nothing
+   classdiagram2dot :: Options -> String -> ClassDiag -> DotGraph String
+   classdiagram2dot flags nm cd
+    = DotGraph { strictGraph     = False
+               , directedGraph   = True
+               , graphID         = Just (Data.GraphViz.Types.Canonical.Str (fromString nm))
                , graphStatements = dotstmts
                }
         where
