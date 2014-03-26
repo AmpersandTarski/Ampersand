@@ -24,9 +24,9 @@ fillAtlas fSpec flags = odbcinstall flags fSpec dsnatlas
 
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
-   = [makePicture flags fSpec Plain_CG p | p <- patterns fSpec] ++
-     [makePicture flags fSpec Plain_CG userRule | userRule <- udefrules fSpec]++
-     [makePicture flags fSpec Plain_CG cpt | cpt <- concs fSpec]
+   = [makePicture flags fSpec (name pat++"AtlasPat") Plain_CG pat | pat <- patterns fSpec] ++
+     [makePicture flags fSpec (name userRule++"AtlasPat") Plain_CG userRule | userRule <- udefrules fSpec]++
+     [makePicture flags fSpec (name cpt++"AtlasPat") Plain_CG cpt | cpt <- concs fSpec]
 
 ----------------------------------------------------
 
