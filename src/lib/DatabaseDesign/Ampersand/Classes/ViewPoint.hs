@@ -18,7 +18,7 @@ fatal = fatalMsg "Classes.ViewPoint"
 
 class Language a where
   objectdef :: a -> ObjectDef        -- ^ The objectdef that characterizes this viewpoint
-  declarations :: a -> [Declaration] -- ^ all relations that exist in the scope of this viewpoint.
+  declarations :: a -> [Declaration] -- ^ all relations that are defined in the scope of this viewpoint.
                                      --   These are user defined declarations and all generated declarations,
                                      --   i.e. one declaration for each GEN and one for each signal rule.
                                      --   Don't confuse declarations with declsUsedIn, which gives the declarations that are

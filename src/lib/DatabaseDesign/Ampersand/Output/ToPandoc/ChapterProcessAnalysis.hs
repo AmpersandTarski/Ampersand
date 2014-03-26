@@ -132,7 +132,7 @@ chpProcessAnalysis lev fSpec flags
        ++ txtProcessModel fproc
        ++ txtLangModel fproc
        ++ (if null sctRules then [] else [DefinitionList sctRules])
-       , [picProcessModel fproc, picLangModel fproc]):  iterat fps i' seenCrs seenDrs
+       , [picProcessModel (name fproc++"ProcessModel") fproc, picLangModel (name fproc++"ConcProcess") fproc]):  iterat fps i' seenCrs seenDrs
        where
          sctMotivation
           = purposes2Blocks flags purps
@@ -150,7 +150,7 @@ chpProcessAnalysis lev fSpec flags
              English -> [ Str "The conceptual diagram of figure ", xrefReference pict
                         , Str " provides an overview of the language in which this process is expressed."])
       ,Plain (xrefFigure1 pict)]                     -- draw the diagram
-     where pict = picLangModel fp
+     where pict = picLangModel (name fp++"ConceptualProcess") fp
 
   txtProcessModel :: FProcess->[Block]
   txtProcessModel p
@@ -162,17 +162,17 @@ chpProcessAnalysis lev fSpec flags
              English -> [ Str "Figure ", xrefReference pict
                         , Str " shows the process model."])
      ,Plain (xrefFigure1 pict)]                     -- draw the diagram
-     where pict = picProcessModel p
+     where pict = picProcessModel (name p++"txtProcess") p
 
-  picLangModel :: FProcess->Picture
-  picLangModel fproc
-   = ((makePictureObj flags (fsLang fSpec) (name fproc) PTProcLang . conceptualGraph fSpec flags Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
+  picLangModel :: String -> FProcess -> Picture
+  picLangModel nm fproc
+   = ((makePictureObj flags (fsLang fSpec) nm PTProcLang . conceptualGraph fSpec flags nm Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
                 {caption = case fsLang fSpec of
-                            Dutch   ->"Basiszinnen van "++name fproc
-                            English ->"Basic sentences of "++name fproc}
+                            Dutch   ->"Basiszinnen van "++nm
+                            English ->"Basic sentences of "++nm}
 
-  picProcessModel :: FProcess->Picture
-  picProcessModel fproc
-   = makePicture flags fSpec Plain_CG fproc -- the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
+  picProcessModel :: String -> FProcess->Picture
+  picProcessModel nm fproc
+   = makePicture flags fSpec nm Plain_CG fproc -- the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
 
 

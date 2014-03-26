@@ -450,7 +450,7 @@ where
         , ", ptend = "++showHS flags "" (ptend pat)
         , ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++ concat [" {- no rules -} "        | null (ptrls pat)] ++"]"
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
-        , ", ptdcs = [" ++intercalate ", " [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++"]"
+        , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++indentB++"]"
         , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
         , case ptrruls pat of
            []          -> ", ptrruls = [] {- no role-rule assignments -}"
