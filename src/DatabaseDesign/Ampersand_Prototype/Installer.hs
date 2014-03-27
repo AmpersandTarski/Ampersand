@@ -82,7 +82,7 @@ installer fSpec flags = intercalate "\n  "
         ]
         ++
         ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
-        | d<-declarations fSpec, decusr d
+        | d<-relsDefdIn fSpec, decusr d
         , let dbrel = sqlRelPlugs fSpec (EDcD d)
         , if null dbrel then fatal 82 "null dbrel" else True
         , let (_,srcField,trgField) = head dbrel

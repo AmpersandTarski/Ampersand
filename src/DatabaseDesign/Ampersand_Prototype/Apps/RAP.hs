@@ -30,7 +30,7 @@ picturesForAtlas flags fSpec
 
 ----------------------------------------------------
 
---select population of concepts or declarations from the atlas of this user
+--select population of concepts or reldeclsDefdInations from the atlas of this user
 --REMARK quickQuery' is strict and needed to keep results for use after disconnecting
 type AtomVal = String
 type RelTbl = [(AtomVal,AtomVal)]
@@ -46,7 +46,7 @@ selectdecl conn fSpec dclName
          therel ::String -> String -> String -> Declaration 
          therel relname relsource reltarget 
           = theonly [ d |
-                       d<-declarations fSpec
+                       d<-relsDefdIn fSpec
                       ,relname==name d
                       ,null relsource || relsource==name(source d)
                       ,null reltarget || reltarget==name(target d)]

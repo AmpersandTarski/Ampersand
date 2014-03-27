@@ -44,7 +44,7 @@ import DatabaseDesign.Ampersand hiding (fatalMsg) -- we wrote our own version fo
 --   , FPAble(..)
 --   , ShowHS(..), haskellIdentifier
 --   , ADL1Importable(..)
---   -- * Functions on declarations
+--   -- * Functions on relsDefdIn
 --   , makeRelation
 --   -- * Functions on rules
 --   , normExpr

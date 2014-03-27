@@ -260,9 +260,9 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fSpec), patid p)         | p<-patterns fSpec]
     ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fSpec]
     ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, r<-udefrules p]
-    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, d<-declarations p,decusr d, pr<-rapmults d, let r=rulefromProp pr d]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, d<-relsDefdIn p,decusr d, pr<-rapmults d, let r=rulefromProp pr d]
     ,makepopu ("ptgns","Pattern","Isa")         [(patid p      , genid g)         | p<-patterns fSpec, g<-gens p]
-    ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fSpec, d<-declarations p,decusr d]
+    ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fSpec, d<-relsDefdIn p,decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(patid p, nonsid (aMarkup2String (explMarkup ex)))
                                                                                   | p<-patterns fSpec, ex<-explanations fSpec, explForObj p (explObj ex)]
     --RAP only knows PATTERN elements from a PROCESS, and reduces a PROCESS to a PATTERN with a name PROCESS_<name>
@@ -270,9 +270,9 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), prcid p)         | p<-vprocesses fs]
     ,makepopu ("ptnm","Pattern","Conid")        [(prcid p      , nonsid ("PROCESS_"++name p)) | p<-vprocesses fs]
     ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, r<-rules (fpProc p)]
-    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, d<-declarations (fpProc p),decusr d, pr<-rapmults d, let r=rulefromProp pr d]
+    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, d<-relsDefdIn (fpProc p),decusr d, pr<-rapmults d, let r=rulefromProp pr d]
     ,makepopu ("ptgns","Pattern","Gen")         [(prcid p      , genid g)         | p<-vprocesses fs, g<-gens (fpProc p)]
-    ,makepopu ("ptdcs","Pattern","Declaration") [(prcid p      , decid d)         | p<-vprocesses fs, d<-declarations (fpProc p),decusr d]
+    ,makepopu ("ptdcs","Pattern","Declaration") [(prcid p      , decid d)         | p<-vprocesses fs, d<-relsDefdIn (fpProc p),decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(prcid p, nonsid (aMarkup2String (explMarkup ex)))
                                                                                   | p<-vprocesses fs, ex<-explanations fs, explForObj (fpProc p) (explObj ex)]
     ,makepopu ("decnm","Declaration","Varid")               [(decid d , nonsid(name d))   | d<-userdeclarations]
@@ -330,7 +330,7 @@ makeRAPPops fSpec flags usrfiles pics
    raprules = udefrules fSpec ++ [rulefromProp p d | d<-userdeclarations, p<-rapmults d]
    rapmults = decprps
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
-   userdeclarations = filter decusr (declarations fSpec)
+   userdeclarations = filter decusr (relsDefdIn fSpec)
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (island,x)
    atoms = [(island , c , x) 
            | island<-islands, c<-island, x<-atomsOf (initialPops fSpec) c
@@ -359,7 +359,7 @@ makeRAPPops fSpec flags usrfiles pics
    getisa c = concat [isanm island | island<-islands, c `elem` island]
    --populate relrels, relrelnm, and relreldcl for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
-   relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm (sign d)) | (ns,expr)<-exprs, d@(Sgn{decnm=nm})<-declsUsedIn expr]
+   relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm (sign d)) | (ns,expr)<-exprs, d@(Sgn{decnm=nm})<-relsMentionedIn expr]
    relrelnm, relreldcl :: [Expression] -> P_Population
-   relrelnm exprs = makepopu ("relnm","Relation","Varid")         [(relid nm (sign d), nonsid nm)         |      expr<-exprs, d@(Sgn{decnm=nm})<-declsUsedIn expr]
-   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm (sign d), decid d)           |      expr<-exprs, d@(Sgn{decnm=nm})<-declsUsedIn expr]
+   relrelnm exprs = makepopu ("relnm","Relation","Varid")         [(relid nm (sign d), nonsid nm)         |      expr<-exprs, d@(Sgn{decnm=nm})<-relsMentionedIn expr]
+   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm (sign d), decid d)           |      expr<-exprs, d@(Sgn{decnm=nm})<-relsMentionedIn expr]
