@@ -76,7 +76,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
                       toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
                       ++
                       [Para [Str "This section itemizes the declared relations with properties and a meaning."]])
-     ++ [DefinitionList blocks | let blocks = map caRelation (declarations pat), not(null blocks)]
+     ++ [DefinitionList blocks | let blocks = map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat], not(null blocks)]
      ++ (case fsLang fSpec of
            Dutch   -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
                       ++
@@ -149,7 +149,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
                   -- then the formal rule
                ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | fsLang fSpec==Dutch]
                       ++ [Str "This is formalized - using relations "     | fsLang fSpec==English]
-                      ++ intercalate [Str ", "] [[RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symDefRef d] | d@Sgn{}<-declsUsedIn r]
+                      ++ intercalate [Str ", "] [[RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symDefRef d] | d@Sgn{}<-relsMentionedIn r]
                       ++ [Str " - als " | fsLang fSpec==Dutch]
                       ++ [Str " - as "     | fsLang fSpec==English]]
                ++ (if showPredExpr flags

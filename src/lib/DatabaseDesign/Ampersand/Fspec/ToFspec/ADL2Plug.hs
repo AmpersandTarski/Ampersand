@@ -26,7 +26,7 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 makeGeneratedSqlPlugs :: Options
               -> A_Context
               -> [Expression]  
-              -> [Declaration]    -- ^ declarations to be saved in generated database plugs. 
+              -> [Declaration]    -- ^ relations to be saved in generated database plugs. 
               -> [PlugSQL]
 makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
   where
@@ -34,8 +34,8 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
         gPlugs   = --trace "---\nStart makeEntityTables " $
-                   --trace ("with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n")
-                         (makeEntityTables flags context entityDcls (gens context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
+                   --trace ("with "++show (length entityDcls)++" relations and "++show(length vsqlplugs)++" userdefined plugs.\n")
+                         (makeEntityTables flags context entityDcls (gens context) (ctxgenconcs context) (relsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable context dcl totsurs

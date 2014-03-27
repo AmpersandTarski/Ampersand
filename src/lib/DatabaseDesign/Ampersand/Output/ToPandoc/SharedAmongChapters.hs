@@ -23,6 +23,7 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , isMissing
     , lclForLang
     , dpRule
+    , relsInThemes
     , Counter(..),newCounter,incEis
     , inlineIntercalate
     )
@@ -164,7 +165,7 @@ orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern
                             )
                            ]
 orderingByTheme fSpec 
- = f (allRules fSpec) (declsUsedIn fSpec) (allConcepts fSpec) tms
+ = f (allRules fSpec) (relsMentionedIn fSpec) (allConcepts fSpec) tms
  where
   -- | The themes that should be taken into account for this ordering
   tms = if null (themes fSpec)
@@ -200,7 +201,7 @@ orderingByTheme fSpec
                                     ProcessTheme prc -> prcRules prc
                                  )
        (relsOfTheme,relsNotOfTheme) = partition isRelOfTheme rels
-       isRelOfTheme r = r `elem` concatMap declsUsedIn rulsOfTheme
+       isRelOfTheme r = r `elem` (concatMap relsDefdIn rulsOfTheme++concatMap relsUsedIn rulsOfTheme)
        (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts
        isCptOfTheme c = c `elem` concatMap concs relsOfTheme
         
@@ -282,11 +283,21 @@ dpRule fSpec flags = dpR
                                         , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
-        ds  =  declsUsedIn r
-        nds = [d | d@Sgn{}<-ds >- seenDeclarations]     -- newly seen declarations
-        rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen declarations
+        ds  = relsUsedIn r
+        nds = [d | d@Sgn{}<-ds >- seenDeclarations]     -- newly seen relations
+        rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)
 
+relsInThemes :: Fspc -> [Declaration]
+relsInThemes fSpec
+        -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
+ = [d | d<-relsDefdIn fSpec
+   , decusr d
+   , (  decpat d `elem` themes fSpec  
+         || d `elem` relsMentionedIn [p | p<-            patterns fSpec   , name p `elem` themes fSpec]
+         || d `elem` relsMentionedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` themes fSpec]
+     )
+   ]
 
 data Counter = Counter { --getConc :: Int
                     --     getDecl :: Int

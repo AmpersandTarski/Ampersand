@@ -41,7 +41,7 @@ where
               crc = fullContents gens pt (consequent r)
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
--- The table of all declarations is provided, in order to generate shorter names if possible.
+-- The table of all relations is provided, in order to generate shorter names if possible.
    rulefromProp :: Prop -> Declaration -> Rule
    rulefromProp prp d@Sgn{}
       = Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
@@ -102,4 +102,4 @@ where
            state False English left right = left ++ " is not " ++ right
            state False Dutch   left right = left ++ " is niet " ++ right
 
-   rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined declarations."
+   rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined relations."

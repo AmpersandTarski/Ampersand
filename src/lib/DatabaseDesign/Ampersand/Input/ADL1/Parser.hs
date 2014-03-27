@@ -73,7 +73,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
                , ctx_PPrcs  = [p | CPrc p<-ces]       -- The processes as defined by the parser
                , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
-               , ctx_ds     = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
+               , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
                , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
                , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
                , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns

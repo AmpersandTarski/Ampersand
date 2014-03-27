@@ -65,8 +65,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
-                 , allUsedDecls = declsUsedIn context
-                 , allDecls     = declarations context
+                 , allUsedDecls = relsUsedIn context
+                 , allDecls     = relsDefdIn context
                  , allConcepts  = concs context `uni` [ONE]
                  , kernels      = constructKernels
                  , fsisa        = let f gen = case gen of 
@@ -123,7 +123,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         calcProps d = d{decprps_calc = Just calculated}
             where calculated = decprps d `uni` [Tot | d `elem` totals]
                                          `uni` [Sur | d `elem` surjectives]
-        calculatedDecls = map calcProps (declarations context)
+        calculatedDecls = map calcProps (relsDefdIn context)
         constructKernels = foldl f (group (delete ONE (concs context))) (gens context)
             where f disjuncLists g = concat haves : nohaves
                     where
@@ -156,7 +156,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
                                       (makeGeneratedSqlPlugs flags context totsurs entityRels)
                    ]
-        -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
+        -- relations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
         entityRels = [ d | d<-calculatedDecls, not (decplug d)] -- The persistent relations.
 
@@ -208,14 +208,14 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --  Ampersand generates interfaces for the purpose of quick prototyping.
 --  A script without any mention of interfaces is supplemented
 --  by a number of interface definitions that gives a user full access to all data.
---  Step 1: select and arrange all declarations to obtain a set cRels of total relations
+--  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-        cRels = [     EDcD d  | d@Sgn{}<-declarations context, not(deciss d), isTot d, not$decplug d]++
-                [flp (EDcD d) | d@Sgn{}<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
---  Step 2: select and arrange all declarations to obtain a set dRels of injective relations
+        cRels = [     EDcD d  | d@Sgn{}<-relsDefdIn context, not(deciss d), isTot d, not$decplug d]++
+                [flp (EDcD d) | d@Sgn{}<-relsDefdIn context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+--  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-        dRels = [     EDcD d  | d@Sgn{}<-declarations context, not(deciss d), isInj d, not$decplug d]++
-                [flp (EDcD d) | d@Sgn{}<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+        dRels = [     EDcD d  | d@Sgn{}<-relsDefdIn context, not(deciss d), isInj d, not$decplug d]++
+                [flp (EDcD d) | d@Sgn{}<-relsDefdIn context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
         maxTotPaths = clos cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
         maxInjPaths = clos dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
@@ -232,7 +232,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept] 
 --          note: based on a theme one can pick a certain set of generated interfaces (there is not one correct set)
 --                default theme => generate interfaces from the clos total expressions and clos injective expressions (see step1-3).
---                student theme => generate interface for each concept with declarations where concept is source or target (note: step1-3 are skipped)
+--                student theme => generate interface for each concept with relations where concept is source or target (note: step1-3 are skipped)
         interfaceGen = step4a ++ step4b
         step4a
          | theme flags == StudentTheme 
@@ -260,7 +260,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                 , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
                 , ifcRoles = []
                 }
-           | c<-concs fSpec, let directdeclsExprs = [EDcD d | d<-declarations fSpec, c `elem` concs d]]
+           | c<-concs fSpec, let directdeclsExprs = [EDcD d | d<-relsDefdIn fSpec, c `elem` concs d]]
          --end student theme
          --otherwise: default theme
          | otherwise --note: the uni of maxInj and maxTot may take significant time (e.g. -p while generating index.htm)
@@ -369,7 +369,7 @@ while maintaining all invariants.
                                ]
                  } in s
     where
--- declarations that may be affected by an edit action within the transaction
+-- relations that may be affected by an edit action within the transaction
         decls        = relsUsedIn rul
 -- the quads that induce automated action on an editable relation.
 -- (A quad contains the conjunct(s) to be maintained.)

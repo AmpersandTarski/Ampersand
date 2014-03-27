@@ -121,7 +121,7 @@ data Event = On { eSrt :: InsDel
                               , toNode   = nameCNode (fsbConjs fsb) (rul,c)
                               , edgeAttributes = [Dir Forward]
                               }
-                    | (rul,c)<-fsbConjs fsb, ev<-eventsIn, eDcl ev `elem` declsUsedIn c]
+                    | (rul,c)<-fsbConjs fsb, ev<-eventsIn, eDcl ev `elem` relsUsedIn c]
         edgesCjEc = [ DotEdge { fromNode = nameCNode (fsbConjs fsb) (rul,c)
                               , toNode   = nameENode (fsbECAs fsb) eca
                               , edgeAttributes = [Dir Forward]
@@ -208,7 +208,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
                                                                        "+-")))
                                                      ,Dir Forward]
                                   }
-                        | (rul,c)<-conjuncts, r<-declsUsedIn c, r `elem` fromRels]
+                        | (rul,c)<-conjuncts, r<-relsUsedIn c, r `elem` fromRels]
         edgesOut      = [ DotEdge { fromNode       = nameCNode conjuncts (rul,c)
                                   , toNode         = nameONode toRels r
                                   , edgeAttributes = [Label (StrLabel (fromString
@@ -217,7 +217,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
                                                                        "+-")))
                                                      ,Dir Forward]
                                   }
-                        | (rul,c)<-conjuncts, r<-declsUsedIn c]
+                        | (rul,c)<-conjuncts, r<-relsUsedIn c]
         nameINode :: [Declaration] -> Declaration -> String
         nameINode = nmLkp fSpec "in_"
         nameCNode = nmLkp fSpec "cj_"

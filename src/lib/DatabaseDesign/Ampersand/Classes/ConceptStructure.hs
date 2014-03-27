@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
-module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStructure(..)
-                                                                   )
+module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStructure(..), prim2rel)
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
    import DatabaseDesign.Ampersand.Core.ParseTree (ConceptDef(..))
@@ -15,21 +14,25 @@ where
 
    class ConceptStructure a where
     concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
-    declsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-    declsUsedIn a = [ d | EDcD d@Sgn{}<-(nub.concatMap primitives.expressionsIn) a]
     relsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-    relsUsedIn a = [ prim2dcl e | e<-(nub.concatMap primitives.expressionsIn) a, not (isMp1 e) ]
-      where prim2dcl expr =
-             case expr of
-               EDcD d@Sgn{} -> d
-               EDcD{}       -> fatal 23 "invalid declaration in EDcD{}" 
-               EDcI c       -> Isn c
-               EDcV sgn     -> Vs sgn
-               EMp1{}  -> fatal 25 "EMp1 should be filtered out from primitives. use `filter (not isMp1)`"
-               _       -> fatal 26 "prim2dcl is not supposed to be called on a non-primitive expression."
+    relsUsedIn a = [ d | d@Sgn{}<-relsMentionedIn a]++[Isn c | c<-concs a]
+    relsMentionedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
+    relsMentionedIn = nub . map prim2rel . primsMentionedIn
+    primsMentionedIn :: a -> [Expression]
+    primsMentionedIn = nub . concatMap primitives . expressionsIn
     expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
-    mp1Exprs = filter isMp1.nub.concatMap primitives.expressionsIn
+    mp1Exprs = filter isMp1.primsMentionedIn
+
+   prim2rel :: Expression -> Declaration
+   prim2rel e
+    = case e of
+       EDcD d@Sgn{} -> d
+       EDcD{}       -> fatal 23 "invalid declaration in EDcD{}" 
+       EDcI c       -> Isn c
+       EDcV sgn     -> Vs sgn
+       EMp1 _ c     -> Isn c
+       _            -> fatal 40 $ "only primitive expressions should be found here.\nHere we see: " ++ show e
 
    instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
     concs    (a,b) = concs a `uni` concs b
