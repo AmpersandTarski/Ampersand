@@ -23,6 +23,14 @@ where
     expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
     mp1Exprs = filter isMp1.primsMentionedIn
+    -- | mp1Pops draws the population from singleton expressions.
+    mp1Pops :: a -> [Population]
+    mp1Pops struc
+     = [ PCptPopu{ popcpt = cpt (head cl), popas = map atm cl } | cl<-eqCl cpt (mp1Exprs struc)]
+       where cpt (EMp1 _ c) = c
+             cpt _          = fatal 31 "cpt error"
+             atm (EMp1 a _) = a
+             atm _          = fatal 31 "atm error"
 
    prim2rel :: Expression -> Declaration
    prim2rel e
@@ -149,7 +157,7 @@ where
                        ]
 
    instance ConceptStructure Interface where
-    concs       ifc = concs       (ifcObj ifc)
+    concs         ifc = concs (ifcObj ifc)
     expressionsIn ifc = foldr (uni) []
                        [ (expressionsIn.ifcObj) ifc
                        , (expressionsIn.ifcParams) ifc

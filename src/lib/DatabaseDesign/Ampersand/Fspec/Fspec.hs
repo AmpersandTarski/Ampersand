@@ -34,9 +34,10 @@ where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics
-import Data.List(nub)
+import Data.List
 import DatabaseDesign.Ampersand.ADL1.Pair
 import DatabaseDesign.Ampersand.ADL1.Expression (notCpl)
+--import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
@@ -94,10 +95,12 @@ concDefs :: Fspc -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
 instance ConceptStructure Fspc where
-  concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
+  concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this Fspc
   expressionsIn fSpec = foldr (uni) []
                         [ (expressionsIn.interfaceS) fSpec
                         , (expressionsIn.vrules) fSpec
+                        , (expressionsIn.vviews) fSpec
+                        , (expressionsIn.vIndices) fSpec
                         ]
   mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an Fspc"
   
