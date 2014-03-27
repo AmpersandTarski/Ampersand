@@ -103,11 +103,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                 , popas  = (nub.concat) [ popas pop | pop<-eqclass ] 
                                 } 
                       | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-          where populations   = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)++singletonpops
-                singletonpops = [ PCptPopu{ popcpt = head [c | EMp1 _ c<-cl ]
-                                          , popas  = nub  [a | EMp1 a c<-cl, not (name c=="SESSION") ] 
-                                          } 
-                                | cl<-eqCl (\(EMp1 _ c)->c) (mp1Exprs context)]
+          where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)
+
 --      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
         allrules = vRules ++ gRules
         vRules = udefrules context   -- all user defined rules

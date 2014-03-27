@@ -7,7 +7,8 @@ import DatabaseDesign.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
+import DatabaseDesign.Ampersand.Classes.ConceptStructure
+import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg,eqCl)
 import DatabaseDesign.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
@@ -47,7 +48,7 @@ pCtx2aCtx
       , ctx_gs     = p_gens         --  The gen definitions defined in this context, outside the scope of patterns
       , ctx_ifcs   = p_interfaces   --  The interfaces defined in this context, outside the scope of patterns
       , ctx_ps     = p_purposes     --  The purposes defined in this context, outside the scope of patterns
-      , ctx_pops   = p_pops         --  The populations defined in this context
+      , ctx_pops   = p_pops         --  The populations defined in this context, but outside patterns and outside processes
       , ctx_sql    = p_sqldefs      --  user defined sqlplugs, taken from the Ampersand script
       , ctx_php    = p_phpdefs      --  user defined phpplugs, taken from the Ampersand script
       , ctx_metas  = p_metas        --  generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
@@ -62,7 +63,7 @@ pCtx2aCtx
             , ctxprocs = procs
             , ctxrs = rules
             , ctxds = ctxDecls
-            , ctxpopus = nub (udpops++ dclPops)
+            , ctxpopus = nub (udpops++dclPops++mp1Pops rules++mp1Pops pats++mp1Pops procs++mp1Pops identdefs++mp1Pops viewdefs++mp1Pops interfaces)
             , ctxcds = allConceptDefs
             , ctxks = identdefs
             , ctxvs = viewdefs
@@ -76,7 +77,7 @@ pCtx2aCtx
             }
     ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
       <*> traverse pProc2aProc p_processes         --  The processes defined in this context
-      <*> traverse (pRul2aRul [] n1) p_rules          --  All user defined rules in this context, but outside patterns and outside processes
+      <*> traverse (pRul2aRul [] n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaces          --  The interfaces defined in this context, outside the scope of patterns
