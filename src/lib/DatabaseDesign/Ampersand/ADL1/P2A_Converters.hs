@@ -40,7 +40,7 @@ pCtx2aCtx
       , ctx_pats   = p_patterns     --  The patterns defined in this context
       , ctx_PPrcs  = p_processes    --  The processes as defined by the parser
       , ctx_rs     = p_rules        --  All user defined rules in this context, but outside patterns and outside processes
-      , ctx_ds     = p_declarations --  The declarations defined in this context, outside the scope of patterns
+      , ctx_ds     = p_declarations --  The relations declared in this context, outside the scope of patterns
       , ctx_cs     = p_conceptdefs  --  The concept definitions defined in this context, outside the scope of patterns
       , ctx_ks     = p_identdefs    --  The identity definitions defined in this context, outside the scope of patterns
       , ctx_vs     = p_viewdefs     --  The view definitions defined in this context, outside the scope of patterns
@@ -107,9 +107,9 @@ pCtx2aCtx
     (decls,dclPops)= unzip dps
     (ctxDecls,_ ) = unzip ctxDecls'
     dps = ctxDecls'++patDecls++patProcs
-    ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
-    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
-    patProcs  = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
+    ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
+    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
+    patProcs  = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The relations declared in all processes within this context.
       
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
@@ -117,7 +117,7 @@ pCtx2aCtx
     findDecl o x = getOneExactly o . Map.elems $ findDecls x
     findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls x))
     findDeclTyped o x tp = getOneExactly o (findDeclsTyped x tp)
-    -- accumDecl is the function that combines two declarations into one
+    -- accumDecl is the function that combines two relations into one
     -- meanings, for instance, two should get combined into a list of meanings, et cetera
     -- positions are combined
     -- TODO

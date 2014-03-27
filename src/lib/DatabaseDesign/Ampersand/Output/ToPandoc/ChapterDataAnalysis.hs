@@ -407,7 +407,7 @@ daBasicsSection lev fSpec flags = theBlocks
         English -> para (text "This section enumerates the fact types, that have been used in the design of the datastructure. "
                        <>text "For each fact type its name, the source and target concept and the properties are documented."
                         )       
-   <> definitionList (map toDef declsInRelevantThemes)
+   <> definitionList (map toDef (relsInThemes fSpec))
 -- HJO, 20130526: onderstaande tabel vervangen door bovenstaande lijst, ivm leesbaarheid.
 --   <>  table 
 --        (-- caption -- 
@@ -420,17 +420,8 @@ daBasicsSection lev fSpec flags = theBlocks
 --           Dutch   -> [plain (text "Relatie") , plain (text "Beschrijving"), plain (text "Eigenschappen")]
 --           English -> [plain (text "Relation"), plain (text "Description") , plain (text "Properties")   ]
 --        ) 
---        (map toRow declsInRelevantThemes)
+--        (map toRow (relsInThemes fSpec))
     where
-      declsInRelevantThemes = 
-        -- a declaration is considered relevant iff it is declared or used in one of the relevant themes.
-         [d | d<-declarations fSpec
-         , decusr d
-         , (  decpat d `elem` themes fSpec  
-               || d `elem` declsUsedIn [p | p<-            patterns fSpec   , name p `elem` themes fSpec]
-               || d `elem` declsUsedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` themes fSpec]
-           )
-         ]
       toRow :: Declaration -> [Blocks]
       toRow d
         = [ (plain.math.showMath) d
@@ -457,7 +448,7 @@ daBasicsSection lev fSpec flags = theBlocks
             
           )
 
--- The properties of various declarations are documented in different tables.
+-- The properties of various relations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally
 -- the signals are documented.
@@ -558,7 +549,7 @@ daBasicsSection lev fSpec flags = theBlocks
             | length hMults>0 ]
        where
         hMults :: [Declaration]
-        hMults  = [decl | decl@Sgn{}<- declsUsedIn fSpec, isEndo decl
+        hMults  = [decl | decl@Sgn{}<- relsUsedIn fSpec, isEndo decl
                         , null (themes fSpec) || decpat decl `elem` themes fSpec]
     identityDocumentation
      = case (identities fSpec, fsLang fSpec) of
@@ -630,21 +621,21 @@ daBasicsSection lev fSpec flags = theBlocks
                   , f<-filter isNeg fus
                   , s<-strands f
                   , e<-[head s, flp (last s)]
-                  , r<-declsUsedIn e
+                  , r<-relsUsedIn e
                 ]
       ts = nub [r | EUni fus<-clauses
                   , isIdent (EIsc [notCpl f | f<-fus, isNeg f] sgn)
                   , f<-filter isPos fus
                   , s<-strands f
                   , e<-[head s, flp (last s)]
-                  , r<-declsUsedIn e
+                  , r<-relsUsedIn e
                   ]
       strands (ECps fs) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
-      tots = [d | t<-ts, inline t, d<-map makeDeclaration (declsUsedIn t)]
-      unis = [d | t<-is, inline t, d<-map makeDeclaration (declsUsedIn t)]
-      surs = [d | t<-ts, not (inline t), d<-map makeDeclaration (declsUsedIn t)]
-      injs = [d | t<-is, not (inline t), d<-map makeDeclaration (declsUsedIn t)]
+      tots = [d | t<-ts, inline t, d<-map makeDeclaration (relsUsedIn t)]
+      unis = [d | t<-is, inline t, d<-map makeDeclaration (relsUsedIn t)]
+      surs = [d | t<-ts, not (inline t), d<-map makeDeclaration (relsUsedIn t)]
+      injs = [d | t<-is, not (inline t), d<-map makeDeclaration (relsUsedIn t)]
 -}
 
   -- daPlugs describes data sets.
@@ -665,7 +656,7 @@ daBasicsSection lev fSpec flags = theBlocks
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugIdentities ++ iRules
        plugRules
         = case fsLang fSpec of
-           English -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
+           English -> case [r | r<-invariants fSpec, null [d | d@Sgn{} <- relsMentionedIn r, d `notElem` relsUsedIn p]] of
                        []  -> []
                        [r] -> [ Para [ Str "Within this data set, the following integrity rule shall be true at all times. " ]]++
                               if showPredExpr flags
@@ -676,7 +667,7 @@ daBasicsSection lev fSpec flags = theBlocks
                                 then BulletList [(pandocEqnArrayOnelabel (symDefLabel r) . showLatex . toPredLogic) r | r<-rs ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath r]] | r<-rs ]
                               ]
-           Dutch   -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
+           Dutch   -> case [r | r<-invariants fSpec, null [d | d@Sgn{} <- relsMentionedIn r, d `notElem` relsUsedIn p]] of
                        []  -> []
                        [r] -> [ Para [ Str "Binnen deze gegevensverzameling dient de volgende integriteitsregel te allen tijde waar te zijn. " ]]++
                               if showPredExpr flags
@@ -689,7 +680,7 @@ daBasicsSection lev fSpec flags = theBlocks
                               ]
        plugIdentities
         = case fsLang fSpec of
-           English -> case [k | k<-identityRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
+           English -> case [k | k<-identityRules fSpec, null [d | d@Sgn{} <- relsMentionedIn k, d `notElem` relsUsedIn p]] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set contains one key. " ]]++
                               if showPredExpr flags
@@ -701,7 +692,7 @@ daBasicsSection lev fSpec flags = theBlocks
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]]
                                                 | s<-ss ]
                               ]
-           Dutch   -> case [k | k<-identityRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
+           Dutch   -> case [k | k<-identityRules fSpec, null [d | d@Sgn{} <- relsMentionedIn k, d `notElem` relsUsedIn p]] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ]]++
                               if showPredExpr flags
@@ -713,8 +704,8 @@ daBasicsSection lev fSpec flags = theBlocks
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
        plugSignals
-        = case (fsLang fSpec, [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)]) of
-    --       English -> case [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)] of
+        = case (fsLang fSpec, [r | r<-vrules fSpec, isSignal r , null [d | d@Sgn{} <- relsMentionedIn r, d `notElem` relsUsedIn p]]) of
+    --       English -> case [r | r<-vrules fSpec, isSignal r , null [d | d@Sgn{} <- relsMentionedIn r, d `notElem` relsUsedIn p]] of
             (_      , [])  -> []
             (English, [s]) -> [ Para [ Str "This data set generates one process rule. " ]]++
                               if showPredExpr flags

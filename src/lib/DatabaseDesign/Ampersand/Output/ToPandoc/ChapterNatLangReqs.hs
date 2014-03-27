@@ -98,7 +98,7 @@ chpNatLangReqs lev fSpec flags =
                 , let pps = [p | p <- purposesDefinedIn fSpec (fsLang fSpec) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ d | d <- declarations fSpec
+              = [ d | d <- relsDefdIn fSpec
                 , decusr d
                 , not . null $ purposesDefinedIn fSpec (fsLang fSpec) d
                 ]
@@ -124,23 +124,11 @@ chpNatLangReqs lev fSpec flags =
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ d | d <- still2doRelsPre
                                , decpat d == name thm ||         -- all relations declared in this theme, combined
-                                 d `eleM` declsUsedIn thisThemeRules] -- all relations used in this theme's rules
+                                 d `eleM` relsMentionedIn thisThemeRules] -- all relations used in this theme's rules
            rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [ x==y | y <- thisThemeRels ]] 
            thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
            stuff2PrintLater  = (concs2PrintLater, rels2PrintLater, rules2PrintLater)
---           (blocksOfThemes,iPost)     = aThemeAtATime stuff2PrintLater xs iPostFirst
---           thisThemeStuff = (thisThemeCdefs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
---           thisThemeRules = [r | r<-still2doRulesPre, r_env r == name x ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
---           rules2PrintLater = still2doRulesPre >- thisThemeRules
---           thisThemeRels = [r | r<-still2doRelsPre, r `eleM` declsUsedIn thisThemeRules] `uni`            -- all relations used in this theme's rules
---                           [ makeRelation d | d<-declarations x, (not.null) (multiplicities d)] -- all relations used in multiplicity rules
---           rels2PrintLater = still2doRelsPre >- thisThemeRels
---           thisThemeCdefs = [(c,cd) |(c,cd)<- still2doCdefsPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)]
---           thisThemeCpurps = [(c,ps) |(c,ps)<- still2doCpurpPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)]
---           cDefs2PrintLater = still2doCdefsPre >- thisThemeCdefs
---           cPurps2PrintLater = still2doCpurpPre >- thisThemeCpurps
---           stuff2PrintLater = (cDefs2PrintLater, cPurps2PrintLater, rels2PrintLater, rules2PrintLater)
            
       -- | printOneTheme tells the story in natural language of a single theme.
       -- For this purpose, Ampersand authors should take care in composing explanations.
@@ -211,8 +199,8 @@ chpNatLangReqs lev fSpec flags =
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
-                                                                  commaNLPandoc (Str "en") cs++
-                                                                  [ Str ". Daarna worden de afspraken geïntroduceerd."]
+                                                                  commaNLPandoc (Str "en") cs++[ Str "."]++
+                                                                  [ Str " Daarna worden hierover afspraken geïntroduceerd." | (not.null) rules2print]
                                                        ([c],_) -> [ Str "Deze sectie introduceert het concept "
                                                                   , c]
                                                        (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
@@ -233,8 +221,8 @@ chpNatLangReqs lev fSpec flags =
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "At this point, the definitions of "]++
-                                                                  commaEngPandoc (Str "and") cs++
-                                                                  [ Str " are given. Directly after that, the agreements are introduced."]
+                                                                  commaEngPandoc (Str "and") cs++[ Str " are given."]++
+                                                                  [ Str " Directly after that, the agreements are introduced." | (not.null) rules2print]
                                                        ([c],_) -> [ Str "This section introduces concept "
                                                                   , Emph [c]]
                                                        (cs ,_) -> [ Str "This section introduces concepts "]++

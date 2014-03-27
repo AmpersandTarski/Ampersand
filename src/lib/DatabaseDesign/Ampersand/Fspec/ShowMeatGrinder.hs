@@ -110,10 +110,10 @@ instance MetaPopulations Fspc where
    filter (not.nullContent)
     (
     [ Comment " "
-    , Comment "The following declarations are all known declarations. This list should be"
-    , Comment "helpfull during the developement of the meatgrinder."
+    , Comment "The following relations are all known to be declared. This list"
+    , Comment "should be helpful during the developement of the meatgrinder."
     , Comment "NOTE:"
-    , Comment "  The order of the declarations is determined in a special way, based on Concepts."
+    , Comment "  The order of the relations is determined in a special way, based on Concepts."
     ]
   ++[Comment ("  "++show i++") "++"Pop "++(show.name) dcl++" "++(show.name.source) dcl++" "++(show.name.target) dcl) | (i,dcl) <- (declOrder.allDecls)       fSpec]
   ++[ Pop "ctxnm"   "Context" "Conid"
@@ -146,7 +146,7 @@ instance MetaPopulations Fspc where
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
     nullContent _ = False
-    -- | the order of declarations is done by an order of the concepts, which is a hardcoded list 
+    -- | the order of relations is done by an order of the concepts, which is a hardcoded list 
     declOrder ::[Declaration] -> [(Int,Declaration)]
     declOrder decls = zip [1..] (concatMap (sortBy f) (declGroups conceptOrder decls))
       where 

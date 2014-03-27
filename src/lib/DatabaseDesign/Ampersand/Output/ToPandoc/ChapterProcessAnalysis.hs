@@ -115,15 +115,17 @@ chpProcessAnalysis lev fSpec flags
                ]
      ]
      where
-      rolelessRels = [ d | d<-declarations fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
+      rolelessRels = [ d | d<-relsDefdIn fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
   emptyProcess :: Process -> Bool
   emptyProcess p = null (udefrules p)
   
 -- the sections in which processes are analyzed
   procSections :: [FProcess] -> [([Block],[Picture])]
-  procSections fprocs = iterat [fp |fp<-fprocs, not (emptyProcess (fpProc fp))] 1 (concs (patterns fSpec)) ((concatMap declarations.patterns) fSpec)
+  procSections fprocs = iterat [fp |fp<-fprocs, (not.emptyProcess.fpProc) fp] 1 declaredConcepts  declaredRelations
    where
+    declaredRelations = (concatMap relsDefdIn.map fpProc.vprocesses) fSpec
+    declaredConcepts  = (concs.map fpProc.vprocesses) fSpec
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [([Block],[Picture])]
     iterat [] _ _ _ = []
     iterat (fproc:fps) i seenConcepts seenDeclarations

@@ -66,10 +66,10 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                  , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
-                 , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fSpec
-                 , allDecls ::     [Declaration]            -- ^ All declarations in the fSpec
-                 , vrels ::        [Declaration]            -- ^ All user defined and generated declarations plus all defined and computed totals.
-                                                            --   The generated declarations are all generalizations and
+                 , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
+                 , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
+                 , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
+                                                            --   The generated relations are all generalizations and
                                                             --   one declaration for each signal.
                  , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                  , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
@@ -83,7 +83,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
                  , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
-                 , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
+                 , metas ::        [Meta]                   -- ^ All meta relations from the entire context      
                  , initialPops ::  [Population]             -- all user defined populations of relations and concepts
                  , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
                  }
@@ -109,13 +109,13 @@ instance Language Fspc where
                            , objstrs = []
                            }
    --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
-  declarations = vrels
-  udefrules    = vrules -- only user defined rules
-  invariants   = invars
-  identities      = vIndices
-  viewDefs     = vviews
-  gens         = vgens
-  patterns     = vpatterns
+  relsDefdIn = vrels
+  udefrules  = vrules -- only user defined rules
+  invariants = invars
+  identities = vIndices
+  viewDefs   = vviews
+  gens       = vgens
+  patterns   = vpatterns
 
 data FProcess
   = FProc { fpProc :: Process
@@ -125,14 +125,14 @@ instance Identified FProcess where
   name = name . fpProc 
 
 instance Language FProcess where
-  objectdef    = objectdef.fpProc
-  declarations = declarations.fpProc
-  udefrules    = udefrules.fpProc
-  invariants   = invariants.fpProc
-  identities      = identities.fpProc
-  viewDefs     = viewDefs.fpProc
-  gens         = gens.fpProc
-  patterns     = patterns.fpProc
+  objectdef  = objectdef.fpProc
+  relsDefdIn = relsDefdIn.fpProc
+  udefrules  = udefrules.fpProc
+  invariants = invariants.fpProc
+  identities = identities.fpProc
+  viewDefs   = viewDefs.fpProc
+  gens       = gens.fpProc
+  patterns   = patterns.fpProc
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard

@@ -18,8 +18,8 @@ chpDiagnosis fSpec flags
      diagIntro ++             -- an introductory text
      roleomissions ++         -- tells which role-rule, role-interface, and role-relation assignments are missing
      roleRuleTable ++         -- gives an overview of rule-rule assignments
-     missingConceptDefs ++    -- tells which concept definitions are missing
-     missingRels ++           -- tells which relation declarations are missing
+     missingConceptDefs ++    -- tells which concept definitions have been declared without a purpose
+     missingRels ++           -- tells which relations have been declared without a purpose
      unusedConceptDefs ++     -- tells which concept definitions are not used in any relation
      relsNotUsed ++           -- tells which relations are not used in any rule
      missingRules ++          -- tells which rule definitions are missing
@@ -88,14 +88,14 @@ chpDiagnosis fSpec flags
       maintained  -- (r,rul) `elem` maintained means that r can maintain rul without restrictions.
         = [ (role,rul)
           | (role,rul)<-fRoleRuls fSpec
-          , and (map (mayEdit role) (declsUsedIn rul))
+          , and (map (mayEdit role) (relsUsedIn rul))
           ]
       mayEdit :: String -> Declaration -> Bool
       mayEdit role decl = decl `elem` ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec))) 
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role,rul)
          | (role,rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayEdit role) (declsUsedIn rul))
+         , (not.or) (map (mayEdit role) (relsUsedIn rul))
          ]
 
   roleomissions :: [Block]
@@ -149,7 +149,7 @@ chpDiagnosis fSpec flags
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+         ccs = concs [ d | d<-relsDefdIn fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
   unusedConceptDefs :: [Block]
   unusedConceptDefs
    = case (fsLang fSpec, unused) of
@@ -180,7 +180,7 @@ chpDiagnosis fSpec flags
    = case (fsLang fSpec, missing) of
       (Dutch,[])  -> [Para 
                        [Str "Alle relaties in dit document zijn voorzien van een reden van bestaan (purpose)."]
-                     | (not.null.declsUsedIn.udefrules) fSpec]
+                     | (not.null.relsMentionedIn.udefrules) fSpec]
       (Dutch,[r]) -> [Para 
                        [ Str "De reden waarom relatie ", r
                        , Str " bestaat wordt niet uitgelegd."
@@ -191,7 +191,7 @@ chpDiagnosis fSpec flags
                      ] ]
       (English,[])  -> [Para 
                          [Str "All relations in this document have been provided with a purpose."]
-                       | (not.null.declsUsedIn.udefrules) fSpec]
+                       | (not.null.relsMentionedIn.udefrules) fSpec]
       (English,[r]) -> [Para 
                          [ Str "The purpose of relation ", r
                          , Str " remains unexplained."
@@ -201,11 +201,7 @@ chpDiagnosis fSpec flags
                          [ Str " is not documented."
                        ] ]
      where missing = [(Math InlineMath . showMath) (EDcD d) 
-                     | d@Sgn{} <-if null (themes fSpec)
-                                 then declsUsedIn fSpec
-                                 else declsUsedIn [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                                      declsUsedIn [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
-                     , not (isIdent d)
+                     | d@Sgn{} <- relsInThemes fSpec
                      , null (purposesDefinedIn fSpec (fsLang fSpec) d)
                      ]
 
@@ -215,7 +211,7 @@ chpDiagnosis fSpec flags
    = ( ( case (fsLang fSpec, notUsed) of
           (Dutch,[])  -> [Para 
                            [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
-                         | (not.null.declsUsedIn.udefrules) fSpec]
+                         | (not.null.relsMentionedIn.udefrules) fSpec]
           (Dutch,[r]) -> [Para 
                            [ Str "De relatie ", r
                            , Str " wordt in geen enkele regel gebruikt. "
@@ -226,7 +222,7 @@ chpDiagnosis fSpec flags
                          ] ]
           (English,[])  -> [Para 
                              [Str "All relations in this document are being used in one or more rules."]
-                           | (not.null.declsUsedIn.udefrules) fSpec]
+                           | (not.null.relsMentionedIn.udefrules) fSpec]
           (English,[r]) -> [Para 
                              [ Str "Relation ", r
                              , Str " is not being used in any rule. "
@@ -269,14 +265,13 @@ chpDiagnosis fSpec flags
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
      where notUsed = nub [(Math InlineMath . showMath) (EDcD d)
-                         | d@Sgn{} <- declarations fSpec
-                         , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
+                         | d@Sgn{} <- relsInThemes fSpec -- only signal relations that are used or defined in the selected themes
                          , decusr d
-                         , d `notElem` (declsUsedIn . udefrules) fSpec
+                         , d `notElem` (relsMentionedIn . udefrules) fSpec
                          ]
            pats  = [ pat | pat<-patterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
-                         , (not.null) (declarations pat>-declsUsedIn pat) ]
+                         , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
            pictsWithUnusedRels = [makePicture flags fSpec (name pat++"DiagnosisConceptualDiagram") Rel_CG pat | pat<-pats ]
 
   missingRules :: [Block]
@@ -518,7 +513,7 @@ chpDiagnosis fSpec flags
 
 --  populationReport :: [Block]
 --  populationReport
---   = [ Para (case (fsLang fSpec, ps, declarations fSpec) of
+--   = [ Para (case (fsLang fSpec, ps, relsDefdIn fSpec) of
 --        (Dutch,  [], [] ) -> [ Str "Dit script is leeg. " ]
 --        (English,[], [] ) -> [ Str "This script is empty. " ]
 --        (Dutch,  [],  _ ) -> [ Str "Geen relatie bevat enige populatie. " ]
@@ -557,7 +552,7 @@ chpDiagnosis fSpec flags
 --               , null (themes fSpec) || (decpat.popdcl) p `elem` themes fSpec  -- restrict if the documentation is partial.
 --               , (not.null.popps) p]
 --      cs  = [c | c@C{}<-ccs, (not.null.atomsOf) c]
---      ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+--      ccs = concs [ d | d<-relsDefdIn fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
 
   wipReport :: [Block]
   wipReport

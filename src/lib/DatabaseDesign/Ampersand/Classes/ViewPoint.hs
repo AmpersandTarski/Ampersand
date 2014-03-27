@@ -14,14 +14,14 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ViewPoint"
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
--- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
+-- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
 
 class Language a where
   objectdef :: a -> ObjectDef        -- ^ The objectdef that characterizes this viewpoint
-  declarations :: a -> [Declaration] -- ^ all relations that are defined in the scope of this viewpoint.
-                                     --   These are user defined declarations and all generated declarations,
-                                     --   i.e. one declaration for each GEN and one for each signal rule.
-                                     --   Don't confuse declarations with declsUsedIn, which gives the declarations that are
+  relsDefdIn :: a -> [Declaration]   -- ^ all relations that are declared in the scope of this viewpoint.
+                                     --   These are user defined relations and all generated relarations,
+                                     --   i.e. one relation for each GEN and one for each signal rule.
+                                     --   Don't confuse relsDefdIn with relsUsedIn, which gives the relations that are
                                      --   used in a.)
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
@@ -30,10 +30,10 @@ class Language a where
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
   invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ identityRules x
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
-  identityRules :: a -> [Rule]          -- all identity rules that are maintained within this viewpoint.
+  multrules x   = [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
+  identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = concatMap rulesFromIdentity (identities x)
-  identities :: a -> [IdentityDef]      -- ^ all keys that are defined in a
+  identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
@@ -114,11 +114,11 @@ instance Language A_Context where
                              , objmsub = Just . Box ONE $ map (objectdef) (ctxpats context)
                              , objstrs = []
                              }
-  declarations context = uniteRels (concatMap declarations (patterns context)
-                                 ++ concatMap declarations (processes context)
-                                 ++ ctxds context)
+  relsDefdIn context = uniteRels (concatMap relsDefdIn (patterns context)
+                                ++ concatMap relsDefdIn (processes context)
+                                ++ ctxds context)
      where
-      -- declarations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
+      -- relations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
       -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
       uniteRels :: [Declaration] -> [Declaration]
       uniteRels [] = []
@@ -150,13 +150,13 @@ instance Language Process where
                          , objmsub = Nothing
                          , objstrs = []
                          }
-  declarations proc = prcDcls proc
-  udefrules         = prcRules -- all user defined rules in this process
---  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
-  identities        = prcIds
-  viewDefs          = prcVds
-  gens              = prcGens
-  patterns      _   = []
+  relsDefdIn proc = prcDcls proc
+  udefrules       = prcRules -- all user defined rules in this process
+--  invariants proc = [r | r<-prcRules proc, not (isSignal r) ]
+  identities      = prcIds
+  viewDefs        = prcVds
+  gens            = prcGens
+  patterns    _   = []
 
 instance ProcessStructure Process where
   processes    proc = [proc]
@@ -175,22 +175,13 @@ instance Language Pattern where
                          , objmsub = Nothing
                          , objstrs = []
                          }
-  declarations pat = ptdcs pat
-  udefrules        = ptrls   -- all user defined rules in this pattern
---  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
-  identities       = ptids 
-  viewDefs         = ptvds 
-  gens             = ptgns 
-  patterns     pat = [pat]
-
-instance ProcessStructure Pattern where
-  processes     _  = []
-  roles         _  = []
-  interfaces    _  = []
-  objDefs       _  = []
-  processRules pat = [r |r<-ptrls pat, isSignal r]
-  maintains        = ptrruls  -- says which roles maintain which rules.
-  mayEdit          = ptrrels  -- says which roles may change the population of which relation.
+  relsDefdIn pat = ptdcs pat
+  udefrules      = ptrls   -- all user defined rules in this pattern
+--  invariants pat = [r |r<-ptrls pat, not (isSignal r)]
+  identities     = ptids 
+  viewDefs       = ptvds 
+  gens           = ptgns 
+  patterns   pat = [pat]
 
 instance Language Rule where
   objectdef rule = Obj { objnm   = name rule
@@ -199,23 +190,23 @@ instance Language Rule where
                        , objmsub = Nothing
                        , objstrs = []
                        }
-  declarations r = [srrel r | isSignal r] -- a process rule "declares" a new relation to store violations in. That relation is "stored" in that rule. Therefore it counts as a declaration.
-  udefrules    r = [r | r_usr r == UserDefined ]
+  relsDefdIn r = [srrel r | isSignal r] -- a process rule "declares" a new relation to store violations in. That relation is "stored" in that rule. Therefore it counts as a declaration.
+  udefrules  r = [r | r_usr r == UserDefined ]
 --  invariants   r = [r | not (isSignal r)]
-  identities   _ = []
-  viewDefs     _ = []
-  gens         _ = []
-  patterns r     = [A_Pat{ ptnm  = "Pattern for rule "++name r
-                         , ptpos = Origin "Nameless pattern generated by patterns (Language (Rule(Relation Concept))) "
-                         , ptend = Origin "Nameless pattern generated by patterns (Language (Rule(Relation Concept))) "
-                         , ptrls = [r]
-                         , ptgns = []  -- A rule defines no Gens.
-                         , ptdcs = declsUsedIn r
-                         , ptups = []
-                         , ptrruls = []
-                         , ptrrels = []
-                         , ptids = []
-                         , ptvds = []
-                         , ptxps = []
-                         }
-                   ]
+  identities _ = []
+  viewDefs   _ = []
+  gens       _ = []
+  patterns r   = [A_Pat{ ptnm  = "Pattern for rule "++name r
+                       , ptpos = Origin "Nameless pattern generated by patterns (Language (Rule(Relation Concept))) "
+                       , ptend = Origin "Nameless pattern generated by patterns (Language (Rule(Relation Concept))) "
+                       , ptrls = [r]
+                       , ptgns = []  -- A rule defines no Gens.
+                       , ptdcs = relsDefdIn r
+                       , ptups = []
+                       , ptrruls = []
+                       , ptrrels = []
+                       , ptids = []
+                       , ptvds = []
+                       , ptxps = []
+                       }
+                 ]
