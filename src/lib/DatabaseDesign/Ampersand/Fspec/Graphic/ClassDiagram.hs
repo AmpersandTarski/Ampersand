@@ -82,7 +82,6 @@ where
                     where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
        lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
-        
 
 
    -- | This function, cdAnalysis, generates a conceptual data model.
@@ -91,32 +90,33 @@ where
    -- Properties and identities are not shown.
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec _ = 
-     OOclassdiagram {cdName  = "logical_"++name fSpec
-                    ,classes = 
-                       [ OOClass{ clName = name root
-                                , clcpt  = Just root
-                                , clAtts = map ooAttr (filter (\x -> source x == root) attribs)
-                                , clMths = []
-                                }
-                       | root <- roots]
-                    ,assocs  = 
-                       [ OOAssoc { assSrc = Left (source r)
-                                 , assSrcPort = (name.head.declsUsedIn) r
-                                 , asslhm = (mults.flp) r
-                                 , asslhr = ""
-                                 , assTgt = Left (target r)
-                                 , assrhm = mults r
-                                 , assrhr = (name.head.declsUsedIn) r
+     OOclassdiagram { cdName  = "logical_"++name fSpec
+                    , classes = 
+                        [ OOClass{ clName = name root
+                                 , clcpt  = Just root
+                                 , clAtts = map ooAttr ooClass
+                                 , clMths = []
                                  }
-                       | r <- allrels, target r `elem` roots
-                       ]
-                    ,aggrs   = []
-                    ,geners  = []
-                    ,ooCpts  = roots
+                        | ooClass <- ooClasses, let root=source (head ooClass)]
+                    , assocs  = 
+                        [ OOAssoc { assSrc = Left (source r)
+                                  , assSrcPort = name d
+                                  , asslhm = (mults.flp) r
+                                  , asslhr = ""
+                                  , assTgt = Left (target r)
+                                  , assrhm = mults r
+                                  , assrhr = name d
+                                  }
+                        | r@(EDcD d) <- allrels, target r `elem` roots
+                        ]
+                    , aggrs   = []
+                    , geners  = []
+                    , ooCpts  = roots
                     }
 
     where
-      ooAttr r = OOAttr { attNm = (name.head.declsUsedIn) r
+      ooAttr :: Expression -> CdAttribute
+      ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
                         , attTyp = (name.target) r
                         , attOptional = (not.isTot) r
                         }
@@ -124,15 +124,17 @@ where
                     maxVal = if isInj r then MaxOne else MaxMany
                 in  Mult minVal maxVal 
       allrels = [ EDcD r -- restricted to those themes that must be printed.
-                | r <- (nub.concat)
-                       ([declarations p ++ declsUsedIn p  | p <- pattsInScope fSpec ]++
-                        [declarations p ++ declsUsedIn p  | p <- procsInScope fSpec ])
+                | r@Sgn{} <- (nub.concat)
+                             ([relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ]++
+                              [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ])
                , decusr r]
       attribs = map flipWhenInj (filter isAttribRel allrels)
           where isAttribRel r = isUni r || isInj r
                 flipWhenInj r = if isInj r then flp r else r
-      roots = nub (map source allrels)
-                     
+      ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
+      roots = map (source.head) ooClasses
+
+
    -- | This function generates a technical data model.
    -- It is based on the plugs that are calculated.
    tdAnalysis :: Fspc -> Options -> ClassDiag
@@ -226,7 +228,7 @@ where
                        , asslhr = fldname f
                        , assTgt = Left (rootOf (target expr))
                        , assrhm = mults expr
-                       , assrhr = (name.head.declsUsedIn) expr
+                       , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
                        }
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isInj r then MaxOne else MaxMany
@@ -239,7 +241,7 @@ where
 --                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 ---- assRels contains all relations that do not occur as attributes in classes
 --       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
---       attrs rs   = [ OOAttr ((name.head.declsUsedIn) r) (name (target r)) (not(isTot r))
+--       attrs rs   = [ OOAttr ((name.head.relsMentionedIn) r) (name (target r)) (not(isTot r))
 --                    | r<-rs, not (isPropty r)]
 --       isPropty r = null([Sym,Asy]>-multiplicities r)
        

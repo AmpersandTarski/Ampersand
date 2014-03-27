@@ -64,7 +64,7 @@ data A_Context
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxprocs :: [Process]     -- ^ The processes defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: [Declaration]    -- ^ The declarations defined in this context, outside the scope of patterns
+         , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -129,7 +129,7 @@ data Pattern
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
-           , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
+           , ptdcs :: [Declaration] -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptrruls :: [(String,Rule)]         -- ^ The assignment of roles to rules.
            , ptrrels :: [(String,Declaration)]  -- ^ The assignment of roles to Relations.

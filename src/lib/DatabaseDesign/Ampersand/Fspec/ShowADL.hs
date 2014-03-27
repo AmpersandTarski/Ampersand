@@ -143,8 +143,6 @@ instance ShowADL ExplObj where
 showstr :: String -> String
 showstr str = "\""++str++"\""
 
--- The declarations of the pattern are supplemented by all declarations needed to define the rules.
--- Thus, the resulting pattern is self-contained with respect to declarations.
 instance ShowADL Process where
  showADL prc
   = "PROCESS " ++ name prc 
@@ -154,8 +152,13 @@ instance ShowADL Process where
 -- concept definitions are not printed, because we have no way of telling where they come from.... 
     ++ (if null (prcIds prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcIds prc))    ++ "\n")
     ++ (if null (prcXps prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcXps prc))    ++ "\n")
+-- The relations declared in the pattern are supplemented by all relations used by the rules.
+-- Thus, the resulting pattern is self-contained with respect to declarations.
+    ++ (if null decls           then "" else "\n  " ++intercalate "\n  " (map showADL decls)           ++ "\n")
     ++ "ENDPROCESS"
-    where -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work... 
+    where
+      decls = [d | d@Sgn{}<-relsDefdIn prc `uni` relsMentionedIn prc]
+ -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work...
       showRM :: Process -> String
       showRM pr = intercalate "\n  " [ "ROLE "++role++" MAINTAINS "++intercalate ", " [name rul | (_,rul)<-cl]
                                      | cl<-eqCl fst (maintains pr), let role = fst (head cl)]
@@ -176,20 +179,11 @@ instance ShowADL Pattern where
  showADL pat
   = "PATTERN " ++ showstr (name pat) ++ "\n"
     ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
-    ++ (if null (maintains pat) then "" else "\n  " ++                        showRM pat               ++ "\n")
-    ++ (if null (mayEdit pat)   then "" else "\n  " ++                        showRR pat               ++ "\n")
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
     ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
 -- concept definitions are not printed, because we have no way of telling where they come from.... 
     ++ (if null (ptids pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptids pat)) ++ "\n")
     ++ "ENDPATTERN"
-    where -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work... 
-      showRM :: Pattern -> String
-      showRM pt = intercalate "\n  " [ "ROLE "++role++" MAINTAINS "++intercalate ", " [name rul | (_,rul)<-cl]
-                                      | cl<-eqCl fst (maintains pt), let role = fst (head cl)]
-      showRR :: Pattern -> String
-      showRR pt = intercalate "\n  " [ "ROLE "++role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
-                                      | cl<-eqCl fst (mayEdit pt), let role = fst (head cl)]
 
 instance ShowADL (PairViewSegment Expression) where
  showADL (PairViewText str)         = "TXT " ++ show str
@@ -354,16 +348,18 @@ instance ShowADL Fspc where
         else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
     ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
+--    ++ (if null (vprocesses fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (vprocesses fSpec))    ++ "\n")  -- TODO implement ShowADL FProcess
     ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map showADL (conceptDefs fSpec)) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
     ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
-    ++ (if null (declarations fSpec) then "" else "\n"++intercalate "\n"   (map showADL (declarations fSpec >- concatMap declarations (patterns fSpec))) ++ "\n")
+    ++ (if null decls then "" else "\n"++intercalate "\n"   (map showADL decls) ++ "\n")
     ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
     ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")
     ++ "TODO: Populations are not shown..\n" --TODO.
 --    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
     ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
     ++ "\n\nENDCONTEXT"
+    where decls = relsDefdIn fSpec >- (concatMap relsDefdIn (patterns fSpec) `uni` concatMap relsDefdIn (vprocesses fSpec))
 instance ShowADL (Maybe String) where
   showADL _ = ""
 instance ShowADL ECArule where

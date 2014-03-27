@@ -120,8 +120,6 @@ instance Plugable PlugSQL where
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 
 
-
-
 --Maintain rule: Object ObjectDef = Object (makeUserDefinedSqlPlug :: ObjectDef -> PlugSQL)
 --TODO151210 -> Build a check which checks this rule for userdefined/showADL generated plugs(::[ObjectDef]) 
 --TODO151210 -> The ObjectDef of a BinSQL plug for relation r is that:

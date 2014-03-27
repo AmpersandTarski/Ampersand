@@ -339,7 +339,7 @@ where
        )++        
        (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fSpec `uni` nub (map qDcl (vquads fs)) in
         if null (ds fSpec)     then "" else
-        "\n -- *** Declarations (total: "++(show.length.ds) fSpec++" declarations) ***: "++
+        "\n -- *** Declared relations (in total: "++(show.length.ds) fSpec++" relations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fSpec]++"\n"
        ) ++
        (if null (vIndices fSpec)     then "" else
@@ -450,7 +450,7 @@ where
         , ", ptend = "++showHS flags "" (ptend pat)
         , ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++ concat [" {- no rules -} "        | null (ptrls pat)] ++"]"
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
-        , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++indentB++"]"
+        , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
         , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
         , case ptrruls pat of
            []          -> ", ptrruls = [] {- no role-rule assignments -}"
@@ -489,7 +489,7 @@ where
         , ", prcEnd = "++showHS flags "" (prcEnd prc)
         , ", prcRules = [" ++intercalate ", " [showHSName r | r<-prcRules prc] ++ concat [" {- no rules -} "                     | null (prcRules prc)] ++"]"
         , wrap ", prcGens = " indentB (showHS flags) (prcGens prc)
-        , ", prcDcls = ["  ++intercalate ", " [showHSName d | d<-prcDcls  prc] ++ concat [" {- no declarations -} "              | null (prcDcls  prc)] ++"]"
+        , ", prcDcls = ["  ++intercalate ", " [showHSName d | d<-prcDcls  prc] ++ concat [" {- no relations -} "              | null (prcDcls  prc)] ++"]"
         , wrap ", prcUps = " indentB (showHS flags) (prcUps prc) 
         , case prcRRuls prc of
            []          -> "     , prcRRuls = [] {- no role-rule assignments -}"
