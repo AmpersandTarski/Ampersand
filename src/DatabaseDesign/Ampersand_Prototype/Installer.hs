@@ -149,7 +149,7 @@ createTablesPHP fSpec =
         ++ ["}"]
         ++ concatMap plugCode [p | InternalPlug p <- plugInfos fSpec]
   where plugCode plug
-         = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+         = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
            ++ if null $ tblcontents (gens fSpec) (initialPops fSpec) plug then [] else

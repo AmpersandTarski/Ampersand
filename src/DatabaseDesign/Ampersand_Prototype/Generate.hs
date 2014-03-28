@@ -264,7 +264,7 @@ generateViews fSpec _ =
  where genViewSeg (ViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genViewSeg (ViewHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
-                                     , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                                     , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
                                      , "          '" ++ selectExpr fSpec 33 "src" "tgt" (objctx objDef)++"'"
                                      , "      )"
@@ -301,7 +301,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
            ++["      //"]      
       else   []
      )
-  ++["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (show normalizedInterfaceExp) ] -- escape for the pathological case that one of the names in the relation contains a newline
+  ++["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ] -- escape for the pathological case that one of the names in the relation contains a newline
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" 
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
@@ -314,7 +314,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
              EDcD d'  -> d'
              EDcI c   -> Isn c
              EDcV sgn -> Vs sgn
-             _        -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ show unflippedExpr
+             _        -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ showADL unflippedExpr
      in (if isEditable unflippedExpr
          then [ "      , 'relation' => "++showPhpStr (name d) 
               , "      , 'relationIsFlipped' => "++show flipped ]++ 
@@ -420,5 +420,5 @@ showPlug plug =
 
 showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++ 
-                 "'"++fldname fld ++ "':"++show (target $ fldexpr fld)]
+                 "'"++fldname fld ++ "':"++showADL (target $ fldexpr fld)]
 
