@@ -30,7 +30,6 @@ RuleEngine::checkRules($session->role->id);
 		<title><?php echo $dbName;?></title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<!-- Bootstrap -->
-		<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
 		
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 		<meta http-equiv="Pragma" content="no-cache">
@@ -43,6 +42,7 @@ RuleEngine::checkRules($session->role->id);
 		<link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 		<link href="css/tno.css" rel="stylesheet" media="screen">
 		<link href="css/smoothness/jquery-ui-1.10.4.custom.css" rel="stylesheet" type="text/css"/>
+		<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
 
 		<script src="js/jquery-1.11.0.min.js"></script>
 		<script src="js/jquery-ui-1.10.4.custom.js"></script>
@@ -50,7 +50,7 @@ RuleEngine::checkRules($session->role->id);
 		<script src="js/Ampersand2.js"></script>
 		<script src="js/jquery-migrate-1.2.1.js"></script>
 	</head>
-	<body onload="initialize()">
+	<body onload="initialize(); $('.tooltip-to-be-initialized').toggleClass('tooltip-to-be-initialized').tooltip();">
 		
 		<div class="navbar navbar-default navbar-fixed-top">
 			<div class="tno">
@@ -67,46 +67,39 @@ RuleEngine::checkRules($session->role->id);
 										.'</li>';
 					?>
 					
-					<li class="dropdown pull-right">
+					<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="right" title="Create new instances">
 						<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-plus"></span></a>
 						<ul class="dropdown-menu" role="menu">
 						  <?php foreach($session->role->getInterfaces(false) as $interface) echo '<li><a href="?interface='.$interface->name.'&atom='.$interface->srcConcept.'_'.time().'">'.htmlSpecialChars($interface->srcConcept . ' (' . $interface->name . ')').'</a></li>';?>
 						</ul>
 					</li>
 					
-					<li class="dropdown pull-right">
+					<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Switch between different roles">
 						<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span></a>
 						<ul class="dropdown-menu" role="menu">
 						  <?php  foreach(Role::getAllRoles() as $role) echo '<li><a href="?role='.$role->id.'">'.htmlSpecialChars($role->name).'</a></li>'; ?>
 						</ul>
 					</li>
 					
-					<?php if(isset($GLOBALS['apps'])){ ?>
-						<li class="dropdown pull-right">
-							<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-th"></span></a>
-							<ul class="dropdown-menu" role="menu">
-							  <?php  foreach($GLOBALS['apps'] as $app) echo '<li><a href="'.$app['link'].'"><span class="'.$app['icon'].'"></span> '.htmlSpecialChars($app['name']).'</a></li>'; ?>
-							</ul>
-						</li>
-					<?php } ?>
-					
+					<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Select application extensions">
+						<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-th"></span></a>
+						<ul class="dropdown-menu" role="menu">
+						  <?php  foreach((array)$GLOBALS['apps'] as $app) echo '<li><a href="'.$app['link'].'"><span class="'.$app['icon'].'"></span> '.htmlSpecialChars($app['name']).'</a></li>'; ?>
+						  <li><a href="ampersand/installer.php"><span class="glyphicon glyphicon-trash"></span> Reset database</a></li>
+						</ul>
+					</li>
 					
 					<?php if(isset($GLOBALS['viewers'])){ ?>
-						<li class="dropdown pull-right">
-							<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-eye-open"></span></a>
+						<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Switch between different viewers">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-eye-open"></span></a>
 							<ul class="dropdown-menu" role="menu">
 							  <?php  foreach($GLOBALS['viewers'] as $key => $viewer) echo '<li><a href="?viewer='.$key.'"><span class="'.$viewer['icon'].'"></span> '.htmlSpecialChars($viewer['name']).'</a></li>'; ?>
 							</ul>
 						</li>
-					
 					<?php } ?>
 					
-					<li id="installer" class="pull-right">
-						<a href="installer.php"><span class="glyphicon glyphicon-trash"></span></a>
-					</li>
-					
-					<li id="violations" class="pull-right">
-						<a href="#"><span class="glyphicon glyphicon-bell"></span></a>
+					<li class="pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="left" title="Hide or show violations messages">
+						<a href="javascript:void(0)" onclick="$( '#violations' ).toggleClass( 'hidden' );"><span class="glyphicon glyphicon-bell messageIndicator"></span></a>
 					</li>
 
 				</ul>
@@ -147,9 +140,10 @@ RuleEngine::checkRules($session->role->id);
 						<?php foreach ($rows as $row) echo '<li class="list-group-item">'.$row.'</li>'; ?>
 					</ul>
 				</div>
+				<script>$('.messageIndicator').css('color', 'orange');</script>
 				<?php } ?>
 			</div>
-			<div id="notifications">
+			<div id="notifications" class="hidden">
 				<?php
 				foreach (ErrorHandling::getNotifications() as $notification){
 				?>
@@ -159,7 +153,7 @@ RuleEngine::checkRules($session->role->id);
 				</div>
 				<?php } ?>
 			</div>
-			<div id="notifications">
+			<div id=successes>
 				<?php
 				foreach (ErrorHandling::getSuccesses() as $success){
 				?>
@@ -176,7 +170,6 @@ RuleEngine::checkRules($session->role->id);
 		
 			?>
 		</div>
-		
-		<script src="plugins/statusColors/js/statusColors.js"></script>
+		<script src="extensions/statusColors/js/statusColors.js"></script>
 	</body>
 </html>

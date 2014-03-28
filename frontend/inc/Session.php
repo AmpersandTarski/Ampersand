@@ -41,7 +41,7 @@ class Session {
 			}
 
 			$database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$_SESSION[sessionAtom]."', '".time()."')".
-			"ON DUPLICATE KEY UPDATE `lastAccess` = '".$time()."'"); //TODO move to Database::Exe function
+			"ON DUPLICATE KEY UPDATE `lastAccess` = '".$time()."'");
 		}
 		
 		// ROLE

@@ -27,8 +27,9 @@ class UserInterface {
 			
 			// determine subInterfaces
 			if(!empty($this->refSubInterface)){
-				$subInterface = new UserInterface($this->refSubInterface);
-				$this->subInterfaces = $subInterface->subInterfaces;
+				// $subInterface = new UserInterface($this->refSubInterface);
+				$this->subInterfaces = $allInterfaceObjects[$this->refSubInterface]['boxSubInterfaces']; // $subInterface->subInterfaces;
+				
 			}else{
 				$this->subInterfaces = $interface['boxSubInterfaces'];
 			}

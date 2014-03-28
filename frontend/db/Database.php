@@ -85,18 +85,9 @@ class Database
 					throw new Exception("Unkown command: '" .$command->dbCmd . "'");
 			}
 		}
-
-		// Process rules checken hoeft niet, aangezien dat niet noodzakelijk is voor een transaction // checkRoleRules($selectedRoleNr);
-		
-		// TODO: ExecEngine check hier invoegen
-
-		// Run all stored procedures in the database
-		// Doing so AFTER running the ExecEngine allows any problems with stored procedures to be 'fixed'
-		// 2do this: create a rule with the same ruleexpression and handle the violation with th ExecEngine
-		// runAllProcedures();
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
-		$invariantRulesHold = RuleEngine::checkInvariantRules();
+		$invariantRulesHold = RuleEngine::checkInvariantRules(); // Process rules checken hoeft niet, aangezien dat niet noodzakelijk is voor een transaction
 		
 		if(isset($roleId)) RuleEngine::checkProcessRules($roleId);
 

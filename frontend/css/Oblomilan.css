@@ -150,6 +150,8 @@ button.Button:hover {
 
 #ScrollPane > .Atom > .InterfaceList > .Interface> .Label {
     font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px;
+	display: none;
+	
 } 
 
 #ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList {

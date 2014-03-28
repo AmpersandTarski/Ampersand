@@ -19,7 +19,7 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		$session = Session::singleton();
 		
 		// TODO: move output related things to Viewer. Move ErrorHandling to Session??
-		$violationMessage = $rule['message'] ? $rule['messsage'] : "Violation of rule '".$rule['name']."'";
+		$violationMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
 		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
 		
 		self::$violations[$violationMessage][] = $rowMessage;
@@ -54,7 +54,7 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		return self::$logs;
 	}
 	
-	// TODO: can be deleted when ErrorHandling is not static anymore but instantiated in Session class.
+	// TODO: can be deleted when ErrorHandling is not static anymore but instantiated in Viewer class.
 	public static function getAll(){
 		$all['errors'] = self::$errors;
 		$all['invariants'] = self::$invariants;
