@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure
-import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg,eqCl)
+import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
 import DatabaseDesign.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
@@ -37,7 +37,7 @@ pCtx2aCtx
       , ctx_pos    = n2
       , ctx_lang   = lang
       , ctx_markup = pandocf
-      , ctx_thms   = p_themes       --  The themes that are specified by the user to be documented.
+      , ctx_thms   = p_themes       --  The names of patterns and processes that are specified by the user to be documented.
       , ctx_pats   = p_patterns     --  The patterns defined in this context
       , ctx_PPrcs  = p_processes    --  The processes as defined by the parser
       , ctx_rs     = p_rules        --  All user defined rules in this context, but outside patterns and outside processes
@@ -114,17 +114,18 @@ pCtx2aCtx
       
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
-    findDecls x = Map.findWithDefault Map.empty x declMap
-    findDecl o x = getOneExactly o . Map.elems $ findDecls x
-    findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls x))
-    findDeclTyped o x tp = getOneExactly o (findDeclsTyped x tp)
+    findDecls relName = Map.findWithDefault Map.empty relName declMap
+    findDecl thing relName = getOneExactly thing . Map.elems $ findDecls relName
+    findDeclsTyped relName tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls relName))
+--  findDeclTyped :: ShowADL a => a -> String -> Sign -> Guarded Declaration
+    findDeclTyped thing relName tp = getOneExactly thing (findDeclsTyped relName tp)
     -- accumDecl is the function that combines two relations into one
     -- meanings, for instance, two should get combined into a list of meanings, et cetera
     -- positions are combined
     -- TODO
     accumDecl :: Declaration -> Declaration -> Declaration
     accumDecl a _ = a
-    
+
     pDecl2aDecl :: 
          String         -- The name of the pattern
       -> Lang           -- The default language 
@@ -147,7 +148,7 @@ pCtx2aCtx
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
-       in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd})
+       in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd, popsgn = decsgn dcl})
     
     pSign2aSign :: P_Sign -> Sign
     pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -191,13 +192,23 @@ pCtx2aCtx
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }
-    pPop2aPop orig@(P_RelPopu { p_rnme = rnm, p_popps = ps })
-     = fmap (\dcl -> PRelPopu { popdcl = dcl, popps = ps})
-            (findDecl orig rnm)
-    pPop2aPop orig@(P_TRelPop { p_rnme = rnm, p_type = tp, p_popps = ps })
-     = fmap (\dcl -> PRelPopu { popdcl = dcl, popps = ps})
-            (findDeclTyped orig rnm (pSign2aSign tp))
-    
+    pPop2aPop pop@(P_RelPopu { p_rnme = rnm, p_popps = ps })
+     = fmap f (findDecl pop rnm)
+       where
+         f dcl = PRelPopu { popdcl = dcl, popps = ps, popsgn = decsgn dcl}
+    pPop2aPop pop@(P_TRelPop { p_rnme = rnm, p_type = tp, p_popps = ps })
+     = (fmap f . findDeclTyped pop rnm . pSign2aSign) tp
+       where
+         f dcl = PRelPopu { popdcl = dcl, popps = ps, popsgn = pSign2aSign tp}
+
+{-
+   fMap (\(tp,dcl)->PRelPopu { popdcl = dcl, popps = ps, popsgn = sgn}) gSgn
+=  { let gSgn=Checked (tp,dcl) }
+   Checked ((\(tp,dcl)->PRelPopu { popdcl = dcl, popps = ps, popsgn = sgn}) (tp,dcl))
+=  { lambda applicatie }
+   Checked (PRelPopu { popdcl = dcl, popps = ps, popsgn = sgn})
+-}
+
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
      where tpda = disambiguate termPrimDisAmb x

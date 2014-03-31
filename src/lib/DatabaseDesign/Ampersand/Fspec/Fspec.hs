@@ -86,6 +86,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                  , metas ::        [Meta]                   -- ^ All meta relations from the entire context      
                  , initialPops ::  [Population]             -- all user defined populations of relations and concepts
+                 , pairsOf ::      Declaration -> Pairs     -- lookup the population of a declaration
                  , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
                  }
 metaValues :: String -> Fspc -> [String]
@@ -373,7 +374,7 @@ data PlugSQL
    -- | stores one relation r in two ordered columns
    --   i.e. a tuple of SqlField -> (source r,target r) with (fldexpr=I/\r;r~, fldexpr=r) 
    --   (note: if r TOT then (I/\r;r~ = I). Thus, the concept (source r) is stored in this plug too)
-   --   with tblcontents = [[x,y] |(x,y)<-contents r]. 
+   --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r]. 
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: String
            , columns :: (SqlField,SqlField)
@@ -384,7 +385,7 @@ data PlugSQL
            }
  -- |stores one concept c in one column
  --  i.e. a SqlField -> c
- --  with tblcontents = [[x] |(x,_)<-contents c].
+ --  with tblcontents = [[Just x] |(x,_)<-contents c].
  --  Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. fldexpr=I[c]
  | ScalarSQL
            { sqlname :: String

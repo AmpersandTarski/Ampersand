@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Classes (module X) where
 import DatabaseDesign.Ampersand.Classes.Populated as X
-       (Populated(..),atomsOf)
+       (atomsOf,fullContents)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure as X
        (ConceptStructure(..),prim2rel)
 import DatabaseDesign.Ampersand.Classes.Relational as X

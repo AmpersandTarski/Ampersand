@@ -81,6 +81,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fSexpls      = ctxps context
                  , metas        = ctxmetas context
                  , initialPops  = initialpops
+                 , pairsOf      = fullContents (gens context) initialpops . EDcD
                  , allViolations = [(r,vs) |r<- allrules, not (isSignal r), let vs = ruleviolations (gens context) initialpops r,  not (null vs)]
                  }
         themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
@@ -95,14 +96,15 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
 
         allQuads = quads flags (\_->True) allrules
-        initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
-                                , popps  = (nub.concat) [ popps pop | pop<-eqclass ] 
-                                } 
-                      | eqclass<-eqCl popdcl [ pop | pop@PRelPopu{}<-populations ] ] ++
-                      [ PCptPopu{ popcpt = popcpt (head eqclass)
-                                , popas  = (nub.concat) [ popas pop | pop<-eqclass ] 
-                                } 
-                      | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
+
+        -- | initialpops computes the initial population from the fragments collected throughout the context.
+        --   Since the equality definition of population ignores populations, we gather the contents of equal populations into one.
+        --   This ensures that the equality, as defined in module AbstractSyntaxTree, corresponds with
+        --   the equality that Haskell would have derived without an explicit Eq definition.
+        initialpops = [ (head eqclass) { popps  = (nub.concat.map popps) eqclass }
+                      | eqclass<-eqClass (==) [ pop | pop@PRelPopu{}<-populations ] ] ++
+                      [ (head eqclass) { popas  = (nub.concat.map popas) eqclass }
+                      | eqclass<-eqClass (==) [ pop | pop@PCptPopu{}<-populations ] ]
           where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)
 
 --      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
@@ -946,15 +948,15 @@ CHC [ if isRel e
     , editable e ]
 
 -}
-          (Del, e@EUni{}) -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Del, e@EIsc{}) -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
-          (Ins, e@(EDif (l,r))) -> CHC [ genPAcl deltaX Ins l motiv, genPAcl deltaX Del r motiv ] motiv
-          (Del, e@(EDif (l,r))) -> CHC [ genPAcl deltaX Del l motiv, genPAcl deltaX Ins r motiv ] motiv
+          (Del, e@EUni{})   -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Del, e@EIsc{})   -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
+          (Ins, EDif (l,r)) -> CHC [ genPAcl deltaX Ins l motiv, genPAcl deltaX Del r motiv ] motiv
+          (Del, EDif (l,r)) -> CHC [ genPAcl deltaX Del l motiv, genPAcl deltaX Ins r motiv ] motiv
 -- Op basis van De Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorganERad e) motiv
-          (_  , EPrd{})   -> fatal 896 "TODO"
-          (_  , EKl0 x )  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
-          (_  , EKl1 x )  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
+          (_  , e@ERad{})   -> genPAcl deltaX tOp (deMorganERad e) motiv
+          (_  , EPrd{})     -> fatal 896 "TODO"
+          (_  , EKl0 x )    -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
+          (_  , EKl1 x )    -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
           (_  , e@(EDcD d)) -> if editAble d then Do tOp d deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
           (_  , e@(EDcI c)) -> if editAble (Isn c) then Do tOp (Isn c) deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
 

@@ -50,7 +50,7 @@ module DatabaseDesign.Ampersand
    , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
-   , (<==>),meet,join,sortWith,atomsOf
+   , (<==>),meet,join,sortWith
    , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on relations
    -- * Functions on rules
@@ -92,7 +92,7 @@ module DatabaseDesign.Ampersand
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
-   , Populated(..), Paire, Purpose(..), ExplObj(..), PictType(..)
+   , atomsOf,fullContents, Paire, Purpose(..), ExplObj(..), PictType(..)
    )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree

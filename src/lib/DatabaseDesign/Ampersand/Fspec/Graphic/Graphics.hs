@@ -19,7 +19,7 @@ import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (ClassDiag,classdiagr
 import Data.GraphViz.Attributes.Complete
 import Data.List -- (nub)
 import Data.String
-import Debug.Trace
+--import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Graphic.Graphics"
