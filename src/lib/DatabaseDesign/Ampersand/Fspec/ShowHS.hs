@@ -306,7 +306,8 @@ where
            ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fSpec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fSpec)
            ,     ", metas         = allMetas"
-           ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fSpec)
+           ,     ", initialPops   = initialpops"
+           ,     ", pairsOf       = fullContents specializations initialpops . EDcD"
            ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
            ,"}" 
            ] ++   
@@ -393,11 +394,15 @@ where
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x
              ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
-       )
+       )++
+       "\n -- *** Initial population ***: "++
+        indent++" initialpops = "++showHS flags (indent++"    ") (initialPops fSpec)++
+       "\n -- *** specializations ***: "++
+         indent++" specializations = "++showHS flags (indent++"    ") (vgens fSpec)
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
-                              "-- atoms: "++(show.sort) (atomsOf (gens fSpec)(initialPops fSpec) c)
+                              "-- atoms: "++(show.sort) (atomsOf (gens fSpec) (initialPops fSpec) c)
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
@@ -654,12 +659,13 @@ where
     showHS flags indent (ViewExp objDef) = "ViewExp "++ showHS flags (indent++"            ") objDef
    
    instance ShowHS Population where
-    showHS _ indent pop
+    showHS fSpec indent pop
      = case pop of 
          PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
              ++indent++"         , popps  = [ "++intercalate 
               (indent++"                    , ") (map show (popps pop))
              ++indent++"                    ]"
+             ++indent++"         , popsgn = "++showHS fSpec indent (popsgn pop)
              ++indent++"         }"
          PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
              ++indent++"         , popas  = [ "++intercalate
@@ -724,7 +730,7 @@ where
     showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
    
    instance ShowHS A_Gen where
-    showHS flags _ gen =
+    showHS _ _ gen =
       case gen of 
         Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
         IsE{} -> "IsE "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "

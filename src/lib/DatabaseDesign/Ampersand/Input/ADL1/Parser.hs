@@ -58,7 +58,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pPopulations = pList1 pPopulation
 
    pContext :: Parser Token (P_Context, [String]) -- the result is the parsed context and a list of include filenames
-   pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConid
+   pContext  = rebuild <$> pKey_pos "CONTEXT" <*> (pConid<|>pString)
                             <*> optional pLanguageRef 
                             <*> optional pTextMarkup 
                             <*> pList pContextElement <* pKey "ENDCONTEXT"

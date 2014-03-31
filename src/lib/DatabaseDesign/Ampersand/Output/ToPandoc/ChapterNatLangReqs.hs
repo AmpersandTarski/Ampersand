@@ -295,7 +295,7 @@ chpNatLangReqs lev fSpec flags =
                  ) ++
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
-                       samplePop = take 3 (fullContents (gens fSpec) (initialPops fSpec) dcl)
+                       samplePop = take 3 (pairsOf fSpec dcl)
                        sampleSentences =
                          [ Para $ mkSentence (development flags) dcl srcViewAtom tgtViewAtom 
                          | (srcAtom,tgtAtom)<-samplePop

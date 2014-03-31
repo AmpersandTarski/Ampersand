@@ -179,7 +179,7 @@ where
     expressionsIn (PairView ps) = expressionsIn ps
 
    instance ConceptStructure Population where
-    concs pop@PRelPopu{} = concs (popdcl pop)
+    concs pop@PRelPopu{} = concs (popsgn pop) -- The concepts of the specific (not the generic) signature are the concepts of this population.
     concs pop@PCptPopu{} = concs (popcpt pop)
     expressionsIn _    = []
 
