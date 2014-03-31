@@ -354,7 +354,7 @@ function getCoDomainAtoms($atom, $selectRel) {
 }
 
 function selectCoDomain($atom, $selectRel) {
-  return 'SELECT DISTINCT `tgt` FROM ('.$selectRel.') AS results WHERE src=\''.escapeSQL($atom).'\'';
+  return 'SELECT DISTINCT "tgt" FROM ('.$selectRel.') AS results WHERE src=\''.escapeSQL($atom).'\'';
 }
 
 

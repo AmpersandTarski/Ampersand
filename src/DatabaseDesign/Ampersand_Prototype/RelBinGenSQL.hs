@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (quote,addSlashes,phpIndent)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (sqlEscIdentifier,sqlEscString,unquote,addSlashes,phpIndent)
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
@@ -253,11 +253,11 @@ WHERE ECps0.`A`<>ECps2.`A
                  selectExpr fSpec i trg src x
     (EMp1 atom _) -> sqlcomment i "case: EMp1 atom."
                       ("SELECT "++show atom++" AS "++src++", "++show atom++" AS "++trg)
-    (EDcV (Sign s t))    -> let concNames pfx c = [([],"","1") |c==ONE]++[([quote (name p) ++ " AS "++pfx],pfx,quote (fldname s')) | (p,s',_) <- sqlRelPlugs fSpec (EDcI c)]
+    (EDcV (Sign s t))    -> let concNames pfx c = [([],"","1") |c==ONE]++[([sqlEscIdentifier (name p) ++ " AS "++pfx],pfx,fldname s') | (p,s',_) <- sqlRelPlugs fSpec (EDcI c)]
                             in sqlcomment i ("case: (EDcV (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (srcPrefix,src',src) (tgtPrefix,trg',trg) tbls "1"
-                                    | (s',srcPrefix,src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
-                                    , (t',tgtPrefix,trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
+                                    | (s',srcPrefix,src') <- concNames (if name s==name t then "cfst0" else sqlEscIdentifier (name s)) s
+                                    , (t',tgtPrefix,trg') <- concNames (if name s==name t then "cfst1" else sqlEscIdentifier (name t)) t
                                     , let tbls = if null (s'++t') then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                                     ] of
                                  []    -> fatal 216 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
@@ -326,8 +326,8 @@ WHERE ECps0.`A`<>ECps2.`A
                                         trg' = sqlAttConcept fSpec (target e)
                                         src2 = sqlExprSrc fSpec e
                                         trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
-    EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
-    EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
+    EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (\"SELECT * FROM NotExistingKl0\")"
+    EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (\"SELECT * FROM NotExistingKl1\")"
     (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
                                     (selectExpr fSpec i src trg (notCpl x))
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
@@ -432,8 +432,8 @@ selectExprInFROM :: Fspc
                -> String
 selectExprInFROM fSpec i src trg expr
    | src == trg && (not.isIdent) expr = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
-   | unquoted src = selectExprInFROM fSpec i (quote src) trg         expr
-   | unquoted trg = selectExprInFROM fSpec i src         (quote trg) expr
+   | unquoted src = selectExprInFROM fSpec i (sqlEscIdentifier src) trg         expr
+   | unquoted trg = selectExprInFROM fSpec i src         (sqlEscIdentifier trg) expr
    | otherwise    = 
       case expr of
         EFlp e -> selectExprInFROM fSpec i trg src e
@@ -445,10 +445,10 @@ selectExprInFROM fSpec i src trg expr
                   where
                    declName = case sqlRelPlugs fSpec expr of
                                 []           -> fatal 371 ("No plug found for expression "++showADL expr)
-                                [(plug,_,_)] -> quote (name plug)
+                                [(plug,_,_)] -> sqlEscIdentifier (name plug)
                                 [(plug,s,t),(plug',s',t')]  --This can be the case for a Prop -relation.
                                              -> if plug == plug' && s == t' && t == s'
-                                                then quote (name plug)
+                                                then sqlEscIdentifier (name plug)
                                                 else fatal 390 ("Multiple plugs found for expression "++showADL expr)
                                 _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
@@ -456,7 +456,7 @@ selectExprInFROM fSpec i src trg expr
                   then cpt
                   else "( /* Case EDcI "++name c++" */" ++ phpIndent (i+5) ++
                        "  SELECT "++sqlAttConcept fSpec c++" AS "++cptAlias++ phpIndent (i+5) ++
-                       "  FROM "++quote cpt++" )"
+                       "  FROM "++sqlEscIdentifier cpt++" )"
                   where
                    cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
                    cpt = sqlConcept fSpec c
@@ -478,19 +478,16 @@ selectExprInFROM fSpec i src trg expr
         _      -> phpIndent (i+5) ++ "( " ++ selectExpr fSpec (i+7) src trg expr++ phpIndent(i+5)++")"
    where 
      unquoted [] = False
-     unquoted (x:_) = x /= '`'
+     unquoted (x:_) = x `notElem` ['`' , '"', '\'']
      srcAlias = if unquote src==unquote (sqlExprSrc fSpec expr) then "" else " AS "++src
      tgtAlias = if unquote trg==unquote (sqlExprTgt fSpec expr) then "" else " AS "++trg
      
 
-unquote :: String->String
-unquote ('`':xs) = init xs
-unquote xs = xs
 -- | changes its second argument by appending a digit, such that it does not occur in its first argument 
 
 -- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
 noCollide' :: [String] -> String -> String
-noCollide' nms nm = quote$noCollide (map unquote nms) (unquote nm)
+noCollide' nms nm = sqlEscIdentifier$noCollide (map unquote nms) (unquote nm)
  where
    noCollide :: [String] -- ^ forbidden names
              -> String -- ^ preferred name
@@ -535,8 +532,8 @@ selectExprRelation fSpec i srcAS trgAS dcl =
        case sqlRelPlugs fSpec expr of
          []           -> fatal 344 $ "No plug for expression "++show expr
          (plug,s,t):_ -> selectGeneric i ("",fldname s,srcAS) ("",fldname t,trgAS)
-                                         (quote (name plug))
-                                         (intercalate " AND " [quote (fldname c)++" IS NOT NULL" | c<-nub [s,t]])
+                                         (sqlEscIdentifier (name plug))
+                                         (intercalate " AND " [sqlEscIdentifier (fldname c)++" IS NOT NULL" | c<-nub [s,t]])
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
                
@@ -565,9 +562,9 @@ selectGeneric i (sPrefix,s,s') (tPrefix,t,t') tbl whr
 
 selectSelItem :: (String, String) -> String
 selectSelItem (att,alias)
-  | unquote att == unquote alias = quote att
-  | att == "1"                   = att++" AS "++quote alias
-  | otherwise                    = quote att++" AS "++quote alias
+  | unquote att == unquote alias = sqlEscIdentifier att
+  | att == "1"                   = att++" AS "++sqlEscIdentifier alias
+  | otherwise                    = sqlEscIdentifier att++" AS "++sqlEscIdentifier alias
 
 
 --WHY bestaat sqlRelPlugs?
@@ -684,11 +681,11 @@ sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprSrc fSpec (EEps _ (Sign a _)) = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
 sqlExprSrc fSpec expr@EDcD{}         = case sqlRelPlugs fSpec expr of 
-                                        [(_,s,_)] -> quote $ fldname s
+                                        [(_,s,_)] -> sqlEscIdentifier $ fldname s
                                         []        -> fatal 614 ("No plug for relation "++showADL expr)
                                         [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname s
                                         _  -> fatal 616 ("Multiple plugs for relation "++showADL expr)
-sqlExprSrc _     expr                = quote $ "Src"++name (source expr)
+sqlExprSrc _     expr                = sqlEscIdentifier $ "Src"++name (source expr)
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: Fspc->Expression -> String
@@ -696,18 +693,18 @@ sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprTgt fSpec (EEps _ (Sign _ b)) = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
-sqlExprTgt fSpec expr@EDcD{}         = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
+sqlExprTgt fSpec expr@EDcD{}         = sqlEscIdentifier $     --  quotes are added just in case the result happens to be an SQL reserved word.
                                        case sqlRelPlugs fSpec expr of 
                                         [(_,_,t)] -> fldname t
                                         []        -> fatal 628 ("No plug for relation "++showADL expr)
                                         [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname t
                                         _  -> fatal 630 ("Multiple plugs for relation "++showADL expr)
-sqlExprTgt _     expr                = quote $ "Tgt"++name (target expr)
+sqlExprTgt _     expr                = sqlEscIdentifier $ "Tgt"++name (target expr)
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
 sqlConcept :: Fspc -> A_Concept -> String
-sqlConcept fSpec = quote.name.sqlConceptPlug fSpec
+sqlConcept fSpec = sqlEscIdentifier.name.sqlConceptPlug fSpec
    
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: Fspc -> A_Concept -> PlugSQL
@@ -723,5 +720,5 @@ sqlAttConcept :: Fspc -> A_Concept -> String
 sqlAttConcept fSpec c | c==ONE = "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
-               quote (head cs)
+               sqlEscIdentifier (head cs)
                where cs = [fldname f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']

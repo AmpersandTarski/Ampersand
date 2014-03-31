@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.Installer
 import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,sqlEscIdentifier,sqlEscString)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -67,6 +67,7 @@ installer fSpec flags = intercalate "\n  "
         , "             '&lt;'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); $DB_debug = 3; ?'.'&gt;</code>');"
         , "}\n"
         , "$error=false;" ] ++
+        ["mysql_query('SET GLOBAL SQL_MODE=ANSI_QUOTES');" ] ++
         createTablesPHP fSpec ++
         ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" ] ++
         -- TODO: why set this only for the next transaction? (no SESSION or GLOBAL parameter is provided)
@@ -109,15 +110,15 @@ installer fSpec flags = intercalate "\n  "
     ) 
 
 createDatabasePHP :: String ->[String]
-createDatabasePHP nm = ["@mysql_query(\"CREATE DATABASE `"++nm++"` DEFAULT CHARACTER SET UTF8\");"]
+createDatabasePHP nm = ["@mysql_query('CREATE DATABASE "++sqlEscIdentifier nm++" DEFAULT CHARACTER SET UTF8');"]
 
 createTablesPHP :: Fspc ->[String]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
         , "// Session timeout table"
-        , "if($columns = mysql_query(\"SHOW COLUMNS FROM `__SessionTimeout__`\")){"
-        , "    mysql_query(\"DROP TABLE `__SessionTimeout__`\");"
+        , "if($columns = mysql_query('SHOW COLUMNS FROM \"__SessionTimeout__\"')){"
+        , "    mysql_query('DROP TABLE \"__SessionTimeout__\"');"
         , "}"
         ] ++ createTablePHP 21 sessiontbl ++
         [ "if($err=mysql_error()) {"
@@ -125,8 +126,8 @@ createTablesPHP fSpec =
         , "}"
         , "" 
         , "// Timestamp table"
-        , "if($columns = mysql_query(\"SHOW COLUMNS FROM `__History__`\")){"
-        , "    mysql_query(\"DROP TABLE `__History__`\");"
+        , "if($columns = mysql_query('SHOW COLUMNS FROM \"__History__\"')){"
+        , "    mysql_query('DROP TABLE \"__History__\"');"
         , "}"
         ] ++ createTablePHP 21 historytbl ++
         [ "if($err=mysql_error()) {"
@@ -138,7 +139,7 @@ createTablesPHP fSpec =
         , "date_default_timezone_set(\"Europe/Amsterdam\");" 
         -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones 
         , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;" 
-        , "mysql_query(\"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
+        , "mysql_query('INSERT INTO \"__History__\" (\"Seconds\",\"Date\") VALUES ("++addSlashes (sqlEscString "$seconds")++","++addSlashes (sqlEscString "$date")++")');"
         , "if($err=mysql_error()) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
@@ -149,25 +150,25 @@ createTablesPHP fSpec =
         ++ ["}"]
         ++ concatMap plugCode [p | InternalPlug p <- plugInfos fSpec]
   where plugCode plug
-         = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+         = commentBlock (["Plugje "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-           ++ if null $ tblcontents (gens fSpec) (initialPops fSpec) plug then [] else
+           ++ if null table then [] else
                [ "else"
-                               , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
-                               ]++ indentBlock 12
+                               , "mysql_query('INSERT IGNORE INTO "++sqlEscIdentifier (name plug)++" ("++intercalate "," [sqlEscIdentifier (fldname f)++" " |f<-plugFields plug]++")"
+                               ]++ indentBlock 13
                                                  [ comma++ " (" ++valuechain md++ ")"
-                                                 | (md,comma)<-zip (tblcontents (gens fSpec) (initialPops fSpec) plug) ("VALUES":repeat "      ,")
+                                                 | (md,comma)<-zip table ("VALUES":repeat "      ,")
                                                  ]
                                                
-                               ++ ["            \");"
+                               ++ ["            ');"
                                , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-           
-        valuechain record = intercalate ", " [if null fld then "NULL" else "'"++escapePhpDoubleQuoteStr (addSlashes fld) ++"'"|fld<-record]
+           where table = tblcontents (gens fSpec) (initialPops fSpec) plug
+                 valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> addSlashes (sqlEscString val) |fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)
-         = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++name plug++"`\")){"
-           , "  mysql_query(\""++ dropplug plug ++"\");" --todo: incremental behaviour
+         = [ "if($columns = mysql_query('SHOW COLUMNS FROM "++sqlEscIdentifier (name plug)++"')){"
+           , "  mysql_query('"++ dropplug plug ++"');" --todo: incremental behaviour
            , "}" ]
 
 
@@ -177,37 +178,34 @@ type CreateTable = (String,[String],String)
 
 createTablePHP :: Int -> CreateTable -> [String] 
 createTablePHP i (crtbl,crflds,crengine)
-         = [ "mysql_query(\""++ crtbl]
+         = [ "mysql_query('"++ crtbl]
            ++ indentBlock i crflds
-           ++ [replicate i ' ' ++ crengine ++ "\");"]
+           ++ [replicate i ' ' ++ crengine ++ "');"]
            
 plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
- = ( "CREATE TABLE `"++name plug++"`"
-   , [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
+ = ( "CREATE TABLE "++sqlEscIdentifier (name plug)
+   , [ comma: " " ++ sqlEscIdentifier (fldname f) ++ " " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
      | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
       case (plug, plugFields plug) of
            (BinSQL{}, _) -> []
-           (_,    plg:_) -> [", PRIMARY KEY (`"++fldname plg++"`)"]
+           (_,    plg:_) -> [", PRIMARY KEY ("++sqlEscIdentifier (fldname plg)++")"]
            _             -> []
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 dropplug :: PlugSQL -> String
-dropplug plug = "DROP TABLE `"++name plug++"`"
+dropplug plug = "DROP TABLE "++sqlEscIdentifier (name plug)
 
 historytbl :: CreateTable
 historytbl
- = ( "CREATE TABLE `__History__`"
-   , [ "( `Seconds` VARCHAR(255) DEFAULT NULL"
-     , ", `Date` VARCHAR(255) DEFAULT NULL"]
+ = ( "CREATE TABLE \"__History__\""
+   , [ "( \"Seconds\" VARCHAR(255) DEFAULT NULL"
+     , ", \"Date\" VARCHAR(255) DEFAULT NULL"]
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 sessiontbl :: CreateTable
 sessiontbl
- = ( "CREATE TABLE `__SessionTimeout__`"
-   , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
-     , ", `lastAccess` BIGINT NOT NULL"]
+ = ( "CREATE TABLE \"__SessionTimeout__\""
+   , [ "( \"SESSION\" VARCHAR(255) UNIQUE NOT NULL"
+     , ", \"lastAccess\" BIGINT NOT NULL"]
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
-
-escapePhpDoubleQuoteStr :: String -> String
-escapePhpDoubleQuoteStr cs = concat [fromMaybe [c] $ lookup c [('\\', "\\\\"),('"', "\\\""),('\n', "\\n")] | c<-cs ]
