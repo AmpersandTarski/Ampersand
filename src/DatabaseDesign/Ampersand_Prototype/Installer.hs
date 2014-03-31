@@ -161,9 +161,10 @@ createTablesPHP fSpec =
                                                  | (md,comma)<-zip table ("VALUES":repeat "      ,")
                                                  ]
                                                
-                               ++ ["            ');" 
+                               ++ ["            ');"
                                , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-           where table = tblcontents (gens fSpec) (initialPops fSpec) plug
+           where table :: [[Maybe String]]
+                 table = tblcontents (gens fSpec) (initialPops fSpec) plug
                  valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> addSlashes (sqlEscString val) |fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)

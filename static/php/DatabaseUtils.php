@@ -16,7 +16,7 @@ set_error_handler("terminate_missing_variables");
 // Sessions
 
 define( "EXPIRATION_TIME", 60*60 ); // expiration time in seconds
-
+ 
 function initSession()
 {
 // when using $_SESSION, we get a nonsense warning if not declared global, however here
