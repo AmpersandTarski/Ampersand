@@ -364,13 +364,28 @@ instance Eq Purpose where
 instance Traced Purpose where
   origin = explPos
 
+-- | Populations are used to collect atoms in their proper place.
 data Population -- The user defined populations
   = PRelPopu { popdcl :: Declaration
-             , popps ::  Pairs     -- The user-defined pairs that populate the relation
+             , popps ::  Pairs     -- The user-defined pairs that populate the relation. popas (source (popsgn pop))
+             , popsgn :: Sign      -- a restriction on the population, caused by specialization. Therefore: popsgn <= sign.popdcl
              }
   | PCptPopu { popcpt :: A_Concept
              , popas ::  [String]  -- The user-defined atoms that populate the concept
-             } deriving Eq
+             }
+{-  Let popdcl pop = d  and  Sign src tgt=popsgn pop  and  Sign srcD tgtD=sign d
+    then there exist popSrcD, popTgtD, popSrc, popTgt such that popcpt popSrcD=srcD, popcpt popTgtD=tgtD, popcpt popSrc=src, popcpt popTgt=tgt
+    The rules are:    popsgn pop <= sign d
+                      Pair a b `elem` popps pop => a `elem` popas popSrc && b `elem` popas popTgt
+    Without isa's, we have popsgn = sign.popdcl,
+    which yields:     popsgn pop == sign d
+                      Pair a b `elem` popps pop => a `elem` popas popSrcD && b `elem` popas popTgtD
+-}
+
+instance Eq Population where
+  pop@PRelPopu{} == pop'@PRelPopu{}  = popdcl pop==popdcl pop' && popsgn pop==popsgn pop'
+  pop@PCptPopu{} == pop'@PCptPopu{} = popcpt pop==popcpt pop'
+  _ == _ = False
 
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration

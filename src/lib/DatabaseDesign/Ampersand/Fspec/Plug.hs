@@ -16,10 +16,10 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      ,PlugSQL(..)
      )
 where
-import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Classes (Populated(..),atomsOf,Relational(..))
+import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.Classes (atomsOf,fullContents,Relational(..))
 import DatabaseDesign.Ampersand.Basics
-import Data.List(elemIndex,nub)
+import Data.List(nub,transpose)
 import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import Prelude hiding (Ordering(..))
@@ -379,13 +379,14 @@ clusterBy f cs xs
      | null (c1++c2) = fatal 547 "clusters are not expected to be empty at this point."
      | otherwise = head c1==head c2
 
-
-type TblRecord = [String]
+-- | tblcontents is meant to compute the contents of an entity table.
+--   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.
+type TblRecord = [Maybe String]
 tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
 tblcontents gens udp plug@ScalarSQL{}
-   = [[x] | x<-atomsOf gens udp (cLkp plug)]
+   = [[Just x] | x<-atomsOf gens udp (cLkp plug)]
 tblcontents gens udp plug@BinSQL{}
-   = [[x,y] |(x,y)<-fullContents gens udp (mLkp plug)]
+   = [[Just x,Just y] |(x,y)<-fullContents gens udp (mLkp plug)]
 tblcontents gens udp plug@TblSQL{}
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other, 
@@ -393,28 +394,18 @@ tblcontents gens udp plug@TblSQL{}
  --and the first field is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
  | null(fields plug) = fatal 593 "no fields in plug."
- | flduniq idfld && not(fldnull idfld) && isIdent (fldexpr idfld)
-   = let 
-     pos fld = case elemIndex fld (fields plug) of 
-       Just n  -> n+1
-       Nothing -> fatal 598 "field is expected."
-     rels fld = [ ((pos s,pos t),xy) | (_,s,t)<-mLkpTbl plug
-                , s /= t 
-                , fld==s
-                , xy<-fullContents gens udp (fldexpr t)
-                ]
-     in --add relation values to the record, from left to right field (concat=rels with source idfld++rels with source fld2++..) 
-     [ foldl insertrel --(a -> b -> a)
-             (take (length (fields plug)) (idval:[[] |_<-[(1::Int)..]])) --new record for id
-             (concatMap rels (fields plug))  
-     | idval<-map fst (fullContents gens udp (fldexpr idfld))  ]
- | otherwise = fatal 609 "fields are assumed to be in the order kernel+other, starting with an id-field."
-   where idfld = head (fields plug)
---if x at position n of some record, then position r is replaced by y (position starts at 1, not 0!)
-insertrel::TblRecord->((Int,Int),Paire)->TblRecord
-insertrel rec ((n,r),(x,y))
- | length rec < n || length rec < r 
-   = fatal 615 $ "cannot take position "++show n++" or "++show r++" of "++show rec++"."
- | x==(rec !! (n - 1)) --x at position n of rec
-   = take (r-1) rec++y:drop r rec --position r is replaced by y
- | otherwise = rec --unchanged
+ | otherwise = transpose
+                 ( map Just cAtoms
+                 : [case fExp of
+                       EDcI c -> [ if a `elem` atomsOf gens udp c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents gens udp) fExp | a<-cAtoms ]
+                   | fld<-tail (fields plug), let fExp=fldexpr fld
+                   ]
+                 )
+                 where
+                   cAtoms = (atomsOf gens udp . source . fldexpr . head . fields) plug
+                   lkp a pairs
+                    = case [ p | p<-pairs, a==srcPaire p ] of
+                       [] -> Nothing
+                       [p] -> Just (trgPaire p)
+                       ps -> fatal 428 ("Multiple values in one field: "++show ps)

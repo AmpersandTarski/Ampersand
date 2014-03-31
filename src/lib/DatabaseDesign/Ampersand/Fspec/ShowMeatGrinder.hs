@@ -140,8 +140,8 @@ instance MetaPopulations Fspc where
       where 
         atoms :: Population -> [Atom]
         atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).fst) (popps udp) 
-                      ++ map (mkAtom ((target.popdcl) udp).snd) (popps udp) 
+          PRelPopu{} ->  map (mkAtom ((source.popsgn) udp).fst) (popps udp) 
+                      ++ map (mkAtom ((target.popsgn) udp).snd) (popps udp) 
           PCptPopu{} ->  map (mkAtom (        popcpt  udp)    ) (popas udp)
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
@@ -153,7 +153,7 @@ instance MetaPopulations Fspc where
         conceptOrder = ["Pattern"
                        ,"Rule"
                        ,"Declaration"
-                       ,"RelPopu"
+                       ,"PRelPopu"
                        ,"A_Concept"
                        ,"Concept"
                        ]
