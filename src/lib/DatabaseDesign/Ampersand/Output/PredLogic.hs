@@ -295,6 +295,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f _ (EMp1 atom _) _             = Atom atom
       f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
       f _ (EDcV _) _                  = Atom "True"
+      f _ e _ = fatal 298 ("Non-exhaustive pattern in subexpression "++showADL e++" of assemble (<"++showADL expr++">)")
 
 -- fECps treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
@@ -328,7 +329,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                     (Left _,    Left _   ) -> []
                     (Left atom, Right  _ ) -> [ Left atom ]
                     (Right  _ , Left atom) -> [ Left atom ]
-                    (Right trg, Right src) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
+                    (Right trg, Right  _ ) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
                                                             -- This code assumes no ISA's in the A-structure. This works due to the introduction of EEps expressions.
                 | (v',w)<-zip [ case l ("",src) ("",trg) of
                                  atom@Atom{} -> Left atom
@@ -383,7 +384,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                     (Left _,    Left _   ) -> []
                     (Left atom, Right  _ ) -> [ Left atom ]
                     (Right  _ , Left atom) -> [ Left atom ]
-                    (Right trg, Right src) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
+                    (Right trg, Right  _ ) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
                                                             -- This code assumes no ISA's in the A-structure. This works due to the introduction of EEps expressions.
                 | (v',w)<-zip [ case l ("",src) ("",trg) of
                                  atom@Atom{} -> Left atom

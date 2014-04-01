@@ -47,11 +47,17 @@ fatal = fatalMsg "Output.PandocAux"
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: Options -> Fspc -> [(String , String)]
 defaultWriterVariables flags fSpec
-  = [ ("fontsize", "10pt,a4paper")   --can be overridden by geometry package (see below)
+  = [ ("title", (case (fsLang fSpec, diagnosisOnly flags) of
+                        (Dutch  , False) -> "Functionele Specificatie van "
+                        (English, False) -> "Functional Specification of "
+                        (Dutch  ,  True) -> "Diagnose van "
+                        (English,  True) -> "Diagnosis of " 
+                )++name fSpec)
  --   , ("mainfont",
  --   , ("sansfont",
  --   , ("monofont",
  --   , ("mathfont",
+    , ("fontsize", "10pt,a4paper")   --can be overridden by geometry package (see below)
     , ("lang"    , case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")

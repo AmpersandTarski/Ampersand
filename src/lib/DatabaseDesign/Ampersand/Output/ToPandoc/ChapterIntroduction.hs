@@ -16,16 +16,17 @@ chpIntroduction fSpec flags =
           Dutch
             -> para ( text "Dit document"
                    <> (note.para.text) ("Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++".")
-                   <> text " definieert de functionaliteit van een informatiesysteem. "
-                   <> text "Concreet definieert dit document een database op platform onafhankelijke wijze, inclusief business-services. "
-                   <> text "Dit gebeurt met behulp van bedrijfsregels"
+                   <> text " definieert de functionaliteit van een informatiesysteem genaamd "
+                   <> (singleQuoted.text.name) fSpec
+                   <> text ". "
+                   <> text "Het definieert de database en de business-services van " <> (text.name) fSpec <> text " door middel van bedrijfsregels"
                    <> (note.para.text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
-                   <> text ", die voldoende precies worden geformuleerd om bedrijfsprocessen en een bijbehorend informatiesysteem eenduidig te kunnen specificeren."
+                   <> text ". "
                    <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
-                              then text "Alle afspraken staan opgesomd in hoofdstuk "
+                              then text "Deze afspraken staan opgesomd in hoofdstuk "
                                 <> xRefReference flags SharedLang
-                              else text "Alle afspraken staan opgesomd in het hoofdstuk genaamd "
+                              else text "Deze afspraken staan opgesomd in het hoofdstuk genaamd "
                                 <> (doubleQuoted.chptTitle (fsLang fSpec)) SharedLang
                             ) <> text ", geordend op thema. "
                        else text "Deze afspraken zijn niet opgenomen in dit document."
@@ -80,20 +81,21 @@ chpIntroduction fSpec flags =
           English
             -> para ( text "This document"
                    <> (note.para.text) ("This document was generated at "++date++" on "++time++", using "++ampersandVersionStr++".")
-                   <> text " defines the functionality of an information system. "
-                   <> text "It defines a database in a platform-independent way, together with business services."
-                   <> text "The design was made by formulating business rules"
+                   <> text " defines the functionality of an information system called "
+                   <> (singleQuoted.text.name) fSpec
+                   <> text ". "
+                   <> text "It defines the database and the business services of " <> (text.name) fSpec <> text " by means of business rules"
                    <> (note.para.text) "Rule based design characterizes the Ampersand approach, which has been used to produce this document. "
-                   <> text " precisely enough that the business process and the information system can be specified from them."
+                   <> text ". "
                    <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
-                              then text "The business rules are listed in chapter "
+                              then text "Those rules are listed in chapter "
                                 <> xRefReference flags SharedLang
                                 <> text ", ordered by theme. "
-                              else text "The business rules are listed in the chapter named "
+                              else text "Those rules are listed in the chapter named "
                                 <> (doubleQuoted.chptTitle (fsLang fSpec)) SharedLang
                             ) <> text ", ordered by theme. " 
-                       else text "The business rules are not included in this document."
+                       else text "Those rules are not included in this document."
                       )
                     ) 
              <> if Diagnosis `elem` chaptersInDoc flags

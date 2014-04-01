@@ -395,7 +395,7 @@ instance ShowADL Population where
  showADL pop
   = "POPULATION "
   ++ case pop of
-        PRelPopu{} -> (name.popdcl) pop++(show.popsgn) pop
+        PRelPopu{} -> (name.popdcl) pop++(show.sign.popdcl) pop
         PCptPopu{} -> (name.popcpt) pop
   ++ " CONTAINS\n"
   ++ if (case pop of
@@ -409,6 +409,11 @@ instance ShowADL Population where
                           PRelPopu{} -> map showPaire (popps pop)
                           PCptPopu{} -> map showAtom  (popas pop)
 
+
+-- showADL (PRelPopu r pairs)
+--  = "POPULATION "++showADL r++" CONTAINS\n"++
+--    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
+--    where indent = "   "
 
 
 showAtom :: String -> String

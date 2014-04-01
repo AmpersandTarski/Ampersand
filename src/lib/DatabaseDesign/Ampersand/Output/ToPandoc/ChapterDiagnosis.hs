@@ -558,9 +558,9 @@ chpDiagnosis fSpec flags
   wipReport
    = [ Para (case (fsLang fSpec, concat popwork,popwork) of
               (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | (not.null.initialPops) fSpec ]  -- Het heeft geen zin om deze opmerking te maken als er geen populatie is gedefinieerd...
+                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is dit correct? Waarom?
               (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | (not.null.initialPops) fSpec ]  -- No use to make this remark if there is no population to start with...
+                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is this correct? Why
               (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (length ps) "taak"++" zien.") ]
               (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (length ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
