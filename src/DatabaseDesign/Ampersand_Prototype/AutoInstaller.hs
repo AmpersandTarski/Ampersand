@@ -8,7 +8,6 @@
 module DatabaseDesign.Ampersand_Prototype.AutoInstaller (odbcinstall)
 where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (sqlEscIdentifier,sqlEscString)
 import DatabaseDesign.Ampersand_Prototype.Installer (plug2tbl,dropplug,CreateTable,sessiontbl,historytbl)
 import Database.HDBC.ODBC 
 import Database.HDBC
@@ -46,12 +45,11 @@ inserts :: (IConnection conn) => conn -> [A_Gen] -> [Population] -> [PlugSQL] ->
 inserts _ _ _ [] = return 1
 inserts conn a_gens udp (plug:plugs) = 
    do stmt<- prepare conn
-             ("INSERT INTO "++sqlEscIdentifier (name plug)++" ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
+             ("INSERT INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
                                 ++" VALUES ("++placeholders(plugFields plug)++")")
-      executeMany stmt (map (map toSql) (tblcontents a_gens udp plug))
+      executeMany stmt [ map toSql tblRecord | tblRecord<-tblcontents a_gens udp plug]
       inserts conn a_gens udp plugs
    where 
-   -- empty string = Nothing => toSql Nothing = NULL
    placeholders :: [a] -> String
    placeholders [] = []
    placeholders (_:[]) = "?"

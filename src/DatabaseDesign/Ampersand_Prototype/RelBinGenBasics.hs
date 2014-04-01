@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
  ,addSlashes
  ,indentBlock,addToLast
- ,pDebug,indentBlockBetween,sqlEscIdentifier,sqlEscString, unquote
+ ,pDebug,indentBlockBetween,quote
  ,phpIndent
  ) where
    import Data.Char(isAlphaNum,isDigit)
@@ -17,47 +17,11 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    pDebug :: Bool
    pDebug = True
 
-{-
-The standard SQL language uses double-quotes for delimited identifiers:
-
-SELECT * FROM "my table";
-MySQL uses back-quotes by default. MySQL can use standard double-quotes:
-
-SELECT * FROM `my table`;
-SET GLOBAL SQL_MODE=ANSI_QUOTES;
-SELECT * FROM "my table";
-Microsoft SQL Server uses brackets by default. Microsoft can use standard double-quotes:
-
-SELECT * FROM [my table];
-SET QUOTED_IDENTIFIER ON;
-SELECT * FROM "my table";
-InterBase and Firebird need to set the SQL dialect to 3 to support delimited identifiers.
-
-Most other brands of database use double-quotes correctly.
--}
-
-   sqlEscIdentifier :: String->String
-   sqlEscIdentifier [] = []
-   sqlEscIdentifier s = "\""++addSlashs (unquote s)++"\""
-    where addSlashs ('"': cs) = "\\\""++addSlashs cs
-          addSlashs ('\\': cs) = "\\\\"++addSlashs cs
-          addSlashs (c:cs) = c:addSlashs cs
-          addSlashs "" = ""
-
-   sqlEscString :: String->String
-   sqlEscString [] = []
-   sqlEscString s = "'"++addSlashs (unquote s)++"'"
-    where addSlashs ('\'': cs) = "\\'"++addSlashs cs
-          addSlashs ('\\': cs) = "\\\\"++addSlashs cs
-          addSlashs (c:cs) = c:addSlashs cs
-          addSlashs "" = ""
-
-   unquote :: String->String
-   unquote ('`': xs) = f (init xs) where f ('\\':'`':  xs) = '`':  f xs; f "" = "" ; f (c:cs) = c: f cs
-   unquote ('"': xs) = f (init xs) where f ('\\':'"':  xs) = '"':  f xs; f "" = "" ; f (c:cs) = c: f cs
-   unquote ('\'':xs) = f (init xs) where f ('\\':'\'': xs) = '\'': f xs; f "" = "" ; f (c:cs) = c: f cs
-   unquote xs = xs
-
+   quote :: String->String
+   quote [] = []
+   quote ('`':s) = '`':s
+   quote s = "`"++s++"`"
+   
    commentBlock :: [String]->[String]
    commentBlock ls = ["/*"++replicate lnth '*'++"*\\"]
                         ++ ["* "++strReplace "*/" "**" line++replicate (lnth - length line) ' '++" *" | line <- ls]

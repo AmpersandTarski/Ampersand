@@ -242,7 +242,7 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("countcpts","Context","Int")   [(fsid (cns,fSpec), nonsid (show (length (concs fSpec))))]
     ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | (r,vs) <- allViolations fSpec, r `elem` raprules, (x,y)<-vs]
     ,makepopu ("decexample","Declaration","PragmaSentence") [(decid d , nonsid (decprL d++x++decprM d++y++decprR d))
-                                                            | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(pairsOf fSpec d++[("...","...")])]
+                                                            | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(pairsOf d++[("...","...")])]
     --see trunk/apps/Atlas/AST.adl
     ,makepopu ("ctxnm","Context","Conid")     [(fsid (cns,fSpec), nonsid (name fSpec))]
     ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fSpec), cptid c)                | c<-concs fSpec] 
@@ -287,19 +287,19 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("decpurpose","Declaration","Blob")           [(decid d , nonsid (aMarkup2String (explMarkup ex)))
                                                                                           | d<-userdeclarations, ex<-explanations fSpec, explForObj d (explObj ex)]
     ,makepopu ("decpopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
-                                                                                          | d<-userdeclarations, (x,y)<-pairsOf fSpec d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("inipopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
-                                                                                          | d<-userdeclarations, (x,y)<-pairsOf fSpec d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("inileft","PairID","Atom")                   [(pairidid (x,y) (decns d,d), nonsid x) 
-                                                                                          | d<-userdeclarations, (x,y)<-pairsOf fSpec d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("iniright","PairID","Atom")                   [(pairidid (x,y) (decns d,d), nonsid y) 
-                                                                                          | d<-userdeclarations, (x,y)<-pairsOf fSpec d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("reldcl","Relation","Declaration") [(relid (name d) (sign d), decid d)        | d<-userdeclarations]
     ,makepopu ("relnm","Relation","Varid")        [(relid (name d) (sign d), nonsid(name d)) | d<-userdeclarations]
     ,relsrc                          userdeclarations
     ,reltrg                          userdeclarations
-    ,relleft  [(decns d, d, pairsOf fSpec d)     | d<-userdeclarations]
-    ,relright [(decns d, d, pairsOf fSpec d)     | d<-userdeclarations]
+    ,relleft  [(decns d, d, pairsOf d)     | d<-userdeclarations]
+    ,relright [(decns d, d, pairsOf d)     | d<-userdeclarations]
     ,makepopu ("rrnm","Rule","ADLid")         [(ruleid r, nonsid (name r))                           | r<-raprules]
     ,makepopu ("rrexp","Rule","ExpressionID") [(ruleid r, expridid (rulens r,rrexp r))               | r<-raprules]
     ,makepopu ("rrmean","Rule","Blob")        [(ruleid r, nonsid (aMarkup2String rdf))               | r<-raprules, Just rdf <- [meaning Dutch r, meaning English r]]
@@ -317,6 +317,14 @@ makeRAPPops fSpec flags usrfiles pics
     ,relright [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
     ]
    where
+   pairsOf :: Declaration -> [(String,String)]
+   pairsOf d = case filter theDecl (initialPops fSpec) of
+                 []    -> []
+                 [pop] -> popps pop
+                 _     -> fatal 273 "Multiple entries found in populationTable"
+     where
+       theDecl :: Population -> Bool
+       theDecl p = popdcl p == d
    
    --SPEC PropertyRule ISA Rule
    raprules = udefrules fSpec ++ [rulefromProp p d | d<-userdeclarations, p<-rapmults d]
