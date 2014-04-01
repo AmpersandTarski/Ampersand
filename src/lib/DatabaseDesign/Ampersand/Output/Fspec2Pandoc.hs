@@ -16,7 +16,6 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGl
 import Data.Time.Format (formatTime)
 import Data.List (nub)
 --import Debug.Trace
-
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -67,20 +66,18 @@ import Data.List (nub)
 fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
   where 
-    myDoc =
+    myDoc = 
       ( (setTitle  
            (case metaValues "title" fSpec of
-             [] -> text
-                   (case (fsLang fSpec, diagnosisOnly flags) of
-                     (Dutch  , False) -> "Functionele Specificatie van "
-                     (English, False) -> "Functional Specification of "
-                     (Dutch  ,  True) -> "Diagnose van "
-                     (English,  True) -> "Diagnosis of "
-                   )
-                   <>
-                   (singleQuoted.text.name) fSpec
-             xs -> (text.concat.nub) xs)  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
-         )
+                [] -> text (case (fsLang fSpec, diagnosisOnly flags) of
+                                 (Dutch  , False) -> "Functionele Specificatie van "
+                                 (English, False) -> "Functional Specification of "
+                                 (Dutch  ,  True) -> "Diagnose van "
+                                 (English,  True) -> "Diagnosis of "
+                           ) <> (singleQuoted.text.name) fSpec
+                titles -> (text.concat.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
+           )
+        )
       . (setAuthors (case metaValues "authors" fSpec of
                 [] -> case fsLang fSpec of
                         Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]

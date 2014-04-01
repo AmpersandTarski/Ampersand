@@ -267,14 +267,14 @@ makeEntityTables flags context allDcls isas conceptss exclusions
         "\nexclusions:" ++  concat ["\n  "++showHSName r           | r<-exclusions]++
         "\nattRels:" ++     concat ["\n  "++showHS flags "    " e  | e<-attRels]++
         "\n"
--- | kernls are computed, starting with the set of concepts, on the basis of generalization tuples.
-    kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernls from a set of isa-pairs.
+-- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
+    kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
     kernPartition specialzs
      = foldl f (group (delete ONE (concs context))) specialzs
        where f disjuncLists g = concat haves : nohaves
                where
                  (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
-    preKernels = kernPartition (gens context) -- ^ Step 1: compute the kernls from the isa-pairs from the context
+    preKernels = kernPartition (gens context) -- ^ Step 1: compute the kernels from the isa-pairs from the context
     extraIsas  -- Step 2: Maybe extra isa-pairs are needed to ensure that each kernel has precisely one largest concept
        = concat
          [ case [c | c<-kernel, null (largerConcepts isas c)] of -- determine how many concepts in one kernel are largest
@@ -285,9 +285,9 @@ makeEntityTables flags context allDcls isas conceptss exclusions
                                            , rc `notElem` concs context ]
                                        preKernels
          ]
-    kernls     -- Step 3: compute the kernls
+    kernls     -- Step 3: compute the kernels
      = [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
-       | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernls with the extra isa-pairs.
+       | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernels with the extra isa-pairs.
        , let largerCs = [c | c<-kernel, null (largerConcepts isas c)]   -- get the set of largest concepts (each kernel has precisely one)
        ]
     kernelsWithAttributes = dist attRels kernls []
