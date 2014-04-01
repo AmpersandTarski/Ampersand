@@ -16,7 +16,7 @@ set_error_handler("terminate_missing_variables");
 // Sessions
 
 define( "EXPIRATION_TIME", 60*60 ); // expiration time in seconds
- 
+
 function initSession()
 {
 // when using $_SESSION, we get a nonsense warning if not declared global, however here
@@ -24,6 +24,7 @@ function initSession()
   global $conceptTableInfo;
 
   session_start(); // Start a new, or resume the existing, PHP session
+  DB_doquer('SET GLOBAL SQL_MODE=ANSI_QUOTES'); // Comply to ANSI standard SQL wrt. quoting.
 
 // only execute session code when concept SESSION is used by adl script
   if (isset($conceptTableInfo['SESSION']))
@@ -354,7 +355,7 @@ function getCoDomainAtoms($atom, $selectRel) {
 }
 
 function selectCoDomain($atom, $selectRel) {
-  return 'SELECT DISTINCT "tgt" FROM ('.$selectRel.') AS results WHERE src=\''.escapeSQL($atom).'\'';
+  return 'SELECT DISTINCT `tgt` FROM ('.$selectRel.') AS results WHERE src=\''.escapeSQL($atom).'\'';
 }
 
 
