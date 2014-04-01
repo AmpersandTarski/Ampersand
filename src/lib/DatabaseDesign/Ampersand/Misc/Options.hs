@@ -48,7 +48,8 @@ data Options = Options { showVersion :: Bool
                        , autoRefresh :: Maybe Int
                        , testRule :: Maybe String                       
                        , customCssFile :: Maybe FilePath                       
-                       , importfile :: FilePath --a file with content 
+                       , importfile :: FilePath --a file with content to populate some (Populated a)
+                                                   --class Populated a where populate::a->b->a
                        , fileformat :: FileFormat --file format e.g. of importfile or export2adl
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML :: Bool
@@ -244,7 +245,7 @@ data FspecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| 
 allFspecFormats :: String
 allFspecFormats = show (map (tail . show) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument, Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile])
 
-data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some relation(s)
+data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
               | StudentTheme   -- Output for normal students of the business rules course

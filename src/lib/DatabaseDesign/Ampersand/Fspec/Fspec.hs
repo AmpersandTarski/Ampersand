@@ -86,7 +86,6 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                  , metas ::        [Meta]                   -- ^ All meta relations from the entire context      
                  , initialPops ::  [Population]             -- all user defined populations of relations and concepts
-                 , pairsOf ::      Declaration -> Pairs     -- lookup the population of a declaration
                  , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
                  }
 metaValues :: String -> Fspc -> [String]

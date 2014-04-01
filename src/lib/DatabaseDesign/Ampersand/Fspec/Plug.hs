@@ -16,8 +16,8 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      ,PlugSQL(..)
      )
 where
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes (atomsOf,fullContents,Relational(..))
+import DatabaseDesign.Ampersand.ADL1 
+import DatabaseDesign.Ampersand.Classes (Populated(..),atomsOf,Relational(..))
 import DatabaseDesign.Ampersand.Basics
 import Data.List(nub,transpose)
 import GHC.Exts (sortWith)
@@ -378,6 +378,7 @@ clusterBy f cs xs
    eqhead c1 c2 
      | null (c1++c2) = fatal 547 "clusters are not expected to be empty at this point."
      | otherwise = head c1==head c2
+
 
 -- | tblcontents is meant to compute the contents of an entity table.
 --   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.

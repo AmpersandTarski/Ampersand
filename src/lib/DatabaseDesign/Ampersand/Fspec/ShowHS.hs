@@ -306,8 +306,7 @@ where
            ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fSpec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fSpec)
            ,     ", metas         = allMetas"
-           ,     ", initialPops   = initialpops"
-           ,     ", pairsOf       = fullContents specializations initialpops . EDcD"
+           ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fSpec)
            ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
            ,"}" 
            ] ++   
@@ -394,15 +393,11 @@ where
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x
              ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
-       )++
-       "\n -- *** Initial population ***: "++
-        indent++" initialpops = "++showHS flags (indent++"    ") (initialPops fSpec)++
-       "\n -- *** specializations ***: "++
-         indent++" specializations = "++showHS flags (indent++"    ") (vgens fSpec)
+       )
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
-                              "-- atoms: "++(show.sort) (atomsOf (gens fSpec) (initialPops fSpec) c)
+                              "-- atoms: "++(show.sort) (atomsOf (gens fSpec)(initialPops fSpec) c)
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
@@ -659,13 +654,12 @@ where
     showHS flags indent (ViewExp objDef) = "ViewExp "++ showHS flags (indent++"            ") objDef
    
    instance ShowHS Population where
-    showHS fSpec indent pop
+    showHS _ indent pop
      = case pop of 
          PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
              ++indent++"         , popps  = [ "++intercalate 
               (indent++"                    , ") (map show (popps pop))
              ++indent++"                    ]"
-             ++indent++"         , popsgn = "++showHS fSpec indent (popsgn pop)
              ++indent++"         }"
          PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
              ++indent++"         , popas  = [ "++intercalate
