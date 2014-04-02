@@ -5,7 +5,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
 import DatabaseDesign.Ampersand.Classes.Relational  (Relational(multiplicities))
-import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
@@ -92,7 +91,6 @@ rulesFromIdentity identity
                             , decfpos = origin identity
                             , deciss  = False
                             , decusr  = False
-                            , decISA  = False
                             , decpat  = ""
                             , decplug = False
                             }

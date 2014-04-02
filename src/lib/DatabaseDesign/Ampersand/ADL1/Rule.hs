@@ -5,7 +5,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Core.ParseTree        ( Prop(..))
-   import DatabaseDesign.Ampersand.Classes.Populated              ( Populated(..))
+   import DatabaseDesign.Ampersand.Classes.Populated              ( fullContents)
    import DatabaseDesign.Ampersand.Misc
 
    fatal :: Int -> String -> a
