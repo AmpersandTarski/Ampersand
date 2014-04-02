@@ -39,8 +39,8 @@ where
                PCptPopu{}  -> False
 -}
 
-    fullContents :: [A_Gen] -> [Population] -> Expression -> Pairs
-    fullContents gens pt = contents
+   fullContents :: [A_Gen] -> [Population] -> Expression -> Pairs
+   fullContents gens pt = contents
      where
       contents expr
        = case expr of
