@@ -17,7 +17,7 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      )
 where
 import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Classes (Populated(..),atomsOf,Relational(..))
+import DatabaseDesign.Ampersand.Classes (fullContents,atomsOf,Relational(..))
 import DatabaseDesign.Ampersand.Basics
 import Data.List(nub,transpose)
 import GHC.Exts (sortWith)
