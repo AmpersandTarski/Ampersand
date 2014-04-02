@@ -92,7 +92,7 @@ module DatabaseDesign.Ampersand
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
-   , Populated(..), Paire, Purpose(..), ExplObj(..), PictType(..)
+   , fullContents, Paire, Purpose(..), ExplObj(..), PictType(..)
    )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree

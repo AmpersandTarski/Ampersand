@@ -233,7 +233,6 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                       , decfpos = OriginUnknown
                       , deciss  = fatal 226 "Do not refer to deciss of this dummy relation"
                       , decusr  = False
-                      , decISA  = False
                       , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
                       , decplug = fatal 229 "Do not refer to decplug of this dummy relation"
                       }

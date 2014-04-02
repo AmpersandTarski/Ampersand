@@ -143,7 +143,6 @@ pCtx2aCtx
                      , decfpos = dec_fpos pd 
                      , deciss  = True
                      , decusr  = True
-                     , decISA  = False
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
@@ -522,7 +521,6 @@ pCtx2aCtx
                           , decfpos = orig
                           , deciss  = True
                           , decusr  = False
-                          , decISA  = False
                           , decpat  = env
                           , decplug = False
                           }

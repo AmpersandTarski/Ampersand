@@ -309,8 +309,7 @@ makeEntityTables flags context allDcls isas conceptss exclusions
              } 
         where
           (isaAtts,atts) = partition isISA attsAndIsaRels
-            where -- isISA (EDcD r) = decISA r
-                  isISA (EDcI _) = True
+            where isISA (EDcI _) = True
                   isISA _        = False
           mainkernel = map EDcI kernel
           plugMors :: [Expression]

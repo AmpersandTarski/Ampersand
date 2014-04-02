@@ -673,7 +673,6 @@ while maintaining all invariants.
                  , decfpos = Origin ("generated relation (Delta "++show sgn++")")
                  , deciss  = True
                  , decusr  = False
-                 , decISA  = False
                  , decpat  = ""
                  , decplug = True
                  } 
