@@ -1,5 +1,11 @@
 <?php
 
+/* FUNCTIONS OF NEWER VERSIONS OF PHP */
+require_once(__DIR__ . '/functions/array_column.php');
+
+
+/* INCLUDES OF AMPERSAND FRAMEWORK */
+
 require_once (__DIR__ . '/../ampersand/Generics.php'); // loading the Ampersand model
 
 require_once (__DIR__ . '/../db/Database.php');
