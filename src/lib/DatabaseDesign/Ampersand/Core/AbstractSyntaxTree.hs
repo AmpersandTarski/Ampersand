@@ -41,7 +41,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , showSign
  , aMarkup2String
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
- , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
+ , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
@@ -390,6 +390,7 @@ data Expression
       | EDif (Expression,Expression)   -- ^ difference              -
       | ELrs (Expression,Expression)   -- ^ left residual           /
       | ERrs (Expression,Expression)   -- ^ right residual          \
+      | EDia (Expression,Expression)   -- ^ diamond                 <>
       | ECps (Expression,Expression)   -- ^ composition             ; 
       | ERad (Expression,Expression)   -- ^ relative addition       ! 
       | EPrd (Expression,Expression)   -- ^ cartesian product       * 
@@ -405,7 +406,7 @@ data Expression
       | EMp1 String A_Concept          -- ^ constant (string between single quotes)
       deriving (Eq,Show)
 
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- implication
@@ -414,6 +415,7 @@ infixl 2 .\/.   -- union
 infixl 4 .-.    -- difference
 infixl 6 ./.    -- left residual
 infixl 6 .\.    -- right residual
+infixl 6 .<>.   -- diamond
 infixl 8 .:.    -- composition    -- .;. was unavailable, because Haskell's scanner does not recognize it as an operator.
 infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
@@ -433,6 +435,8 @@ l ./. r  = if target l/=target r then fatal 434 ("Cannot residuate (with operato
            ELrs (l,r)
 l .\. r  = if source l/=source r then fatal 436 ("Cannot residuate (with operator \"\\\") expression\n   "++show l++"\n   with "++show r++".") else
            ERrs (l,r)
+l .<>. r = if target l/=target r then fatal 434 ("Cannot use diamond operator \"<>\") on\n   "++show l++"\n   and "++show r++".") else
+           EDia (l,r)
 l .:. r  = if source r/=target l then fatal 438 ("Cannot compose (with operator \";\") expression\n   "++show l++"\n   with "++show r++".") else
            ECps (l,r)
 l .!. r  = if source r/=target l then fatal 440 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
@@ -454,6 +458,7 @@ instance Flippable Expression where
                EDif (l,r) -> EDif (flp l, flp r)
                ELrs (l,r) -> ERrs (flp r, flp l)
                ERrs (l,r) -> ELrs (flp r, flp l)
+               EDia (l,r) -> EDia (flp r, flp l)
                ECps (l,r) -> ECps (flp r, flp l)
                ERad (l,r) -> ERad (flp r, flp l)
                EPrd (l,r) -> EPrd (flp r, flp l)
@@ -476,6 +481,7 @@ instance Association Expression where
  sign (EDif (l,r)) = Sign (source l) (target r)
  sign (ELrs (l,r)) = Sign (source l) (source r)
  sign (ERrs (l,r)) = Sign (target l) (target r)
+ sign (EDia (l,r)) = Sign (source l) (source r)
  sign (ECps (l,r)) = Sign (source l) (target r)
  sign (ERad (l,r)) = Sign (source l) (target r)
  sign (EPrd (l,r)) = Sign (source l) (target r)

@@ -215,6 +215,7 @@ where
       | PDif Origin (Term a) (Term a)  -- ^ difference              -
       | PLrs Origin (Term a) (Term a)  -- ^ left residual           /
       | PRrs Origin (Term a) (Term a)  -- ^ right residual          \
+      | PDia Origin (Term a) (Term a)  -- ^ diamond                 <>
       | PCps Origin (Term a) (Term a)  -- ^ composition             ;
       | PRad Origin (Term a) (Term a)  -- ^ relative addition       !
       | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       *
@@ -237,6 +238,7 @@ where
        PDif o a b -> PDif o <$> (f a) <*> (f b)
        PLrs o a b -> PLrs o <$> (f a) <*> (f b)
        PRrs o a b -> PRrs o <$> (f a) <*> (f b)
+       PDia o a b -> PDia o <$> (f a) <*> (f b)
        PCps o a b -> PCps o <$> (f a) <*> (f b)
        PRad o a b -> PRad o <$> (f a) <*> (f b)
        PPrd o a b -> PPrd o <$> (f a) <*> (f b)
@@ -293,6 +295,7 @@ where
       PDif orig _ _  -> orig
       PLrs orig _ _  -> orig
       PRrs orig _ _  -> orig
+      PDia orig _ _  -> orig
       PCps orig _ _  -> orig
       PRad orig _ _  -> orig
       PPrd orig _ _  -> orig

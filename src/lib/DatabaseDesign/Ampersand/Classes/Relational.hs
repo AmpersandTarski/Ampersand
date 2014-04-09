@@ -144,7 +144,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EEps i _   -> isSingleton i
      EDcV{}     -> True
      EBrk e     -> isTrue e
-     _          -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
+     _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
 
  -- |  isFalse e == True   means that e is false, i.e. the population of e is empty.
  --    isFalse e == False  does not mean anything.
@@ -167,7 +167,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EEps{}     -> False
      EDcV{}     -> False
      EBrk e     -> isFalse e
-     _          -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
+     _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
  isProp expr = null ([Asy,Sym]>-multiplicities expr)
 
@@ -191,7 +191,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
-     _          -> False  -- TODO: find richer answers for ERrs, ELrs, EPrd, and ERad
+     _          -> False  -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad
  isEpsilon e = case e of
                 EEps{} -> True
                 _      -> False
@@ -209,4 +209,4 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EDcV{}     -> False
      EBrk f     -> isImin f
      EFlp f     -> isImin f
-     _          -> False  -- TODO: find richer answers for ERrs and ELrs
+     _          -> False  -- TODO: find richer answers for ELrs, ERrs, and EDia

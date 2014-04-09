@@ -139,8 +139,8 @@ where
      nM :: Bool -> Expression -> [Expression] -> (Expression,[String],String)
 -- posCpl indicates whether the expression is positive under a complement. It is False when expr is inside a complemented expression.
      nM posCpl (EEqu (l,r)) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM posCpl l []
-                                                  (f,steps',equ'') = nM posCpl r []
+                                            where (t,steps, equ')  = nM posCpl l []  -- TODO: the use of posCpl is erroneous
+                                                  (f,steps',equ'') = nM posCpl r []  -- TODO: the use of posCpl is erroneous
      nM posCpl (EImp (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM (not posCpl) l []
                                                   (f,steps',equ'') = nM posCpl r []
@@ -163,6 +163,9 @@ where
      nM posCpl (ERrs (l,r)) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM (not posCpl) l []
                                                   (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EDia (l,r)) _     | simpl = (t .<>. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM posCpl l []  -- TODO: the use of posCpl is erroneous
+                                                  (f,steps',equ'') = nM posCpl r []  -- TODO: the use of posCpl is erroneous
      nM posCpl (ERad (ERad (l,k),r)) rs   = nM posCpl (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
      nM posCpl (ERad (l,r)) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')    = nM posCpl l []
@@ -232,6 +235,9 @@ where
      nM _      (ERrs (y,ERrs (x,z))) _                     = (ERrs (ECps (x,y),z), ["Jipsen&Tsinakis: xy\\z = y\\(x\\z)"], "<=>")
      nM posCpl (ERrs (l,r)) _                              = (t .\. f, steps++steps', fEqu [equ',equ''])
                                                              where (t,steps, equ')  = nM (not posCpl) l []
+                                                                   (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EDia (l,r)) _                              = (t .<>. f, steps++steps', fEqu [equ',equ''])
+                                                             where (t,steps, equ')  = nM posCpl l []
                                                                    (f,steps',equ'') = nM posCpl r []
      nM _      (ERad (l,r)) _                   | isImin l = (r, ["-I!x = x"], "<=>")
      nM _      (ERad (l,r)) _                   | isImin r = (l, ["x!-I = x"], "<=>")
