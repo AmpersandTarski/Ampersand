@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    import Data.GraphViz
    import Data.GraphViz.Attributes.Complete
    import Data.List
-   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Identified(..),flp)
+   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Identified(..))
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -238,9 +238,9 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (EImp (l,r)) = f (notCpl l .\/. r)
      f (EIsc (l,r)) = f l ++ f r
      f (EUni (l,r)) = f l ++ f r
-     f (EDif (l,r)) = f (l ./\. notCpl r)
-     f (ELrs (l,r)) = f (l .!. notCpl (flp r))
-     f (ERrs (l,r)) = f (notCpl (flp l) .!. r)
+     f (EDif (l,r)) = f l ++ f (notCpl r)
+     f (ELrs (l,r)) = f l ++ f (notCpl r)
+     f (ERrs (l,r)) = f (notCpl l) ++ f r
      f (ECps (l,r)) = f l ++ f r
      f (ERad (l,r)) = f l ++ f r
      f (EPrd (l,r)) = f l ++ f r
