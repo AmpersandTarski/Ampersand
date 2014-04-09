@@ -269,6 +269,9 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f exclVars (ERrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
                                        where [c]   = mkVar exclVars [source l]
                                              eVars = exclVars++[c]
+      f exclVars (EDia (l,r)) (a,b)  = Forall [c] (Equiv (f eVars r (b,c)) (f eVars l (a,c)))
+                                       where [c]   = mkVar exclVars [target l]
+                                             eVars = exclVars++[c]
       f exclVars e@ECps{}     (a,b)  = fECps exclVars e (a,b)  -- special treatment, see below
       f exclVars e@ERad{}     (a,b)  = fERad exclVars e (a,b)  -- special treatment, see below
       f _        (EPrd (l,r)) (a,b)  = Conj [Dom l a, Cod r b]

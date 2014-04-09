@@ -400,6 +400,7 @@ instance ShowMath Expression where
           showExpr (EDif (l,r)) = showExpr l++texOnly_bx ++showExpr r
           showExpr (ELrs (l,r)) = showExpr l++texOnly_lRes++showExpr r
           showExpr (ERrs (l,r)) = showExpr l++texOnly_rRes++showExpr r
+          showExpr (EDia (l,r)) = showExpr l++texOnly_dia++showExpr r
           showExpr (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showExpr  r
                                          | otherwise                    = showExpr (ECps (EDcI i,r))
           showExpr (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showExpr  l
@@ -663,6 +664,9 @@ texOnly_lRes = " / "
 
 texOnly_rRes :: String
 texOnly_rRes = " \\backslash "
+
+texOnly_dia :: String
+texOnly_dia = " \\Diamond "
 
 texOnly_flip :: String
 texOnly_flip = "\\smallsmile "

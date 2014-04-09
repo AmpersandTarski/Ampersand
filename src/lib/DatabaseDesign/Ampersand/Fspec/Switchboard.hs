@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    import Data.GraphViz
    import Data.GraphViz.Attributes.Complete
    import Data.List
-   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Identified(..))
+   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Identified(..), flp)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -234,13 +234,14 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
    positiveIn :: Expression -> Declaration -> [Bool]
    positiveIn expr decl = f expr   -- all are True, so an insert in rel means an insert in expr
     where
-     f (EEqu _)     = fatal 245 "Illegal call of positiveIn."
+     f (EEqu _)     = fatal 237 "Illegal call of positiveIn."
      f (EImp (l,r)) = f (notCpl l .\/. r)
      f (EIsc (l,r)) = f l ++ f r
      f (EUni (l,r)) = f l ++ f r
      f (EDif (l,r)) = f l ++ f (notCpl r)
      f (ELrs (l,r)) = f l ++ f (notCpl r)
      f (ERrs (l,r)) = f (notCpl l) ++ f r
+     f (EDia (l,r)) = f (flp l .\. r ./\. l ./. flp r)
      f (ECps (l,r)) = f l ++ f r
      f (ERad (l,r)) = f l ++ f r
      f (EPrd (l,r)) = f l ++ f r

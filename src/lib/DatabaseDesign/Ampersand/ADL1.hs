@@ -53,7 +53,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
          ,RoleRelation(..)
          ,Population(..)
          ,Purpose(..), ExplObj(..)
-         , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
+         , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import DatabaseDesign.Ampersand.ADL1.Expression as X
          ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc

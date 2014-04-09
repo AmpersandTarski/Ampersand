@@ -253,12 +253,12 @@ instance ShowADL ViewSegment where
 -- showADL rel = show rel
 
 instance ShowADL Expression where
- showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]")
+ showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", " <> ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]")
 -- NOTE: retain space after \\, because of unexpected side effects if it is used just before an 'r' or 'n'....
    where 
-     showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
+     showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
-     showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
+     showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rDia, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
       = --let c = PlainConcept "A" in trace (showchar (insParentheses (ECps (ECps (EDcI c,EDcI c),ECps (EDcI c,EDcI c))))) $
         showchar (insParentheses expr)
         where
@@ -269,6 +269,7 @@ instance ShowADL Expression where
           showchar (EDif (l,r)) = showchar l++diff ++showchar r
           showchar (ELrs (l,r)) = showchar l++lresi++showchar r
           showchar (ERrs (l,r)) = showchar l++rresi++showchar r
+          showchar (EDia (l,r)) = showchar l++rDia++showchar r
           showchar (ECps (l,r)) = showchar l++rMul++showchar r
           showchar (ERad (l,r)) = showchar l++rAdd++showchar r
           showchar (EPrd (l,r)) = showchar l++rPrd++showchar r
@@ -433,9 +434,9 @@ instance ShowADL TermPrim where
 
 --used to compose error messages at p2a time
 instance (ShowADL a, Traced a) => ShowADL (Term a) where
- showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")")
+ showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", "<>", ";", "!", "*", "*", "+", "~", "(", ")")
    where
-    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar) expr
+    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rDia,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar) expr
      = showchar (insP_Parentheses expr)
       where
        showchar (Prim a) = showADL a
@@ -446,6 +447,7 @@ instance (ShowADL a, Traced a) => ShowADL (Term a) where
        showchar (PDif _ l r)                             = showchar l++diff ++showchar r
        showchar (PLrs _ l r)                             = showchar l++lresi++showchar r
        showchar (PRrs _ l r)                             = showchar l++rresi++showchar r
+       showchar (PDia _ l r)                             = showchar l++rDia++showchar r
        showchar (PCps _ l r)                             = showchar l++rMul++showchar r
        showchar (PRad _ l r)                             = showchar l++rAdd++showchar r
        showchar (PPrd _ l r)                             = showchar l++rPrd++showchar r
@@ -468,6 +470,7 @@ insP_Parentheses = insPar 0
        insPar i (PDif o l r) = wrap i     4 (PDif o (insPar 5 l) (insPar 5 r))
        insPar i (PLrs o l r) = wrap i     6 (PLrs o (insPar 7 l) (insPar 7 r))
        insPar i (PRrs o l r) = wrap i     6 (PRrs o (insPar 7 l) (insPar 7 r))
+       insPar i (PDia o l r) = wrap i     6 (PDia o (insPar 7 l) (insPar 7 r))
        insPar i (PCps o l r) = wrap (i+1) 8 (PCps o (insPar 8 l) (insPar 8 r))
        insPar i (PRad o l r) = wrap (i+1) 8 (PRad o (insPar 8 l) (insPar 8 r))
        insPar i (PPrd o l r) = wrap (i+1) 8 (PPrd o (insPar 8 l) (insPar 8 r))

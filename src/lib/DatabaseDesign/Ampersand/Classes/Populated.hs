@@ -70,6 +70,11 @@ where
                           [(x,[y]) | x<-atomsOf gens pt (target l), y<-atomsOf gens pt (target r)
                                    , null (lkp x (contents (EFlp l)) >- lkp y (contents (EFlp r)))
                                    ]
+            EDia (l,r) -> fromListWith (++)
+                          [(x,[y]) | x<-atomsOf gens pt (source l), y<-atomsOf gens pt (source r)
+                                   , null (lkp y (contents r) >- lkp x (contents l))
+                                   , null (lkp y (contents l) >- lkp x (contents r))
+                                   ]
             ERad (l,r) -> fromListWith uni
                           [(x,[y]) | x<-atomsOf gens pt (source l), y<-atomsOf gens pt (target r)
                                    , null (atomsOf gens pt (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
