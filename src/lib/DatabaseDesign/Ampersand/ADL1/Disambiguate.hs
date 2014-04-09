@@ -143,7 +143,7 @@ data DisambPrim
  | Ident
  | Vee
  | Mp1 String
- | Known Expression
+ | Known Expression deriving Show  -- Here, deriving Show serves debugging purposes only.
 
 -- get concept:
 gc :: Association expr => SrcOrTgt -> expr -> String
