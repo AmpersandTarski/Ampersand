@@ -299,10 +299,10 @@ pCtx2aCtx
          PIsc _ a b -> binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PUni _ a b -> binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PDif _ a b -> binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PLrs _ a b -> binary' (./.)  (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>tt a<*>tt b)
-         PRrs _ a b -> binary' (.\.)  (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PCps _ a b -> binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PRad _ a b -> binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PLrs _ a b -> binary' (./.)  (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <?> ((,)<$>tt a<*>tt b)
+         PRrs _ a b -> binary' (.\.)  (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <?> ((,)<$>tt a<*>tt b)
+         PCps _ a b -> binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b)
+         PRad _ a b -> binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b)
          PPrd _ a b -> (\((x,(s,_)),(y,(_,t))) -> (x .*. y, (s,t))) <$> ((,)<$>tt a<*>tt b)
          PKl0 _ a   -> unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
          PKl1 _ a   -> unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
@@ -342,12 +342,17 @@ pCtx2aCtx
                 ) -- simple instruction on how to derive the type
              -> ((Expression,(Bool,Bool)), (Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
              -> Guarded (Expression,(Bool,Bool))
-      binary  cbn     tp (e1,e2) = wrap'' cbn (fst e1,fst e2) <$> deriv tp (e1,e2)
-      unary   cbn     tp e1      = wrap   cbn (fst e1       ) <$> deriv tp e1
-      binary' cbn cpt tp (e1,e2) = wrap'  cbn (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
-      wrap'' f (e1,e2) ((src,b1), (tgt,b2)) = (f (addEpsilon src tgt e1) (addEpsilon src tgt e2), (b1, b2))
-      wrap   f expr  ((src,b1), (tgt,b2))  = (f (addEpsilon src tgt expr), (b1, b2))
-      wrap'  f (e1,e2) (cpt,_) ((_,b1), (_,b2))  = (f (addEpsilonRight' cpt e1) (addEpsilonLeft' cpt e2), (b1, b2))
+      binary  cbn     tp (e1,e2) = wrap (fst e1,fst e2) <$> deriv tp (e1,e2)
+        where
+         wrap (expr1,expr2) ((src,b1), (tgt,b2)) = (cbn (addEpsilon src tgt expr1) (addEpsilon src tgt expr2), (b1, b2))
+      unary   cbn     tp e1      = wrap (fst e1) <$> deriv tp e1
+        where
+         wrap expr  ((src,b1), (tgt,b2))  = (cbn (addEpsilon src tgt expr), (b1, b2))
+      binary' cbn preConcept tp side1 side2 (e1,e2) = wrap (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) preConcept) <*> deriv' tp (e1,e2)
+        where
+         wrap (expr1,expr2) (cpt,_) ((_,b1), (_,b2))
+          = (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
+            where lrDecide side e = case side of Src -> addEpsilonLeft' cpt e; Tgt -> addEpsilonRight' cpt e
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
     
     deriv1 o x'
