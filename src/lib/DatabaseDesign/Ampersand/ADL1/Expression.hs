@@ -28,6 +28,7 @@ subst (decl,expr) = subs
        subs (EDif (l,r)) = EDif (subs l,subs r)
        subs (ELrs (l,r)) = ELrs (subs l,subs r)
        subs (ERrs (l,r)) = ERrs (subs l,subs r)
+       subs (EDia (l,r)) = EDia (subs l,subs r)
        subs (ECps (l,r)) = ECps (subs l,subs r)
        subs (ERad (l,r)) = ERad (subs l,subs r)
        subs (EPrd (l,r)) = EPrd (subs l,subs r)
@@ -54,6 +55,7 @@ foldrMapExpression f g a (EUni (l,r)) = foldrMapExpression f g (foldrMapExpressi
 foldrMapExpression f g a (EDif (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ELrs (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ERrs (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EDia (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ECps (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ERad (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EPrd (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
@@ -78,6 +80,7 @@ primitives expr =
     (EDif (l,r)) -> primitives l `uni` primitives r
     (ELrs (l,r)) -> primitives l `uni` primitives r
     (ERrs (l,r)) -> primitives l `uni` primitives r
+    (EDia (l,r)) -> primitives l `uni` primitives r
     (ECps (l,r)) -> primitives l `uni` primitives r
     (ERad (l,r)) -> primitives l `uni` primitives r
     (EPrd (l,r)) -> primitives l `uni` primitives r
@@ -166,6 +169,7 @@ insParentheses expr = insPar 0 expr
      insPar i  (EDif (l,r)) = wrap i 4 (insPar 5 l .-. insPar 5 r)
      insPar i  (ELrs (l,r)) = wrap i 6 (insPar 7 l ./. insPar 7 r)
      insPar i  (ERrs (l,r)) = wrap i 6 (insPar 7 l .\. insPar 7 r)
+     insPar i  (EDia (l,r)) = wrap i 6 (insPar 7 l .<>. insPar 7 r)
      insPar i x@ECps{}      = wrap i 8 (foldr1 (.:.) [insPar 9 e | e<-exprCps2list x ])
      insPar i x@ERad{}      = wrap i 8 (foldr1 (.!.) [insPar 9 e | e<-exprRad2list x ])
      insPar i x@EPrd{}      = wrap i 8 (foldr1 (.*.) [insPar 9 e | e<-exprPrd2list x ])

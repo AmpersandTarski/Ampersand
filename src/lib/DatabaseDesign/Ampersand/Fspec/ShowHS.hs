@@ -706,6 +706,7 @@ where
     showHS flags indent (EDif (l,r)) = "EDif ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
     showHS flags indent (ELrs (l,r)) = "ELrs ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
     showHS flags indent (ERrs (l,r)) = "ERrs ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
+    showHS flags indent (EDia (l,r)) = "EDia ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
     showHS flags indent (ECps (l,r)) = "ECps ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
     showHS flags indent (ERad (l,r)) = "ERad ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"
     showHS flags indent (EPrd (l,r)) = "EPrd ("++showHS flags (indent++"      ") l++indent++"     ,"++showHS flags (indent++"      ") r++indent++"     )"

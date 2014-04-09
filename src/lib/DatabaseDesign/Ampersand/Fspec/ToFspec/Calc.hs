@@ -446,6 +446,7 @@ where
                      EDif{} -> "-"
                      ELrs{} -> "/"
                      ERrs{} -> "\\"
+                     EDia{} -> "<>"
                      ECps{} -> ";"
                      ERad{} -> "!"
                      EPrd{} -> "*"

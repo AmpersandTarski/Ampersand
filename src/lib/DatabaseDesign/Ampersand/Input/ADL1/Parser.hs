@@ -648,15 +648,17 @@ In practice, we have it a little different.
 
 -- The left factored version of right- and left residuals:
    pTrm3 :: Parser Token (Term TermPrim)
-   pTrm3  =  pTrm4 <??> (fRrs <$> pKey_pos "\\"  <*> pTrm4 <|> fLrs <$> pKey_pos "/" <*> pTrm4 )
-             where fRrs orig rExp lExp = PRrs orig lExp rExp
-                   fLrs orig rExp lExp = PLrs orig lExp rExp
+   pTrm3  =  pTrm4 <??> (fLrs <$> pKey_pos "/" <*> pTrm4 <|> fRrs <$> pKey_pos "\\"  <*> pTrm4 <|> fDia <$> pKey_pos "<>" <*> pTrm4 )
+             where fLrs orig rExp lExp = PLrs orig lExp rExp
+                   fRrs orig rExp lExp = PRrs orig lExp rExp
+                   fDia orig rExp lExp = PDia orig lExp rExp
 
 {- by the way, a slightly different way of getting exactly the same result is:
    pTrm3 :: Parser Token (Term TermPrim)
-   pTrm3  =  pTrm4 <??> (f <$>  (pKey_val_pos "\\" <|> pKey_val_pos "/") <*> pTrm4 )
+   pTrm3  =  pTrm4 <??> (f <$>  (pKey_val_pos "/" <|> pKey_val_pos "\\" <|> pKey_val_pos "<>") <*> pTrm4 )
              where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
-                   f (_   , orig) rExp lExp = PLrs orig lExp rExp
+                   f ("/" , orig) rExp lExp = PLrs orig lExp rExp
+                   f (_   , orig) rExp lExp = PDia orig lExp rExp
 -}
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...

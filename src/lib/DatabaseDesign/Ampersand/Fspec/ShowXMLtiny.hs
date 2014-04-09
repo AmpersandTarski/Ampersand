@@ -145,6 +145,7 @@ where
                (EDif (l,r)) -> Elem (simpleTag "DIFF") (map mkXmlTree [l,r])
                (ELrs (l,r)) -> Elem (simpleTag "LRES") (map mkXmlTree [l,r])
                (ERrs (l,r)) -> Elem (simpleTag "RRES") (map mkXmlTree [l,r])
+               (EDia (l,r)) -> Elem (simpleTag "DIAM") (map mkXmlTree [l,r])
                (ECps (l,r)) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
                (ERad (l,r)) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
                (EPrd (l,r)) -> Elem (simpleTag "RPRD") (map mkXmlTree [l,r])
