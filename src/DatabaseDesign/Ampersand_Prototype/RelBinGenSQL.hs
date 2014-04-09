@@ -58,7 +58,7 @@ selectExpr ::    Fspc       -- current context
               -> String     -- resulting SQL expression
 -- In order to translate all Expressions, code generators have been written for EUni ( \/ ), EIsc ( /\ ), EFlp ( ~ ), ECpl (unary - ), and ECps ( ; ),
 -- each of which is supposed to generate correct code in 100% of the cases. (TODO: how do we establish that properly?)
--- The other operators, EEqu ( = ), EImp ( |- ), ERad ( ! ), EPrd ( * ), ELrs ( / ), and ERrs ( \ ), have been implemented in terms of the previous ones,
+-- The other operators, EEqu ( = ), EImp ( |- ), ERad ( ! ), EPrd ( * ), ELrs ( / ), ERrs ( \ ), and EDia ( <> ), have been implemented in terms of the previous ones,
 -- in order to prevent mistakes in the code generator. It is possible that more efficient code may be generated in these cases.
 -- Special cases are treated up front, so they will overrule the more general cases.
 -- That allows more efficient code while retaining correctness and completeness as much as possible.
@@ -412,7 +412,10 @@ Based on this derivation:
                          rResiduClause
     ELrs (l,r)
       -> sqlcomment i ("case: ELrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
-         selectExpr fSpec i trg src (flp r .\. flp l)
+         selectExpr fSpec i trg src (EFlp (flp r .\. flp l))
+    EDia (l,r)
+      -> sqlcomment i ("case: EDia (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
+         selectExpr fSpec i trg src ((flp l .\. r) ./\. (l ./. flp r))
     ERad{}
       -> sqlcomment i ("case: ERad (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
         selectExpr fSpec i src trg (deMorganERad expr)
