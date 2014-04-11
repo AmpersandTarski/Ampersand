@@ -71,7 +71,7 @@ where
                         Asy-> flp r ./\. r .|-. EDcI (source r)
                         Trn-> r .:. r .|-. r
                         Rfx-> EDcI (source r) .|-. r
-                        Irf-> EDcI (source r) ./\. (EDcV (sign r) .-. r)
+                        Irf-> r .|-. ECpl (EDcI (source r))
            explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                                  case prop of
                                    Sym-> state isPositive English (name d++"["++s++"]") "symmetric"

@@ -1,0 +1,33 @@
+CONTEXT RAP IN ENGLISH LATEX
+
+POPULATION characteristic[Rule*Expression] CONTAINS    -- [UNI,TOT]
+   [ ("def equivalued", "equivalued = state;state~ /\\ result<>result~")
+   ; ("def sat",        "sat = state~;true;exp;characteristic~"        )
+   ; ("def true",       "true = exp;signature;exp~;equivalued"         )
+   ]
+POPULATION exp[Query*Expression] CONTAINS    -- [UNI,TOT]
+   []
+POPULATION signature[Expression*Expression] CONTAINS    -- [UNI,TOT,RFX,TRN]
+   [ ("true = exp;signature;exp~;equivalued"         , "V[Query*Query]"     )
+   ; ("V[Query*Query]"                               , "V[Query*Query]"     )
+   ; ("V[State*Rule]"                                , "V[State*Rule]"      )
+   ; ("equivalued = state;state~ /\\ result<>result~", "V[Query*Query]"     )
+   ; ("sat = state~;true;exp;characteristic~"        , "V[State*Rule]"      )
+   ]
+POPULATION state[Query*State] CONTAINS    -- [UNI,TOT]
+   []
+POPULATION true[Query*Query] CONTAINS    -- [PROP]
+   []
+POPULATION result[Query*Statement] CONTAINS
+   []
+POPULATION sat[State*Rule] CONTAINS
+   []
+POPULATION pred[State*State] CONTAINS    -- [UNI,IRF]
+   [ ("2", "1")
+   ; ("3", "2")
+   ; ("4", "3")
+   ]
+POPULATION equivalued[Query*Query] CONTAINS    -- [RFX,TRN,ASY]
+   []
+
+ENDCONTEXT

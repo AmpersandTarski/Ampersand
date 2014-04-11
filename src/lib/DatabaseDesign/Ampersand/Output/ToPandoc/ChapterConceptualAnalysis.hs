@@ -92,9 +92,11 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
           in ([]
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( if null purp
-                  then [ Plain$[ Str ("De volgende "++nladjs d++" relatie is gedeclareerd ")      | fsLang fSpec==Dutch]
-                            ++ [ Str ("The following "++ukadjs d++" relation has been declared ") | fsLang fSpec==English] ]
-                  else purp ) -- If there is a purpose, its text should introduce the declaration and the generator remains silent.
+                  then [ Plain$[ Str ("De volgende "++nladjs d++" is gedefinieerd ")      | fsLang fSpec==Dutch]
+                            ++ [ Str ("The following "++ukadjs d++" has been defined ") | fsLang fSpec==English] ]
+                  else purp++
+                       [ Plain$[ Str ("Voor dat doel is de volgende "++nladjs d++" gedefinieerd ")      | fsLang fSpec==Dutch]
+                            ++ [ Str ("For this purpose, the following "++ukadjs d++" has been defined ") | fsLang fSpec==English] ] )
                   -- Then the declaration of the relation with its properties and its intended meaning 
                ++ pandocEqnArray 
                      [ ( texOnly_Id(name d)
@@ -108,26 +110,32 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
                   | null (meaning2Blocks (fsLang fSpec) d)]
                ++ meaning2Blocks (fsLang fSpec) d
               ])
-  ukadjs d  = commaEng "and" (map ukadj (multiplicities d))
-  ukadj Uni = "univalent"
-  ukadj Inj = "injective"
-  ukadj Sur = "surjective"
-  ukadj Tot = "total"
-  ukadj Sym = "symmetric"
-  ukadj Asy = "antisymmetric"
-  ukadj Trn = "transitive"
-  ukadj Rfx = "reflexive"
-  ukadj Irf = "irreflexive"
-  nladjs d  = commaNL "en" (map nladj (multiplicities d))
-  nladj Uni = "univalente"
-  nladj Inj = "injectieve"
-  nladj Sur = "surjectieve"
-  nladj Tot = "totale"
-  nladj Sym = "symmetrische"
-  nladj Asy = "antisymmetrische"
-  nladj Trn = "transitieve"
-  nladj Rfx = "reflexieve"
-  nladj Irf = "irreflexieve"
+  ukadjs d  = case [Uni,Tot]>-multiplicities d of
+               [] -> commaEng "and" (map ukadj (multiplicities d>-[Uni,Tot]))++" function"
+               _  -> commaEng "and" (map ukadj (multiplicities d))++" relation"
+   where
+    ukadj Uni = "univalent"
+    ukadj Inj = "injective"
+    ukadj Sur = "surjective"
+    ukadj Tot = "total"
+    ukadj Sym = "symmetric"
+    ukadj Asy = "antisymmetric"
+    ukadj Trn = "transitive"
+    ukadj Rfx = "reflexive"
+    ukadj Irf = "irreflexive"
+  nladjs d = case [Uni,Tot]>-multiplicities d of
+               [] -> commaNL "en" (map nladj (multiplicities d>-[Uni,Tot]))++" functie"
+               _  -> commaNL "en" (map nladj (multiplicities d))++" relatie"
+   where
+    nladj Uni = "univalente"
+    nladj Inj = "injectieve"
+    nladj Sur = "surjectieve"
+    nladj Tot = "totale"
+    nladj Sym = "symmetrische"
+    nladj Asy = "antisymmetrische"
+    nladj Trn = "transitieve"
+    nladj Rfx = "reflexieve"
+    nladj Irf = "irreflexieve"
   caRule :: Rule -> ([Inline], [[Block]])
   caRule r 
         = let purp = purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) r)

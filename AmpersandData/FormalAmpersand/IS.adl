@@ -1,0 +1,44 @@
+CONTEXT RAP IN ENGLISH LATEX
+INCLUDE "ISdocumentation.adl"
+INCLUDE "IS.ifc"
+INCLUDE "IS.pop"
+
+
+PATTERN "Information Systems"
+RELATION characteristic[Rule*Expression] [UNI,TOT]
+MEANING "Every rule has a {\\em characteristic expression}, which is meant to remain true across changing states. We say that a rule is true whenever its characteristic expression can be evaluated to true."
+RELATION exp[Query*Expression] [UNI,TOT]
+MEANING "Each query evaluates a given expression in a given state, and produces a number of facts as a result."
+RELATION signature[Expression*Expression] [UNI,TOT,TRN]
+MEANING "Every expression has a signature (sometimes called type)."
+RELATION state[Query*State] [UNI,TOT]
+MEANING "Every query operates on a state, in which expressions can be evaluated."
+RELATION true[Query*Query] [PROP]
+MEANING "In order to say that a query has produced `true' as a result, we will call that query  `true'."
+RELATION result[Query*Statement]
+MEANING "When mentioning the result of executing a query, we mean the set of facts that was produced by executing that query."
+RELATION sat[State*Rule]
+MEANING "It makes sense to say that a state satisfies a rule, meaning that the rule is true in that state."
+RELATION pred[State*State] [UNI,IRF]
+MEANING "Each state except the initial state will have a predecessor. Two states that have the same predecessor are the same."
+RELATION equivalued[Query*Query] [RFX,TRN,ASY]
+MEANING "We shall use the word equivalued to indicate that executing two queries in the same state has produced identical results."
+
+CLASSIFY Expression ISA Statement
+
+RULE "def equivalued" : equivalued = state;state~ /\ result<>result~
+MEANING "Two queries are called equivalued if they produce exactly the same facts from the same state."
+
+RULE "def sat" : sat = state~;true;exp;characteristic~
+MEANING "For a rule $r$ to satisfy a state $s$ means: the query that executes the rule expression of rule $r$ yields true."
+
+RULE "def true" : true = exp;signature;exp~;equivalued
+MEANING "A query is true if it is equivalued with a query of the signature of its expression. I.e. its execution yields the same set of facts as does the signature executed on the same state."
+
+IDENT query : Query(exp, state)
+
+IDENT state : State(pred)
+
+ENDPATTERN
+
+ENDCONTEXT
