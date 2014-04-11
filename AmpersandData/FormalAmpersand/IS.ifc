@@ -1,0 +1,15 @@
+CONTEXT RAP IN ENGLISH LATEX
+
+INTERFACE ruleOverview : I[ONE]
+BOX [ rules : V[ONE*Rule]
+      BOX [ rule : I
+          , expression : characteristic
+          ]
+    ]
+
+INTERFACE newRule : I[Rule]
+BOX [ rule : I
+    , expression : characteristic
+    ]
+
+ENDCONTEXT

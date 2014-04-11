@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
---import Debug.Trace
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
@@ -190,6 +190,7 @@ chpNatLangReqs lev fSpec flags =
                          Just pat -> purposes2Blocks flags purps
                                      where purps = purposesDefinedIn fSpec (fsLang fSpec) pat
 
+-- The following paragraph produces an introduction of one theme (i.e. pattern or process).
               printIntro :: [(A_Concept, [Purpose])] -> [(String, String, Origin)] -> [Block]
               printIntro [] [] = []
               printIntro ccds relConcpts
@@ -199,8 +200,8 @@ chpNatLangReqs lev fSpec flags =
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
-                                                                  commaNLPandoc (Str "en") cs++[ Str "."]++
-                                                                  [ Str " Daarna worden hierover afspraken geïntroduceerd." | (not.null) rules2print]
+                                                                  commaNLPandoc (Str "en") cs++[ Str "."]
+                                                    --            ++[ Str " Daarna worden hierover afspraken geïntroduceerd." | (not.null) rules2print]
                                                        ([c],_) -> [ Str "Deze sectie introduceert het concept "
                                                                   , c]
                                                        (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
