@@ -24,7 +24,6 @@ function initSession()
   global $conceptTableInfo;
 
   session_start(); // Start a new, or resume the existing, PHP session
-  DB_doquer('SET GLOBAL SQL_MODE=ANSI_QUOTES'); // Comply to ANSI standard SQL wrt. quoting.
 
 // only execute session code when concept SESSION is used by adl script
   if (isset($conceptTableInfo['SESSION']))
