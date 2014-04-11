@@ -1,0 +1,119 @@
+CONTEXT RAP IN ENGLISH LATEX
+{- This file contains documentation of the information iystems pattern (IS) in LaTeX format.
+   Each concept has its own section, where sections are separated by comments -}
+
+PURPOSE PATTERN "Information Systems"
+{+The purpose of an information system is to support people (called {\em users})
+in a specific domain (called the {\em context})
+by disclosing and maintaining factual information (represented by {\em data}).
+For example, a customer relationship management (CRM) system of ECME Inc.\ should contain facts about ECME's customers.
+Its context is ECME Inc., in particular its customer base.
+The users are undoubtedly employees of ECME Inc., but customers with access to this information are considered user just as well.
+
+In order to ask, to command, to state facts and in general to communicate things verbally, people use language.
+Since an information system is supposed to contain facts, we take a special interest in affirmative sentences.
+Affirmative sentences are characterized by being either true or false, e.g. ``Last Tuesday, Peter was in Amsterdam.''
+We call this a {\em statement}, and we call a true statement a {\em fact}.
+Thus, we can think of an information system as a device that contains and maintains facts about a particular domain.
+The set of facts that is contained in an information system is called the {\em contents} or {\em population} of that system.
+
+The following definitions are needed for explaining how users can trust the system.
+For we must keep in mind at all times that ECME Inc.\ (for example) wishes to rely on its CRM-system.
+So to what extent can we be sure that the system tells the truth about ECME's customers?
+-}
+
+PURPOSE CONCEPT Context
+{+The word context is used to delimit scope.
+This involves both the scope of use (the business scope) and the scope of definitions (the technical scope).
+The purpose of having a context is to allow a sound definition of truth within that context.
+If users are to rely on an information system to be truthful, we must be able to establish the truth or falsehood of statements unequivocally.
+This can be done if the notion of truth is confined to a context.
+That allows us, for example, to say ``Peter has scored ten hits'', and know that it is true in the context of his sports club, but that it is false in the context of his work as a professional musician.
+Every information has a scope, e.g. the customer base of ECME Inc.
+-}
+CONCEPT Context "A context is a scope in which a single truth is defined."
+
+CONCEPT Statement "A statement is an affirmative sentence."
+
+PURPOSE CONCEPT Rule
+{+Agreements made by people can be represented by a statement, which must be kept true.
+For example, if we agree to keep the desks in our office clean,
+the statement ``All desks are clean'' should be true all the time.
+Such agreements are known under many different names, such as ``rule'', ``commitment'', ``contract'', etcetera.
+
+-}
+CONCEPT Rule "A rule is a statement that must be kept true."
+
+PURPOSE CONCEPT State
+{+If an information system is to tell the truth, it must cope with truth that changes over time.
+For example, suppose that ECME's customer John Brown moves houses.
+The system has to be told that John Brown gets a new address, in order to remain a reliable truth-teller.
+So the set of facts contained by an information system changes over time, because they represent
+truth\footnote{There is much more to be said about truth, for which we refer to the literature on language philosophy.
+For our purposes, we work with the idea that truth requires a context.} in the real world.
+-}
+CONCEPT State "A state is the set of facts that populates an information system at a particular moment in time. The current state is the state of the system at the current moment in time."
+
+PURPOSE CONCEPT Expression
+{+If we want to talk to people, we use statements in natural language.
+If we want a computer to understand us, we use statements in a formal language.
+The latter type of statement is called {\em expression}.
+-}
+CONCEPT Expression "An expression is a statement in a formal language."
+
+PURPOSE CONCEPT Query
+{+Note that the word {\em statement} is used both in natural language and in formal language.
+That makes sense, because a statement can be true or false in natural language as well as formal language.
+If it is relevant to say that a statement is made in natural language, we will say so explicitly.
+
+Statements can be obtained from an information system by executing a query.
+Queries are meant to produce statements from the current state of an information system.
+-}
+CONCEPT Query "A query is a computation that yields a set of statements from a state."
+
+PURPOSE RELATION characteristic[Rule*Expression]
+{+In order to maintain rules, each rule is associated with one expression. That expression is called the {\em characteristic} expression of the rule.
+-}
+PURPOSE RELATION exp[Query*Expression]
+{+Queries exist for the purpose of evaluating an expression in a given context.
+-}
+PURPOSE RELATION signature[Expression*Expression]
+{+For the purpose of defining truth, every expression has a signature. That signature itself is an expression too.
+-}
+PURPOSE RELATION state[Query*State]
+{+When talking about the state on which the query has been executed,
+we mean the state that was current on the moment of execution.
+-}
+PURPOSE RELATION true[Query*Query]
+{+In order to define how to compute the truth (by executing queries), we define `true' as a property of queries.
+-}
+PURPOSE RELATION sat[State*Rule]
+{+In order to say that a set of facts is consistent with a rule, we introduce the notion of satisfaction.
+We will say that a state satisfies a rule, to indicate that it is true.
+-}
+PURPOSE RELATION pred[State*State]
+{+If we perceive an information system as a set of states, that changes over time, then it makes sense to talk about the predecessor of a state.
+As time passes by an ever growing sequence of states emerges.
+In order to obtain a linear (acyclic) notion of time, we must define that two states are the same if their predecessors are the same, and a state cannot be its own predecessor.
+-}
+PURPOSE RELATION result[Query*Statement]
+{+Every query results in a number of facts.
+-}
+PURPOSE RELATION equivalued[Query*Query]
+{+It makes sense to say that two queries are called equivalued.
+-}
+
+PURPOSE RULE "def equivalued"
+{+In order to define true queries, we must introduce the word equivalued.
+-}
+
+PURPOSE RULE "def sat"
+{+The meaning of the word satisfy is given by:
+-}
+
+PURPOSE RULE "def true"
+{+In order to define the notion of truth formally, we must introduce a technical definition.
+As the signature of an expression defines the truth, we call that expression true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
+-}
+
+ENDCONTEXT

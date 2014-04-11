@@ -435,11 +435,11 @@ l ./. r  = if target l/=target r then fatal 434 ("Cannot residuate (with operato
            ELrs (l,r)
 l .\. r  = if source l/=source r then fatal 436 ("Cannot residuate (with operator \"\\\") expression\n   "++show l++"\n   with "++show r++".") else
            ERrs (l,r)
-l .<>. r = if target l/=target r then fatal 434 ("Cannot use diamond operator \"<>\") on\n   "++show l++"\n   and "++show r++".") else
+l .<>. r = if source l/=target r then fatal 438 ("Cannot use diamond operator \"<>\") on\n   "++show l++"\n   and "++show r++".") else
            EDia (l,r)
-l .:. r  = if source r/=target l then fatal 438 ("Cannot compose (with operator \";\") expression\n   "++show l++"\n   with "++show r++".") else
+l .:. r  = if source r/=target l then fatal 440 ("Cannot compose (with operator \";\") expression\n   "++show l++"\n   with "++show r++".") else
            ECps (l,r)
-l .!. r  = if source r/=target l then fatal 440 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
+l .!. r  = if source r/=target l then fatal 442 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
            ERad (l,r)
 l .*. r  = -- SJC: always fits! No fatal here..
            EPrd (l,r)
@@ -481,7 +481,7 @@ instance Association Expression where
  sign (EDif (l,r)) = Sign (source l) (target r)
  sign (ELrs (l,r)) = Sign (source l) (source r)
  sign (ERrs (l,r)) = Sign (target l) (target r)
- sign (EDia (l,r)) = Sign (source l) (source r)
+ sign (EDia (l,r)) = Sign (source l) (target r)
  sign (ECps (l,r)) = Sign (source l) (target r)
  sign (ERad (l,r)) = Sign (source l) (target r)
  sign (EPrd (l,r)) = Sign (source l) (target r)
