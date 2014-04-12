@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
  ,addSlashes
  ,indentBlock,addToLast
- ,pDebug,indentBlockBetween,quote
+ ,pDebug,indentBlockBetween,quote,sqlAtomQuote
  ,phpIndent
  ) where
    import Data.Char(isAlphaNum,isDigit)
@@ -19,9 +19,19 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 
    quote :: String->String
    quote [] = []
-   quote ('`':s) = '`':s
+   quote ('`':s) = '`':s  -- do nothing if already quoted
    quote s = "`"++s++"`"
-   
+   quote s = "`"++quot s++"`"
+    where quot ('`':s) = "\\`" ++ quot s
+          quot (c:s)   = c: quot s
+          quot []      = []                          
+
+   sqlAtomQuote :: String->String
+   sqlAtomQuote s = "'"++sAQ s++"'"
+    where sAQ ('\'':s) = "\\'" ++ sAQ s
+          sAQ (c:s)    = c: sAQ s
+          sAQ []       = []                          
+
    commentBlock :: [String]->[String]
    commentBlock ls = ["/*"++replicate lnth '*'++"*\\"]
                         ++ ["* "++strReplace "*/" "**" line++replicate (lnth - length line) ' '++" *" | line <- ls]

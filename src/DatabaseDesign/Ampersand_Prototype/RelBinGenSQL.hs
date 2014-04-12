@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (quote,addSlashes,phpIndent)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (quote,sqlAtomQuote,addSlashes,phpIndent)
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
@@ -95,8 +95,8 @@ selectExpr fSpec i src trg expr
                               [ "isect0."++src'++" = "++show atom -- source and target are equal because this is the case with EMp1{}
                               | EMp1 atom _ <- mp1Tm
                               ]++
-                              [ "isect0."++src'++" = "++show atom1 -- source and target are unequal
-                                ++ " AND isect0."++trg'++" = "++show atom2 -- source and target are unequal
+                              [ "isect0."++src'++" = "++sqlAtomQuote atom1 -- source and target are unequal
+                                ++ " AND isect0."++trg'++" = "++sqlAtomQuote atom2 -- source and target are unequal
                               | t@ECps{} <- mp1Tm, [EMp1 atom1 _, EDcV _, EMp1 atom2 _]<-[exprCps2list t]
                               ]++
                               [if isIdent l
@@ -163,7 +163,7 @@ selectExpr fSpec i src trg expr
                 phpIndent (i+3)++showADL expr) (selectExpr fSpec i src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
           [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]-- this will occur quite often because of doSubsExpr
              -> sqlcomment i ("case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]"++phpIndent (i+3)++showADL expr) $
-                 "SELECT "++show atomSrc++" AS "++src++", "++show atomTgt++" AS "++trg
+                 "SELECT "++sqlAtomQuote atomSrc++" AS "++src++", "++sqlAtomQuote atomTgt++" AS "++trg
           (e@(EMp1 atom _):f:fx)
              -> let expr' = foldr1 (.:.) (f:fx)
                     src' = sqlExprSrc fSpec e
@@ -171,7 +171,7 @@ selectExpr fSpec i src trg expr
                 in sqlcomment i ("case:  (EMp1{}: f: fx)"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("fst",src',src) ("fst",trg',trg)
                                    (selectExprInFROM fSpec i src' trg' expr'++" AS fst")
-                                   ("fst."++src'++" = "++show atom)
+                                   ("fst."++src'++" = "++sqlAtomQuote atom)
           (e:EDcV _:f:fx) -- prevent calculating V in this case
              | src==trg && not (isProp e) -> fatal 172 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
              | otherwise -> let expr' = foldr1 (.:.) (f:fx)
@@ -252,7 +252,7 @@ WHERE ECps0.`A`<>ECps2.`A
     (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
     (EMp1 atom _) -> sqlcomment i "case: EMp1 atom."
-                      ("SELECT "++show atom++" AS "++src++", "++show atom++" AS "++trg)
+                      ("SELECT "++sqlAtomQuote atom++" AS "++src++", "++sqlAtomQuote atom++" AS "++trg)
     (EDcV (Sign s t))    -> let concNames pfx c = [([],"","1") |c==ONE]++[([quote (name p) ++ " AS "++pfx],pfx,quote (fldname s')) | (p,s',_) <- sqlRelPlugs fSpec (EDcI c)]
                             in sqlcomment i ("case: (EDcV (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (srcPrefix,src',src) (tgtPrefix,trg',trg) tbls "1"

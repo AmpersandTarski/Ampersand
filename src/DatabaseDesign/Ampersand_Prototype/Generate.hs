@@ -102,10 +102,11 @@ generateTableInfos fSpec =
   , "  array" ] ++
   addToLastLine ";" 
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [showPhpStr (name decl)++" => array ('srcConcept' => "++showPhpStr (name (source decl))++", 'tgtConcept' => "++showPhpStr (name (target decl))++
-                                          ", 'table' => "++showPhpStr (name table)
-                                        ++", 'srcCol' => "++showPhpStr (fldname srcCol)
-                                        ++", 'tgtCol' => "++showPhpStr (fldname tgtCol)++")"] 
+         [ [showPhpStr (name decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
+                                            ++", 'tgtConcept' => "++showPhpStr (name (target decl))
+                                            ++", 'table'      => "++showPhpStr (name table)
+                                            ++", 'srcCol'     => "++showPhpStr (fldname srcCol)
+                                            ++", 'tgtCol'     => "++showPhpStr (fldname tgtCol)++")"] 
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
          , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
          ])) ++
@@ -181,13 +182,11 @@ generateRules fSpec flags =
            ) ++
            [ "        // Normalized complement (== violationsSQL): " ] ++
            (lines ( "        // "++(showHS flags "\n        // ") violationsExpr))++
-           [ "        , 'violationsSQL' => '"++ selectExpr fSpec 26 "src" "tgt" violationsExpr
-                                             ++"'" 
+           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
            ] ++
-           [ "        , 'contentsSQL'   => '" ++
+           [ "        , 'contentsSQL'   => " ++
              let contentsExpr = conjNF rExpr in
-              selectExpr fSpec 26 "src" "tgt" contentsExpr
-               ++ "'"
+              showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
            | development flags -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
            ] ++
@@ -221,7 +220,7 @@ generateRules fSpec flags =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          '" ++ selectExpr fSpec 33 "src" "tgt" exp ++"'"
+         , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" exp)
          , "      )"
          ] 
        
@@ -264,9 +263,9 @@ generateViews fSpec _ =
  where genViewSeg (ViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genViewSeg (ViewHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
-                                     , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                                     , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
-                                     , "          '" ++ selectExpr fSpec 33 "src" "tgt" (objctx objDef)++"'"
+                                     , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" (objctx objDef))
                                      , "      )"
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
@@ -328,8 +327,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => '" ++ selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp
-                                   ++ "'"                                                  
+  , "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
   ] 
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
@@ -398,7 +396,7 @@ showPhpStr str = "'"++escapePhpStr str++"'"
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
 escapePhpStr :: String -> String
-escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\"),('\n', "\\n")] | c<-cs ] -- escape '   \   \n
+escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\")] | c<-cs ] -- escape '   \   \n
 -- todo: escape everything else (unicode, etc)
 
 showPhpBool :: Bool -> String
@@ -412,7 +410,7 @@ indent n liness = [ replicate n ' ' ++ line | line <- liness ]
 
 showPlug :: PlugSQL -> [String]
 showPlug plug =  
- ("Table: '"++sqlname plug++"'")
+ ("Table: "++showPhpStr (sqlname plug))
  : 
  indent 4 
    (blockParenthesize "[" "]" "," (map showField (plugFields plug)))
@@ -420,5 +418,5 @@ showPlug plug =
 
 showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++ 
-                 "'"++fldname fld ++ "':"++showADL (target $ fldexpr fld)]
+                 showPhpStr (fldname fld) ++ ":"++showADL (target $ fldexpr fld)]
 
