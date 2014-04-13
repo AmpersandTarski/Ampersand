@@ -9,6 +9,7 @@ module DatabaseDesign.Ampersand_Prototype.AutoInstaller (odbcinstall)
 where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Installer (plug2tbl,dropplug,CreateTable,sessiontbl,historytbl)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(quote)
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Data.List  (intercalate)
@@ -45,7 +46,7 @@ inserts :: (IConnection conn) => conn -> [A_Gen] -> [Population] -> [PlugSQL] ->
 inserts _ _ _ [] = return 1
 inserts conn a_gens udp (plug:plugs) = 
    do stmt<- prepare conn
-             ("INSERT INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
+             ("INSERT INTO "++quote (name plug)++" ("++intercalate "," [quote (fldname f)++" " |f<-plugFields plug]++")"
                                 ++" VALUES ("++placeholders(plugFields plug)++")")
       executeMany stmt [ map toSql tblRecord | tblRecord<-tblcontents a_gens udp plug]
       inserts conn a_gens udp plugs

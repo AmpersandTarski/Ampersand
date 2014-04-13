@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.Installer
 import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr, quote, sqlAtomQuote)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -155,17 +155,17 @@ createTablesPHP fSpec =
            ++ case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
                tblRecords -> [ "else"
-                             , "mysql_query("++showPhpStr ("INSERT IGNORE INTO `"++name plug
-                                                           ++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
+                             , "mysql_query("++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
+                                                           ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
                                                            ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
                                                            ++phpIndent 16 )
                                         ++");"
                              ]
                              ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> "'"++escapePhpDoubleQuoteStr (addSlashes str) ++"'"|fld<-record]
+        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)
-         = [ "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM `"++name plug++"`")++")){"
+         = [ "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
            , "  mysql_query("++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
            , "}" ]
 
@@ -182,8 +182,8 @@ createTablePHP i (crtbl,crflds,crengine)
            
 plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
- = ( "CREATE TABLE `"++name plug++"`"
-   , [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
+ = ( "CREATE TABLE "++quote (name plug)++""
+   , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
      | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
       case (plug, plugFields plug) of
            (BinSQL{}, _) -> []
@@ -192,7 +192,7 @@ plug2tbl plug
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 dropplug :: PlugSQL -> String
-dropplug plug = "DROP TABLE `"++name plug++"`"
+dropplug plug = "DROP TABLE "++quote (name plug)++""
 
 historytbl :: CreateTable
 historytbl
@@ -207,6 +207,3 @@ sessiontbl
    , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , ", `lastAccess` BIGINT NOT NULL"]
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
-
-escapePhpDoubleQuoteStr :: String -> String
-escapePhpDoubleQuoteStr cs = concat [fromMaybe [c] $ lookup c [('\\', "\\\\"),('"', "\\\""),('\n', "\\n")] | c<-cs ]
