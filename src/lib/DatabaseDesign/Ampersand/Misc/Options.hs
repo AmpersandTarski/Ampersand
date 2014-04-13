@@ -78,7 +78,7 @@ data Options = Options { showVersion :: Bool
                        , progrName :: String --The name of the adl executable
                        , fileName :: FilePath --the file with the Ampersand context
                        , baseName :: String
-                       , logName :: String
+                       , logName :: FilePath
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , test :: Bool
@@ -95,85 +95,89 @@ getOptions :: IO Options
 getOptions =
    do args     <- getArgs
       progName <- getProgName
+      exePath <- findExecutable progName
+      env <- getEnvironment
       let usage = "\nType '"++ progName++" --help' for usage info."
-      let (o,n,errs) = getOpt Permute (each options) args
-      when ((not.null) errs) (error $ concat errs ++ usage)
-      defaultOpts <- defaultOptionsM (head (n++(error $ "Please supply the name of an ampersand file" ++ usage)))
-      let flags = foldl (flip id) defaultOpts o
+      let (actions, nonOptions, errors) = getOpt Permute (each options) args
+      let fName = head (nonOptions++(error $ "Please supply the name of an ampersand file" ++ usage))
+      localTime <- getLocalTime 
+      when ((not.null) errors) (error $ concat errors ++ usage)
+      
+      -- Here we thread startOptions through all supplied option actions
+      flags <- foldl (>>=) (return (startOptions fName localTime env exePath progName)) actions
+    --  defaultOpts <- defaultOptionsM 
+    --  let flags = foldl (flip id) opts actions
       if showHelp flags || showVersion flags
       then return flags
-      else checkNSetOptionsAndFileNameM (flags,n) usage
+      else checkNSetOptionsAndFileNameM (flags,nonOptions) usage
         
   where 
-     defaultOptionsM :: String -> IO Options 
-     defaultOptionsM fName =
-           do utcTime <- getCurrentTime
-              timeZone <- getCurrentTimeZone
-              let localTime = utcToLocalTime timeZone utcTime
-              progName <- getProgName
-              exePath <- findExecutable progName
-              env <- getEnvironment
-              return
-               Options {genTime       = localTime
-                      , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
-                      , outputfile    = fatal 83 "No monadic options available."
-                      , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
-                                                  (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
-                      , dbName        = fromMaybe ""        (lookup envdbName       env)
-                      , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
-                      , dirExec       = case exePath of
-                                          Nothing -> fatal 155 $ "Specify the path location of "++progName++" in your system PATH variable."
-                                          Just s  -> takeDirectory s
-                      , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
-                      , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
-                      , theme         = DefaultTheme
-                      , showVersion   = False
-                      , showHelp      = False
-                      , verboseP      = False
-                      , development   = False
-                      , validateSQL   = False
-                      , genPrototype  = False
-                      , allInterfaces = False
-                      , genAtlas      = False   
-                      , namespace     = []
-                      , autoRefresh   = Nothing
-                      , testRule      = Nothing
-                      , customCssFile = Nothing
-                      , importfile    = []
-                      , fileformat    = fatal 101 "--fileformat is required for --import."
-                      , genXML        = False
-                      , genFspec      = False 
-                      , diag          = False 
-                      , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFspecFormats++"."
-                      , genGraphics   = True
-                      , genEcaDoc     = False
-                      , proofs        = False
-                      , haskell       = False
-                      , crowfoot      = False
-                      , blackWhite    = False
-                      , doubleEdges   = False
-                      , showPredExpr  = False
-                      , noDiagnosis   = False
-                      , diagnosisOnly = False
-                      , genLegalRefs  = False
-                      , genUML        = False
-                      , genFPAExcel   = False
-                      , genStaticFiles= True
-                      , genBericht    = False
-                      , genMeat       = False
-                      , language      = Nothing
-                      , progrName     = progName
-                      , fileName      = fatal 119 "no default value for fileName."
-                      , baseName      = fatal 120 "no default value for baseName."
-                      , export2adl    = False
-                      , test          = False
-                      , includeRap    = False
-                      , pangoFont     = "Sans"
-                      , sqlHost       = Nothing
-                      , sqlLogin      = Nothing
-                      , sqlPwd        = Nothing
-                      , parserVersion = Current
-                      }
+     getLocalTime :: IO LocalTime
+     getLocalTime = do utcTime <- getCurrentTime
+                       timeZone <- getCurrentTimeZone
+                       return (utcToLocalTime timeZone utcTime)
+     startOptions  :: String -> LocalTime -> [(String,String)] -> Maybe FilePath -> String -> Options 
+     startOptions  fName localTime env exePath progName =
+       Options {genTime       = localTime
+              , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
+              , outputfile    = fatal 83 "No monadic options available."
+              , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
+                                          (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
+              , dbName        = fromMaybe ""        (lookup envdbName       env)
+              , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
+              , dirExec       = case exePath of
+                                  Nothing -> fatal 155 $ "Specify the path location of "++progName++" in your system PATH variable."
+                                  Just s  -> takeDirectory s
+              , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
+              , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
+              , theme         = DefaultTheme
+              , showVersion   = False
+              , showHelp      = False
+              , verboseP      = False
+              , development   = False
+              , validateSQL   = False
+              , genPrototype  = False
+              , allInterfaces = False
+              , genAtlas      = False   
+              , namespace     = []
+              , autoRefresh   = Nothing
+              , testRule      = Nothing
+              , customCssFile = Nothing
+              , importfile    = []
+              , fileformat    = fatal 101 "--fileformat is required for --import."
+              , genXML        = False
+              , genFspec      = False 
+              , diag          = False 
+              , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFspecFormats++"."
+              , genGraphics   = True
+              , genEcaDoc     = False
+              , proofs        = False
+              , haskell       = False
+              , crowfoot      = False
+              , blackWhite    = False
+              , doubleEdges   = False
+              , showPredExpr  = False
+              , noDiagnosis   = False
+              , diagnosisOnly = False
+              , genLegalRefs  = False
+              , genUML        = False
+              , genFPAExcel   = False
+              , genStaticFiles= True
+              , genBericht    = False
+              , genMeat       = False
+              , language      = Nothing
+              , progrName     = progName
+              , fileName      = fatal 119 "no default value for fileName."
+              , baseName      = fatal 120 "no default value for baseName."
+              , export2adl    = False
+              , test          = False
+              , includeRap    = False
+              , pangoFont     = "Sans"
+              , sqlHost       = Nothing
+              , sqlLogin      = Nothing
+              , sqlPwd        = Nothing
+              , parserVersion = Current
+              }
 
 
 
@@ -251,78 +255,78 @@ publics flags = [o | (o,Public)<-flags]
 each :: [(a, DisplayMode) ] -> [a]
 each flags = [o |(o,_) <- flags]
 
-type OptionDef = OptDescr (Options -> Options)
+type OptionDef = OptDescr (Options -> IO Options)
 options :: [(OptionDef, DisplayMode) ]
 options = map pp
           [ (Option "v"     ["version"]
-               (NoArg (\flags -> flags{showVersion = True}))
+               (NoArg (\flags -> return flags{showVersion = True}))
                "show version and exit."
             , Public)
           , (Option "h?"    ["help"]
-               (NoArg (\flags -> flags{showHelp = True}))
+               (NoArg (\flags -> return flags{showHelp = True}))
                "get (this) usage information."
             , Public)
           , (Option ""      ["verbose"]
-               (NoArg (\flags -> flags{verboseP = True}))
+               (NoArg (\flags -> return flags{verboseP = True}))
                "verbose error message format."
             , Public)
           , (Option ""      ["dev"]
-               (NoArg (\flags -> flags{development = True}))
+               (NoArg (\flags -> return flags{development = True}))
                "Report and generate extra development information"
             , Hidden)
           , (Option ""      ["validate"]
-               (NoArg (\flags -> flags{validateSQL = True}))
+               (NoArg (\flags -> return flags{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
             , Hidden)
           , (Option "p"     ["proto"]
-               (OptArg (\nm flags -> flags {dirPrototype = fromMaybe (dirPrototype flags) nm
-                                           ,genPrototype = True}
+               (OptArg (\nm flags -> return flags {dirPrototype = fromMaybe (dirPrototype flags) nm
+                                                  ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (overwrites environment variable "++ envdirPrototype ++ ").")
             , Public)
           , (Option "d"     ["dbName"]
-               (ReqArg (\nm flags -> flags{dbName = if nm == "" 
-                                                    then baseName flags
-                                                    else nm}                          
+               (ReqArg (\nm flags -> return flags{dbName = if nm == "" 
+                                                           then baseName flags
+                                                           else nm}                          
                        ) "NAME")
                ("database name (overwrites environment variable "++ envdbName ++ ", defaults to filename)")
             , Public)
           , (Option []      ["theme"]
-               (ReqArg (\t flags -> flags{theme = case map toUpper t of 
-                                                    "STUDENT"  -> StudentTheme
-                                                    "STUDENTDESIGNER" -> StudentDesignerTheme
-                                                    "DESIGNER" -> DesignerTheme
-                                                    "PROOF"    -> ProofTheme
-                                                    _          -> DefaultTheme}
+               (ReqArg (\t flags -> return flags{theme = case map toUpper t of 
+                                                          "STUDENT"  -> StudentTheme
+                                                          "STUDENTDESIGNER" -> StudentDesignerTheme
+                                                          "DESIGNER" -> DesignerTheme
+                                                          "PROOF"    -> ProofTheme
+                                                          _          -> DefaultTheme}
                         ) "THEME")
                "differentiate between certain outputs e.g. student"
             , Public)
           , (Option "x"     ["interfaces"]
-               (NoArg (\flags -> flags{allInterfaces  = True}))
+               (NoArg (\flags -> return flags{allInterfaces  = True}))
                "generate interfaces."
             , Public)
           , (Option "e"     ["export"]
-               (OptArg (\mbnm flags -> flags{export2adl = True
-                                            ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
+               (OptArg (\mbnm flags -> return flags{export2adl = True
+                                                   ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script."
             , Public)
           , (Option "o"     ["outputDir"]
-               (ReqArg (\nm flags -> flags{dirOutput = nm}
+               (ReqArg (\nm flags -> return flags{dirOutput = nm}
                        ) "DIR")
                ("output directory (dir overwrites environment variable "++ envdirOutput ++ ").")
             , Public)
           , (Option []      ["log"]
-               (ReqArg (\nm flags -> flags{logName = nm}
+               (ReqArg (\nm flags -> return flags{logName = nm}
                        ) "NAME")
                ("log file name (name overwrites environment variable "++ envlogName  ++ ").")
             , Hidden)
           , (Option []      ["import"]
-               (ReqArg (\nm flags -> flags{importfile = nm}
+               (ReqArg (\nm flags -> return flags{importfile = nm}
                        ) "FILE")
                "import this file as the population of the context."
             , Public)
           , (Option []      ["fileformat"]
-               (ReqArg (\f flags -> 
+               (ReqArg (\f flags -> return 
                              flags{fileformat = case map toUpper f of
                                                  "ADL" -> Adl1Format
                                                  "ADL1"-> Adl1Format
@@ -334,36 +338,36 @@ options = map pp
                ("format of import file (format=ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)).")
             , Public)
           , (Option []      ["namespace"]
-               (ReqArg (\nm flags -> flags{namespace = nm}
+               (ReqArg (\nm flags -> return flags{namespace = nm}
                        ) "NAMESPACE")
                "places the population in this namespace within the context."
             , Public)
           , (Option "f"     ["fspec"]
-               (ReqArg (\w flags -> flags
+               (ReqArg (\w flags -> return flags
                                 { genFspec=True
                                 , fspecFormat= case map toUpper w of
-                                    ('A': _ )         -> Fasciidoc
-                                    ('C': _ )         -> Fcontext
-                                    ('D': _ )         -> Fdocbook
-                                    ('H': _ )         -> Fhtml
-                                    ('L': _ )         -> FLatex
-                                    ('M':'A':'N': _ ) -> Fman
-                                    ('M':'A': _ )     -> Fmarkdown
-                                    ('M':'E': _ )     -> Fmediawiki
-                                    ('O':'P': _ )     -> Fopendocument
-                                    ('O':'R': _ )     -> Forg
-                                    ('P':'A': _ )     -> FPandoc
-                                    ('P':'L': _ )     -> Fplain
-                                    ('R':'S': _ )     -> Frst
-                                    ('R':'T': _ )     -> Frtf
+                                    ('A': _ )             -> Fasciidoc
+                                    ('C': _ )             -> Fcontext
+                                    ('D': _ )             -> Fdocbook
+                                    ('H': _ )             -> Fhtml
+                                    ('L': _ )             -> FLatex
+                                    ('M':'A':'N': _ )     -> Fman
+                                    ('M':'A': _ )         -> Fmarkdown
+                                    ('M':'E': _ )         -> Fmediawiki
+                                    ('O':'P': _ )         -> Fopendocument
+                                    ('O':'R': _ )         -> Forg
+                                    ('P':'A': _ )         -> FPandoc
+                                    ('P':'L': _ )         -> Fplain
+                                    ('R':'S': _ )         -> Frst
+                                    ('R':'T': _ )         -> Frtf
                                     ('T':'E':'X':'I': _ ) -> Ftexinfo
                                     ('T':'E':'X':'T': _ ) -> Ftextile
-                                    _         -> fspecFormat flags}
+                                    _                     -> fspecFormat flags}
                        ) "FORMAT")  
                ("generate a functional specification document in specified format (format="++allFspecFormats++").")
             , Public)
           , (Option []        ["refresh"]
-               (OptArg (\r flags -> 
+               (OptArg (\r flags -> return 
                             flags{autoRefresh = Just (case r of
                                                        Just str | [(i,"")] <- reads str -> i
                                                        _                                -> 5
@@ -372,76 +376,76 @@ options = map pp
                "Experimental auto-refresh feature"
             , Hidden)
           , (Option []        ["testRule"]
-               (ReqArg (\ruleName flags -> flags{ testRule = Just ruleName }
+               (ReqArg (\ruleName flags -> return flags{ testRule = Just ruleName }
                        ) "RULE")
                "Show contents and violations of specified rule."
             , Hidden)
           , (Option []        ["css"]
-               (ReqArg (\pth flags -> flags{ customCssFile = Just pth }) "file")
+               (ReqArg (\pth flags -> return flags{ customCssFile = Just pth }) "file")
                "Custom.css file to customize the style of the prototype."
             , Public)
           , (Option []        ["noGraphics"]
-               (NoArg (\flags -> flags{genGraphics = False}))
+               (NoArg (\flags -> return flags{genGraphics = False}))
                "save compilation time by not generating any graphics."
             , Public)
           , (Option []        ["ECA"]
-               (NoArg (\flags -> flags{genEcaDoc = True}))
+               (NoArg (\flags -> return flags{genEcaDoc = True}))
                "generate documentation with ECA rules."
             , Public)
           , (Option []        ["proofs"]
-               (NoArg (\flags -> flags{proofs = True}))
+               (NoArg (\flags -> return flags{proofs = True}))
                "generate derivations."
             , Public)
           , (Option []        ["XML"]
-               (NoArg (\flags -> flags{genXML = True}))
+               (NoArg (\flags -> return flags{genXML = True}))
                "generate internal data structure, written in XML (for debugging)."
             , Public)
           , (Option []        ["haskell"]
-               (NoArg (\flags -> flags{haskell = True}))
+               (NoArg (\flags -> return flags{haskell = True}))
                "generate internal data structure, written in Haskell (for debugging)."
             , Public)
           , (Option []        ["crowfoot"]
-               (NoArg (\flags -> flags{crowfoot = True}))
+               (NoArg (\flags -> return flags{crowfoot = True}))
                "generate crowfoot notation in graphics."
             , Public)
           , (Option []        ["blackWhite"]
-               (NoArg (\flags -> flags{blackWhite = True}))
+               (NoArg (\flags -> return flags{blackWhite = True}))
                "do not use colours in generated graphics"
             , Public)
           , (Option []        ["doubleEdges"]
-               (NoArg (\flags -> flags{doubleEdges = not (doubleEdges flags)}))
+               (NoArg (\flags -> return flags{doubleEdges = not (doubleEdges flags)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Public)
           , (Option []        ["predLogic"]
-               (NoArg (\flags -> flags{showPredExpr = True}))
+               (NoArg (\flags -> return flags{showPredExpr = True}))
                "show logical expressions in the form of predicate logic."
             , Public)
           , (Option []        ["noDiagnosis"]
-               (NoArg (\flags -> flags{noDiagnosis = True}))
+               (NoArg (\flags -> return flags{noDiagnosis = True}))
                "omit the diagnosis chapter from the functional specification document."
             , Public)
           , (Option []        ["diagnosis"]
-               (NoArg (\flags -> flags{diagnosisOnly = True}))
+               (NoArg (\flags -> return flags{diagnosisOnly = True}))
                "diagnose your Ampersand script (generates a .pdf file)."
             , Public)
           , (Option []        ["legalrefs"]
-               (NoArg (\flags -> flags{genLegalRefs = True}))
+               (NoArg (\flags -> return flags{genLegalRefs = True}))
                "generate a table of legal references in Natural Language chapter."
             , Public)
           , (Option []        ["uml"]
-               (NoArg (\flags -> flags{genUML = True}))
+               (NoArg (\flags -> return flags{genUML = True}))
                "Generate a UML 2.0 data model."
             , Hidden)
           , (Option []        ["FPA"]
-               (NoArg (\flags -> flags{genFPAExcel = True}))
+               (NoArg (\flags -> return flags{genFPAExcel = True}))
                "Generate a Excel workbook (.xls)."
             , Hidden)
           , (Option []        ["bericht"]
-               (NoArg (\flags -> flags{genBericht = True}))
+               (NoArg (\flags -> return flags{genBericht = True}))
                "Generate definitions for 'berichten' (specific to INDOORS project)."
             , Hidden)
           , (Option []        ["language"]
-               (ReqArg (\l flags-> flags{language = case map toUpper l of
+               (ReqArg (\l flags-> return flags{language = case map toUpper l of
                                                        "NL"  -> Just Dutch
                                                        "UK"  -> Just English
                                                        "US"  -> Just English
@@ -451,38 +455,38 @@ options = map pp
                "Pick 'NL' for Dutch or 'EN' for English, as the language to be used in your output. Without this option, output is written in the language of your context."
             , Public)
           , (Option []        ["test"]
-               (NoArg (\flags -> flags{test = True}))
+               (NoArg (\flags -> return flags{test = True}))
                "Used for test purposes only."
             , Hidden)
           , (Option []        ["rap"]
-               (NoArg (\flags -> flags{includeRap = True}))
+               (NoArg (\flags -> return flags{includeRap = True}))
                "Include RAP into the generated artifacts (experimental)"
             , Hidden)
           , (Option []        ["meta"]
-               (NoArg (\flags -> flags{genMeat = True}))
+               (NoArg (\flags -> return flags{genMeat = True}))
                "Generate meta-population in an .adl file (experimental)"
             , Hidden)
           , (Option []        ["pango"]
-               (ReqArg (\nm flags -> flags{pangoFont = nm}
+               (ReqArg (\nm flags -> return flags{pangoFont = nm}
                        ) "FONTNAME")
                "specify font name for Pango in graphics."
             , Hidden)
           , (Option []   ["no-static-files"]
-               (NoArg  (\flags -> flags{genStaticFiles = False}))
+               (NoArg  (\flags -> return flags{genStaticFiles = False}))
                "Do not generate static files into the prototype directory"
             , Public)
           , (Option []        ["sqlHost"]
-               (ReqArg (\nm flags -> flags{sqlHost = Just nm}
+               (ReqArg (\nm flags -> return flags{sqlHost = Just nm}
                        ) "HOSTNAME")
                "specify database host name."
             , Hidden)
           , (Option []        ["sqlLogin"]
-               (ReqArg (\nm flags -> flags{sqlLogin = Just nm}
+               (ReqArg (\nm flags -> return flags{sqlLogin = Just nm}
                        ) "NAME")
                "specify database login name."
             , Hidden)
           , (Option []        ["sqlPwd"]
-               (ReqArg (\nm flags -> flags{sqlPwd = Just nm}
+               (ReqArg (\nm flags -> return flags{sqlPwd = Just nm}
                        ) "STR")
                "specify database password."
             , Hidden)
