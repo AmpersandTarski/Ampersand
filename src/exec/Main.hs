@@ -6,11 +6,6 @@ import System.Exit
 import Prelude hiding (readFile,writeFile)
 import Data.List (intersperse)
 import DatabaseDesign.Ampersand (getOptions, showErr, showVersion, showHelp, helpNVersionTexts, ampersandVersionStr, createFspec, Guarded(..), generateAmpersandOutput)
--- import DatabaseDesign.Ampersand.Misc 
--- import qualified DatabaseDesign.Ampersand.Basics as Basics
--- import DatabaseDesign.Ampersand.Components
--- import DatabaseDesign.Ampersand.InputProcessing
--- import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr)
 
 main :: IO ()
 main =
