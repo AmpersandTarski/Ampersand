@@ -74,7 +74,10 @@ classificationSection lev fSpec flags = (theBlocks,pict)
     <> content
   content = 
     if null (classes classificationModel)
-    then para $ text "Er zijn geen classificaties gedefinieerd."
+    then para (case fsLang fSpec of 
+              Dutch   -> text "Er zijn geen classificaties gedefinieerd."
+              English -> text "No classifications have been defined"
+              )
     else para (case fsLang fSpec of 
               Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
                        <> (if canXRefer flags 

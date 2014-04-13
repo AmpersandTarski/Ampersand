@@ -265,70 +265,187 @@ publics flags = [o | (o,Public)<-flags]
 each :: [(a, DisplayMode) ] -> [a]
 each flags = [o |(o,_) <- flags]
 
-options :: [(OptDescr (Options -> Options), DisplayMode) ]
+type OptionDef = OptDescr (Options -> Options)
+options :: [(OptionDef, DisplayMode) ]
 options = map pp
-          [ (Option "v"     ["version"]     (NoArg versionOpt)          "show version and exit.", Public)
-          , (Option "h?"    ["help"]        (NoArg helpOpt)             "get (this) usage information.", Public)
-          , (Option ""      ["verbose"]     (NoArg verboseOpt)          "verbose error message format.", Public)
-          , (Option ""      ["dev"]         (NoArg developmentOpt)      "Report and generate extra development information", Hidden)
-          , (Option ""      ["validate"]    (NoArg (\flags -> flags{validateSQL = True}))  "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)", Hidden)
-          , (Option "p"     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype (overwrites environment variable "
-                                                                           ++ envdirPrototype ++ ")."), Public)
-          , (Option "d"     ["dbName"]      (ReqArg dbNameOpt "name")   ("database name (overwrites environment variable "
-                                                                           ++ envdbName ++ ", defaults to filename)"), Public)
-          , (Option []      ["theme"]       (ReqArg themeOpt "theme")   "differentiate between certain outputs e.g. student", Public)
-          , (Option "x"     ["interfaces"]  (NoArg maxInterfacesOpt)    "generate interfaces.", Public)
-          , (Option "e"     ["export"]      (OptArg exportOpt "file") "export as ASCII Ampersand syntax.", Public)
-          , (Option "o"     ["outputDir"]   (ReqArg outputDirOpt "dir") ("output directory (dir overwrites environment variable "
-                                                                           ++ envdirOutput ++ ")."), Public)
-          , (Option []      ["log"]         (ReqArg logOpt "name")      ("log file name (name overwrites environment variable "
-                                                                           ++ envlogName  ++ ")."), Hidden)
-          , (Option []      ["import"]      (ReqArg importOpt "file")   "import this file as the population of the context.", Public)
-          , (Option []      ["fileformat"]  (ReqArg formatOpt "format")("format of import file (format="
-                                                                           ++allFileFormats++")."), Public)
-          , (Option []      ["namespace"]   (ReqArg namespaceOpt "ns")  "places the population in this namespace within the context.", Public)
-          , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
-                                                                         ("generate a functional specification document in specified format (format="
-                                                                         ++allFspecFormats++")."), Public)
-          , (Option []        ["refresh"]     (OptArg autoRefreshOpt "interval") "Experimental auto-refresh feature", Hidden)
-          , (Option []        ["testRule"]    (ReqArg (\ruleName flags -> flags{ testRule = Just ruleName }) "rule name")
-                                                                          "Show contents and violations of specified rule.", Hidden)
-          , (Option []        ["css"]         (ReqArg (\pth flags -> flags{ customCssFile = Just pth }) "file")
-                                                                          "Custom.css file to customize the style of the prototype.", Public)
-          , (Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics.", Public)
-          , (Option []        ["ECA"]         (NoArg genEcaDocOpt)        "generate documentation with ECA rules.", Public)
-          , (Option []        ["proofs"]      (NoArg proofsOpt)           "generate derivations.", Public)
-          , (Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging).", Public)
-          , (Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell (for debugging).", Public)
-          , (Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics.", Public)
-          , (Option []        ["blackWhite"]  (NoArg blackWhiteOpt)       "do not use colours in generated graphics", Public)
-          , (Option []        ["doubleEdges"] (NoArg doubleEdgesOpt)      "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)", Public)
-          , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicate logic." , Public)
-          , (Option []        ["noDiagnosis"] (NoArg noDiagnosisOpt)      "omit the diagnosis chapter from the functional specification document." , Public)
-          , (Option []        ["diagnosis"]   (NoArg diagnosisOpt)        "diagnose your Ampersand script (generates a .pdf file).", Public)
-          , (Option []        ["legalrefs"]   (NoArg (\flags -> flags{genLegalRefs = True}))
-                                                                          "generate a table of legal references in Natural Language chapter.", Public)
-          , (Option []        ["uml"]         (NoArg (\flags -> flags{genUML = True}))
-                                                                          "Generate a UML 2.0 data model.", Hidden)
-          , (Option []        ["FPA"]         (NoArg (\flags -> flags{genFPAExcel = True}))
-                                                                          "Generate a Excel workbook (.xls).", Hidden)
-          , (Option []        ["bericht"]     (NoArg (\flags -> flags{genBericht = True}))
-                                                                          "Generate definitions for 'berichten' (specific to INDOORS project).", Hidden)
-          , (Option []        ["language"]    (ReqArg languageOpt "lang") "Pick 'NL' for Dutch or 'EN' for English,\nas the language to be used in your output.\nWithout this option, output is written in the language of your context.", Public)
-          , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
-          , (Option []        ["rap"]         (NoArg (\flags -> flags{includeRap = True}))
-                                                                          "Include RAP into the generated artifacts (experimental)", Hidden)
-          , (Option []        ["meta"]        (NoArg (\flags -> flags{genMeat = True}))
-                                                                          "Generate meta-population in an .adl file (experimental)", Hidden)
-          , (Option []        ["pango"]       (OptArg pangoOpt "fontname") "specify font name for Pango in graphics.", Hidden)
-          , (Option []   ["no-static-files"]  (NoArg  (\flags -> flags{genStaticFiles = False}))
-                                                                          "Do not generate static files into the prototype directory", Public)
-          , (Option []        ["sqlHost"]     (OptArg sqlHostOpt "name")  "specify database host name.", Hidden)
-          , (Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "name") "specify database login name.", Hidden)
-          , (Option []        ["sqlPwd"]      (OptArg sqlPwdOpt "str")    "specify database password.", Hidden)
-          , (Option []        ["forceSyntax"] (ReqArg forceSyntaxOpt "versionNumber") "version number of the syntax to be used, ('1' or '2'). Without this, Ampersand will guess the version used.", Hidden) 
+          [ (Option "v"     ["version"]
+               (NoArg (versionOpt))
+               "show version and exit."
+            , Public)
+          , (Option "h?"    ["help"]
+               (NoArg helpOpt)
+               "get (this) usage information."
+            , Public)
+          , (Option ""      ["verbose"]
+               (NoArg verboseOpt)
+               "verbose error message format."
+            , Public)
+          , (Option ""      ["dev"]
+               (NoArg developmentOpt)
+               "Report and generate extra development information"
+            , Hidden)
+          , (Option ""      ["validate"]
+               (NoArg (\flags -> flags{validateSQL = True}))
+               "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
+            , Hidden)
+          , (Option "p"     ["proto"]
+               (OptArg prototypeOpt "dir")
+               ("generate a functional prototype (overwrites environment variable "++ envdirPrototype ++ ").")
+            , Public)
+          , (Option "d"     ["dbName"]
+               (ReqArg dbNameOpt "name")
+               ("database name (overwrites environment variable "++ envdbName ++ ", defaults to filename)")
+            , Public)
+          , (Option []      ["theme"]
+               (ReqArg themeOpt "theme")
+               "differentiate between certain outputs e.g. student"
+            , Public)
+          , (Option "x"     ["interfaces"]
+               (NoArg maxInterfacesOpt)
+               "generate interfaces."
+            , Public)
+          , (Option "e"     ["export"]
+               (OptArg exportOpt "file")
+               "export as ASCII Ampersand syntax."
+            , Public)
+          , (Option "o"     ["outputDir"]
+               (ReqArg outputDirOpt "dir")
+               ("output directory (dir overwrites environment variable "++ envdirOutput ++ ").")
+            , Public)
+          , (Option []      ["log"]
+               (ReqArg logOpt "name")
+               ("log file name (name overwrites environment variable "++ envlogName  ++ ").")
+            , Hidden)
+          , (Option []      ["import"]
+               (ReqArg importOpt "file")
+               "import this file as the population of the context."
+            , Public)
+          , (Option []      ["fileformat"]
+               (ReqArg formatOpt "format")
+               ("format of import file (format="++allFileFormats++").")
+            , Public)
+          , (Option []      ["namespace"]
+               (ReqArg namespaceOpt "ns")
+               "places the population in this namespace within the context."
+            , Public)
+          , (Option "f"     ["fspec"]
+               (ReqArg fspecRenderOpt "format")  
+               ("generate a functional specification document in specified format (format="++allFspecFormats++").")
+            , Public)
+          , (Option []        ["refresh"]
+               (OptArg autoRefreshOpt "interval")
+               "Experimental auto-refresh feature"
+            , Hidden)
+          , (Option []        ["testRule"]
+               (ReqArg (\ruleName flags -> flags{ testRule = Just ruleName }) "rule name")
+               "Show contents and violations of specified rule."
+            , Hidden)
+          , (Option []        ["css"]
+               (ReqArg (\pth flags -> flags{ customCssFile = Just pth }) "file")
+               "Custom.css file to customize the style of the prototype."
+            , Public)
+          , (Option []        ["noGraphics"]
+               (NoArg noGraphicsOpt)
+               "save compilation time by not generating any graphics."
+            , Public)
+          , (Option []        ["ECA"]
+               (NoArg genEcaDocOpt)
+               "generate documentation with ECA rules."
+            , Public)
+          , (Option []        ["proofs"]
+               (NoArg proofsOpt)
+               "generate derivations."
+            , Public)
+          , (Option []        ["XML"]
+               (NoArg xmlOpt)
+               "generate internal data structure, written in XML (for debugging)."
+            , Public)
+          , (Option []        ["haskell"]
+               (NoArg haskellOpt)
+               "generate internal data structure, written in Haskell (for debugging)."
+            , Public)
+          , (Option []        ["crowfoot"]
+               (NoArg crowfootOpt)
+               "generate crowfoot notation in graphics."
+            , Public)
+          , (Option []        ["blackWhite"]
+               (NoArg blackWhiteOpt)
+               "do not use colours in generated graphics"
+            , Public)
+          , (Option []        ["doubleEdges"]
+               (NoArg doubleEdgesOpt)
+               "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
+            , Public)
+          , (Option []        ["predLogic"]
+               (NoArg predLogicOpt)
+               "show logical expressions in the form of predicate logic."
+            , Public)
+          , (Option []        ["noDiagnosis"]
+               (NoArg noDiagnosisOpt)
+               "omit the diagnosis chapter from the functional specification document."
+            , Public)
+          , (Option []        ["diagnosis"]
+               (NoArg diagnosisOpt)
+               "diagnose your Ampersand script (generates a .pdf file)."
+            , Public)
+          , (Option []        ["legalrefs"]
+               (NoArg (\flags -> flags{genLegalRefs = True}))
+               "generate a table of legal references in Natural Language chapter."
+            , Public)
+          , (Option []        ["uml"]
+               (NoArg (\flags -> flags{genUML = True}))
+               "Generate a UML 2.0 data model."
+            , Hidden)
+          , (Option []        ["FPA"]
+               (NoArg (\flags -> flags{genFPAExcel = True}))
+               "Generate a Excel workbook (.xls)."
+            , Hidden)
+          , (Option []        ["bericht"]
+               (NoArg (\flags -> flags{genBericht = True}))
+               "Generate definitions for 'berichten' (specific to INDOORS project)."
+            , Hidden)
+          , (Option []        ["language"]
+               (ReqArg languageOpt "lang")
+               "Pick 'NL' for Dutch or 'EN' for English, as the language to be used in your output. Without this option, output is written in the language of your context."
+            , Public)
+          , (Option []        ["test"]
+               (NoArg testOpt)
+               "Used for test purposes only."
+            , Hidden)
+          , (Option []        ["rap"]
+               (NoArg (\flags -> flags{includeRap = True}))
+               "Include RAP into the generated artifacts (experimental)"
+            , Hidden)
+          , (Option []        ["meta"]
+               (NoArg (\flags -> flags{genMeat = True}))
+               "Generate meta-population in an .adl file (experimental)"
+            , Hidden)
+          , (Option []        ["pango"]
+               (OptArg pangoOpt "fontname")
+               "specify font name for Pango in graphics."
+            , Hidden)
+          , (Option []   ["no-static-files"]
+               (NoArg  (\flags -> flags{genStaticFiles = False}))
+               "Do not generate static files into the prototype directory"
+            , Public)
+          , (Option []        ["sqlHost"]
+               (OptArg sqlHostOpt "name")
+               "specify database host name."
+            , Hidden)
+          , (Option []        ["sqlLogin"]
+               (OptArg sqlLoginOpt "name")
+               "specify database login name."
+            , Hidden)
+          , (Option []        ["sqlPwd"]
+               (OptArg sqlPwdOpt "str")
+               "specify database password."
+            , Hidden)
+          , (Option []        ["forceSyntax"]
+               (ReqArg forceSyntaxOpt "versionNumber")
+               "version number of the syntax to be used, ('1' or '2'). Without this, Ampersand will guess the version used."
+            , Hidden) 
           ]
-     where pp :: (OptDescr (Options -> Options), DisplayMode) -> (OptDescr (Options -> Options), DisplayMode)
+     where pp :: (OptionDef, DisplayMode) -> (OptionDef, DisplayMode)
            pp (Option a b' c d,e) = (Option a b' c d',e)
               where d' =  afkappen [] [] (words d) 40
                     afkappen :: [[String]] -> [String] -> [String] -> Int -> String
@@ -482,3 +599,7 @@ verboseLn flags x
 helpNVersionTexts :: String -> Options -> [String]
 helpNVersionTexts vs flags          = [preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++
                                       [usageInfo' flags                              | showHelp    flags]
+                                      
+
+
+
