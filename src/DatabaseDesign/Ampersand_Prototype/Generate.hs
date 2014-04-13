@@ -12,6 +12,7 @@ import Control.Monad
 import System.FilePath
 import System.Directory
 import DatabaseDesign.Ampersand_Prototype.Version 
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import Control.Exception
 
@@ -390,17 +391,6 @@ blockParenthesize open close sep liness =
 addToLastLine :: String -> [String] -> [String]
 addToLastLine str [] = [str] 
 addToLastLine str liness = init liness ++ [last liness ++ str] 
-  
-showPhpStr :: String -> String
-showPhpStr str = "'"++escapePhpStr str++"'"
-
--- NOTE: we assume a single quote php string, so $ and " are not escaped
-escapePhpStr :: String -> String
-escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\")] | c<-cs ] -- escape '   \   \n
--- todo: escape everything else (unicode, etc)
-
-showPhpBool :: Bool -> String
-showPhpBool b = if b then "true" else "false"
   
 indent :: Int -> [String] -> [String]
 indent n liness = [ replicate n ' ' ++ line | line <- liness ]

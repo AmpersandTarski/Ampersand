@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
  ,addSlashes
  ,indentBlock,addToLast
  ,pDebug,indentBlockBetween,quote,sqlAtomQuote
- ,phpIndent
+ ,phpIndent,showPhpStr,escapePhpStr,showPhpBool
  ) where
    import Data.Char(isAlphaNum,isDigit)
    import Data.List
@@ -22,13 +22,15 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    quote ('`':s) = '`':s  -- do nothing if already quoted
    quote s = "`"++s++"`"
    quote s = "`"++quot s++"`"
-    where quot ('`':s) = "\\`" ++ quot s
-          quot (c:s)   = c: quot s
-          quot []      = []                          
+    where quot ('`':s)  = "\\`" ++ quot s
+          quot ('\\':s) = "\\\\" ++ quot s
+          quot (c:s)    = c: quot s
+          quot []       = []                          
 
    sqlAtomQuote :: String->String
    sqlAtomQuote s = "'"++sAQ s++"'"
     where sAQ ('\'':s) = "\\'" ++ sAQ s
+          sAQ ('\\':s) = "\\\\" ++ sAQ s
           sAQ (c:s)    = c: sAQ s
           sAQ []       = []                          
 
@@ -89,3 +91,18 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    addToLast :: [a] -> [[a]] -> [[a]]
    addToLast _ [] = fatal 109 "addToLast: empty list"
    addToLast s as = init as++[last as++s]
+
+   showPhpStr :: String -> String
+   showPhpStr str = "'"++escapePhpStr str++"'"
+
+-- NOTE: we assume a single quote php string, so $ and " are not escaped
+   escapePhpStr :: String -> String
+   escapePhpStr ('\'':s) = "\\'" ++ escapePhpStr s
+   escapePhpStr ('\\':s) = "\\\\" ++ escapePhpStr s
+   escapePhpStr (c:s)    = c: escapePhpStr s
+   escapePhpStr []       = []                          
+-- todo: escape everything else (unicode, etc)
+
+   showPhpBool :: Bool -> String
+   showPhpBool b = if b then "true" else "false"
+  

@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.Installer
 import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -155,19 +155,18 @@ createTablesPHP fSpec =
            ++ case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
                tblRecords -> [ "else"
-                             , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
-                             ]++ indentBlock 12
-                                               [ comma++ " (" ++valuechain md++ ")"
-                                               | (md,comma)<-zip tblRecords ("VALUES":repeat "      ,")
-                                               ]
-                                             
-                             ++ ["            \");"
-                             , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
+                             , "mysql_query("++showPhpStr ("INSERT IGNORE INTO `"++name plug
+                                                           ++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
+                                                           ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
+                                                           ++phpIndent 16 )
+                                        ++");"
+                             ]
+                             ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> "'"++escapePhpDoubleQuoteStr (addSlashes str) ++"'"|fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)
-         = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++name plug++"`\")){"
-           , "  mysql_query(\""++ dropplug plug ++"\");" --todo: incremental behaviour
+         = [ "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM `"++name plug++"`")++")){"
+           , "  mysql_query("++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
            , "}" ]
 
 
