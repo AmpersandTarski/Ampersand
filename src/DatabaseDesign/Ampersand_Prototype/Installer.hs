@@ -109,15 +109,15 @@ installer fSpec flags = intercalate "\n  "
     ) 
 
 createDatabasePHP :: String ->[String]
-createDatabasePHP nm = ["@mysql_query(\"CREATE DATABASE `"++nm++"` DEFAULT CHARACTER SET UTF8\");"]
+createDatabasePHP nm = ["@mysql_query("++showPhpStr ("CREATE DATABASE `"++nm++"` DEFAULT CHARACTER SET UTF8")++");"]
 
 createTablesPHP :: Fspc ->[String]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
         , "// Session timeout table"
-        , "if($columns = mysql_query(\"SHOW COLUMNS FROM `__SessionTimeout__`\")){"
-        , "    mysql_query(\"DROP TABLE `__SessionTimeout__`\");"
+        , "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM `__SessionTimeout__`")++")){"
+        , "    mysql_query("++showPhpStr ("DROP TABLE `__SessionTimeout__`")++");"
         , "}"
         ] ++ createTablePHP 21 sessiontbl ++
         [ "if($err=mysql_error()) {"
@@ -125,8 +125,8 @@ createTablesPHP fSpec =
         , "}"
         , "" 
         , "// Timestamp table"
-        , "if($columns = mysql_query(\"SHOW COLUMNS FROM `__History__`\")){"
-        , "    mysql_query(\"DROP TABLE `__History__`\");"
+        , "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM `__History__`")++")){"
+        , "    mysql_query("++showPhpStr ("DROP TABLE `__History__`")++");"
         , "}"
         ] ++ createTablePHP 21 historytbl ++
         [ "if($err=mysql_error()) {"

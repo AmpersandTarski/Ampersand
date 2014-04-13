@@ -142,7 +142,7 @@ performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
  do { let php = connectToServer flags ++
                 [ "mysql_select_db('"++tempDbName++"');"
-                , "$result=mysql_query('"++queryStr++"');"
+                , "$result=mysql_query("++showPhpStr queryStr++");"
                 , "if(!$result)"
                 , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
                 , "$rows=Array();"
@@ -182,7 +182,7 @@ removeTempDatabase :: Options -> IO ()
 removeTempDatabase flags =
  do { _ <- executePHP . showPHP $ 
         connectToServer flags ++
-        ["mysql_query('DROP DATABASE "++tempDbName++"');"]
+        ["mysql_query("++showPhpStr ("DROP DATABASE "++tempDbName)++");"]
     ; return ()
     }
 
