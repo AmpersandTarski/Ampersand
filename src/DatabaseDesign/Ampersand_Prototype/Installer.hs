@@ -39,7 +39,7 @@ installer fSpec flags = intercalate "\n  "
       , "  $included = false; // get user/pass from some place else"
       , "  if(file_exists(\"dbSettings.php\")) include \"dbSettings.php\";"
       , "  else { // no settings found.. try some default settings"
-      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"',$DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"',$DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"')))"
+      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"',$DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"',$DB_pass='"++addSlashes (fromMaybe "anaxagoras0" $ sqlPwd flags)++"')))"
       , "    { // we still have no working settings.. ask the user!"
       , "      die(\"Install failed: cannot connect to MySQL\"); // todo" --todo
       , "    }"
