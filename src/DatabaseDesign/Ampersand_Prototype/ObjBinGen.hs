@@ -53,7 +53,7 @@ phpObjInterfaces fSpec flags =
     dbsettings = "<?php $DB_link=mysql_connect("
                  ++  "$DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"'"
                  ++", $DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"'"
-                 ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"'"
+                 ++", $DB_pass='"++addSlashes (fromMaybe "anaxagoras0" $ sqlPwd flags)++"'"
                  ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype flags
 
