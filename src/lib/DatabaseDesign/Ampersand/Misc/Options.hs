@@ -84,9 +84,9 @@ data Options = Options { showVersion :: Bool
                        , test :: Bool
                        , includeRap :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
                        , pangoFont :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
-                       , sqlHost :: Maybe String  -- do database queries to the specified host
-                       , sqlLogin :: Maybe String  -- pass login name to the database server
-                       , sqlPwd :: Maybe String  -- pass password on to the database server
+                       , sqlHost ::  String  -- do database queries to the specified host
+                       , sqlLogin :: String  -- pass login name to the database server
+                       , sqlPwd :: String  -- pass password on to the database server
                        , parserVersion :: ParserVersion
                        } 
   
@@ -173,9 +173,9 @@ getOptions =
               , test          = False
               , includeRap    = False
               , pangoFont     = "Sans"
-              , sqlHost       = Nothing
-              , sqlLogin      = Nothing
-              , sqlPwd        = Nothing
+              , sqlHost       = "localhost"
+              , sqlLogin      = "ampersand"
+              , sqlPwd        = "ampersand"
               , parserVersion = Current
               }
 
@@ -476,17 +476,17 @@ options = map pp
                "Do not generate static files into the prototype directory"
             , Public)
           , (Option []        ["sqlHost"]
-               (ReqArg (\nm flags -> return flags{sqlHost = Just nm}
+               (ReqArg (\nm flags -> return flags{sqlHost = nm}
                        ) "HOSTNAME")
                "specify database host name."
             , Hidden)
           , (Option []        ["sqlLogin"]
-               (ReqArg (\nm flags -> return flags{sqlLogin = Just nm}
+               (ReqArg (\nm flags -> return flags{sqlLogin = nm}
                        ) "NAME")
                "specify database login name."
             , Hidden)
           , (Option []        ["sqlPwd"]
-               (ReqArg (\nm flags -> return flags{sqlPwd = Just nm}
+               (ReqArg (\nm flags -> return flags{sqlPwd = nm}
                        ) "STR")
                "specify database password."
             , Hidden)
