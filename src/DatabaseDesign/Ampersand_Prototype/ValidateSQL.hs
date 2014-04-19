@@ -188,9 +188,9 @@ removeTempDatabase flags =
 
 connectToServer :: Options -> [String]
 connectToServer flags =
-  ["$DB_link = mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"'"
-                         ++",'"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"'"
-                         ++",'"++addSlashes (fromMaybe "" $ sqlPwd flags)++"');"] 
+  ["$DB_link = mysql_connect('"++addSlashes (sqlHost flags)++"'"
+                         ++",'"++addSlashes (sqlLogin flags)++"'"
+                         ++",'"++addSlashes (sqlPwd flags)++"');"] 
                
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String

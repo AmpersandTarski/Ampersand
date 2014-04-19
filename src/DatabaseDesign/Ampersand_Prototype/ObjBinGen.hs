@@ -35,7 +35,7 @@ phpObjInterfaces fSpec flags =
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php if it does not exists, or if a host, login, or password has been specified
-    ; if not dbSettingsExists ||  any isJust [sqlHost flags, sqlLogin flags, sqlPwd flags]
+    ; if not dbSettingsExists
       then do { verboseLn flags "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
@@ -51,9 +51,9 @@ phpObjInterfaces fSpec flags =
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = "<?php $DB_link=mysql_connect("
-                 ++  "$DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"'"
-                 ++", $DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"'"
-                 ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"'"
+                 ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
+                 ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
+                 ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                  ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype flags
 

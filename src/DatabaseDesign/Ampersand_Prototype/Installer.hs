@@ -39,7 +39,7 @@ installer fSpec flags = intercalate "\n  "
       , "  $included = false; // get user/pass from some place else"
       , "  if(file_exists(\"dbSettings.php\")) include \"dbSettings.php\";"
       , "  else { // no settings found.. try some default settings"
-      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"',$DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"',$DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"')))"
+      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (sqlHost flags)++"',$DB_user='"++addSlashes (sqlLogin flags)++"',$DB_pass='"++addSlashes (sqlPwd flags)++"')))"
       , "    { // we still have no working settings.. ask the user!"
       , "      die(\"Install failed: cannot connect to MySQL\"); // todo" --todo
       , "    }"
@@ -83,8 +83,9 @@ installer fSpec flags = intercalate "\n  "
         ++
         ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
         | d<-relsDefdIn fSpec, decusr d
-        , let dbrel = sqlRelPlugs fSpec (EDcD d)
-        , if null dbrel then fatal 82 "null dbrel" else True
+        , let dbrel = case sqlRelPlugs fSpec (EDcD d) of
+                        [] -> fatal 82 "null dbrel"
+                        x  -> x
         , let (_,srcField,trgField) = head dbrel
         , let qry = selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d]
         ++
