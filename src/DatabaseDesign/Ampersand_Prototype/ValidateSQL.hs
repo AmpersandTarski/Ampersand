@@ -141,7 +141,7 @@ evaluateExpSQL fSpec flags exp =
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
  do { let php = connectToServer flags ++
-                [ "mysql_select_db('"++tempDbName++"');"
+                [ "mysql_select_db('"++tempDbName++"',$DB_link);"
                 , "$result=mysql_query("++showPhpStr queryStr++");"
                 , "if(!$result)"
                 , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
@@ -174,7 +174,7 @@ createTempDatabase fSpec flags =
  where php = showPHP $
                connectToServer flags ++
                createDatabasePHP tempDbName ++
-               [ "mysql_select_db('"++tempDbName++"');"
+               [ "mysql_select_db('"++tempDbName++"',$DB_link);"
                , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
                createTablesPHP fSpec
 

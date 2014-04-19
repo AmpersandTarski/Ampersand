@@ -45,12 +45,12 @@ installer fSpec flags = intercalate "\n  "
       , "    }"
       , "  } "
       , "}"
-      , "if($DB_slct = @mysql_select_db('"++dbName flags++"')){"
+      , "if($DB_slct = @mysql_select_db('"++dbName flags++"',$DB_link)){"
       , "  $existing=true;"
       , "}else{"
       , "  $existing = false; // db does not exist, so try to create it" ] ++
       indentBlock 2 (createDatabasePHP (dbName flags))  ++
-      [ "  $DB_slct = @mysql_select_db('"++dbName flags++"');"
+      [ "  $DB_slct = @mysql_select_db('"++dbName flags++"',$DB_link);"
       , "}"
       , "if(!$DB_slct){"
       , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database '"++dbName flags++"'\");" --todo: full error report
