@@ -121,7 +121,7 @@ createTablesPHP fSpec =
         , "    mysqli_query($DB_link,"++showPhpStr ("DROP TABLE `__SessionTimeout__`")++");"
         , "}"
         ] ++ createTablePHP 21 sessiontbl ++
-        [ "if($err=mysqli_error()) {"
+        [ "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , "" 
@@ -130,7 +130,7 @@ createTablesPHP fSpec =
         , "    mysqli_query($DB_link,"++showPhpStr ("DROP TABLE `__History__`")++");"
         , "}"
         ] ++ createTablePHP 21 historytbl ++
-        [ "if($err=mysqli_error()) {"
+        [ "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
@@ -140,7 +140,7 @@ createTablesPHP fSpec =
         -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones 
         , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;" 
         , "mysqli_query($DB_link,\"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
-        , "if($err=mysqli_error()) {"
+        , "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , ""
@@ -152,7 +152,7 @@ createTablesPHP fSpec =
   where plugCode plug
          = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
-           ++ ["if($err=mysqli_error()) { $error=true; echo $err.'<br />'; }"]
+           ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
            ++ case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
                tblRecords -> [ "else"
@@ -162,7 +162,7 @@ createTablesPHP fSpec =
                                                            ++phpIndent 16 )
                                         ++");"
                              ]
-                             ++ ["if($err=mysqli_error()) { $error=true; echo $err.'<br />'; }"]
+                             ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)
