@@ -140,13 +140,13 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { let php = connectToServer flags ++
-                [ "mysql_select_db('"++tempDbName++"',$DB_link);"
-                , "$result=mysql_query("++showPhpStr queryStr++");"
+ do { let php = -- connectToServer flags ++
+                -- [ "mysqli_select_db('"++tempDbName++"');"
+                [ "$result=mysqli_query(($DB_link,"++showPhpStr queryStr++");"
                 , "if(!$result)"
-                , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
+                , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link));"
                 , "$rows=Array();"
-                , "  while (($row = @mysql_fetch_array($result))!==false) {"
+                , "  while (($row = @mysqli_fetch_array($result))!==false) {"
                 , "    $rows[]=$row;"
                 , "    unset($row);"
                 , "  }"
@@ -174,7 +174,7 @@ createTempDatabase fSpec flags =
  where php = showPHP $
                connectToServer flags ++
                createDatabasePHP tempDbName ++
-               [ "mysql_select_db('"++tempDbName++"',$DB_link);"
+               [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
                , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
                createTablesPHP fSpec
 
@@ -182,15 +182,15 @@ removeTempDatabase :: Options -> IO ()
 removeTempDatabase flags =
  do { _ <- executePHP . showPHP $ 
         connectToServer flags ++
-        ["mysql_query("++showPhpStr ("DROP DATABASE "++tempDbName)++");"]
+        ["mysqli_query($DB_link,"++showPhpStr ("DROP DATABASE "++tempDbName)++");"]
     ; return ()
     }
 
 connectToServer :: Options -> [String]
 connectToServer flags =
-  ["$DB_link = mysql_connect('"++addSlashes (sqlHost flags)++"'"
-                         ++",'"++addSlashes (sqlLogin flags)++"'"
-                         ++",'"++addSlashes (sqlPwd flags)++"');"] 
+  [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
+                           ++",'"++addSlashes (sqlLogin flags)++"'"
+                           ++",'"++addSlashes (sqlPwd flags)++"');"]
                
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
