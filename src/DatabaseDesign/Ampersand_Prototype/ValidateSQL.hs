@@ -140,9 +140,9 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { let php = -- connectToServer flags ++
-                -- [ "mysqli_select_db('"++tempDbName++"');"
-                [ "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
+ do { let php = connectToServer flags ++
+                [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
+                , "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
                 , "if(!$result)"
                 , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link));"
                 , "$rows=Array();"
