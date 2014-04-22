@@ -142,7 +142,7 @@ performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
  do { let php = -- connectToServer flags ++
                 -- [ "mysqli_select_db('"++tempDbName++"');"
-                [ "$result=mysqli_query(($DB_link,"++showPhpStr queryStr++");"
+                [ "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
                 , "if(!$result)"
                 , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link));"
                 , "$rows=Array();"
@@ -163,7 +163,7 @@ performQuery flags queryStr =
               fatal 141 $ "PHP/SQL problem: "++queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 $ "Parse error on php result: "++show queryResult
+             _            -> fatal 143 ( "Parse error on php result: "++show queryResult++":\n\n"++(showPHP php))
     }
 
 createTempDatabase :: Fspc -> Options -> IO ()
