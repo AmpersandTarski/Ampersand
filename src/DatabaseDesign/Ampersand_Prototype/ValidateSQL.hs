@@ -112,7 +112,7 @@ validateExp _     _    vExp@(EDcD{}, _)   = -- skip all simple relations
     ; return (vExp, True)
     }
 validateExp fSpec flags vExp@(exp, origin) =
- do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
+ do { putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec flags $ exp
     ; let violationsAmp = sort $ fullContents (gens fSpec) (initialPops fSpec) exp
     
@@ -140,9 +140,9 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { let php = connectToServer flags ++
-                [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
-                , "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
+ do { let php = -- connectToServer flags ++
+                --[ "mysqli_select_db($DB_link,'"++tempDbName++"');"
+                [ "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
                 , "if(!$result)"
                 , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link));"
                 , "$rows=Array();"
@@ -195,7 +195,7 @@ connectToServer flags =
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
- do { --putStrLn $ "Executing PHP:\n" ++ phpStr
+ do { putStrLn $ "Executing PHP:\n" ++ phpStr
     ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
@@ -222,7 +222,7 @@ executePHP phpStr =
           (Nothing, _) -> fatal 105 "no output handle"
           (_, Nothing) -> fatal 106 "no error handle"
           (Just stdOutH, Just stdErrH) ->
-           do { --putStrLn "done"
+           do { putStrLn "done"
               ; errStr <- hGetContents stdErrH
               ; seq (length errStr) $ return ()
               ; hClose stdErrH
@@ -231,7 +231,7 @@ executePHP phpStr =
               ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
               ; seq (length outputStr) $ return ()
               ; hClose stdOutH
-              --; putStrLn $ "Results:\n" ++ outputStr
+              ; putStrLn $ "Results:\n" ++ outputStr
               ; return outputStr
               }
     ; removeFile tempfile
