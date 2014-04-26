@@ -188,9 +188,9 @@ connectToServer databaseExistsIsGuaranteed flags =
     [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                              ++",'"++addSlashes (sqlLogin flags)++"'"
                              ++",'"++addSlashes (sqlPwd flags)++"'"
-                             ++if databaseExistsIsGuaranteed
+                             ++(if databaseExistsIsGuaranteed
                                then ",'"++addSlashes tempDbName++"'"
-                               else ""
+                               else "")
                              ++");"]
 
 -- call the command-line php with phpStr as input
