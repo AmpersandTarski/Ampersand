@@ -34,7 +34,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
           A_Concept(..)
          ,Sign(..),showSign,GenR()
          , (<==>),meet,join
-         ,Signaling(..)
          ,A_Context(..),Process(..)
          ,Association(..)
          ,Expression(..)
