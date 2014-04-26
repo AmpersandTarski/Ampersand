@@ -54,7 +54,7 @@ where
            , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
            , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
            , r_usr = Multiplicity
-           , r_sgl = False
+           , isSignal = False
            , srrel = d{decnm=show prp++name d}
            }
           where

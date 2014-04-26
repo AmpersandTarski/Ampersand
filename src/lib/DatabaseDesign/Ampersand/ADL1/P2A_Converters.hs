@@ -514,7 +514,7 @@ pCtx2aCtx
              , rrdcl = Nothing
              , r_env = env
              , r_usr = UserDefined
-             , r_sgl = not (null sgl)
+             , isSignal = not (null sgl)
              , srrel = Sgn{ decnm   = nm
                           , decsgn  = (sign exp')
                           , decprps = []

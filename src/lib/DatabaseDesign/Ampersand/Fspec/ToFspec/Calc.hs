@@ -420,7 +420,7 @@ where
                                        , rrdcl = Nothing
                                        , r_env = ""
                                        , r_usr = Multiplicity
-                                       , r_sgl = fatal 336 $ "erroneous reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")"
+                                       , isSignal = fatal 336 $ "erroneous reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        , srrel = fatal 337 $ "erroneous reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        }
                     | otherwise   = Ru { rrnm  = ""
@@ -435,7 +435,7 @@ where
                                        , rrdcl = Nothing
                                        , r_env = ""
                                        , r_usr = Multiplicity
-                                       , r_sgl = fatal 352 $ "illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")"
+                                       , isSignal = fatal 352 $ "illegal reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        , srrel = fatal 353 $ "illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        }
      showOp expr' = case expr' of
