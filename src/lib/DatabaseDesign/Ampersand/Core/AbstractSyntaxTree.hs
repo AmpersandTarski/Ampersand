@@ -32,7 +32,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Sign(..)
  , Population(..)
  , GenR
- , Signaling(..)
  , Association(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
@@ -163,7 +162,7 @@ data Rule =
         , rrdcl :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
         , r_env :: String                  -- ^ Name of pattern in which it was defined.
         , r_usr :: RuleOrigin              -- ^ Where does this rule come from?
-        , r_sgl :: Bool                    -- ^ True if this is a signal; False if it is an invariant
+        , isSignal :: Bool                    -- ^ True if this is a signal; False if it is an invariant
         , srrel :: Declaration             -- ^ the signal relation
         }
 instance Eq Rule where
@@ -177,8 +176,6 @@ instance Identified Rule where
   name   = rrnm
 instance Association Rule where
   sign   = rrtyp
-instance Signaling Rule where
-  isSignal = r_sgl
 
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
@@ -542,9 +539,6 @@ class Association rel where
   isEndo :: rel  -> Bool
   isEndo s        = source s == target s
 
-class Signaling a where
-  isSignal :: a -> Bool  -- > tells whether the argument refers to a signal
-    
 
 {- 
   --  a <= b means that concept a is more specific than b and b is more generic than a. For instance 'Elephant' <= 'Animal'

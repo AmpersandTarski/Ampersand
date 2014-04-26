@@ -401,7 +401,7 @@ where
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
-                        [        " ( "++showHSName r++" -- This is "++(if r_sgl r then "a process rule." else "an invariant")++
+                        [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
                          indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
                                                                       in showPair) ps++
                          indent'++" )"
@@ -608,7 +608,7 @@ where
                               Nothing    -> "Nothing"
         ,"  , r_env  = " ++ show (r_env  r)
         ,"  , r_usr  = " ++ show (r_usr  r)
-        ,"  , r_sgl  = " ++ show (r_sgl  r)
+        ,"  , isSignal = " ++ show (isSignal  r)
         ,"  , srrel  = " ++ showHSName (srrel  r)
         ,"  }"
         ]
