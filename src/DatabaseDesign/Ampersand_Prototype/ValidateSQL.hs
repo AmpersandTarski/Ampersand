@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
+module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
 
 where
 
@@ -30,11 +30,12 @@ fatal = fatalMsg "ValidateSQL"
 tempDbName :: String
 tempDbName = "TemporaryValidationDatabase"
 
-validateRuleSQL :: Fspc -> Options -> IO Bool
-validateRuleSQL fSpec flags =
- do { when (invalidPopulation fSpec) (do { putStrLn "The population would violate invariants. Could not generate your database."
-                                         ; exitWith $ ExitFailure 10
-                                         })
+validateRulesSQL :: Fspc -> Options -> IO Bool
+validateRulesSQL fSpec flags =
+ do { when (any (not.isSignal.fst) (allViolations fSpec)) 
+        (do { putStrLn "The population would violate invariants. Could not generate your database."
+            ; exitWith $ ExitFailure 10
+                 })
     ; removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
@@ -63,11 +64,6 @@ validateRuleSQL fSpec flags =
                   ; return False
                   } 
     }
-
-invalidPopulation :: Fspc -> Bool
-invalidPopulation fSpec = (not. null) (filter isInvariant (allViolations fSpec))
-  where isInvariant :: (Rule,[Paire]) -> Bool
-        isInvariant (r,_) = (not . r_sgl) r
 
 
 -- functions for extracting all expressions from the context
@@ -140,7 +136,7 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { let php = -- connectToServer flags ++
+ do { let php = connectToServer True flags ++
                 --[ "mysqli_select_db($DB_link,'"++tempDbName++"');"
                 [ "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
                 , "if(!$result)"
@@ -163,7 +159,7 @@ performQuery flags queryStr =
               fatal 141 $ "PHP/SQL problem: "++queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 ( "Parse error on php result: "++show queryResult++":\n\n"++(showPHP php))
+             _            -> fatal 143 ( "Parse error on php result: "++show queryResult++":\n\n"++showPHP php)
     }
 
 createTempDatabase :: Fspc -> Options -> IO ()
@@ -172,7 +168,7 @@ createTempDatabase fSpec flags =
     ; return ()
     }
  where php = showPHP $
-               connectToServer flags ++
+               connectToServer False flags ++
                createDatabasePHP tempDbName ++
                [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
                , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
@@ -181,17 +177,22 @@ createTempDatabase fSpec flags =
 removeTempDatabase :: Options -> IO ()
 removeTempDatabase flags =
  do { _ <- executePHP . showPHP $ 
-        connectToServer flags ++
+        connectToServer False flags ++
         ["mysqli_query($DB_link,"++showPhpStr ("DROP DATABASE "++tempDbName)++");"]
     ; return ()
     }
 
-connectToServer :: Options -> [String]
-connectToServer flags =
-  [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
-                           ++",'"++addSlashes (sqlLogin flags)++"'"
-                           ++",'"++addSlashes (sqlPwd flags)++"');"]
-               
+
+connectToServer :: Bool -> Options -> [String]
+connectToServer databaseExistsIsGuaranteed flags =
+    [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
+                             ++",'"++addSlashes (sqlLogin flags)++"'"
+                             ++",'"++addSlashes (sqlPwd flags)++"'"
+                             ++if databaseExistsIsGuaranteed
+                               then ",'"++addSlashes tempDbName++"'"
+                               else ""
+                             ++");"]
+
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
