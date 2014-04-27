@@ -164,7 +164,9 @@ performQuery flags queryStr =
 
 createTempDatabase :: Fspc -> Options -> IO ()
 createTempDatabase fSpec flags =
- do { _ <- executePHP php
+ do { res <- executePHP php
+    ; putStrLn "Result of createTempDatabase:"
+    ; putStrLn res
     ; return ()
     }
  where php = showPHP $
