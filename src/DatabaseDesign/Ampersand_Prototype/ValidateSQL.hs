@@ -27,8 +27,8 @@ therefore most likely to be correct in case of discrepancies.
 fatal :: Int -> String -> a
 fatal = fatalMsg "ValidateSQL"
 
-tempDbName :: String
-tempDbName = "TemporaryValidationDatabase"
+tempDbName :: Options -> String
+tempDbName flags = "TemporaryValidationDatabase"++dbName flags
 
 validateRulesSQL :: Fspc -> Options -> IO Bool
 validateRulesSQL fSpec flags =
@@ -149,7 +149,7 @@ performQuery flags queryStr =
     [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                              ++",'"++addSlashes (sqlLogin flags)++"'"
                              ++",'"++addSlashes (sqlPwd flags)++"'"
-                             ++",'"++addSlashes tempDbName++"'"
+                             ++",'"++addSlashes (tempDbName flags)++"'"
                              ++");"
     , "// Check connection"
     , "if (mysqli_connect_errno()) {"
@@ -192,14 +192,14 @@ createTempDatabase fSpec flags =
     , "}"
     , ""
     , "// Create database"
-    , "$sql=\"CREATE DATABASE "++tempDbName++"\";"
+    , "$sql=\"CREATE DATABASE "++tempDbName flags++"\";"
     , "if (mysqli_query($DB_link,$sql)) {"
-    , "  echo \"Database "++tempDbName++" created successfully\";"
+    , "  echo \"Database "++tempDbName flags++" created successfully\";"
     , "} else {"
     , "  echo \"Error creating database: \" . mysqli_error($DB_Link);"
     , "}"
     ] ++
-    [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
+    [ "mysqli_select_db($DB_link,'"++tempDbName flags++"');"
     , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
     createTablesPHP fSpec
 
@@ -211,11 +211,11 @@ removeTempDatabase flags =
     ; return()
     }
  where
-  php = showPHP $
+  php = showPHP 
     [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                              ++",'"++addSlashes (sqlLogin flags)++"'"
                              ++",'"++addSlashes (sqlPwd flags)++"'"
-                             ++",'"++addSlashes tempDbName++"'"
+                        --     ++",'"++addSlashes (tempDbName flags)++"'"
                              ++");"
     , "// Check connection"
     , "if (mysqli_connect_errno()) {"
@@ -223,9 +223,9 @@ removeTempDatabase flags =
     , "}"
     , ""
     , "// Drop database"
-    , "$sql=\"DROP DATABASE "++tempDbName++"\";"
+    , "$sql=\"DROP DATABASE IF EXISTS "++tempDbName flags++"\";"
     , "if (mysqli_query($DB_link,$sql)) {"
-    , "  echo \"Database "++tempDbName++" dropped successfully\";"
+    , "  echo \"Database "++tempDbName flags++" dropped successfully\";"
     , "} else {"
     , "  echo \"Error dropping database: \" . mysqli_error($DB_Link);"
     , "}"
@@ -235,52 +235,52 @@ removeTempDatabase flags =
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
- do { putStrLn $ "Executing PHP:\n" ++ phpStr
-    ; putStrLn ("(Just kidding, not really...)")
-    ; return "."
-    }
 -- do { putStrLn $ "Executing PHP:\n" ++ phpStr
---    ; tempdir <- catch getTemporaryDirectory
---                       (\e -> do let err = show (e :: IOException)
---                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
---                                 return ".")
---
---    ; (tempfile, temph) <- openTempFile tempdir "phpInput"
---    ; hPutStr temph phpStr
---    ; hClose temph
---     
---    ; let cp = CreateProcess
---                { cmdspec      = RawCommand "php" [tempfile]
---                , cwd          = Nothing -- path
---                , env          = Just [("TERM","dumb")] -- environment
---                , std_in       = Inherit 
---                , std_out      = CreatePipe
---                , std_err      = CreatePipe
---                , close_fds    = False -- no need to close all other file descriptors
---                , create_group = False
---                }
---            
---    ; (_, mStdOut, mStdErr, _) <- createProcess cp 
---    ; outputStr <-
---        case (mStdOut, mStdErr) of
---          (Nothing, _) -> fatal 105 "no output handle"
---          (_, Nothing) -> fatal 106 "no error handle"
---          (Just stdOutH, Just stdErrH) ->
---           do { putStrLn "done"
---              ; errStr <- hGetContents stdErrH
---              ; seq (length errStr) $ return ()
---              ; hClose stdErrH
---              ; unless (null errStr) $
---                  putStrLn $ "Error during PHP execution:\n" ++ errStr 
---              ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
---              ; seq (length outputStr) $ return ()
---              ; hClose stdOutH
---              ; putStrLn $ "Results:\n" ++ outputStr
---              ; return outputStr
---              }
---    ; removeFile tempfile
---    ; return outputStr
+--    ; putStrLn ("(Just kidding, not really...)")
+--    ; return "."
 --    }
+ do { putStrLn $ "Executing PHP:\n" ++ phpStr
+    ; tempdir <- catch getTemporaryDirectory
+                       (\e -> do let err = show (e :: IOException)
+                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
+                                 return ".")
+
+    ; (tempfile, temph) <- openTempFile tempdir "phpInput"
+    ; hPutStr temph phpStr
+    ; hClose temph
+     
+    ; let cp = CreateProcess
+                { cmdspec      = RawCommand "php" [tempfile]
+                , cwd          = Nothing -- path
+                , env          = Just [("TERM","dumb")] -- environment
+                , std_in       = Inherit 
+                , std_out      = CreatePipe
+                , std_err      = CreatePipe
+                , close_fds    = False -- no need to close all other file descriptors
+                , create_group = False
+                }
+            
+    ; (_, mStdOut, mStdErr, _) <- createProcess cp 
+    ; outputStr <-
+        case (mStdOut, mStdErr) of
+          (Nothing, _) -> fatal 105 "no output handle"
+          (_, Nothing) -> fatal 106 "no error handle"
+          (Just stdOutH, Just stdErrH) ->
+           do { putStrLn "done"
+              ; errStr <- hGetContents stdErrH
+              ; seq (length errStr) $ return ()
+              ; hClose stdErrH
+              ; unless (null errStr) $
+                  putStrLn $ "Error during PHP execution:\n" ++ errStr 
+              ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
+              ; seq (length outputStr) $ return ()
+              ; hClose stdOutH
+              ; putStrLn $ "Results:\n" ++ outputStr
+              ; return outputStr
+              }
+    ; removeFile tempfile
+    ; return outputStr
+    }
     
 showPHP :: [String] -> String
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
