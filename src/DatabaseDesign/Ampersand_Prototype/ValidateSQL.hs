@@ -236,47 +236,51 @@ removeTempDatabase flags =
 executePHP :: String -> IO String
 executePHP phpStr =
  do { putStrLn $ "Executing PHP:\n" ++ phpStr
-    ; tempdir <- catch getTemporaryDirectory
-                       (\e -> do let err = show (e :: IOException)
-                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
-                                 return ".")
-
-    ; (tempfile, temph) <- openTempFile tempdir "phpInput"
-    ; hPutStr temph phpStr
-    ; hClose temph
-     
-    ; let cp = CreateProcess
-                { cmdspec      = RawCommand "php" [tempfile]
-                , cwd          = Nothing -- path
-                , env          = Just [("TERM","dumb")] -- environment
-                , std_in       = Inherit 
-                , std_out      = CreatePipe
-                , std_err      = CreatePipe
-                , close_fds    = False -- no need to close all other file descriptors
-                , create_group = False
-                }
-            
-    ; (_, mStdOut, mStdErr, _) <- createProcess cp 
-    ; outputStr <-
-        case (mStdOut, mStdErr) of
-          (Nothing, _) -> fatal 105 "no output handle"
-          (_, Nothing) -> fatal 106 "no error handle"
-          (Just stdOutH, Just stdErrH) ->
-           do { putStrLn "done"
-              ; errStr <- hGetContents stdErrH
-              ; seq (length errStr) $ return ()
-              ; hClose stdErrH
-              ; unless (null errStr) $
-                  putStrLn $ "Error during PHP execution:\n" ++ errStr 
-              ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
-              ; seq (length outputStr) $ return ()
-              ; hClose stdOutH
-              ; putStrLn $ "Results:\n" ++ outputStr
-              ; return outputStr
-              }
-    ; removeFile tempfile
-    ; return outputStr
+    ; putStrLn ("(Just kidding, not really...)")
+    ; return "."
     }
+-- do { putStrLn $ "Executing PHP:\n" ++ phpStr
+--    ; tempdir <- catch getTemporaryDirectory
+--                       (\e -> do let err = show (e :: IOException)
+--                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
+--                                 return ".")
+--
+--    ; (tempfile, temph) <- openTempFile tempdir "phpInput"
+--    ; hPutStr temph phpStr
+--    ; hClose temph
+--     
+--    ; let cp = CreateProcess
+--                { cmdspec      = RawCommand "php" [tempfile]
+--                , cwd          = Nothing -- path
+--                , env          = Just [("TERM","dumb")] -- environment
+--                , std_in       = Inherit 
+--                , std_out      = CreatePipe
+--                , std_err      = CreatePipe
+--                , close_fds    = False -- no need to close all other file descriptors
+--                , create_group = False
+--                }
+--            
+--    ; (_, mStdOut, mStdErr, _) <- createProcess cp 
+--    ; outputStr <-
+--        case (mStdOut, mStdErr) of
+--          (Nothing, _) -> fatal 105 "no output handle"
+--          (_, Nothing) -> fatal 106 "no error handle"
+--          (Just stdOutH, Just stdErrH) ->
+--           do { putStrLn "done"
+--              ; errStr <- hGetContents stdErrH
+--              ; seq (length errStr) $ return ()
+--              ; hClose stdErrH
+--              ; unless (null errStr) $
+--                  putStrLn $ "Error during PHP execution:\n" ++ errStr 
+--              ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
+--              ; seq (length outputStr) $ return ()
+--              ; hClose stdOutH
+--              ; putStrLn $ "Results:\n" ++ outputStr
+--              ; return outputStr
+--              }
+--    ; removeFile tempfile
+--    ; return outputStr
+--    }
     
 showPHP :: [String] -> String
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
