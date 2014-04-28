@@ -3,6 +3,18 @@
 
    This file defines the functions 'InsPair', 'DelPair', InsAtom, DelAtom and NewStruct
    There are no guarantees with respect to their 100% functioning. Have fun...
+   
+   This file has been modified to produce Exceptions rather than that it dies...
+   Such exceptions need to be caught. The syntax for doing this is as follows:
+   
+   try { <insert code here>;
+         throw new Exception("identification string of the exception");
+         <insert other code if needed>; 
+       }
+  catch (Exception $e)
+       { <insert exception handling code here>;
+         <the exception identifier is in variable $e>;
+       }
 */
 
 /*
@@ -184,7 +196,12 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
    
    ROLE ExecEngine MAINTAINS "insEquivalence" -- Creation of the atom
    RULE "insEquivalence": r |- r1;r2
-   VIOLATION (TXT "{EX} NewStruct;ConceptC;NULL" -- 'NULL' specifies that a name is to be generated
+   VIOLATION (TXT "{EX} NewStruct;ConceptC" -- atom generated automatically (with time stamp)
+             ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"  -- Always use NULL as ConceptC atom
+             ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I   -- Always use NULL as ConceptC atom
+              )
+Alternatively, the following construct should also work:
+   VIOLATION (TXT "{EX} NewStruct;ConceptC;" SRC I -- atom generated using specified text
              ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"  -- Always use NULL as ConceptC atom
              ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I   -- Always use NULL as ConceptC atom
               )
@@ -220,18 +237,18 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
 // populate relation r1, first checking for allowed syntax:
     if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')) // Note: when populating a [PROP] relation, both atoms can be NULL
     {  ExecEngineSHOUTS("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL");
-       die;
+       throw new Exception("Failure 1 in NewStruct in InsDelPairAtom.php");
     }
     if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)) // Note: when populating a [PROP] relation, both atoms can be NULL
     {  ExecEngineSHOUTS("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC");
-       die;
+       throw new Exception("Failure 2 in NewStruct in InsDelPairAtom.php");
     }
     if ($srcConcept == $ConceptC)
     {  if ($srcAtom == 'NULL')
        {  $srcAtom = $AtomC;
        } else // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
        {  ExecEngineSHOUTS ("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
-          die;
+          throw new Exception("Failure 3 in NewStruct in InsDelPairAtom.php");
        }
     }
     if ($tgtConcept == $ConceptC)
@@ -239,7 +256,7 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
        {  $tgtAtom = $AtomC;
        } else // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
        {  ExecEngineSHOUTS ("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
-          die;
+       	  throw new Exception("Failure 4 in NewStruct in InsDelPairAtom.php");
        }
     }
 // Any logging is done by InsPair:
