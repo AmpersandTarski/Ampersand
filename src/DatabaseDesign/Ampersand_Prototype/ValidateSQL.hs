@@ -27,8 +27,8 @@ therefore most likely to be correct in case of discrepancies.
 fatal :: Int -> String -> a
 fatal = fatalMsg "ValidateSQL"
 
-tempDbName :: Options -> String
-tempDbName flags = "TemporaryValidationDatabase"++dbName flags
+tempDbName :: String
+tempDbName = "TemporaryValidationDatabase"
 
 validateRulesSQL :: Fspc -> Options -> IO Bool
 validateRulesSQL fSpec flags =
@@ -149,7 +149,7 @@ performQuery flags queryStr =
     [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                              ++",'"++addSlashes (sqlLogin flags)++"'"
                              ++",'"++addSlashes (sqlPwd flags)++"'"
-                             ++",'"++addSlashes (tempDbName flags)++"'"
+                             ++",'"++addSlashes tempDbName++"'"
                              ++");"
     , "// Check connection"
     , "if (mysqli_connect_errno()) {"
@@ -192,14 +192,14 @@ createTempDatabase fSpec flags =
     , "}"
     , ""
     , "// Create database"
-    , "$sql=\"CREATE DATABASE "++tempDbName flags++"\";"
+    , "$sql=\"CREATE DATABASE "++tempDbName++"\";"
     , "if (mysqli_query($DB_link,$sql)) {"
-    , "  echo \"Database "++tempDbName flags++" created successfully\";"
+    , "  echo \"Database "++tempDbName++" created successfully\";"
     , "} else {"
     , "  echo \"Error creating database: \" . mysqli_error($DB_link);"
     , "}"
     ] ++
-    [ "mysqli_select_db($DB_link,'"++tempDbName flags++"');"
+    [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
     , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
     createTablesPHP fSpec
 
@@ -215,7 +215,7 @@ removeTempDatabase flags =
     [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                              ++",'"++addSlashes (sqlLogin flags)++"'"
                              ++",'"++addSlashes (sqlPwd flags)++"'"
-                        --     ++",'"++addSlashes (tempDbName flags)++"'"
+                        --     ++",'"++addSlashes tempDbName++"'"
                              ++");"
     , "// Check connection"
     , "if (mysqli_connect_errno()) {"
@@ -223,9 +223,9 @@ removeTempDatabase flags =
     , "}"
     , ""
     , "// Drop database"
-    , "$sql=\"DROP DATABASE IF EXISTS "++tempDbName flags++"\";"
+    , "$sql=\"DROP DATABASE IF EXISTS "++tempDbName++"\";"
     , "if (mysqli_query($DB_link,$sql)) {"
-    , "  echo \"Database "++tempDbName flags++" dropped successfully\";"
+    , "  echo \"Database "++tempDbName++" dropped successfully\";"
     , "} else {"
     , "  echo \"Error dropping database: \" . mysqli_error($DB_link);"
     , "}"
