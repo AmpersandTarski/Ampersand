@@ -196,7 +196,7 @@ createTempDatabase fSpec flags =
     , "if (mysqli_query($DB_link,$sql)) {"
     , "  echo \"Database "++tempDbName flags++" created successfully\";"
     , "} else {"
-    , "  echo \"Error creating database: \" . mysqli_error($DB_Link);"
+    , "  echo \"Error creating database: \" . mysqli_error($DB_link);"
     , "}"
     ] ++
     [ "mysqli_select_db($DB_link,'"++tempDbName flags++"');"
@@ -227,7 +227,7 @@ removeTempDatabase flags =
     , "if (mysqli_query($DB_link,$sql)) {"
     , "  echo \"Database "++tempDbName flags++" dropped successfully\";"
     , "} else {"
-    , "  echo \"Error dropping database: \" . mysqli_error($DB_Link);"
+    , "  echo \"Error dropping database: \" . mysqli_error($DB_link);"
     , "}"
     ]
     
