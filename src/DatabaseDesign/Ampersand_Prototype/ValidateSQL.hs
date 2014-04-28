@@ -181,8 +181,8 @@ createTempDatabase fSpec flags =
     ; return ()
     }
  where 
-   php = showPHP $
-     [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
+   php = showPHP 
+    ([ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                               ++",'"++addSlashes (sqlLogin flags)++"'"
                               ++",'"++addSlashes (sqlPwd flags)++"'"
                               ++");"
@@ -202,7 +202,7 @@ createTempDatabase fSpec flags =
     [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
     , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
     createTablesPHP fSpec
-
+    )
 removeTempDatabase :: Options -> IO ()
 removeTempDatabase flags =
  do { putStrLn "Result of dropTempDatabase:"
@@ -239,7 +239,8 @@ executePHP phpStr =
 --    ; putStrLn ("(Just kidding, not really...)")
 --    ; return "."
 --    }
- do { putStrLn $ "Executing PHP:\n" ++ phpStr
+ do { putStrLn $ "Executing PHP:" 
+    ; mapM_ putStrLn (map (\s -> "  "++s) (lines phpStr))
     ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
@@ -248,7 +249,7 @@ executePHP phpStr =
     ; (tempfile, temph) <- openTempFile tempdir "phpInput"
     ; hPutStr temph phpStr
     ; hClose temph
-     
+    ; putStrLn "Written to temp. file.." 
     ; let cp = CreateProcess
                 { cmdspec      = RawCommand "php" [tempfile]
                 , cwd          = Nothing -- path
