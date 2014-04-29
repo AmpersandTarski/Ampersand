@@ -6,7 +6,6 @@ import DatabaseDesign.Ampersand_Prototype.Installer           (installer)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
 import DatabaseDesign.Ampersand_Prototype.Apps
 import DatabaseDesign.Ampersand_Prototype.Generate            (generateAll)
-import Data.Maybe
 import Control.Monad
 import System.FilePath               
 import System.Directory

@@ -179,7 +179,7 @@ selectExpr fSpec i src trg expr
                                 mid' = noCollide' [src'] (sqlExprTgt fSpec e)
                                 mid2'= sqlExprSrc fSpec f
                                 trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
-                            in sqlcomment i ("case:  (e:ERel (V _) _:f:fx)"++phpIndent (i+3)++showADL e) $
+                            in sqlcomment i ("case:  (e:ERel (EDcV _) _:f:fx)"++phpIndent (i+3)++showADL e) $
                                    selectGeneric i ("fst",src',src) 
                                                    ("snd",trg',trg)
                                                    (  selectExprInFROM fSpec i src'  mid' e++" AS fst,"++phpIndent (i+5)++
@@ -254,7 +254,7 @@ WHERE ECps0.`A`<>ECps2.`A
     (EMp1 atom _) -> sqlcomment i "case: EMp1 atom."
                       ("SELECT "++sqlAtomQuote atom++" AS "++src++", "++sqlAtomQuote atom++" AS "++trg)
     (EDcV (Sign s t))    -> let concNames pfx c = [([],"","1") |c==ONE]++[([quote (name p) ++ " AS "++pfx],pfx,quote (fldname s')) | (p,s',_) <- sqlRelPlugs fSpec (EDcI c)]
-                            in sqlcomment i ("case: (EDcV (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
+                            in sqlcomment i ("case: (EDcV (Sign s t))"++phpIndent (i+3)++"V[ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (srcPrefix,src',src) (tgtPrefix,trg',trg) tbls "1"
                                     | (s',srcPrefix,src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
                                     , (t',tgtPrefix,trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
