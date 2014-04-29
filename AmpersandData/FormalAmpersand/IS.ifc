@@ -7,9 +7,9 @@ BOX [ rules : V[ONE*Rule]
           ]
     ]
 
-INTERFACE newRule : I[Rule]
+INTERFACE newRule (characteristic, meaning["Rule"*"NatLang"], purpose["Rule"*"NatLang"]): I[Rule]
 BOX [ rule : I
     , expression : characteristic
     ]
 
-ENDCONTEXT
+ENDCONTEXT 

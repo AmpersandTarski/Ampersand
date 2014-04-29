@@ -189,8 +189,10 @@ where
      nM _      (EImp (x,ELrs (z,y))) _                   = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
      nM _      (EImp (y,ERrs (x,z))) _                   = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
      nM _      (EImp (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
-     nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
-     nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
+--   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
+--   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
+     nM _      e@(ECpl EIsc{}) _                         = (deMorganEIsc e, ["De Morgan"], "<=>")
+     nM _      e@(ECpl EUni{}) _                         = (deMorganEUni e, ["De Morgan"], "<=>")
      nM _      e@(ECpl (ERad (_,ECpl{}))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      e@(ECpl (ERad (ECpl{},_))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      e@(ECpl (ECps (ECpl{},ECpl{}))) _         = (deMorganECps e, ["De Morgan"], "<=>")
@@ -228,11 +230,18 @@ where
                                                                where (t,steps, equ')  = nM posCpl l []
                                                                      (f,steps',equ'') = nM posCpl r (l:rs)
      nM _      x@(EEps i sgn) _ | source sgn==i && i==target sgn = (EDcI i, ["source and target are equal to "++name i++", so "++showADL x++"="++showADL (EDcI i)], "<=>")
+     nM _      (ELrs (ECps (x,y),z)) _ | not eq && y==z    = (x,     ["(x;y)/y |- x"], "==>")
+     nM _      (ELrs (ECps (x,y),z)) _ | not eq && flp x==z= (flp y, [case (x, y) of
+                                                                           (EFlp _, EFlp _) -> "(SJ) (x~;y~)/x |- y"
+                                                                           (     _, EFlp _) -> "(SJ) (x;y~)/x~ |- y"
+                                                                           (EFlp _,      _) -> "(SJ) (x~;y)/x |- y~"
+                                                                           (     _,      _) -> "(SJ) (x;y)/x~ |- y~"], "==>")
      nM _      (ELrs (ELrs (x,z),y)) _                     = (ELrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>")
      nM posCpl (ELrs (l,r)) _                              = (t ./. f, steps++steps', fEqu [equ',equ''])
                                                              where (t,steps, equ')  = nM posCpl l []
                                                                    (f,steps',equ'') = nM (not posCpl) r []
      nM _      (ERrs (y,ERrs (x,z))) _                     = (ERrs (ECps (x,y),z), ["Jipsen&Tsinakis: xy\\z = y\\(x\\z)"], "<=>")
+     nM _      (ERrs (x,ECps (y,z))) _ | not eq && x==y    = (z,     ["x\\(x;y) |- y"], "==>")
      nM posCpl (ERrs (l,r)) _                              = (t .\. f, steps++steps', fEqu [equ',equ''])
                                                              where (t,steps, equ')  = nM (not posCpl) l []
                                                                    (f,steps',equ'') = nM posCpl r []

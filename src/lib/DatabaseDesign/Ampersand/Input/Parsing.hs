@@ -193,7 +193,7 @@ parseSingleADL pv str fn =
  where addEmptyIncludes parsedContext = (parsedContext, []) -- the old parsed does not support include filenames, so we add an empty list
 
 
--- | Same as passeCtx_ , however this one is for a list of populations
+-- | Same as parseCtx_ , however this one is for a list of populations
 parsePops :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
