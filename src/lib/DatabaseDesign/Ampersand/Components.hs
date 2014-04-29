@@ -68,6 +68,7 @@ doGenADL    fSpec flags =
 doGenProofs :: Fspc -> Options -> IO()
 doGenProofs fSpec flags =
  do { verboseLn flags $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
+--  ; verboseLn flags $ writeHtmlString def thePandoc
     ; writeFile outputFile $ writeHtmlString def thePandoc
     ; verboseLn flags "Proof written."
     }

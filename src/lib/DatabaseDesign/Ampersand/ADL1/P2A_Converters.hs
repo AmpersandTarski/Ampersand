@@ -301,9 +301,9 @@ pCtx2aCtx
          PDif _ a b -> binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PLrs _ a b -> binary' (./.)  (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <?> ((,)<$>tt a<*>tt b)
          PRrs _ a b -> binary' (.\.)  (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <?> ((,)<$>tt a<*>tt b)
-         PDia _ a b -> binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b) -- TODO: Sebastiaan, is this correct?
+         PDia _ a b -> binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b) -- MBE would have been correct, but too restrictive
          PCps _ a b -> binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b)
-         PRad _ a b -> binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b)
+         PRad _ a b -> binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b) -- Using MBE instead of ISC allows the programmer to use De Morgan
          PPrd _ a b -> (\((x,(s,_)),(y,(_,t))) -> (x .*. y, (s,t))) <$> ((,)<$>tt a<*>tt b)
          PKl0 _ a   -> unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
          PKl1 _ a   -> unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a

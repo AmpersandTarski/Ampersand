@@ -195,13 +195,12 @@ chpNatLangReqs lev fSpec flags =
               printIntro [] [] = []
               printIntro ccds relConcpts
                 = case fsLang fSpec of
-                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap cname] | cname<-map (name . fst) ccds ++ map fst3 relConcpts]
+                              Dutch   ->  [Para$ (case ([Emph [Str (unCap cname)] | cname<-map (name . fst) ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
                                                                   commaNLPandoc (Str "en") cs++[ Str "."]
-                                                    --            ++[ Str " Daarna worden hierover afspraken geïntroduceerd." | (not.null) rules2print]
                                                        ([c],_) -> [ Str "Deze sectie introduceert het concept "
                                                                   , c]
                                                        (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
@@ -222,8 +221,7 @@ chpNatLangReqs lev fSpec flags =
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "At this point, the definitions of "]++
-                                                                  commaEngPandoc (Str "and") cs++[ Str " are given."]++
-                                                                  [ Str " Directly after that, the agreements are introduced." | (not.null) rules2print]
+                                                                  commaEngPandoc (Str "and") cs++[ Str " are given."]
                                                        ([c],_) -> [ Str "This section introduces concept "
                                                                   , Emph [c]]
                                                        (cs ,_) -> [ Str "This section introduces concepts "]++

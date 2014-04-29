@@ -16,7 +16,7 @@ BOX ["loaded into Atlas" : V[ONE*Context]
     BOX ["CONTEXT":I,"source file (click to edit)":sourcefile \/ includes,"operations (click to perform)":sourcefile;applyto~]
     ,"overview of files" : V[ONE*User]
     BOX [ "open new source file" : newfile
-        , "source files" : uploaded[User*AdlFile];I[AdlFile] BOX ["file name (click to edit)":I,"created at":filetime,"operations (click to perform)":applyto~]
+        , "source files" : uploaded[User*File];I[AdlFile] BOX ["file name (click to edit)":I[AdlFile],"created at":filetime,"operations (click to perform)":applyto~]
         ]
     ]
 
@@ -136,7 +136,7 @@ INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
-    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I,"created at":filetime]
+    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
     ]
 
 INTERFACE "CONTEXT" FOR Student: I[Context]
@@ -166,7 +166,7 @@ BOX ["PURPOSEs" :cptpurpose
     ,"name" :cptnm
     ,"POPULATION" :cptos BOX ["atom":atomvalue]
     ,"POPULATION (through ISA)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
-    BOX ["more specific concept":I, "POPULATION":cptos;atomvalue]
+    BOX ["more specific concept":I[Concept], "POPULATION":cptos;atomvalue]
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
     ,"used in relations": (decsgn;(src \/ trg))~

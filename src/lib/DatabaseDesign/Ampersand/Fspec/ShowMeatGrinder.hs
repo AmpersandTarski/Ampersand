@@ -90,9 +90,6 @@ data RelPopuType = InitPop | CurrPop deriving Show
 mkUriRelPopu :: Declaration -> RelPopuType  -> String
 mkUriRelPopu d t = show t++"Of"++uri d
 
-data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
-                 , atmVal :: String
-                 } deriving Eq
 instance AdlId Atom where
  uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a  
 

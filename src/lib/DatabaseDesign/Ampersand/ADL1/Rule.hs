@@ -62,7 +62,9 @@ where
            t = name (target d)
            r:: Expression
            r = EDcD d
-           rExpr = case prp of
+           rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
+                   then fatal 70 ("Illegal property of an endo relation "++show (name d)) else
+                   case prp of
                         Uni-> flp r .:. r .|-. EDcI (target r)
                         Tot-> EDcI (source r)  .|-. r .:. flp r
                         Inj-> r .:. flp r .|-. EDcI (source r)

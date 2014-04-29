@@ -5,9 +5,9 @@ module DatabaseDesign.Ampersand.ADL1.ECArule ( isAll
                                              , isNop
                                              , isDo
                                              , dos
- 
                                              )
 where
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (source,target)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Basics     (fatalMsg)
 
@@ -25,7 +25,6 @@ import DatabaseDesign.Ampersand.Basics     (fatalMsg)
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.ECArule"
 
-  
 
 isAll :: PAclause -> Bool
 isAll ALL{} = True
@@ -49,8 +48,10 @@ isDo _      = False
 
 dos :: PAclause -> [PAclause]   -- gather all Do's from a PAclause
 dos p@CHC{} = concatMap dos (paCls p)
+dos p@GCH{} = concatMap dos [ p c | (c,p)<-paGCls p]
 dos p@ALL{} = concatMap dos (paCls p)
 dos p@Do{}  = [p]
+dos p@Pck{} = dos (paLink p (Atom (source e) "a") (Atom (target e) "b")) where e = paExp p
 dos p@Sel{} = dos (paCl p "x")
 dos p@New{} = dos (paCl p "x")
 dos p@Rmv{} = dos (paCl p "x")
@@ -58,7 +59,3 @@ dos Nop{}   = []
 dos Blk{}   = []
 dos Let{}   = fatal 56 "dos not defined for `Let` constructor of PAclause"
 dos Ref{}   = fatal 57 "dos not defined for `Ref` constructor of PAclause"
- 
-
-
-  

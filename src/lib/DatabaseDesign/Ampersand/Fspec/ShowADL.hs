@@ -9,7 +9,7 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module DatabaseDesign.Ampersand.Fspec.ShowADL
-    ( ShowADL(..), LanguageDependent(..))
+    ( ShowADL(..), LanguageDependent(..), showPAclause)
 where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -488,31 +488,46 @@ instance ShowADL P_Concept where
 
 instance ShowADL PAclause where
     showADL = showPAclause "\n "
-     where
-      showPAclause indent pa@CHC{}
-       = let indent'=indent++"   " in "execute ONE from"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]
-      showPAclause indent pa@ALL{}
-       = let indent'=indent++"   " in "execute ALL of"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]
-      showPAclause indent pa@Do{}
+
+showPAclause :: String -> PAclause -> String
+showPAclause indent pa@Do{}
        = ( case paSrt pa of
             Ins -> "INSERT INTO "
             Del -> "DELETE FROM ")++
-         show (paTo pa)++
-         " SELECTFROM "++
-         show (paDelta pa)
-         ++concat [ indent++showConj rs | (_,rs)<-paMotiv pa ]
-      showPAclause indent pa@Sel{}
-       = let indent'=indent++"   " in
-        "SELECT x:"++show (paCpt pa)++" FROM "++showADL (paExp pa)++";"++indent'++showPAclause indent' (paCl pa "x")
-      showPAclause indent pa@New{}
-       = let indent'=indent++"   " in
-        "CREATE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
-      showPAclause indent pa@Rmv{}
-       = let indent'=indent++"   " in
-        "REMOVE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
-      showPAclause _ Nop{} = "Nop"
-      showPAclause _ Blk{} = "Blk"
-      showPAclause _ (Let _ _ _) = fatal 390 "showPAclause not defined for `Let`. Consult your dealer!"
-      showPAclause _ (Ref _)     = fatal 391 "showPAclause not defined for `Ref`. Consult your dealer!"
-      showConj rs
-              = "(TO MAINTAIN"++intercalate ", " [name r | r<-rs]++")"
+         name (paTo pa)++showSign (sign (paTo pa)) ++
+         " SELECTFROM"++indent++"  "++
+         showADL (paDelta pa)++
+         motivate indent "TO MAINTAIN " (paMotiv pa)
+showPAclause indent (New c clause cj_ruls)
+       = "CREATE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"  "
+showPAclause indent (Rmv c clause cj_ruls)
+       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"  "
+showPAclause indent (Pck e r cj_ruls)
+       = "SELECT a,b FROM ("++ showADL e ++");"
+             ++indent'++showPAclause indent' (r (Atom (source e) "a") (Atom (target e) "b"))++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"  "
+showPAclause indent (Sel c e r cj_ruls)
+       = "SELECT x:"++show c++" FROM codomain("++ showADL e ++");"
+             ++indent'++showPAclause indent' (r "x")++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"  "
+showPAclause indent (CHC ds cj_ruls)
+       = "ONE of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"       "
+showPAclause indent (GCH ds cj_ruls)
+       = "ONE of "++intercalate indent' ["IF "++showADL c++" IS POPULATED"++indent'++"THEN "++ showPAclause (indent'++"     ") (d c)| (c,d)<-ds]++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"       "
+showPAclause indent (ALL ds cj_ruls)
+       = "ALL of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
+         where indent'  = indent++"       "
+showPAclause indent (Nop cj_ruls)
+       = "DO NOTHING"++motivate indent "TO MAINTAIN" cj_ruls
+showPAclause indent (Blk cj_ruls)
+       = "BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
+showPAclause  _ (Let _ _ _)  = fatal 55 "showPAclause is missing for `Let`. Contact your dealer!"
+showPAclause  _ (Ref _)      = fatal 56 "showPAclause is missing for `Ref`. Contact your dealer!"
+                     
+motivate :: [Char] -> [Char] -> [(Expression, [Rule])] -> [Char]
+motivate indent motive motives = concat [ indent++showConj cj_rul | cj_rul<-motives ]
+   where showConj (conj,rs) = "("++motive++" "++showADL conj++" FROM "++intercalate ", " (map name rs) ++")"

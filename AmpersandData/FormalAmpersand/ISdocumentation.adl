@@ -8,9 +8,9 @@ in a specific domain (called the {\em context})
 by disclosing and maintaining factual information (represented by {\em data}).
 For example, a customer relationship management (CRM) system of ECME Inc.\ should contain facts about ECME's customers.
 Its context is ECME Inc., in particular its customer base.
-The users are undoubtedly employees of ECME Inc., but customers with access to this information are considered user just as well.
+Those users are undoubtedly employees of ECME Inc., but each customer with access to this information is considered a user just as well.
 
-In order to ask, to command, to state facts and in general to communicate things verbally, people use language.
+People use language in order to ask, to command, to state facts and in general to communicate things verbally.
 Since an information system is supposed to contain facts, we take a special interest in affirmative sentences.
 Affirmative sentences are characterized by being either true or false, e.g. ``Last Tuesday, Peter was in Amsterdam.''
 We call this a {\em statement}, and we call a true statement a {\em fact}.
@@ -114,6 +114,74 @@ PURPOSE RULE "def sat"
 PURPOSE RULE "def true"
 {+In order to define the notion of truth formally, we must introduce a technical definition.
 As the signature of an expression defines the truth, we call that expression true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
+-}
+
+PURPOSE PATTERN "Documentation"
+{+Documentation is required for human understanding of rules.
+It explains why things exist and how things are expressed in natural language.
+-}
+PURPOSE RELATION meaning[Concept*NatLang]
+{+The meaning of a concept is described in natural language, because it must be discussed with business stakeholders.
+In the end, they must vouch for the correct wording of that concept.
+-}
+PURPOSE RELATION purpose[Concept*NatLang]
+{+The purpose of a concept is described to document why it exists.
+-}
+PURPOSE RELATION reference[Concept*Reference]
+{+The reference of a concept is required in order to know where that concept comes from.
+That helps to judge the relevance of that particular concept.
+-}
+PURPOSE RELATION meaning[Relation*NatLang]
+{+The meaning of a relation is described in natural language, because it must be discussed with business stakeholders.
+In the end, they must vouch for the correct wording of that relation.
+-}
+PURPOSE RELATION purpose[Relation*NatLang]
+{+The purpose of a relation is described to document why it exists.
+-}
+PURPOSE RELATION reference[Relation*Reference]
+{+The reference of a relation is required in order to know where that relation comes from.
+That helps to get consensus about the correct wording of statements made from this relation.
+-}
+PURPOSE RELATION meaning[Rule*NatLang]
+{+The meaning of a rule is described in natural language for two reasons.
+The first is to discuss the rule with its owner and stakeholders, because they must vouch for the correct wording of that rule.
+The second is to verify the meaning with the expression of that rule, which is part of the formal review.
+-}
+PURPOSE RELATION purpose[Rule*NatLang]
+{+The purpose of a rule is described to document why it exists.
+-}
+PURPOSE RELATION reference[Rule*Reference]
+{+The reference of a rule is required in order to know where that rule comes from.
+That helps to judge the importance of following that particular rule.
+-}
+
+
+PURPOSE CONCEPT RuleEnforcement
+{+A rule enforcement is defined for the purpose of describing when a rule takes effect and in which context it does so.
+Only rules that are enforced have a noticeable effect in the context in which it is enforced.
+A rule that is enforced by a computer is enforced immediately.
+Immediate enforcement means that the computer ensures that the rule
+remains satisfied all the time, no matter what happens.
+Attempts to violate the rule will lead to appropriate error messages, but will not have any effect on the state of the system.
+A rule that is enforced by man may be violated temporarily, as long as needed for a person to bring the system in a state that satisfies the rule.
+That is called deferred enforcement, which means that people must ensure that the rule is satisfied.
+To help those people, the computer will signal them to let them know there is work to be done.
+Without enforcement, a rule stays without consequence for the business process at hand.
+That can be useful when a rule must become effective at a particular moment in time.
+It is also useful to describe laws of nature, for purposes of automated reasoning.
+-}
+PURPOSE CONCEPT EnforcementType
+{+We distinguish two types of enforcement: human and machine.
+Enforcement by machine is immediate; human enforcement is deferred and accompanied by appropriate signalling.
+-}
+
+PURPOSE RELATION enforcement[RuleEnforcement*EnforcementType]
+{+The enforcement of a rule is done either by human interaction or fully automated by a machine.
+In order to make this distinction, we must be able to tell the type of enforcement for each rule enforcement.
+-}
+
+PURPOSE RELATION rule[RuleEnforcement*Rule]
+{+To discuss the enforcement of a rule implies that for every rule enforcement, we know which rule we are talking about.
 -}
 
 ENDCONTEXT

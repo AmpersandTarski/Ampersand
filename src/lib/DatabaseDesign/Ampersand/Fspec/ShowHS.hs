@@ -69,8 +69,8 @@ where
    instance (ShowHSName a , ShowHSName b) => ShowHSName (a,b) where 
     showHSName (a,b) = "( "++showHSName a++" , "++showHSName b++" )"
    -- | The following is used to showHS flags for signs: (Concept, Concept)
-   instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
-    showHS flags indent (a,b) = "("++showHS flags (indent++" ") a++","++showHS flags (indent++" ") b++")"
+--   instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
+--    showHS flags indent (a,b) = "("++showHS flags (indent++" ") a++","++showHS flags (indent++" ") b++")"
   
    
 
@@ -126,10 +126,16 @@ where
         then "On " ++ show (eSrt e)++indent++"   " ++ showHSName (eDcl e)++indent++"   "
         else "On " ++ show (eSrt e)++          " " ++ showHSName (eDcl e)++           ""
 
+   instance ShowHS (Expression, Expression->PAclause) where
+    showHS flags indent (c, p)  
+      = "( "++showHS flags (indent++"  ") c++", "++showHS flags (indent++"  ") (p c)++indent++")"
+
    instance ShowHS PAclause where
     showHS flags indent p   
       = case p of
            CHC{} -> wrap "CHC " (indent ++"    ") (showHS flags) (paCls p)++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           GCH{} -> wrap "GCH " (indent ++"    ") (showHS flags) (paGCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            ALL{} -> wrap "ALL " (indent ++"    ") (showHS flags) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
@@ -142,6 +148,10 @@ where
            Rmv{} -> "Rmv ("++showHS flags "" (paCpt p)++")"++
                     indent++"    (\\x->"++showHS flags (indent++"        ") (paCl p "x")++indent++"    )"++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           Pck{} -> let e = paExp p in
+                    "Pck ("++showHS flags (indent++"      ") e++indent++"    )"++
+                    indent++"    (\\a,b->"++showHS flags (indent++"        ") (paLink p (Atom (source e) "a") (Atom (target e) "b"))++indent++"    )"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Sel{} -> "Sel ("++showHS flags "" (paCpt p)++")"++
                     indent++"    ( "++showHS flags (indent++"      ") (paExp p)++indent++"    )"++
                     indent++"    (\\x->"++showHS flags (indent++"        ") (paCl p "x")++indent++"    )"++
@@ -153,7 +163,7 @@ where
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms             
            Ref{} -> "Ref "++paVar p
         where ms = paMotiv p
-              showMotiv ind (conj,rs) = "("++showHS flags (ind++" ") conj++", "++showHSName rs++")"
+              showMotiv ind (conj,rs) = "( "++showHS flags (ind++"  ") conj++" -- conjunct:  "++showADL conj++ind++", "++showHSName rs++ind++")"
 
    instance ShowHSName SqlField where
     showHSName sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
