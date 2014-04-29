@@ -41,4 +41,62 @@ IDENT state : State(pred)
 
 ENDPATTERN
 
+PROCESS "Documentation"
+RELATION meaning[Concept*NatLang]
+MEANING "It makes sense to talk about the meaning of a concept. The meaning is a written statement in natural language."
+RULE conceptHasMeaning : I[Concept] |- meaning;meaning~
+MEANING "Every concept has a meaning"
+
+RELATION purpose[Concept*NatLang]
+MEANING "It makes sense to talk about the purpose of a concept. The purpose is a written statement in natural language."
+RULE conceptHasPurpose : I[Concept] |- purpose;purpose~
+MEANING "Every concept must have a purpose, written in natural language."
+
+RELATION reference[Concept*Reference]
+MEANING "A concept that originates from a written source can be referenced. The link between concept and reference makes it traceable."
+RULE conceptHasReference : I[Concept] |- reference;reference~
+MEANING "Every concept must be traceable to its origin(s)."
+
+RELATION meaning[Relation*NatLang]
+MEANING "It makes sense to talk about the meaning of a relation. The meaning is a written statement in natural language."
+RULE relationHasMeaning : I[Relation] |- meaning;meaning~
+MEANING "Every relation has a meaning"
+
+RELATION purpose[Relation*NatLang]
+MEANING "It makes sense to talk about the purpose of a relation. The purpose is a written statement in natural language."
+RULE relationHasPurpose : I[Relation] |- purpose;purpose~
+MEANING "Every relation must have a purpose, written in natural language."
+
+RELATION reference[Relation*Reference]
+MEANING "A relation that originates from a written source can be referenced. The link between relation and reference makes it traceable."
+RULE relationHasReference : I[Relation] |- reference;reference~
+MEANING "Every relation must be traceable to its origin(s)."
+
+RELATION meaning[Rule*NatLang]
+MEANING "It makes sense to talk about the meaning of a rule. The meaning is a written statement in natural language."
+RULE ruleHasMeaning : I[Rule] |- meaning;meaning~
+MEANING "Every rule has a meaning"
+
+RELATION purpose[Rule*NatLang]
+MEANING "It makes sense to talk about the purpose of a rule. The purpose is a written statement in natural language."
+RULE ruleHasPurpose : I[Rule] |- purpose;purpose~
+MEANING "Every rule must have a purpose, written in natural language."
+
+RELATION reference[Rule*Reference]
+MEANING "A rule that originates from a written source can be referenced. The link between rule and reference makes it traceable."
+RULE ruleHasReference : I[Rule] |- reference;reference~
+MEANING "Every rule must be traceable to its origin(s)."
+ENDPROCESS
+
+PROCESS "Enforcement"
+CONCEPT EnforcementType "Rules can be enforced either by humans or by computers. An enforcement type is used to distinguish between the two."
+CONCEPT RuleEnforcement "A rule can be enforced within a context, which means it is being kept without violations."
+RULE enforcementType : I[EnforcementType] = 'Human' \/ 'Computer'
+RELATION enforcement[RuleEnforcement*EnforcementType] [UNI,TOT]
+MEANING "For each rule enforcement, a way of enforcement is defined."
+RELATION rule[RuleEnforcement*Rule] [TOT]
+MEANING "The rule(s) being enforced are linked to the rule enforcement."
+RELATION valid[RuleEnforcement*Context] [TOT]
+MEANING "We can say that a rule is valid in a context, which means that the rule should not have any violations in that context."
+ENDPROCESS
 ENDCONTEXT

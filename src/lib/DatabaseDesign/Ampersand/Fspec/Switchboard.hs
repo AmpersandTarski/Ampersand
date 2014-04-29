@@ -136,11 +136,11 @@ data Event = On { eSrt :: InsDel
                     , Do tOp rel _ _<-dos (ecaAction eca)
 {- for testing purposes:
                     , doAct<-dos (ecaAction eca)
-                    , if not (isDo doAct) then fatal 136 ("not in \"Do\" shape: "++showECA fSpec "\n  " doAct) else True
+                    , if not (isDo doAct) then fatal 136 ("not in \"Do\" shape: "++showECA "\n  " doAct) else True
                     , let Do tOp expr _ _=doAct
                           isTm ERel{} = True
                           isTm _    = False
-                    , if not (isTm expr) then fatal 138 ("not in \"ERel\" shape: "++showECA fSpec "\n  " doAct) else True
+                    , if not (isTm expr) then fatal 138 ("not in \"ERel\" shape: "++showECA "\n  " doAct) else True
                     , let ERel rel _ = expr
 Note:
 The expression 'isDo doAct' will become False if a property is being maintained

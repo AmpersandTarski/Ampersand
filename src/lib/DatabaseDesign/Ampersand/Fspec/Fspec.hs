@@ -8,7 +8,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show Fspc.
 -}
 module DatabaseDesign.Ampersand.Fspec.Fspec 
-          ( Fspc(..), concDefs
+          ( Fspc(..), concDefs, Atom(..)
           , Fswitchboard(..),  Clauses(..), Quad(..)
           , FSid(..), FProcess(..)
           , InsDel(..)
@@ -90,6 +90,10 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  }
 metaValues :: String -> Fspc -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
+
+data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
+                 , atmVal :: String
+                 } deriving Eq
 
 concDefs :: Fspc -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
@@ -221,15 +225,22 @@ data Event = On { eSrt :: InsDel
                 } deriving (Show,Eq)
 
 data PAclause
-              = CHC { paCls :: [PAclause]
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
+              = CHC { paCls :: [PAclause]                 -- precisely one clause is executed.
+                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
                     }
-              | ALL { paCls :: [PAclause]
+              | GCH { paGCls :: [(Expression,Expression->PAclause)]    -- guarded choice; precisely one of the clauses of which the expression is populated is executed.
+                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
+                    }
+              | ALL { paCls :: [PAclause]                 -- all clauses are executed.
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Do  { paSrt :: InsDel                     -- do Insert or Delete
                     , paTo :: Declaration                    -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
+                    , paMotiv :: [(Expression,[Rule] )]
+                    }
+              | Pck { paExp :: Expression                 -- the expression to pick from
+                    , paLink :: Atom->Atom->PAclause      -- the completion of the clause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Sel { paCpt :: A_Concept                  -- pick an existing instance of type c
@@ -261,8 +272,10 @@ events paClause = nub (evs paClause)
  where evs clause
         = case clause of
            CHC{} -> (concat.map evs) (paCls clause)
+           GCH{} -> concat [ evs (p c) | (c,p)<-paGCls clause]
            ALL{} -> (concat.map evs) (paCls clause)
            Do{}  -> [(paSrt paClause, paTo clause)]
+           Pck{} -> evs (paLink clause (Atom (source e) "a") (Atom (target e) "b")) where e = paExp clause
            Sel{} -> evs (paCl clause "")
            New{} -> evs (paCl clause "")
            Rmv{} -> evs (paCl clause "")
@@ -276,6 +289,7 @@ events paClause = nub (evs paClause)
    -- Every rule is transformed to this form, as a step to derive eca-rules
 instance Eq PAclause where
    CHC ds _ == CHC ds' _ = ds==ds'
+   GCH ds _ == GCH ds' _ = [ p c | (c,p)<-ds]==[ p c | (c,p)<-ds']
    ALL ds _ == ALL ds' _ = ds==ds'
    p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && paTo p==paTo p' && paDelta p==paDelta p'
    Nop _    ==     Nop _ = True

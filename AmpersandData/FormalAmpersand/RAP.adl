@@ -65,7 +65,7 @@ VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in 
 
 RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A business rule that involves several relations is violated.</span> Add or delete tuple(s) in one or more of the relation(s) to correct the violation(s)."
-VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the violation ", TGT I, TXT " in combination with some other tuple(s).")
 ENDPROCESS
 
 PROCESS Admin
