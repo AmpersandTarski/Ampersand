@@ -16,7 +16,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
+   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
