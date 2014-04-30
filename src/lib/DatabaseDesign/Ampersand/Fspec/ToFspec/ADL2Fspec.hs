@@ -417,7 +417,7 @@ while maintaining all invariants.
                                        } | (dnfClause,i)<-zip (conjuncts rule) [0..] ] rule
 
    allShifts :: Options -> DnfClause -> [DnfClause]
-   allShifts _ conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
+   allShifts _ conjunct = (map head.eqCl (disjNF.dnf2expr)) [ e'| e'<-shiftL conjunct++shiftR conjunct]  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
     where
     {-
@@ -647,7 +647,7 @@ while maintaining all invariants.
      cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
      cascade rel (Rmv c clause m) = ((fst.cascade rel.clause) "dummystr", Rmv c (snd.cascade rel.clause) m)
 --   cascade rel (Pck e clause m) = ((fst.cascade rel) (clause (Atom (source e) "a") (Atom (target e) "b")), Pck e (snd.cascade rel.clause) m)
-     cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (snd.cascade rel.cl)   m)
+--   cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (snd.cascade rel.cl)   m)
      cascade rel (CHC ds m)       = (any (fst.cascade rel) ds, CHC (map (snd.cascade rel) ds) m)
      cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
      cascade  _  (Nop m)          = (False, Nop m)
@@ -708,9 +708,12 @@ while maintaining all invariants.
       pick1 :: InsDel -> Expression -> Expression -> PAclause
       pick1 tOp expr dlta = Pck dlta (\(Atom ca a) (Atom cb b)->genPAcl (EMp1 a ca.*.EMp1 b cb) tOp expr) motive
 
-      test i l r
-       = if source l==target r then id else
-         fatal i ("test "++show i++":\nl = "++showADL l++"\nr = "++showADL r)
+      test i l r ex
+       = if (source l,target r)/=(source ex,target ex)
+         then fatal i ("test with sign deltaX = ["++show (source l)++"*"++show (target r)++"],  and sign expr = "++show (sign ex)++":\ndeltaX = "++showADL (l.:.r)++"\nexpr = "++show ex)
+         else if source r/=target l
+         then fatal i ("test with source r = "++show (source r)++",  and target l = "++show (target l)++":\nl"++showSign (sign l)++" = "++showADL l++"\nr"++showSign (sign r)++" = "++showADL r++"\nexpr = "++show ex)
+         else id
 
       genPAcl deltaX tOp expr =
         case (tOp, expr) of
@@ -722,300 +725,50 @@ while maintaining all invariants.
           (Del, ECpl x)     -> genPAcl deltaX Ins x
           (Ins, EUni{})     -> CHC [ genPAcl deltaX Ins f | f<-exprUni2list expr{-, not (f==expr1 && Ins/=tOp') -}] motive -- the filter prevents self compensating PA-clauses.
           (Ins, EIsc{})     -> ALL [ genPAcl deltaX Ins f | f<-exprIsc2list expr ] motive
-{-        (Ins, ECps{})     -> CHC [ -- Diagnostic code
-                                     -- trace ( "Diagnostic (Ins, ECps{})\n"++
-                                     --         "chop (exprCps2list expr)= "++show [(map showADL ls, map showADL rs)| (ls,rs)<-chop (exprCps2list expr) ]++
-                                     --         "\nConcepts c="++showADL c++",  target els="++showADL (target els)++",  source ers="++showADL (source ers)++
-                                     --         "\nfLft \"x\"= "++showADL (fLft "x") ++
-                                     --         "\nfRht \"x\"= "++showADL (fRht "x")
-                                     --       ) $
-                                     if els==flp ers
-                                     then CHC [ New c fLft motive
-                                              , Sel c els fLft motive
-                                              ] motive
-                                     else CHC [ New c (\x->ALL [fLft x, fRht x] motive) motive
-                                              , Sel c els fLft motive
-                                              , Sel c (flp ers) fRht motive
-                                              ] motive
-                                   | (ls,rs)<-chop (exprCps2list expr)
-                                   , let els=foldCompose ls
-                                   , let ers=foldCompose rs
-                                   , let c=source ers  -- SJ 20131202: Note that target ers==source els
-                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom (source ers) .*. deltaX) .\/. notCpl ers)) Ins ers
-                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (target els)) .\/. notCpl els)) Ins els
-                                   ] motive
-                               where foldCompose xs = case xs of
-                                                       [] -> fatal 659 "Going into (foldr1 (.:.)) with an empty list"
-                                                       _  -> foldr1 (.:.) xs -}
-{- Problem: how to insert Delta into r;s
-This corresponds with:  genPAclause editAble Ins (ECps (r,s)) Delta motive
-Let us solve it mathematically,  and gradually transform via pseudo-code into Haskell code.
-The problem is how to find dr and ds such that 
-   Delta \/ r;s  |-  (dr\/r) ; (ds\/s)
-Since r;s  |-  (dr\/r) ; (ds\/s) is true by definition, we simplify:
-   Delta  |-  (dr\/r) ; (ds\/s)
-One way of doing this is the "bow tie" solution, which uses one element, c, and chooses dr = Delta*c  and ds = c*Delta.
-There is a fair chance, however, that this solution breaks existing rules.
-For example, if Delta< has multiple elements and r is injective, we have a violation. (Similarly, if Delta> has multiple elements and s is univalent)
-Since we make no assumptions on the rules that r and s must satisfy, let us look for more subtle solutions.
-For instance, we might choose dr = d;s~  and ds = r~;d, for that part of Delta that is not in r;s (let d = Delta-r;s)
-The approach is to do this first, then see which links are left and connect these last ones with a bow tie approach.
-
-SEQ [ ASSIGN d (EDif (delta,expr))
-    , ALL [ FOREACH (x,y) FROM d DO
-              SEQ [ SEL z FROM SELECT (x',z) FROM r WHERE x==x'
-                  , INSERT (z,y) INTO s
-                  ]
-          , FOREACH (x,y) FROM d DO
-              SEQ [ SEL z FROM SELECT (z,y') FROM s WHERE y==y'
-                  , INSERT (x,z) INTO r
-                  ]
-          , SEQ [ ASSIGN delta' [ (x,y) | (x,y)<-d, x `notElem` dom expr, y `notElem` cod expr]
-                , CHC [ NEW z IN target r `meet` source s
-                      , SEL z FROM contents (target r `meet` source s)
-                      ]
-                , INSERT [ (z,y) | (x,y)<-delta' ] INTO s
-                , INSERT [ (x,z) | (x,y)<-delta' ] INTO r
-                ]
-          ]
-    ]
-
-On this algorithm, there are some attractive optimizations. 
-Some code generation can be prevented, when we know that r or s are not editable.
-Generation of a SEL statement can be prevented, when we know that r is univalent or s is injective.
-
-This is what becomes of it:
-
-SEQ [ ASSIGN d (EDif (delta,expr))
-    , COMMENT "Variable d contains only those links that need to be inserted into expr."
-    , CONDITIONAL not (null d)
-      (ALL((if editable s
-            then [ COMMENT "The following statement inserts tuples only on the right side of the composition."
-                 , FOREACH (x,y) FROM d DO
-                    SEQ [ if injective s
-                          then            SELECT (x',z) FROM r WHERE x==x'
-                          else SEL z FROM SELECT (x',z) FROM r WHERE x==x'
-                        , INSERT (z,y) INTO s
-                        ]
-                 ]
-            else [] )++
-           (if editable r
-            then [ COMMENT "The following statement inserts tuples only on the left side of the composition."
-                 , FOREACH (x,y) FROM d DO
-                    SEQ [ if injective s
-                          then            SELECT (z,y') FROM s WHERE y==y'
-                          else SEL z FROM SELECT (z,y') FROM s WHERE y==y'
-                        , INSERT (x,z) INTO r
-                        ]
-                 ]
-            else [] )++
-           (if editable r && editable s
-            then [ COMMENT "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."
-                 , COMMENT "The following statement inserts tuples both on the left and the right side of the composition."
-                 , SEQ [ ASSIGN delta' [ (x,y) | (x,y)<-d, x `notElem` dom expr, y `notElem` cod expr]
-                       , CHC [ NEW z IN target r `meet` source s
-                             , SEL z FROM contents (target r `meet` source s)
-                             ]
-                       , INSERT [ (z,y) | (x,y)<-delta' ] INTO s
-                       , INSERT [ (x,z) | (x,y)<-delta' ] INTO r
-                       ]
-                 ]
-            else [] )))
-    ]
-
-We can use an "Algebra of Imperative Programs" to move towards real code. Suppose we have the following data structure of imperative programs:
-data Program = SEQ [Program]               -- execute programs in sequence
-             | CONDITIONAL Cond Program    -- evaluate the computation (Cond), which yields a boolean result, and execute the program if it is true
-             | CHC [Program]               -- execute precisely one program from the list
-             | ALL [Program]               -- execute all programs in arbitrary order (may even be parallel)
-             | New String Concept Program  -- create a named variable (the String) of type C (the concept) and execute the program, which may use this concept.
-             | NewAtom PHPRel Concept      -- assign a brand new atom of type Concept to the PHPRel, which must be a PHPvar (i.expr. a variable).
-             | ASSIGN PHPRel PHPExpression -- execute a relation expression in PHP and assign its result to the PHPRel, which must be a PHPvar (i.expr. a variable).
-             | Insert PHPExpression DBrel  -- execute the computation and insert its result into the database
-             | Delete PHPExpression DBrel  -- execute the computation and delete its result from the database
-             | COMMENT String              -- ignore this. This is part of the algebra, so we can generate commented code.
-             | Nop                         -- do nothing
-             | Blk [(Expression,[Rule])]   -- abort, leaving an error message that motivates this. The motivation consists of the conjuncts (traced back to their rules) that are being restored by this code fragment.
-data Cond    = NotNull PHPRel  -- a condition on a PHPRel
-
-In order to proceed to the next refinement, we have enriched the PHPExpression data structure with variables (PHPvar) and queries (PHPqry) 
-We need a variable in PHP that represents a relation, which gets the label PHPvar.
-We also need to query an Expression on the SQL server. The result of that query is relation contents in PHP, which gets the label PHPqry.
-The 'almost Haskell' program fragment for generating an insertion of Delta into r;s is now:
-let delta = PHPvar{ phpVar = "delta"       -- this is the input
-                  , phptyp = phpsign (sign expr)    -- the type is used nowhere, but it feels good to know the type.
-                  } in
-let d     = PHPvar{ phpVar = "d"           -- this is the input, from which everything already in  Ecps es  is removed.
-                  , phptyp = phpsign (sign expr)    -- the type is used nowhere, but it feels good to know the type.
-                  } in
-let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `meet` source(s)] in
-SEQ [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry expr)))    -- let d = Delta - e0;e1;e2;...
-    , COMMENT "d contains all links that must be inserted in r;s"
-    , CONDITIONAL (NotNull d)
-      (SEQ [ ALL ( (if editable(head es)    
-                    then [ Insert (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) (mkDBrel (head es)) ]
-                    else []) ++
-                   (if editable(last es)
-                    then [ Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (mkDBrel (last es)) ]
-                    else []) )
-           , COMMENT "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
-           if or [not (editable expr) | expr<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
-           [ -- let us see which links are left to be inserted
-             ASSIGN d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
-           , COMMENT "d contains the remaining links to be inserted in r;s"
-           , CONDITIONAL (NotNull d)
-             (SEQ ( newAtoms ++
-                    ALL ( let vs = [ v | NewAtom v _ <- newAtoms ] in
-                          [ Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (mkDBrel (head es)) ]++
-                          [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel expr) | (cl,cr,expr)<-zip (init vs) (tail vs) tail (init es))] ++
-                          [ Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (mkDBrel (last es)) ])
-             )    )
-           ]
-      )
-    ]
-
-In order to proceed to the real code, we must realize that mkDBrel is not defined yet.
-The argument of mkDBrel is an Expression. This can be an ERel{} or something different.
-In case it is an ERel{}, the insert can be translated directly to a database action.
-If it is not, the insert can be treated as a recursive call to genPAcl, which breaks down the expression further until it reaches a relation.
-let delta = PHPvar{ phpVar = "delta"       -- this is the input
-                  , phptyp = phpsign (sign expr)    -- the type is used nowhere, but it feels good to know the type.
-                  } in
-let d     = PHPvar{ phpVar = "d"           -- this is the input, from which everything already in  Ecps es  is removed.
-                  , phptyp = phpsign (sign expr)    -- the type is used nowhere, but it feels good to know the type.
-                  } in
-let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `meet` source(s)] in
-SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
-         , COMMENT "d contains all links to be inserted in r;s"
-         , CONDITIONAL (NotNull d)
-           (SEQUENCE([ ALL ( (if editable(head es)
-                              then [ if isRel (head es)
-                                     then Insert (PHPECps (PHPERel d, PHPERel (PHPqry (flp (ECps (tail es)))))) (let PHPRel r = head es in r)
-                                     else genPAclause editAble Ins (head es) (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) motive
-                                   ]
-                              else []) ++
-                             (if editable(last es)
-                              then [ if isRel (last es)
-                                     then Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (let PHPRel r = last es in r)
-                                     else genPAclause editAble Ins (last es) (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) motive
-                                   ]
-                              else []) )
-                     , COMMENT "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
-                     if or [not (editable expr) | expr<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
-                     [ -- let us see which links are left to be inserted
-                       ASSIGN d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
-                     , COMMENT "d contains the remaining links to be inserted in r;s"
-                     , CONDITIONAL (NotNull d)
-                       (SEQ ( newAtoms ++
-                              ALL ( let vs = [ v | NewAtom v _ <- newAtoms ] in
-                                    [ if isRel (head es)
-                                      then Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (let PHPRel r = head es in r)
-                                      else genPAclause editAble Ins (head es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive]++
-                                    [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel expr) | (cl,cr,expr)<-zip (init vs) (tail vs) tail (init es))] ++
-                                    [ if isRel (last es)
-                                      then Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (let PHPRel r = last es in r)
-                                      else genPAclause editAble Ins (last es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive ])
-                       )    )
-                     ])
-           )
-         ]
-
--}
-{-        (Del, ECps{})     -> CHC [ -- Diagnostic code
-                                     -- trace ( "Diagnostic (Del, ECps{})\n"++
-                                     --         "chop (exprCps2list expr)= "++show [(map showADL ls, map showADL rs)| (ls,rs)<-chop (exprCps2list expr) ]++
-                                     --         "\nConcepts c="++showADL c++",  target els="++showADL (target els)++",  source ers="++showADL (source ers)++
-                                     --         "\nfLft \"x\"= "++showADL (fLft "x") ++
-                                     --         "\nfRht \"x\"= "++showADL (fRht "x")
-                                     --       ) $
-                                     if els==flp ers
-                                     then CHC [ Sel c (disjNF els) (\_->Rmv c fLft motive) motive
-                                              , Sel c (disjNF els) fLft motive
-                                              ] motive
-                                     else CHC [ Sel c (disjNF (els ./\. flp ers)) (\_->Rmv c (\x->ALL [fLft x, fRht x] motive) motive) motive
-                                              , Sel c (disjNF (els ./\. flp ers)) fLft motive
-                                              , Sel c (disjNF (els ./\. flp ers)) fRht motive
-                                              ] motive
-                                   | (ls,rs)<-chop (exprCps2list expr)
-                                   , let ers=foldCompose rs
-                                   , let els=foldCompose ls
-                                   , let c=source ers  -- SJ 20131202: Note that target ers==source els
-                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom (source ers) .*. deltaX) .\/. notCpl ers)) Del ers  -- TODO (SJ 26-01-2013) is this double code?
-                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (target els)) .\/. notCpl els)) Del els
-                                   ] motive
-                               where foldCompose xs = case xs of
-                                                       [] -> fatal 851 "Going into (foldr1 (.:.)) with an empty list"
-                                                       _  -> foldr1 (.:.) xs -}
-{- Purpose: how to delete Delta from ECps es
-This corresponds with:  genPAclause editAble Del (ECps es) Delta motive
-One way of doing this is to select from es one subexpression, expr, that is editable.
-By removing the proper links from that particular expr, all chains are broken.
-
-Splitting the terms on one particular subexpression can be done as follows:
-  triples = [ (take i es, es!!i, drop (i+1) es) | i<-[0..length es-1]  ]
-This gives us triples, (left,expr,right), each of which is a candidate for deletion.
-There is no point in having two candidates, (left,expr,right) and (left',expr',right'), with expr==expr'.
-Since expr and expr' are aliases of the underlying database relation, deletion from expr need not be repeated by deletion from expr'.
-That is why double candidates may be excluded. Here is how:
-  triples = [ (take i es, es!!i, drop (i+1) es) | i<-[0..length es-1], es!!i `notElem` (take i es)  ]
-If expr is a relation and editable as well, this relation can be used for deletion.
-The elements from expr to be deleted are those, that establish a link between cod(left) and dom(right).
-In order to eliminate these, no link from the expression  left~;expr;right~  may survive.
-If we sum up the alternatives in pseudocode, we get:
-CHC [ DELETE ((ECps (reverse (map flp left) ++ [expr] ++ reverse (map flp right))) FROM expr
-    | (left,ERel expr _,right)<-triples
-    , editable expr ]
-In order to refine further to real code, we must realize that deletion can be done in relations only. Not in expressions.
-So if expr is a relation, the DELETE can be executed.
-If it is an expression, the function genPAclause can be called recursively.
-We now get the following code fragment:
-CHC [ if isRel expr
-      then DELETE (ECps (reverse (map flp left) ++ [expr] ++ reverse (map flp right))) FROM  (let PHPRel r = expr in r)
-      else genPAclause editAble Del expr (ECps (reverse (map flp left) ++ [expr] ++ reverse (map flp right))) motive
-    | (left,ERel expr _,right)<-triples
-    , editable expr ]
-
--}
           (Del, EUni{})     -> ALL [ genPAcl deltaX Del f | f<-exprUni2list expr {-, not (f==expr1 && Del/=tOp') -}] motive -- the filter prevents self compensating PA-clauses.
           (Del, EIsc{})     -> CHC [ genPAcl deltaX Del f | f<-exprIsc2list expr ] motive
           (Ins, EDif (l,r)) -> CHC [ genPAcl deltaX Ins l, genPAcl deltaX Del r ] motive
           (Del, EDif (l,r)) -> CHC [ genPAcl deltaX Del l, genPAcl deltaX Ins r ] motive
-          (Ins, EDia (l,r)) -> CHC [ ALL [(test 979 (deltaX) (flp r) $ genPAcl (deltaX.:.flp r) Ins l), (test 2979 (deltaX) (flp r) $ genPAcl (flp l.:.deltaX) Ins r)] motive
-                                   , ALL [genPAcl (deltaX.:.notCpl (flp r)) Del l, genPAcl (deltaX.:.flp r) Ins l] motive
-                                   , ALL [genPAcl (notCpl (flp l).:.deltaX) Del r, genPAcl (flp l.:.deltaX) Ins r] motive
-                                   , ALL [genPAcl (deltaX.:.notCpl (flp r)) Del l, genPAcl (notCpl (flp l).:.deltaX) Del r] motive
+          (Ins, EDia (l,r)) -> CHC [ ALL [ genPAcl (test 986 (deltaX) (flp r)          l $ deltaX.:.flp r         ) Ins l
+                                         , genPAcl (test 987 (flp l) (deltaX)          r $ flp l.:.deltaX         ) Ins r] motive
+                                   , ALL [ genPAcl (test 988 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Del l
+                                         , genPAcl (test 989 (deltaX) (flp r)          l $ deltaX.:.flp r         ) Ins l] motive
+                                   , ALL [ genPAcl (test 990 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Del r
+                                         , genPAcl (test 991 (flp l) (deltaX)          r $ flp l.:.deltaX         ) Ins r] motive
+                                   , ALL [ genPAcl (test 992 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Del l
+                                         , genPAcl (test 993 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Del r] motive
                                    ] motive
-          (Del, EDia (l,r)) -> GCH [ ((test 988 (deltaX) (flp r) $          deltaX.:.flp r),          pick1 Del l)
-                                   , ((test 989 (deltaX) (flp (notCpl r)) $ deltaX.:.flp (notCpl r)), pick1 Ins l)
-                                   , ((test 990 (flp l) (deltaX) $          flp l.:.deltaX),          pick1 Del r)
-                                   , ((test 991 (notCpl (flp l)) (deltaX) $ notCpl (flp l).:.deltaX), pick1 Ins r)
+          (Del, EDia (l,r)) -> GCH [ ((test 995 (deltaX) (flp r)          l $ deltaX.:.flp r),          pick1 Del l)
+                                   , ((test 996 (deltaX) (flp (notCpl r)) l $ deltaX.:.flp (notCpl r)), pick1 Ins l)
+                                   , ((test 997 (flp l) (deltaX)          r $ flp l.:.deltaX),          pick1 Del r)
+                                   , ((test 998 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX), pick1 Ins r)
                                    ] motive
-          (Ins, ERrs (l,r)) -> CHC [ (test 993 (notCpl r) (flp deltaX) $ genPAcl (notCpl r.:.flp deltaX) Del l)
-                                   , (test 994 (l) (deltaX) $            genPAcl (l.:.deltaX) Ins r)
+          (Ins, ERrs (l,r)) -> CHC [ genPAcl (test 1000 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX) Del l
+                                   , genPAcl (test 1001 (l) (deltaX)            r $ l.:.deltaX)            Ins r
                                    ] motive
-          (Del, ERrs (l,r)) -> GCH [ ((test 996 (notCpl r) (flp deltaX) $ notCpl r.:.flp deltaX), pick1 Ins l)
-                                   , ((test 997 (l) (deltaX) $            l.:.deltaX),            pick1 Del r)
+          (Del, ERrs (l,r)) -> GCH [ ((test 1003 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX), pick1 Ins l)
+                                   , ((test 1004 (l) (deltaX)            r $ l.:.deltaX),            pick1 Del r)
                                    ] motive
-          (Ins, ELrs (l,r)) -> CHC [ (test  999 (flp deltaX) (notCpl l) $ genPAcl (flp deltaX.:.notCpl l) Del r)
-                                   , (test 1000 (deltaX) (r) $            genPAcl (deltaX.:.r) Ins l)
+          (Ins, ELrs (l,r)) -> CHC [ genPAcl (test 1006 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l) Del r
+                                   , genPAcl (test 1007 (deltaX) (r)            l $ deltaX.:.r           ) Ins l
                                    ] motive
-          (Del, ELrs (l,r)) -> GCH [ ((test 1002 (flp deltaX) (notCpl l) $ flp deltaX.:.notCpl l), pick1 Ins r)
-                                   , ((test 1003 (deltaX) (r) $            deltaX.:.r),            pick1 Del l)
+          (Del, ELrs (l,r)) -> GCH [ ((test 1009 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l), pick1 Ins r)
+                                   , ((test 1010 (deltaX) (r)            l $ deltaX.:.r),            pick1 Del l)
                                    ] motive
-          (Ins, ECps (l,r)) -> CHC [ GCH [ ((test 1005 (deltaX) (flp r) $ deltaX.:.flp r), pick1 Ins l)
-                                         , ((test 1006 (flp l) (deltaX) $ flp l.:.deltaX), pick1 Ins r)
+          (Ins, ECps (l,r)) -> CHC [ GCH [ ((test 1012 (deltaX) (flp r) l $ deltaX.:.flp r), pick1 Ins l)
+                                         , ((test 1013 (flp l) (deltaX) r $ flp l.:.deltaX), pick1 Ins r)
                                          ] motive
-                                   , New (source r) (\x->ALL [ genPAcl (    deltaX.*.EMp1 x (target l)) Ins l
-                                                             , genPAcl (EMp1 x (source r).*.flp deltaX) Ins r] motive) motive
+                                   , New (source r) (\x->ALL [ genPAcl (deltaX.*.EMp1 x (target l)) Ins l
+                                                             , genPAcl (EMp1 x (source r).*.deltaX) Ins r] motive) motive
                                    ] motive
-          (Del, ECps (l,r)) -> CHC [ genPAcl (test 1011 (deltaX) (flp r) $ deltaX.:.flp r) Del l
-                                   , genPAcl (test 1012 (flp l) (deltaX) $ flp l.:.deltaX) Del r
+          (Del, ECps (l,r)) -> CHC [ genPAcl (test 1018 (deltaX) (flp r) l $ deltaX.:.flp r) Del l
+                                   , genPAcl (test 1019 (flp l) (deltaX) r $ flp l.:.deltaX) Del r
                                    ] motive
-          (Ins, ERad (l,r)) -> CHC [ genPAcl (test 1014 (deltaX) (notCpl (flp r)) $ deltaX.:.notCpl (flp r)) Ins l
-                                   , genPAcl (test 1015 (notCpl (flp l)) (deltaX) $ notCpl (flp l).:.deltaX) Ins r
+          (Ins, ERad (l,r)) -> CHC [ genPAcl (test 1021 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Ins l
+                                   , genPAcl (test 1022 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Ins r
                                    ] motive
-          (Del, ERad (l,r)) -> CHC [ GCH [ ((test 1017 (deltaX) (flp r) $ deltaX.:.flp r), pick1 Del l)
-                                         , ((test 1018 (flp l) (deltaX) $ flp l.:.deltaX), pick1 Del r)
+          (Del, ERad (l,r)) -> CHC [ GCH [ ((test 1024 (deltaX) (flp r) l $ deltaX.:.flp r), pick1 Del l)
+                                         , ((test 1025 (flp l) (deltaX) r $ flp l.:.deltaX), pick1 Del r)
                                          ] motive
                                    , New (source r) (\_->Nop motive) motive
                                    ] motive
