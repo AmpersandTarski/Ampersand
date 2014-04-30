@@ -152,10 +152,6 @@ where
                     "Pck ("++showHS flags (indent++"      ") e++indent++"    )"++
                     indent++"    (\\a,b->"++showHS flags (indent++"        ") (paLink p (Atom (source e) "a") (Atom (target e) "b"))++indent++"    )"++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-           Sel{} -> "Sel ("++showHS flags "" (paCpt p)++")"++
-                    indent++"    ( "++showHS flags (indent++"      ") (paExp p)++indent++"    )"++
-                    indent++"    (\\x->"++showHS flags (indent++"        ") (paCl p "x")++indent++"    )"++
-                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
            Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
            Let{} -> wrap "Let " (indent ++"    ") (showHS flags) (paCls p)++

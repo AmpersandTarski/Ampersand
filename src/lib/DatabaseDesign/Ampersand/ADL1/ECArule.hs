@@ -52,7 +52,6 @@ dos p@GCH{} = concatMap dos [ p c | (c,p)<-paGCls p]
 dos p@ALL{} = concatMap dos (paCls p)
 dos p@Do{}  = [p]
 dos p@Pck{} = dos (paLink p (Atom (source e) "a") (Atom (target e) "b")) where e = paExp p
-dos p@Sel{} = dos (paCl p "x")
 dos p@New{} = dos (paCl p "x")
 dos p@Rmv{} = dos (paCl p "x")
 dos Nop{}   = []

@@ -211,7 +211,7 @@ where
                     concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length (rc_dnfClauses x)>1 ]++
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause), Str " may be affected by the following events:",LineBreak]++
                              concat [ [ Str "event = ", Str (show ev), Space, Str (showADL dcl), Str " means doing the following substitution", LineBreak ] ++
-                                      [ Str (showADL clause++"["++showADL dcl++":="++showADL (actSem ev (EDcD dcl) (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
+                                      [ Str (showADL clause++"["++showREL dcl++":="++showADL (actSem ev (EDcD dcl) (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
                                       [ Str ("clause' = "++showADL ex') ] ++
                                       ( if clause'==ex'
                                         then [Str (", which is already in conjunctive normal form."), LineBreak]

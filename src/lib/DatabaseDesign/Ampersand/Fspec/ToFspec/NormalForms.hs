@@ -95,11 +95,6 @@ where
                                    _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
-     norm (Sel c e p ms)      = ( case p' of
-                                   Blk{} -> p'{paMotiv = ms}
-                                   _     -> Sel c e (\x->let (p'', _) = norm (p x) in p'') ms
-                                , msgs)
-                                where (p', msgs) = norm (p "x")
      norm p                   = (p, [])
 
 
@@ -265,8 +260,8 @@ where
      nM posCpl (EPrd (l,r)) _                              = (t .*. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posCpl l []
                                                                        (f,steps',equ'') = nM posCpl r []
-     nM _      (EIsc (EUni (l,k),r)) _           | dnf     = ((l./\.r) .\/. (k./\.r), ["distribute /\\ over \\/"],"<=>")
-     nM _      (EIsc (l,EUni (k,r))) _           | dnf     = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
+     nM posCpl (EIsc (EUni (l,k),r)) _       | posCpl==dnf = ((l./\.r) .\/. (k./\.r), ["distribute /\\ over \\/"],"<=>")
+     nM posCpl (EIsc (l,EUni (k,r))) _       | posCpl==dnf = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
      nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
@@ -329,8 +324,8 @@ where
                absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
                absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
                eList  = rs++exprIsc2list l++exprIsc2list r
-     nM _      (EUni (EIsc (l,k),r)) _           | not dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
-     nM _      (EUni (l,EIsc (k,r))) _           | not dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl/=dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl/=dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
          | or [length cl>1 |cl<-absorbClasses]   -- yields False if absorbClasses is empty
