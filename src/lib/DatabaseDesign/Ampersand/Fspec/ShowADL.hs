@@ -9,7 +9,7 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module DatabaseDesign.Ampersand.Fspec.ShowADL
-    ( ShowADL(..), LanguageDependent(..), showPAclause)
+    ( ShowADL(..), LanguageDependent(..), showPAclause, showREL)
 where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -303,6 +303,13 @@ instance ShowADL Declaration where
      meaning :: A_Markup -> String
      meaning pmkup = " MEANING "++showADL pmkup
 
+showREL :: Declaration-> String
+showREL decl = 
+  case decl of
+     Sgn{} -> name decl++showSign (sign decl)
+     Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
+     Vs{}  -> "V"++show (decsgn decl)
+     
 instance ShowADL P_Markup where
  showADL (P_Markup lng fmt str) = case lng of
                                      Nothing -> ""
@@ -365,8 +372,10 @@ instance ShowADL (Maybe String) where
   showADL _ = ""
 instance ShowADL ECArule where
   showADL eca = "ECA #"++show (ecaNum eca)
+
 instance ShowADL Event where
-  showADL = show
+  showADL ev = " On " ++show (eSrt ev)++" "++showREL (eDcl ev)
+
 instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
@@ -494,10 +503,10 @@ showPAclause indent pa@Do{}
        = ( case paSrt pa of
             Ins -> "INSERT INTO "
             Del -> "DELETE FROM ")++
-         name (paTo pa)++showSign (sign (paTo pa)) ++
-         " SELECTFROM"++indent++"  "++
+         showREL (paTo pa) ++
+         indent++" SELECTFROM "++
          showADL (paDelta pa)++
-         motivate indent "TO MAINTAIN " (paMotiv pa)
+         indent++motivate indent "TO MAINTAIN " (paMotiv pa)
 showPAclause indent (New c clause cj_ruls)
        = "CREATE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
@@ -507,10 +516,6 @@ showPAclause indent (Rmv c clause cj_ruls)
 showPAclause indent (Pck e r cj_ruls)
        = "SELECT a,b FROM ("++ showADL e ++");"
              ++indent'++showPAclause indent' (r (Atom (source e) "a") (Atom (target e) "b"))++motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"  "
-showPAclause indent (Sel c e r cj_ruls)
-       = "SELECT x:"++show c++" FROM codomain("++ showADL e ++");"
-             ++indent'++showPAclause indent' (r "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (CHC ds cj_ruls)
        = "ONE of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls

@@ -235,17 +235,12 @@ data PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Declaration                    -- into toExpr    or from toExpr
+                    , paTo :: Declaration                 -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Pck { paExp :: Expression                 -- the expression to pick from
+              | Pck { paExp :: Expression                 -- the expression to pick one tuple from
                     , paLink :: Atom->Atom->PAclause      -- the completion of the clause
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Sel { paCpt :: A_Concept                  -- pick an existing instance of type c
-                    , paExp :: Expression                 -- the expression to pick from
-                    , paCl :: String->PAclause            -- the completion of the clause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | New { paCpt :: A_Concept                  -- make a new instance of type c
@@ -276,7 +271,6 @@ events paClause = nub (evs paClause)
            ALL{} -> (concat.map evs) (paCls clause)
            Do{}  -> [(paSrt paClause, paTo clause)]
            Pck{} -> evs (paLink clause (Atom (source e) "a") (Atom (target e) "b")) where e = paExp clause
-           Sel{} -> evs (paCl clause "")
            New{} -> evs (paCl clause "")
            Rmv{} -> evs (paCl clause "")
            Nop{} -> []
