@@ -6,6 +6,7 @@ import DatabaseDesign.Ampersand_Prototype.Installer           (installer)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
 import DatabaseDesign.Ampersand_Prototype.Apps
 import DatabaseDesign.Ampersand_Prototype.Generate            (generateAll)
+import Data.Maybe
 import Control.Monad
 import System.FilePath               
 import System.Directory
@@ -34,11 +35,11 @@ phpObjInterfaces fSpec flags =
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php if it does not exists, or if a host, login, or password has been specified
-    ; if dbSettingsExists
-      then verboseLn flags "  Using existing dbSettings.php."
-      else do { verboseLn flags "  Writing dbSettings.php."
+    ; if not dbSettingsExists
+      then do { verboseLn flags "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
+      else verboseLn flags "  Using existing dbSettings.php."
 
     ; generateAll fSpec flags          
     ; when (genAtlas flags) $ doGenAtlas fSpec flags
@@ -49,11 +50,10 @@ phpObjInterfaces fSpec flags =
      do { verboseLn flags ("  Generating "++fname)
         ; writeFile (combine targetDir fname) content
         }
-    dbsettings = "<?php $DB_link=mysqli_connect("
+    dbsettings = "<?php $DB_link=mysql_connect("
                  ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
                  ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
                  ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
-                 ++", $DB_name='"++addSlashes (dbName flags)++"'"
                  ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype flags
 

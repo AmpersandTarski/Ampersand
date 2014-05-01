@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
+module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
 
 where
 
@@ -30,12 +30,11 @@ fatal = fatalMsg "ValidateSQL"
 tempDbName :: String
 tempDbName = "TemporaryValidationDatabase"
 
-validateRulesSQL :: Fspc -> Options -> IO Bool
-validateRulesSQL fSpec flags =
- do { when (any (not.isSignal.fst) (allViolations fSpec)) 
-        (do { putStrLn "The population would violate invariants. Could not generate your database."
-            ; exitWith $ ExitFailure 10
-                 })
+validateRuleSQL :: Fspc -> Options -> IO Bool
+validateRuleSQL fSpec flags =
+ do { when (invalidPopulation fSpec) (do { putStrLn "The population would violate invariants. Could not generate your database."
+                                         ; exitWith $ ExitFailure 10
+                                         })
     ; removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
@@ -64,6 +63,11 @@ validateRulesSQL fSpec flags =
                   ; return False
                   } 
     }
+
+invalidPopulation :: Fspc -> Bool
+invalidPopulation fSpec = (not. null) (filter isInvariant (allViolations fSpec))
+  where isInvariant :: (Rule,[Paire]) -> Bool
+        isInvariant (r,_) = (not . isSignal) r
 
 
 -- functions for extracting all expressions from the context
@@ -108,7 +112,7 @@ validateExp _     _    vExp@(EDcD{}, _)   = -- skip all simple relations
     ; return (vExp, True)
     }
 validateExp fSpec flags vExp@(exp, origin) =
- do { putStr $ "Checking "++origin ++": expression = "++showADL exp
+ do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec flags $ exp
     ; let violationsAmp = sort $ fullContents (gens fSpec) (initialPops fSpec) exp
     
@@ -136,111 +140,62 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { queryResult <- executePHP php 
+ do { let php = connectToServer flags ++
+                [ "mysql_select_db('"++tempDbName++"');"
+                , "$result=mysql_query("++showPhpStr queryStr++");"
+                , "if(!$result)"
+                , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
+                , "$rows=Array();"
+                , "  while (($row = @mysql_fetch_array($result))!==false) {"
+                , "    $rows[]=$row;"
+                , "    unset($row);"
+                , "  }"
+                , "echo '[';"
+                , "for ($i = 0; $i < count($rows); $i++) {"
+                , "  if ($i==0) echo ''; else echo ',';"
+                , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
+                , "}"
+                , "echo ']';"
+                ]
+    ; queryResult <- executePHP . showPHP $ php 
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn flags{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
               fatal 141 $ "PHP/SQL problem: "++queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 ( "Parse error on php result: "++show queryResult++":\n\n"++php)
+             _            -> fatal 143 $ "Parse error on php result: "++show queryResult
     }
-  where 
-   php = showPHP 
-    [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
-                             ++",'"++addSlashes (sqlLogin flags)++"'"
-                             ++",'"++addSlashes (sqlPwd flags)++"'"
-                             ++",'"++addSlashes tempDbName++"'"
-                             ++");"
-    , "// Check connection"
-    , "if (mysqli_connect_errno()) {"
-    , "  echo \"Failed to connect to MySQL: \" . mysqli_connect_error();"
-    , "}"
-    , ""
-    , "$result=mysqli_query($DB_link,"++showPhpStr queryStr++");"
-    , "if(!$result)"
-    , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link));"
-    , "$rows=Array();"
-    , "  while (($row = @mysqli_fetch_array($result))!==false) {"
-    , "    $rows[]=$row;"
-    , "    unset($row);"
-    , "  }"
-    , "echo '[';"
-    , "for ($i = 0; $i < count($rows); $i++) {"
-    , "  if ($i==0) echo ''; else echo ',';"
-    , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
-    , "}"
-    , "echo ']';"
-    ]
-
 
 createTempDatabase :: Fspc -> Options -> IO ()
 createTempDatabase fSpec flags =
- do { putStrLn "Result of createTempDatabase:"
-    ; res <- executePHP php
-    ; putStrLn res
+ do { _ <- executePHP php
     ; return ()
     }
- where 
-   php = showPHP 
-    ([ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
-                              ++",'"++addSlashes (sqlLogin flags)++"'"
-                              ++",'"++addSlashes (sqlPwd flags)++"'"
-                              ++");"
-    , "// Check connection"
-    , "if (mysqli_connect_errno()) {"
-    , "  echo \"Failed to connect to MySQL: \" . mysqli_connect_error();"
-    , "}"
-    , ""
-    , "// Create database"
-    , "$sql=\"CREATE DATABASE "++tempDbName++"\";"
-    , "if (mysqli_query($DB_link,$sql)) {"
-    , "  echo \"Database "++tempDbName++" created successfully\";"
-    , "} else {"
-    , "  echo \"Error creating database: \" . mysqli_error($DB_link);"
-    , "}"
-    ] ++
-    [ "mysqli_select_db($DB_link,'"++tempDbName++"');"
-    , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
-    createTablesPHP fSpec
-    )
+ where php = showPHP $
+               connectToServer flags ++
+               createDatabasePHP tempDbName ++
+               [ "mysql_select_db('"++tempDbName++"');"
+               , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
+               createTablesPHP fSpec
+
 removeTempDatabase :: Options -> IO ()
 removeTempDatabase flags =
- do { putStrLn "Result of dropTempDatabase:"
-    ; res <- executePHP php
-    ; putStrLn res
-    ; return()
+ do { _ <- executePHP . showPHP $ 
+        connectToServer flags ++
+        ["mysql_query("++showPhpStr ("DROP DATABASE "++tempDbName)++");"]
+    ; return ()
     }
- where
-  php = showPHP 
-    [ "$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
-                             ++",'"++addSlashes (sqlLogin flags)++"'"
-                             ++",'"++addSlashes (sqlPwd flags)++"'"
-                        --     ++",'"++addSlashes tempDbName++"'"
-                             ++");"
-    , "// Check connection"
-    , "if (mysqli_connect_errno()) {"
-    , "  echo \"Failed to connect to MySQL: \" . mysqli_connect_error();"
-    , "}"
-    , ""
-    , "// Drop database"
-    , "$sql=\"DROP DATABASE IF EXISTS "++tempDbName++"\";"
-    , "if (mysqli_query($DB_link,$sql)) {"
-    , "  echo \"Database "++tempDbName++" dropped successfully\";"
-    , "} else {"
-    , "  echo \"Error dropping database: \" . mysqli_error($DB_link);"
-    , "}"
-    ]
-    
 
+connectToServer :: Options -> [String]
+connectToServer flags =
+  ["$DB_link = mysql_connect('"++addSlashes (sqlHost flags)++"'"
+                         ++",'"++addSlashes (sqlLogin flags)++"'"
+                         ++",'"++addSlashes (sqlPwd flags)++"');"] 
+               
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
--- do { putStrLn $ "Executing PHP:\n" ++ phpStr
---    ; putStrLn ("(Just kidding, not really...)")
---    ; return "."
---    }
- do { putStrLn $ "Executing PHP:" 
-    ; mapM_ putStrLn (map (\s -> "  "++s) (lines phpStr))
+ do { --putStrLn $ "Executing PHP:\n" ++ phpStr
     ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
@@ -249,7 +204,7 @@ executePHP phpStr =
     ; (tempfile, temph) <- openTempFile tempdir "phpInput"
     ; hPutStr temph phpStr
     ; hClose temph
-    ; putStrLn "Written to temp. file.." 
+     
     ; let cp = CreateProcess
                 { cmdspec      = RawCommand "php" [tempfile]
                 , cwd          = Nothing -- path
@@ -267,7 +222,7 @@ executePHP phpStr =
           (Nothing, _) -> fatal 105 "no output handle"
           (_, Nothing) -> fatal 106 "no error handle"
           (Just stdOutH, Just stdErrH) ->
-           do { putStrLn "done"
+           do { --putStrLn "done"
               ; errStr <- hGetContents stdErrH
               ; seq (length errStr) $ return ()
               ; hClose stdErrH
@@ -276,7 +231,7 @@ executePHP phpStr =
               ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
               ; seq (length outputStr) $ return ()
               ; hClose stdOutH
-              ; putStrLn $ "Results:\n" ++ outputStr
+              --; putStrLn $ "Results:\n" ++ outputStr
               ; return outputStr
               }
     ; removeFile tempfile
