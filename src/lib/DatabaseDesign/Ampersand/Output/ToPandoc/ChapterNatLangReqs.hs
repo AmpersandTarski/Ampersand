@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
 
 import Data.Char hiding (Space)
@@ -28,35 +29,35 @@ chpNatLangReqs lev fSpec flags =
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
-                     ( str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
+                     (  "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
                      <> (singleQuoted.str.name) fSpec
-                     <> str " kunnen worden besproken en uitgedrukt. "
-                     <> str "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
-                     <> str "De taal van "
+                     <> " kunnen worden besproken en uitgedrukt. "
+                     <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
+                     <> "De taal van "
                      <> (singleQuoted. str. name) fSpec
-                     <> str " bestaat uit begrippen en basiszinnen, "
-                     <> str "waarin afspraken worden uitgedrukt. "
-                     <> str "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
-                     <> str "althans voor zover het "
+                     <> " bestaat uit begrippen en basiszinnen, "
+                     <> "waarin afspraken worden uitgedrukt. "
+                     <> "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
+                     <> "althans voor zover het "
                      <> (singleQuoted. str. name) fSpec
-                     <> str " betreft, "
-                     <> str "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
-                     <> str "Alle definities zijn genummerd omwille van de traceerbaarheid. "
+                     <> " betreft, "
+                     <> "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
+                     <> "Alle definities zijn genummerd omwille van de traceerbaarheid. "
                      )
         English -> para
-                     ( str "This chapter defines the natural language, in which functional requirements of "
+                     (  "This chapter defines the natural language, in which functional requirements of "
                      <> (singleQuoted.str.name) fSpec
-                     <> str " can be discussed and expressed. "
-                     <> str "The purpose of this chapter is to create shared understanding among stakeholders. "
-                     <> str "The language of "
+                     <> " can be discussed and expressed. "
+                     <> "The purpose of this chapter is to create shared understanding among stakeholders. "
+                     <> "The language of "
                      <> (singleQuoted.str.name) fSpec
-                     <> str " consists of concepts and basic sentences. "
-                     <> str "All functional requirements are expressed in these terms. "
-                     <> str "When stakeholders can agree upon this language, "
-                     <> str "at least within the scope of "
+                     <> " consists of concepts and basic sentences. "
+                     <> "All functional requirements are expressed in these terms. "
+                     <> "When stakeholders can agree upon this language, "
+                     <> "at least within the scope of "
                      <> (singleQuoted.str.name) fSpec
-                     <> str ", they share precisely enough language to have meaningful discussions about functional requirements. "
-                     <> str "All definitions have been numbered for the sake of traceability. "
+                     <> ", they share precisely enough language to have meaningful discussions about functional requirements. "
+                     <> "All definitions have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
    fromList dpRequirements 
@@ -67,9 +68,9 @@ chpNatLangReqs lev fSpec flags =
   where
   legalRefs :: Blocks
   legalRefs = (labeledThing flags (lev+1) "LegalRefs" sectionTitle) 
-            <> table (str caption')
+            <> table caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
-                     [(plain.str) lawHeader, (plain.str) articleHeader]  --headers
+                     [plain lawHeader, plain articleHeader]  --headers
                      [ [(para.str.aOlLaw) art  , (para.str.unscanRef.aOlArt) art]
                      | art <-(sort.nub.concatMap getArticlesOfLaw.getRefs) fSpec  ]
                      
