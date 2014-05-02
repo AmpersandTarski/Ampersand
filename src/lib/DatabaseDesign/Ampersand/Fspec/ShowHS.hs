@@ -240,8 +240,8 @@ where
    instance ShowHS DnfClause where
     showHS flags indent (Dnf antcs conss)
       = intercalate indent
-          [ wrap "Dnf " (indent++"   ") (\_->showHS flags (indent++"      ")) antcs
-          , wrap "    " (indent++"   ") (\_->showHS flags (indent++"      ")) conss
+          [ wrap "Dnf " (indent++"    ") (\_->showHS flags (indent++"      ")) antcs
+          , wrap "    " (indent++"    ") (\_->showHS flags (indent++"      ")) conss
           ]
 
    instance ShowHSName RuleClause where

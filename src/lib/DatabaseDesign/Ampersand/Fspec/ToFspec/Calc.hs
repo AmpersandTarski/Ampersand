@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
             ( deriveProofs 
             , lambda
@@ -11,6 +13,8 @@ where
    import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl)
    import Data.List hiding (head)
    import GHC.Exts (sortWith)
+--   import Data.ByteString.Char8
+--   import Data.ByteString.Lazy.Char8
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.ADL1.Expression
@@ -22,6 +26,8 @@ where
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
+   import Text.Pandoc.Builder
+   import Text.Pandoc.Readers.Textile
    import Prelude hiding (head)
 -- import Debug.Trace
    
@@ -77,243 +83,228 @@ where
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
 
-   deriveProofs :: Options -> Fspc -> [Inline]
+   interText _ [] = ""
+   interText str (xs:xss) = xs<>str<>interText str xss
+   
+   deriveProofs :: Options -> Fspc -> Blocks
    deriveProofs flags fSpec
-    = [ Str ("Rules and their conjuncts for "++name fSpec), LineBreak
-      ] ++
+    = para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
 --   conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
-      intercalate [LineBreak,Str "-- next rule ------------", LineBreak]
-        [ [ Str "rule r:   ", Str (showADL r), LineBreak]++
-          [ Str "rrexp r:  ", Str (showADL (rrexp r)), LineBreak]++
-          [ Str "conjNF:   ", Str (showADL (conjNF (rrexp r))), LineBreak]++
-          intercalate [LineBreak] [ [Str "     conj: ", Str (showADL conj)] | conj<-conjuncts r]
-        | r<-grules fSpec++vrules fSpec] ++
-      [ --"\nSignals for "++name fSpec++"\n--------------\n"++
-        --proof (signals fSpec)++
-        LineBreak
-      , Str ("Transformation of user specified rules into ECA rules for "++name fSpec)
-      , LineBreak, Str "--------------", LineBreak, Str "--------------", LineBreak
-      , LineBreak, Str "First step: determine all (", Str (show (length qs)), Str ") quads", LineBreak
-      , LineBreak, Str "-- first quad ------------", LineBreak
-      ]
+      bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
+                         "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
+                         "conjNF:   "<>str (showADL (conjNF (rrexp r)))<>linebreak<>
+                         interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts r]
+                        )
+                 | r<-grules fSpec++vrules fSpec]<>
+      para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
+      para (linebreak<>"--------------"<>linebreak<>"First step: determine the "<>(str.show.length) qs<>" quads:")<>
+      bulletList [ para ( "-- quad ------------"<>linebreak<>"When relation "<>str (showADL rel)<>" is changed,"
+                          <>linebreak<>str (showADL r)
+                          <>(if length (cl_conjNF ccrs)<=1 then space else " ("<>(str.show.length.cl_conjNF) ccrs<>" conjuncts)")
+                          <>" must be restored."<>linebreak<>"This quad has conjunct: "<>(str.showADL.rc_conjunct) x
+                          <>" and "<>(str.show.length.rc_dnfClauses) x<>" dnf clauses."
+                        ) <>
+                   bulletList [ para (linebreak<>"Dnf clause "<>str (showADL dc)) | dc<-rc_dnfClauses x]
+                 | Quad rel ccrs<-qs, let r=cl_rule ccrs , x<-cl_conjNF ccrs ] <>
+      para (linebreak<>linebreak<>"Second step: assemble dnf clauses.") <>
+      bulletList [ para ( "Dnf clause "<>str (showADL dc)
+                          <>linebreak<>"is derived from rule "<>str (showADL r)
+                          <>linebreak
+                          <>case ms of
+                               []    -> "No relations affect this clause."
+                               [rel] -> "It can be called when relation " <>str (showADL rel)<>" is affected."
+                               _     -> "It can be called when relations "<>str (commaEng "or" [showADL rel | rel<-ms])<>" are affected."
+                        )
+                 | (ms,dc,r)<-
+                       [ (nub [ dcl |(dcl,_,_)<-cl],dc,r)
+                       | cl<-eqCl (\(_,_,dc)->dc) [(dcl,dc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, x<-cl_conjNF ccrs, dc<-rc_dnfClauses x]
+                       , let (_,dc,r) = head cl
+                       ]
+                 ]<>
+      para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) fSpec<>" ECA rules"<>
+            if verboseP flags
+             then " (Turn --verbose off if you want to see ECA rules only)"
+             else " (Turn on --verbose if you want to see more detail)"
+           )<>
+      bulletList [ para ( "--------------"<>linebreak)<>derivation rule
+                 | verboseP flags, rule<-udefrules fSpec]<>
+      bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------"<>linebreak
+                          <>str (showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)}))<>
+                   bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
+                                      <>linebreak<>"derivation:"
+                                     )<>
+                                (showProof showADL.nfProof showADL) d<>  -- nfProof produces its result in disjunctive normal form
+                                para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF) d)
+                              | verboseP flags, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
+                 | ecarule <- ecaRs]
+      {-
       ++
-      intercalate [LineBreak,Str "-- next quad ------------",LineBreak]
-        [ [            Str "When relation ", Str (showADL rel), Str " is changed,"
-          , LineBreak, Str (showADL r)
-          ]++ (if length (cl_conjNF ccrs)<=1 then [Space] else [Str " (", Str (show (length (cl_conjNF ccrs))), Str " conjuncts)"]) ++
-          [ Str " must be restored.", LineBreak, Str "This quad has conjunct: ", Str (showADL (rc_conjunct x))
-          , Str " and ", Str (show (length (rc_dnfClauses x))), Str " dnf clauses."
-          ]++
-          [ inl
-          | dc<-rc_dnfClauses x, inl<-[LineBreak, Str "Dnf clause ", Str (showADL dc)]]
-        | Quad rel ccrs<-qs, let r=cl_rule ccrs , x<-cl_conjNF ccrs ]
-      ++
-      [ LineBreak, Str "-- end ------------", LineBreak, LineBreak, Str "Second step: assemble dnf clauses."
-      , LineBreak, Str "-- first dnf clause ------------", LineBreak]
-      ++
-      intercalate [LineBreak,Str "-- next dnf clause ------------",LineBreak]
-        [ [ Str "Dnf clause ", Str (showADL dc)
-          , LineBreak, Str "is derived from rule ", Str (showADL r)
-          , LineBreak
-          , Str ( case ms of
-                  []    -> "no relations affect this clause"
-                  [rel] -> "It can be called when relation " ++showADL rel++" is affected."
-                  _     -> "It can be called when relations "++commaEng "or" [showADL rel | rel<-ms]++" are affected."
-                )
-          ]
-          | (ms,dc,r)<-
-              [ (nub [ dcl |(dcl,_,_)<-cl],dc,r)
-              | cl<-eqCl (\(_,_,dc)->dc) [(dcl,dc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, x<-cl_conjNF ccrs, dc<-rc_dnfClauses x]
-              , let (_,dc,r) = head cl
-              ]
-         ]
-      ++
-      [ LineBreak, Str "-- end ------------", LineBreak, LineBreak, Str "Third step: determine ECA rules"] ++
-      [ if verboseP flags
-        then Str " (Turn --verbose off if you want to see ECA rules only)"
-        else Str " (Turn on --verbose if you want to see more detail)" ] ++
-      [ LineBreak ]
-      ++
-      concat
-        [ [ LineBreak,Str "-- ECA Rule ", Str (show (ecaNum ecarule)), Str " ---------", LineBreak
-          , Str (showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)}) ]++
-          concat [ [ LineBreak, Str "delta expression", LineBreak, Space, Str (showADL d)
-                   , LineBreak, Str "derivation:"
-                   , LineBreak, Space]++
-                   (showProof showADL. nfProof showADL) d ++  -- nfProof produces its result in disjunctive normal form
-                   [ LineBreak, Str "disjunctly normalized delta expression" 
-                   , LineBreak, Str (showADL (disjNF d))
-                   ]
-                 | verboseP flags, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
-        | ecarule <- ecaRs]
-      ++
-      [ LineBreak, Str "--------------", LineBreak, LineBreak, Str "Fourth step: cascade blocking rules"
-      , LineBreak
+      [ linebreak<>"--------------", linebreak, linebreak<>"Fourth step: cascade blocking rules"
+      , linebreak
       ]++
-      intercalate []
-        [ [LineBreak, Str ("-- Raw ECA rule "++show (ecaNum er)++"------------"), LineBreak, Str (showECA "\n  " er)]
+      interText []
+        [ [linebreak<>"-- Raw ECA rule "<>(str.show.ecaNum) er<>"------------"<>linebreak<>str (showECA "\n  " er)]
         | er<- ecaRs]
       ++
-      [ LineBreak, Str "--------------", LineBreak, LineBreak, Str "Fifth step: preEmpt the rules (= optimize)"
-      , LineBreak
+      [ linebreak<>"--------------", linebreak, linebreak<>"Fifth step: preEmpt the rules (= optimize)"
+      , linebreak
       ]++
 {- TODO: readdress preEmpt. It is wrong
-      intercalate []
-        [ [LineBreak, Str ("-- Preempted ECA rule "++show (ecaNum er)++"------------"), LineBreak, Str (showECA "\n  " er)]
+      interText []
+        [ [linebreak<>"-- Preempted ECA rule "<>(str.show.ecaNum) er<>"------------"<>linebreak<>str (showECA "\n  " er)]
         | er<- preEmpt ecaRs]
       ++ -}
-      [ Str "--------------", LineBreak, Str "Final step: derivations --------------", LineBreak]
-      ++
-      intercalate [LineBreak, Str "--------------", LineBreak]
-         [ derivation rule
-         | rule<-udefrules fSpec]++
-      [Str ("Aantal Rules: "++(show.length.udefrules) fSpec)]
 {-
-      ++
-      [ LineBreak, Str "--------------", LineBreak]
+      [ linebreak<>"--------------", linebreak]
       ++ -- TODO: make an ontological analysis, which explains the delete behaviour.
-      [ Str "Ontological analysis: ", LineBreak, Str "  "]
+      [ Str "Ontological analysis: ", linebreak<>"  "]
       ++
-      intercalate [LineBreak, LineBreak, Str "  "] 
-          [ [Str (name ifc), Str "("]
-            ++ intercalate [Str ", "] 
-                 [[Str (name a), Str "[", Str ((name.target.ctx) a), Str "]"]
+      interText [linebreak, linebreak<>"  "] 
+          [ [Str (name ifc)<>"("]
+            ++ interText ", "
+                 [str (name a)<>"["<>(str.name.target.ctx) a<>"]"
                  |a<-attributes (ifcObj ifc)]
-            ++ [Str "):", LineBreak, Str "  "]
+            ++ [Str "):", linebreak<>"  "]
           | ifc<-interfaceS fSpec]
       ++
-      [ LineBreak, Str "--------------", LineBreak
-      , Str "Analyzing interfaces:", LineBreak, Str "     "]
+      [ linebreak<>"--------------", linebreak
+      <>"Analyzing interfaces:", linebreak<>"     "]
       ++
-      intercalate [LineBreak, Str "     "] 
+      interText [linebreak<>"     "] 
          [[Str (testInterface flags fSpec ifc)]
          | ifc<-take 1 (interfaceG fSpec)]
       ++
-      [ LineBreak, Str "--------------", LineBreak]
+      [ linebreak<>"--------------", linebreak]
       -}
+-}
       where 
   --     visible _  = True -- We take all quads into account.
        qs         = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
           --   assembleECAs :: [Quad] -> [ECArule]
        ecaRs      = assembleECAs qs  -- this creates all ECA rules from the available quads. They are still raw (unoptimized).
-       derivation :: Rule -> [Inline]
+       commaEng :: String -> [String] -> String
+       commaEng  _  []       = ""
+       commaEng  _  [x]      = x
+       commaEng chs [x,y]    = x++" "++chs++" "++y
+       commaEng chs (x:y:ys) = x++", "++commaEng chs (y:ys)
+       derivation :: Rule -> Blocks
        derivation rule 
-         = 
-           ( if exx'==e
-             then [Str (showADL rule)]++[Str " is already in conjunctive normal form", LineBreak]
-             else [Str "Convert into conjunctive normal form", LineBreak] ++ showProof showADL ((e,[],"<=>"):prf)
-           )++
-           [ LineBreak, Str "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     " ]++
-           (disjProof. notCpl. rrexp) rule++[ LineBreak, LineBreak ] ++
-           concat [ [LineBreak, Str "Conjunct: ", Space, Space, Space, Space, Space, Str (showADL (rc_conjunct x))]++
-                    concat [ [LineBreak, Str "This conjunct has ", Str (show (length (rc_dnfClauses x))), Str " clauses:"] | length (rc_dnfClauses x)>1 ]++
-                    concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-(rc_dnfClauses x)]++[ LineBreak]++
-                    concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length (rc_dnfClauses x)>1 ]++
-                    concat [ [LineBreak, Str "   Clause: ", Str (showADL clause), Str " may be affected by the following events:",LineBreak]++
-                             concat [ [ Str "event = ", Str (show ev), Space, Str (showADL dcl), Str " means doing the following substitution", LineBreak ] ++
-                                      [ Str (showADL clause++"["++showREL dcl++":="++showADL (actSem ev (EDcD dcl) (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
-                                      [ Str ("clause' = "++showADL ex') ] ++
-                                      ( if clause'==ex'
-                                        then [Str (", which is already in conjunctive normal form."), LineBreak]
-                                        else [LineBreak, Str ", which has conjunctive normal form: ", LineBreak, Str (showADL clause'), LineBreak] ) ++
-                                      [ Str "Let us compute the violations to see whether invariance is maintained.", LineBreak] ++
-                                      [ Str "This means to negate the result (notClau = notCpl clause'): ", LineBreak ]++
-                                      ( showProof showADL. cfProof showADL) notClau ++
-                                      [ LineBreak, Str "So, notClau has CNF: ", Str (showADL viols ), LineBreak
-                                      , if viols==viols'
-                                        then Str "This expression is in disjunctive normal form as well."
-                                        else Str ("In DNF, notClau is:  "++showADL viols'++".")
-                                      , LineBreak] ++
-                                      ( if isTrue clause'
-                                        then [ Str "This result proves the absence of violations, so a reaction of doing nothing is appropriate.", LineBreak
-                                             , Str "Just for fun, let us try to derive whether clause |- clause' is true... ", LineBreak] ++
-                                             (showProof showADL. cfProof showADL) (expr .|-. clause')
-                                        else [ Str "This result does not prove the absence of violations, so we cannot conclude that invariance is maintained.", LineBreak
-                                             , Str "We must compute a reaction to compensate for violations...", LineBreak
-                                             , Str "That would be to reinsert violations that originate from "
-                                             ]++
-                                             ( if ev==Ins
-                                               then [ Str (showADL (conjNF negs)), Str " into ",  Str (showADL (disjNF poss)), Str ".", LineBreak ]
-                                               else [ Str (showADL (disjNF poss)), Str " into ",  Str (showADL (conjNF negs)), Str ".", LineBreak ]
-                                             )++
-                                             [ Str "deltFr: " ]++
-                                             (showProof showADL. dfProof showADL) deltFr++[ LineBreak ]++
-                                             [ Str "This yields the following ECA action:", LineBreak 
-                                             , Str (showECA "\n     " (ECA (On ev dcl) delt act 0)), LineBreak, LineBreak ]
-                                  {-         ++ [ Str "To finish the analysis of case ", Str (show ev), Space, Str (showADL dcl)
-                                                , Str ", let us compute the contents of ", Str (showADL toExpr), Str " after insertion of viols.", LineBreak
-                                                ]++
-                                             ( if length (nub [sign viols, sign viols', sign toExpr])>1
-                                               then fatal 248 ("viols"++showSign (sign viols) ++"   "++showADL viols ++"\n"++
-                                                               "viols'"++showSign (sign viols')++"  "++showADL viols'++"\n"++
-                                                               "toExpr"++showSign (sign toExpr)++"  "++showADL toExpr)
-                                               else if ev==Ins
-                                               then (showProof showADL. cfProof showADL) (viols'.\/.toExpr)++[ LineBreak ]
-                                               else (showProof showADL. dfProof showADL) (notCpl viols./\.toExpr)++[ LineBreak ]
-                                             ) -}
-                                      )
-                                    | dcl <- relsUsedIn r
-                                    , let EDcD delt = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
-                                    , ev<-[Ins,Del]
-                                    , let ex'     = subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl))) expr -- the clause after the edit action
-                                    , let clause' = conjNF ex'                                                -- its CNF
-                                    , let notClau = notCpl clause'                                            -- the violations after the edit action
-                                    , let viols   = conjNF notClau                                            -- the violations after the edit action
-                                    , let viols'  = disjNF notClau                                            -- the violations after the edit action
-                                    , let negs    = if (length.nub.map sign) antcs>1
-                                                    then fatal 265 ("type inconsistencies in antcs: "++show (map showADL antcs))
-                                                    else foldr (./\.) vee antcs
-                                    , let poss    = if (length.nub.map sign) conss>1
-                                                    then fatal 265 ("type inconsistencies in conss: "++show (map showADL conss))
-                                                    else foldr (.\/.) (notCpl vee) conss
-                                    , let frExpr  = if ev==Ins
-                                                    then disjNF (notCpl negs)
-                                                    else disjNF poss
-                                    , let deltFr  = if sign poss/=sign negs
-                                                    then fatal 274 ("type inconsistencies in deltFr: "++showADL clause)
-                                                    else if ev==Ins
-                                                    then (subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) negs ./\. notCpl poss
-                                                    else (notCpl . subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) poss ./\. negs
-                                    , let deltFr' = disjNF deltFr
-                                    , dcl `elem` relsMentionedIn frExpr
-                                    , let toExpr  = if ev==Ins
-                                                    then disjNF poss
-                                                    else disjNF (notCpl negs)
-                                    , let visible _ = True
-                                    , if length (nub (map sign [toExpr, deltFr', expr]))>1
-                                      then fatal 285 "type problem"
-                                      else True
-                                    , let act = genPAclause visible Ins toExpr deltFr' [(expr,[rule])]
-                                    ]
-                           | clause@(Dnf antcs conss) <- rc_dnfClauses x
-                           , let expr = dnf2expr clause, let vee = EDcV (sign expr)
+         = ( if exx'==e
+             then para (str (showADL rule)<>" is already in conjunctive normal form")
+             else para ("Convert into conjunctive normal form")
+           )<>
+           showProof showADL ((e,[],"<=>"):prf)<>
+           para "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     "<>
+           (disjProof. notCpl. rrexp) rule<>
+           bulletList
+               [ para("Conjunct: "<>str (showADL (rc_conjunct x))<>
+                      if length (rc_dnfClauses x)>1 then " has "<>(str.show.length.rc_dnfClauses) x<>" clauses:" else "" )<>
+                 bulletList [ para ("Clause: "<>str (showADL clause)) | clause<-(rc_dnfClauses x)]<>
+                 para (if length (rc_dnfClauses x)>1 then "For each clause<>let us analyse the insert- and delete events." else "")<>
+                 bulletList
+                     [ para ("Clause: "<>str (showADL clause)<>" may be affected by the following events:")<>
+                       bulletList
+                           [ para ("event = "<>str (show ev)<>space<>str (showADL dcl)<>" means doing the following substitution")<>
+                             para (str (showADL clause<>"["<>showREL dcl<>":="<>showADL (actSem ev (EDcD dcl) (delta (sign dcl)))<>"] = clause'"))<>
+                             para ("clause' = "<>str (showADL ex')<>
+                                   if clause'==ex'
+                                   then ", which is already in conjunctive normal form."<>linebreak
+                                   else ", which has conjunctive normal form: "<>linebreak<>str (showADL clause')
+                                  )<>
+                             para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
+                                   "This means to negate the result (notClau = notCpl clause'): ")<>
+                             (showProof showADL. cfProof showADL) notClau<>
+                             para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
+                                   ( if viols==viols'
+                                     then "This expression is in disjunctive normal form as well."
+                                     else str ("In DNF, notClau is:  "<>showADL viols'<>".")))<>
+                             ( if isTrue clause'
+                               then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
+                                          <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
+                                    (showProof showADL. cfProof showADL) (expr .|-. clause')
+                               else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
+                                          "We must compute a reaction to compensate for violations..."<>linebreak<>
+                                          "That would be to reinsert violations that originate from "<>
+                                          ( if ev==Ins
+                                            then str (showADL (conjNF negs))<>" into "<> str (showADL (disjNF poss))<>"."
+                                            else str (showADL (disjNF poss))<>" into "<> str (showADL (conjNF negs))<>"."
+                                          )<>linebreak<>"deltFr: ")<>
+                                    (showProof showADL. dfProof showADL) deltFr<>
+                                    para "This yields the following ECA action:"<>
+                                    codeBlock (showECA "\n     " (ECA (On ev dcl) delt act 0))
+                             {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL dcl)
+                                       <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
+                                       <>
+                                    ( if length (nub [sign viols, sign viols', sign toExpr])>1
+                                      then fatal 248 ("viols"<>showSign (sign viols) <>"   "<>showADL viols <>"\n"<>
+                                                      "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
+                                                      "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
+                                      else if ev==Ins
+                                      then (showProof showADL. cfProof showADL) (viols'.\/.toExpr)<>linebreak
+                                      else (showProof showADL. dfProof showADL) (notCpl viols./\.toExpr)<>linebreak
+                                    ) -}
+                             )
+                           | dcl <- relsUsedIn r
+                           , let EDcD delt = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
+                           , ev<-[Ins,Del]
+                           , let ex'     = subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl))) expr -- the clause after the edit action
+                           , let clause' = conjNF ex'                                                -- its CNF
+                           , let notClau = notCpl clause'                                            -- the violations after the edit action
+                           , let viols   = conjNF notClau                                            -- the violations after the edit action
+                           , let viols'  = disjNF notClau                                            -- the violations after the edit action
+                           , let negs    = if (length.nub.map sign) antcs>1
+                                           then fatal 265 ("type inconsistencies in antcs: "<>show (map showADL antcs))
+                                           else foldr (./\.) vee antcs
+                           , let poss    = if (length.nub.map sign) conss>1
+                                           then fatal 265 ("type inconsistencies in conss: "<>show (map showADL conss))
+                                           else foldr (.\/.) (notCpl vee) conss
+                           , let frExpr  = if ev==Ins
+                                           then disjNF (notCpl negs)
+                                           else disjNF poss
+                           , let deltFr  = if sign poss/=sign negs
+                                           then fatal 274 ("type inconsistencies in deltFr: "<>showADL clause)
+                                           else if ev==Ins
+                                           then (subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) negs ./\. notCpl poss
+                                           else (notCpl . subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) poss ./\. negs
+                           , let deltFr' = disjNF deltFr
+                           , dcl `elem` relsMentionedIn frExpr
+                           , let toExpr  = if ev==Ins
+                                           then disjNF poss
+                                           else disjNF (notCpl negs)
+                           , let visible _ = True
+                           , if length (nub (map sign [toExpr, deltFr', expr]))>1
+                             then fatal 285 "type problem"
+                             else True
+                           , let act = genPAclause visible Ins toExpr deltFr' [(expr,[rule])]
                            ]
-                  | let Clauses ts r = allClauses flags rule, x <-ts
-                  ] ++
-           [LineBreak]
+                     | clause@(Dnf antcs conss) <- rc_dnfClauses x
+                     , let expr = dnf2expr clause, let vee = EDcV (sign expr)
+                     ]
+               | let Clauses ts r = allClauses flags rule, x <-ts
+               ]
 {-
-           [ Str ("Available code fragments on rule "++name rule++":", LineBreak ]++
-           intercalate [LineBreak] [showADL rule++ " yields\n"++intercalate "\n\n"
-                                   [ [Str "event = ", Str (show ev), Space, Str (showADL rel), LineBreak ] ++
-                                     [Str (showADL r++"["++showADL rel++":="++showADL (actSem ev (EDcD rel) (delta (sign rel)))++"] = r'"), LineBreak ] ++
-                                     [Str "r'    = "] ++ conjProof r' ++ [LineBreak ] ++
-                                     [Str "viols = r'-"] ++ disjProof (ECpl r') ++ [ LineBreak ] ++
-                                     "violations, considering that the valuation of "++showADL rel++" has just been changed to "++showADL (actSem ev (EDcD rel) (delta (sign rel)))++
-                                     "            "++conjProof (ECpl r) ++"\n"++
-                                     "reaction? evaluate r |- r' ("++(showADL.conjNF) (notCpl r .\/. r')++")"++
-                                        conjProof (notCpl r .\/. r')++"\n"++
-                                     "delta: r-/\\r' = "++conjProof (EIsc[notCpl r,r'])++
-                                     "\nNow compute a reaction\n(isTrue.conjNF) (notCpl r .\/. r') = "++show ((isTrue.conjNF) (notCpl r .\/. r'))++"\n"++
+           [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
+           interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
+                                   [ ["event = ", str (show ev), space, str (showADL rel), linebreak ] <>
+                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
+                                     ["r'    = "] <> conjProof r' <> [linebreak ] <>
+                                     ["viols = r'-"] <> disjProof (ECpl r') <> [ linebreak ] <>
+                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem ev (EDcD rel) (delta (sign rel)))<>
+                                     "            "<>conjProof (ECpl r) <>"\n"<>
+                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF) (notCpl r .\/. r')<>")"<>
+                                        conjProof (notCpl r .\/. r')<>"\n"<>
+                                     "delta: r-/\\r' = "<>conjProof (EIsc[notCpl r,r'])<>
+                                     "\nNow compute a reaction\n(isTrue.conjNF) (notCpl r .\/. r') = "<>show ((isTrue.conjNF) (notCpl r .\/. r'))<>"\n"<>
                                      (if null (lambda ev (ERel rel ) r)
-                                      then "lambda "++showADL rel++" ("++showADL r++") = empty\n"
+                                      then "lambda "<>showADL rel<>" ("<>showADL r<>") = empty\n"
                                       else -- for debug purposes:
-                                           -- "lambda "++show ev++" "++showADL rel++" ("++showADL r++") = \n"++(intercalate "\n\n".map showPr.lambda ev (ERel rel)) r++"\n"++
-                                           -- "derivMono ("++showADL r++") "++show ev++" "++showADL rel++"\n = "++({-intercalate "\n". map -}showPr.derivMono r ev) rel++"\n"++
-                                           -- "\nNow compute checkMono r ev rel = \n"++show (checkMono r ev rel)++"\n"++
+                                           -- "lambda "<>show ev<>" "<>showADL rel<>" ("<>showADL r<>") = \n"<>(interText "\n\n".map showPr.lambda ev (ERel rel)) r<>"\n"<>
+                                           -- "derivMono ("<>showADL r<>") "<>show ev<>" "<>showADL rel<>"\n = "<>({-interText "\n". map -}showPr.derivMono r ev) rel<>"\n"<>
+                                           -- "\nNow compute checkMono r ev rel = \n"<>show (checkMono r ev rel)<>"\n"<>
                                            if (isTrue.conjNF) (notCpl r .\/. r')
-                                           then "A reaction is not required, because  r |- r'. Proof:"++conjProof (notCpl r .\/. r')++"\n"
+                                           then "A reaction is not required, because  r |- r'. Proof:"<>conjProof (notCpl r .\/. r')<>"\n"
                                            else if checkMono r ev rel
-                                           then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) rel-}++"NIET TYPECORRECT: (showPr.derivMono r ev) rel"++"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
+                                           then "A reaction is not required, because  r |- r'. Proof:"{-<>(str.showPr.derivMono r ev) rel-}<>"NIET TYPECORRECT: (showPr.derivMono r ev) rel"<>"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ _ = delta (sign rel) in
                                                 "An appropriate reaction on this event is required."
                                            --     showECA "\n  " (ECA (On ev rel) delt (genPAclause visible Ins r viols conj [rule]) 0)
@@ -326,18 +317,13 @@ where
                                   | r<-[dc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, dc<-dnfClauses]
                                   ]
 -}
-              where e = rrexp rule
-                    prf = cfProof showADL e
-                    (exx',_,_) = last prf
-               --     conjProof = showProof showADL . cfProof showADL
-                    disjProof = showProof showADL . dfProof showADL
---                    showPr    = showProof showADL  -- hoort bij de uitgecommentaarde code hierboven...
+           where e = rrexp rule
+                 prf = cfProof showADL e
+                 (exx',_,_) = last prf
+            --     conjProof = showProof showADL . cfProof showADL
+                 disjProof = showProof showADL . dfProof showADL
+--                 showPr    = showProof showADL  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
-       commaEng :: String -> [String] -> String
-       commaEng  _  []       = ""
-       commaEng  _  [x]      = x
-       commaEng str [x,y]    = x++" "++str++" "++y
-       commaEng str (x:y:ys) = x++", "++commaEng str (y:ys)
 
 -- Stel we voeren een actie a uit, die een(1) van de volgende twee is:
 --        {r} INS rel INTO expr {r'}       ofwel
@@ -369,15 +355,15 @@ where
            rev "<--" = "-->"
            rev x = x
 
-   showProof :: (expr->String) -> Proof expr -> [Inline]
-   showProof shw [(expr,_,_)]        = [ LineBreak, Space, Space, Space, Space, Space, Space, Str (shw expr), LineBreak]
-   showProof shw ((expr,ss,equ):prf) = [ LineBreak, Space, Space, Space, Space, Space, Space, Str (shw expr), LineBreak] ++
-                                       (if null ss  then [ Space, Space, Space, Str equ ] else
-                                        if null equ then [ Str (unwords ss) ] else
-                                        [ Space, Space, Space, Str equ, Str (" { "++intercalate " and " ss++" }") ])++
+   showProof :: (expr->String) -> Proof expr -> Blocks
+   showProof shw [(expr,_,_)]        = (para.str.shw) expr
+   showProof shw ((expr,ss,equ):prf) = (para.str.shw) expr<>
+                                       para (if null ss  then str equ else
+                                             if null equ then str (unwords ss) else
+                                             str equ<>str (" { "++intercalate " and " ss++" }"))<>
                                        showProof shw prf
                                        --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
-   showProof _  []                   = []
+   showProof _  []                   = fromList []
 
    showPrf :: (expr->String) -> Proof expr -> [String]
    showPrf shw [(expr,_,_)]        = [ "    "++shw expr]

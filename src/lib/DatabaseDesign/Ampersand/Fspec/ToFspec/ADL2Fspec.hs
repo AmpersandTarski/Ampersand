@@ -544,7 +544,7 @@ while maintaining all invariants.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: [Quad] -> [ECArule]
    assembleECAs qs
-    = [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
+    = [er | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
       where
        -- the quads that are derived for this fSpec contain dnf clauses.
        -- A dnf clause dc that is generated from rule r contains the information how to restore the truth of r.
@@ -561,7 +561,7 @@ while maintaining all invariants.
        relEqCls = eqCl fst4 [(dcl,rc_dnfClauses x,rc_conjunct x,cl_rule ccrs) | Quad dcl ccrs<-qs, x <-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
-        = [ ECA (On ev dcl) delt act
+        = [ ECA (On ev dcl) delt (normPA act)
           | relEq <- relEqCls                   -- The material required for one relation
           , let (dcl,_,_,_) = head relEq        -- This is the relation
           , let EDcD delt   = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.

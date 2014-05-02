@@ -90,6 +90,11 @@ where
                                    _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
+     norm (Pck e p ms)        = ( case p' of
+                                   Blk{} -> p'{paMotiv = ms}
+                                   _     -> Pck e (\a b->let (p'', _) = norm (p a b) in p'') ms
+                                , msgs)
+                                where (p', msgs) = norm (p (Atom (source e) "a") (Atom (target e) "b"))
      norm (Rmv c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
                                    _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms

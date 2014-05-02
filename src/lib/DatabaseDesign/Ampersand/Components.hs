@@ -75,7 +75,7 @@ doGenProofs fSpec flags =
  where outputFile = combine (dirOutput flags) $ replaceExtension ("proofs_of_"++baseName flags) ".html" 
        thePandoc = setTitle title (doc theDoc)
        title  = text $ "Proofs for "++name fSpec
-       theDoc = para $ fromList (deriveProofs flags fSpec)
+       theDoc = deriveProofs flags fSpec
        --theDoc = plain (text "Aap")  -- use for testing...
 
 doGenHaskell :: Fspc -> Options -> IO()
