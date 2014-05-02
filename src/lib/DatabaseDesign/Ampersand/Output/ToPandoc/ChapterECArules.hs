@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
@@ -14,24 +15,37 @@ chpECArules fSpec _
  where
   ecaIntro :: Blocks
   ecaIntro
-   = fromList
-     [ Plain $ case fsLang fSpec of
-       Dutch   -> [Str "Dit hoofdstuk bevat de ECA regels." ]
-       English -> [Str "This chapter lists the ECA rules." ]
-     ]
+   = case fsLang fSpec of
+       Dutch   -> plain "Dit hoofdstuk bevat de ECA regels."
+       English -> plain "This chapter lists the ECA rules."
+     
   ifcECA :: Blocks
   ifcECA
-   = fromList $
-     case fsLang fSpec of
-      Dutch   -> Para [ Str "ECA rules:",LineBreak, Str "   ",Str "tijdelijk ongedocumenteerd" ] : 
-                 concat [ [ BlockQuote (toList (codeBlock ( showECA "\n     " eca )))
-                          , Para [ LineBreak, Str "------ Afleiding ----->"] ]              ++   -- Dit in- en uitschakelbaar maken
-                          toList (showProof (showECA "\n>     ") (proofPA (ecaAction eca))) ++   --  voor het bewijs
-                          [ Para [ LineBreak, Str "<------Einde afleiding --"] ]
-                        | eca<-vEcas fSpec, not (isNop (ecaAction eca))]
-      English -> Para [ Str "ECA rules:",LineBreak, Str "   ",Str "temporarily not documented" ] :
-                 concat [ [ BlockQuote (toList (codeBlock ( showECA "\n     " eca )))
-                          , Para [ LineBreak, Str "------ Derivation ----->"] ]             ++   -- Dit in- en uitschakelbaar maken
-                          toList (showProof (showECA "\n>     ") (proofPA (ecaAction eca))) ++   --  voor het bewijs
-                          [ Para [ LineBreak, Str "<------End Derivation --"] ]
-                        | eca<-vEcas fSpec, not (isNop (ecaAction eca))]
+   = case fsLang fSpec of
+      Dutch   -> para ( "ECA regels:" <> linebreak 
+                     <> "   tijdelijk ongedocumenteerd")
+                     <> mconcat 
+                         [   (blockQuote . codeBlock . showECA "\n     ") eca
+                          <> para ( linebreak <>
+                                    "------ Afleiding ----->"   -- Dit in- en uitschakelbaar maken
+                                  )
+                          <> (showProof (showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
+                          <> para ( linebreak <>
+                                    "<------Einde afleiding --"   -- Dit in- en uitschakelbaar maken
+                                  )
+                         | eca<-vEcas fSpec, (not.isNop.ecaAction) eca
+                         ]
+      English -> para ( "ECA rules:" <> linebreak 
+                     <> "   temporarily not documented")
+                     <> mconcat 
+                         [   (blockQuote . codeBlock . showECA "\n     ") eca
+                          <> para ( linebreak <>
+                                    "------ Derivation ----->"   -- Dit in- en uitschakelbaar maken
+                                  )
+                          <> (showProof (showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
+                          <> para ( linebreak <>
+                                    "<------End Derivation --"   -- Dit in- en uitschakelbaar maken
+                                  )
+                         | eca<-vEcas fSpec, (not.isNop.ecaAction) eca
+                         ]
+                      
