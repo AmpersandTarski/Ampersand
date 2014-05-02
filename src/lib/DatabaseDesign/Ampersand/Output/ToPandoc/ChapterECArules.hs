@@ -25,15 +25,13 @@ chpECArules fSpec _
      case fsLang fSpec of
       Dutch   -> Para [ Str "ECA rules:",LineBreak, Str "   ",Str "tijdelijk ongedocumenteerd" ] : 
                  concat [ [ BlockQuote (toList (codeBlock ( showECA "\n     " eca )))
-                          , Para ( [ LineBreak, Str "------ Afleiding ----->"]                      ++   -- Dit in- en uitschakelbaar maken
-                                   showProof (showECA "\n>     ") (proofPA (ecaAction eca))    ++   --  voor het bewijs
-                                   [ LineBreak, Str "<------Einde afleiding --"] )                         --
-                          ]
+                          , Para [ LineBreak, Str "------ Afleiding ----->"] ]              ++   -- Dit in- en uitschakelbaar maken
+                          toList (showProof (showECA "\n>     ") (proofPA (ecaAction eca))) ++   --  voor het bewijs
+                          [ Para [ LineBreak, Str "<------Einde afleiding --"] ]
                         | eca<-vEcas fSpec, not (isNop (ecaAction eca))]
       English -> Para [ Str "ECA rules:",LineBreak, Str "   ",Str "temporarily not documented" ] :
                  concat [ [ BlockQuote (toList (codeBlock ( showECA "\n     " eca )))
-                          , Para ( [ LineBreak, Str "------ Derivation ----->"]                      ++   -- Dit in- en uitschakelbaar maken
-                                   showProof (showECA "\n>     ") (proofPA (ecaAction eca))    ++   --  voor het bewijs
-                                   [ LineBreak, Str "<------End Derivation --"] )                         --
-                          ]
+                          , Para [ LineBreak, Str "------ Derivation ----->"] ]             ++   -- Dit in- en uitschakelbaar maken
+                          toList (showProof (showECA "\n>     ") (proofPA (ecaAction eca))) ++   --  voor het bewijs
+                          [ Para [ LineBreak, Str "<------End Derivation --"] ]
                         | eca<-vEcas fSpec, not (isNop (ecaAction eca))]
