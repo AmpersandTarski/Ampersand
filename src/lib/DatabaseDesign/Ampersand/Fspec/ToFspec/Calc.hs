@@ -23,7 +23,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
    import Text.Pandoc.Builder
@@ -231,7 +231,9 @@ where
                                           )<>linebreak<>"deltFr: ")<>
                                     (showProof showADL. dfProof showADL) deltFr<>
                                     para "This yields the following ECA action:"<>
-                                    codeBlock (showECA "\n     " (ECA (On ev dcl) delt act 0))
+                                    codeBlock (showECA "\n     " (ECA (On ev dcl) delt act 0))<>
+                                    para "Now let us remove redundancy from the ECA action:"<>
+                                    showProof (showECA "\n>     ") (proofPA act)
                              {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL dcl)
                                        <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
                                        <>
