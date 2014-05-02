@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2popul
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
 import DatabaseDesign.Ampersand_Prototype.GenBericht (doGenBericht)
-import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
+import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
 -- import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr)
 -- import qualified DatabaseDesign.Ampersand.Basics as Basics
 
@@ -34,7 +34,7 @@ generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff flags fSpec 
   | validateSQL flags =
       do { verboseLn flags "Validating SQL expressions..."
-         ; isValid <- validateRuleSQL fSpec flags
+         ; isValid <- validateRulesSQL fSpec flags
          ; unless isValid (exitWith (ExitFailure 30))
          }
   | export2adl flags && fileformat flags==Adl1Format =

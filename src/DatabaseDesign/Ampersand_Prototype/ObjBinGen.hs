@@ -35,11 +35,11 @@ phpObjInterfaces fSpec flags =
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php if it does not exists, or if a host, login, or password has been specified
-    ; if not dbSettingsExists
-      then do { verboseLn flags "  Writing dbSettings.php."
+    ; if dbSettingsExists
+      then verboseLn flags "  Using existing dbSettings.php."
+      else do { verboseLn flags "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
-      else verboseLn flags "  Using existing dbSettings.php."
 
     ; generateAll fSpec flags          
     ; when (genAtlas flags) $ doGenAtlas fSpec flags

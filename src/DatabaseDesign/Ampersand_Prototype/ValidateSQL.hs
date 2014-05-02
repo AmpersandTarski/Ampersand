@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
+module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
 
 where
 
@@ -30,11 +30,12 @@ fatal = fatalMsg "ValidateSQL"
 tempDbName :: String
 tempDbName = "TemporaryValidationDatabase"
 
-validateRuleSQL :: Fspc -> Options -> IO Bool
-validateRuleSQL fSpec flags =
- do { when (invalidPopulation fSpec) (do { putStrLn "The population would violate invariants. Could not generate your database."
-                                         ; exitWith $ ExitFailure 10
-                                         })
+validateRulesSQL :: Fspc -> Options -> IO Bool
+validateRulesSQL fSpec flags =
+ do { when (any (not.isSignal.fst) (allViolations fSpec)) 
+        (do { putStrLn "The population would violate invariants. Could not generate your database."
+            ; exitWith $ ExitFailure 10
+                 })
     ; removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
@@ -63,11 +64,6 @@ validateRuleSQL fSpec flags =
                   ; return False
                   } 
     }
-
-invalidPopulation :: Fspc -> Bool
-invalidPopulation fSpec = (not. null) (filter isInvariant (allViolations fSpec))
-  where isInvariant :: (Rule,[Paire]) -> Bool
-        isInvariant (r,_) = (not . isSignal) r
 
 
 -- functions for extracting all expressions from the context
