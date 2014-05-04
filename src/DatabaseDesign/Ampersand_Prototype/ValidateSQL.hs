@@ -224,13 +224,13 @@ executePHP phpStr =
               ; hClose stdErrH
               ; unless (null errStr) $
                   putStrLn $ "Error during PHP execution:\n" ++ errStr 
-              ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
-              ; seq (length outputStr) $ return ()
+              ; outputStr' <- hGetContents stdOutH --and fetch the results from the output pipe
+              ; seq (length outputStr') $ return ()
               ; hClose stdOutH
-              ; putStrLn $ "Results:\n" ++ outputStr
-              ; return outputStr
+              ; return outputStr'
               }
     ; removeFile tempfile
+    ; putStrLn $ "Results:\n" ++ outputStr
     ; return outputStr
     }
     
