@@ -45,8 +45,8 @@ function datimeStdFormat($stdFormatRelation,$DateConcept,$srcAtom,$StdFormatConc
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
 function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)
 { 	emitLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
-   $dt1 = strtotime($srcAtom);
-   $dt2 = strtotime($tgtAtom);
+   if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+   if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
    if ($dt1 == $dt2) 
    { InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
 // Accommodate for different representations of the same time:
@@ -59,8 +59,8 @@ function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
 function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)
 { 	emitLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
-   $dt1 = strtotime($srcAtom);
-   $dt2 = strtotime($tgtAtom);
+   if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+   if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
    if ($dt1 != $dt2) 
    { InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
      InsPair($neqRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
@@ -71,8 +71,8 @@ function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)
 { 	emitLog("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
-   $dt1 = strtotime($srcAtom);
-   $dt2 = strtotime($tgtAtom);
+   if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+   if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
    if ($dt1 == $dt2) return;
    if ($dt1 < $dt2)
    { InsPair($ltRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -85,8 +85,8 @@ function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)
 { 	emitLog("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
-   $dt1 = strtotime($srcAtom);
-   $dt2 = strtotime($tgtAtom);
+   if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+   if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
    if ($dt1 == $dt2) return;
    if ($dt1 > $dt2)
    { InsPair($gtRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
