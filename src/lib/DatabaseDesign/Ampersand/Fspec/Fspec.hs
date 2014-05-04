@@ -228,7 +228,7 @@ data PAclause
               = CHC { paCls :: [PAclause]                 -- precisely one clause is executed.
                     , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
                     }
-              | GCH { paGCls :: [(Expression,Expression->PAclause)]    -- guarded choice; precisely one of the clauses of which the expression is populated is executed.
+              | GCH { paGCls :: [(InsDel,Expression,PAclause)]    -- guarded choice; The rule is maintained if one of the clauses of which the expression is populated is executed.
                     , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
                     }
               | ALL { paCls :: [PAclause]                 -- all clauses are executed.
@@ -237,10 +237,6 @@ data PAclause
               | Do  { paSrt :: InsDel                     -- do Insert or Delete
                     , paTo :: Declaration                 -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Pck { paExp :: Expression                 -- the expression to pick one tuple from
-                    , paLink :: Atom->Atom->PAclause      -- the completion of the clause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | New { paCpt :: A_Concept                  -- make a new instance of type c
@@ -267,10 +263,9 @@ events paClause = nub (evs paClause)
  where evs clause
         = case clause of
            CHC{} -> (concat.map evs) (paCls clause)
-           GCH{} -> concat [ evs (p c) | (c,p)<-paGCls clause]
+           GCH{} -> concat [ evs p | (_,_,p)<-paGCls clause] -- TODO is this correct?
            ALL{} -> (concat.map evs) (paCls clause)
            Do{}  -> [(paSrt paClause, paTo clause)]
-           Pck{} -> evs (paLink clause (Atom (source e) "a") (Atom (target e) "b")) where e = paExp clause
            New{} -> evs (paCl clause "")
            Rmv{} -> evs (paCl clause "")
            Nop{} -> []
@@ -283,7 +278,7 @@ events paClause = nub (evs paClause)
    -- Every rule is transformed to this form, as a step to derive eca-rules
 instance Eq PAclause where
    CHC ds _ == CHC ds' _ = ds==ds'
-   GCH ds _ == GCH ds' _ = [ p c | (c,p)<-ds]==[ p c | (c,p)<-ds']
+   GCH ds _ == GCH ds' _ = ds==ds'
    ALL ds _ == ALL ds' _ = ds==ds'
    p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && paTo p==paTo p' && paDelta p==paDelta p'
    Nop _    ==     Nop _ = True

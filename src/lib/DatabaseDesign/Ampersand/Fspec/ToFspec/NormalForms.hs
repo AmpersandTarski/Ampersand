@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify)
+  (delta,conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify)
 where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.ECArule
@@ -20,6 +20,26 @@ where
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
 
+-- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
+   delta :: Sign -> Expression
+   delta sgn
+    = EDcD   Sgn { decnm   = "Delta"
+                 , decsgn  = sgn
+                 , decprps = []
+                 , decprps_calc = Nothing
+                 , decprL  = ""
+                 , decprM  = ""
+                 , decprR  = ""
+                 , decMean = AMeaning [ --   A_Markup Dutch   ReST (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
+                                        -- , A_Markup English ReST (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
+                                      ]
+                 , decConceptDef = Nothing
+                 , decfpos = Origin ("generated relation (Delta "++show sgn++")")
+                 , deciss  = True
+                 , decusr  = False
+                 , decpat  = ""
+                 , decplug = True
+                 } 
 
 {- Normalization of process algebra clauses -}
 
@@ -35,6 +55,16 @@ where
                        ( _ , []  ,equ) -> [(expr',[]   ,equ)]    -- is dus (expr,[],"<=>")
                        (res,steps,equ) -> (expr',steps,equ):pPA res
 
+{- The following rewriter is used to simplify the actions inside eca rules.
+-- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
+-- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
+-- BECAUSE! Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
+-- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
+-- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
+-- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
+-- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
+-- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
+-}
    normstepPA :: PAclause -> (PAclause,[String],String)
    normstepPA expr = (res,ss,"<=>")
     where
@@ -45,14 +75,6 @@ where
                        where r' = case r of
                                     Blk{} -> r
                                     _     -> r{paMotiv = ms} 
--- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
--- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
--- BECAUSE! Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
--- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
--- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
--- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
--- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
--- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
      norm (CHC ds ms)  | (not.null) msgs = (CHC ops ms, msgs)
                        | (not.null) [d | d<-ds, isCHC d] = (CHC (nub [ d' | d<-ds, d'<-if isCHC d then let CHC ops' _ = d in ops' else [d] ]) ms, ["flatten CHC"])  -- flatten
                        | (not.null) [Nop | Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
@@ -61,6 +83,12 @@ where
                        where nds  = map norm ds
                              msgs = concatMap snd nds
                              ops  = map fst nds
+     norm (GCH [] ms)  = (Blk ms, ["Run out of options"])
+     norm (GCH ds ms)  | (not.null) [() | (_,links,_)<-normds, isFalse links] = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isFalse links)] ms, ["Remove provably empty guard(s)."])
+                       | (not.null) [()          | (_,  _    ,p)<-normds, isNop p]
+                           = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isNop p)] ms, ["Remove unneccessary SELECT."])
+                       | otherwise = (GCH ds ms, [])
+                       where normds = [ (tOp, conjNF links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
      norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
      norm (ALL [d] ms) = (d', ["Flatten ONE"])
                        where d' = case d of
@@ -90,11 +118,6 @@ where
                                    _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
-     norm (Pck e p ms)        = ( case p' of
-                                   Blk{} -> p'{paMotiv = ms}
-                                   _     -> Pck e (\a b->let (p'', _) = norm (p a b) in p'') ms
-                                , msgs)
-                                where (p', msgs) = norm (p (Atom (source e) "a") (Atom (target e) "b"))
      norm (Rmv c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
                                    _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms

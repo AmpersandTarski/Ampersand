@@ -23,7 +23,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
    import Text.Pandoc.Builder
@@ -51,7 +51,7 @@ where
 --      concat [showClause fSpec (allClauses flags rule) | rule<-invs]++"\n"++
 --{-
 --      " - ECA rules:"++concat  [ "\n\n   "++showECA "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
---                                 ++"\n------ Derivation ----->"++showProof (showECA "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+--                                 ++"\n------ Derivation ----->"++showProof (codeBlock.showECA "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
 --                               | eca<-ecaRs]++"\n\n"++
 ---}
 --      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADL r  | r<-vis])++"\n"
@@ -128,12 +128,12 @@ where
            )<>
       bulletList [ para ( "--------------"<>linebreak)<>derivation rule
                  | verboseP flags, rule<-udefrules fSpec]<>
-      bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------"<>linebreak
-                          <>str (showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)}))<>
+      bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
+                   codeBlock (showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)})<>
                    bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                       <>linebreak<>"derivation:"
                                      )<>
-                                (showProof showADL.nfProof showADL) d<>  -- nfProof produces its result in disjunctive normal form
+                                (showProof (para.str.showADL).nfProof showADL) d<>  -- nfProof produces its result in disjunctive normal form
                                 para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF) d)
                               | verboseP flags, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
                  | ecarule <- ecaRs]
@@ -193,7 +193,7 @@ where
              then para (str (showADL rule)<>" is already in conjunctive normal form")
              else para ("Convert into conjunctive normal form")
            )<>
-           showProof showADL ((e,[],"<=>"):prf)<>
+           showProof (para.str.showADL) ((e,[],"<=>"):prf)<>
            para "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     "<>
            (disjProof. notCpl. rrexp) rule<>
            bulletList
@@ -204,7 +204,7 @@ where
                  bulletList
                      [ para ("Clause: "<>str (showADL clause)<>" may be affected by the following events:")<>
                        bulletList
-                           [ para ("event = "<>str (show ev)<>space<>str (showADL dcl)<>" means doing the following substitution")<>
+                           [ para ("event = "<>str (show ev)<>space<>str (showREL dcl)<>" means doing the following substitution")<>
                              para (str (showADL clause<>"["<>showREL dcl<>":="<>showADL (actSem ev (EDcD dcl) (delta (sign dcl)))<>"] = clause'"))<>
                              para ("clause' = "<>str (showADL ex')<>
                                    if clause'==ex'
@@ -213,7 +213,7 @@ where
                                   )<>
                              para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
                                    "This means to negate the result (notClau = notCpl clause'): ")<>
-                             (showProof showADL. cfProof showADL) notClau<>
+                             (showProof (para.str.showADL). cfProof showADL) notClau<>
                              para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
                                    ( if viols==viols'
                                      then "This expression is in disjunctive normal form as well."
@@ -221,7 +221,7 @@ where
                              ( if isTrue clause'
                                then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
                                           <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
-                                    (showProof showADL. cfProof showADL) (expr .|-. clause')
+                                    (showProof (para.str.showADL). cfProof showADL) (expr .|-. clause')
                                else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
                                           "We must compute a reaction to compensate for violations..."<>linebreak<>
                                           "That would be to reinsert violations that originate from "<>
@@ -229,11 +229,15 @@ where
                                             then str (showADL (conjNF negs))<>" into "<> str (showADL (disjNF poss))<>"."
                                             else str (showADL (disjNF poss))<>" into "<> str (showADL (conjNF negs))<>"."
                                           )<>linebreak<>"deltFr: ")<>
-                                    (showProof showADL. dfProof showADL) deltFr<>
-                                    para "This yields the following ECA action:"<>
-                                    codeBlock (showECA "\n     " (ECA (On ev dcl) delt act 0))<>
-                                    para "Now let us remove redundancy from the ECA action:"<>
-                                    showProof (showECA "\n>     ") (proofPA act)
+                                    (showProof (para.str.showADL). dfProof showADL) deltFr<>
+                                    ( let pr=proofPA act in
+                                      if length pr>1
+                                      then para "Now let us remove redundancy from the ECA action:"<>
+                                           showProof (codeBlock.showECA "\n>     ") (proofPA act)
+                                      else fromList []
+                                    )<>
+                                    para "This yields the following ECA rule:"<>
+                                    codeBlock (showECA "\n     " (ECA (On ev dcl) delt (normPA act) 0))
                              {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL dcl)
                                        <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
                                        <>
@@ -242,8 +246,8 @@ where
                                                       "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
                                                       "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
                                       else if ev==Ins
-                                      then (showProof showADL. cfProof showADL) (viols'.\/.toExpr)<>linebreak
-                                      else (showProof showADL. dfProof showADL) (notCpl viols./\.toExpr)<>linebreak
+                                      then (showProof (para.str.showADL). cfProof showADL) (viols'.\/.toExpr)<>linebreak
+                                      else (showProof (para.str.showADL). dfProof showADL) (notCpl viols./\.toExpr)<>linebreak
                                     ) -}
                              )
                            | dcl <- relsUsedIn r
@@ -322,9 +326,9 @@ where
            where e = rrexp rule
                  prf = cfProof showADL e
                  (exx',_,_) = last prf
-            --     conjProof = showProof showADL . cfProof showADL
-                 disjProof = showProof showADL . dfProof showADL
---                 showPr    = showProof showADL  -- hoort bij de uitgecommentaarde code hierboven...
+            --     conjProof = showProof (para.str.showADL) . cfProof showADL
+                 disjProof = showProof (para.str.showADL) . dfProof showADL
+--                 showPr    = showProof (para.str.showADL)  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
 
 -- Stel we voeren een actie a uit, die een(1) van de volgende twee is:
@@ -357,9 +361,9 @@ where
            rev "<--" = "-->"
            rev x = x
 
-   showProof :: (expr->String) -> Proof expr -> Blocks
-   showProof shw [(expr,_,_)]        = (para.str.shw) expr
-   showProof shw ((expr,ss,equ):prf) = (para.str.shw) expr<>
+   showProof :: (expr->Blocks) -> Proof expr -> Blocks
+   showProof shw [(expr,_,_)]        = shw expr
+   showProof shw ((expr,ss,equ):prf) = shw expr<>
                                        para (if null ss  then str equ else
                                              if null equ then str (unwords ss) else
                                              str equ<>str (" { "++intercalate " and " ss++" }"))<>

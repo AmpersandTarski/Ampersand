@@ -29,7 +29,7 @@ chpECArules fSpec _
                           <> para ( linebreak <>
                                     "------ Afleiding ----->"   -- Dit in- en uitschakelbaar maken
                                   )
-                          <> (showProof (showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
+                          <> (showProof (codeBlock.showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
                           <> para ( linebreak <>
                                     "<------Einde afleiding --"   -- Dit in- en uitschakelbaar maken
                                   )
@@ -42,10 +42,9 @@ chpECArules fSpec _
                           <> para ( linebreak <>
                                     "------ Derivation ----->"   -- Dit in- en uitschakelbaar maken
                                   )
-                          <> (showProof (showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
+                          <> (showProof (codeBlock.showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
                           <> para ( linebreak <>
                                     "<------End Derivation --"   -- Dit in- en uitschakelbaar maken
                                   )
                          | eca<-vEcas fSpec, (not.isNop.ecaAction) eca
                          ]
-                      

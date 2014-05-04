@@ -501,35 +501,37 @@ instance ShowADL PAclause where
 showPAclause :: String -> PAclause -> String
 showPAclause indent pa@Do{}
        = ( case paSrt pa of
-            Ins -> "INSERT INTO "
-            Del -> "DELETE FROM ")++
+            Ins -> "(Do) INSERT INTO "
+            Del -> "(Do) DELETE FROM ")++
          showREL (paTo pa) ++
          indent++" SELECTFROM "++
          showADL (paDelta pa)++
          indent++motivate indent "TO MAINTAIN " (paMotiv pa)
 showPAclause indent (New c clause cj_ruls)
-       = "CREATE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+       = "(New) CREATE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (Rmv c clause cj_ruls)
-       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"  "
-showPAclause indent (Pck e r cj_ruls)
-       = "SELECT a,b FROM ("++ showADL e ++");"
-             ++indent'++showPAclause indent' (r (Atom (source e) "a") (Atom (target e) "b"))++motivate indent "MAINTAINING" cj_ruls
+       = "(Rmv) REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (CHC ds cj_ruls)
-       = "ONE of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
+       = "(CHC) ONE of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"       "
 showPAclause indent (GCH ds cj_ruls)
-       = "ONE of "++intercalate indent' ["IF "++showADL c++" IS POPULATED"++indent'++"THEN "++ showPAclause (indent'++"     ") (d c)| (c,d)<-ds]++motivate indent "MAINTAINING" cj_ruls
+       = "(GCH) ONE of "++intercalate indent'
+         ["PICK a,b FROM "++showADL links++indent'++"   IF POPULATED THEN "++
+         ( case tOp of
+            Ins -> "INSERT a,b INTO"
+            Del -> "DELETE a,b FROM")++
+          showPAclause (indent'++"    ") p| (tOp,links,p)<-ds]++
+         motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"       "
 showPAclause indent (ALL ds cj_ruls)
-       = "ALL of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
+       = "(ALL) ALL of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"       "
 showPAclause indent (Nop cj_ruls)
-       = "DO NOTHING"++motivate indent "TO MAINTAIN" cj_ruls
+       = "(Nop) DO NOTHING"++motivate indent "TO MAINTAIN" cj_ruls
 showPAclause indent (Blk cj_ruls)
-       = "BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
+       = "(Blk) BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
 showPAclause  _ (Let _ _ _)  = fatal 55 "showPAclause is missing for `Let`. Contact your dealer!"
 showPAclause  _ (Ref _)      = fatal 56 "showPAclause is missing for `Ref`. Contact your dealer!"
                      
