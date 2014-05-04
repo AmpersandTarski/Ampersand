@@ -7,7 +7,6 @@ module DatabaseDesign.Ampersand.ADL1.ECArule ( isAll
                                              , dos
                                              )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (source,target)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Basics     (fatalMsg)
 
@@ -48,10 +47,9 @@ isDo _      = False
 
 dos :: PAclause -> [PAclause]   -- gather all Do's from a PAclause
 dos p@CHC{} = concatMap dos (paCls p)
-dos p@GCH{} = concatMap dos [ p c | (c,p)<-paGCls p]
+dos p@GCH{} = concatMap dos [ paClause | (_,_,paClause)<-paGCls p]
 dos p@ALL{} = concatMap dos (paCls p)
 dos p@Do{}  = [p]
-dos p@Pck{} = dos (paLink p (Atom (source e) "a") (Atom (target e) "b")) where e = paExp p
 dos p@New{} = dos (paCl p "x")
 dos p@Rmv{} = dos (paCl p "x")
 dos Nop{}   = []
