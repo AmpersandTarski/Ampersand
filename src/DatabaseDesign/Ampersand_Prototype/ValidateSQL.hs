@@ -191,7 +191,7 @@ connectToServer flags =
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
- do { putStrLn $ "Executing PHP:\n" ++ phpStr
+ do { --putStrLn $ "Executing PHP:\n" ++ phpStr
     ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
@@ -218,7 +218,7 @@ executePHP phpStr =
           (Nothing, _) -> fatal 105 "no output handle"
           (_, Nothing) -> fatal 106 "no error handle"
           (Just stdOutH, Just stdErrH) ->
-           do { putStrLn "done"
+           do { --putStrLn "done"
               ; errStr <- hGetContents stdErrH
               ; seq (length errStr) $ return ()
               ; hClose stdErrH
@@ -230,7 +230,7 @@ executePHP phpStr =
               ; return outputStr'
               }
     ; removeFile tempfile
-    ; putStrLn $ "Results:\n" ++ outputStr
+--    ; putStrLn $ "Results:\n" ++ outputStr
     ; return outputStr
     }
     
