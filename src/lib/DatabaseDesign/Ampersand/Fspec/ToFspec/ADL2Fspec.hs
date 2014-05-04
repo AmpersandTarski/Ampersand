@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
-    (makeFspec,actSem, delta, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable, conjuncts)
+module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
+    (makeFspec,actSem, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable, conjuncts)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (conjNF,disjNF,normPA)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (delta,conjNF,disjNF,normPA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
@@ -561,7 +561,7 @@ while maintaining all invariants.
        relEqCls = eqCl fst4 [(dcl,rc_dnfClauses x,rc_conjunct x,cl_rule ccrs) | Quad dcl ccrs<-qs, x <-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
-        = [ ECA (On ev dcl) delt (normPA act)
+        = [ ECA (On ev dcl) delt ( act)
           | relEq <- relEqCls                   -- The material required for one relation
           , let (dcl,_,_,_) = head relEq        -- This is the relation
           , let EDcD delt   = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
@@ -646,7 +646,6 @@ while maintaining all invariants.
      cascade  _  c@Do{}           = (False, c)
      cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
      cascade rel (Rmv c clause m) = ((fst.cascade rel.clause) "dummystr", Rmv c (snd.cascade rel.clause) m)
---   cascade rel (Pck e clause m) = ((fst.cascade rel) (clause (Atom (source e) "a") (Atom (target e) "b")), Pck e (snd.cascade rel.clause) m)
 --   cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (snd.cascade rel.cl)   m)
      cascade rel (CHC ds m)       = (any (fst.cascade rel) ds, CHC (map (snd.cascade rel) ds) m)
      cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
@@ -674,27 +673,7 @@ while maintaining all invariants.
                        | dcl==delt           = notCpl (EDcV (sign dcl))
                        | otherwise           = conjNF (dcl ./\. notCpl delt)
 
-   delta :: Sign -> Expression
-   delta sgn
-    = EDcD   Sgn { decnm   = "Delta"
-                 , decsgn  = sgn
-                 , decprps = []
-                 , decprps_calc = Nothing
-                 , decprL  = ""
-                 , decprM  = ""
-                 , decprR  = ""
-                 , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST "TODO: Doel van deze Delta relatie opschrijven")
-                                      , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
-                                      ]
-                 , decConceptDef = Nothing
-                 , decfpos = Origin ("generated relation (Delta "++show sgn++")")
-                 , deciss  = True
-                 , decusr  = False
-                 , decpat  = ""
-                 , decplug = True
-                 } 
-
-   -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
+-- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
    genPAclause :: (Declaration->Bool)        -- ^True if a relation may be changed (i.e. is editable)
@@ -705,9 +684,6 @@ while maintaining all invariants.
                   -> PAclause
    genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
     where
-      pick1 :: InsDel -> Expression -> Expression -> PAclause
-      pick1 tOp expr dlta = Pck dlta (\(Atom ca a) (Atom cb b)->genPAcl (EMp1 a ca.*.EMp1 b cb) tOp expr) motive
-
       test i l r ex
        = if (source l,target r)/=(source ex,target ex)
          then fatal i ("test with sign deltaX = ["++show (source l)++"*"++show (target r)++"],  and sign expr = "++show (sign ex)++":\ndeltaX = "++showADL (l.:.r)++"\nexpr = "++show ex)
@@ -738,25 +714,25 @@ while maintaining all invariants.
                                    , ALL [ genPAcl (test 992 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Del l
                                          , genPAcl (test 993 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Del r] motive
                                    ] motive
-          (Del, EDia (l,r)) -> GCH [ ((test 995 (deltaX) (flp r)          l $ deltaX.:.flp r),          pick1 Del l)
-                                   , ((test 996 (deltaX) (flp (notCpl r)) l $ deltaX.:.flp (notCpl r)), pick1 Ins l)
-                                   , ((test 997 (flp l) (deltaX)          r $ flp l.:.deltaX),          pick1 Del r)
-                                   , ((test 998 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX), pick1 Ins r)
+          (Del, EDia (l,r)) -> GCH [ (Del, (test 995 (deltaX) (flp r)          l $ deltaX.:.flp r),          genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   , (Ins, (test 996 (deltaX) (flp (notCpl r)) l $ deltaX.:.flp (notCpl r)), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   , (Del, (test 997 (flp l) (deltaX)          r $ flp l.:.deltaX),          genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                   , (Ins, (test 998 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
                                    ] motive
           (Ins, ERrs (l,r)) -> CHC [ genPAcl (test 1000 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX) Del l
                                    , genPAcl (test 1001 (l) (deltaX)            r $ l.:.deltaX)            Ins r
                                    ] motive
-          (Del, ERrs (l,r)) -> GCH [ ((test 1003 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX), pick1 Ins l)
-                                   , ((test 1004 (l) (deltaX)            r $ l.:.deltaX),            pick1 Del r)
+          (Del, ERrs (l,r)) -> GCH [ (Ins, (test 1003 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   , (Del, (test 1004 (l) (deltaX)            r $ l.:.deltaX),            genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
                                    ] motive
           (Ins, ELrs (l,r)) -> CHC [ genPAcl (test 1006 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l) Del r
                                    , genPAcl (test 1007 (deltaX) (r)            l $ deltaX.:.r           ) Ins l
                                    ] motive
-          (Del, ELrs (l,r)) -> GCH [ ((test 1009 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l), pick1 Ins r)
-                                   , ((test 1010 (deltaX) (r)            l $ deltaX.:.r),            pick1 Del l)
+          (Del, ELrs (l,r)) -> GCH [ (Ins, (test 1009 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                   , (Del, (test 1010 (deltaX) (r)            l $ deltaX.:.r),            genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
                                    ] motive
-          (Ins, ECps (l,r)) -> CHC [ GCH [ ((test 1012 (deltaX) (flp r) l $ deltaX.:.flp r), pick1 Ins l)
-                                         , ((test 1013 (flp l) (deltaX) r $ flp l.:.deltaX), pick1 Ins r)
+          (Ins, ECps (l,r)) -> CHC [ GCH [ (Ins, (test 1012 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                         , (Ins, (test 1013 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
                                          ] motive
                                    , New (source r) (\x->ALL [ genPAcl (deltaX.*.EMp1 x (target l)) Ins l
                                                              , genPAcl (EMp1 x (source r).*.deltaX) Ins r] motive) motive
@@ -767,8 +743,8 @@ while maintaining all invariants.
           (Ins, ERad (l,r)) -> CHC [ genPAcl (test 1021 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Ins l
                                    , genPAcl (test 1022 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Ins r
                                    ] motive
-          (Del, ERad (l,r)) -> CHC [ GCH [ ((test 1024 (deltaX) (flp r) l $ deltaX.:.flp r), pick1 Del l)
-                                         , ((test 1025 (flp l) (deltaX) r $ flp l.:.deltaX), pick1 Del r)
+          (Del, ERad (l,r)) -> CHC [ GCH [ (Del, (test 1024 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                         , (Del, (test 1025 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
                                          ] motive
                                    , New (source r) (\_->Nop motive) motive
                                    ] motive

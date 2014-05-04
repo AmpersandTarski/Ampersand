@@ -126,9 +126,11 @@ where
         then "On " ++ show (eSrt e)++indent++"   " ++ showHSName (eDcl e)++indent++"   "
         else "On " ++ show (eSrt e)++          " " ++ showHSName (eDcl e)++           ""
 
-   instance ShowHS (Expression, Expression->PAclause) where
-    showHS flags indent (c, p)  
-      = "( "++showHS flags (indent++"  ") c++", "++showHS flags (indent++"  ") (p c)++indent++")"
+   instance ShowHS (InsDel, Expression, PAclause) where
+    showHS flags indent (tOp, links, p)  
+      = "( "++show tOp++indent++", "++showHS flags (indent++"  ") links++indent++", "++showHS flags (indent++"  ") p++indent++")"
+        where a = Atom (source links) "a"
+              b = Atom (target links) "b"
 
    instance ShowHS PAclause where
     showHS flags indent p   
@@ -147,10 +149,6 @@ where
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Rmv{} -> "Rmv ("++showHS flags "" (paCpt p)++")"++
                     indent++"    (\\x->"++showHS flags (indent++"        ") (paCl p "x")++indent++"    )"++
-                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-           Pck{} -> let e = paExp p in
-                    "Pck ("++showHS flags (indent++"      ") e++indent++"    )"++
-                    indent++"    (\\a,b->"++showHS flags (indent++"        ") (paLink p (Atom (source e) "a") (Atom (target e) "b"))++indent++"    )"++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
            Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
