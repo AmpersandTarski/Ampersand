@@ -25,9 +25,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
-   import Text.Pandoc
    import Text.Pandoc.Builder
-   import Text.Pandoc.Readers.Textile
    import Prelude hiding (head)
 -- import Debug.Trace
    
@@ -83,9 +81,6 @@ where
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
 
-   interText _ [] = ""
-   interText str (xs:xss) = xs<>str<>interText str xss
-   
    deriveProofs :: Options -> Fspc -> Blocks
    deriveProofs flags fSpec
     = para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
@@ -187,6 +182,10 @@ where
        commaEng  _  [x]      = x
        commaEng chs [x,y]    = x++" "++chs++" "++y
        commaEng chs (x:y:ys) = x++", "++commaEng chs (y:ys)
+    -- interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
+       interText _ [] = ""
+       interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
+   
        derivation :: Rule -> Blocks
        derivation rule 
          = ( if exx'==e
@@ -461,8 +460,8 @@ Rewrite rules:
    lambda :: InsDel -> Expression 
                     -> Expression 
                     -> [Proof Expression]
-   lambda tOp' e' expr' = [reversePrf[(e'',text,op)
-                          | (e'',_,text,op)<-prf]
+   lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
+                          | (e'',_,txt,op)<-prf]
                           | prf<-lam tOp' e' expr' ]
     where
      lam :: InsDel -> Expression -> Expression ->
@@ -545,7 +544,7 @@ Rewrite rules:
      derivtext :: InsDel -> String -> Expression -> Expression -> String
      derivtext tOp "invert" e'' expr = sh tOp++showADL e''++" means "++sh (inv tOp)++showADL expr++"."
      derivtext tOp "mono"    e'' expr = "("++showADL e''++"->"++showADL expr++") is monotonous, so "++sh tOp++showADL e''++" means "++sh tOp++showADL expr++"."
-     derivtext _ str _ _ = str
+     derivtext _ txt _ _ = txt
      sh :: InsDel -> String
      sh Ins  = "insert into "
      sh Del  = "delete from "
