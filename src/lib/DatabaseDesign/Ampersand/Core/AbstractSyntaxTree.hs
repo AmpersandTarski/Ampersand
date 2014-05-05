@@ -196,10 +196,10 @@ data Declaration =
       , decpat  :: String     -- ^ the pattern where this declaration has been declared.
       , decplug :: Bool       -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
       } | 
- Isn 
+  Isn 
       { detyp :: A_Concept       -- ^ The type
       } |
- Vs 
+  Vs 
       { decsgn :: Sign
       }
 
@@ -209,17 +209,23 @@ instance Eq Declaration where
   d@Vs{}      == d'@Vs{}      = decsgn d==decsgn d'
   _           == _            = False
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
-  showsPrec _ d@Sgn{}
-    = showString (unwords (["RELATION",decnm d,show (decsgn d),show (decprps_calc d)
-                           ,"PRAGMA",show (decprL d),show (decprM d),show (decprR d)]
-                            ++concatMap showMeaning (ameaMrk (decMean d))
-                 )        )
-           where 
-              showMeaning m = "MEANING"
-                             : ["IN", show (amLang m)]
-                            ++ [show (amFormat m)]
-                            ++ ["{+",aMarkup2String m,"-}"]                
-                            -- then [] else ["MEANING",show (decMean d)] ))
+  showsPrec _ decl@Sgn{}
+   = showString (case decl of
+                  Sgn{} -> name decl++showSign (sign decl)
+                  Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
+                  Vs{}  -> "V"++show (decsgn decl) )
+-- was:
+--  = showString (unwords (["RELATION",decnm decl,show (decsgn decl),show (decprps_calc decl)
+--                         ,"PRAGMA",show (decprL decl),show (decprM decl),show (decprR decl)]
+--                          ++concatMap showMeaning (ameaMrk (decMean decl))
+--               )        )
+--         where 
+--            showMeaning m = "MEANING"
+--                           : ["IN", show (amLang m)]
+--                          ++ [show (amFormat m)]
+--                          ++ ["{+",aMarkup2String m,"-}"]                
+--                          -- then [] else ["MEANING",show (decMean decl)] ))
+
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
 
