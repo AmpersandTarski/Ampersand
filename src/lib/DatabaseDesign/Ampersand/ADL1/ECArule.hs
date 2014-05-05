@@ -4,9 +4,10 @@ module DatabaseDesign.Ampersand.ADL1.ECArule ( isAll
                                              , isBlk
                                              , isNop
                                              , isDo
-                                             , dos
+                                             , eventsFrom
                                              )
 where
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Basics     (fatalMsg)
 
@@ -45,14 +46,31 @@ isDo :: PAclause -> Bool
 isDo Do{}   = True
 isDo _      = False
 
-dos :: PAclause -> [PAclause]   -- gather all Do's from a PAclause
-dos p@CHC{} = concatMap dos (paCls p)
-dos p@GCH{} = concatMap dos [ paClause | (_,_,paClause)<-paGCls p]
-dos p@ALL{} = concatMap dos (paCls p)
-dos p@Do{}  = [p]
-dos p@New{} = dos (paCl p "x")
-dos p@Rmv{} = dos (paCl p "x")
-dos Nop{}   = []
-dos Blk{}   = []
-dos Let{}   = fatal 56 "dos not defined for `Let` constructor of PAclause"
-dos Ref{}   = fatal 57 "dos not defined for `Ref` constructor of PAclause"
+{-
+             | Do  { paSrt :: InsDel                     -- do Insert or Delete
+                    , paTo :: Declaration                 -- into toExpr    or from toExpr
+                    , paDelta :: Expression               -- delta
+                    , paMotiv :: [(Expression,[Rule] )]
+ 
+              | New { paCpt :: A_Concept                  -- make a new instance of type c
+                    , paCl :: String->PAclause            -- to be done after creating the concept
+                    , paMotiv :: [(Expression,[Rule] )]
+                    }
+              | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
+                    , paCl :: String->PAclause            -- to be done afteremoving the concept
+                    , paMotiv :: [(Expression,[Rule] )]
+                    }
+-}
+ 
+-- | eventsFrom is written for constructing switchboard diagrams.
+eventsFrom :: PAclause -> [Event]   -- gather all Do's from a PAclause
+eventsFrom p@CHC{}          = concatMap eventsFrom (paCls p)
+eventsFrom p@GCH{}          = concatMap eventsFrom [ paClause | (_,_,paClause)<-paGCls p]
+eventsFrom p@ALL{}          = concatMap eventsFrom (paCls p)
+eventsFrom (Do tOp dcl _ _) = [On tOp dcl]
+eventsFrom p@New{}          = On Ins (Isn (paCpt p)): eventsFrom (paCl p "x")
+eventsFrom p@Rmv{}          = On Del (Isn (paCpt p)): eventsFrom (paCl p "x")
+eventsFrom Nop{}            = []
+eventsFrom Blk{}            = []
+eventsFrom Let{}            = fatal 56 "eventsFrom not defined for `Let` constructor of PAclause"
+eventsFrom Ref{}            = fatal 57 "eventsFrom not defined for `Ref` constructor of PAclause"

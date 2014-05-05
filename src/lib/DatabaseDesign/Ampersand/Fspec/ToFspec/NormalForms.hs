@@ -44,16 +44,16 @@ where
 {- Normalization of process algebra clauses -}
 
    normPA :: PAclause -> PAclause
-   normPA expr = expr' 
-       where (expr',_,_) = if null (proofPA expr) then fatal 21 "last: empty list" else last (proofPA expr)
+   normPA pac = pac' 
+       where (pac',_,_) = if null (proofPA pac) then fatal 21 "last: empty list" else last (proofPA pac)
 
    type Proof a = [(a, [String], String)]
 
    proofPA :: PAclause -> Proof PAclause
    proofPA = {-reverse.take 3.reverse.-}pPA
-    where pPA expr' = case normstepPA expr' of
-                       ( _ , []  ,equ) -> [(expr',[]   ,equ)]    -- is dus (expr,[],"<=>")
-                       (res,steps,equ) -> (expr',steps,equ):pPA res
+    where pPA pac' = case normstepPA pac' of
+                       ( _ , []  ,equ) -> [(pac',[]   ,equ)]    -- is dus (pac,[],"<=>")
+                       (res,steps,equ) -> (pac',steps,equ):pPA res
 
 {- The following rewriter is used to simplify the actions inside eca rules.
 -- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
@@ -66,9 +66,9 @@ where
 -- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
 -}
    normstepPA :: PAclause -> (PAclause,[String],String)
-   normstepPA expr = (res,ss,"<=>")
+   normstepPA pac = (res,ss,"<=>")
     where
-     (res,ss) = norm expr
+     (res,ss) = norm pac
      norm :: PAclause -> (PAclause,[String])
      norm (CHC [] ms)  = (Blk ms, ["Run out of options"])
      norm (CHC [r] ms) = (r', ["Flatten ONE"])

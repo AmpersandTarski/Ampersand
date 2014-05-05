@@ -5,12 +5,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
             ( deriveProofs 
             , lambda
             , checkMono
-            , showProof, showPrf
+            , showProof, showPrf, assembleECAs, conjuncts, genPAclause
           --  , testInterface
             )
 where
 
-   import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl)
+   import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl,Flippable(..))
    import Data.List hiding (head)
    import GHC.Exts (sortWith)
 --   import Data.ByteString.Char8
@@ -22,7 +22,6 @@ where
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc.Builder
@@ -35,6 +34,16 @@ where
    head :: [a] -> a
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
+
+   conjuncts :: Rule -> [DnfClause]
+   conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
+   disjuncts :: Expression -> DnfClause
+   disjuncts conj = (split (Dnf [] []).exprUni2list) conj
+    where split :: DnfClause -> [Expression] -> DnfClause
+          split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
+          split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
+          split dc             []             = dc
+
 
 -- testInterface :: Fspc -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
@@ -84,11 +93,10 @@ where
    deriveProofs :: Options -> Fspc -> Blocks
    deriveProofs flags fSpec
     = para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
---   conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
       bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
                          "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
                          "conjNF:   "<>str (showADL (conjNF (rrexp r)))<>linebreak<>
-                         interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts r]
+                         interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts r ]
                         )
                  | r<-grules fSpec++vrules fSpec]<>
       para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
@@ -121,8 +129,7 @@ where
              then " (Turn --verbose off if you want to see ECA rules only)"
              else " (Turn on --verbose if you want to see more detail)"
            )<>
-      bulletList [ para ( "--------------"<>linebreak)<>derivation rule
-                 | verboseP flags, rule<-udefrules fSpec]<>
+      ( if verboseP flags then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
       bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
                    codeBlock (showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)})<>
                    bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
@@ -176,7 +183,6 @@ where
   --     visible _  = True -- We take all quads into account.
        qs         = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
           --   assembleECAs :: [Quad] -> [ECArule]
-       ecaRs      = assembleECAs qs  -- this creates all ECA rules from the available quads. They are still raw (unoptimized).
        commaEng :: String -> [String] -> String
        commaEng  _  []       = ""
        commaEng  _  [x]      = x
@@ -185,108 +191,9 @@ where
     -- interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
        interText _ [] = ""
        interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
-   
-       derivation :: Rule -> Blocks
-       derivation rule 
-         = ( if exx'==e
-             then para (str (showADL rule)<>" is already in conjunctive normal form")
-             else para ("Convert into conjunctive normal form")
-           )<>
-           showProof (para.str.showADL) ((e,[],"<=>"):prf)<>
-           para "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     "<>
-           (disjProof. notCpl. rrexp) rule<>
-           bulletList
-               [ para("Conjunct: "<>str (showADL (rc_conjunct x))<>
-                      if length (rc_dnfClauses x)>1 then " has "<>(str.show.length.rc_dnfClauses) x<>" clauses:" else "" )<>
-                 bulletList [ para ("Clause: "<>str (showADL clause)) | clause<-(rc_dnfClauses x)]<>
-                 para (if length (rc_dnfClauses x)>1 then "For each clause<>let us analyse the insert- and delete events." else "")<>
-                 bulletList
-                     [ para ("Clause: "<>str (showADL clause)<>" may be affected by the following events:")<>
-                       bulletList
-                           [ para ("event = "<>str (show ev)<>space<>str (showREL dcl)<>" means doing the following substitution")<>
-                             para (str (showADL clause<>"["<>showREL dcl<>":="<>showADL (actSem ev (EDcD dcl) (delta (sign dcl)))<>"] = clause'"))<>
-                             para ("clause' = "<>str (showADL ex')<>
-                                   if clause'==ex'
-                                   then ", which is already in conjunctive normal form."<>linebreak
-                                   else ", which has conjunctive normal form: "<>linebreak<>str (showADL clause')
-                                  )<>
-                             para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
-                                   "This means to negate the result (notClau = notCpl clause'): ")<>
-                             (showProof (para.str.showADL). cfProof showADL) notClau<>
-                             para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
-                                   ( if viols==viols'
-                                     then "This expression is in disjunctive normal form as well."
-                                     else str ("In DNF, notClau is:  "<>showADL viols'<>".")))<>
-                             ( if isTrue clause'
-                               then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
-                                          <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
-                                    (showProof (para.str.showADL). cfProof showADL) (expr .|-. clause')
-                               else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
-                                          "We must compute a reaction to compensate for violations..."<>linebreak<>
-                                          "That would be to reinsert violations that originate from "<>
-                                          ( if ev==Ins
-                                            then str (showADL (conjNF negs))<>" into "<> str (showADL (disjNF poss))<>"."
-                                            else str (showADL (disjNF poss))<>" into "<> str (showADL (conjNF negs))<>"."
-                                          )<>linebreak<>"deltFr: ")<>
-                                    (showProof (para.str.showADL). dfProof showADL) deltFr<>
-                                    ( let pr=proofPA act in
-                                      if length pr>1
-                                      then para "Now let us remove redundancy from the ECA action:"<>
-                                           showProof (codeBlock.showECA "\n>     ") (proofPA act)
-                                      else fromList []
-                                    )<>
-                                    para "This yields the following ECA rule:"<>
-                                    codeBlock (showECA "\n     " (ECA (On ev dcl) delt (normPA act) 0))
-                             {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL dcl)
-                                       <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
-                                       <>
-                                    ( if length (nub [sign viols, sign viols', sign toExpr])>1
-                                      then fatal 248 ("viols"<>showSign (sign viols) <>"   "<>showADL viols <>"\n"<>
-                                                      "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
-                                                      "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
-                                      else if ev==Ins
-                                      then (showProof (para.str.showADL). cfProof showADL) (viols'.\/.toExpr)<>linebreak
-                                      else (showProof (para.str.showADL). dfProof showADL) (notCpl viols./\.toExpr)<>linebreak
-                                    ) -}
-                             )
-                           | dcl <- relsUsedIn r
-                           , let EDcD delt = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
-                           , ev<-[Ins,Del]
-                           , let ex'     = subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl))) expr -- the clause after the edit action
-                           , let clause' = conjNF ex'                                                -- its CNF
-                           , let notClau = notCpl clause'                                            -- the violations after the edit action
-                           , let viols   = conjNF notClau                                            -- the violations after the edit action
-                           , let viols'  = disjNF notClau                                            -- the violations after the edit action
-                           , let negs    = if (length.nub.map sign) antcs>1
-                                           then fatal 265 ("type inconsistencies in antcs: "<>show (map showADL antcs))
-                                           else foldr (./\.) vee antcs
-                           , let poss    = if (length.nub.map sign) conss>1
-                                           then fatal 265 ("type inconsistencies in conss: "<>show (map showADL conss))
-                                           else foldr (.\/.) (notCpl vee) conss
-                           , let frExpr  = if ev==Ins
-                                           then disjNF (notCpl negs)
-                                           else disjNF poss
-                           , let deltFr  = if sign poss/=sign negs
-                                           then fatal 274 ("type inconsistencies in deltFr: "<>showADL clause)
-                                           else if ev==Ins
-                                           then (subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) negs ./\. notCpl poss
-                                           else (notCpl . subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) poss ./\. negs
-                           , let deltFr' = disjNF deltFr
-                           , dcl `elem` relsMentionedIn frExpr
-                           , let toExpr  = if ev==Ins
-                                           then disjNF poss
-                                           else disjNF (notCpl negs)
-                           , let visible _ = True
-                           , if length (nub (map sign [toExpr, deltFr', expr]))>1
-                             then fatal 285 "type problem"
-                             else True
-                           , let act = genPAclause visible Ins toExpr deltFr' [(expr,[rule])]
-                           ]
-                     | clause@(Dnf antcs conss) <- rc_dnfClauses x
-                     , let expr = dnf2expr clause, let vee = EDcV (sign expr)
-                     ]
-               | let Clauses ts r = allClauses flags rule, x <-ts
-               ]
+       derivations :: [Blocks]
+       ecaRs :: [ECArule]
+       (ecaRs, derivations) = unzip (assembleECAs qs)
 {-
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
@@ -321,7 +228,6 @@ where
                                    , True ]  -- (isTrue.conjNF) (notCpl r .\/. r')
                                   | r<-[dc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, dc<-dnfClauses]
                                   ]
--}
            where e = rrexp rule
                  prf = cfProof showADL e
                  (exx',_,_) = last prf
@@ -329,6 +235,7 @@ where
                  disjProof = showProof (para.str.showADL) . dfProof showADL
 --                 showPr    = showProof (para.str.showADL)  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
+-}
 
 -- Stel we voeren een actie a uit, die een(1) van de volgende twee is:
 --        {r} INS rel INTO expr {r'}       ofwel
@@ -561,4 +468,235 @@ Rewrite rules:
                  EImp{} -> Implication
                  _      -> Truth
 
+
+   -- | Action semantics for inserting a delta into a relation dcl.
+   actSem :: InsDel -> Expression -> Expression -> Expression
+   actSem Ins dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem Ins"
+                       | dcl==delt           = dcl
+                       | otherwise           = disjNF (dcl .\/. delt)
+   actSem Del dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem Del"
+                       | dcl==delt           = notCpl (EDcV (sign dcl))
+                       | otherwise           = conjNF (dcl ./\. notCpl delt)
+
+-- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
+   assembleECAs :: [Quad] -> [(ECArule,Blocks)]
+   assembleECAs qs
+    = [eca i | (eca,i) <- zip ecas [(1::Int)..]]
+      where
+       ecas :: [Int->(ECArule,Blocks)]
+       ecas
+         = [ (\ruleNr->( ECA ecaEvt delt normEcaAct ruleNr
+                       , para ("Let us analyse what happens "<>str (show (On ev dcl))<>".")<>
+                         bulletList [ txt | (_,_,_,txt)<-acts]<>
+                         ( if length ecaProof>1
+                           then para ("The resulting action is:")<>
+                                showProof (codeBlock.showECA "\n>     ") ecaProof
+                           else fromList []
+                         )<>
+                         para ("These results lead to the following ECA-rule:")<>
+                         (codeBlock.showECA "\n     ".ecaRule) ruleNr
+                       )
+             )
+           | relEq <- eqCl qDcl qs               -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl) and clauses (qClauses)
+           , let dcl = (qDcl.head) relEq         -- This is the relation in which a delta is being inserted or deleted.
+           , let quadClauses = (nub.map qClauses) relEq -- these are the clauses
+           , let EDcD delt   = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
+           , ev<-[Ins,Del]
+           , let acts = [ -- go through all the events that affect that clause:
+                          (normPA act, conj, rule,
+                          para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>(singleQuoted.str.name) rule<>".")<>
+                          para ("event = "<>str (show ev)<>space<>str (showREL dcl)<>" means doing the following substitution")<>
+                          para (str (showADL clause<>"["<>showREL dcl<>":="<>showADL (actSem ev (EDcD dcl) (delta (sign dcl)))<>"] = clause'"))<>
+                          para ("clause' = "<>str (showADL ex')<>
+                                if clause'==ex'
+                                then ", which is already in conjunctive normal form."<>linebreak
+                                else ", which has conjunctive normal form: "<>linebreak<>str (showADL clause')
+                               )<>
+                          para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
+                                "This means to negate the result (notClau = notCpl clause'): ")<>
+                          (showProof (para.str.showADL). cfProof showADL) notClau<>
+                          para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
+                                ( if viols==viols'
+                                  then "This expression is in disjunctive normal form as well."
+                                  else str ("In DNF, notClau is:  "<>showADL viols'<>".")))<>
+                          ( if isTrue clause'
+                            then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
+                                       <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
+                                 (showProof (para.str.showADL). cfProof showADL) (expr .|-. clause')
+                            else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
+                                       "We must compute a reaction to compensate for violations..."<>linebreak<>
+                                       "That would be to reinsert violations that originate from "<>
+                                       ( if ev==Ins
+                                         then str (showADL (conjNF negs))<>" into "<> str (showADL (disjNF poss))<>"."
+                                         else str (showADL (disjNF poss))<>" into "<> str (showADL (conjNF negs))<>"."
+                                       )<>linebreak<>"deltFr: ")<>
+                                 (showProof (para.str.showADL). dfProof showADL) deltFr<>
+                                 ( let pr=proofPA act in
+                                   if length pr>1
+                                   then para "Now let us remove redundancy from the ECA action:"<>
+                                        showProof (codeBlock.showECA "\n     ") (proofPA act)
+                                   else fromList []
+                                 )
+                          {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL dcl)
+                                    <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
+                                    <>
+                                 ( if length (nub [sign viols, sign viols', sign toExpr])>1
+                                   then fatal 248 ("viols"<>showSign (sign viols) <>"   "<>showADL viols <>"\n"<>
+                                                   "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
+                                                   "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
+                                   else if ev==Ins
+                                   then (showProof (para.str.showADL). cfProof showADL) (viols'.\/.toExpr)<>linebreak
+                                   else (showProof (para.str.showADL). dfProof showADL) (notCpl viols./\.toExpr)<>linebreak
+                                 ) -}
+                          ))
+                        | Clauses ts rule<-quadClauses, conj<-ts                  -- get conjuncts from the clauses
+                        , clause@(Dnf antcs conss) <- rc_dnfClauses conj          -- the DNF form of each clause
+                        , let expr    = dnf2expr clause                           -- Note that this differs from:  rc_conjunct conj
+                        , let vee     = EDcV (sign expr)
+                        , let ex'     = subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl))) expr -- the clause after the edit action
+                        , let clause' = conjNF ex'                                                -- its CNF
+                        , not (isTrue clause')
+                        , let notClau = notCpl clause'                                            -- the violations after the edit action
+                        , let viols   = conjNF notClau                                            -- the violations after the edit action
+                        , let viols'  = disjNF notClau                                            -- the violations after the edit action
+                        , let negs    = if (length.nub.map sign) (vee:antcs)>1
+                                        then fatal 265 ("type inconsistencies in antcs: "++show (map showADL (vee:antcs)))
+                                        else foldr (./\.) vee antcs
+                        , let poss    = if (length.nub.map sign) (vee:conss)>1
+                                        then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss)))
+                                        else foldr (.\/.) (notCpl vee) conss
+                        , let frExpr  = if ev==Ins
+                                        then disjNF (notCpl negs)
+                                        else disjNF poss
+                        , let deltFr  = if sign poss/=sign negs
+                                        then fatal 274 ("type inconsistencies in deltFr: "++showADL clause)
+                                        else if ev==Ins
+                                        then (subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) negs ./\. notCpl poss
+                                        else (notCpl . subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) poss ./\. negs
+                        , let deltFr' = disjNF deltFr
+                        , dcl `elem` relsMentionedIn frExpr
+                        , let toExpr  = if ev==Ins
+                                        then disjNF poss
+                                        else disjNF (notCpl negs)
+                        , let visible _ = True
+                        , if length (nub (map sign [toExpr, deltFr', expr]))>1
+                          then fatal 285 "type problem"
+                          else True
+                        , let act = genPAclause visible Ins toExpr deltFr' [(expr,[rule])]
+                        ]
+           , let ecaAct = ALL (map fst4 acts)
+                              [ (rc_conjunct conj,[rule]) | (_,conj,rule,_)<-acts] --motivation is of type [(Expression,[Rule])]
+           , let normEcaAct = normPA ecaAct
+           , let ecaProof = proofPA ecaAct
+           , let ecaEvt = On ev dcl
+           , let ecaRule = ECA ecaEvt delt normEcaAct
+           ]
+       fst4 (x,_,_,_) = x
+
+-- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
+-- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
+-- TODO: Deze code is onvolledig en misschien zelfs fout....
+   genPAclause :: (Declaration->Bool)        -- ^True if a relation may be changed (i.e. is editable)
+                  -> InsDel                  -- ^the type of action: Insert or Delete
+                  -> Expression              -- ^the expression in which a delete or insert takes place
+                  -> Expression              -- ^the delta to be inserted or deleted
+                  -> [(Expression,[Rule])]   -- ^the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+                  -> PAclause
+   genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
+    where
+      testPA i l r ex
+       = if (source l,target r)/=(source ex,target ex)
+         then fatal i ("test with sign deltaX = ["++show (source l)++"*"++show (target r)++"],  and sign expr = "++show (sign ex)++":\ndeltaX = "++showADL (l.:.r)++"\nexpr = "++show ex)
+         else if source r/=target l
+         then fatal i ("test with source r = "++show (source r)++",  and target l = "++show (target l)++":\nl"++showSign (sign l)++" = "++showADL l++"\nr"++showSign (sign r)++" = "++showADL r++"\nexpr = "++show ex)
+         else id
+
+      genPAcl deltaX tOp expr =
+        case (tOp, expr) of
+          (_  , EEqu{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+          (_  , EImp{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+          (_ ,  EFlp x)     -> genPAcl (flp deltaX) tOp x
+          (_ ,  EBrk x)     -> genPAcl deltaX tOp x
+          (Ins, ECpl x)     -> genPAcl deltaX Del x
+          (Del, ECpl x)     -> genPAcl deltaX Ins x
+          (Ins, EUni{})     -> CHC [ genPAcl deltaX Ins f | f<-exprUni2list expr{-, not (f==expr1 && Ins/=tOp') -}] motive -- the filter prevents self compensating PA-clauses.
+          (Ins, EIsc{})     -> ALL [ genPAcl deltaX Ins f | f<-exprIsc2list expr ] motive
+          (Del, EUni{})     -> ALL [ genPAcl deltaX Del f | f<-exprUni2list expr {-, not (f==expr1 && Del/=tOp') -}] motive -- the filter prevents self compensating PA-clauses.
+          (Del, EIsc{})     -> CHC [ genPAcl deltaX Del f | f<-exprIsc2list expr ] motive
+          (Ins, EDif (l,r)) -> CHC [ genPAcl deltaX Ins l, genPAcl deltaX Del r ] motive
+          (Del, EDif (l,r)) -> CHC [ genPAcl deltaX Del l, genPAcl deltaX Ins r ] motive
+          (Ins, EDia (l,r)) -> CHC [ ALL [ genPAcl (testPA 986 (deltaX) (flp r)          l $ deltaX.:.flp r         ) Ins l
+                                         , genPAcl (testPA 987 (flp l) (deltaX)          r $ flp l.:.deltaX         ) Ins r] motive
+                                   , ALL [ genPAcl (testPA 988 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Del l
+                                         , genPAcl (testPA 989 (deltaX) (flp r)          l $ deltaX.:.flp r         ) Ins l] motive
+                                   , ALL [ genPAcl (testPA 990 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Del r
+                                         , genPAcl (testPA 991 (flp l) (deltaX)          r $ flp l.:.deltaX         ) Ins r] motive
+                                   , ALL [ genPAcl (testPA 992 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Del l
+                                         , genPAcl (testPA 993 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Del r] motive
+                                   ] motive
+          (Del, EDia (l,r)) -> GCH [ (Del, (testPA 995 (deltaX) (flp r)          l $ deltaX.:.flp r),          genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   , (Ins, (testPA 996 (deltaX) (flp (notCpl r)) l $ deltaX.:.flp (notCpl r)), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   , (Del, (testPA 997 (flp l) (deltaX)          r $ flp l.:.deltaX),          genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                   , (Ins, (testPA 998 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                   ] motive
+          (Ins, ERrs (l,r)) -> CHC [ genPAcl (testPA 1000 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX) Del l
+                                   , genPAcl (testPA 1001 (l) (deltaX)            r $ l.:.deltaX)            Ins r
+                                   ] motive
+          (Del, ERrs (l,r)) -> GCH [ (Ins, (testPA 1003 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   , (Del, (testPA 1004 (l) (deltaX)            r $ l.:.deltaX),            genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                   ] motive
+          (Ins, ELrs (l,r)) -> CHC [ genPAcl (testPA 1006 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l) Del r
+                                   , genPAcl (testPA 1007 (deltaX) (r)            l $ deltaX.:.r           ) Ins l
+                                   ] motive
+          (Del, ELrs (l,r)) -> GCH [ (Ins, (testPA 1009 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                   , (Del, (testPA 1010 (deltaX) (r)            l $ deltaX.:.r),            genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                   ] motive
+          (Ins, ECps (l,r)) -> CHC [ GCH [ (Ins, (testPA 1012 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                         , (Ins, (testPA 1013 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                         ] motive
+                                   , New (source r) (\x->ALL [ genPAcl (deltaX.*.EMp1 x (target l)) Ins l
+                                                             , genPAcl (EMp1 x (source r).*.deltaX) Ins r] motive) motive
+                                   ] motive
+          (Del, ECps (l,r)) -> CHC [ genPAcl (testPA 1018 (deltaX) (flp r) l $ deltaX.:.flp r) Del l
+                                   , genPAcl (testPA 1019 (flp l) (deltaX) r $ flp l.:.deltaX) Del r
+                                   ] motive
+          (Ins, ERad (l,r)) -> CHC [ genPAcl (testPA 1021 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Ins l
+                                   , genPAcl (testPA 1022 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Ins r
+                                   ] motive
+          (Del, ERad (l,r)) -> CHC [ GCH [ (Del, (testPA 1024 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+                                         , (Del, (testPA 1025 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+                                         ] motive
+                                   , New (source r) (\_->Nop motive) motive
+                                   ] motive
+          (Ins, EPrd (l,r)) -> ALL [ genPAcl (EDcV (Sign ONE (source deltaX)).:.deltaX) Ins (EDcV (Sign ONE (source r)).:.r)
+                                   , genPAcl (deltaX.:.EDcV (Sign (target deltaX) ONE)) Ins (l.:.EDcV (Sign (target l) ONE))
+                                   ] motive
+          (Del, EPrd (l,r)) -> ALL [ genPAcl (EDcV (Sign ONE (source deltaX)).:.deltaX) Del (EDcV (Sign ONE (source r)).:.r)
+                                   , genPAcl (deltaX.:.EDcV (Sign (target deltaX) ONE)) Del (l.:.EDcV (Sign (target l) ONE))
+                                   ] motive
+          (_  , EKl0 x )    -> genPAcl (deltaK0 deltaX tOp x) tOp x
+          (_  , EKl1 x )    -> genPAcl (deltaK1 deltaX tOp x) tOp x
+          (_  , EDcD d)     -> if editAble d then Do tOp d deltaX motive else Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+          (_  , EDcI c)     -> if editAble (Isn c) then Do tOp (Isn c) deltaX motive else Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+          (_  , EDcV{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+          (_  , EMp1{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+          (_  , EEps{})     -> Nop [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+
+{-        (_ , _)           -> fatal 767 ( "(Stef?) Non-exhaustive patterns in the recursive call\n"
+                                       ++"doCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL expr++") -- expr\n"++
+                                         "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++
+                                         concat
+                                         [ "while trying to maintain conjunct "++showADL conjunct++
+                                           "\nfrom rule "++intercalate "\n          " [show r | r<-rs]
+                                         | (conjunct,rs)<-motive ] ++
+                                         if null motive then "null motive" else ""
+                                         )
+-}
+
+      deltaK0 :: t -> InsDel -> t1 -> t
+      deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)
+      deltaK0 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x* leeg is)
+      deltaK1 :: t -> InsDel -> t1 -> t
+      deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x+)
+      deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
 

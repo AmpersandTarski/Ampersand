@@ -59,7 +59,7 @@ import DatabaseDesign.Ampersand.ADL1.Expression as X
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
 import DatabaseDesign.Ampersand.ADL1.ECArule as X (
-         isAll, isCHC, isBlk, isNop, isDo, dos)
+         isAll, isCHC, isBlk, isNop, isDo, eventsFrom)
 import DatabaseDesign.Ampersand.ADL1.Rule as X (
           rulefromProp, ruleviolations
          ,consequent,antecedent,hasantecedent)

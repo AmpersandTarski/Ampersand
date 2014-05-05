@@ -133,27 +133,14 @@ data Event = On { eSrt :: InsDel
                               , edgeAttributes = [Dir Forward]
                               }
                     | eca<-fsbECAs fsb, not (isBlk (ecaAction eca))
-                    , Do tOp rel _ _<-dos (ecaAction eca)
-{- for testing purposes:
-                    , doAct<-dos (ecaAction eca)
-                    , if not (isDo doAct) then fatal 136 ("not in \"Do\" shape: "++showECA "\n  " doAct) else True
-                    , let Do tOp expr _ _=doAct
-                          isTm ERel{} = True
-                          isTm _    = False
-                    , if not (isTm expr) then fatal 138 ("not in \"ERel\" shape: "++showECA "\n  " doAct) else True
-                    , let ERel rel _ = expr
-Note:
-The expression 'isDo doAct' will become False if a property is being maintained
-(a property is a relation that are both Sym and Asy).   
-This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction eca)'.
--}
+                    , On tOp rel<-eventsFrom (ecaAction eca)
                     ]
         nameINode = nmLkp fSpec "in_"
         nameCNode = nmLkp fSpec "cj_"
         nameENode = nmLkp fSpec "eca_"
         nameONode = nmLkp fSpec "out_"
         eventsIn  = nub [ecaTriggr eca | eca<-fsbECAs fsb, not (isBlk (ecaAction eca)) ]
-        eventsOut = nub [On tOp rel | eca<-fsbECAs fsb, let act=ecaAction eca, not (isBlk act), Do tOp rel _ _<-dos act]
+        eventsOut = nub [evt | eca<-fsbECAs fsb, let act=ecaAction eca, not (isBlk act), evt<-eventsFrom act]
 
    switchboardAct :: Fspc -> Activity -> SwitchBdDiagram
    switchboardAct fSpec act
