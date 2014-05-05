@@ -277,7 +277,6 @@ where
            ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fSpec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
-           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fSpec)
            ,wrap ", fActivities   = " indentA (\_->showHS flags (indentA++"  ")) (fActivities fSpec)
            ,     ", fRoleRels     = " ++
                  case fRoleRels fSpec of
@@ -306,6 +305,7 @@ where
            ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fSpec)
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
+           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fSpec)
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fSpec)
            ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fSpec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fSpec)

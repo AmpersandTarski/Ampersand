@@ -46,7 +46,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "ROLE", "EDITS", "MAINTAINS"
                        ]
    keywordsops :: [String]
-   keywordsops       = [ "|-", "-", "->", "<-", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
+   keywordsops       = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
                        , "..", "." , "0", "1"]
    specialchars :: String
    specialchars      = "()[],{}"
@@ -580,26 +580,26 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                PMessage (P_Markup lang fmt mkup)
                               
 {-  Basically we would have the following expression syntax:
-pRule ::= pTrm1   "="    pTerm                           |
-          pTrm1   "|-"   pTerm                           |
+pRule ::= pTrm1   "="    pTerm                           |  -- equivalence
+          pTrm1   "|-"   pTerm                           |  -- implication or subset
           pTrm1 .
-pTerm ::= pList1Sep "/\\" pTrm2                          |
-          pList1Sep "\\/" pTrm2                          |
+pTerm ::= pList1Sep "/\\" pTrm2                          |  -- intersection
+          pList1Sep "\\/" pTrm2                          |  -- union
           pTrm2 .
-pTrm2 ::= pTrm3    "-"    pTrm3                          |
+pTrm2 ::= pTrm3    "-"    pTrm3                          |  -- set difference
           pTrm3 .
-pTrm3 ::= pTrm4   "\\"   pTrm4                           |
-          pTrm4   "/"    pTrm4                           |
+pTrm3 ::= pTrm4   "\\"   pTrm4                           |  -- right residual
+          pTrm4   "/"    pTrm4                           |  -- left residual
           pTrm4 .
-pTrm4 ::= pList1Sep ";" pTrm5                            |
-          pList1Sep "!" pTrm5                            |
-          pList1Sep "*" pTrm5                            |
+pTrm4 ::= pList1Sep ";" pTrm5                            |  -- composition       (semicolon)
+          pList1Sep "!" pTrm5                            |  -- relative addition (dagger)
+          pList1Sep "#" pTrm5                            |  -- cartesian product (asterisk)
           pTrm5 .
-pTrm5 ::= "-"     pTrm6                                  |
-          pTrm6   pSign                                  |
-          pTrm6   "~"                                    |
-          pTrm6   "*"                                    |
-          pTrm6   "+"                                    |
+pTrm5 ::= "-"     pTrm6                                  |  -- unary complement
+          pTrm6   pSign                                  |  -- unary type cast
+          pTrm6   "~"                                    |  -- unary flip
+          pTrm6   "*"                                    |  -- unary Kleene star
+          pTrm6   "+"                                    |  -- unary Kleene plus
           pTrm6 .
 pTrm6 ::= pRelation                                      |
           "("   pTerm   ")" .
@@ -663,7 +663,7 @@ In practice, we have it a little different.
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
    pTrm4 :: Parser Token (Term TermPrim)
-   pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "*")
+   pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "#")
              where pars combinator operator
                     = g <$> pKey_pos operator <*> pTrm5 <*> optional (pars combinator operator)
                              where g orig y Nothing  = (orig, y)
