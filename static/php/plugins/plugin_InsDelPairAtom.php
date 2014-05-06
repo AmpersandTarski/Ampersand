@@ -26,7 +26,7 @@
 */
 // Use:  VIOLATION (TXT "{EX} InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
-{ /* 
+{  /* 
     $relationTableInfo from Generics.php 
     contains array with all relations, for each relation the following is specified: 
      - srcConcept : srcConcept of relation
@@ -62,11 +62,13 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
       die;
     }
 // if srcAtom is specified as NULL, a new atom of srcConcept is created
-    if($srcAtom == "NULL") 
+    if ($srcAtom == "") ExecEngineSHOUTS("InsPair: srcAtom is empty string.");
+    if ($srcAtom == "NULL") 
     { $srcAtom = InsAtom($srcConcept);
     }   
 // if tgtAtom is specified as NULL, a new atom of tgtConcept is created
-    if($tgtAtom == "NULL") 
+    if ($tgtAtom == "") ExecEngineSHOUTS("InsPair: tgtAtom is empty string.");
+    if ($tgtAtom == "NULL") 
     { $tgtAtom = InsAtom($tgtConcept);
     }
 // get table column properties for $srcCol and $tgtCol
@@ -84,9 +86,17 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
     if($srcColUnique || $tgtColUnique) // srcCol, tgtCol or both are unique ==> update query
     {   if($srcColUnique)
         { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$srcColEsc`='$srcAtomEsc'";
+//        if ($srcConcept == $tgtConcept)
+//        { queryDb($query);
+//          $query = "INSERT IGNORE INTO `$tableEsc` SET `$srcColEsc` = '$tgtAtomEsc'";
+//        }
           ExecEngineWhispers ("Update $relation($srcConcept*$tgtConcept) with (<b>$srcAtom</b>,$tgtAtom)");
         }else
         { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$tgtColEsc`='$tgtAtomEsc'";
+//        if ($srcConcept == $tgtConcept)
+//        { queryDb($query);
+//          $query = "INSERT IGNORE INTO `$tableEsc` SET `$tgtColEsc` = '$srcAtomEsc'";
+//        }
           ExecEngineWhispers ("Update $relation($srcConcept*$tgtConcept) with ($srcAtom,<b>$tgtAtom</b>)");
         }
     }else
@@ -116,7 +126,9 @@ Example of a rule that automatically deletes pairs from a relation:
 */
 // Use: VIOLATION (TXT "{EX} DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
-{   /* 
+{   if ($srcAtom == "") ExecEngineSHOUTS("DelPair: srcAtom is empty string.");
+    if ($srcAtom == "") ExecEngineSHOUTS("DelPair: tgtAtom is empty string.");
+    /* 
     $relationTableInfo from Generics.php 
     contains array with all relations, for each relation the following is specified: 
      - srcConcept : srcConcept of relation
@@ -259,6 +271,17 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
        	  throw new Exception("Failure 4 in NewStruct in InsDelPairAtom.php");
        }
     }
+/* Als '$tgtAtom' nog niet in de database bestaat als een instantie van $tgtConcept, dan moet die nog wel worden toegevoegd; dat gebeurt bijvoorbeeld als '$tgtAtom' ontstaat uit de volgende ADL tekst: 
+VIOLATION (TXT "{EX} NewStruct;Beslissing"
+               ,TXT ";op;Beslissing;NULL;Verzoek;", SRC I 
+           ...
+               ,TXT ";reden;Beslissing;NULL;Reden;'Voldoen aan artikel 2 lid 10 Wet aanpassing arbeidsduur'"
+           ...                                  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ deze tekst moet als een instantie van het concept 'Reden' worden toegevoegd (als-ie nog niet als een Reden bestaat).
+               )
+*/
+   if(!isAtomInConcept($tgtAtom, $tgtConcept))
+   {  addAtomToConcept($tgtAtom, $tgtConcept);
+   }
 // Any logging is done by InsPair:
     InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
   }
