@@ -64,7 +64,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vconjs       = let equalOnConjunct a b = rc_conjunct a == rc_conjunct b
                                   in nubBy equalOnConjunct (concatMap (cl_conjNF.qClauses)allQuads)
                  , vquads       = allQuads
-                 , vEcas        = let (ecas,_)=(unzip.assembleECAs) [q | q<-vquads fSpec] in {-preEmpt-} ecas -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+                 , vEcas        = let (ecas,_)=(unzip.assembleECAs) fSpec in {-preEmpt-} ecas -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = relsUsedIn context
                  , allDecls     = relsDefdIn context
@@ -388,8 +388,6 @@ while maintaining all invariants.
              f q x = q `un`
                         [(a, qs `uni` qs', b') | (a, qs, b) <- q, b == x,
                          (a', qs', b') <- q, a' == x]
-             fst3 (a,_,_) = a
-             thd3 (_,_,c) = c
              ts `un` [] = ts
              ts `un` ((a',qs',b'):ts')
               = ([(a,qs `uni` qs',b) | (a,qs,b)<-ts, a==a' && b==b']++
@@ -596,7 +594,7 @@ while maintaining all invariants.
       where
         qs :: [Quad]
         qs        = quads flags visible (invariants fSpec)
-        (ecas, _) = unzip (assembleECAs qs)
+        (ecas, _) = unzip (assembleECAs fSpec)
         conjs     = nub [ (cl_rule ccrs,rc_conjunct x) | Quad _ ccrs<-qs, x<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
         eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]

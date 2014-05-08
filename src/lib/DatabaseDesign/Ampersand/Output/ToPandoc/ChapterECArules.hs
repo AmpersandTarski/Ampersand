@@ -25,11 +25,11 @@ chpECArules fSpec _
       Dutch   -> para ( "ECA regels:" <> linebreak 
                      <> "   tijdelijk ongedocumenteerd")
                      <> mconcat 
-                         [   (blockQuote . codeBlock . showECA "\n     ") eca
+                         [   (blockQuote . codeBlock . ("\n     "++) . showECA "\n     ") eca
                           <> para ( linebreak <>
                                     "------ Afleiding ----->"   -- Dit in- en uitschakelbaar maken
                                   )
-                          <> (showProof (codeBlock.showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
+                          <> (showProof (codeBlock . ("\n     "++) . showECA "\n     ") . proofPA . ecaAction) eca   --  voor het bewijs
                           <> para ( linebreak <>
                                     "<------Einde afleiding --"   -- Dit in- en uitschakelbaar maken
                                   )
@@ -38,11 +38,11 @@ chpECArules fSpec _
       English -> para ( "ECA rules:" <> linebreak 
                      <> "   temporarily not documented")
                      <> mconcat 
-                         [   (blockQuote . codeBlock . showECA "\n     ") eca
+                         [   (blockQuote . codeBlock . ("\n     "++) . showECA "\n     ") eca
                           <> para ( linebreak <>
                                     "------ Derivation ----->"   -- Dit in- en uitschakelbaar maken
                                   )
-                          <> (showProof (codeBlock.showECA "\n>     ") . proofPA . ecaAction) eca   --  voor het bewijs
+                          <> (showProof (codeBlock . ("\n     "++) . showECA "\n     ") . proofPA . ecaAction) eca   --  voor het bewijs
                           <> para ( linebreak <>
                                     "<------End Derivation --"   -- Dit in- en uitschakelbaar maken
                                   )

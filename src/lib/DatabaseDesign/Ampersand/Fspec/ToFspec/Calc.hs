@@ -57,8 +57,8 @@ where
 --      " - Derivation of clauses for ECA-rules:"   ++
 --      concat [showClause fSpec (allClauses flags rule) | rule<-invs]++"\n"++
 --{-
---      " - ECA rules:"++concat  [ "\n\n   "++showECA "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
---                                 ++"\n------ Derivation ----->"++showProof (codeBlock.showECA "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+--      " - ECA rules:"++concat  [ "\n\n     "++showECA "\n     "  (eca{ecaAction=normPA (ecaAction eca)})
+--                                 ++"\n------ Derivation ----->"++showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
 --                               | eca<-ecaRs]++"\n\n"++
 ---}
 --      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADL r  | r<-vis])++"\n"
@@ -72,7 +72,7 @@ where
 --   --     visible r  = r `elem` vis
 --        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (relsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
---   --     ecaRs      = assembleECAs qs
+--   --     ecaRs      = assembleECAs fSpec
 ----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
 ----        editable _               = False
 ----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
@@ -131,7 +131,7 @@ where
            )<>
       ( if verboseP flags then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
       bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
-                   codeBlock (showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)})<>
+                   codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)})<>
                    bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                       <>linebreak<>"derivation:"
                                      )<>
@@ -182,7 +182,7 @@ where
       where 
   --     visible _  = True -- We take all quads into account.
        qs         = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
-          --   assembleECAs :: [Quad] -> [ECArule]
+          --   assembleECAs :: Fspc -> [ECArule]
        commaEng :: String -> [String] -> String
        commaEng  _  []       = ""
        commaEng  _  [x]      = x
@@ -193,7 +193,7 @@ where
        interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
        derivations :: [Blocks]
        ecaRs :: [ECArule]
-       (ecaRs, derivations) = unzip (assembleECAs qs)
+       (ecaRs, derivations) = unzip (assembleECAs fSpec)
 {-
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
@@ -479,34 +479,34 @@ Rewrite rules:
                        | otherwise           = conjNF (dcl ./\. notCpl delt)
 
 -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
-   assembleECAs :: [Quad] -> [(ECArule,Blocks)]
-   assembleECAs qs
+   assembleECAs :: Fspc -> [(ECArule,Blocks)]
+   assembleECAs fSpec
     = [eca i | (eca,i) <- zip ecas [(1::Int)..]]
       where
        ecas :: [Int->(ECArule,Blocks)]
        ecas
          = [ (\ruleNr->( ECA ecaEvt delt normEcaAct ruleNr
-                       , para ("Let us analyse what happens "<>str (show (On ev dcl))<>".")<>
+                       , para ("Let us analyse what happens "<>str (show (On ev rel))<>".")<>
                          bulletList [ txt | (_,_,_,txt)<-acts]<>
                          ( if length ecaProof>1
-                           then para ("The resulting action is:")<>
-                                showProof (codeBlock.showECA "\n>     ") ecaProof
+                           then para ("The resulting action is:\n     ")<>
+                                showProof (codeBlock . ("\n     "++) . showECA "\n     ") ecaProof
                            else fromList []
                          )<>
-                         para ("These results lead to the following ECA-rule:")<>
-                         (codeBlock.showECA "\n     ".ecaRule) ruleNr
+                         para ("These results lead to the following ECA-rule:\n     ")<>
+                         (codeBlock . ("\n     "++) . showECA "\n     ".ecaRule) ruleNr
                        )
              )
-           | relEq <- eqCl qDcl qs               -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl) and clauses (qClauses)
-           , let dcl = (qDcl.head) relEq         -- This is the relation in which a delta is being inserted or deleted.
-           , let quadClauses = (nub.map qClauses) relEq -- these are the clauses
-           , let EDcD delt   = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
+           | rel <- allDecls fSpec ++ [ Isn c | c<-allConcepts fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
+           , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl) and clauses (qClauses)
+           , let quadClauses = (nub.map qClauses) relEq      -- these are the clauses
+           , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
            , ev<-[Ins,Del]
            , let acts = [ -- go through all the events that affect that clause:
                           (normPA act, conj, rule,
                           para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>(singleQuoted.str.name) rule<>".")<>
-                          para ("event = "<>str (show ev)<>space<>str (showREL dcl)<>" means doing the following substitution")<>
-                          para (str (showADL clause<>"["<>showREL dcl<>":="<>showADL (actSem ev (EDcD dcl) (delta (sign dcl)))<>"] = clause'"))<>
+                          para ("event = "<>str (show ev)<>space<>str (showREL rel)<>" means doing the following substitution")<>
+                          para (str (showADL clause<>"["<>showREL rel<>":="<>showADL (actSem ev (EDcD rel) (delta (sign rel)))<>"] = clause'"))<>
                           para ("clause' = "<>str (showADL ex')<>
                                 if clause'==ex'
                                 then ", which is already in conjunctive normal form."<>linebreak
@@ -533,11 +533,11 @@ Rewrite rules:
                                  (showProof (para.str.showADL). dfProof showADL) deltFr<>
                                  ( let pr=proofPA act in
                                    if length pr>1
-                                   then para "Now let us remove redundancy from the ECA action:"<>
-                                        showProof (codeBlock.showECA "\n     ") (proofPA act)
+                                   then para "Now let us remove redundancy from the ECA action:\n     "<>
+                                        showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA act)
                                    else fromList []
                                  )
-                          {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL dcl)
+                          {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL rel)
                                     <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
                                     <>
                                  ( if length (nub [sign viols, sign viols', sign toExpr])>1
@@ -553,7 +553,7 @@ Rewrite rules:
                         , clause@(Dnf antcs conss) <- rc_dnfClauses conj          -- the DNF form of each clause
                         , let expr    = dnf2expr clause                           -- Note that this differs from:  rc_conjunct conj
                         , let vee     = EDcV (sign expr)
-                        , let ex'     = subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl))) expr -- the clause after the edit action
+                        , let ex'     = subst (rel, actSem ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
                         , let clause' = conjNF ex'                                                -- its CNF
                         , not (isTrue clause')
                         , let notClau = notCpl clause'                                            -- the violations after the edit action
@@ -565,16 +565,16 @@ Rewrite rules:
                         , let poss    = if (length.nub.map sign) (vee:conss)>1
                                         then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss)))
                                         else foldr (.\/.) (notCpl vee) conss
-                        , let frExpr  = if ev==Ins
-                                        then disjNF (notCpl negs)
-                                        else disjNF poss
+                        , let frExpr  = case ev of
+                                         Ins -> disjNF (notCpl negs)
+                                         Del -> disjNF poss
                         , let deltFr  = if sign poss/=sign negs
                                         then fatal 274 ("type inconsistencies in deltFr: "++showADL clause)
                                         else if ev==Ins
-                                        then (subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) negs ./\. notCpl poss
-                                        else (notCpl . subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl)))) poss ./\. negs
+                                        then (subst (rel, actSem ev (EDcD rel) (delta (sign rel)))) negs ./\. notCpl poss
+                                        else (notCpl . subst (rel, actSem ev (EDcD rel) (delta (sign rel)))) poss ./\. negs
                         , let deltFr' = disjNF deltFr
-                        , dcl `elem` relsMentionedIn frExpr
+                        , rel `elem` relsMentionedIn frExpr
                         , let toExpr  = if ev==Ins
                                         then disjNF poss
                                         else disjNF (notCpl negs)
@@ -584,12 +584,61 @@ Rewrite rules:
                           else True
                         , let act = genPAclause visible Ins toExpr deltFr' [(expr,[rule])]
                         ]
-           , let ecaAct = ALL (map fst4 acts)
+           , let ecaAct = ALL (map fst4 acts
+           -- The following acts add the implicit rules, which allows the user to add and delete atoms from concepts in a safe way.
+                               ++ [act' | (ev',rel',act')<-rulesDecls++rulesGens rel, ev==ev', rel==rel' ]
+                              )
                               [ (rc_conjunct conj,[rule]) | (_,conj,rule,_)<-acts] --motivation is of type [(Expression,[Rule])]
            , let normEcaAct = normPA ecaAct
            , let ecaProof = proofPA ecaAct
-           , let ecaEvt = On ev dcl
+           , let ecaEvt = On ev rel
            , let ecaRule = ECA ecaEvt delt normEcaAct
+           ]
+-- | the following eca-rules are derived from the typing rules, rather than explicit rules specified by users.
+--   This concerns the following rules:
+--   Each declaration "RELATION r[A*B]" represents the rule "RULE r[A*B] |- V[A*B]"
+--   Besides, for every A, B:   "RULE  I[A]*I[B] = V[A*B]"
+--   For every "CLASSIFY A ISA B" we get  "RULE  I[A] |- I[B]"
+--   For every "CLASSIFY A IS B /\ C" we get "RULE  I[A] |- I[B]" and "RULE  I[A] |- I[C]"
+--   The results of both classify statements are available through vgens.
+--   Finally, for every Atom c a there is a rule  "RULE  'a' |- I[c]"
+--   The eca-rules that can be derived from these rules are produced by  ecasFromTypes
+   {- V[A*B] is implicit, so we don't generate ECA (On Ins rel) delt (Do Ins (Vs (Sign a b)) delt motive).
+                        Neither do we generate ECA (On Del (Vs (Sign a b))) delt (Do Del rel delt motive).
+      However, we do generate:                 ECA (On Ins rel) delt (Do Ins (Isn a) ((dlt.<>.flp dlt).-.EDcI a) motive)
+                                         and:  ECA (On Ins rel) delt (Do Ins (Isn b) ((flp dlt.<>.dlt).-.EDcI b) motive),
+      because the delta to be inserted might contain new atoms.
+      Similarly, upon deletion of an atom from a concept we must delete the appropriate links from relations that share this concept.
+      So, we generate                          ECA (On Del (Isn a)) delt (Do Del rel (delt.:.V[A*B]) motive)
+                                         and:  ECA (On Del (Isn b)) delt (Do Del rel (V[A*B].:.delt) motive)
+      ECA-rules that are derivable from relation declarations are generated by rulesDecls
+   -}
+       rulesDecls :: [(InsDel, Declaration, PAclause)]
+       rulesDecls
+         = concat
+           [ [ (Ins, rel, Do Ins (Isn a) ((dlt.:.flp dlt ./\. EDcI a).-.EDcI a) [])
+             , (Ins, rel, Do Ins (Isn b) ((flp dlt.:.dlt ./\. EDcI b).-.EDcI b) [])
+             , (Del, Isn a, Do Del rel (delta (Sign b b).:.vee) [])
+             , (Del, Isn b, Do Del rel (vee.:.delta (Sign b b)) [])
+             ]
+           | rel <- allDecls fSpec, let dlt = delta (sign rel)
+           , let a=source rel, let b=target rel
+           , let vee = (EDcV . sign) rel
+           ]
+   {- We generate:
+        for every "RULE  I[A] |- I[B]":        ECA (On Ins (Isn a)) delt (Do Ins (Isn b) (EDcD delt) motive)
+                                   and:        ECA (On Del (Isn b)) delt (Do Del (Isn a) (EDcD delt) motive)
+        for every "RULE   'a' |- I[c]":        ECA (On Del (Isn c)) ('a','a') (Blk motive)
+   -}
+       rulesGens :: Declaration -> [(InsDel, Declaration, PAclause)]
+       rulesGens rel
+         = concat
+           [ [ (Ins, Isn s, Do Ins (Isn g) dlt [])
+             , (Del, Isn g, Do Del (Isn s) dlt [])
+             ]
+           | let dlt = delta (sign rel)
+           , gen <- vgens fSpec
+           , let g=gengen gen, let s=genspc gen
            ]
        fst4 (x,_,_,_) = x
 

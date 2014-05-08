@@ -8,6 +8,7 @@ import Data.List
 import Data.List.Split
 import GHC.Exts (sortWith)
 import Data.Maybe
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sortWith)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
@@ -238,7 +239,6 @@ chpNatLangReqs lev fSpec flags =
                                                    (_          , True ) -> [ Str "Each one has several definitions. "]
                                                  )
                                           ]
-                  where fst3 (a,_,_) = a
 
               -- | the origin of c is the origin of the head of uniquecds c
               --   after sorting by origin the counter will be applied
