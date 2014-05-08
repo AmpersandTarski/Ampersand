@@ -235,7 +235,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  | PrE PPurpose
                  | PrP P_Population
 
-   pClassify :: Parser Token P_Gen
+   pClassify :: Parser Token P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
    pClassify = rebuild <$> pKey_pos "CLASSIFY"
                        <*> pConceptRef
                        <*  pKey "IS"
