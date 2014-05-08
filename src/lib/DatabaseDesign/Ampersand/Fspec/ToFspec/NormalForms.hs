@@ -79,16 +79,20 @@ where
                        | (not.null) [d | d<-ds, isCHC d] = (CHC (nub [ d' | d<-ds, d'<-if isCHC d then let CHC ops' _ = d in ops' else [d] ]) ms, ["flatten CHC"])  -- flatten
                        | (not.null) [Nop | Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
                        | (not.null) [Blk | Blk{}<-ops] = (CHC [op | op<-ops, not (isBlk op)] ms, ["Choose anything but block"])
+                       | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
                        | otherwise = (CHC ds ms, [])
                        where nds  = map norm ds
                              msgs = concatMap snd nds
                              ops  = map fst nds
+                             doubles = [ d | cl<-eqClass (==) ds, length cl>1, d<-cl ]
      norm (GCH [] ms)  = (Blk ms, ["Run out of options"])
      norm (GCH ds ms)  | (not.null) [() | (_,links,_)<-normds, isFalse links] = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isFalse links)] ms, ["Remove provably empty guard(s)."])
                        | (not.null) [()          | (_,  _    ,p)<-normds, isNop p]
                            = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isNop p)] ms, ["Remove unneccessary SELECT."])
+                       | (not.null) doubles = (GCH [ (fst3 (head cl), foldr1 (.\/.) (map snd3 cl), thd3 (head cl)) | cl<-eqCl (\(tOp,links,p)->(tOp,p)) ds ] ms, ["remove double occurrences"])
                        | otherwise = (GCH ds ms, [])
                        where normds = [ (tOp, conjNF links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
+                             doubles = [ d | cl<-eqCl (\(tOp,links,p)->(tOp,p)) ds, length cl>1, d<-cl ]
      norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
      norm (ALL [d] ms) = (d', ["Flatten ONE"])
                        where d' = case d of
@@ -98,21 +102,23 @@ where
                        | (not.null) [d | d<-ds, isAll d] = (ALL (nub [ d' | d<-ds, d'<-if isAll d then let ALL ops' _ = d in ops' else [d] ]) ms, ["flatten ALL"])  -- flatten
                        | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop | Nop{}<-ops] = (ALL [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                       | (not.null) long              = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [name (paTo (head cl)) |cl<-long]++"together"])
+                       | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
+                       | (not.null) long    = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [name (paTo (head cl)) |cl<-long]++"together"])
                        | otherwise = (ALL ds ms, [])
-                       where ds' = [ let p=head cl in
-                                       if length cl==1 then p else p{paDelta=disjNF (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
-                                   | cl<-dCls {- not (null cl) is guaranteed by eqCl -} ]
-                                   ++[d | d<-ds, not (isDo d)]
-                             nds  = map norm ds
-                             msgs = concatMap snd nds
-                             ops  = map fst nds
+                       where ds'     = [ let p=head cl in
+                                           if length cl==1 then p else p{paDelta=disjNF (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
+                                       | cl<-dCls {- not (null cl) is guaranteed by eqCl -} ]
+                                       ++[d | d<-ds, not (isDo d)]
+                             nds     = map norm ds
+                             msgs    = concatMap snd nds
+                             ops     = map fst nds
+                             doubles = [ d | cl<-eqClass (==) ds, length cl>1, d<-cl ]
                              dCls :: [[PAclause]]
                              dCls = eqCl to [d | d<-ds, isDo d]
                              long :: [[PAclause]]
                              long = [cl | cl<-dCls, length cl>1]
                              to d@Do{} = (paSrt d,paTo d)
-                             to _        = fatal 74 "illegal call of to(d)"
+                             to _      = fatal 74 "illegal call of to(d)"
      norm (New c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
                                    _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms

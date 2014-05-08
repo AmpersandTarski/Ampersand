@@ -1,13 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Basics.Auxiliaries
-   ( eqCl 
-   , eqClass
-   , getCycles
-   , combinations
-   , commaEng
-   , commaNL
-   , Flippable(..)
-   )
   where
    import Data.List (nub,elemIndex)
    import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
@@ -61,7 +53,13 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    commaNL str (a:as) = a++", "++commaNL str as
    commaNL  _  []     = ""
 
-   
+   fst3 :: (a,b,c)->a
+   snd3 :: (a,b,c)->b
+   thd3 :: (a,b,c)->c
+   fst3 (a,_,_) = a
+   snd3 (_,b,_) = b
+   thd3 (_,_,c) = c
+
    class Flippable a where
      flp :: a -> a
    
