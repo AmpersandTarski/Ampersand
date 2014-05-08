@@ -618,7 +618,7 @@ Rewrite rules:
          = concat
            [ [ (Ins, rel, Do Ins (Isn a) ((dlt.:.flp dlt ./\. EDcI a).-.EDcI a) [])
              , (Ins, rel, Do Ins (Isn b) ((flp dlt.:.dlt ./\. EDcI b).-.EDcI b) [])
-             , (Del, Isn a, Do Del rel (delta (Sign b b).:.vee) [])
+             , (Del, Isn a, Do Del rel (delta (Sign a a).:.vee) [])
              , (Del, Isn b, Do Del rel (vee.:.delta (Sign b b)) [])
              ]
            | rel <- allDecls fSpec, let dlt = delta (sign rel)
