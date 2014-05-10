@@ -90,16 +90,16 @@ function DB_doquerErr($quer, &$error) {
   //Replace the special atom value _SESSION by the current sessionAtom
   $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
   
-  $DB_slct = mysqli_select_db($DB_link, $dbName);
+  $DB_slct = mysql_select_db($dbName, $DB_link);
     
-  $result=mysqli_query($DB_link,$quer);
+  $result=mysql_query($quer,$DB_link);
   if(!$result){
-    $error = 'Error '.($ernr=mysqli_errno($DB_link)).' in query "'.$quer.'": '.mysqli_error($DB_link);
+    $error = 'Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'": '.mysql_error();
     return false;
   }
   if($result===true) return true; // success.. but no contents..
   $rows=Array();
-  while (($row = @mysqli_fetch_array($result))!==false) {
+  while (($row = @mysql_fetch_array($result))!==false) {
     $rows[]=$row;
     unset($row);
   }
@@ -136,6 +136,7 @@ function showViewAtom($atom, $concept) {
       elseif ($viewSegment['segmentType'] == 'Html')
         $viewStrs[] = $viewSegment['Html'];
       else {
+if ($viewSegment['expSQL']=="") ExecEngineSHOUTS("showViewAtom($atom, $concept)");
 	$r = getCoDomainAtoms($atom, $viewSegment['expSQL']);
 	$txt = count($r) ? $r[0] : "<View relation not total>";
         $viewStrs[] = htmlSpecialChars($txt);
@@ -173,6 +174,7 @@ function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $t
         $atom    = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
         $concept = $segment['srcOrTgt'] == 'Src' ? $srcConcept : $tgtConcept;
         $hasInterfaces = $segment['srcOrTgt'] == 'Src' ? $srcHasInterfaces : $tgtHasInterfaces;
+if ($segment['expSQL']=="") ExecEngineSHOUTS("showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $tgtNrOfIfcs, $pairView)");
         $r = getCoDomainAtoms($atom, $segment['expSQL']);
         
         // we label all expressionsegments as violation source or target based on the source of their expression
@@ -192,6 +194,7 @@ function execPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView)
     } else
     { $atom    = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
       $concept = $segment['srcOrTgt'] == 'Src' ? $srcConcept : $tgtConcept;
+if ($segment['expSQL']=="") ExecEngineSHOUTS("execPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView)");
       $r = getCoDomainAtoms($atom, $segment['expSQL']); // SRC of TGT kunnen door een expressie gevolgd worden
       $pairStrs[] = $r[0]; // Even er van uit gaan dat we maar 1 atoom kunnen behandelen...
     }
@@ -350,6 +353,7 @@ function targetCol($rows) {
 }
 
 function getCoDomainAtoms($atom, $selectRel) {
+// ExecEngineWhispers(">> getCoDomainAtoms($atom, $selectRel)");
   return targetCol(DB_doquer(selectCoDomain($atom, $selectRel)));
 }
 

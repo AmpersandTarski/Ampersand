@@ -86,17 +86,17 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
     if($srcColUnique || $tgtColUnique) // srcCol, tgtCol or both are unique ==> update query
     {   if($srcColUnique)
         { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$srcColEsc`='$srcAtomEsc'";
-//        if ($srcConcept == $tgtConcept)
-//        { queryDb($query);
-//          $query = "INSERT IGNORE INTO `$tableEsc` SET `$srcColEsc` = '$tgtAtomEsc'";
-//        }
+          if ($srcConcept == $tgtConcept)
+          { queryDb($query);
+            $query = "INSERT IGNORE INTO `$tableEsc` SET `$srcColEsc` = '$tgtAtomEsc'";
+          }
           ExecEngineWhispers ("Update $relation($srcConcept*$tgtConcept) with (<b>$srcAtom</b>,$tgtAtom)");
         }else
         { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$tgtColEsc`='$tgtAtomEsc'";
-//        if ($srcConcept == $tgtConcept)
-//        { queryDb($query);
-//          $query = "INSERT IGNORE INTO `$tableEsc` SET `$tgtColEsc` = '$srcAtomEsc'";
-//        }
+          if ($srcConcept == $tgtConcept)
+          { queryDb($query);
+            $query = "INSERT IGNORE INTO `$tableEsc` SET `$tgtColEsc` = '$srcAtomEsc'";
+          }
           ExecEngineWhispers ("Update $relation($srcConcept*$tgtConcept) with ($srcAtom,<b>$tgtAtom</b>)");
         }
     }else

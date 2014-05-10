@@ -256,8 +256,9 @@ function checkRules($ruleNames)
 { global $allRoles;
   global $allRulesSql;
   global $selectedRoleNr;
-  global $execEningeIsVerySilent; // set in 'pluginsettings.php'
-
+  global $execEngineWhispers; // set in 'pluginsettings.php'
+  global $execEngineSays; // set in 'pluginsettings.php'
+  
   global $ExecEngineRules; // array met alle ruleNames van de ExecEngine 
   if (!isset($ExecEngineRules))
   { foreach ($allRoles as $role)
@@ -278,7 +279,7 @@ function checkRules($ruleNames)
     if (count($rows) == 0)
     { // emitLog('Rule '.$ruleSql['name'].' holds');
     } else
-        { $allRulesHold = false;
+    { $allRulesHold = false;
       emitLog('Rule '.$ruleSql['name'].' is broken');
       
       // if the rule has an associated message, we show that instead of the name and the meaning
@@ -300,8 +301,13 @@ function checkRules($ruleNames)
       
       $pairView = $ruleSql['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
      
+// For optimization purposes, e.g. for computing transitive closures (see plugin_Warshall.php), we allow plugins to be run only for the first violation, and skip all the others.
       global $violationID;
-      $violationID=0; // For optimization purposes, e.g. for computing transitive closures (see plugin_Warshall.php)
+      $violationID=0;
+// It may become tedious to scroll through many log records on the screen for some violations. Therefore, we allow plugins to tinker with $execEngineWhispers and $execEngineSays, which we will restore.
+      $whisper=$execEngineWhispers;
+      $says=$execEngineSays;
+      $functionsToBeCalled=1;
       foreach($rows as $violation)
       { $violationID++; 
         if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
@@ -333,6 +339,13 @@ function checkRules($ruleNames)
           emitAmpersandLog('- ' . $theMessage);
           }
       }
+      if(count($functionsToBeCalled)>1 && $execEngineWhispers!=$whisper)
+      { $execEngineWhispers=$whisper;
+        $execEngineSays=$says;
+        ExecEngineWhispers("... etc ... [[DONE]]");
+      }
+      $execEngineWhispers=$whisper;
+      $execEngineSays=$says;
     }
   }
   return $allRulesHold;

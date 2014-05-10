@@ -47,6 +47,8 @@ function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)
 { 	emitLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
    if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
    if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
    if ($dt1 == $dt2) 
    { InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
 // Accommodate for different representations of the same time:
@@ -61,6 +63,8 @@ function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)
 { 	emitLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
    if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
    if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
    if ($dt1 != $dt2) 
    { InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
      InsPair($neqRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
@@ -74,6 +78,8 @@ function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)
    if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
    if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
    if ($dt1 == $dt2) return;
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
    if ($dt1 < $dt2)
    { InsPair($ltRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
    } else
@@ -88,6 +94,8 @@ function datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)
    if (($dt1 = strtotime($srcAtom)) === false) ExecEngineSHOUTS("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
    if (($dt2 = strtotime($tgtAtom)) === false) ExecEngineSHOUTS("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
    if ($dt1 == $dt2) return;
+   global $execEngineWhispers; // Defined in 'pluginsettings.php'
+   $execEngineWhispers=false;
    if ($dt1 > $dt2)
    { InsPair($gtRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
    } else
