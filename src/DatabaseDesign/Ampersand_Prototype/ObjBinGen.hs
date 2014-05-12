@@ -33,7 +33,7 @@ phpObjInterfaces fSpec flags =
     
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
-    -- we generate a dbSettings.php if it does not exists, or if a host, login, or password has been specified
+    -- we generate a dbSettings.php only if it does not exist already.
     ; if dbSettingsExists
       then verboseLn flags "  Using existing dbSettings.php."
       else do { verboseLn flags "  Writing dbSettings.php."
@@ -49,11 +49,19 @@ phpObjInterfaces fSpec flags =
      do { verboseLn flags ("  Generating "++fname)
         ; writeFile (combine targetDir fname) content
         }
-    dbsettings = "<?php $DB_link=mysql_connect("
-                 ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
-                 ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
-                 ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
-                 ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
+    dbsettings = unlines
+       [ "<?php"
+       , ""
+       , "global $DB_host,$DB_user,$DB_pass;"
+       , "$DB_host='"++addSlashes (sqlHost flags)++"';"
+       , "$DB_user='"++addSlashes (sqlLogin flags)++"';"
+       , "$DB_pass='"++addSlashes (sqlPwd flags)++"';"
+       , ""
+       , "$DB_link=mysql_connect($DB_host, $DB_user, $DB_pass)"
+       , "      or exit(\"Error connecting to the database: username / password are probably incorrect.\");"
+       , ""
+       , "?>"
+       ]
     targetDir = dirPrototype flags
 
 doGenAtlas :: Fspc -> Options -> IO()
