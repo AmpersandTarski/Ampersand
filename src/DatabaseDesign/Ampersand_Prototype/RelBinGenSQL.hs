@@ -680,7 +680,7 @@ sqlPlugFields p e' =
   
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
---   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TRG" would suffice)
+--   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TGT" would suffice)
 sqlExprSrc :: Fspc->Expression -> String
 sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
