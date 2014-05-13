@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Installer
-  (installer,createDatabasePHP,createTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
+  (installer,createTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
@@ -15,7 +15,7 @@ fatal = fatalMsg "Installer"
 --  import Debug.Trace
 
 installer :: Fspc -> Options -> String
-installer fSpec flags = intercalate "\n  "
+installer fSpec flags = unlines
    (
       [ "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0 Strict//EN\">"
       , "<html>"
@@ -30,106 +30,97 @@ installer fSpec flags = intercalate "\n  "
       , "</html>"
       , "<body>"
       ,"<?php"
-      , "// Try to connect to the database\n"
-      , "if(isset($DB_host)&&!isset($_REQUEST['DB_host'])){"
-      , "  $included = true; // this means user/pass are probably correct"
-      , "  $DB_link = @mysql_connect(@$DB_host,@$DB_user,@$DB_pass);"
-      , "}else{"
-      , "  $included = false; // get user/pass from some place else"
-      , "  if(file_exists(\"dbSettings.php\")) include \"dbSettings.php\";"
-      , "  else { // no settings found.. try some default settings"
-      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (sqlHost flags)++"',$DB_user='"++addSlashes (sqlLogin flags)++"',$DB_pass='"++addSlashes (sqlPwd flags)++"')))"
-      , "    { // we still have no working settings.. ask the user!"
-      , "      die(\"Install failed: cannot connect to MySQL\"); // todo" --todo
-      , "    }"
-      , "  } "
+      , "// Try to connect to the database"
+      , ""
+      , "include \"dbSettings.php\";"
+      , ""
+      , "$DB_name='"++addSlashes (dbName flags)++"';"
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
       , "}"
-      , "if($DB_slct = @mysql_select_db('"++dbName flags++"')){"
-      , "  $existing=true;"
-      , "}else{"
-      , "  $existing = false; // db does not exist, so try to create it" ] ++
-      indentBlock 2 (createDatabasePHP (dbName flags))  ++
-      [ "  $DB_slct = @mysql_select_db('"++dbName flags++"');"
+      , ""
+      , "// Drop the database if it exists"
+      , "$sql=\"DROP DATABASE $DB_name\";"
+      , "mysqli_query($DB_link,$sql);"
+      , "// Don't bother about the error if the database didn't exist..."
+      , ""
+      , "// Create the database"
+      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8\";"
+      , "if (!mysqli_query($DB_link,$sql)) {"
+      , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
+      , "  }"
+      
+      , "// Connect to the freshly created database"
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
       , "}"
-      , "if(!$DB_slct){"
-      , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database '"++dbName flags++"'\");" --todo: full error report
-      , "}else{"
-      ] ++ indentBlock 2
-      (
-        [ "if(!$included && !file_exists(\"dbSettings.php\")){ // we have a link now; try to write the dbSettings.php file"
-        , "   if($fh = @fopen(\"dbSettings.php\", 'w')){"
-        , "     fwrite($fh, '<'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); $DB_debug = 3; ?'.'>');"
-        , "     fclose($fh);"
-        , "   }else die('<P>Error: could not write dbSettings.php, make sure that the directory of Installer.php is writable"
-        , "              or create dbSettings.php in the same directory as Installer.php"
-        , "              and paste the following code into it:</P><code>'."
-        , "             '&lt;'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); $DB_debug = 3; ?'.'&gt;</code>');"
-        , "}\n"
-        , "$error=false;" ] ++
-        createTablesPHP fSpec ++
-        ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" ] ++
+      , ""
+      ] ++
+      createTablesPHP fSpec ++
+      [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" 
         -- TODO: why set this only for the next transaction? (no SESSION or GLOBAL parameter is provided)
-    
-        ["if ($err=='') {"
-        ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
-        ,"  $content = '"
-        ,"  <?php"
-        ,"  require \"Generics.php\";"
-        ,"  require \"php/DatabaseUtils.php\";"
-        ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
-        ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
-        ]
-        ++
-        ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
-        | d<-relsDefdIn fSpec, decusr d
-        , let dbrel = case sqlRelPlugs fSpec (EDcD d) of
-                        [] -> fatal 82 "null dbrel"
-                        x  -> x
-        , let (_,srcField,trgField) = head dbrel
-        , let qry = selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d]
-        ++
-        ["  fwrite($dumpfile, \"ENDCONTEXT\");"
-        ,"  fclose($dumpfile);"
-        ,"  "
-        ,"  function dumprel ($rel,$quer)"
-        ,"  {"
-        ,"    $rows = DB_doquer($quer);"
-        ,"    $pop = \"\";"
-        ,"    foreach ($rows as $row)"
-        ,"      $pop = $pop.\";(\\\"\".escapedoublequotes($row[0]).\"\\\",\\\"\".escapedoublequotes($row[1]).\"\\\")\\n  \";"
-        ,"    return \"POPULATION \".$rel.\" CONTAINS\\n  [\".substr($pop,1).\"]\\n\";"
-        ,"  }"
-        ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
-        ,"  ?>';"
-        ,"  file_put_contents(\"dbdump.php.\",$content);"  
-        ,"}"]
-       ) ++
-       [ "}"
-       , "\n?></body></html>\n" ]
-    ) 
-
-createDatabasePHP :: String ->[String]
-createDatabasePHP nm = ["@mysql_query("++showPhpStr ("CREATE DATABASE `"++nm++"` DEFAULT CHARACTER SET UTF8")++");"]
+      , "if ($err=='') {"
+      ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
+      ,"  $content = '"
+      ,"  <?php"
+      ,"  require \"Generics.php\";"
+      ,"  require \"php/DatabaseUtils.php\";"
+      ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
+      ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
+      ]
+      ++
+      ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
+      | d<-relsDefdIn fSpec, decusr d
+      , let dbrel = case sqlRelPlugs fSpec (EDcD d) of
+                      [] -> fatal 82 "null dbrel"
+                      x  -> x
+      , let (_,srcField,trgField) = head dbrel
+      , let qry = selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d]
+      ++
+      ["  fwrite($dumpfile, \"ENDCONTEXT\");"
+      ,"  fclose($dumpfile);"
+      ,"  "
+      ,"  function dumprel ($rel,$quer)"
+      ,"  {"
+      ,"    $rows = DB_doquer($quer);"
+      ,"    $pop = \"\";"
+      ,"    foreach ($rows as $row)"
+      ,"      $pop = $pop.\";(\\\"\".escapedoublequotes($row[0]).\"\\\",\\\"\".escapedoublequotes($row[1]).\"\\\")\\n  \";"
+      ,"    return \"POPULATION \".$rel.\" CONTAINS\\n  [\".substr($pop,1).\"]\\n\";"
+      ,"  }"
+      ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
+      ,"  ?>';"
+      ,"  file_put_contents(\"dbdump.php.\",$content);"  
+      ,"}"
+      , ""
+      , "?></body></html>"
+      ,""
+      ]
+     )
 
 createTablesPHP :: Fspc ->[String]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
         , "// Session timeout table"
-        , "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM `__SessionTimeout__`")++")){"
-        , "    mysql_query("++showPhpStr ("DROP TABLE `__SessionTimeout__`")++");"
+        , "if($columns = mysqli_query($DB_link, "++showPhpStr "SHOW COLUMNS FROM `__SessionTimeout__`"++")){"
+        , "    mysqli_query($DB_link, "++showPhpStr "DROP TABLE `__SessionTimeout__`"++");"
         , "}"
         ] ++ createTablePHP 21 sessiontbl ++
-        [ "if($err=mysql_error()) {"
+        [ "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , "" 
         , "// Timestamp table"
-        , "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM `__History__`")++")){"
-        , "    mysql_query("++showPhpStr ("DROP TABLE `__History__`")++");"
+        , "if($columns = mysqli_query($DB_link, "++showPhpStr "SHOW COLUMNS FROM `__History__`"++")){"
+        , "    mysqli_query($DB_link, "++showPhpStr "DROP TABLE `__History__`"++");"
         , "}"
         ] ++ createTablePHP 21 historytbl ++
-        [ "if($err=mysql_error()) {"
+        [ "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
@@ -138,35 +129,35 @@ createTablesPHP fSpec =
         , "date_default_timezone_set(\"Europe/Amsterdam\");" 
         -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones 
         , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;" 
-        , "mysql_query(\"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
-        , "if($err=mysql_error()) {"
+        , "mysqli_query($DB_link, \"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
+        , "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
-        , "if($existing==true){"
+        , "if(true){"
         ] ++ indentBlock 2 (concatMap checkPlugexists (plugInfos fSpec))
         ++ ["}"]
         ++ concatMap plugCode [p | InternalPlug p <- plugInfos fSpec]
   where plugCode plug
          = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
-           ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
+           ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
            ++ case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
                tblRecords -> [ "else"
-                             , "mysql_query("++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
+                             , "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
                                                            ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
                                                            ++phpIndent 16 )
                                         ++");"
                              ]
-                             ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
+                             ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)
-         = [ "if($columns = mysql_query("++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
-           , "  mysql_query("++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
+         = [ "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
+           , "  mysqli_query($DB_link, "++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
            , "}" ]
 
 
@@ -176,7 +167,7 @@ type CreateTable = (String,[String],String)
 
 createTablePHP :: Int -> CreateTable -> [String] 
 createTablePHP i (crtbl,crflds,crengine)
-         = [ "mysql_query(\""++ crtbl]
+         = [ "mysqli_query($DB_link,\""++ crtbl]
            ++ indentBlock i crflds
            ++ [replicate i ' ' ++ crengine ++ "\");"]
            

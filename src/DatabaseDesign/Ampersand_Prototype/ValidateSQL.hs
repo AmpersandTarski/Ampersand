@@ -169,7 +169,7 @@ createTempDatabase fSpec flags =
     }
  where php = showPHP $
                connectToServer flags ++
-               createDatabasePHP tempDbName ++
+        --       createDatabasePHP tempDbName ++
                [ "mysql_select_db('"++tempDbName++"');"
                , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
                createTablesPHP fSpec
