@@ -57,7 +57,7 @@ phpObjInterfaces fSpec flags =
        , "$DB_user='"++addSlashes (sqlLogin flags)++"';"
        , "$DB_pass='"++addSlashes (sqlPwd flags)++"';"
        , ""
-       , "$DB_link=mysql_connect($DB_host, $DB_user, $DB_pass)"
+       , "$DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass)"
        , "      or exit(\"Error connecting to the database: username / password are probably incorrect.\");"
        , ""
        , "?>"
