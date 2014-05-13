@@ -638,6 +638,9 @@ Rewrite rules:
              ]
            | let dlt = delta (sign rel)
            , gen <- vgens fSpec
+  -- FIXME: @Stef twee opletpunten:
+  --          1) gen kan ook van de vorm IsE{} zijn!
+  --          2) ik kan me voorstellen dat je hier ook nog wil ontdubbelen...
            , let g=gengen gen, let s=genspc gen
            ]
        fst4 (x,_,_,_) = x
