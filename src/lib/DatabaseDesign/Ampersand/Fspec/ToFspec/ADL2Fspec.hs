@@ -72,7 +72,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , kernels      = constructKernels
                  , fsisa        = let f gen = case gen of 
                                                Isa{} -> [(genspc gen, gengen gen)]
-                                               IsE{} -> [(genspc gen, x ) | x<-(genrhs gen)]
+                                               IsE{} -> [(genspc gen, g ) | g<-genrhs gen]
                                   in concatMap f (gens context)
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -82,7 +82,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fSexpls      = ctxps context
                  , metas        = ctxmetas context
                  , initialPops  = initialpops
-                 , allViolations = [(r,vs) |r<- allrules, not (isSignal r), let vs = ruleviolations (gens context) initialpops r,  not (null vs)]
+                 , allViolations = [(r,vs) |r<-allrules, not (isSignal r), let vs = ruleviolations (gens context) initialpops r,  not (null vs)]
                  }
         themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                         then map name (patterns context) ++ map name allProcs
