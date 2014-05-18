@@ -51,18 +51,17 @@ installer fSpec flags = unlines
       , "if (!mysqli_query($DB_link,$sql)) {"
       , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
       , "  }"
-      
+      , ""
       , "// Connect to the freshly created database"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
       , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
-      , "}"
+      , "  }"
       , ""
       ] ++
       createTablesPHP fSpec ++
       [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" 
-        -- TODO: why set this only for the next transaction? (no SESSION or GLOBAL parameter is provided)
       , "if ($err=='') {"
       ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
       ,"  $content = '"

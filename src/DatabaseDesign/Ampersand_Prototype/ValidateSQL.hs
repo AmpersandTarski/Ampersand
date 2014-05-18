@@ -36,11 +36,10 @@ validateRulesSQL fSpec flags =
         (do { putStrLn "The population would violate invariants. Could not generate your database."
             ; exitWith $ ExitFailure 10
                  })
-    ; removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
     ; putStrLn "Initializing temporary database"
-    ; createTempDatabase fSpec flags
+    ; createTempDatabase fSpec
      
     ; let allExps = getAllInterfaceExps fSpec ++ 
                     getAllRuleExps fSpec ++
@@ -51,8 +50,8 @@ validateRulesSQL fSpec flags =
     ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
     ; results <- mapM (validateExp fSpec flags) allExps 
                    
-    ; putStrLn "\nRemoving temporary database"
-    ; removeTempDatabase flags
+--    ; putStrLn "\nRemoving temporary database"
+--    ; removeTempDatabase flags
     
     ; case [ ve | (ve, False) <- results] of
         [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
@@ -136,24 +135,7 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { let php = connectToServer flags ++
-                [ "mysql_select_db('"++tempDbName++"');"
-                , "$result=mysql_query("++showPhpStr queryStr++");"
-                , "if(!$result)"
-                , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
-                , "$rows=Array();"
-                , "  while (($row = @mysql_fetch_array($result))!==false) {"
-                , "    $rows[]=$row;"
-                , "    unset($row);"
-                , "  }"
-                , "echo '[';"
-                , "for ($i = 0; $i < count($rows); $i++) {"
-                , "  if ($i==0) echo ''; else echo ',';"
-                , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
-                , "}"
-                , "echo ']';"
-                ]
-    ; queryResult <- executePHP . showPHP $ php 
+ do { queryResult <- (executePHP . showPHP) php 
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn flags{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
               fatal 141 $ "PHP/SQL problem: "++queryResult
@@ -161,26 +143,69 @@ performQuery flags queryStr =
              [(pairs,"")] -> return pairs
              _            -> fatal 143 $ "Parse error on php result: "++show queryResult
     }
+   where
+    php = 
+      [ "// Try to connect to the database"
+      , "$DB_name='"++addSlashes tempDbName++"';"
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
+      , "}"
+      , ""
+      , "$sql="++showPhpStr queryStr++";"
+      , "$result=mysqli_query($DB_link,$sql);"
+      , "if(!$result)"
+      , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
+      , "$rows=Array();"
+      , "  while (($row = @mysql_fetch_array($result))!==false) {"
+      , "    $rows[]=$row;"
+      , "    unset($row);"
+      , "  }"
+      , "echo '[';"
+      , "for ($i = 0; $i < count($rows); $i++) {"
+      , "  if ($i==0) echo ''; else echo ',';"
+      , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
+      , "}"
+      , "echo ']';"
+      ]
 
-createTempDatabase :: Fspc -> Options -> IO ()
-createTempDatabase fSpec flags =
+createTempDatabase :: Fspc -> IO ()
+createTempDatabase fSpec =
  do { _ <- executePHP php
     ; return ()
     }
- where php = showPHP $
-               connectToServer flags ++
-        --       createDatabasePHP tempDbName ++
-               [ "mysql_select_db('"++tempDbName++"');"
-               , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
-               createTablesPHP fSpec
-
-removeTempDatabase :: Options -> IO ()
-removeTempDatabase flags =
- do { _ <- executePHP . showPHP $ 
-        connectToServer flags ++
-        ["mysql_query("++showPhpStr ("DROP DATABASE "++tempDbName)++");"]
-    ; return ()
-    }
+ where 
+  php = showPHP 
+     ([ "// Try to connect to the database"
+      , "$DB_name='"++addSlashes tempDbName++"';"
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
+      , "}"
+      , ""
+      , "// Drop the database if it exists"
+      , "$sql=\"DROP DATABASE $DB_name\";"
+      , "mysqli_query($DB_link,$sql);"
+      , "// Don't bother about the error if the database didn't exist..."
+      , ""
+      , "// Create the database"
+      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8\";"
+      , "if (!mysqli_query($DB_link,$sql)) {"
+      , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
+      , "  }"
+      , ""
+      , "// Connect to the freshly created database"
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
+      , "  }"
+      , ""
+      ]++
+      createTablesPHP fSpec
+     )
 
 connectToServer :: Options -> [String]
 connectToServer flags =
