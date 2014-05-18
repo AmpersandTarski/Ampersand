@@ -86,20 +86,30 @@ function DB_doquerErr($quer, &$error) {
   global $dbName;
   global $DB_link;
   global $DB_errs;
+//TODO: Onderstaande constanten zouden vanuit dbSettings moeten komen. Maar omdat ik geen verstand heb van PHP, krijg ik dat niet voor elkaar.
+//      @Michiel, zou jij hiernaar willen kijken?? Dank!
+  $DB_host='localhost';
+  $DB_user='ampersand';
+  $DB_pass='ampersand';
+
   
   //Replace the special atom value _SESSION by the current sessionAtom
   $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
   
-  $DB_slct = mysql_select_db($dbName, $DB_link);
-    
-  $result=mysql_query($quer,$DB_link);
+  $DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass,$dbName);
+  // Check connection
+  if (mysqli_connect_errno()) {
+    die("Failed to connect to MySQL (username/password are probably incorrect): " . mysqli_connect_error());
+  }
+          
+  $result=mysqli_query($DB_link,$quer);
   if(!$result){
-    $error = 'Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'": '.mysql_error();
+    $error = 'Error '.($ernr=mysqli_errno($DB_link)).' in query "'.$quer.'": '.mysqli_error($DB_link);
     return false;
   }
   if($result===true) return true; // success.. but no contents..
   $rows=Array();
-  while (($row = @mysql_fetch_array($result))!==false) {
+  while ($row = mysqli_fetch_array($result)) {
     $rows[]=$row;
     unset($row);
   }
