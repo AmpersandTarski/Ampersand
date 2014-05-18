@@ -39,7 +39,7 @@ validateRulesSQL fSpec flags =
     ; hSetBuffering stdout NoBuffering
     
     ; putStrLn "Initializing temporary database"
-    ; createTempDatabase fSpec
+    ; createTempDatabase fSpec flags
      
     ; let allExps = getAllInterfaceExps fSpec ++ 
                     getAllRuleExps fSpec ++
@@ -147,6 +147,10 @@ performQuery flags queryStr =
     php = 
       [ "// Try to connect to the database"
       , "$DB_name='"++addSlashes tempDbName++"';"
+      , "global $DB_host,$DB_user,$DB_pass;"
+      , "$DB_host='"++addSlashes (sqlHost flags)++"';"
+      , "$DB_user='"++addSlashes (sqlLogin flags)++"';"
+      , "$DB_pass='"++addSlashes (sqlPwd flags)++"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
@@ -170,8 +174,8 @@ performQuery flags queryStr =
       , "echo ']';"
       ]
 
-createTempDatabase :: Fspc -> IO ()
-createTempDatabase fSpec =
+createTempDatabase :: Fspc -> Options -> IO ()
+createTempDatabase fSpec flags =
  do { _ <- executePHP php
     ; return ()
     }
@@ -179,6 +183,11 @@ createTempDatabase fSpec =
   php = showPHP 
      ([ "// Try to connect to the database"
       , "$DB_name='"++addSlashes tempDbName++"';"
+      , "global $DB_host,$DB_user,$DB_pass;"
+      , "$DB_host='"++addSlashes (sqlHost flags)++"';"
+      , "$DB_user='"++addSlashes (sqlLogin flags)++"';"
+      , "$DB_pass='"++addSlashes (sqlPwd flags)++"';"
+      
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
