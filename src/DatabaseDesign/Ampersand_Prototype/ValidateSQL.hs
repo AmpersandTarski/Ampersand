@@ -220,7 +220,7 @@ createTempDatabase fSpec flags =
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
- do { --putStrLn $ "Executing PHP:\n" ++ phpStr
+ do { putStrLn $ "Executing PHP:\n" ++ phpStr
     ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
