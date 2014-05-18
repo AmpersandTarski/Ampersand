@@ -158,7 +158,7 @@ performQuery flags queryStr =
       , "if(!$result)"
       , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
       , "$rows=Array();"
-      , "  while (($row = @mysql_fetch_array($result))!==false) {"
+      , "  while (($row = @mysqli_fetch_array($result))!==false) {"
       , "    $rows[]=$row;"
       , "    unset($row);"
       , "  }"
@@ -209,7 +209,7 @@ createTempDatabase fSpec =
 
 connectToServer :: Options -> [String]
 connectToServer flags =
-  ["$DB_link = mysql_connect('"++addSlashes (sqlHost flags)++"'"
+  ["$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
                          ++",'"++addSlashes (sqlLogin flags)++"'"
                          ++",'"++addSlashes (sqlPwd flags)++"');"] 
                
