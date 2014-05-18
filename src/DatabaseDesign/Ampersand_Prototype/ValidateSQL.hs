@@ -155,14 +155,14 @@ performQuery flags queryStr =
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
       , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
-      , "}"
+      , "  }"
       , ""
       , "$sql="++showPhpStr queryStr++";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
       , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
       , "$rows=Array();"
-      , "  while (($row = @mysqli_fetch_array($result))!==false) {"
+      , "  while ($row = mysqli_fetch_array($result)) {"
       , "    $rows[]=$row;"
       , "    unset($row);"
       , "  }"
@@ -216,11 +216,6 @@ createTempDatabase fSpec flags =
       createTablesPHP fSpec
      )
 
-connectToServer :: Options -> [String]
-connectToServer flags =
-  ["$DB_link = mysqli_connect('"++addSlashes (sqlHost flags)++"'"
-                         ++",'"++addSlashes (sqlLogin flags)++"'"
-                         ++",'"++addSlashes (sqlPwd flags)++"');"] 
                
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
