@@ -259,13 +259,13 @@ data PAclause
                     }
 
 events :: PAclause -> [(InsDel,Declaration)]
-events paClause = nub (evs paClause)
+events = nub . evs
  where evs clause
         = case clause of
            CHC{} -> (concat.map evs) (paCls clause)
            GCH{} -> concat [ evs p | (_,_,p)<-paGCls clause] -- TODO is this correct?
            ALL{} -> (concat.map evs) (paCls clause)
-           Do{}  -> [(paSrt paClause, paTo clause)]
+           Do{}  -> [(paSrt clause, paTo clause)]
            New{} -> evs (paCl clause "")
            Rmv{} -> evs (paCl clause "")
            Nop{} -> []
