@@ -28,7 +28,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations
-          , RuleClause(..),DnfClause(..), dnf2expr, events
+          , RuleClause(..),DnfClause(..), dnf2expr
           )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -257,21 +257,6 @@ data PAclause
                     }
               | Ref { paVar :: String
                     }
-
-events :: PAclause -> [(InsDel,Declaration)]
-events = nub . evs
- where evs clause
-        = case clause of
-           CHC{} -> (concat.map evs) (paCls clause)
-           GCH{} -> concat [ evs p | (_,_,p)<-paGCls clause] -- TODO is this correct?
-           ALL{} -> (concat.map evs) (paCls clause)
-           Do{}  -> [(paSrt clause, paTo clause)]
-           New{} -> evs (paCl clause "")
-           Rmv{} -> evs (paCl clause "")
-           Nop{} -> []
-           Blk{} -> []
-           Let{} -> fatal 305 "events for let undetermined"
-           Ref{} -> fatal 306 "events for Ref undetermined"
 
    -- The data structure Clauses is meant for calculation purposes.
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, dnfClauses)<-cl_conjNF cl, disj<-[conj!!i]]
