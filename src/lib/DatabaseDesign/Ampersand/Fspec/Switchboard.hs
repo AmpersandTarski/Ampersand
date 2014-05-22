@@ -68,7 +68,21 @@ data Event = On { eSrt :: InsDel
                   } deriving (Show,Eq)
 -}
          eventsIn  = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, let On e d = ecaTriggr eca]
-         eventsOut = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, (e,d)<-events (ecaAction eca)]
+         eventsOut = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, (e,d)<-(nub.evs.ecaAction) eca]
+                     where evs :: PAclause -> [(InsDel,Declaration)]
+                           evs clause
+                             = case clause of
+                                CHC{} -> (concat.map evs) (paCls clause)
+                                GCH{} -> concat [ evs p | (_,_,p)<-paGCls clause]
+                                ALL{} -> (concat.map evs) (paCls clause)
+                                Do{}  -> [(paSrt clause, paTo clause)]
+                                New{} -> evs (paCl clause "")
+                                Rmv{} -> evs (paCl clause "")
+                                Nop{} -> []
+                                Blk{} -> []
+                                Let{} -> fatal 305 "events for let undetermined"
+                                Ref{} -> fatal 306 "events for Ref undetermined"
+
    colorRule :: Rule -> X11Color
    colorRule r  | isSignal r = Orange
                 | otherwise  = Green
