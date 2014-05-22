@@ -86,13 +86,11 @@ function DB_doquerErr($quer, &$error) {
   global $dbName;
   global $DB_link;
   global $DB_errs;
-//TODO: Onderstaande constanten zouden vanuit dbSettings moeten komen. Maar omdat ik geen verstand heb van PHP, krijg ik dat niet voor elkaar.
-//      @Michiel, zou jij hiernaar willen kijken?? Dank!
-  $DB_host='localhost';
-  $DB_user='ampersand';
-  $DB_pass='ampersand';
 
-  
+  global $DB_host;
+  global $DB_user;
+  global $DB_pass;
+
   //Replace the special atom value _SESSION by the current sessionAtom
   $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
   
