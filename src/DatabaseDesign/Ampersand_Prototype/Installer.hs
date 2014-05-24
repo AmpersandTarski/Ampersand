@@ -62,7 +62,9 @@ installer fSpec flags = unlines
       ] ++
       createTablesPHP fSpec ++
       [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" 
-      , "if ($err=='') {"
+      ] ++
+      populateTablesPHP fSpec ++
+      [ "if ($err=='') {"
       ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
       ,"  $content = '"
       ,"  <?php"
@@ -134,32 +136,41 @@ createTablesPHP fSpec =
         , "}"
         , ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
+        
+        -- The next statements will drop each table if exists:
         , "if(true){"
         ] ++ indentBlock 2 (concatMap checkPlugexists (plugInfos fSpec))
         ++ ["}"]
-        ++ concatMap plugCode [p | InternalPlug p <- plugInfos fSpec]
-  where plugCode plug
+        
+        -- The next statements will create all plugs
+        ++ concatMap createPlugPHP [p | InternalPlug p <- plugInfos fSpec]
+  where 
+    checkPlugexists (ExternalPlug _) = []
+    checkPlugexists (InternalPlug plug)
+         = [ "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
+           , "  mysqli_query($DB_link, "++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
+           , "}" ]
+    createPlugPHP plug
          = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
-           ++ case tblcontents (gens fSpec) (initialPops fSpec) plug of
+
+populateTablesPHP :: Fspc -> [String]
+populateTablesPHP fSpec = 
+    concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
+  where
+    populatePlugPHP plug
+         = case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
-               tblRecords -> [ "else"
-                             , "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
+               tblRecords -> [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
                                                            ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
                                                            ++phpIndent 16 )
                                         ++");"
                              ]
                              ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+     where 
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
-        checkPlugexists (ExternalPlug _) = []
-        checkPlugexists (InternalPlug plug)
-         = [ "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
-           , "  mysqli_query($DB_link, "++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
-           , "}" ]
-
-
 
 -- (CREATE TABLE name, fields, engine)
 type CreateTable = (String,[String],String)
