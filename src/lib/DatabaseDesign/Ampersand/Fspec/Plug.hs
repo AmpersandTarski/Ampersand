@@ -109,12 +109,6 @@ instance Plugable PlugSQL where
 --REMARK151210 -> one would expect I[entityconcept p], 
 --                but any p (as instance of Object) has one always existing concept p suitable to replace entityconcept p.
 --                concept p and entityconcept p are related uni,tot,inj,sur.
---data SqlFieldUsage = PrimKey A_Concept     -- The field is the primary key of the table
---                   | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL
---                   | PlainAttr             -- None of the above
---                   | NonMainKey            -- Key value of an Specialization of the Primary key. (field could be null)
---                   | UserDefinedUsage
---                   | FillInLater          -- Must be filled in later....
 
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
