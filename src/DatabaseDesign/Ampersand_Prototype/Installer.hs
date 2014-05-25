@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Installer
-  (installer,createTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
+  (installer,createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.CoreImporter

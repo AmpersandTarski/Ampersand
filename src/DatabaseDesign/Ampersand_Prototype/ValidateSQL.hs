@@ -213,6 +213,7 @@ createTempDatabase fSpec flags =
       , "  }"
       , ""
       ]++
+      createTablesPHP fSpec ++
       createTablesPHP fSpec
      )
 
