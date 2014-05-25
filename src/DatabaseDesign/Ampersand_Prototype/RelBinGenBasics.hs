@@ -21,17 +21,17 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    quote [] = []
    quote ('`':s) = '`':s  -- do nothing if already quoted
    quote s = "`"++s++"`"
-   quote s = "`"++quot s++"`"
-    where quot ('`':s)  = "\\`" ++ quot s
-          quot ('\\':s) = "\\\\" ++ quot s
-          quot (c:s)    = c: quot s
-          quot []       = []                          
-
+--   quote s = "`"++quo s++"`"
+--    where quo ('`':s')  = "\\`" ++ quo s'
+--          quo ('\\':s') = "\\\\" ++ quo s'
+--          quo (c:s')    = c: quo s'
+--          quo []       = []                          
+-- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks 
    sqlAtomQuote :: String->String
    sqlAtomQuote s = "'"++sAQ s++"'"
-    where sAQ ('\'':s) = "\\'" ++ sAQ s
-          sAQ ('\\':s) = "\\\\" ++ sAQ s
-          sAQ (c:s)    = c: sAQ s
+    where sAQ ('\'':s') = "\\'" ++ sAQ s'
+          sAQ ('\\':s') = "\\\\" ++ sAQ s'
+          sAQ (c:s')    = c: sAQ s'
           sAQ []       = []                          
 
    commentBlock :: [String]->[String]
