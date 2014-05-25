@@ -341,6 +341,7 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
         where 
           eRelIs = [c | EDcI c <- map fldexpr flds]
           showField fld =
+--FIXME 20140525: Onderstaande code vervangen door afl te leiden van `flduse`. Daar zit deze info al in verwerkt!
              let isPrimaryKey = case fldexpr fld of
                                   e@EDcI{} -> e==fldexpr (head flds) -- The first field represents the most general concept
                                   _        -> False 
