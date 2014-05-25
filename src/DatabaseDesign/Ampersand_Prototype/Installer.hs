@@ -183,13 +183,18 @@ createTablePHP i (crtbl,crflds,crengine)
            
 plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
- = ( "CREATE TABLE "++quote (name plug)++""
+ = ( "CREATE TABLE "++quote (name plug)
    , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
      | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
-      case (plug, plugFields plug) of
-           (BinSQL{}, _) -> []
-           (_,    plg:_) -> [", PRIMARY KEY (`"++fldname plg++"`)"]
-           _             -> []
+      case (plug, (head.plugFields) plug) of
+           (BinSQL{}, _)   -> []
+           (_,    primFld) -> 
+                case flduse primFld of
+                   TableKey isPrim c -> [ ", "++ (if isPrim then "PRIMARY " else "") 
+                                          ++ "KEY (`"++fldname primFld++"`)"
+                                        ]
+                   ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
+                   PlainAttr     -> []
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 dropplug :: PlugSQL -> String
