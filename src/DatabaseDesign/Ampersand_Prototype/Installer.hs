@@ -62,9 +62,22 @@ installer fSpec flags = unlines
       ] ++
       createTablesPHP fSpec ++
       [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" 
+      , "?>"
+      ,"<?php"
+      , "// Connect to the database"
+      , "include \"dbSettings.php\";"
+      , ""
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
+      , "  }"
+      , ""
       ] ++
       populateTablesPHP fSpec ++
-      [ "if ($err=='') {"
+      [ "?>"
+      ,"<?php"
+      , "if ($err=='') {"
       ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
       ,"  $content = '"
       ,"  <?php"
@@ -162,13 +175,13 @@ populateTablesPHP fSpec =
     populatePlugPHP plug
          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
-               tblRecords -> [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
+               tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
                                                            ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
                                                            ++phpIndent 16 )
                                         ++");"
-                             ]
-                             ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+                             ):
+                             ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
      where 
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
 
@@ -190,7 +203,7 @@ plug2tbl plug
            (BinSQL{}, _)   -> []
            (_,    primFld) -> 
                 case flduse primFld of
-                   TableKey isPrim c -> [ ", "++ (if isPrim then "PRIMARY " else "") 
+                   TableKey isPrim _ -> [ ", "++ (if isPrim then "PRIMARY " else "") 
                                           ++ "KEY (`"++fldname primFld++"`)"
                                         ]
                    ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
