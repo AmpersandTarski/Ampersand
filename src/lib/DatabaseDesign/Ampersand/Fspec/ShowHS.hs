@@ -129,8 +129,6 @@ where
    instance ShowHS (InsDel, Expression, PAclause) where
     showHS flags indent (tOp, links, p)  
       = "( "++show tOp++indent++", "++showHS flags (indent++"  ") links++indent++", "++showHS flags (indent++"  ") p++indent++")"
-        where a = Atom (source links) "a"
-              b = Atom (target links) "b"
 
    instance ShowHS PAclause where
     showHS flags indent p   
@@ -176,12 +174,9 @@ where
                   indentB = indentA++"            " -- adding the width of ", fldexpr = " 
 
    instance ShowHS SqlFieldUsage where
-    showHS _ _ (PrimKey aCpt)    = "PrimKey "   ++showHSName aCpt
-    showHS _ _ (ForeignKey aCpt) = "ForeignKey "++showHSName aCpt
-    showHS _ _ PlainAttr         = "PlainAttr "
-    showHS _ _ NonMainKey        = "NonMainKey "
-    showHS _ _ UserDefinedUsage  = "UserDefinedUsage "
-    showHS _ _ FillInLater       = "FillInLater "
+    showHS _ _ (TableKey isPrimary aCpt) = "TableKey "  ++show isPrimary++" "++showHSName aCpt
+    showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
+    showHS _ _ PlainAttr                 = "PlainAttr "
 
    instance ShowHS SqlType where
     showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i

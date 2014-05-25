@@ -73,7 +73,9 @@ makeLinkTable context dcl totsurs =
                            Fld { fldname = concat["Src" | isEndo dcl]++name (source trgExpr)                       
                                , fldexpr = srcExpr
                                , fldtype = sqlTypeOf context (target srcExpr)
-                               , flduse  = ForeignKey (target srcExpr)
+                               , flduse  = if suitableAsKey (sqlTypeOf context (target srcExpr))
+                                           then ForeignKey (target srcExpr)
+                                           else PlainAttr
                                , fldnull = isTot trgExpr
                                , flduniq = isUni trgExpr
                                } 
@@ -81,7 +83,9 @@ makeLinkTable context dcl totsurs =
                            Fld { fldname = concat["Tgt" | isEndo dcl]++name (target trgExpr)                       
                                , fldexpr = trgExpr
                                , fldtype = sqlTypeOf context (target trgExpr)
-                               , flduse  = ForeignKey (target trgExpr)
+                               , flduse  = if suitableAsKey (sqlTypeOf context (target trgExpr))
+                                           then ForeignKey (target trgExpr)
+                                           else PlainAttr
                                , fldnull = isSur trgExpr
                                , flduniq = isInj trgExpr
                                }
@@ -103,6 +107,22 @@ makeLinkTable context dcl totsurs =
     trgExpr 
      | not r_is_Tot && r_is_Sur = flp (EDcD dcl)
      | otherwise                = EDcD dcl
+
+suitableAsKey :: SqlType -> Bool
+suitableAsKey st = 
+  case st of 
+    SQLChar{}    -> True
+    SQLBlob      -> False
+    SQLPass      -> False
+    SQLSingle    -> True
+    SQLDouble    -> True
+    SQLText      -> False
+    SQLuInt{}    -> True
+    SQLsInt{}    -> True
+    SQLId{}      -> True
+    SQLVarchar{} -> True
+    SQLBool{}    -> True
+
 
 -----------------------------------------
 --rel2fld
@@ -137,7 +157,9 @@ rel2fld context
        , flduse  =  
           let f expr =
                  case expr of
-                    EDcI c   -> PrimKey c
+                    EDcI c   -> if suitableAsKey (sqlTypeOf context c)
+                                then TableKey ((not.maybenull) e) c
+                                else PlainAttr
                     EDcD _   -> PlainAttr
                     EFlp e'  -> f e'
                     _        -> fatal 144 ("No flduse defined for "++show expr)

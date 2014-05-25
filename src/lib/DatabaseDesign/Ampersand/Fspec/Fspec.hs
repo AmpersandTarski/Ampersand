@@ -34,7 +34,6 @@ where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics
-import Data.List
 import DatabaseDesign.Ampersand.ADL1.Pair
 import DatabaseDesign.Ampersand.ADL1.Expression (notCpl)
 --import Debug.Trace
@@ -401,12 +400,9 @@ lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
                  [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
 
-data SqlFieldUsage = PrimKey A_Concept     -- The field is the primary key of the table
+data SqlFieldUsage = TableKey Bool A_Concept  -- The field is the (primary) key of the table. (The boolean tells whether or not it is primary)
                    | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL
                    | PlainAttr             -- None of the above
-                   | NonMainKey            -- Key value of an Specialization of the Primary key. (field could be null)
-                   | UserDefinedUsage
-                   | FillInLater          -- Must be filled in later....
                    deriving (Eq, Show)
 
 data SqlField = Fld { fldname :: String
