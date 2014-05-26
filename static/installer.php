@@ -13,6 +13,7 @@
 <?php
   require 'InstallerDBstruct.php';
   require 'InstallerDefPop.php';
+  require 'DumpPopulationToADL.php';
 ?>
 </body>
 </html>
