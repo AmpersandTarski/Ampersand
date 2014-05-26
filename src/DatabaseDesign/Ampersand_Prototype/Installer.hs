@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Installer
-  (installer,createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
+  (installerDBstruct,installerDefPop,dumpPopulationToADL,
+   createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
@@ -11,12 +12,8 @@ import DatabaseDesign.Ampersand_Prototype.Version
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"
 
-
---  import Debug.Trace
-
 installer :: Fspc -> Options -> String
-installer fSpec flags = unlines
-   (
+installer fSpec flags = unlines $
       [ "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0 Strict//EN\">"
       , "<html>"
       , "<head>"
@@ -29,7 +26,17 @@ installer fSpec flags = unlines
       , ""
       , "</html>"
       , "<body>"
-      ,"<?php"
+      ] ++
+      lines (installerDBstruct fSpec flags) ++
+      lines (installerDefPop fSpec) ++
+      lines (dumpPopulationToADL fSpec) ++
+      ["</body></html>"
+      ,""
+      ]
+
+installerDBstruct :: Fspc -> Options -> String
+installerDBstruct fSpec flags = unlines $
+      ["<?php"
       , "// Try to connect to the database"
       , ""
       , "include \"dbSettings.php\";"
@@ -63,7 +70,11 @@ installer fSpec flags = unlines
       createTablesPHP fSpec ++
       [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" 
       , "?>"
-      ,"<?php"
+      ]
+      
+installerDefPop :: Fspc -> String
+installerDefPop fSpec = unlines $
+      ["<?php"
       , "// Connect to the database"
       , "include \"dbSettings.php\";"
       , ""
@@ -79,7 +90,11 @@ installer fSpec flags = unlines
       ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
       ,"  }"
       , "?>"
-      ,"<?php"
+      ]
+
+dumpPopulationToADL :: Fspc -> String
+dumpPopulationToADL fSpec = unlines $
+      ["<?php"
       ,"  $content = '"
       ,"  <?php"
       ,"  require \"Generics.php\";"
@@ -111,10 +126,9 @@ installer fSpec flags = unlines
       ,"  ?>';"
       ,"  file_put_contents(\"dbdump.php.\",$content);"  
       , ""
-      , "?></body></html>"
-      ,""
+      , "?>"
       ]
-     )
+
 
 createTablesPHP :: Fspc ->[String]
 createTablesPHP fSpec =
