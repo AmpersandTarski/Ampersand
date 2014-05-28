@@ -13,8 +13,9 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
 chpDiagnosis :: Fspc -> Options -> (Blocks,[Picture])
 chpDiagnosis fSpec flags
- = ( fromList $
-     header ++                -- the chapter header
+ = ( (chptHeader (fsLang fSpec) Diagnosis) <> 
+     fromList 
+     (
      diagIntro ++             -- an introductory text
      roleomissions ++         -- tells which role-rule, role-interface, and role-relation assignments are missing
      roleRuleTable ++         -- gives an overview of rule-rule assignments
@@ -29,10 +30,9 @@ chpDiagnosis fSpec flags
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
      wipReport++              -- sums up the work items (i.e. the violations of process rules)
      toList violationReport          -- sums up the violations caused by the population of this script.
+     )   
    , pics )
   where
-  header :: [Block]
-  header = toList (chptHeader (fsLang fSpec) Diagnosis)
   diagIntro :: [Block]
   diagIntro = 
     case fsLang fSpec of
@@ -381,12 +381,12 @@ chpDiagnosis fSpec flags
                   then udefrules fSpec
                   else concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                        concat [udefrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
-           upC (Str str:strs) = Str (upCap str):strs
-           upC str = str
+           upC (Str str':strs) = Str (upCap str'):strs
+           upC str' = str'
            fn r = locnm (origin r)
            ln r = locln (origin r)
            strconcat :: [Inline] -> Inline
-           strconcat strs = (Str . concat) [ str | Str str<-strs]
+           strconcat strs = (Str . concat) [ str' | Str str'<-strs]
 
   ruleRelationRefTable =
     [ Para [ Str descriptionStr ]
@@ -425,10 +425,10 @@ chpDiagnosis fSpec flags
                                           , "Theme", "Relations", "With reference", "Rules", "Entire context")
 
   locnm (FileLoc(FilePos(filename,_,_))) = filename
-  locnm (DBLoc str) = str
+  locnm (DBLoc str') = str'
   locnm _ = "NO FILENAME"
   locln (FileLoc(FilePos(_,Pos l _,_))) = show l
-  locln (DBLoc str) = str
+  locln (DBLoc str') = str'
   locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
 
 -- TODO: give richer feedback...
