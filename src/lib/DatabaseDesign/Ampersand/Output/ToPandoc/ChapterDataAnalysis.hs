@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
 where 
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
@@ -25,23 +26,23 @@ chpDataAnalysis fSpec flags = (theBlocks, thePictures)
   theBlocks 
     =  chptHeader (fsLang fSpec) DataAnalysis  -- The header
     <> (case fsLang fSpec of 
-             Dutch   -> para ( text "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
-                            <> text "De opbouw is als volgt:"
+             Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
+                            <> "De opbouw is als volgt:"
                              )
                      <> para ( if summaryOnly
-                               then text "We beginnen met "
-                               else text "We beginnen met het classificatiemodel, gevolgd door "
-                            <> text "een overzicht van alle relaties, die samen de basis vormen van de rest van deze analyse. "
-                            <> text "tenslotte volgen achtereenvolgend het logische- en technische gegevensmodel."
+                               then  "We beginnen met "
+                               else  "We beginnen met het classificatiemodel, gevolgd door "
+                            <>  "een overzicht van alle relaties, die samen de basis vormen van de rest van deze analyse. "
+                            <>  "tenslotte volgen achtereenvolgend het logische- en technische gegevensmodel."
                              )   
-             English -> para ( text "This chapter contains the result of the data analisys. "
-                            <> text "It is structured as follows:"
+             English -> para (  "This chapter contains the result of the data analisys. "
+                            <>  "It is structured as follows:"
                              )
                      <> para ( if summaryOnly
-                               then text "We start with "
-                               else text "We start with the classification model, followed by "
-                            <> text "a list of all relations, that are the foundation of the rest of the analisys. "
-                            <> text "Finally, the logical and technical data model are discussed."
+                               then  "We start with "
+                               else  "We start with the classification model, followed by "
+                            <>  "a list of all relations, that are the foundation of the rest of the analisys. "
+                            <>  "Finally, the logical and technical data model are discussed."
                              )   
        )
     <> if summaryOnly then mempty else classificationBlocks
@@ -68,26 +69,26 @@ classificationSection lev fSpec flags = (theBlocks,pict)
  where 
   theBlocks =
        header lev (case fsLang fSpec of
-                    Dutch   -> text "Classificaties"
-                    English -> text "Classifications"
+                    Dutch   ->  "Classificaties"
+                    English ->  "Classifications"
                   )
     <> content
   content = 
     if null (classes classificationModel)
     then para (case fsLang fSpec of 
-              Dutch   -> text "Er zijn geen classificaties gedefinieerd."
-              English -> text "No classifications have been defined"
+              Dutch   ->  "Er zijn geen classificaties gedefinieerd."
+              English ->  "No classifications have been defined"
               )
     else para (case fsLang fSpec of 
-              Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
+              Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
                        <> (if canXRefer flags 
-                           then text "Deze is in figuur " <> xRefReference flags pict <> text "weergegeven."
-                           else text "Deze is in onderstaand figuur weergegeven."
+                           then  "Deze is in figuur " <> xRefReference flags pict <> "weergegeven."
+                           else "Deze is in onderstaand figuur weergegeven."
                           )
-              English -> text "A number of concepts is organized in a classification structure. "
+              English -> "A number of concepts is organized in a classification structure. "
                        <> (if canXRefer flags 
-                           then text "This is shown in figure " <> xRefReference flags pict <> text "."
-                           else text "This is shown in the figure below."
+                           then "This is shown in figure " <> xRefReference flags pict <> "."
+                           else "This is shown in the figure below."
                           )
             )
          <> para (showImage flags pict)
@@ -204,58 +205,50 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
            Dutch   -> para (   text "Ieder(e) "
                             <> (emph.text.nm.assSrc) assoc
                             <> let rel = (singleQuoted.text.assrhr) assoc
-                                   rel' = text ""
+                                   rel' = ""
                                in (case assrhm assoc of
-                                     Mult MinZero MaxOne  -> text " "  <> rel <> text " maximaal één " 
-                                     Mult MinZero MaxMany -> text " "  <> rel <> text " geen tot meerdere "
-                                     Mult MinOne  MaxOne  -> text " moet " <> rel <> text " precies één "
-                                     Mult MinOne  MaxMany -> text " moet " <> rel <> text " ten minste één "
+                                     Mult MinZero MaxOne  -> " " <> rel <> " maximaal één " 
+                                     Mult MinZero MaxMany -> " " <> rel <> " geen tot meerdere "
+                                     Mult MinOne  MaxOne  -> " moet " <> rel <> " precies één "
+                                     Mult MinOne  MaxMany -> " moet " <> rel <> " ten minste één "
                                   ) 
                             <> (emph.text.nm.assTgt) assoc 
-                            <> text ". Over deze relatie geldt omgekeerd dat "
-                            <> text "ieder(e) "
+                            <>  ". Over deze relatie geldt omgekeerd dat "
+                            <>  "ieder(e) "
                             <> (emph.text.nm.assTgt) assoc
                             <> (case asslhm assoc of
-                                     Mult MinZero MaxOne  -> text " "  <> rel' <> text " maximaal één " 
-                                     Mult MinZero MaxMany -> text " "  <> rel' <> text " geen tot meerdere "
-                                     Mult MinOne  MaxOne  -> text " moet " <> rel' <> text " precies één "
-                                     Mult MinOne  MaxMany -> text " moet " <> rel' <> text " ten minste één "
+                                     Mult MinZero MaxOne  -> " "  <> rel' <> " maximaal één " 
+                                     Mult MinZero MaxMany -> " "  <> rel' <> " geen tot meerdere "
+                                     Mult MinOne  MaxOne  -> " moet " <> rel' <> " precies één "
+                                     Mult MinOne  MaxMany -> " moet " <> rel' <> " ten minste één "
                                   )
                             <> (emph.text.nm.assSrc) assoc
-                            <> text " kan hebben."
+                            <> " kan hebben."
                            )
-           English -> para (   text "Every "
+           English -> para (   "Every "
                             <> (emph.text.nm.assSrc) assoc
                             <> let rel = (singleQuoted.text.assrhr) assoc
-                                   rel' = text ""
+                                   rel' = ""
                                in (case assrhm assoc of
-                                     Mult MinZero MaxOne  -> text " "  <> rel <> text " at most one " 
-                                     Mult MinZero MaxMany -> text " "  <> rel <> text " zero or more "
-                                     Mult MinOne  MaxOne  -> text " must " <> rel <> text " exactly one "
-                                     Mult MinOne  MaxMany -> text " must " <> rel <> text " at least one "
+                                     Mult MinZero MaxOne  -> " "  <> rel <> " at most one " 
+                                     Mult MinZero MaxMany -> " "  <> rel <> " zero or more "
+                                     Mult MinOne  MaxOne  -> " must " <> rel <> " exactly one "
+                                     Mult MinOne  MaxMany -> " must " <> rel <> " at least one "
                                   ) 
                             <> (emph.text.nm.assTgt) assoc 
-                            <> text ". For the other way round, for this relation holds that "
-                            <> text "each "
+                            <> ". For the other way round, for this relation holds that "
+                            <> "each "
                             <> (emph.text.nm.assTgt) assoc
                             <> (case asslhm assoc of
-                                     Mult MinZero MaxOne  -> text " "  <> rel' <> text " at most one " 
-                                     Mult MinZero MaxMany -> text " "  <> rel' <> text " zero or more "
-                                     Mult MinOne  MaxOne  -> text " must " <> rel' <> text " exactly one "
-                                     Mult MinOne  MaxMany -> text " must " <> rel' <> text " at least one "
+                                     Mult MinZero MaxOne  -> " "  <> rel' <> " at most one " 
+                                     Mult MinZero MaxMany -> " "  <> rel' <> " zero or more "
+                                     Mult MinOne  MaxOne  -> " must " <> rel' <> " exactly one "
+                                     Mult MinOne  MaxMany -> " must " <> rel' <> " at least one "
                                   )
                             <> (emph.text.nm.assSrc) assoc
-                            <> text "."
+                            <> "."
                            )
              
-     showDummy :: DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
-     showDummy assoc = --(plain.text.show) assoc 
-             (para.text) ("assSrc: "++(nm.assSrc) assoc)
-          <> (para.text) ("asslhm: "++(show.asslhm) assoc)
-          <> (para.text) ("asslhr: "++(     asslhr) assoc)
-          <> (para.text) ("assTgt: "++(nm.assTgt) assoc)
-          <> (para.text) ("assrhm: "++(show.assrhm) assoc)
-          <> (para.text) ("assrhr: "++(     assrhr) assoc)
 
      nm :: Identified a => Either a String -> String
      nm x = case x of 
@@ -267,19 +260,19 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
  where 
    theBlocks =
        header lev (case fsLang fSpec of
-                    Dutch   -> text "Technisch datamodel"
-                    English -> text "Technical datamodel"
+                    Dutch   ->  "Technisch datamodel"
+                    English ->  "Technical datamodel"
                       )
     <> para (case fsLang fSpec of
-               Dutch   -> (text "De afspraken zijn vertaald naar een technisch datamodel. "
+               Dutch   -> ( "De afspraken zijn vertaald naar een technisch datamodel. "
                          <> ( if canXRefer flags
-                              then text "Dit model is in figuur " <> xRefReference flags pict <> text " weergegeven."
-                              else text "Dit model is in onderstaand figuur weergegeven. "
+                              then "Dit model is in figuur " <> xRefReference flags pict <> " weergegeven."
+                              else "Dit model is in onderstaand figuur weergegeven. "
                           ) )
-               English -> (text "The functional requirements have been translated into a technical data model. "
+               English -> ( "The functional requirements have been translated into a technical data model. "
                          <> ( if canXRefer flags
-                              then text "This model is shown by figure " <> xRefReference flags pict <> text "."
-                              else text "This model is shown by the figure below. "
+                              then "This model is shown by figure " <> xRefReference flags pict <> "."
+                              else "This model is shown by the figure below. "
                           ) )
             )
     <> para (showImage flags pict)
@@ -299,10 +292,10 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
       detailsOfplug :: PlugInfo -> Blocks
       detailsOfplug p = 
            header 3 (   case (fsLang fSpec, p) of
-                          (Dutch  , InternalPlug{}) -> text "Tabel: "
-                          (Dutch  , ExternalPlug{}) -> text "Dataservice: "
-                          (English, InternalPlug{}) -> text "Table: "
-                          (English, ExternalPlug{}) -> text "Data service: "
+                          (Dutch  , InternalPlug{}) ->  "Tabel: "
+                          (Dutch  , ExternalPlug{}) ->  "Dataservice: "
+                          (English, InternalPlug{}) ->  "Table: "
+                          (English, ExternalPlug{}) ->  "Data service: "
                      <> text (name p)
                     ) 
         <> case p of
@@ -318,14 +311,14 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
                -> para 
                        (case fsLang fSpec of
                          Dutch
-                           ->  text "Dit is een koppeltabel, die "
+                           ->  "Dit is een koppeltabel, die "
                             <> primExpr2pandocMath (fsLang fSpec) (mLkp bin)
-                            <> text " implementeert. De tabel bestaat uit de volgende kolommen:"      
+                            <> " implementeert. De tabel bestaat uit de volgende kolommen:"      
                            
                          English
-                           ->  text "This is a link-table, implementing "
+                           ->  "This is a link-table, implementing "
                             <> primExpr2pandocMath (fsLang fSpec) (mLkp bin)
-                            <> text ". It contains the following columns:"  
+                            <> ". It contains the following columns:"  
                        )
                      <> showFields (plugFields bin)
                    
@@ -334,12 +327,11 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
                 -> mempty
              ExternalPlug _
                -> case fsLang fSpec of
-                    Dutch   -> para (text "De details van deze service zijn in dit document (nog) niet verder uitgewerkt.")
-                    English -> para (text "The details of this dataservice are not available in this document.")
+                    Dutch   -> para "De details van deze service zijn in dit document (nog) niet verder uitgewerkt."
+                    English -> para "The details of this dataservice are not available in this document."
       showFields :: [SqlField] -> Blocks
       showFields flds = bulletList (map showField flds)
         where 
-          eRelIs = [c | EDcI c <- map fldexpr flds]
           showField fld =
 --FIXME 20140525: Onderstaande code vervangen door afl te leiden van `flduse`. Daar zit deze info al in verwerkt!
              let isPrimaryKey = case fldexpr fld of
@@ -352,37 +344,37 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
                       <> linebreak
                       <> (if isPrimaryKey 
                           then case fsLang fSpec of
-                                Dutch   -> text ("Dit attribuut is de primaire sleutel. ")
-                                English -> text ("This attribute is the primary key. ")
+                                Dutch   -> "Dit attribuut is de primaire sleutel. "
+                                English -> "This attribute is the primary key. "
                           else 
                           case mForeignKey of 
                            Just c ->  case fsLang fSpec of
-                                         Dutch   -> text ("Dit attribuut verwijst naar een voorkomen in de tabel ")
-                                         English -> text ("This attribute is a foreign key to ")
+                                         Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
+                                         English -> "This attribute is a foreign key to "
                                      <> (text.name) c
                            Nothing -- (no foreign key...)
                              -> --if isBool
                                 --then 
                                 --else
                                   (case fsLang fSpec of
-                                     Dutch   -> text ("Dit attribuut implementeert ")
-                                     English -> text ("This attribute implements ")
+                                     Dutch   -> "Dit attribuut implementeert "
+                                     English -> "This attribute implements "
                                   <> primExpr2pandocMath (fsLang fSpec) (fldexpr fld)
-                                  <> text "."
+                                  <> "."
                                   )
                          )
                       <> linebreak 
                       <> (code.show.fldtype) fld
-                      <> text ", "
+                      <> ", "
                       <> (case fsLang fSpec of
                             Dutch 
-                              -> text (if fldnull fld then "Optioneel" else "Verplicht")
-                               <>text (if flduniq fld then ", Uniek" else "")
-                               <>text "."
+                              ->  (if fldnull fld then "Optioneel" else "Verplicht")
+                               <> (if flduniq fld then ", Uniek" else "")
+                               <> "."
                             English 
-                              -> text (if fldnull fld then "Optional" else "Mandatory")
-                               <>text (if flduniq fld then ", Unique" else "")
-                               <>text "."
+                              ->  (if fldnull fld then "Optional" else "Mandatory")
+                               <> (if flduniq fld then ", Unique" else "")
+                               <> "."
                          )
                      )
    pict :: Picture
@@ -401,37 +393,18 @@ daBasicsSection lev fSpec flags = theBlocks
  where 
   theBlocks =
        header lev (case fsLang fSpec of
-                    Dutch   -> text "Basiszinnen"
-                    English -> text "Fact types"
+                    Dutch   -> "Basiszinnen"
+                    English -> "Fact types"
                   )
    <> case fsLang fSpec of 
-        Dutch   -> para (text "In deze paragraaf worden de basiszinnen opgesomd, die een rol spelen bij het ontwerp van de gegevensstructuur. "
-                       <>text "Per basiszin wordt de naam en het bron- en doelconcept gegeven, alsook de eigenschappen van deze relatie."
+        Dutch   -> para ( "In deze paragraaf worden de basiszinnen opgesomd, die een rol spelen bij het ontwerp van de gegevensstructuur. "
+                       <> "Per basiszin wordt de naam en het bron- en doelconcept gegeven, alsook de eigenschappen van deze relatie."
                         )
-        English -> para (text "This section enumerates the fact types, that have been used in the design of the datastructure. "
-                       <>text "For each fact type its name, the source and target concept and the properties are documented."
+        English -> para ( "This section enumerates the fact types, that have been used in the design of the datastructure. "
+                       <> "For each fact type its name, the source and target concept and the properties are documented."
                         )       
    <> definitionList (map toDef (relsInThemes fSpec))
--- HJO, 20130526: onderstaande tabel vervangen door bovenstaande lijst, ivm leesbaarheid.
---   <>  table 
---        (-- caption -- 
---         case fsLang fSpec of
---           Dutch   -> text "Deze tabel bevat de basiszinnen, die gebruikt zijn als basis voor de gegevensanalyse."
---           English -> text "This table lists the fact types, that have been used in assembling the data models."
---        )
---        [(AlignLeft,0.4)       , (AlignCenter, 0.4)         , (AlignCenter, 0.2)]
---        ( case fsLang fSpec of
---           Dutch   -> [plain (text "Relatie") , plain (text "Beschrijving"), plain (text "Eigenschappen")]
---           English -> [plain (text "Relation"), plain (text "Description") , plain (text "Properties")   ]
---        ) 
---        (map toRow (relsInThemes fSpec))
     where
-      toRow :: Declaration -> [Blocks]
-      toRow d
-        = [ (plain.math.showMath) d
-          , fromList (meaning2Blocks (fsLang fSpec) d)
-          , plain ( inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d])
-          ]
       toDef :: Declaration -> (Inlines, [Blocks])
       toDef d
         = ( (math.showMath) d

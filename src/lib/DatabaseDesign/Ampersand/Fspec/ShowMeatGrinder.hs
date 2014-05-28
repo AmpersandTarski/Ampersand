@@ -260,7 +260,7 @@ instance MetaPopulations Declaration where
                      Nothing -> False
                      Just (_,d) -> d == dcl   
 instance MetaPopulations Atom where
- metaPops _ _ atm = []
+ metaPops _ _ _ = []
 --   [ Pop "root"  "AtomID" "Concept"
 --          [(uri atm,uri(atmRoot atm))]
 --   , Pop "atomvalue"  "AtomID" "AtomValue"

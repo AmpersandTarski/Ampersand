@@ -89,10 +89,10 @@ where
      norm (GCH ds ms)  | (not.null) [() | (_,links,_)<-normds, isFalse links] = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isFalse links)] ms, ["Remove provably empty guard(s)."])
                        | (not.null) [()          | (_,  _    ,p)<-normds, isNop p]
                            = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isNop p)] ms, ["Remove unneccessary SELECT."])
-                       | (not.null) doubles = (GCH [ (fst3 (head cl), foldr1 (.\/.) (map snd3 cl), thd3 (head cl)) | cl<-eqCl (\(tOp,links,p)->(tOp,p)) ds ] ms, ["remove double occurrences"])
+                       | (not.null) doubles = (GCH [ (fst3 (head cl), foldr1 (.\/.) (map snd3 cl), thd3 (head cl)) | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds ] ms, ["remove double occurrences"])
                        | otherwise = (GCH ds ms, [])
                        where normds = [ (tOp, conjNF links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
-                             doubles = [ d | cl<-eqCl (\(tOp,links,p)->(tOp,p)) ds, length cl>1, d<-cl ]
+                             doubles = [ d | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds, length cl>1, d<-cl ]
      norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
      norm (ALL [d] ms) = (d', ["Flatten ONE"])
                        where d' = case d of

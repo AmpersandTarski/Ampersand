@@ -14,7 +14,6 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
-import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
@@ -144,14 +143,14 @@ chpNatLangReqs lev fSpec flags =
       printOneTheme mTheme (concs2print, rels2print, rules2print) counter0
               = case (mTheme, themes fSpec) of
                  (Nothing, _:_) -> ( [], counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-                 _              -> ( header' ++ explainsPat ++ printIntro concs2print relConcepts ++ reqdefs
+                 _              -> ( toList (header' <> explainsPat) ++ printIntro concs2print relConcepts ++ reqdefs
                                    , Counter (getEisnr counter0 + length reqs)
                                    )
            where
               -- the concepts for which one of the relations of this theme contains a source or target definition
               -- (these will be printed, regardless whether the concept was printed before)
-              relConcepts = [ (upCap $ name d,def, origin d)
-                            | d@Sgn{decConceptDef=Just (RelConceptDef _ def)} <- rels2print 
+              relConcepts = [ (upCap $ name d,def', origin d)
+                            | d@Sgn{decConceptDef=Just (RelConceptDef _ def')} <- rels2print 
                             ]
               
               -- sort the requirements by file position
@@ -169,28 +168,27 @@ chpNatLangReqs lev fSpec flags =
                            Just pat -> name pat
                            --Just (PatternTheme pat) -> "Pattern "++name pat
                            --Just (ProcessTheme prc) -> "Process "++name prc
-              header' :: [Block]
-              header' = toList (labeledThing flags (lev+1) (xLabel DataAnalysis++case mTheme of
-                                                                       Nothing ->  "_LooseEnds"
-                                                                       _       -> themeName
-                                              )
-                                          (case (mTheme,fsLang fSpec) of
-                                              (Nothing, Dutch  ) -> "Losse eindjes..."
-                                              (Nothing, English) -> "Loose ends..."
-                                              _                  -> themeName
-                                          ))
+              header' :: Blocks
+              header' = labeledThing flags (lev+1) (xLabel DataAnalysis++case mTheme of
+                                                               Nothing ->  "_LooseEnds"
+                                                               _       -> themeName
+                                                   )
+                                  (case (mTheme,fsLang fSpec) of
+                                      (Nothing, Dutch  ) -> "Losse eindjes..."
+                                      (Nothing, English) -> "Loose ends..."
+                                      _                  -> themeName
+                                  )
                                           
-              explainsPat :: [Block]
+              explainsPat :: Blocks
               explainsPat
                = case mTheme of
-                         Nothing  -> [Para 
-                                      (case fsLang fSpec of
-                                        Dutch   -> [Str "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."]
-                                        English -> [Str "This paragraph shows remaining fact types and concepts "
-                                                   ,Str "that have not been described in previous paragraphs."]
-                                      )]
-                         Just pat -> purposes2Blocks flags purps
-                                     where purps = purposesDefinedIn fSpec (fsLang fSpec) pat
+                  Nothing  -> case fsLang fSpec of
+                                 Dutch   -> para $ 
+                                                "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."
+                                 English -> para $
+                                                "This paragraph shows remaining fact types and concepts "
+                                             <> "that have not been described in previous paragraphs."
+                  Just pat -> purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat)
 
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
               printIntro :: [(A_Concept, [Purpose])] -> [(String, String, Origin)] -> [Block]
@@ -254,19 +252,19 @@ chpNatLangReqs lev fSpec flags =
                        [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds fSpec c ]
               -- | make a block for a concept definition
               cdBlock :: (Counter,String) -> (String,String,String,String) -> Block
-              cdBlock (cnt,xcnt) (nm,lbl,def,ref) = DefinitionList 
+              cdBlock (cnt,xcnt) (nm,lbl,def',ref) = DefinitionList 
                                         [( [ Str (case fsLang fSpec of
                                                                  Dutch   -> "Definitie "
                                                                  English -> "Definition ")
                                            , Str (show (getEisnr cnt)++xcnt)
                                            , Str ":"]
-                                         , [ makeDefinition flags (getEisnr cnt)  nm lbl def ref ])]
+                                         , [ makeDefinition flags (getEisnr cnt)  nm lbl def' ref ])]
 
               printRelConcepts :: [(String, String, Origin)] -> [(Origin, Counter -> [Block])]
               printRelConcepts relConcpts = map printRelConcept relConcpts
               
-              printRelConcept (relcncpt, def, org) = 
-                ( org, \cnt -> [cdBlock (cnt,"") (relcncpt, "", def, "")]
+              printRelConcept (relcncpt, def', org) = 
+                ( org, \cnt -> [cdBlock (cnt,"") (relcncpt, "", def', "")]
                 )
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
@@ -275,7 +273,7 @@ chpNatLangReqs lev fSpec flags =
               printRel :: Declaration -> Counter -> [Block]
               printRel dcl cnt 
                = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
-                 purposes2Blocks flags purps
+                 toList (purposes2Blocks flags purps)
                  ++ 
                  [ DefinitionList [ ( [ Str (case fsLang fSpec of
                                                       Dutch   -> "Afspraak "
@@ -310,7 +308,7 @@ chpNatLangReqs lev fSpec flags =
   printRule :: Rule -> Counter -> [Block]
   printRule rul cnt 
    =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
-      purposes2Blocks flags purps
+      toList (purposes2Blocks flags purps)
       ++
       [ DefinitionList [ ( [ Str (case fsLang fSpec of
                                     Dutch   -> "Afspraak "
@@ -329,20 +327,20 @@ chpNatLangReqs lev fSpec flags =
   mkSentence isDev decl srcAtom tgtAtom
    = case decl of
        Sgn{} | null (prL++prM++prR) 
-                  -> [str (upCap srcAtom), Space] ++ devShow (source decl) ++ [Str "corresponds",Space,Str "to",Space,str tgtAtom, Space] ++ devShow (target decl) ++[Str "in",Space,Str "relation",Space,str (decnm decl),Str "."]
+                  -> [str' (upCap srcAtom), Space] ++ devShow (source decl) ++ [Str "corresponds",Space,Str "to",Space,str' tgtAtom, Space] ++ devShow (target decl) ++[Str "in",Space,Str "relation",Space,str' (decnm decl),Str "."]
              | otherwise 
                   -> leftHalf prL ++ rightHalf
                     where prL = decprL decl
                           prM = decprM decl
                           prR = decprR decl
                           leftHalf ""    = devShow (source decl)
-                          leftHalf prLft = [str (upCap prLft), Space] ++ devShow (source decl)
-                          rightHalf = [str srcAtom,Space,str prM, Space] ++ devShow (target decl) ++ [str tgtAtom]++(if null prR then [] else [Space,str prR]) ++ [Str "."]
+                          leftHalf prLft = [str' (upCap prLft), Space] ++ devShow (source decl)
+                          rightHalf = [str' srcAtom,Space,str' prM, Space] ++ devShow (target decl) ++ [str' tgtAtom]++(if null prR then [] else [Space,str' prR]) ++ [str' "."]
 
-       Isn{}     -> devShow (source decl) ++ [str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
+       Isn{}     -> devShow (source decl) ++ [str' (upCap srcAtom),Space,Str "equals",Space,str' tgtAtom,Str "."]
        Vs{}      -> [Str "True"]
-   where str = if fspecFormat flags==FLatex then RawInline (Text.Pandoc.Builder.Format "latex") . latexEscShw else Str
-         devShow c | isDev     = [Str "(", str $ name c, Str ") "] -- only show the concept when --dev option is given
+   where str' = if fspecFormat flags==FLatex then RawInline (Text.Pandoc.Builder.Format "latex") . latexEscShw else Str
+         devShow c | isDev     = [Str "(", str' $ name c, Str ") "] -- only show the concept when --dev option is given
                    | otherwise = []
 
 -- TODO: fix showing/not showing based on relation
@@ -358,8 +356,8 @@ showViewAtom fSpec mDec cncpt atom =
                          then atom
                          else concatMap showViewSegment (vdats view)
              -- if we are showing one of the view relations, don't expand the view
-     where showViewSegment (ViewText str) = str
-           showViewSegment (ViewHtml str) = str
+     where showViewSegment (ViewText str') = str'
+           showViewSegment (ViewHtml str') = str'
            showViewSegment (ViewExp objDef) = 
              case [ tgtAtom | (srcAtom, tgtAtom) <- fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcAtom ] of
                []         -> ""
@@ -400,22 +398,22 @@ getArticlesOfLaw ref = map buildLA  ((splitOn ", ".unwords.init.words.lawRef) re
     -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)              
          scanRef :: String -> [Either String Int]
          scanRef "" = []
-         scanRef str@(c:_) | isDigit c = scanRefInt str
-                           | otherwise = scanRefTxt str
+         scanRef str'@(c:_) | isDigit c = scanRefInt str'
+                            | otherwise = scanRefTxt str'
          scanRefTxt "" = []
-         scanRefTxt str = let (txt, rest) = break isDigit str
-                          in  Left txt : scanRefInt rest
+         scanRefTxt str' = let (txt, rest) = break isDigit str'
+                           in  Left txt : scanRefInt rest
 
          scanRefInt "" = []
-         scanRefInt str = let (digits, rest) = break (not . isDigit) str
-                          in  Right (read digits) : scanRefTxt rest
+         scanRefInt str' = let (digits, rest) = break (not . isDigit) str'
+                           in  Right (read digits) : scanRefTxt rest
                
   
 instance Ord ArticleOfLaw where
  compare a b =
    case compare (aOlLaw a) (aOlLaw b) of
-     EQ  -> compare (aOlArt a) (aOlArt b)
-     ord -> ord
+     EQ   -> compare (aOlArt a) (aOlArt b)
+     ord' -> ord'
 
 unscanRef :: [Either String Int] -> String
 unscanRef scannedRef = concat $ map (either id show) scannedRef

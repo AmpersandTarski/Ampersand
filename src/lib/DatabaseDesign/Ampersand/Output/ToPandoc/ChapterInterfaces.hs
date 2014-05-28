@@ -23,18 +23,19 @@ chpInterfacesBlocks lev fSpec flags =
    interfaceChap act
    -- TODO: This should be one chapter for all interfaces.
     =  (labeledThing flags lev ("chpIfc"++name act) (name act)) <>
+       ifcIntro act <>
        fromList 
        ( 
-         ifcIntro act
-         ++ (if genGraphics flags then txtKnowledgeGraph act else [])
+         
+          (if genGraphics flags then txtKnowledgeGraph act else [])
          -- ifcFieldTables
          ++ (if graphic flags then txtSwitchboard act else [])
        )
-   ifcIntro :: Activity -> [Block]
+   ifcIntro :: Activity -> Blocks
    ifcIntro act
-    = purposes2Blocks flags purps
-      ++ifcAutoRules act++
-      (if genEcaDoc flags then ifcEcaRules act else [])
+    =   purposes2Blocks flags purps
+      <> fromList (ifcAutoRules act)
+      <> fromList (if genEcaDoc flags then ifcEcaRules act else [])
       where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
 
 {-

@@ -73,7 +73,7 @@ createFspec flags =
                          (Errors  err) -> fatal 64 ("MeatGrinder has errors!" 
                                                  ++ intercalate "\n"(map showErr err))
                          (Checked (pctx,[])) -> return (Checked pctx)
-                         (Checked (_,includes)) -> fatal 67 "Meatgrinder returns included file????"
+                         (Checked _ )        -> fatal 67 "Meatgrinder returns included file????"
      )
 
      

@@ -520,7 +520,7 @@ showPAclause indent (CHC ds cj_ruls)
          where indent'  = indent++"       "
 showPAclause indent (GCH ds cj_ruls)
        = "ONE NONEMPTY ALTERNATIVE OF "++intercalate indent'
-         ["PICK a,b FROM "++showADL links++indent'++"THEN "++showPAclause (indent'++"     ") p| (tOp,links,p)<-ds]++
+         ["PICK a,b FROM "++showADL links++indent'++"THEN "++showPAclause (indent'++"     ") p| (_,links,p)<-ds]++
          motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"       "
 showPAclause indent (ALL ds cj_ruls)

@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
@@ -26,6 +27,7 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , relsInThemes
     , Counter(..),newCounter,incEis
     , inlineIntercalate
+    , orderingByTheme
     )
 where
 import DatabaseDesign.Ampersand.Basics  
@@ -158,7 +160,7 @@ xrefFigure1 pict =
 -- | This function orders the content to print by theme. It returns a list of 
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
-orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern of a process. 
+orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern or a process. 
                             , [Rule]        -- The rules of that theme
                             , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
                             , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
@@ -215,8 +217,8 @@ dpRule fSpec flags = dpR
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( [Str (name r)]
          , [ let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
-             purposes2Blocks flags purps ++
-             purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d] ++  -- Dan de uitleg van de betreffende relaties
+             toList (purposes2Blocks flags purps) ++
+             toList (purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]) ++  -- Dan de uitleg van de betreffende relaties
              [ Plain text1 | not (null nds)] ++
              pandocEqnArray [ ( texOnly_Id(name d)
                               , ":"
@@ -267,10 +269,10 @@ dpRule fSpec flags = dpR
             (English,False) -> [Str "This means: "]
             (Dutch  ,True)  -> [Str "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "]
             (English,True)  -> [Str "Activities that are defined by this rule are finished when: "]
-        text4
-         = case fsLang fSpec of
-                 Dutch   -> [Str " Deze activiteiten worden opgestart door:"]
-                 English -> [Str " These activities are signalled by:"]
+--        text4
+--         = case fsLang fSpec of
+--                 Dutch   -> [Str " Deze activiteiten worden opgestart door:"]
+--                 English -> [Str " These activities are signalled by:"]
         text5
          = case (fsLang fSpec,isSignal r) of
              (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (fsLang fSpec) r
@@ -312,19 +314,20 @@ incEis :: Counter -> Counter
 --incRule x = x{getRule = getRule x + 1}
 incEis x = x{getEisnr = getEisnr x + 1}
 
-purposes2Blocks :: Options -> [Purpose] -> [Block]
+purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks flags ps
- = case ps of
-    [] -> []
-          -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
-    _  -> case concatMarkup [expl{amPandoc = insertAfterFirstInline (ref purp) $ amPandoc expl} | purp<-ps, let expl=explMarkup purp] of
-           Nothing -> []
-           Just p  -> amPandoc p
-   where   -- The reference information, if available for this purpose, is put
-    ref purp = case fspecFormat flags of
-                FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") 
-                                                         ("\\marge{"++intercalate "; " (map latexEscShw (explRefIds purp))++"}\n")]
-                _                                  -> []
+ = fromList $
+     case ps of
+      [] -> []
+            -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
+      _  -> case concatMarkup [expl{amPandoc = insertAfterFirstInline (ref purp) $ amPandoc expl} | purp<-ps, let expl=explMarkup purp] of
+             Nothing -> []
+             Just p  -> amPandoc p
+       where   -- The reference information, if available for this purpose, is put
+        ref purp = case fspecFormat flags of
+                    FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") 
+                                                             ("\\marge{"++intercalate "; " (map latexEscShw (explRefIds purp))++"}\n")]
+                    _                                  -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
  = case eqCl f es of
