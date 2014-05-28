@@ -18,7 +18,7 @@ chpProcessAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpProcessAnalysis lev fSpec flags
  = if null procs
    then (mempty,[])
-   else (fromList $ headerBlocks ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
+   else (headerBlocks <> fromList (roleRuleBlocks ++ roleRelationBlocks ++ processSections) , pictures)
  where
   pictures = [pict | (_,picts)<-procSections procs,pict<-picts]
   procs = if null (themes fSpec)
@@ -28,10 +28,11 @@ chpProcessAnalysis lev fSpec flags
   processSections
    = [block | (bs,_)<-procSections procs, block<-bs]
 
-  headerBlocks :: [Block]
+  headerBlocks :: Blocks
   headerBlocks
-   = toList (chptHeader (fsLang fSpec) ProcessAnalysis) ++
-     purposes2Blocks flags purps ++ -- This explains the purpose of this context.
+   = (chptHeader (fsLang fSpec) ProcessAnalysis) <>
+     purposes2Blocks flags purps <> -- This explains the purpose of this context.
+     fromList( 
      [ case fsLang fSpec of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" benoemt geen enkele rol. "
@@ -51,7 +52,7 @@ chpProcessAnalysis lev fSpec flags
             Plain [ Str $ upCap (name fSpec)++" does not specify which roles may change the contents of which relations. "
                   , Str ""
                   ]
-     | null (fRoleRels fSpec)]
+     | null (fRoleRels fSpec)])
      where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
 
   roleRuleBlocks :: [Block]
@@ -130,15 +131,12 @@ chpProcessAnalysis lev fSpec flags
     iterat [] _ _ _ = []
     iterat (fproc:fps) i seenConcepts seenDeclarations
      = (  toList (labeledThing flags (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
-       ++ sctMotivation                       -- The section startss with the reason why this process exists,
+       ++ toList (purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fproc))  
        ++ txtProcessModel fproc
        ++ txtLangModel fproc
        ++ (if null sctRules then [] else [DefinitionList sctRules])
        , [picProcessModel (name fproc++"ProcessModel") fproc, picLangModel (name fproc++"ConcProcess") fproc]):  iterat fps i' seenCrs seenDrs
        where
-         sctMotivation
-          = purposes2Blocks flags purps
-         purps = purposesDefinedIn fSpec (fsLang fSpec) fproc
          sctRules :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
