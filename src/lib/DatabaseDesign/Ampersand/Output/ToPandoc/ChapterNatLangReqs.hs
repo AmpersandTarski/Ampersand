@@ -60,7 +60,8 @@ chpNatLangReqs lev fSpec flags =
                      <> "All definitions have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
-   fromList dpRequirements 
+   fromList dpRequirementsOld <>
+   dpRequirementesNew 
    <> --  *** Legal Refs ***
      if (not.genLegalRefs) flags then mempty else
        legalRefs
@@ -81,8 +82,18 @@ chpNatLangReqs lev fSpec flags =
                getRefs ::Fspc ->  [LawRef]
                getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
 
-  dpRequirements :: [Block]
-  dpRequirements = theBlocks
+  dpRequirementesNew :: Blocks
+  dpRequirementesNew = (mconcat.map printTheme.orderingByTheme) fSpec
+    where
+     printTheme :: ( Maybe Theme   -- A theme is about either a pattern or a process. 
+                   , [Rule]        -- The rules of that theme
+                   , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
+                   , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
+                   ) -> Blocks
+     printTheme (mtheme,rules,decls,cpts) = mempty
+  
+  dpRequirementsOld :: [Block]
+  dpRequirementsOld = theBlocks
     where
       (theBlocks,_) = if null (themes fSpec)
                       then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
@@ -114,13 +125,13 @@ chpNatLangReqs lev fSpec flags =
            = case allThemes of
               []  -> if null still2doCPre && null still2doRelsPre && null still2doRelsPre
                      then ([],iPre)
-                     else printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
+                     else printOneTheme (Nothing, still2doRulesPre, still2doRelsPre, still2doCPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (thm:thms) = allThemes
-           (blocksOfOneTheme,iPostFirst) = printOneTheme (Just thm) thisThemeStuff iPre
+           (blocksOfOneTheme,iPostFirst) = printOneTheme  thisThemeStuff iPre
            (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst thms
-           thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r == UserDefined])
+           thisThemeStuff    = (Just thm, [r | r<-thisThemeRules, r_usr r == UserDefined], thisThemeRels, thisThemeCs)
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name thm ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ d | d <- still2doRelsPre
@@ -134,13 +145,14 @@ chpNatLangReqs lev fSpec flags =
       -- | printOneTheme tells the story in natural language of a single theme.
       -- For this purpose, Ampersand authors should take care in composing explanations.
       -- Each explanation should state the purpose (and nothing else).
-      printOneTheme :: Maybe Theme -- name of the theme to process (if any)
-                    -> ( [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
+      printOneTheme :: ( Maybe Theme -- name of the theme to process (if any)
+                       , [Rule]             -- Rules to print in this section
                        , [Declaration]          -- Relations to print in this section
-                       , [Rule])             -- Rules to print in this section
+                       , [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
+                       )
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
-      printOneTheme mTheme (concs2print, rels2print, rules2print) counter0
+      printOneTheme (mTheme, rules2print, rels2print, concs2print) counter0
               = case (mTheme, themes fSpec) of
                  (Nothing, _:_) -> ( [], counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
                  _              -> ( toList (header' <> explainsPat) ++ printIntro concs2print relConcepts ++ reqdefs
