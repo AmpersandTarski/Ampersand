@@ -104,10 +104,9 @@ chpNatLangReqs lev fSpec flags =
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
          where
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
-              = [ (c, pps)
+              = [ c
                 | c@PlainConcept{} <- concs fSpec
                 , (not.null) (concDefs fSpec c)
-                , let pps = [p | p <- purposesDefinedIn fSpec (fsLang fSpec) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
               = [ d | d <- relsDefdIn fSpec
@@ -115,7 +114,7 @@ chpNatLangReqs lev fSpec flags =
                 , not . null $ purposesDefinedIn fSpec (fsLang fSpec) d
                 ]
                  
-      printThemes :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
+      printThemes :: (   [A_Concept]     -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
                        , [Declaration]           -- all relations to be processed into this section and the sections to come
                        , [Rule])                 -- all rules to be processed into this section and the sections to come
                     -> Counter           -- unique definition counters
@@ -138,7 +137,7 @@ chpNatLangReqs lev fSpec flags =
                                , decpat d == name thm ||         -- all relations declared in this theme, combined
                                  d `eleM` relsMentionedIn thisThemeRules] -- all relations used in this theme's rules
            rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [ x==y | y <- thisThemeRels ]] 
-           thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
+           thisThemeCs       = [c | c <- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
            stuff2PrintLater  = (concs2PrintLater, rels2PrintLater, rules2PrintLater)
            
@@ -148,7 +147,7 @@ chpNatLangReqs lev fSpec flags =
       printOneTheme :: ( Maybe Theme -- name of the theme to process (if any)
                        , [Rule]             -- Rules to print in this section
                        , [Declaration]          -- Relations to print in this section
-                       , [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
+                       , [A_Concept]            -- all concepts that have one or more definitions, to be printed in this section
                        )
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
@@ -203,11 +202,11 @@ chpNatLangReqs lev fSpec flags =
                   Just pat -> purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat)
 
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
-              printIntro :: [(A_Concept, [Purpose])] -> [(String, String, Origin)] -> [Block]
+              printIntro :: [A_Concept] -> [(String, String, Origin)] -> [Block]
               printIntro [] [] = []
               printIntro ccds relConcpts
                 = case fsLang fSpec of
-                              Dutch   ->  [Para$ (case ([Emph [Str (unCap cname)] | cname<-map (name . fst) ccds ++ map fst3 relConcpts]
+                              Dutch   ->  [Para$ (case ([Emph [Str (unCap cname)] | cname<-map name ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
@@ -219,16 +218,16 @@ chpNatLangReqs lev fSpec flags =
                                                                   commaNLPandoc (Str "en") cs++
                                                                   [ Str ". "]
                                                  )++
-                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = concDefs fSpec c,length cds>1] in
+                                                 (let cs = [(c,cds) | (c)<-ccds, let cds = concDefs fSpec c,length cds>1] in
                                                   case (cs, length cs==length ccds) of
-                                                   ([]         ,   _  ) -> []
-                                                   ([(c,_,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
-                                                   (_          , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst3) cs)++[Str " meerdere definities. "]
-                                                   ([(_,cds,_)], True ) -> [ Str $ "Deze heeft "++count Dutch (length cds) "definitie"++". " ]
-                                                   (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
+                                                   ([]       ,   _  ) -> []
+                                                   ([(c,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
+                                                   (_        , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst) cs)++[Str " meerdere definities. "]
+                                                   ([(_,cds)], True ) -> [ Str $ "Deze heeft "++count Dutch (length cds) "definitie"++". " ]
+                                                   (_        , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
-                              English ->  [Para$ (case ([Emph [Str $ unCap cname] |cname<-map (name . fst) ccds ++ map fst3 relConcpts]
+                              English ->  [Para$ (case ([Emph [Str $ unCap cname] |cname<-map name ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
@@ -240,28 +239,32 @@ chpNatLangReqs lev fSpec flags =
                                                                   commaEngPandoc (Str "and") cs++
                                                                   [ Str ". "]
                                                  )++
-                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = concDefs fSpec c, length cds>1] in
+                                                 (let cs = [(c,cds) | c <- ccds, let cds = concDefs fSpec c, length cds>1] in
                                                   case (cs, length cs==length ccds) of
-                                                   ([]         ,   _  ) -> []
-                                                   ([(c,_,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
-                                                   (_          , False) -> [ Str "Of those concepts "]++commaEngPandoc (Str "and") (map (Str . name . fst3) cs)++[Str " have multiple definitions. "]
-                                                   ([(_,cds,_)], True ) -> [ Str $ "It has "++count English (length cds) "definition"++". " ]
-                                                   (_          , True ) -> [ Str "Each one has several definitions. "]
+                                                   ([]       ,   _  ) -> []
+                                                   ([(c,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
+                                                   (_        , False) -> [ Str "Of those concepts "]++commaEngPandoc (Str "and") (map (Str . name . fst) cs)++[Str " have multiple definitions. "]
+                                                   ([(_,cds)], True ) -> [ Str $ "It has "++count English (length cds) "definition"++". " ]
+                                                   (_        , True ) -> [ Str "Each one has several definitions. "]
                                                  )
                                           ]
 
               -- | the origin of c is the origin of the head of uniquecds c
               --   after sorting by origin the counter will be applied
-              printConcepts :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
-              printConcepts = let mborigin c = if null (uniquecds fSpec c) then OriginUnknown else (origin . snd . head . uniquecds fSpec) c
-                      in map (\(c,exps) -> (mborigin c, cptBlock (c,exps)))
+              printConcepts :: [A_Concept] -> [(Origin, Counter -> [Block])]
+              printConcepts cs = 
+                      let mborigin c = if null (uniquecds fSpec c) then OriginUnknown else (origin . snd . head . uniquecds fSpec) c
+                      in map (\c -> (mborigin c, cptBlock c)) cs
               -- | make a block for a c with all its purposes and definitions
-              cptBlock :: (A_Concept, [Purpose]) -> Counter -> [Block]
-              cptBlock (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
+              cptBlock :: A_Concept -> Counter -> [Block]
+              cptBlock cpt cnt = concat [amPandoc (explMarkup e) | e<-exps] 
                   ++ zipWith cdBlock
-                       (if length (uniquecds fSpec c) == 1 then [(cnt, "")] else
+                       (if length (uniquecds fSpec cpt) == 1 then [(cnt, "")] else
                           [(cnt, '.' : show i) | i <- [(1 :: Int) ..]])
-                       [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds fSpec c ]
+                       [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds fSpec cpt ]
+                  where exps = case purposeOf fSpec (fsLang fSpec) cpt of
+                                 Nothing -> []
+                                 Just ps -> ps
               -- | make a block for a concept definition
               cdBlock :: (Counter,String) -> (String,String,String,String) -> Block
               cdBlock (cnt,xcnt) (nm,lbl,def',ref) = DefinitionList 
