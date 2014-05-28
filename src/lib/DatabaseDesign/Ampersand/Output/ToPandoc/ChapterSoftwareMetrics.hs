@@ -3,8 +3,8 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
-import DatabaseDesign.Ampersand.Output.PandocAux
+--import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
+--import DatabaseDesign.Ampersand.Output.PandocAux
 
 
 ------------------ Function Point Analysis --------------------

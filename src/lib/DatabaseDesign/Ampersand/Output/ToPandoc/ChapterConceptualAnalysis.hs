@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
@@ -13,32 +14,34 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis"
 
 chpConceptualAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
-chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAnalysis <> caIntro <> caBlocks, pictures)
+chpConceptualAnalysis lev fSpec flags = (
+      --  *** Header ***
+   chptHeader (fsLang fSpec) ConceptualAnalysis
+   <> --  *** Intro  ***
+   caIntro
+   <> --  *** For all themes, a section containing the conceptual analysis for that theme  ***
+   caBlocks, pictures)
   where
   caIntro :: Blocks
   caIntro
-   = fromList $ (case fsLang fSpec of
-        Dutch   -> [Para
-                    [ Str "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
-                    , Quoted  SingleQuote [Str (name fSpec)]
-                    , Str " kunnen worden besproken en uitgedrukt. "
-                    , Str "De formalisering dient om een bouwbare specificatie te verkrijgen. "
-                    , Str "Een derde met voldoende deskundigheid kan op basis van dit hoofdstuk toetsen of de gemaakte afspraken "
-                    , Str "overeenkomen met de formele regels en definities. "
-                   ]]
-        English -> [Para
---                    [ Str "This chapter provides an analysis of the principles described in chapter "
---                    
---                    , Str ". Each section in that chapter is analysed in terms of relations "
---                    , Str "and each principle is then translated in a rule. "
-                    [ Str "This chapter defines the formal language, in which functional requirements of "
-                    , Quoted  SingleQuote [Str (name fSpec)]
-                    , Str " can be analysed and expressed."
-                    , Str "The purpose of this formalisation is to obtain a buildable specification. "
-                    , Str "This chapter allows an independent professional with sufficient background to check whether the agreements made "
-                    , Str "correspond to the formal rules and definitions. "
-                    ]])
-     ++ purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
+   = (case fsLang fSpec of
+        Dutch   -> para
+                    (  "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
+                    <> (singleQuoted.str.name) fSpec
+                    <> " kunnen worden besproken en uitgedrukt. "
+                    <> "De formalisering dient om een bouwbare specificatie te verkrijgen. "
+                    <> "Een derde met voldoende deskundigheid kan op basis van dit hoofdstuk toetsen of de gemaakte afspraken "
+                    <> "overeenkomen met de formele regels en definities. "
+                    )
+        English -> para
+                    (  "This chapter defines the formal language, in which functional requirements of "
+                    <> (singleQuoted.str.name) fSpec
+                    <> " can be analysed and expressed."
+                    <> "The purpose of this formalisation is to obtain a buildable specification. "
+                    <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
+                    <> "correspond to the formal rules and definitions. "
+                    )
+     )<> purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
      
   caBlocks = fromList $ concat(map caSection (patterns fSpec))
   pictures =        map pict      (patterns fSpec)
@@ -54,7 +57,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
    =    -- new section to explain this pattern  
         toList ( labeledThing flags (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
         -- The section starts with the reason why this pattern exists 
-     ++ purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat)
+     ++ toList (purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat))
         -- followed by a conceptual model for this pattern
      ++ ( case (genGraphics flags, fsLang fSpec) of
                (True,Dutch  ) -> -- announce the conceptual diagram
@@ -88,7 +91,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
 
   caRelation :: Declaration -> ([Inline], [[Block]])
   caRelation d 
-        = let purp = purposes2Blocks flags [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d]
+        = let purp = toList (purposes2Blocks flags [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
           in ([]
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( if null purp
@@ -138,7 +141,7 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader (fsLang fSpec) ConceptualAna
     nladj Irf = "irreflexieve"
   caRule :: Rule -> ([Inline], [[Block]])
   caRule r 
-        = let purp = purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) r)
+        = let purp = toList (purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) r))
           in ( []
              , [  -- First the reason why the rule exists, if any..
                   purp  
