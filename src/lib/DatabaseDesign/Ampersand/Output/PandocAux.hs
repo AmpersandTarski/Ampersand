@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE OverloadedStrings #-}
 module DatabaseDesign.Ampersand.Output.PandocAux
       ( writepandoc
       , labeledThing
@@ -17,6 +18,7 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       , texOnly_fun
       , texOnly_rel
       , commaEngPandoc, commaNLPandoc
+      , commaEngPandoc', commaNLPandoc'
       )
 where
 import DatabaseDesign.Ampersand.ADL1
@@ -602,7 +604,13 @@ makeDefinition flags i nm lbl defin ref =
        -- by putting the ref after the first word of the definition, it aligns nicely with the definition
        insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
                                          in  fstWord ++ s ++ rest
- 
+commaEngPandoc' :: Inlines -> [Inlines] -> Inlines
+commaEngPandoc' s [a,b,c]= a <> ", " <> b <> ", " <> s <> space <> c
+commaEngPandoc' s [a,b]  = a <> space <> s <> space <> b
+commaEngPandoc' _   [a]    = a
+commaEngPandoc' s (a:as) = a <> ", " <> commaEngPandoc' s as
+commaEngPandoc' _   []     = mempty
+
 commaEngPandoc :: Inline -> [Inline] -> [Inline]
 commaEngPandoc s [a,b,c]= [a,Str ", ",b,Str ", ",s, Str " ", c]
 commaEngPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
@@ -610,6 +618,11 @@ commaEngPandoc _   [a]    = [a]
 commaEngPandoc s (a:as) = [a, Str ", "]++commaEngPandoc s as
 commaEngPandoc _   []     = []
 
+commaNLPandoc' :: Inlines -> [Inlines] -> Inlines
+commaNLPandoc' s [a,b]  = a <> space <> s <> space <> b
+commaNLPandoc'  _  [a]    = a
+commaNLPandoc' s (a:as) = a <> ", " <> commaNLPandoc' s as
+commaNLPandoc'  _  []     = mempty
 commaNLPandoc :: Inline -> [Inline] -> [Inline]
 commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
 commaNLPandoc  _  [a]    = [a]

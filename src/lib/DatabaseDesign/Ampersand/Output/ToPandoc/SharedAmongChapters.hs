@@ -167,8 +167,11 @@ orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern
                             )
                            ]
 orderingByTheme fSpec 
- = f (allRules fSpec) (relsMentionedIn fSpec) (allConcepts fSpec) tms
+ = f (allRules fSpec) (filter isUserDefined (relsMentionedIn fSpec)) (allConcepts fSpec) tms
  where
+  isUserDefined d = case d of
+                       Sgn{} -> decusr d
+                       _     -> False  
   -- | The themes that should be taken into account for this ordering
   tms = if null (themes fSpec)
         then map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
