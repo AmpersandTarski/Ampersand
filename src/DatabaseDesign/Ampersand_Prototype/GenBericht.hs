@@ -9,7 +9,6 @@ import System.FilePath
 import System.Directory
 import Control.Monad
 import DatabaseDesign.Ampersand
--- import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree(RelConceptDef(..))
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 
@@ -62,17 +61,9 @@ doGenBericht fSpec flags =
                       }
             where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
           
-                  -- take the DEFINE SRC or DEFINE TGT definition for the target concept if it exists,
-                  -- otherwise take the definition of the concept itself
-                  def rel = if relTargetDef /= "" 
-                            then relTargetDef 
-                            else case concDefs fSpec (target rel) of
-                                     Cd {cddef=def'} : _ | def' /= "" -> def'
-                                     _                                -> "** NO DEFINITION **"
-                   where relTargetDef = case rel of -- target def of relation, or source def if relation is flipped
-                                          EDcD (Sgn{decConceptDef=Just (RelConceptDef Tgt def')})        -> def'
-                                          EFlp (EDcD (Sgn{decConceptDef=Just (RelConceptDef Src def')})) -> def'
-                                          _                                              -> ""       
+                  def rel = case concDefs fSpec (target rel) of
+                                Cd {cddef=def'} : _ | def' /= "" -> def'
+                                _                                -> "** NO DEFINITION **"
        
                   objsForInterfaceNamed :: String -> [ObjectDef]
                   objsForInterfaceNamed nm =

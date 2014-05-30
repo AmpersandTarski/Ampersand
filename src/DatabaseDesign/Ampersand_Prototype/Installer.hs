@@ -12,27 +12,6 @@ import DatabaseDesign.Ampersand_Prototype.Version
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"
 
-installer :: Fspc -> Options -> String
-installer fSpec flags = unlines $
-      [ "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0 Strict//EN\">"
-      , "<html>"
-      , "<head>"
-      , "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>"
-      , ""
-      , "<meta http-equiv=\"Pragma\" content=\"no-cache\">"
-      , "<meta http-equiv=\"no-cache\">"
-      , "<meta http-equiv=\"Expires\" content=\"-1\">"
-      , "<meta http-equiv=\"cache-Control\" content=\"no-cache\">"
-      , ""
-      , "</html>"
-      , "<body>"
-      ] ++
-      lines (installerDBstruct fSpec flags) ++
-      lines (installerDefPop fSpec) ++
-      lines (dumpPopulationToADL fSpec) ++
-      ["</body></html>"
-      ,""
-      ]
 
 installerDBstruct :: Fspc -> Options -> String
 installerDBstruct fSpec flags = unlines $
