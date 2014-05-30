@@ -171,7 +171,7 @@ chpNatLangReqs lev fSpec flags =
                                                     "This paragraph shows remaining fact types and concepts "
                                                  <> "that have not been described in previous paragraphs."
                       Just pat -> purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat)
-                <> printIntro (filter isDefined concs2print) relConcepts 
+                <> printIntro (filter isDefined concs2print) 
                 <> fromList reqdefs
                 )
              , Counter (getEisnr counter0 + length reqs)
@@ -181,13 +181,10 @@ chpNatLangReqs lev fSpec flags =
               isDefined = not.null.concDefs fSpec
               -- the concepts for which one of the relations of this theme contains a source or target definition
               -- (these will be printed, regardless whether the concept was printed before)
-              relConcepts = [ (upCap $ name d,def', origin d)
-                            | d@Sgn{decConceptDef=Just (RelConceptDef _ def')} <- rels2print 
-                            ]
               
               -- sort the requirements by file position
               reqs = sortWith fst [ ((i,filenm org, linenr org,colnr org), bs) 
-                                  | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ addIndex 2 (printRelConcepts relConcepts) ++ 
+                                  | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ 
                                                  addIndex 2 (printRels rels2print) ++ addIndex 3 (printRules rules2print)]
                where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
               
@@ -213,11 +210,11 @@ chpNatLangReqs lev fSpec flags =
                                           
 
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
-              printIntro :: [A_Concept] -> [(String, String, Origin)] -> Blocks
-              printIntro [] [] = mempty
-              printIntro ccds relConcpts
+              printIntro :: [A_Concept] -> Blocks
+              printIntro [] = mempty
+              printIntro ccds
                 = case fsLang fSpec of
-                      Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds ++ map fst3 relConcpts]
+                      Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
@@ -241,7 +238,7 @@ chpNatLangReqs lev fSpec flags =
                                     (_        , True ) -> para ("Elk daarvan heeft meerdere definities. ")
                                  )
                                   
-                      English -> (case ([(emph.str.unCap) cname | cname<-map name ccds ++ map fst3 relConcpts]
+                      English -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
@@ -296,12 +293,6 @@ chpNatLangReqs lev fSpec flags =
                                            , Str ":"]
                                          , [ makeDefinition flags (getEisnr cnt)  nm lbl def' ref ])]
 
-              printRelConcepts :: [(String, String, Origin)] -> [(Origin, Counter -> [Block])]
-              printRelConcepts relConcpts = map printRelConcept relConcpts
-              
-              printRelConcept (relcncpt, def', org) = 
-                ( org, \cnt -> [cdBlock (cnt,"") (relcncpt, "", def', "")]
-                )
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               printRels :: [Declaration] -> [(Origin, Counter -> [Block])]

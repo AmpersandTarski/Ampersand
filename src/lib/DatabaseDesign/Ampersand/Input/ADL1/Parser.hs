@@ -34,7 +34,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                       , "RELATION", "MEANING", "DEFINE", "CONCEPT", "IDENT"
+                       , "RELATION", "MEANING", "CONCEPT", "IDENT"
                        , "VIEW", "TXT", "PRIMHTML"
                        , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
                        , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
@@ -295,13 +295,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          <*> ((True <$ pKey "BYPLUG") `opt` False)
                          <*> (pPragma `opt` [])
                          <*> pList pMeaning
-                         <*> ((\st d -> Just $ RelConceptDef st d) <$ pKey "DEFINE" <*> pSrcOrTgt <*> pString `opt` Nothing)
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pKey "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
-                       where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings conceptDef content
-                               = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings conceptDef content
+                       where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
+                               = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
                                  where props'= nub (props `uni` fun')
-                             rbd pos' nm (sgn,_) bp1 props bp2 pragma meanings conceptDef content
+                             rbd pos' nm (sgn,_) bp1 props bp2 pragma meanings content
                                = P_Sgn { dec_nm   = nm
                                        , dec_sign = sgn
                                        , dec_prps = props
@@ -309,7 +308,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                        , dec_prM  = pr!!1
                                        , dec_prR  = pr!!2
                                        , dec_Mean = meanings
-                                       , dec_conceptDef = conceptDef
                                        , dec_popu = content
                                        , dec_fpos = pos'
                                        , dec_plug = bp1 || bp2

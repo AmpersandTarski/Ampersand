@@ -33,7 +33,6 @@ where
                  , decMean = AMeaning [ --   A_Markup Dutch   ReST (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
                                         -- , A_Markup English ReST (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
                                       ]
-                 , decConceptDef = Nothing
                  , decfpos = Origin ("generated relation (Delta "++show sgn++")")
                  , deciss  = True
                  , decusr  = False
