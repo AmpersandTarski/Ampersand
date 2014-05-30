@@ -360,11 +360,15 @@ instance Meaning Rule where
                   where isLang m = l == amLang m
   
 instance Meaning Declaration where
-  meaning l d = case filter isLang (ameaMrk (decMean d)) of
-                  []   -> Nothing 
-                  [m]  -> Just m
-                  _    -> fatal 388 ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
-                  where isLang m = l == amLang m
+  meaning l d = 
+    case d of
+      Sgn{} -> let isLang m = l == amLang m
+               in case filter isLang (ameaMrk (decMean d)) of
+                    []   -> Nothing 
+                    [m]  -> Just m
+                    _    -> fatal 388 ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
+      Isn{} -> fatal 370 "meaning is undefined for Isn"
+      Vs{}  -> fatal 371 "meaning is undefined for Vs"
    
 instance Motivated Fspc where
 --  meaning _ fSpec = fatal 329 ("No Fspc has an intrinsic meaning, (used with Fspc '"++name fSpec++"')")
