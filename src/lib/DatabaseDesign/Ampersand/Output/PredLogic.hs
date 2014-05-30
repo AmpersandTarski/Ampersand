@@ -229,7 +229,6 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                       , decprM  = ""
                       , decprR  = ""
                       , decMean = fatal 223 "Do not refer to decMean of this dummy relation"
-                      , decConceptDef = Nothing
                       , decfpos = OriginUnknown
                       , deciss  = fatal 226 "Do not refer to deciss of this dummy relation"
                       , decusr  = False
