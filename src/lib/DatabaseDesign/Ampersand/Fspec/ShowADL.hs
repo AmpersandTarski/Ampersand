@@ -296,7 +296,6 @@ instance ShowADL Declaration where
               (if null(decprL decl++decprM decl++decprR decl) then "" else
                " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
                ++ concatMap meaning (ameaMrk (decMean decl))
-               ++ maybe "" (\(RelConceptDef srcOrTgt def) -> " DEFINE "++showADL srcOrTgt ++ " " ++ def) (decConceptDef decl)
      Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
      Vs{}  -> "V"++show (decsgn decl)      -- Vs{}  is of type Declaration and it is implicitly defined
    where

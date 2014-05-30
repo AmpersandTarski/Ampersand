@@ -139,7 +139,6 @@ pCtx2aCtx
                      , decprM  = dec_prM pd
                      , decprR  = dec_prR pd
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
-                     , decConceptDef = dec_conceptDef pd
                      , decfpos = dec_fpos pd 
                      , deciss  = True
                      , decusr  = True
@@ -523,7 +522,6 @@ pCtx2aCtx
                           , decprM  = ""
                           , decprR  = ""
                           , decMean = pMean2aMean deflangCtxt deffrmtCtxt meanings
-                          , decConceptDef = Nothing
                           , decfpos = orig
                           , deciss  = True
                           , decusr  = False

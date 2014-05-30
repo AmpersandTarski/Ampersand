@@ -87,7 +87,6 @@ rulesFromIdentity identity
                                           [ A_Markup English ReST (string2Blocks ReST meaningEN)
                                           , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
                                           ]
-                            , decConceptDef = Nothing
                             , decfpos = origin identity
                             , deciss  = False
                             , decusr  = False
