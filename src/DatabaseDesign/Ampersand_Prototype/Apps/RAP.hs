@@ -341,7 +341,6 @@ atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredt
          , dec_prM = geta r_decprM rid ""
          , dec_prR = geta r_decprR rid ""
          , dec_Mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_decmean rid ""))]
-         , dec_conceptDef = Nothing
          , dec_popu = []
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False
