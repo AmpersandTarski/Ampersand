@@ -71,6 +71,14 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
     if ($tgtAtom == "NULL") 
     { $tgtAtom = InsAtom($tgtConcept);
     }
+    
+    if(!isAtomInConcept($srcAtom, $srcConcept))
+   {  addAtomToConcept($srcAtom, $srcConcept);
+   }
+   
+    if(!isAtomInConcept($tgtAtom, $tgtConcept))
+   {  addAtomToConcept($tgtAtom, $tgtConcept);
+   }
 // get table column properties for $srcCol and $tgtCol
     $srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
     $srcColNull = $tableColumnInfo[$table][$srcCol]['null'];
