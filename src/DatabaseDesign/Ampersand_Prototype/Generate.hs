@@ -27,7 +27,8 @@ generateAll fSpec flags =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
 --  ; verboseLn flags filecontent
     ; writePrototypeFile "Generics.php" filecontent
-    ; case customCssFile flags of
+    ; when (genStaticFiles flags)(
+       case customCssFile flags of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
             ; writePrototypeFile customCssPath customCssContents
@@ -49,7 +50,7 @@ generateAll fSpec flags =
                             }
                   }
             }
-            
+      )      
     ; when (development flags) $ 
        do { verboseLn flags "Generated tables\n"
           ; verboseLn flags ( unlines ( concatMap showPlug [ plug | InternalPlug plug <- plugInfos fSpec]))
