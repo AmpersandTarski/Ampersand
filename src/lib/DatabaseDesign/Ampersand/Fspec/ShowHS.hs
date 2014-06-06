@@ -809,17 +809,12 @@ where
                  DBLoc l   -> "DBLoc " ++ show l
                  Origin s  -> "Origin " ++ show s
                  OriginUnknown -> "OriginUnknown"
-                 SomewhereNear s -> "SomewhereNear "++show s
    
    instance ShowHS Origin where
     showHS flags indent (FileLoc l) = "FileLoc (" ++ showHS flags indent l++")"
-    showHS _ _ (DBLoc l) = "DBLoc " ++ show l
-    showHS _ _ (Origin s) = "Origin " ++ show s
-    showHS _ _ OriginUnknown
-      = "OriginUnknown"
-    showHS _ _ (SomewhereNear s) 
-      = "SomewhereNear "++show s
-
+    showHS _     _      (DBLoc l)   = "DBLoc "  ++ show l
+    showHS _     _      (Origin s)  = "Origin " ++ show s
+    showHS _     _    OriginUnknown = "OriginUnknown"
 
 
    instance ShowHS Block where

@@ -8,7 +8,13 @@ import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (proofPA)
 import DatabaseDesign.Ampersand.ADL1
 
 chpECArules :: Fspc -> Options ->  Blocks
-chpECArules fSpec _
+chpECArules fSpec flags =
+  if genEcaDoc flags 
+  then mempty
+  else chpECArules' fSpec 
+  
+chpECArules' :: Fspc -> Blocks
+chpECArules' fSpec 
  =   chptHeader (fsLang fSpec) EcaRules
   <> ecaIntro
   <> ifcECA
