@@ -10,7 +10,7 @@ where
 
    --Traced a have an origin, which may be unknown.
    data FilePos = FilePos ( String, Pos, String) deriving (Eq, Ord)
-   data Origin = SomewhereNear String | OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord)
+   data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord)
 --line column pos
 
 {- SJ20140216: made obsolete. This was used to tell which concept definitions are declared within a pattern or within a process.
@@ -34,7 +34,6 @@ where
      show (DBLoc str)   = "Database location: "++str
      show (Origin str)  = str
      show OriginUnknown = "Unknown origin"
-     show (SomewhereNear str) = "Somewhere near: "++str
    class Traced a where
     origin :: a -> Origin
     filenm :: a -> String

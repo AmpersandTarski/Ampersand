@@ -160,8 +160,20 @@ chpNatLangReqs lev fSpec flags =
     = case (mTheme, themes fSpec) of
        (Nothing, _:_) 
           -> ( mempty, counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-       _  -> ( (  header' 
-               <> --  Purpose of the theme:
+       _  -> ( (  --  *** Header of the theme: ***
+                 labeledThing flags (lev+1) 
+                              (xLabel DataAnalysis++case mTheme of
+                                                          Nothing ->  "_LooseEnds"
+                                                          _       -> themeName
+                                                   )
+                                  (case (mTheme,fsLang fSpec) of
+                                      (Nothing, Dutch  ) -> "Losse eindjes..."
+                                      (Nothing, English) -> "Loose ends..."
+                                      _                  -> themeName
+                                  )
+
+
+               <> --  *** Purpose of the theme: ***
                   case mTheme of 
                       Nothing  -> case fsLang fSpec of
                                      Dutch   -> para $ 
@@ -171,7 +183,8 @@ chpNatLangReqs lev fSpec flags =
                                                     "This paragraph shows remaining fact types and concepts "
                                                  <> "that have not been described in previous paragraphs."
                       Just pat -> purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) pat)
-                <> printIntro (filter isDefined concs2print) 
+                <> --  *** Introduction text of the theme: ***
+                   printIntro (filter isDefined concs2print) 
                 <> fromList reqdefs
                 )
              , Counter (getEisnr counter0 + length reqs)
@@ -197,16 +210,6 @@ chpNatLangReqs lev fSpec flags =
                            Just pat -> name pat
                            --Just (PatternTheme pat) -> "Pattern "++name pat
                            --Just (ProcessTheme prc) -> "Process "++name prc
-              header' :: Blocks
-              header' = labeledThing flags (lev+1) (xLabel DataAnalysis++case mTheme of
-                                                               Nothing ->  "_LooseEnds"
-                                                               _       -> themeName
-                                                   )
-                                  (case (mTheme,fsLang fSpec) of
-                                      (Nothing, Dutch  ) -> "Losse eindjes..."
-                                      (Nothing, English) -> "Loose ends..."
-                                      _                  -> themeName
-                                  )
                                           
 
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
