@@ -10,8 +10,8 @@ import DatabaseDesign.Ampersand.ADL1
 chpECArules :: Fspc -> Options ->  Blocks
 chpECArules fSpec flags =
   if genEcaDoc flags 
-  then mempty
-  else chpECArules' fSpec 
+  then chpECArules' fSpec 
+  else mempty
   
 chpECArules' :: Fspc -> Blocks
 chpECArules' fSpec 
