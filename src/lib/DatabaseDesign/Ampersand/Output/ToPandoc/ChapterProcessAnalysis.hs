@@ -133,24 +133,24 @@ chpProcessAnalysis lev fSpec flags
      = (  toList (labeledThing flags (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
        ++ toList (purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fproc))  
        ++ txtProcessModel fproc
-       ++ txtLangModel fproc
+   --    ++ txtLangModel fproc
        ++ (if null sctRules then [] else [DefinitionList sctRules])
-       , [picProcessModel (name fproc++"ProcessModel") fproc, picLangModel (name fproc++"ConcProcess") fproc]):  iterat fps i' seenCrs seenDrs
+       , [picProcessModel fproc]):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
-  txtLangModel :: FProcess->[Block]
-  txtLangModel fp
-   = if not (genGraphics flags) then [] else
-     -- (if name ifc==name (head (fActivities fSpec)) then processModelIntro else [])++
-      [Para (case fsLang fSpec of                                     -- announce the conceptual diagram
-             Dutch   -> [ Str "Het conceptueel diagram in figuur ", xrefReference pict
-                        , Str " geeft een overzicht van de taal waarin dit proces wordt uitgedrukt."]
-             English -> [ Str "The conceptual diagram of figure ", xrefReference pict
-                        , Str " provides an overview of the language in which this process is expressed."])
-      ,Plain (xrefFigure1 pict)]                     -- draw the diagram
-     where pict = picLangModel (name fp++"ConceptualProcess") fp
+--  txtLangModel :: FProcess->[Block]
+--  txtLangModel fp
+--   = if not (genGraphics flags) then [] else
+--     -- (if name ifc==name (head (fActivities fSpec)) then processModelIntro else [])++
+--      [Para (case fsLang fSpec of                                     -- announce the conceptual diagram
+--             Dutch   -> [ Str "Het conceptueel diagram in figuur ", xrefReference pict
+--                        , Str " geeft een overzicht van de taal waarin dit proces wordt uitgedrukt."]
+--             English -> [ Str "The conceptual diagram of figure ", xrefReference pict
+--                        , Str " provides an overview of the language in which this process is expressed."])
+--      ,Plain (xrefFigure1 pict)]                     -- draw the diagram
+--     where pict = picLangModel fp
 
   txtProcessModel :: FProcess->[Block]
   txtProcessModel p
@@ -162,17 +162,12 @@ chpProcessAnalysis lev fSpec flags
              English -> [ Str "Figure ", xrefReference pict
                         , Str " shows the process model."])
      ,Plain (xrefFigure1 pict)]                     -- draw the diagram
-     where pict = picProcessModel (name p++"txtProcess") p
+     where pict = picProcessModel p
 
-  picLangModel :: String -> FProcess -> Picture
-  picLangModel nm fproc
-   = ((makePictureObj flags (fsLang fSpec) nm PTProcLang . conceptualGraph fSpec flags nm Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
-                {caption = case fsLang fSpec of
-                            Dutch   ->"Basiszinnen van "++nm
-                            English ->"Basic sentences of "++nm}
 
-  picProcessModel :: String -> FProcess->Picture
-  picProcessModel nm fproc
-   = makePicture flags fSpec nm Plain_CG fproc -- the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
+
+  -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
+  picProcessModel :: FProcess->Picture
+  picProcessModel fproc = makePicture flags fSpec PTProcess fproc 
 
 

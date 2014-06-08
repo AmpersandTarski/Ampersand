@@ -600,9 +600,6 @@ while maintaining all invariants.
         eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]
         visible _ = True
 
--- Auxiliaries
--- chop :: [a] -> [([a], [a])]
--- chop xs = [ splitAt i xs | i <- [1..length xs-1]]
    
    
    class Identified a => Rename a where
