@@ -44,12 +44,16 @@ chpConceptualAnalysis lev fSpec flags = (
      )<> purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
      
   caBlocks = fromList $ concat(map caSection (patterns fSpec))
-  pictures =        map pict      (patterns fSpec)
+  pictures = concatMap patPicts (patterns fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
-  pict :: Pattern -> Picture
-  pict pat = makePicture flags fSpec PTRelsUsedInPat pat
-                
+  patPicts :: Pattern -> [Picture] 
+  patPicts pat = pictOfPat pat :
+                (map pictOfRule (invariants pat `isc` udefrules pat))
+  pictOfPat  :: Pattern ->  Picture
+  pictOfPat  = makePicture flags fSpec PTRelsUsedInPat              
+  pictOfRule :: Rule -> Picture
+  pictOfRule = makePicture flags fSpec PTSingleRule
   caSection :: Pattern -> [Block]
   caSection pat
    =    -- new section to explain this pattern  
@@ -59,11 +63,11 @@ chpConceptualAnalysis lev fSpec flags = (
         -- followed by a conceptual model for this pattern
      ++ ( case (genGraphics flags, fsLang fSpec) of
                (True,Dutch  ) -> -- announce the conceptual diagram
-                                 [Para [Str "Figuur ", xrefReference (pict pat), Str " geeft een conceptueel diagram van dit pattern."]
+                                 [Para [Str "Figuur ", xrefReference (pictOfPat pat), Str " geeft een conceptueel diagram van dit pattern."]
                                  -- draw the conceptual diagram
-                                 ,Plain (xrefFigure1 (pict pat))]          
-               (True,English) -> [Para [Str "Figure ", xrefReference (pict pat), Str " shows a conceptual diagram of this pattern."]
-                                 ,Plain (xrefFigure1 (pict pat))]
+                                 ,Plain (xrefFigure1 (pictOfPat pat))]          
+               (True,English) -> [Para [Str "Figure ", xrefReference (pictOfPat pat), Str " shows a conceptual diagram of this pattern."]
+                                 ,Plain (xrefFigure1 (pictOfPat pat))]
                _              -> [])
         -- now provide the text of this pattern.
      ++ (case fsLang fSpec of
@@ -71,12 +75,12 @@ chpConceptualAnalysis lev fSpec flags = (
                       ]++
                       toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
                       ++
-                      [Para [Str "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en een betekenis."]]
+                      [Para [Str "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."]]
            English -> [Para [Str "The definitions of concepts can be found in the glossary."]
                       ]++
                       toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
                       ++
-                      [Para [Str "This section itemizes the declared relations with properties and a meaning."]])
+                      [Para [Str "This section itemizes the declared relations with properties and purpose."]])
      ++ [DefinitionList blocks | let blocks = map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat], not(null blocks)]
      ++ (case fsLang fSpec of
            Dutch   -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
@@ -140,6 +144,7 @@ chpConceptualAnalysis lev fSpec flags = (
   caRule :: Rule -> ([Inline], [[Block]])
   caRule r 
         = let purp = toList (purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) r))
+              
           in ( []
              , [  -- First the reason why the rule exists, if any..
                   purp  
@@ -148,24 +153,32 @@ chpConceptualAnalysis lev fSpec flags = (
                                        else Str "Daarom is als afspraak gesteld in paragraaf " | fsLang fSpec==Dutch]
                       ++ [if null purp then Str "The following requirement has been defined in section " 
                                        else Str "Therefore the following requirement has been defined in section " | fsLang fSpec==English]
-                      ++ [RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "~"
-                         ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqRef r
+                      ++ [RawInline (Format "latex") "~"
+                         ,RawInline (Format "latex") $ symReqRef r
                          ,Str " p."
-                         ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "~"
-                         ,RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqPageRef r
+                         ,RawInline (Format "latex") "~"
+                         ,RawInline (Format "latex") $ symReqPageRef r
                          ,Str ": "]]
                ++ meaning2Blocks (fsLang fSpec) r
                   -- then the formal rule
                ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | fsLang fSpec==Dutch]
                       ++ [Str "This is formalized - using relations "     | fsLang fSpec==English]
-                      ++ intercalate [Str ", "] [[RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symDefRef d] | d@Sgn{}<-relsMentionedIn r]
+                      ++ intercalate [Str ", "] [[RawInline (Format "latex") $ symDefRef d] | d@Sgn{}<-relsMentionedIn r]
                       ++ [Str " - als " | fsLang fSpec==Dutch]
                       ++ [Str " - as "     | fsLang fSpec==English]]
                ++ (if showPredExpr flags
                    then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
                    else pandocEquation (showMath r++symDefLabel r)
                   )
+               -- followed by a conceptual model for this rule
+               ++ toList
+               ( case (genGraphics flags, fsLang fSpec) of
+                  (True,Dutch  ) -> 
+                        para ("Figuur " <> xRefReference flags (pictOfRule r) <> " geeft een conceptueel diagram van deze regel.")
+                     <> plain (showImage flags (pictOfRule r))          
+                  (True,English) -> 
+                        para ("Figure " <> xRefReference flags (pictOfRule r) <> " shows a conceptual diagram of this rule.")
+                     <> plain (showImage flags (pictOfRule r))
+                  _              -> mempty)
+               
                ])
-
-
-

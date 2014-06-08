@@ -589,7 +589,7 @@ chpDiagnosis fSpec flags
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                if xrefSupported flags then [ Str "(", RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ symReqRef r, Str ") "] else []++
+                if xrefSupported flags then [ Str "(", RawInline (Format "latex") $ symReqRef r, Str ") "] else []++
                 (case fsLang fSpec of
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]
