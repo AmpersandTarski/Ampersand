@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
+module DatabaseDesign.Ampersand_Prototype.Generate (generateAll,otherQuerys) where
 
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
@@ -13,7 +13,7 @@ import System.FilePath
 import System.Directory
 import DatabaseDesign.Ampersand_Prototype.Version 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 
 import Control.Exception
 
 fatal :: Int -> String -> a
@@ -21,6 +21,9 @@ fatal = fatalMsg "Generate"
 
 customCssPath :: String
 customCssPath = "css/Custom.css"
+
+otherQuerys :: Fspc -> [String]
+otherQuerys _ = []
 
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec flags =

@@ -23,7 +23,7 @@ import DatabaseDesign.Ampersand hiding (fatalMsg) -- we wrote our own version fo
 --   , Prop(..)
 --   , Lang(..)
 --   , Options(..), DocTheme(..)
---   , Picture(..), writePicture, DrawingType(..)
+--   , Picture(..), writePicture
 --   , Origin(..)
 --   , FPA(..), FPcompl(..)
 --   , mkPair
@@ -40,7 +40,7 @@ import DatabaseDesign.Ampersand hiding (fatalMsg) -- we wrote our own version fo
 --   , Traced(..)
 --   , SpecHierarchy(..)
 --   , Language(..)
---   , Dotable(..)
+--   , makePicture
 --   , FPAble(..)
 --   , ShowHS(..), haskellIdentifier
 --   , ADL1Importable(..)

@@ -40,13 +40,15 @@ validateRulesSQL fSpec flags =
     
     ; putStrLn "Initializing temporary database"
     ; createTempDatabase fSpec flags
-     
+    
     ; let allExps = getAllInterfaceExps fSpec ++ 
                     getAllRuleExps fSpec ++
                     getAllPairViewExps fSpec ++
                     getAllIdExps fSpec ++
                     getAllViewExps fSpec
                     
+    ; let allOtherSQL = []
+    
     ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
     ; results <- mapM (validateExp fSpec flags) allExps 
                    
@@ -262,6 +264,13 @@ executePHP phpStr =
 --    ; putStrLn $ "Results:\n" ++ outputStr
     ; return outputStr
     }
-    
+-- | The syntax of the generated SQL code might not be valid for the database in use. This could be
+-- because the prototype contains errors. For this reason, a validation can be done. The idea is
+-- that every single SQL expression is thrown against the generated database. If the SQL syntax
+-- is incorrect, an error is generated. 
+-- result of the query, a check is d
+validateSQLsyntax :: fSpc -> Bool
+validateSQLsyntax fSpec = False
+
 showPHP :: [String] -> String
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]

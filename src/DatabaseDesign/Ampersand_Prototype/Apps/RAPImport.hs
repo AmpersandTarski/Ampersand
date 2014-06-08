@@ -234,8 +234,8 @@ makeRAPPops fSpec flags usrfiles pics
     ,makepopu ("savecontext","Context","SaveAdlFile")    [(fsid (cns,fSpec), fileid savectxfile)]
     ,makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])
                                                                        | pic<-pics]
-    ,makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fSpec, name p==origName pic]
-    ,makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-udefrules fSpec   , name r==origName pic]
+    ,makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTRelsUsedInPat, p<-patterns fSpec, name p==origName pic]
+    ,makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTSingleRule   , r<-udefrules fSpec   , name r==origName pic]
     ,makepopu ("cptpic","Concept","Image") [(cptid c    , imageid pic) | pic<-pics, pType pic==PTConcept, c<-concs fSpec   , name c==origName pic]
     ,makepopu ("countrules","Context","Int")  [(fsid (cns,fSpec), nonsid (show (length (udefrules fSpec))))]
     ,makepopu ("countdecls","Context","Int")  [(fsid (cns,fSpec), nonsid (show (length userdeclarations)))]
