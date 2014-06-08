@@ -19,7 +19,6 @@ module DatabaseDesign.Ampersand
    , Expression(..)
    , Population(..)
    , Fspc(..), concDefs
-   , Fswitchboard(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Rule(..)
    , Process(..) , FProcess(..)
@@ -28,7 +27,7 @@ module DatabaseDesign.Ampersand
    , SqlFieldUsage(..)
    , DnfClause(..), Clauses(..)
    , Options(..), DocTheme(..)
-   , Picture(..), writePicture, DrawingType(..)
+   , Picture(..), writePicture
    , FilePos(..), Origin(..), Pos(Pos)
    , FPA(..), FPcompl(..)
    , mkPair
@@ -46,7 +45,7 @@ module DatabaseDesign.Ampersand
    , Motivated(..)
    , Traced(..)
    , Language(..)
-   , Dotable(..)
+   , makePicture
    , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts

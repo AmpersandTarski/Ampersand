@@ -30,25 +30,30 @@ data Picture = Pict { origName :: String              -- ^ The original name of 
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 data PictType = PTClassDiagram -- a UML class diagram, or something that comes close
-              | PTPattern      -- a conceptual diagram with the relations that are USED in a pattern
-              | PTFullPat      -- a conceptual diagram with the relations DECLARED in a pattern
-              | PTProcess      -- a process diagram, that shows dependencies between activities
-              | PTProcLang     -- a conceptual diagram that shows the language of a process
+              | PTRelsUsedInPat      -- a conceptual diagram with the relations that are USED in a pattern
+              | PTDeclaredInPat      -- a conceptual diagram with the relations DECLARED in a pattern
+              | PTIsaInPattern  -- a conceptual diagram with Isa relations to and fro concepts of a pattern.
+              | PTSingleRule   -- a conceptual diagram with the relations in a single rule 
+              | PTProcess      -- a process model diagram, that shows dependencies between activities
               | PTConcept      -- a conceptual diagram that shows a concept in relation with the rules it occurs in.
-              | PTRule         -- a conceptual diagram that shows a rule
               | PTSwitchBoard
-              | PTFinterface deriving Eq
+              | PTFinterface   --a conceptual diagram that shows concepts in the interface/activity
+              | PTLogicalDM
+              | PTTechnicalDM
+               deriving (Eq, Show)
 picType2prefix :: PictType -> String
 picType2prefix pt = case pt of
-                      PTClassDiagram -> "CD_"
-                      PTPattern      -> "Pat_"
-                      PTFullPat      -> "Lat_"
-                      PTProcess      -> "Proc_"
-                      PTProcLang     -> "PL_"
-                      PTConcept      -> "Cpt_"
-                      PTRule         -> "Rul_"
-                      PTSwitchBoard  -> "SB_"
-                      PTFinterface   -> "Serv_"
+                      PTClassDiagram -> "CD"
+                      PTRelsUsedInPat -> "Pat"
+                      PTDeclaredInPat-> "Lat"
+                      PTProcess      -> "Proc"
+                      PTConcept      -> "Cpt"
+                      PTSwitchBoard  -> "SB"
+                      PTFinterface   -> "Interface"
+                      PTIsaInPattern -> "IsasOf"
+                      PTSingleRule   -> "Rul"
+                      PTLogicalDM    -> "LDM"
+                      PTTechnicalDM  -> "TDM"
 
 makePictureObj :: Options
                -> Lang
@@ -65,29 +70,49 @@ makePictureObj flags lang nm pTyp dotsource
            , pType       = pTyp
            , scale       = case pTyp of
                             PTClassDiagram -> "1.0"
-                            PTPattern      -> "0.7"
-                            PTFullPat      -> "0.5"
+                            PTRelsUsedInPat-> "0.7"
+                            PTDeclaredInPat-> "0.5"
                             PTProcess      -> "0.4"
                             PTSwitchBoard  -> "0.4"
-                            PTProcLang     -> "0.7"
-                            _              -> "0.7"
-           , dotProgName = case pTyp of
-                     PTClassDiagram -> Dot
-                     PTSwitchBoard  -> Dot
-                     _              -> Sfdp
+                            PTIsaInPattern -> "0.7"
+                            PTSingleRule   -> "0.7"
+                            PTConcept      -> "0.7"
+                            PTFinterface   -> "0.7"
+                            PTLogicalDM    -> "0.7"
+                            PTTechnicalDM  -> "0.7"
+        
+           , dotProgName 
+              = case pTyp of
+                  PTClassDiagram -> Dot
+                  PTSwitchBoard  -> Dot
+                  PTLogicalDM    -> Dot
+                  PTTechnicalDM  -> Dot
+                  _              -> Sfdp
            , caption     = case (pTyp,lang) of
-                           (PTClassDiagram,English) -> "Class Diagram of " ++ nm
-                           (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
-                           (PTPattern     ,English) -> "Concept diagram of the rules in " ++ nm
-                           (PTPattern     ,Dutch  ) -> "Conceptueel diagram van de regels in " ++ nm
-                           (PTFullPat     ,English) -> "Concept diagram of relations in " ++ nm
-                           (PTFullPat     ,Dutch  ) -> "Conceptueel diagram van relaties in " ++ nm
-                           (PTProcess     ,English) -> "Process model of " ++ nm
-                           (PTProcess     ,Dutch  ) -> "Procesmodel van " ++ nm
-                           (PTSwitchBoard ,English) -> "Switchboard diagram of " ++ nm
-                           (PTSwitchBoard ,Dutch  ) -> "Schakelpaneel van " ++ nm
-                           (_             ,English) -> "Knowledge graph about " ++ nm
-                           (_             ,Dutch  ) -> "Kennisgraaf rond " ++ nm
+                           (PTClassDiagram ,English) -> "Classification of " ++ nm
+                           (PTClassDiagram ,Dutch  ) -> "Classificatie van " ++ nm
+                           (PTRelsUsedInPat,English) -> "Concept diagram of the rules in " ++ nm
+                           (PTRelsUsedInPat,Dutch  ) -> "Conceptueel diagram van de regels in " ++ nm
+                           (PTDeclaredInPat,English) -> "Concept diagram of relations in " ++ nm
+                           (PTDeclaredInPat,Dutch  ) -> "Conceptueel diagram van relaties in " ++ nm
+                           (PTProcess      ,English) -> "Process model of " ++ nm
+                           (PTProcess      ,Dutch  ) -> "Procesmodel van " ++ nm
+                           (PTSwitchBoard  ,English) -> "Switchboard diagram of " ++ nm
+                           (PTSwitchBoard  ,Dutch  ) -> "Schakelpaneel van " ++ nm
+                           (PTLogicalDM    ,English) -> "Logical data model of "++nm      
+                           (PTLogicalDM    ,Dutch  ) -> "Logisch gegevensmodel van "++nm
+                           (PTTechnicalDM  ,English) -> "Technical data model of "++nm
+                           (PTTechnicalDM  ,Dutch  ) -> "Technisch gegevensmodel van "++nm
+                           (PTConcept      ,English) -> "Concept diagram of the rules about " ++ nm
+                           (PTConcept      ,Dutch  ) -> "Conceptueel diagram van de regels rond " ++ nm
+                           (PTFinterface   ,English) -> "Concept diagram of interface " ++ nm
+                           (PTFinterface   ,Dutch  ) -> "Conceptueel diagram van interface " ++ nm
+                           (PTIsaInPattern ,English) -> "Classifications of "++ nm
+                           (PTIsaInPattern , Dutch ) -> "Classificaties van "++ nm
+                           (PTSingleRule   ,English) -> "Concept diagram of rule "++ nm
+                           (PTSingleRule   , Dutch ) -> "Conceptueel diagram van regel "++ nm
+
+
            }
        where
          absImgPath | genAtlas flags = dirPrototype flags </> relImgPath 
@@ -106,7 +131,7 @@ writePicture :: Options -> Picture -> IO()
 writePicture flags pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (fullPath pict))     |                   genAtlas flags ]++
-      [writeDot (dotProgName pict) Canon (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
+      [writeDot (dotProgName pict) Canon (dotSource pict) (fullPath pict) | {- genFspec flags || -} genAtlas flags ]++
 --      [writeDot (dotProgName pict) XDot  (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
       [writeDot (dotProgName pict) Png   (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
       [writeDot (dotProgName pict) Cmapx (dotSource pict) (fullPath pict) |                   genAtlas flags ]

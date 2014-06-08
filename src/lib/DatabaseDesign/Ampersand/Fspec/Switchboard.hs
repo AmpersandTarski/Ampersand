@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.Switchboard
     (SwitchBdDiagram(..),switchboardAct,sbDiagram,processModel) where
--- Go to  http://hackage.haskell.org/package/graphviz  for Graphviz bindings for Haskell.
  
    import Data.GraphViz
    import Data.GraphViz.Attributes.Complete
@@ -87,8 +86,8 @@ data Event = On { eSrt :: InsDel
    colorRule r  | isSignal r = Orange
                 | otherwise  = Green
 
-   sbDiagram :: Fspc -> Fswitchboard -> SwitchBdDiagram
-   sbDiagram fSpec fsb
+   sbDiagram :: Fspc -> SwitchBdDiagram
+   sbDiagram fSpec 
     = SBdgrm
         { sbName = name fSpec
         , sbdotGraph
@@ -104,6 +103,7 @@ data Event = On { eSrt :: InsDel
                       }
         }
       where
+        fsb = fSwitchboard fSpec
         --DESCR -> The relations from which changes can come
         inEvNodes = [ DotNode { nodeID         = nameINode eventsIn ev
                               , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eDcl ev))))]

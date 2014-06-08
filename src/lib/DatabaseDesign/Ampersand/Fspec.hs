@@ -14,7 +14,7 @@ import DatabaseDesign.Ampersand.Fspec.ShowMeatGrinder as X (meatGrinder)
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram as X
        (clAnalysis, cdAnalysis, ClassDiag(..))
 import DatabaseDesign.Ampersand.Fspec.Graphic.Graphics as X
-       (Dotable(..), makePictureObj, printDotGraph, DrawingType(..))
+       (makePicture)
 import DatabaseDesign.Ampersand.Fspec.Graphic.Picture as X
        (Picture(..), PictType(..), writePicture)
 import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc as X

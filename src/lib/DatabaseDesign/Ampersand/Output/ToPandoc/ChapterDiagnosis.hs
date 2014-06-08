@@ -272,7 +272,7 @@ chpDiagnosis fSpec flags
            pats  = [ pat | pat<-patterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
-           pictsWithUnusedRels = [makePicture flags fSpec (name pat++"DiagnosisConceptualDiagram") Rel_CG pat | pat<-pats ]
+           pictsWithUnusedRels = [makePicture flags fSpec PTDeclaredInPat pat | pat<-pats ]
 
   missingRules :: [Block]
   missingRules

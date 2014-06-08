@@ -48,10 +48,8 @@ chpConceptualAnalysis lev fSpec flags = (
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   pict :: Pattern -> Picture
-  pict pat = (makePicture flags fSpec (name pat++"ConceptDiagram") Plain_CG pat)
-                {caption = case fsLang fSpec of
-                            Dutch   ->"Conceptdiagram van "++name pat
-                            English ->"Concept diagram of "++name pat}
+  pict pat = makePicture flags fSpec PTRelsUsedInPat pat
+                
   caSection :: Pattern -> [Block]
   caSection pat
    =    -- new section to explain this pattern  
