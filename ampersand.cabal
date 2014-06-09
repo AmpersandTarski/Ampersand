@@ -110,7 +110,6 @@ library
                     DatabaseDesign.Ampersand.Fspec.GenerateUML,
                     DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram,
                     DatabaseDesign.Ampersand.Fspec.Graphic.Graphics,
-                    DatabaseDesign.Ampersand.Fspec.Graphic.Picture,
                     DatabaseDesign.Ampersand.Fspec.Motivations,
                     DatabaseDesign.Ampersand.Fspec.Plug,
                     DatabaseDesign.Ampersand.Fspec.ShowADL,

@@ -98,7 +98,7 @@ classificationSection lev fSpec flags = (theBlocks,pict)
   classificationModel = clAnalysis fSpec flags
 
   pict :: Picture
-  pict = makePicture flags fSpec PTClassDiagram classificationModel
+  pict = makePicture flags fSpec PTClassDiagram
           
 
 
@@ -140,7 +140,7 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
 
   pict :: Picture
-  pict = (makePicture flags fSpec PTLogicalDM oocd)
+  pict = makePicture flags fSpec PTLogicalDM
 
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec flags
@@ -374,7 +374,7 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
                          )
                      )
    pict :: Picture
-   pict = makePicture flags fSpec PTTechnicalDM (tdAnalysis fSpec flags)
+   pict = makePicture flags fSpec PTTechnicalDM
 
                    
              
