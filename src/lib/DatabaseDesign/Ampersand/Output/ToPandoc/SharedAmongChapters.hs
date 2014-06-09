@@ -130,7 +130,7 @@ instance Xreferencable Chapter where
   xLabel a = "chapter" ++ escapeNonAlphaNum (show a)
   
 instance Xreferencable Picture where
-  xLabel a = "figure" ++ escapeNonAlphaNum (uniqueName a)
+  xLabel a = "figure" ++ escapeNonAlphaNum (caption a)
 
 --Image [Inline] Target
 --      alt.text (URL,title)
@@ -139,7 +139,7 @@ showImage flags pict =
       case fspecFormat flags of
          FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
-   <> image (uniqueName pict) (xLabel pict) (text $ "Here, "++uniqueName pict++" should have been visible" )
+   <> image (caption pict) (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
    <> case fspecFormat flags of
          FLatex  -> rawInline "latex" "}\n"
                   <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
@@ -151,7 +151,7 @@ showImage flags pict =
 xrefFigure1 :: Picture -> [Inline]  --DEPRECIATED! Use showImage instead.
 xrefFigure1 pict =
    [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
-   , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] (uniqueName pict, xLabel pict)
+   , Image [Str $ "Here, "++caption pict++" should have been visible"] (caption pict, xLabel pict)
    , RawInline (Text.Pandoc.Builder.Format "latex") "}\n"
    , RawInline (Text.Pandoc.Builder.Format "latex") ("\\caption{"++latexEscShw (caption pict)++"}\n") 
    , xrefLabel pict

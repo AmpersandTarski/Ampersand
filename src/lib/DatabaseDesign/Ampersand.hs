@@ -27,7 +27,7 @@ module DatabaseDesign.Ampersand
    , SqlFieldUsage(..)
    , DnfClause(..), Clauses(..)
    , Options(..), DocTheme(..)
-   , Picture(..), writePicture
+   , Picture(..), writePicture , PictureReq(..), makePicture
    , FilePos(..), Origin(..), Pos(Pos)
    , FPA(..), FPcompl(..)
    , mkPair
@@ -45,7 +45,6 @@ module DatabaseDesign.Ampersand
    , Motivated(..)
    , Traced(..)
    , Language(..)
-   , makePicture
    , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
@@ -91,7 +90,7 @@ module DatabaseDesign.Ampersand
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
-   , fullContents, Paire, Purpose(..), ExplObj(..), PictType(..)
+   , fullContents, Paire, Purpose(..), ExplObj(..)
    )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree

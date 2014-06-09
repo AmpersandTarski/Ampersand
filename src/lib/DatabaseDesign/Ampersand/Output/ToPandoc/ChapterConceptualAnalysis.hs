@@ -51,9 +51,9 @@ chpConceptualAnalysis lev fSpec flags = (
   patPicts pat = pictOfPat pat :
                 (map pictOfRule (invariants pat `isc` udefrules pat))
   pictOfPat  :: Pattern ->  Picture
-  pictOfPat  = makePicture flags fSpec PTRelsUsedInPat              
+  pictOfPat  = makePicture flags fSpec . PTRelsUsedInPat 
   pictOfRule :: Rule -> Picture
-  pictOfRule = makePicture flags fSpec PTSingleRule
+  pictOfRule = makePicture flags fSpec . PTSingleRule
   caSection :: Pattern -> [Block]
   caSection pat
    =    -- new section to explain this pattern  
