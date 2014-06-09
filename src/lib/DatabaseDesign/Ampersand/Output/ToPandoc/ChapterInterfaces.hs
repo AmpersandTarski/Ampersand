@@ -9,7 +9,6 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.ADL1
 import Data.List
 import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Fspec.Switchboard      (switchboardAct)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 chpInterfacesPics :: Fspc -> Options -> [Picture]
@@ -226,11 +225,11 @@ chpInterfacesBlocks lev fSpec flags =
      ]
 
 picKnowledgeGraph :: Options -> Fspc -> Activity ->Picture
-picKnowledgeGraph flags fSpec act = makePicture flags fSpec PTFinterface act
+picKnowledgeGraph flags fSpec act = makePicture flags fSpec (PTFinterface act)
 
 picSwitchboard :: Options -> Fspc -> Activity -> Picture
 picSwitchboard flags fSpec act
-    = makePicture flags fSpec PTSwitchBoard (switchboardAct fSpec act) -- the Picture that represents this interface's knowledge graph
+    = makePicture flags fSpec (PTSwitchBoard act) -- the Picture that represents this interface's knowledge graph
 
 
 graphic :: Options -> Bool

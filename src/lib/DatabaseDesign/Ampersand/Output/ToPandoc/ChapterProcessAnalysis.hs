@@ -168,6 +168,6 @@ chpProcessAnalysis lev fSpec flags
 
   -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
   picProcessModel :: FProcess->Picture
-  picProcessModel fproc = makePicture flags fSpec PTProcess fproc 
+  picProcessModel fproc = makePicture flags fSpec (PTProcess fproc) 
 
 
