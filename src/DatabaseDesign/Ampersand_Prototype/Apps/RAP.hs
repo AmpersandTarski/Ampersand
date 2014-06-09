@@ -24,9 +24,11 @@ fillAtlas fSpec flags = odbcinstall flags fSpec dsnatlas
 
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
-   = [makePicture flags fSpec PTRelsUsedInPat pat | pat <- patterns fSpec] ++
-     [makePicture flags fSpec PTSingleRule userRule | userRule <- udefrules fSpec]++
-     [makePicture flags fSpec PTConcept cpt | cpt <- concs fSpec]
+   = map (makePicture flags fSpec) 
+         ( [PTRelsUsedInPat pat   | pat <- patterns fSpec] ++
+           [PTSingleRule userRule | userRule <- udefrules fSpec]++
+           [PTConcept cpt         | cpt <- concs fSpec]
+         )
 
 ----------------------------------------------------
 
