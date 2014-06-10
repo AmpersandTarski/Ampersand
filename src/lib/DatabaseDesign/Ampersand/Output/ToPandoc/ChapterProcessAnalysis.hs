@@ -149,7 +149,7 @@ chpProcessAnalysis lev fSpec flags
 --                        , Str " geeft een overzicht van de taal waarin dit proces wordt uitgedrukt."]
 --             English -> [ Str "The conceptual diagram of figure ", xrefReference pict
 --                        , Str " provides an overview of the language in which this process is expressed."])
---      ,Plain (xrefFigure1 pict)]                     -- draw the diagram
+--      ,Plain ((toList . showImage flags) pict)]                     -- draw the diagram
 --     where pict = picLangModel fp
 
   txtProcessModel :: FProcess->[Block]
@@ -161,7 +161,7 @@ chpProcessAnalysis lev fSpec flags
                         , Str " geeft het procesmodel weer."]
              English -> [ Str "Figure ", xrefReference pict
                         , Str " shows the process model."])
-     ,Plain (xrefFigure1 pict)]                     -- draw the diagram
+     ,Plain ((toList . showImage flags) pict)]                     -- draw the diagram
      where pict = picProcessModel p
 
 
