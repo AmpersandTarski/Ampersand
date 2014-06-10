@@ -26,22 +26,23 @@ class Session {
 		if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
 
 			try {
-				$database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
+				$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
 			} catch (Exception $e) {
 				return;
 			}
 			
 			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-			$expiredSessionsAtoms = array_column($database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < ".time() - EXPIRATION_TIME), 'SESSION');
+			$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
 			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
 			
 			// Create a new Ampersand session if $_SESSION['sessionAtom'] is not set (browser started a new session or Ampersand session was expired
 			if (!Concept::isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')){ 
-				$_SESSION['sessionAtom']  = $database->addAtomToConcept(Concept::createNewAtom('SESSION'), 'SESSION'); // TODO: change to PHP SESSION ID??
+				$sessionAtom = $this->database->addAtomToConcept(Concept::createNewAtom('SESSION'), 'SESSION'); // TODO: change to PHP SESSION ID??
+				$_SESSION['sessionAtom'] = $sessionAtom;
+				
 			}
 
-			$database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$_SESSION[sessionAtom]."', '".time()."')".
-			"ON DUPLICATE KEY UPDATE `lastAccess` = '".$time()."'");
+			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$sessionAtom."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 		}
 		
 		// ROLE

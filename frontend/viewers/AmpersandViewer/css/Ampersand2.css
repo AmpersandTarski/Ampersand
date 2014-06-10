@@ -1,0 +1,497 @@
+body {
+	margin: 0px;
+}
+
+#TopLevelInterfaces {
+    width: 100%;
+    position: relative;
+    z-index: 20;
+    height: 33px; /* 24 (menu) + 6 (gradient) */
+    background: transparent url(../images/menu_bg.png) repeat-x bottom center;
+}
+#TopLevelInterfaces .MenuBar {
+    background-color: #333333;
+    padding-left: 10px;
+    padding-right: 3px;
+    height: 27px;
+}
+#TopLevelInterfaces .MenuItem {
+    padding-top: 3px;
+    padding-left: 20px;
+    padding-right: 20px;
+    float: left;
+    height: 24px;
+    color: white;
+    font-size: 18px;
+}
+#TopLevelInterfaces .MenuItem:hover  {
+    background-color: white;
+    color: #BF1E74;
+}
+#TopLevelInterfaces .MenuItem a {
+    color: inherit;
+}
+#TopLevelInterfaces #RoleSelector {
+    font-size: 14px;
+    float: right;
+    margin: 3px 4px 0 0;
+}
+#TopLevelInterfaces #MenuBarLogout {
+    float: right;
+}
+#TopLevelInterfaces #MenuBarReset {
+    float: right;
+}
+#TopLevelInterfaces #MenuBarNew {
+    float: right;
+    margin-right: 10px;
+}
+
+/* Due to a bug in Chrome, 'before' pseudo elements are not part of the element, which makes it impossible to rename links
+   in the interface with a Custom.css. A workaround is to display these links as inline-block. */
+#TopLevelInterfaces a {
+  display: inline-block;
+}
+#Maintenance a {
+  display: inline-block;
+}
+#CreateList a {
+  display: inline-block;
+}
+
+
+#ScrollPane {
+    overflow:auto; 
+    background-color: inherit; /* otherwise position: absolute causes background to be white */
+    top: 50px;
+    left:0px;
+    right:0px;
+    bottom:0px;
+    padding-top: 26px;
+}
+
+[editing=false] .Atom[hasInterface]>.AtomName {
+    cursor: pointer;
+    color: blue
+}
+
+.AtomList {
+    display: table;
+    border: 0px;
+    margin: 0px;
+    padding-left: 10px;
+    cell-padding: 0px;
+    margin: 4px;
+}
+    
+.AtomRow[rowType=NewAtomTemplate] {
+    display: none;
+}  
+.AtomRow {
+    display: table-row;
+}
+.AtomListElt {
+    display: table-cell;
+}
+.DeleteStub {
+    display: none;
+}
+.InsertStub {
+    display: none;
+}
+    
+[editing=true] .AtomRow[rowStatus=deleted] {
+    display: none;
+}
+
+/* show edit operations as style variations when dev=true */
+[dev=true][editing=true] .AtomRow[rowStatus=deleted] {
+    display: table-row;
+}
+[dev=true][editing=true] .Atom[status=deleted]>.AtomName {
+    text-decoration: line-through;
+}
+[dev=true][editing=true] .Atom[status=modified]>.AtomName {
+    font-style: italic;
+}
+[dev=true][editing=true] .Atom[status=new]>.AtomName {
+    color:blue;
+}
+
+
+.Atom[atom='']>.AtomName:after {
+    content: "<empty>";
+    font-weight: bold;
+}
+    
+.Atom[atom=''][status=new]>.AtomName:after {
+    content: "<new>";
+    font-weight: bold;
+}
+    
+.Label {
+    font-family: Arial;
+    font-style: bold;
+    color: #707070;
+}
+
+
+/* Buttons */
+
+.Button {
+    position: relative;
+    float: left;
+    z-index: 50;
+}
+
+[editing=true] .EditButton {
+    display: none;
+}
+    
+.SaveButton {
+    display: none;
+}
+    
+[editing=true] .SaveButton {
+    display: block;
+}
+    
+.CancelButton {
+    display: none;
+}
+    
+[editing=true] .CancelButton {
+    display: block;
+}
+    
+.InterfaceList {
+    border-style: solid;
+    border-width: 1px;
+    padding-left: 5px;
+    -moz-border-radius: 5px;  /* rounded corners for Firefox */
+    -webkit-border-radius: 5px;  /* rounded corners for Safari */
+}
+ 
+    
+/* Editing */  
+
+[editing=true] .AtomList[relation] {
+    border-color: #0000ff;
+    border-style: solid;
+    border-width: 2px ;
+    padding-right: 4px;
+    background-color: #f0f0f0;
+}
+
+[editing=true] .AtomList[relation][hover=true] {
+    border-color: #0080ff;
+    background-color: #e0e0e0;
+}
+      
+[editing=true] .AtomList[relation][hover=true] > .AtomRow > .AtomListElt > .Atom > .AtomName:hover {
+    background-color: #808080;
+}
+    
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
+    display: table-cell;
+    visibility: hidden;
+    background-image: url('../images/DeleteButton.png');
+    background-repeat:no-repeat;
+    background-position: 6px 1px;
+    width: 25px;
+}
+
+/* Don't show deletestub if there should be at least one field and we only have one atom */
+[editing=true] .AtomList[relation][min=One][nrOfAtoms="1"] > .AtomRow > .DeleteStub {
+    visibility: hidden;
+}
+[editing=true] .AtomList[relation] > .AtomRow[rowType=Normal] > .DeleteStub {
+    display:table-cell;
+}
+
+[editing=true] .AtomList[hover=true] > .AtomRow[rowType=Normal] > .DeleteStub {
+    visibility: visible;
+}
+    
+[editing=true] .AtomList[hover=true] > .AtomRow > .DeleteStub:hover {
+    background-image: url('../images/DeleteButtonHover.png');
+}
+
+[editing=true] .AtomList[relation] > .AtomRow > .InsertStub {
+    display:block;  /* only show the insert stub when there is an editable relation */
+}
+
+/* Don't show insertStub if there should be at most one field and we already have one atom */
+[editing=true] .AtomList[relation][max=One][nrOfAtoms="1"] > .AtomRow > .InsertStub {
+    visibility: hidden;  /* we hide it rather than set display to none, so the width doesn't change */
+}                        /* would be nice to set the height to 0, but turns out to be rather complicated */
+
+.AtomList .InsertStub {
+    visibility: hidden;
+    padding: 1px 7px 1px 7px;
+    font-family: Arial;
+    font-style: bold;
+    font-size: 80%;
+    color: white;
+    background-color: #909090;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    -moz-border-radius: 7px;  /* rounded corners for Firefox */
+    -webkit-border-radius: 7px;  /* rounded corners for Safari */
+}
+ 
+[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub {
+    visibility: visible;
+}
+    
+[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub:hover {
+    background-color: #606060;
+    cursor: default;
+}
+
+ 
+ /* Navigation context menu */
+
+#FullScreenMask {
+    display: block;
+    position: fixed;
+    z-index: 50;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#InterfaceContextMenu {
+    position: absolute;
+    z-index: 51;
+    border-style: solid;
+    color: black;
+    background-color: #f8f8f8;
+    border-width: 1px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+    
+.InterfaceContextMenuItem {
+    display: block ;
+    font-family: Arial;
+    font-size: 15px;
+    color: black;
+    padding-left:6px;
+    padding-right:16px;
+}
+
+.InterfaceContextMenuItem:hover {
+    font-family: Arial;
+    color: white;
+    background-color: blue;
+}
+
+
+/* Create-new dropdown menu */
+
+#CreateMenu {
+    display: none;
+    font-family: arial;
+    position: absolute;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #333333;
+    margin-top: -6px;
+    right: 3px;
+    z-index: 51;
+    background-color: #333333;
+}
+
+#CreateMenu > .MenuItem  {
+    padding-top: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    height: 24px;
+    color: white;
+    font-size: 18px;
+    }
+#CreateMenu > .MenuItem:hover  {
+    background: white;
+    color: #BF1E74;
+}
+#CreateMenu > .MenuItem > a  {
+    color: inherit;
+}
+
+/* Log windows */
+
+.LogWindow {
+    font-family: arial;
+	  position: absolute;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    padding: 10px;
+    z-index: 25;
+    width: 200px; /* each log window sets its own maximized width */
+    overflow:auto; 
+    max-height: 35%;
+}
+.LogWindow>.MinMaxButton { /* not a button but an icon */
+  float: right;
+  cursor: pointer; /* because we can click to minimize/maximize */
+}
+.LogWindow>.Title {
+    color: black;
+    font-weight: bold;
+    margin-bottom: 3px;
+    cursor: pointer; /* because we can click to minimize/maximize */ 
+}
+.LogWindow>.LogItem {
+    display: block;
+    font-size: 90%;
+}
+.LogWindow>.MinMaxButton {
+    background-repeat:no-repeat;
+    width: 10px;
+    height: 6px;
+    font-family: courier;
+    font-weight: bold;
+}
+.LogWindow[minimized=false]>.MinMaxButton:after {
+    content: "\2228";  /* unicode logical or (v) */ 
+}
+.LogWindow[minimized=true] {
+    padding: 4px 10px 2px 10px;
+}
+.LogWindow[minimized=true]>.Title {
+    margin-bottom: 0px;
+}
+.LogWindow[minimized=true]>.MinMaxButton {
+	  margin-top: 1px;
+}
+.LogWindow[minimized=true]>.MinMaxButton:after {
+    content: "\2227";  /* unicode logical and (^) */
+}
+.LogWindow[minimized=true]>.LogItem {
+    display:none
+}
+
+.PairAtom[hasInterface] {
+    cursor: pointer;
+}
+.PairAtom[hasInterface]:hover {
+    background-color: #909090;
+}
+
+#EditLog {
+    display: none;
+    right: 5px;
+    background-color: #d0d0d0;
+}
+#EditLog[minimized=false] {
+    width: 500px;
+} 
+[editing=true][dev=true] #EditLog {
+    display: block;
+}
+#EditLog>.MinMaxButton {
+	  color: white;
+}
+#EditLog[minimized=false]>.MinMaxButton:after { /* switch buttons, since this log window is positioned at the top */
+    content: "\2228";  /* unicode logical or (v) */ 
+}
+#EditLog[minimized=true]>.MinMaxButton:after {
+    content: "\2227";  /* unicode logical and (^) */
+    margin-top: 5px;
+}
+
+#SignalAndPhpLogs { /* these two share a corner, so we have the logs float and use extra div for the absolute positioning */
+    position:absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+#PhpLog {
+    display: none;
+    position: relative;
+    float:right;
+    clear:right;
+    background-color: lightblue;
+    max-height: 250px;   /* cannot use a percentage for the height because this log window is floating */
+}
+#PhpLog[minimized=false] {
+    width: 500px;
+} 
+[dev=true] #PhpLog[nonEmpty=true] {
+    display: block;
+}
+#PhpLog>.MinMaxButton {
+    color: white;
+}
+#PhpLog>.LogMsg {
+    font-size: 80%;
+}
+    
+#SignalLog {
+    display: none;
+    position: relative;
+    float:right;
+    clear:right;
+    margin-top: 5px;
+    color: black;
+    background-color: #f0f080;
+    border-width: 2px;
+    max-height: 250px;   /* cannot use a percentage for the height because this log window is floating */
+}
+#SignalLog[minimized=false] {
+    width: 600px;
+} 
+#SignalLog[nonEmpty=true] {
+    display: block;
+}    
+#SignalLog>.MinMaxButton {
+    color: black;
+}
+#SignalLog>.Error { /* signal log may also show internal php errors */
+    font-size: 90%;
+    color: darkred;
+}
+
+#ErrorLog {
+    display: none;
+    left: 5px;
+    bottom: 5px;
+    color: red;
+    background-color: #f0f0f0;
+    border-width: 2px;
+    border-color: red;
+}
+#ErrorLog[minimized=false] {
+    width: 600px;
+} 
+[editing=true] #ErrorLog[nonEmpty=true] {
+    display: block;
+}    
+#ErrorLog>.MinMaxButton {
+    color: black;
+}
+#ErrorLog>.Error {
+    font-size: 90%;
+    color: darkred;
+}
+
+
+/* Misc */
+
+.InternalError { /* for unhandled errors, should not appear */
+    background-color: red;
+    color: white;
+}
+
+#Rollback { /* used for parking a clone of the root atom during editing */
+    display: none;
+}
+
+.ui-autocomplete > .ui-menu-item /{ * jQuery autocomplete menu items */
+    font-size: 13px;
+}
+    

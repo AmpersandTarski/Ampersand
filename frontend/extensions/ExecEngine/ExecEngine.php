@@ -54,7 +54,7 @@ class ExecEngine {
 					if (function_exists($func)){ 
 						call_user_func_array($func,$params);
 					} else { 
-						die ("Function does not exists"); // TODO: proper ErrorHandling
+						//die ("Function does not exists"); // TODO: proper ErrorHandling
 						// ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
 					}
 				// }
@@ -89,27 +89,8 @@ class ExecEngine {
 }
 
 
-
-// Load the functions from the functions folder:
+// Load the  from the functions folder:
 // (security hazard :P)
-function getDirectoryList ($directory) 
-{   // create an array to hold directory list
-    $results = array();
-    // create a handler for the directory
-    $handler = opendir($directory);
-    // open directory and walk through the filenames
-    while ($file = readdir($handler))
-    {   // if file isn't this directory or its parent, add it to the results
-        if ($file != "." && $file != "..")
-        {   $results[] = $file;
-        }
-    }
-    // tidy up: close the handler
-    closedir($handler);
-    // done!
-    return $results;
-}
-
 $files = getDirectoryList(__DIR__.'/functions');
 foreach ($files as $file)
 { if (substr($file,-3) !== 'php') continue;

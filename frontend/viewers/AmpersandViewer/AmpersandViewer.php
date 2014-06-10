@@ -1,6 +1,6 @@
 <?php
 
-$viewers['AmpersandViewer'] = array('name' => 'Ampersand viewer', 'class' => 'AmpersandViewer', 'icon' => ''); // activeer viewer extension in framework
+$viewers['AmpersandViewer'] = array('name' => 'Ampersand viewer', 'class' => 'AmpersandViewer', 'icon' => ''); // activeert viewer extension in framework
 
 class AmpersandViewer extends Viewer {
 	
@@ -14,11 +14,20 @@ class AmpersandViewer extends Viewer {
 		
 	}
 	
+	public function getHtmlBody(){
+		$body .= '<body>';
+		$body .= $this->getNavigationBar();
+		$body .= $this->getView();
+		$body .= '</body>';
+		
+		return $body;
+	}
+	
 	public function getView(){ 
 		$db = Database::singleton();
 		$session = Session::singleton();
 		
-		global $allInterfaceObjects;
+		global $allInterfaceObjects; // TODO: hieronder vervangen door $this->interface object
 		global $autoRefreshInterval;
 		global $isDev;
 		
@@ -31,7 +40,7 @@ class AmpersandViewer extends Viewer {
 		} else {
 			$interface = $this->interface->name;
 
-			$concept = $allInterfaceObjects[$interface]['srcConcept'];
+			$concept = $this->interface->srcConcept;
 
 			$isNew = ($concept != 'ONE' and !Concept::isAtomInConcept($this->atomId, $concept)); // $isNew boolean.
 

@@ -57,7 +57,7 @@ class Database
 		
 		$this->Exe("START TRANSACTION"); // start database transaction
 		
-		foreach ($commandArray as $command){
+		foreach ((array)$commandArray as $command){
 			if (!isset($command->dbCmd)) throw new Exception("Malformed command, missing 'dbCmd'");
 			
 			switch ($command->dbCmd){ 
@@ -141,6 +141,8 @@ class Database
 				$this->Exe("INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
 			}
 		}
+		
+		return $newAtomEsc;
 	}
 	
 	// NOTE: if $originalAtom == '', editUpdate means insert for n-ary relations

@@ -1,8 +1,10 @@
 <?php
 
 /* FUNCTIONS OF NEWER VERSIONS OF PHP */
-require_once(__DIR__ . '/functions/array_column.php');
+require_once (__DIR__ . '/functions/array_column.php');
 
+/* OTHER GENERIC FUNCTIONS */
+require_once (__DIR__ . '/functions/getDirectoryList.php');
 
 /* INCLUDES OF AMPERSAND FRAMEWORK */
 
