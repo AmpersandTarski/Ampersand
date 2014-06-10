@@ -236,13 +236,13 @@ chpDiagnosis fSpec flags
                                        , xrefReference pict
                                        , Str " geeft een conceptueel diagram met alle relaties."
                                        ] 
-                                , Plain (xrefFigure1 pict)
+                                , Plain ((toList . showImage flags) pict)
                                 ]
           (English,[pict])   -> [ Para [ Str "Figure "
                                        , xrefReference pict
                                        , Str " shows a conceptual diagram with all relations."
                                        ]
-                                , Plain (xrefFigure1 pict)
+                                , Plain ((toList . showImage flags) pict)
                                 ]
           (Dutch,picts)   -> concat
                                   [ Para [ Str "Figuur "
@@ -251,7 +251,7 @@ chpDiagnosis fSpec flags
                                          , Quoted SingleQuote [Str (name pat)]
                                          , Str "."
                                          ] 
-                                    : [Plain (xrefFigure1 pict)]
+                                    : [Plain ((toList . showImage flags) pict)]
                                   | (pict,pat)<-zip picts pats ]
           (English,picts) -> concat
                                   [ Para [ Str "Figure "
@@ -260,7 +260,7 @@ chpDiagnosis fSpec flags
                                          , Quoted SingleQuote [Str (name pat)]
                                          , Str "."
                                          ]
-                                    : [Plain (xrefFigure1 pict)]
+                                    : [Plain ((toList . showImage flags) pict)]
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
