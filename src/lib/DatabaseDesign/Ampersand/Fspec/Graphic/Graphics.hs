@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.Graphic.Graphics 
-          (makePicture, writePicture, Picture(..), PictureReq(..)
+          (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
-import Data.GraphViz hiding (addExtension )
+import Data.GraphViz 
 import DatabaseDesign.Ampersand.ADL1 
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Classes 
@@ -15,7 +15,7 @@ import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String
 
-import System.FilePath
+import System.FilePath hiding (addExtension)
 import System.Directory
 
 fatal :: Int -> String -> a
@@ -36,8 +36,6 @@ data PictureReq = PTClassDiagram
 data Picture = Pict { pType :: PictureReq             -- ^ the type of the picture
                     , scale :: String                 -- ^ a scale factor, intended to pass on to LaTeX, because Pandoc seems to have a problem with scaling.
                     , dotSource :: DotGraph String    -- ^ the string representing the .dot
-            --        , fullPath :: FilePath            -- ^ the full file path where the .dot and .png file resides
-            --        , relPng :: FilePath              -- ^ the relative file path where the .png file resides
                     , dotProgName :: GraphvizCommand  -- ^ the name of the program to use  ("dot" or "neato" or "fdp" or "Sfdp")
                     , caption :: String               -- ^ a human readable name of this picture
                     }
@@ -46,105 +44,105 @@ data Picture = Pict { pType :: PictureReq             -- ^ the type of the pictu
 makePicture :: Options -> Fspc -> PictureReq -> Picture
 makePicture flags fSpec pr =
   case pr of 
-   PTClassDiagram    -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = classdiagram2dot flags (clAnalysis fSpec flags)
-                                , dotProgName = Dot
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Classification of " ++ name fSpec
-                                       Dutch   -> "Classificatie van " ++ name fSpec
-                                }
-   PTLogicalDM       -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = classdiagram2dot flags (cdAnalysis fSpec flags)
-                                , dotProgName = Dot
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Logical data model of " ++ name fSpec
-                                       Dutch   -> "Logisch gegevensmodel van " ++ name fSpec
-                                }
-   PTTechnicalDM     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = classdiagram2dot flags (tdAnalysis fSpec flags)
-                                , dotProgName = Dot
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Technical data model of " ++ name fSpec
-                                       Dutch   -> "Technisch gegevensmodel van " ++ name fSpec
-                                }
-   PTConcept cpt     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = conceptualGraph' fSpec flags pr
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Concept diagram of the rules about " ++ name cpt
-                                       Dutch   -> "Conceptueel diagram van de regels rond " ++ name cpt
-                                }
-   PTDeclaredInPat pat     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = conceptualGraph' fSpec flags pr
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Concept diagram of relations in " ++ name pat
-                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
-                                }
-   PTIsaInPattern pat     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = conceptualGraph' fSpec flags pr
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Classifications of " ++ name pat
-                                       Dutch   -> "Classificaties van " ++ name pat
-                                }
-   PTRelsUsedInPat pat     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = conceptualGraph' fSpec flags pr
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Concept diagram of the rules in " ++ name pat
-                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
-                                }
-   PTFinterface act     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = conceptualGraph' fSpec flags pr
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Concept diagram of interface " ++ name act
-                                       Dutch   -> "Conceptueel diagram van interface " ++ name act
-                                }
-   PTSingleRule rul     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = conceptualGraph' fSpec flags pr
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Concept diagram of rule " ++ name rul
-                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
-                                }
-   PTProcess fp     -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = processModel fp
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Process model of " ++ name fp
-                                       Dutch   -> "Procesmodel van " ++ name fp
-                                }
+   PTClassDiagram      -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = classdiagram2dot flags (clAnalysis fSpec flags)
+                               , dotProgName = Dot
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Classification of " ++ name fSpec
+                                      Dutch   -> "Classificatie van " ++ name fSpec
+                               }
+   PTLogicalDM         -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = classdiagram2dot flags (cdAnalysis fSpec flags)
+                               , dotProgName = Dot
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Logical data model of " ++ name fSpec
+                                      Dutch   -> "Logisch gegevensmodel van " ++ name fSpec
+                               }
+   PTTechnicalDM       -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = classdiagram2dot flags (tdAnalysis fSpec flags)
+                               , dotProgName = Dot
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Technical data model of " ++ name fSpec
+                                      Dutch   -> "Technisch gegevensmodel van " ++ name fSpec
+                               }
+   PTConcept cpt       -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Concept diagram of the rules about " ++ name cpt
+                                      Dutch   -> "Conceptueel diagram van de regels rond " ++ name cpt
+                               }
+   PTDeclaredInPat pat -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Concept diagram of relations in " ++ name pat
+                                      Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
+                               }
+   PTIsaInPattern pat  -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Classifications of " ++ name pat
+                                      Dutch   -> "Classificaties van " ++ name pat
+                               }
+   PTRelsUsedInPat pat -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Concept diagram of the rules in " ++ name pat
+                                      Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
+                               }
+   PTFinterface act    -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Concept diagram of interface " ++ name act
+                                      Dutch   -> "Conceptueel diagram van interface " ++ name act
+                               }
+   PTSingleRule rul    -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Concept diagram of rule " ++ name rul
+                                      Dutch   -> "Conceptueel diagram van regel " ++ name rul
+                               }
+   PTProcess fp        -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = processModel fp
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Process model of " ++ name fp
+                                      Dutch   -> "Procesmodel van " ++ name fp
+                               }
    PTSwitchBoard act   -> Pict { pType = pr
-                                , scale = scale'
-                                , dotSource = sbdotGraph (switchboardAct fSpec act)
-                                , dotProgName = graphVizCmdForConceptualGraph
-                                , caption = 
-                                    case fsLang fSpec of
-                                       English -> "Switchboard diagram of " ++ name act
-                                       Dutch   -> "Schakelpaneel van " ++ name act
-                                }
+                               , scale = scale'
+                               , dotSource = sbdotGraph (switchboardAct fSpec act)
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption = 
+                                   case fsLang fSpec of
+                                      English -> "Switchboard diagram of " ++ name act
+                                      Dutch   -> "Schakelpaneel van " ++ name act
+                               }
  where
    scale' =
       case pr of
@@ -161,19 +159,19 @@ makePicture flags fSpec pr =
             PTTechnicalDM  -> "0.7"
    graphVizCmdForConceptualGraph = Sfdp
    
-pictureName' :: PictureReq -> String
-pictureName' pr = 
+pictureID :: PictureReq -> String
+pictureID pr = 
      case pr of
       PTClassDiagram   -> "Classification"
       PTLogicalDM      -> "LogicalDataModel"
       PTTechnicalDM    -> "TechnicalDataModel"
       PTConcept cpt    -> "RulesWithConcept"++name cpt
-      PTDeclaredInPat pat -> name pat++"RelationsInPattern"
-      PTIsaInPattern  pat -> name pat++"IsasInPattern"
-      PTRelsUsedInPat pat -> name pat++"RulesInPattern"
-      PTProcess fp        -> name fp++"ProcessModel"
-      PTFinterface act    -> name act++"KnowledgeGraph"
-      PTSwitchBoard x     -> name x ++"SwitchBoard"
+      PTDeclaredInPat pat -> "RelationsInPattern"++name pat
+      PTIsaInPattern  pat -> "IsasInPattern"++name pat
+      PTRelsUsedInPat pat -> "RulesInPattern"++name pat
+      PTProcess fp        -> "ProcessModel"++name fp
+      PTFinterface act    -> "KnowledgeGraph"++name act
+      PTSwitchBoard x     -> "SwitchBoard"++name x
       PTSingleRule r      -> "SingleRule"++name r
 
 conceptualGraph' :: Fspc -> Options -> PictureReq -> DotGraph String
@@ -186,8 +184,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
               cpts' = concs rs
               rs    = [r | r<-udefrules fSpec, c `elem` concs r]
           in
-          CStruct { csName = pictureName' pr
-                  , csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
+          CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = [r | r@Sgn{} <- relsMentionedIn rs   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
                              , not (isProp r)
                              ]
@@ -210,8 +207,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                              , not (isProp r)    -- r is not a property
                              ]
           in
-          CStruct { csName = pictureName' pr
-                  , csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
+          CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
                   , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
                   , csIdgs = idgs
                   }
@@ -222,8 +218,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
               cpts = concs decs `uni` concs (gens pat)
               decs = relsDefdIn pat `uni` relsMentionedIn (udefrules pat)
           in
-          CStruct { csName = pictureName' pr
-                  , csCpts = cpts
+          CStruct { csCpts = cpts
                   , csRels = [r | r@Sgn{}<-decs
                              , not (isProp r), decusr r    -- r is not a property
                              ]
@@ -241,8 +236,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                      f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
                                              where result' = result++new
           in
-          CStruct { csName = pictureName' pr
-                  , csCpts = cpts
+          CStruct { csCpts = cpts
                   , csRels = []
                   , csIdgs = idgs
                   }
@@ -258,8 +252,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                         , not (isProp r)    -- r is not a property
                      ]
           in
-          CStruct { csName = pictureName' pr
-                  , csCpts = cpts -- involve all concepts involved either in the affected rules or in the isa-links
+          CStruct { csCpts = cpts -- involve all concepts involved either in the affected rules or in the isa-links
                   , csRels = rels
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
@@ -267,8 +260,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
-          CStruct { csName = pictureName' pr
-                  , csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
+          CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
                   , csRels = [d | d@Sgn{}<-relsMentionedIn r, decusr d
                              , not (isProp d)    -- d is not a property
                              ]
@@ -280,40 +272,32 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
 writePicture :: Options -> Picture -> IO()
 writePicture flags pict
     = sequence_ (
-      [createDirectoryIfMissing True  (takeDirectory (fullPath pict))     |                   genAtlas flags ]++
-      [writeDot (dotProgName pict) Canon (dotSource pict) (fullPath pict) | {- genFspec flags || -} genAtlas flags ]++
---      [writeDot (dotProgName pict) XDot  (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
-      [writeDot (dotProgName pict) Png   (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
-      [writeDot (dotProgName pict) Cmapx (dotSource pict) (fullPath pict) |                   genAtlas flags ]
+      [createDirectoryIfMissing True  (takeDirectory (imagePath flags pict)) | genAtlas flags ]++
+      [writeDot Canon  | {- genFspec flags || -} genAtlas flags ]++
+--      [writeDot XDot   | genFspec flags || genAtlas flags ]++
+      [writeDot Png    | genFspec flags || genAtlas flags ]++
+      [writeDot Cmapx  |                   genAtlas flags ]
           )
    where 
-     writeDot :: GraphvizCommand
-              -> GraphvizOutput
-              -> DotGraph String
-              -> FilePath
+     writeDot :: GraphvizOutput
               -> IO ()
-     writeDot gvCommand gvOutput graph filePath = 
+     writeDot  gvOutput  = 
          do verboseLn flags ("Generating "++show gvOutput++" using "++show gvCommand++".")
-            path <- runGraphvizCommand gvCommand graph gvOutput (replaceExtension filePath (extentionOf gvOutput))
+            path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath flags) pict)
             verboseLn flags (path++" written.")
-       where extentionOf :: GraphvizOutput -> String
-             extentionOf x = case x of
-                Canon -> "dot"
-                Png   -> "png"     
-                Cmapx -> "map"
-                XDot  -> "xdot"
-                Svg   -> "svg"
-                Gif   -> "gif"
-                _     -> fatal 139 "GraphvizOutput has undefined extention"
+       where  gvCommand = dotProgName pict
+              
              
-     absImgPath | genAtlas flags = dirPrototype flags </> relImgPath 
-                | otherwise = dirOutput flags  </> relImgPath
-     relImgPath | genAtlas flags = "images" 
-                | otherwise = []
-     fullPath p = absImgPath </> (escapeNonAlphaNum . pictureName' . pType ) p
-                                  
+class ReferableFromPandoc a where
+  imagePath :: Options ->a -> FilePath   -- ^ the full file path to the image file
+
+instance ReferableFromPandoc Picture where
+  imagePath flags p = 
+     (if genAtlas flags then dirPrototype flags </> "images" else dirOutput flags)
+     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
+
 class Identified a => Navigatable a where
-   interfacename :: a -> String
+   interfacename :: a -> String 
    itemstring :: a -> String 
    theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
    theURL flags x 
@@ -341,17 +325,16 @@ instance Navigatable Declaration where
 
 
 -- Chapter 2: Formation of a conceptual graph as a DotGraph data structure.
-data ConceptualStructure = CStruct { csName ::  String -- ^ the name of the Graph
-                                   , csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
+data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
                                    , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
 conceptual2Dot :: Options -> ConceptualStructure -> DotGraph String
-conceptual2Dot flags (CStruct graphName cpts' rels idgs)
+conceptual2Dot flags (CStruct cpts' rels idgs)
      = DotGraph { strictGraph = False
                 , directedGraph = True
-                , graphID = Just (Str (fromString graphName))
+                , graphID = Nothing
                 , graphStatements 
                       = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture flags)]
                                  , subGraphs = []

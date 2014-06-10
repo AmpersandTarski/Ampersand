@@ -175,7 +175,7 @@ chpInterfacesBlocks lev fSpec flags =
            English -> [Para [ Str "Figure ", xrefReference (picKnowledgeGraph flags fSpec act)
                             , Str " shows the knowledge graph of this interface."]]
       )
-      ++ [Plain (xrefFigure1 (picKnowledgeGraph flags fSpec act))]    -- draw the knowledge graph
+      ++ [Plain ((toList . showImage flags) (picKnowledgeGraph flags fSpec act))]    -- draw the knowledge graph
 
    txtSwitchboard :: Activity ->[Block]
    txtSwitchboard act
@@ -186,7 +186,7 @@ chpInterfacesBlocks lev fSpec flags =
            English -> [Para [ Str "Figure ", xrefReference (picSwitchboard flags fSpec act)
                             , Str " shows the switchboard diagram of this interface."]]
      )
-     ++ [Plain (xrefFigure1 (picSwitchboard flags fSpec act))]        -- draw the switchboard
+     ++ [Plain ((toList . showImage flags) (picSwitchboard flags fSpec act))]        -- draw the switchboard
 
    switchboardIntro :: [Block]
    switchboardIntro

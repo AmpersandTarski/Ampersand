@@ -65,9 +65,9 @@ chpConceptualAnalysis lev fSpec flags = (
                (True,Dutch  ) -> -- announce the conceptual diagram
                                  [Para [Str "Figuur ", xrefReference (pictOfPat pat), Str " geeft een conceptueel diagram van dit pattern."]
                                  -- draw the conceptual diagram
-                                 ,Plain (xrefFigure1 (pictOfPat pat))]          
+                                 ,Plain ((toList . showImage flags) (pictOfPat pat))]          
                (True,English) -> [Para [Str "Figure ", xrefReference (pictOfPat pat), Str " shows a conceptual diagram of this pattern."]
-                                 ,Plain (xrefFigure1 (pictOfPat pat))]
+                                 ,Plain ((toList . showImage flags) (pictOfPat pat))]
                _              -> [])
         -- now provide the text of this pattern.
      ++ (case fsLang fSpec of

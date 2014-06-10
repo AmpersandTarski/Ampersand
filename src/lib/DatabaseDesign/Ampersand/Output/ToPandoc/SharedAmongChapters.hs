@@ -139,7 +139,7 @@ showImage flags pict =
       case fspecFormat flags of
          FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
-   <> image (caption pict) (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
+   <> image (imagePath flags pict) (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
    <> case fspecFormat flags of
          FLatex  -> rawInline "latex" "}\n"
                   <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
