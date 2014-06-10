@@ -33,6 +33,7 @@ VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (RentalEndDat
 function DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)
 {  emitLog("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)");
    $datediff = strtotime($latestDate) - strtotime($earliestDate);
+   if ($datediff < 0) ExecEngineSHOUTS("ERROR IN FUNCTION DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
    $result = 1 + max(0, floor($datediff/(60*60*24)));
    InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
    return;
@@ -47,6 +48,7 @@ VIOLATION (TXT "{EX} DateDifference"
 function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)
 {  emitLog("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)");
    $datediff = strtotime($lastDate) - strtotime($firstDate);
+   if ($datediff < 0) ExecEngineSHOUTS("ERROR IN FUNCTION DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
    $result = max(0, floor($datediff/(60*60*24)));
    InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
    return;
