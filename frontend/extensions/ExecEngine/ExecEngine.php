@@ -54,7 +54,7 @@ class ExecEngine {
 					if (function_exists($func)){ 
 						call_user_func_array($func,$params);
 					} else { 
-						//die ("Function does not exists"); // TODO: proper ErrorHandling
+						die ("Function '$functionToBeCalled' does not exists"); // TODO: proper ErrorHandling
 						// ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
 					}
 				// }
