@@ -116,6 +116,7 @@ class Session {
 		
 		session_destroy(); // session_destroy() destroys all of the data associated with the current session. It does not unset any of the global variables associated with the session, or unset the session cookie.
 		
+		self::$_instance = null;
 	}
 	
 	private function deleteAmpersandSession($sessionAtom){

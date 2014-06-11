@@ -33,40 +33,29 @@ class ExecEngine {
 				$theMessage = ExecEngine::execPair($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
 
 				$theCleanMessage = strip_tags($theMessage);
-				// $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
-				
-				// TODO: enable multiple function calls again
-				
-				// $functionsToBeCalled = explode('{EX}',$theCleanMessage); // Split off subsequent function calls 
-				// if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[START]]");
+				$functionsToBeCalled = explode('{EX}', $theCleanMessage);
 
-				$functionToBeCalled = $theCleanMessage; // foreach ($functionsToBeCalled as $functionToBeCalled) { 
+				foreach ($functionsToBeCalled as $functionToBeCalled) { 
 				
 					$params = explode(';',$functionToBeCalled); // Split off variables
-					$cleanparams = array();
 					foreach ($params as $param) $cleanparams[] = trim($param);
 					$params = $cleanparams;
 					unset($cleanparams);
 					
-					// ExecEngineWhispers($functionToBeCalled);
-					
 					$func = array_shift($params); // First parameter is function name
 					if (function_exists($func)){ 
-						call_user_func_array($func,$params);
+						$successMessages[] = call_user_func_array($func,$params);
 					} else { 
-						die ("Function '$functionToBeCalled' does not exists"); // TODO: proper ErrorHandling
-						// ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
+						throw new Exception ("Function '$func' does not exists. Create function $func with ".count($params)." parameters");
 					}
-				// }
-				
-				// if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[DONE]]");
-			
+				}
 			}
 		
 			// provide ErrorHandling class a success message for every fixed rule
-			ErrorHandling::addSuccess('ExecEngine fixed rule: '.$rule['name']);
-		}
-		
+			$id = ErrorHandling::addSuccess('ExecEngine fixed rule: '.$rule['name']);
+			foreach ((array)$successMessages as $successMessage) ErrorHandling::addSuccess($successMessage, $id);			
+			
+		}		
 	}
 
 	public static function execPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView){ 
@@ -89,13 +78,12 @@ class ExecEngine {
 }
 
 
-// Load the  from the functions folder:
-// (security hazard :P)
+// Load the  from the functions folder: (security hazard :P)
 $files = getDirectoryList(__DIR__.'/functions');
-foreach ($files as $file)
-{ if (substr($file,-3) !== 'php') continue;
-  require_once __DIR__.'/functions/'.$file;
-  //echo "Included file: " . __DIR__ . '/functions/' . $file . "\n<br/>";
+foreach ($files as $file){ 
+	if (substr($file,-3) !== 'php') continue;
+	require_once __DIR__.'/functions/'.$file;
+	ErrorHandling::addLog('Included file: '.__DIR__ .'/functions/'.$file); 
 }
 
 ?>

@@ -36,12 +36,22 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	}
 	
 	// if srcAtom is specified as NULL, a new atom of srcConcept is created
-    if($srcAtom == "NULL") $srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
+    if($srcAtom == "NULL"){
+		$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
+	}elseif(!isAtomInConcept($srcAtom, $srcConcept)){
+		$database->addAtomToConcept($srcAtom, $srcConcept);
+	}
 	
 	// if tgtAtom is specified as NULL, a new atom of tgtConcept is created
-	if($tgtAtom == "NULL") $tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
+	if($tgtAtom == "NULL"){
+		$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
+	}elseif(!isAtomInConcept($tgtAtom, $tgtConcept)){
+		$database->addAtomToConcept($tgtAtom, $tgtConcept);
+	}
 	
 	$database->editUpdate($relation, false, $srcAtom, $tgtAtom, 'child', '');
+	
+	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relation.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
 /*
@@ -62,6 +72,8 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	}
 	
 	$database->editDelete($relation, false, $srcAtom, $tgtAtom);
+	
+	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relation.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
 // TODO: NewStruct afstemmen met Rieks, moet nog bijgewerkt worden naar nieuwe Database functies
@@ -151,7 +163,8 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 function InsAtom($concept){ 
 	$database = Database::singleton();
  
-	return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
+	$database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
+	
 	
 }
 

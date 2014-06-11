@@ -14,7 +14,10 @@ class RuleEngine {
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkProcessRules'] as $hook) call_user_func($hook); // Hook functions
 		$role = new Role($roleId);
 		
-		foreach ($role->getRules() as $rule) RuleEngine::checkProcessRule($rule);
+		foreach ($role->getRules() as $rule){ 
+			$violations = RuleEngine::checkProcessRule($rule);
+			foreach ((array)$violations as $violation) ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);
+		}
 		
 		// TODO: return function
 	
@@ -40,7 +43,6 @@ class RuleEngine {
 				ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
 			}else{				
 				foreach($result as $violation) {
-					ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);
 					$violations[] = array('src' => $violation['src'], 'tgt' => $violation['tgt']);
 				}
 			}

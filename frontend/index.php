@@ -16,7 +16,6 @@ try {
 $session = Session::singleton(); // initialize both a PHP session and an Ampersand session as soon as we can.
 if(isset($_REQUEST['resetSession'])){ // TODO: reset working not working properly. Refresh of page needed before reset has effect.
 	$session->destroySession();	// unset $_SESSION variables and Ampersand SESSION atom
-	unset($session); // delete Session object
 	$session = Session::singleton(); // initialize new session
 }
 

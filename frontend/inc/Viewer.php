@@ -120,6 +120,7 @@ class Viewer {
 									foreach((array)$GLOBALS['apps'] as $app)
 		$return .= 					'<li><a href="'.$app['link'].'"><span class="'.$app['icon'].'"></span> '.htmlSpecialChars($app['name']).'</a></li>';
 		$return .= 					'<li><a href="ampersand/installer.php"><span class="glyphicon glyphicon-trash"></span> Reset database</a></li>'
+									.'<li><a href="?resetSession"><span class="glyphicon glyphicon-refresh"></span> Reset session</a></li>'
 								.'</ul>'
 							.'</li>';
 					
