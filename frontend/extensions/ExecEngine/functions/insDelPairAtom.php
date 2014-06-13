@@ -38,14 +38,14 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	// if srcAtom is specified as NULL, a new atom of srcConcept is created
     if($srcAtom == "NULL"){
 		$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
-	}elseif(!isAtomInConcept($srcAtom, $srcConcept)){
+	}elseif(!Concept::isAtomInConcept($srcAtom, $srcConcept)){
 		$database->addAtomToConcept($srcAtom, $srcConcept);
 	}
 	
 	// if tgtAtom is specified as NULL, a new atom of tgtConcept is created
 	if($tgtAtom == "NULL"){
 		$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
-	}elseif(!isAtomInConcept($tgtAtom, $tgtConcept)){
+	}elseif(!Concept::isAtomInConcept($tgtAtom, $tgtConcept)){
 		$database->addAtomToConcept($tgtAtom, $tgtConcept);
 	}
 	

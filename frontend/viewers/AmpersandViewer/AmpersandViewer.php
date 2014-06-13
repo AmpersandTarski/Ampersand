@@ -7,17 +7,22 @@ class AmpersandViewer extends Viewer {
 	private $interface;
 	private $atomId;
 	
-	public function __construct($interfaceName, $atomId = null){
+	public function __construct($interface, $atomId = null){
+		// TODO: implement parent constructor
 		
-		$this->interface = new UserInterface($interfaceName);
+		$this->interface = $interface;
 		$this->atomId = $atomId;
 		
 	}
 	
 	public function getHtmlBody(){
-		$body .= '<body>';
+		$body .= '<body onload="initialize(); $(\'.tooltip-to-be-initialized\').toggleClass(\'tooltip-to-be-initialized\').tooltip();">';
 		$body .= $this->getNavigationBar();
-		$body .= $this->getView();
+		$body .= '<div class="container mainview">';
+		$body .= $this->getNotifications();
+		if(isset($this->interface)) $body .= $this->getView();
+		$body .= '</div>';
+		$body .= '<script src="extensions/statusColors/js/statusColors.js"></script>';
 		$body .= '</body>';
 		
 		return $body;
@@ -172,7 +177,7 @@ class AmpersandViewer extends Viewer {
 		* 
 		* if $atom is null, we are presenting a template. Because ""==null and "" denotes an empty atom, we check with === (since "" !== null)
 		*/
-		global $session;
+		$session = Session::singleton();
 		global $allInterfaceObjects;
 
 

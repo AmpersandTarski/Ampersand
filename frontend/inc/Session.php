@@ -4,7 +4,7 @@ define("EXPIRATION_TIME", 60*60 ); // expiration time in seconds
 
 class Session {
 	
-	private $database;
+	public $database;
 	public $role;
 	public $interface;
 	public $viewer;
@@ -45,52 +45,11 @@ class Session {
 			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$sessionAtom."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 		}
 		
-		// ROLE
-		if(isset($_REQUEST['role'])){	// new role selected
-			 $roleId = $_REQUEST['role'];
-		}elseif(isset($_SESSION['role'])){	// role already selected
-			$roleId = $_SESSION['role'];
-		}else{	// default role
-			$roleId = -1;	// TODO: how to handle no role selected
-		}		
-		$_SESSION['role'] = $roleId;	// store roleId in $_SESSION['role'] 
-		$this->role = new Role($roleId);
+		$this->setRole();
+		$this->setInterface();
+		$this->setAtom();
+		$this->setViewer();
 		
-		
-		// INTERFACE
-		if(isset($_REQUEST['interface'])){ // new interface selected
-			$interfaceName = $_REQUEST['interface'];
-		}elseif(isset($_SESSION['interface'])){ // interface already selected
-			$interfaceName = $_SESSION['interface'];
-		}else{ // default interface
-			$interfaceName = '';
-		}		
-		$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
-		
-		
-		// ATOM
-		if(isset($_REQUEST['atom'])){ // new atom selected
-			$atomId = $_REQUEST['atom'];
-		}elseif(isset($_SESSION['atom'])){ // atom already selected
-			$atomId = $_SESSION['atom'];
-		}else{ // default atom
-			$atomId = null;
-		}		
-		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
-		
-		// VIEWER
-		if(isset($_REQUEST['viewer'])){ // new viewer selected
-			$viewerName = $_REQUEST['viewer'];
-		}elseif(isset($_SESSION['viewer'])){ // viewer already selected
-			$viewerName = $_SESSION['viewer'];
-		}else{ // default viewer
-			$viewerName = 'AmpersandViewer'; // TODO: config instelling van maken
-		}		
-		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
-		
-		$viewerClass = $GLOBALS['viewers'][$viewerName]['class'];
-		if(!class_exists($viewerClass)) throw new Exception('Specified viewer: '.$viewerName.' does not exists');
-		$this->viewer = new $viewerClass($interfaceName, $atomId);
 	}
 	
 	// Prevent any copy of this object
@@ -118,6 +77,65 @@ class Session {
 		
 		self::$_instance = null;
 	}
+	
+	public function setRole($roleId = null){
+	
+		if(isset($roleId)){
+			$this->role = new Role($roleId);
+			
+		}elseif(isset($_SESSION['role'])){
+			$this->role = new Role($_SESSION['role']);
+		}else{
+			$this->role = new Role();
+		}
+		ErrorHandling::addLog("Role $role->name selected");
+		$_SESSION['role'] = $this->role->id;	// store roleId in $_SESSION['role']
+		
+		return $this->role->id;
+	}
+	
+	public function setInterface($interfaceName = null){
+		
+		if(isset($interfaceName)) {
+			$this->interface = new UserInterface($interfaceName);
+			ErrorHandling::addLog("Interface $interfaceName selected");
+		}else{
+			$this->interface = null;
+			ErrorHandling::addNotification("No interface selected");
+		}
+		$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
+		
+		return $interfaceName;
+	}
+	
+	public function setAtom($atomId = null){
+		
+		if(isset($atomId)){
+			$this->atom = $atomId;
+			ErrorHandling::addLog("Atom $atomId selected");
+		}else{
+			$this->atom = null;
+		}
+		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
+		
+		return $atomId;
+	}
+	
+	public function setViewer($viewerName = null){ 
+		if(!isset($viewerName)) $viewerName = 'AmpersandViewer'; // TODO: config voor default viewer maken
+		
+		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
+		
+		try{
+			$viewerClass = $GLOBALS['viewers'][$viewerName]['class'];
+			if(!class_exists($viewerClass)) throw new Exception("Specified viewer: $viewerName does not exists");
+			$this->viewer = new $viewerClass($this->interface, $this->atom);
+		}catch (Exception $e){
+			ErrorHandling::addError($e->getMessage);
+		}
+		return $viewerName;
+	}
+	
 	
 	private function deleteAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");

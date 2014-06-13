@@ -7,9 +7,14 @@ class Role {
 	public $maintains = array();
 	public $interfaces = array();
 
-	public function __construct($id){
+	public function __construct($id = null){
 		global $allRoles; // from Generics.php
 		global $allInterfaceObjects; // from Generics.php
+		
+		if(!isset($id)){ 
+			$id = 1;//key($allRoles); // TODO: config for default Role
+			ErrorHandling::addLog("Default role selected");
+		}
 		
 		$this->id = $id;
 		$this->name = $allRoles[$id]['name'];

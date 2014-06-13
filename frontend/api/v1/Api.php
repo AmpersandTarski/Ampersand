@@ -121,7 +121,13 @@ class Api
      */	
 	public function getInterfaceWithView($viewerName, $interfaceName, $atom = "1")
 	{
-		return "TODO: implement viewer api";
+		
+		$session = Session::singleton();
+		$session->setInterface($interfaceName);
+		$session->setAtom($atom);
+		$session->setViewer($viewerName);
+		
+		return $session->viewer->getHtmlBody();
 	
 	}
 
@@ -131,11 +137,12 @@ class Api
      */
     public function processCommands($commands, $role)
     {
-		$database = Database::singleton();
+		$session = Session::singleton();
 		
-		$database->transaction(json_decode($commands), $role);
+		$session->database->transaction(json_decode($commands), $role);
 		
 		return ErrorHandling::getAll();
+
 		
     }
 	
