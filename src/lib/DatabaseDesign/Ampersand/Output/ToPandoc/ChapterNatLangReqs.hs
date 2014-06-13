@@ -326,9 +326,9 @@ chpNatLangReqs lev fSpec flags =
                        samplePop = (take 3 . fullContents (gens fSpec) (initialPops fSpec) . EDcD) dcl
                        sampleSentences =
                          [ Para $ mkSentence (development flags) dcl srcViewAtom tgtViewAtom 
-                         | (srcAtom,tgtAtom)<-samplePop
-                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) srcAtom 
-                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) tgtAtom
+                         | p <-samplePop
+                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (srcPaire p) 
+                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (trgPaire p)
                          ] ++
                          (if null samplePop then [] else [Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\medskip"]])
 
@@ -389,7 +389,7 @@ showViewAtom fSpec mDec cncpt atom =
      where showViewSegment (ViewText str') = str'
            showViewSegment (ViewHtml str') = str'
            showViewSegment (ViewExp objDef) = 
-             case [ tgtAtom | (srcAtom, tgtAtom) <- fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcAtom ] of
+             case [ trgPaire p | p <- fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
                []         -> ""
                viewAtom:_ -> viewAtom  
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]

@@ -623,12 +623,13 @@ chpDiagnosis fSpec flags
                English -> Str ("on "++show (origin r))
                Dutch   -> Str ("op "++show (origin r))
          else Quoted SingleQuote [Str (name r)]
-      oneviol r [(a,b)]
-       = if source r==target r && a==b
-         then [Quoted  SingleQuote [Str (name (source r)),Space,Str a]]
-         else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
+      oneviol :: Rule -> Pairs -> [Inline]
+      oneviol r [p]
+       = if source r==target r && srcPaire p==trgPaire p
+         then [Quoted  SingleQuote [Str (name (source r)),Space,Str (srcPaire p)]]
+         else [Str "(",Str (name (source r)),Space,Str (srcPaire p),Str ", ",Str (name (target r)),Space,Str (trgPaire p),Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
-      popwork :: [[(Rule,[(String, String)])]];
+      popwork :: [[(Rule,Pairs)]];
       popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
   partofThemes r = 
         or [ null (themes fSpec) 
@@ -648,7 +649,7 @@ chpDiagnosis fSpec flags
                                (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                          
                    showRow :: Paire -> [Blocks]
-                   showRow p = [(para.text.fst) p,(para.text.snd) p]
+                   showRow p = [(para.text.srcPaire) p,(para.text.trgPaire) p]
                in para ( case fsLang fSpec of
                             Dutch   -> text "Regel "
                             English -> text "Rule "
@@ -794,21 +795,22 @@ chpDiagnosis fSpec flags
 --                  else concat [identityRules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
 --                       concat [identityRules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
+  violtable :: Rule -> Pairs -> Block
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
         then Table []
              [AlignLeft]
              [0.0]
              [[Plain [(Str . name . source) r]]]
-             [ [[Plain [Str a]]]
-             | (a,_)<-take 10 ps
+             [ [[Plain [Str (srcPaire p)]]]
+             | p <-take 10 ps
              ]
         else Table []
              [AlignLeft,AlignLeft]
              [0.0,0.0]
              [[Plain [(Str . name . source) r]], [Plain [(Str . name . target) r] ]]
-             [ [[Plain [Str a]], [Plain [Str b]]]
-             | (a,b)<-take 10 ps
+             [ [[Plain [Str (srcPaire p)]], [Plain [Str (trgPaire p)]]]
+             | p <-take 10 ps
              ]
         
 

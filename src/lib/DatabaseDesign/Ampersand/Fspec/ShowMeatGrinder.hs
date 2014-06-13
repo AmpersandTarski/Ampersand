@@ -84,7 +84,7 @@ instance AdlId Purpose where
 instance AdlId Sign where 
  uri (Sign s t) = "Sgn"++(show.hash) (uri s++uri t)
 instance AdlId Paire where
- uri (l,r) = "Paire"++(show.hash) (l++"_"++r)
+ uri p = "Paire"++(show.hash) (srcPaire p++"_"++trgPaire p)
  
 data RelPopuType = InitPop | CurrPop deriving Show
 mkUriRelPopu :: Declaration -> RelPopuType  -> String
@@ -137,9 +137,9 @@ instance MetaPopulations Fspc where
       where 
         atoms :: Population -> [Atom]
         atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).fst) (popps udp) 
-                      ++ map (mkAtom ((target.popdcl) udp).snd) (popps udp) 
-          PCptPopu{} ->  map (mkAtom (        popcpt  udp)    ) (popas udp)
+          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp) 
+                      ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp) 
+          PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
     nullContent _ = False

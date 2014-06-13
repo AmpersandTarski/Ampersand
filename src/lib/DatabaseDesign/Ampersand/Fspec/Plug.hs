@@ -381,7 +381,7 @@ tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
 tblcontents gens udp plug@ScalarSQL{}
    = [[Just x] | x<-atomsOf gens udp (cLkp plug)]
 tblcontents gens udp plug@BinSQL{}
-   = [[Just x,Just y] |(x,y)<-fullContents gens udp (mLkp plug)]
+   = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gens udp (mLkp plug)]
 tblcontents gens udp plug@TblSQL{}
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other, 

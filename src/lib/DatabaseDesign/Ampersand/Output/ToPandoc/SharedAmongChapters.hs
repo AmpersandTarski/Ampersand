@@ -16,7 +16,6 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , chptHeader
     , chptTitle
     , Xreferencable(..)
-    , xrefFigure1
     , showImage
     , canXRefer
     , Purpose(..)
@@ -148,14 +147,6 @@ showImage flags pict =
    <> case fspecFormat flags of
          FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
          _       -> mempty
-xrefFigure1 :: Picture -> [Inline]  --DEPRECIATED! Use showImage instead.
-xrefFigure1 pict =
-   [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
-   , Image [Str $ "Here, "++caption pict++" should have been visible"] (caption pict, xLabel pict)
-   , RawInline (Text.Pandoc.Builder.Format "latex") "}\n"
-   , RawInline (Text.Pandoc.Builder.Format "latex") ("\\caption{"++latexEscShw (caption pict)++"}\n") 
-   , xrefLabel pict
-   , RawInline (Text.Pandoc.Builder.Format "latex") "\n\\end{center}\n\\end{figure}"]
 
 -- | This function orders the content to print by theme. It returns a list of 
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
