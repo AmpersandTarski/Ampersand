@@ -20,7 +20,8 @@ class Session {
 		session_start(); 
 		
 		// Database connection for within this class
-		$this->database = Database::singleton();
+		try {
+ 	  $this->database = Database::singleton();
 		
 		// AMPERSAND SESSION
 		if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
@@ -49,7 +50,10 @@ class Session {
 		$this->setInterface();
 		$this->setAtom();
 		$this->setViewer();
-		
+	
+	} catch (Exception $e){
+ 	  ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
+ 	}	
 	}
 	
 	// Prevent any copy of this object
@@ -90,7 +94,8 @@ class Session {
 		}
 		ErrorHandling::addLog("Role $role->name selected");
 		$_SESSION['role'] = $this->role->id;	// store roleId in $_SESSION['role']
-		
+
+		RuleEngine::checkRules($this->role->id); // TODO: ergens anders plaatsen?
 		return $this->role->id;
 	}
 	

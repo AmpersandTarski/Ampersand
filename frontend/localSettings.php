@@ -1,6 +1,6 @@
 <?php
 
-define ('IP', 'http://localhost/CB');
+define ('IP', 'http://ampersand/EURent[FE]');
 
 /************ EXTENSIONS ****************/
 

@@ -6,11 +6,6 @@ $debug = false; // TODO: waar wordt dit nog gebruikt. Verplaatsen naar config
 
 require_once (__DIR__ . '/inc/includes.php');
 
-try {
-	$db = Database::singleton();
-} catch (Exception $e) {
-	ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
-}
 
 // SESSION handling
 $session = Session::singleton(); // initialize both a PHP session and an Ampersand session as soon as we can.
@@ -58,8 +53,6 @@ if(isset($_REQUEST['viewer'])){ // new viewer selected
 	$viewerName = null; 
 }
 $session->setViewer($viewerName);
-
-RuleEngine::checkRules($session->role->id); // TODO: ergens anders plaatsen?
 
 print $session->viewer;
 
