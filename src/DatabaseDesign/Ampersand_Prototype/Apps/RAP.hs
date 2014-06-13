@@ -316,11 +316,11 @@ atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos
               }
    | cl<-eqCl fst r_cptos, not (null cl)]
    where 
-   makepair pid = (lval,rval) 
+   makepair pid = mkPair src trg 
          where lid = geta r_left pid (error "while geta r_left.")
                rid = geta r_right pid (error "while geta r_right.")
-               lval = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
-               rval = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
+               src = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
+               trg = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
 
 atlas2decl :: AtomVal -> Int -> Lang 
               -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> P_Declaration
