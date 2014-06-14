@@ -7,6 +7,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import DatabaseDesign.Ampersand.Classes.ViewPoint hiding (interfaces,gens)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure
 import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
 import DatabaseDesign.Ampersand.Misc
@@ -32,7 +33,19 @@ instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
 pCtx2aCtx :: P_Context -> Guarded A_Context
-pCtx2aCtx 
+pCtx2aCtx pCtx = finalChecksOnAContext <?> pCtx2aCtx' pCtx 
+  where 
+    finalChecksOnAContext :: A_Context -> Guarded A_Context
+    finalChecksOnAContext ctx = checkUniqueRuleNames
+      where
+        checkUniqueRuleNames 
+          = case uniqueNames (udefrules ctx) of 
+              Checked _   -> Checked ctx
+              Errors err  -> Errors err
+
+
+pCtx2aCtx' :: P_Context -> Guarded A_Context
+pCtx2aCtx' 
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
@@ -103,7 +116,7 @@ pCtx2aCtx
     soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
     
     deflangCtxt = fromMaybe English lang  -- explanation: if lang==Nothing, then English, if lang==Just l then l
-    deffrmtCtxt = fromMaybe HTML pandocf
+    deffrmtCtxt = fromMaybe ReST pandocf
 
     (decls,dclPops)= unzip dps
     (ctxDecls,_ ) = unzip ctxDecls'
