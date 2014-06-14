@@ -21,7 +21,8 @@ import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
 -- import Data.Traversable
-import Data.List  (intercalate, partition)
+import Data.List  (intercalate)
+import GHC.Exts (groupWith)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
 import DatabaseDesign.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
@@ -74,17 +75,21 @@ cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\
 
 uniqueNames :: (Identified a, Traced a) =>
                      [a] -> Guarded ()
-uniqueNames a = case findDuplicates (map name a) of
+uniqueNames a = case (filter moreThanOne . groupWith name)  a of
                   [] -> pure ()
-                  [r] -> Errors [CTXE (origin (head a))$ "Names / labels must be unique. "++show r++", however, is not."]
-                  r -> Errors [CTXE (origin (head a))$ "Names / labels must be unique. The following are not: "++concat ["\n  - "++l'|l'<-r]]
-findDuplicates :: Eq a => [a] -> [a]
-findDuplicates [] = []
-findDuplicates (a:as)
- = case (partition (== a) as) of
-    ([],r) -> findDuplicates r
-    (_,r) -> a:findDuplicates r
-
+                  xs -> Errors (map messageFor xs)
+    where 
+     moreThanOne (_:_:_) = True
+     moreThanOne  _      = False
+     messageFor :: (Identified a, Traced a) => [a] -> CtxError
+     messageFor (x:xs) = CTXE (origin x) 
+                      ("Names / labels must be unique. "++(show . name) x++", however, is also used at:"++
+                        concatMap (("\n    "++ ) . show . origin) xs
+                        ++"."
+                       )             
+     messageFor _ = fatal 90 "messageFor must only be used on lists with more thatn one element!"
+--                  [r] -> Errors [CTXE (origin (head r))$ "Names / labels must be unique. "++(show . name) r++", however, is not."]
+--                  r -> Errors [CTXE (origin (head a))$ "Names / labels must be unique. The following are not: "++concat ["\n  - "++l'|l'<-r]]
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String
