@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand
    , Activity(..)
    , AMeaning(..)
    , Quad(..), RuleClause(..)
-   , ECArule(..)
+   , Fswitchboard(..), ECArule(..), Event(..), InsDel(..) -- (required for --haskell output)
    , Pattern(..)
    , Declaration(..)
    , IdentityDef(..)
@@ -20,6 +20,7 @@ module DatabaseDesign.Ampersand
    , Population(..)
    , Fspc(..), concDefs
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
+   , PAclause(..)
    , Rule(..)
    , Process(..) , FProcess(..)
    , Prop(..), RuleOrigin(..)
