@@ -33,7 +33,6 @@ import DatabaseDesign.Ampersand.Misc
 import System.Process      (system)
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.IO              (hPutStrLn, stderr)
-import Paths_ampersand
 import System.FilePath       -- (combine,addExtension,replaceExtension)
 import System.Directory
 import System.Info (os)
@@ -181,11 +180,11 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Ftextile -> "textile"                  
               readDefaultTemplate :: String -> IO(Maybe String)
               readDefaultTemplate  s = 
-                do { dataDir <- getDataDir
-                   ; let fp = dataDir </> "outputTemplates" </> "default."++s
+                do { let fp = ampersandDataDir flags </> ".." </> "outputTemplates" </> "default."++s
                    ; exists <- doesFileExist fp
                    ; (if exists 
-                      then do contents <- readFile fp
+                      then do verboseLn flags $ "Using Template: "++fp
+                              contents <- readFile fp
                               return $ Just contents 
                       else do verboseLn flags $ "Template file does not exist: "++fp
                               verboseLn flags "...trying without template...(but you might want to reinstall ampersand...)" 
