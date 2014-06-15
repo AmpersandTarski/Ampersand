@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Misc.Options
         ,verboseLn,verbose,FspecFormat(..),FileFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
-import System.Environment    (getArgs, getProgName,getEnvironment)
+import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import DatabaseDesign.Ampersand.Misc.Languages (Lang(..))
 import Data.Char (toUpper)
 import System.Console.GetOpt
@@ -17,6 +17,7 @@ import Data.Time.LocalTime
 import Control.Monad
 import Data.Maybe
 import DatabaseDesign.Ampersand.Basics  
+import Paths_ampersand (getDataDir)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 
@@ -75,6 +76,7 @@ data Options = Options { showVersion :: Bool
                        , genMeat :: Bool  -- Generate the meta-population and output it to an .adl file
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
+                       , ampersandDataDir :: FilePath -- the directory where Ampersand data files are. 
                        , progrName :: String --The name of the adl executable
                        , fileName :: FilePath --the file with the Ampersand context
                        , baseName :: String
@@ -95,8 +97,10 @@ getOptions :: IO Options
 getOptions =
    do args     <- getArgs
       progName <- getProgName
-      exePath <- findExecutable progName
+      exePath <- getExecutablePath -- findExecutable progName
       env <- getEnvironment
+      haskellInstallationDirectoryOfAmpersand <- getDataDir
+      let dataDirOfAmpersandInstallation = takeDirectory exePath </> ".." </> "AmpersandData" 
       let usage = "\nType '"++ progName++" --help' for usage info."
       let (actions, nonOptions, errors) = getOpt Permute (each options) args
       let fName = head (nonOptions++(error $ "Please supply the name of an ampersand file" ++ usage))
@@ -104,7 +108,7 @@ getOptions =
       when ((not.null) errors) (error $ concat errors ++ usage)
       
       -- Here we thread startOptions through all supplied option actions
-      flags <- foldl (>>=) (return (startOptions fName localTime env exePath progName)) actions
+      flags <- foldl (>>=) (return (startOptions fName localTime env exePath progName dataDirOfAmpersandInstallation)) actions
     --  defaultOpts <- defaultOptionsM 
     --  let flags = foldl (flip id) opts actions
       if showHelp flags || showVersion flags
@@ -116,8 +120,8 @@ getOptions =
      getLocalTime = do utcTime <- getCurrentTime
                        timeZone <- getCurrentTimeZone
                        return (utcToLocalTime timeZone utcTime)
-     startOptions  :: String -> LocalTime -> [(String,String)] -> Maybe FilePath -> String -> Options 
-     startOptions  fName localTime env exePath progName =
+     startOptions  :: String -> LocalTime -> [(String,String)] -> FilePath -> String -> FilePath -> Options 
+     startOptions  fName localTime env exePath progName dataDirOfAmpersandInstallation=
        Options {genTime       = localTime
               , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
               , outputfile    = fatal 83 "No monadic options available."
@@ -125,9 +129,8 @@ getOptions =
                                           (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
               , dbName        = fromMaybe ""        (lookup envdbName       env)
               , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
-              , dirExec       = case exePath of
-                                  Nothing -> fatal 155 $ "Specify the path location of "++progName++" in your system PATH variable."
-                                  Just s  -> takeDirectory s
+              , dirExec       = takeDirectory exePath
+              , ampersandDataDir = dataDirOfAmpersandInstallation
               , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
               , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
               , theme         = DefaultTheme
@@ -523,5 +526,7 @@ verboseLn flags x
                       mapM_ putStrLn (lines x)
    | otherwise      = return ()
 helpNVersionTexts :: String -> Options -> [String]
-helpNVersionTexts vs flags          = [preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++
+helpNVersionTexts vs flags          = ["Executable: "++show (dirExec flags)++"\n"++
+                                       preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++
                                       [usageInfo' flags                              | showHelp    flags]
+

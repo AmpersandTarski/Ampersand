@@ -16,7 +16,6 @@ import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
 import Control.Exception
-import Paths_ampersand
 
 type ParseError = Message Token
 
@@ -32,8 +31,7 @@ parseContext :: Options                          -- ^ flags to be taken into acc
 parseContext flags file 
              = do { verboseLn flags $ "Parsing with "++show (parserVersion flags)++"..."
                   ; rapRes <- if includeRap flags
-                              then do dataDir <- getDataDir
-                                      let rapFile = dataDir </> "AmpersandData" </> "RepoRap" </> "RAP.adl"
+                              then do let rapFile = ampersandDataDir flags </> "RepoRap" </> "RAP.adl"
                                       exists <- doesFileExist rapFile
                                       when (not exists) (fatal 39 $ "RAP file isn't installed properly. RAP.adl expected at:"
                                                                   ++"\n  "++show rapFile

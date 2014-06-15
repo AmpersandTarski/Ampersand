@@ -18,7 +18,6 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(PE))
 import Data.List
 import System.Directory
 import System.FilePath
-import Paths_ampersand
 import Control.Monad
 import Data.Traversable (sequenceA)
 import Control.Applicative
@@ -32,8 +31,7 @@ createFspec :: Options  -- ^The options derived from the command line
 createFspec flags = 
   do userCtx <- parseWithIncluded flags (fileName flags)
      bothCtx <- if includeRap flags
-                then do dataDir <- getDataDir
-                        let rapFile = dataDir </> "AmpersandData" </> "FormalAmpersand" </> "FormalAmpersand.adl" 
+                then do let rapFile = ampersandDataDir flags </> "FormalAmpersand" </> "FormalAmpersand.adl" 
                         exists <- doesFileExist rapFile
                         when (not exists) (fatal 39 $ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
                                                     ++"\n  "++show rapFile
