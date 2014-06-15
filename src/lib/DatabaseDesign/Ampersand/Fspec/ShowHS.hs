@@ -265,7 +265,7 @@ where
            ,wrap ", procsInScope  = " indentA (\_->showHSName) (procsInScope fSpec)
            ,wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fSpec)
            ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
-           ,wrap ", cDefsInScope  = " indentA (\_->showHSName) (cDefsInScope fSpec)
+           ,wrap ", cDefsInScope  = " indentA (\_->showHS flags (indentA++"  ")) (cDefsInScope fSpec)
            ,wrap ", gensInScope   = " indentA (showHS flags)   (gensInScope fSpec)
            ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fSpec)
            ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fSpec)
@@ -302,7 +302,7 @@ where
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
            ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fSpec)
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fSpec)
-           ,wrap ", conceptDefs   = " indentA (\_->showHSName) (conceptDefs fSpec)
+           ,wrap ", conceptDefs   = " indentA (showHS flags) (conceptDefs fSpec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fSpec)
            ,     ", metas         = allMetas"
            ,wrap ", initialPops   = " indentA (showHS flags)   (initialPops fSpec)
@@ -351,8 +351,9 @@ where
        ) ++
        (if null (vprocesses fSpec ) then "" else
         "\n -- *** Processes (total: "++(show.length.vprocesses) fSpec++" processes) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fSpec ]++"\n"
-       )++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fSpec ]++"\n"++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map fpProc (vprocesses fSpec) ]++"\n"
+       ) ++
        (if null (vrules   fSpec ) then "" else
         "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrules     fSpec ]++"\n"++
@@ -384,10 +385,10 @@ where
         "\n -- *** Patterns (total: "++(show.length.vpatterns) fSpec++" patterns) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fSpec]++"\n"
        )++
-       (if null (conceptDefs fSpec) then "" else
-        "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fSpec++" conceptDefs) ***: "++
-        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | c<-concs fSpec, cd<-concDefs fSpec c]++"\n"
-       )++
+--       (if null (conceptDefs fSpec) then "" else
+--        "\n -- *** ConceptDefs (total: "++(show.length.conceptDefs) fSpec++" conceptDefs) ***: "++
+--        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | c<-concs fSpec, cd<-concDefs fSpec c]++"\n"
+--       )++
        (if null (allConcepts fSpec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fSpec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x
@@ -396,7 +397,12 @@ where
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
-                              "-- atoms: "++(show.sort) (atomsOf (gens fSpec)(initialPops fSpec) c)
+                              "-- atoms: [ "++ intercalate indentC strs++"]"
+                     where
+                       strs = map show (sort (atomsOf (gens fSpec)(initialPops fSpec) c))
+                       indentC = if sum (map length strs) > 300
+                                 then indent ++ "    --        , "
+                                 else ", "
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
@@ -471,7 +477,7 @@ where
    instance ShowHS FProcess where
     showHS flags indent prc
      = intercalate indentA
-        [ "FProc { fpProc       = "++showHS flags (indent++"                     ") (fpProc prc)
+        [ "FProc { fpProc       = "++showHSName (fpProc prc)
         , wrap  ", fpActivities = " indentB (showHS flags) (fpActivities prc)
         , "      }"
         ] where indentA = indent ++"      "     -- adding the width of "FProc "
@@ -491,13 +497,13 @@ where
         , ", prcDcls = ["  ++intercalate ", " [showHSName d | d<-prcDcls  prc] ++ concat [" {- no relations -} "              | null (prcDcls  prc)] ++"]"
         , wrap ", prcUps = " indentB (showHS flags) (prcUps prc) 
         , case prcRRuls prc of
-           []          -> "     , prcRRuls = [] {- no role-rule assignments -}"
-           [(rol,rul)] -> "     , prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
-           rs          -> "     , prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
+           []          -> ", prcRRuls = [] {- no role-rule assignments -}"
+           [(rol,rul)] -> ", prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
+           rs          -> ", prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
         , case prcRRels prc of
-           []          -> "     , prcRRels = [] {- no role-relation assignments -}"
-           [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
-           rs          -> "     , prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
+           []          -> ", prcRRels = [] {- no role-relation assignments -}"
+           [(rol,rel)] -> ", prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
+           rs          -> ", prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
         , wrap ", prcIds = " indentB (showHS flags) (prcIds prc)
         , wrap ", prcVds = " indentB (showHS flags) (prcVds prc)
         , wrap ", prcXps = " indentB (showHS flags) (prcXps prc)
@@ -552,8 +558,8 @@ where
                    ++show (explRefIds expla)++" "
 
    instance ShowHS ExplObj where
-    showHS _ {-flags-} _ {-i-} peObj = case peObj of                     -- SJ: names of variables commented out to prevent warnings.
-             ExplConceptDef cd  -> "ExplConceptDef " ++showHSName cd
+    showHS flags i peObj = case peObj of
+             ExplConceptDef cd  -> "ExplConceptDef " ++showHS flags i cd
              ExplDeclaration d  -> "ExplDeclaration "++showHSName d
              ExplRule str       -> "ExplRule "       ++show str
              ExplIdentityDef str-> "ExplIdentityDef "++show str
@@ -760,8 +766,8 @@ where
           Vs{}      -> "Vs { decsgn  = " ++ showHS flags "" (sign d)++"}"
 
 
-   instance ShowHSName ConceptDef where
-    showHSName cd = haskellIdentifier ("cDef_"++cdcpt cd)
+--   instance ShowHSName ConceptDef where
+--    showHSName cd = haskellIdentifier ("cDef_"++cdcpt cd)
 
    instance ShowHS ConceptDef where
     showHS flags _ cd
