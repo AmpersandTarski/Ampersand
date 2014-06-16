@@ -20,7 +20,7 @@ where
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
 
--- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
+   -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
    delta :: Sign -> Expression
    delta sgn
     = EDcD   Sgn { decnm   = "Delta"

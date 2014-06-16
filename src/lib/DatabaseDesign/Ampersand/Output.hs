@@ -1,6 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Output (module X) where
-import DatabaseDesign.Ampersand.Output.Fspec2Pandoc as X
+module DatabaseDesign.Ampersand.Output
+    ( module DatabaseDesign.Ampersand.Output.Fspec2Pandoc
+    , module DatabaseDesign.Ampersand.Output.PandocAux
+    , module DatabaseDesign.Ampersand.Output.Fspec2Excel
+    ) where
+import DatabaseDesign.Ampersand.Output.Fspec2Pandoc
        (fSpec2Pandoc)
-import DatabaseDesign.Ampersand.Output.PandocAux as X (writepandoc)
-import DatabaseDesign.Ampersand.Output.Fspec2Excel as X
+import DatabaseDesign.Ampersand.Output.PandocAux (writepandoc)
+import DatabaseDesign.Ampersand.Output.Fspec2Excel

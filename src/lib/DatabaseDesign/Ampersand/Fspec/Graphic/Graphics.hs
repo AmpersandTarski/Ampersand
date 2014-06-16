@@ -190,9 +190,9 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
-   -- | The Plain_CG of pat makes a picture of at least the relations within pat; 
-   --   extended with a limited number of more general concepts;
-   --  and rels to prevent disconnected concepts, which can be connected given the entire context.
+        --  PTRelsUsedInPat makes a picture of at least the relations within pat; 
+        --  extended with a limited number of more general concepts;
+        --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTRelsUsedInPat pat ->
           let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
               xrels = nub [r | c<-orphans, r@Sgn{}<-relsDefdIn fSpec
@@ -212,7 +212,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                   , csIdgs = idgs
                   }
 
-   -- | The Rel_CG of pat makes a picture of relations and gens within pat only 
+        -- PTDeclaredInPat makes a picture of relations and gens within pat only 
         PTDeclaredInPat pat ->
           let gs   = fsisa fSpec
               cpts = concs decs `uni` concs (gens pat)
@@ -324,7 +324,6 @@ instance Navigatable Declaration where
 
 
 
--- Chapter 2: Formation of a conceptual graph as a DotGraph data structure.
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
                                    , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
