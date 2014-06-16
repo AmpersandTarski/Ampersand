@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.CoreImporter 
-    ( module DatabaseDesign.Ampersand
+module Database.Design.Ampersand_Prototype.CoreImporter 
+    ( module Database.Design.Ampersand
     )
 where
 
-import DatabaseDesign.Ampersand hiding (fatalMsg) -- we wrote our own version for the prototype
+import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version for the prototype
 --   ( -- Data Constructors:
 --     A_Context
 --   , P_Context(..)

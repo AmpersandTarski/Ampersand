@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 --import an fSpec into the RAP specification
 -- USE -> cmd: ampersand --importfile=some.adl --importformat=adl RAP.adl
-module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
+module Database.Design.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
-import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
---import DatabaseDesign.Ampersand.Core.Poset (Poset(..),maxima)
+import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand_Prototype.Version (prototypeVersionStr)
+--import Database.Design.Ampersand.Core.Poset (Poset(..),maxima)
 import Prelude hiding (Ord(..))
---import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
-import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
-import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
+--import Database.Design.Ampersand.Input.ADL1.UU_Parsing (Message(..))
+import Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers
+import Database.Design.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
 import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
 import System.Directory       (getDirectoryContents,doesDirectoryExist,getModificationTime)
 import System.Time
@@ -17,7 +17,7 @@ import qualified GHC.Exts (sortWith)
 import Control.Monad
 import Data.List (intercalate)
 import Data.List.Split (splitOn)
-import DatabaseDesign.Ampersand
+import Database.Design.Ampersand
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RAPImport"

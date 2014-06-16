@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE NamedFieldPuns #-}  
-module DatabaseDesign.Ampersand_Prototype.GenBericht (doGenBericht) where
+module Database.Design.Ampersand_Prototype.GenBericht (doGenBericht) where
 
 import Prelude hiding (writeFile)
 import Data.List
@@ -8,7 +8,7 @@ import Text.CSV
 import System.FilePath
 import System.Directory
 import Control.Monad
-import DatabaseDesign.Ampersand
+import Database.Design.Ampersand
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 

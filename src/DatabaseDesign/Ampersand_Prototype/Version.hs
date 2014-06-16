@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr, fatalMsg) where 
+module Database.Design.Ampersand_Prototype.Version (prototypeVersionStr, fatalMsg) where 
 
-import DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated
-import DatabaseDesign.Ampersand_Prototype.CoreImporter (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr)
+import Database.Design.Ampersand_Prototype.BuildInfo_Generated
+import Database.Design.Ampersand_Prototype.CoreImporter (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr)
 
 
 fatalMsg :: String -> Int -> String -> a

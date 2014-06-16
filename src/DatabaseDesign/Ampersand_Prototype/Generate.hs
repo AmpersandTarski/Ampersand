@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.Generate (generateAll,otherQuerys) where
+module Database.Design.Ampersand_Prototype.Generate (generateAll,otherQuerys) where
 
 
-import DatabaseDesign.Ampersand_Prototype.CoreImporter 
--- import DatabaseDesign.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+import Database.Design.Ampersand_Prototype.CoreImporter 
+-- import Database.Design.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
@@ -11,9 +11,9 @@ import Data.Maybe
 import Control.Monad
 import System.FilePath
 import System.Directory
-import DatabaseDesign.Ampersand_Prototype.Version 
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 
+import Database.Design.Ampersand_Prototype.Version 
+import Database.Design.Ampersand_Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
+import Database.Design.Ampersand_Prototype.RelBinGenSQL 
 import Control.Exception
 
 fatal :: Int -> String -> a

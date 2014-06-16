@@ -7,14 +7,14 @@ import Data.Function (on)
 import System.FilePath        (combine)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
-import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
-import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
-import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
-import DatabaseDesign.Ampersand_Prototype.GenBericht (doGenBericht)
-import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
--- import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr)
--- import qualified DatabaseDesign.Ampersand.Basics as Basics
+import Database.Design.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
+import Database.Design.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
+import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand_Prototype.Version (prototypeVersionStr)
+import Database.Design.Ampersand_Prototype.GenBericht (doGenBericht)
+import Database.Design.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
+-- import Database.Design.Ampersand.Input.ADL1.CtxError (showErr)
+-- import qualified Database.Design.Ampersand.Basics as Basics
 
 main :: IO ()
 main =

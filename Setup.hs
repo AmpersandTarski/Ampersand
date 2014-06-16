@@ -35,7 +35,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; clockTime <- getCurrentTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
-    ; writeFile "src/DatabaseDesign/Ampersand_Prototype/BuildInfo_Generated.hs" $
+    ; writeFile "src/Database.Design/Ampersand_Prototype/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
     ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
@@ -51,7 +51,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion revision time = unlines
-  [ "module DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where" 
+  [ "module Database.Design.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where" 
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
@@ -96,7 +96,7 @@ noSVNRevisionStr =
 -}
 
 staticFileModuleName :: String
-staticFileModuleName = "DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated"
+staticFileModuleName = "Database.Design.Ampersand_Prototype.StaticFiles_Generated"
 
 getStaticFilesModuleContents :: IO String
 getStaticFilesModuleContents =

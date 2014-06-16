@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
+module Database.Design.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
 
 where
 
@@ -10,11 +10,11 @@ import System.Process
 import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
-import DatabaseDesign.Ampersand_Prototype.CoreImporter hiding (putStr, origin)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
-import DatabaseDesign.Ampersand_Prototype.Installer
-import DatabaseDesign.Ampersand_Prototype.Version 
+import Database.Design.Ampersand_Prototype.CoreImporter hiding (putStr, origin)
+import Database.Design.Ampersand_Prototype.RelBinGenBasics
+import Database.Design.Ampersand_Prototype.RelBinGenSQL
+import Database.Design.Ampersand_Prototype.Installer
+import Database.Design.Ampersand_Prototype.Version 
 import Control.Exception
 import Prelude hiding (exp)
 

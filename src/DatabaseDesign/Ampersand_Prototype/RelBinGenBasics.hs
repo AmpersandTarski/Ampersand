@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
+module Database.Design.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
  ,addSlashes
  ,indentBlock,addToLast
@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
  ) where
    import Data.Char(isAlphaNum,isDigit)
    import Data.List
-   import DatabaseDesign.Ampersand_Prototype.Version 
+   import Database.Design.Ampersand_Prototype.Version 
 
    fatal :: Int -> String -> a
    fatal = fatalMsg "RelBinGenBasics"

@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.Installer
+module Database.Design.Ampersand_Prototype.Installer
   (installerDBstruct,installerDefPop,dumpPopulationToADL,
    createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
-import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr, quote, sqlAtomQuote)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
-import DatabaseDesign.Ampersand_Prototype.Version 
+import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr, quote, sqlAtomQuote)
+import Database.Design.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
+import Database.Design.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"

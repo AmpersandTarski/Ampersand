@@ -1,14 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
+module Database.Design.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTgt,sqlExprSrc,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where 
-import DatabaseDesign.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand_Prototype.CoreImporter
 
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (quote,sqlAtomQuote,addSlashes,phpIndent)
+import Database.Design.Ampersand_Prototype.RelBinGenBasics (quote,sqlAtomQuote,addSlashes,phpIndent)
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
-import DatabaseDesign.Ampersand_Prototype.Version 
+import Database.Design.Ampersand_Prototype.Version 
 -- import Debug.Trace
 
 fatal :: Int -> String -> a
@@ -716,7 +716,7 @@ sqlConcept fSpec = quote.name.sqlConceptPlug fSpec
 sqlConceptPlug :: Fspc -> A_Concept -> PlugSQL
 sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
                        | otherwise
-             = if null ps then fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
+             = if null ps then fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module Database.Design.Ampersand_Prototype.RelBinGenSQL)" else
                head ps
                where ps = [plug |InternalPlug plug<-plugInfos fSpec
                                 , not (null (case plug of ScalarSQL{} -> [c |c==cLkp plug]; _ -> [c' |(c',_)<-cLkpTbl plug, c'==c]))]
@@ -725,6 +725,6 @@ sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represente
 sqlAttConcept :: Fspc -> A_Concept -> String
 sqlAttConcept fSpec c | c==ONE = "ONE"
                       | otherwise
-             = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
+             = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\" (sqlAttConcept in module Database.Design.Ampersand_Prototype.RelBinGenSQL)" else
                quote (head cs)
                where cs = [fldname f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
