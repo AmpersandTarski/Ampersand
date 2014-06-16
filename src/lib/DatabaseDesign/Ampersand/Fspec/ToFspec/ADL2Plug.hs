@@ -289,14 +289,14 @@ makeEntityTables flags context allDcls isas conceptss exclusions
         "\nexclusions:" ++  concat ["\n  "++showHSName r           | r<-exclusions]++
         "\nattRels:" ++     concat ["\n  "++showHS flags "    " e  | e<-attRels]++
         "\n"
--- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
+    -- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
     kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
     kernPartition specialzs
      = foldl f (group (delete ONE (concs context))) specialzs
        where f disjuncLists g = concat haves : nohaves
                where
                  (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
-    preKernels = kernPartition (gens context) -- ^ Step 1: compute the kernels from the isa-pairs from the context
+    preKernels = kernPartition (gens context) -- Step 1: compute the kernels from the isa-pairs from the context
     extraIsas  -- Step 2: Maybe extra isa-pairs are needed to ensure that each kernel has precisely one largest concept
        = concat
          [ case [c | c<-kernel, null (largerConcepts isas c)] of -- determine how many concepts in one kernel are largest
@@ -344,8 +344,8 @@ makeEntityTables flags context allDcls isas conceptss exclusions
           lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
           fld a                 = rel2fld context mainkernel atts a
           isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]    
--- attRels contains all relations that will be attribute of a kernel.
--- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
+    -- attRels contains all relations that will be attribute of a kernel.
+    -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
     attRels = mapMaybe attExprOf (allDcls>- exclusions)
      where
