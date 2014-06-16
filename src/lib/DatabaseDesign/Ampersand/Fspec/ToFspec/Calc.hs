@@ -478,7 +478,7 @@ Rewrite rules:
                        | dcl==delt           = notCpl (EDcV (sign dcl))
                        | otherwise           = conjNF (dcl ./\. notCpl delt)
 
--- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
+   -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
    assembleECAs :: Fspc -> [(ECArule,Blocks)]
    assembleECAs fSpec
     = [eca i | (eca,i) <- zip ecas [(1::Int)..]]
@@ -594,7 +594,7 @@ Rewrite rules:
            , let ecaEvt = On ev rel
            , let ecaRule = ECA ecaEvt delt normEcaAct
            ]
--- | the following eca-rules are derived from the typing rules, rather than explicit rules specified by users.
+--   the following eca-rules are derived from the typing rules, rather than explicit rules specified by users.
 --   This concerns the following rules:
 --   Each declaration "RELATION r[A*B]" represents the rule "RULE r[A*B] |- V[A*B]"
 --   Besides, for every A, B:   "RULE  I[A]*I[B] = V[A*B]"
@@ -640,9 +640,9 @@ Rewrite rules:
            ]
        fst4 (x,_,_,_) = x
 
--- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
--- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
--- TODO: Deze code is onvolledig en misschien zelfs fout....
+   -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
+   -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
+   -- TODO: Deze code is onvolledig en misschien zelfs fout....
    genPAclause :: (Declaration->Bool)        -- ^True if a relation may be changed (i.e. is editable)
                   -> InsDel                  -- ^the type of action: Insert or Delete
                   -> Expression              -- ^the expression in which a delete or insert takes place
