@@ -62,13 +62,13 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
       die;
     }
 // if srcAtom is specified as NULL, a new atom of srcConcept is created
-    if ($srcAtom == "") ExecEngineSHOUTS("InsPair: srcAtom is empty string.");
-    if ($srcAtom == "NULL") 
+    if ($srcAtom === "") ExecEngineSHOUTS("InsPair: srcAtom is empty string.");
+    if ($srcAtom === "NULL") 
     { $srcAtom = InsAtom($srcConcept);
     }   
 // if tgtAtom is specified as NULL, a new atom of tgtConcept is created
-    if ($tgtAtom == "") ExecEngineSHOUTS("InsPair: tgtAtom is empty string.");
-    if ($tgtAtom == "NULL") 
+    if ($tgtAtom === "") ExecEngineSHOUTS("InsPair: tgtAtom is empty string.");
+    if ($tgtAtom === "NULL") 
     { $tgtAtom = InsAtom($tgtConcept);
     }
     
@@ -134,8 +134,8 @@ Example of a rule that automatically deletes pairs from a relation:
 */
 // Use: VIOLATION (TXT "{EX} DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
-{   if ($srcAtom == "") ExecEngineSHOUTS("DelPair: srcAtom is empty string.");
-    if ($srcAtom == "") ExecEngineSHOUTS("DelPair: tgtAtom is empty string.");
+{   if ($srcAtom === "") ExecEngineSHOUTS("DelPair: srcAtom is empty string.");
+    if ($srcAtom === "") ExecEngineSHOUTS("DelPair: tgtAtom is empty string.");
     /* 
     $relationTableInfo from Generics.php 
     contains array with all relations, for each relation the following is specified: 
@@ -255,7 +255,7 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
     $tgtConcept = func_get_arg($i+3);
     $tgtAtom    = func_get_arg($i+4);
 // populate relation r1, first checking for allowed syntax:
-    if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')) // Note: when populating a [PROP] relation, both atoms can be NULL
+    if (!($srcAtom === 'NULL' or $tgtAtom === 'NULL')) // Note: when populating a [PROP] relation, both atoms can be NULL
     {  ExecEngineSHOUTS("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL");
        throw new Exception("Failure 1 in NewStruct in InsDelPairAtom.php");
     }
@@ -264,7 +264,7 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
        throw new Exception("Failure 2 in NewStruct in InsDelPairAtom.php");
     }
     if ($srcConcept == $ConceptC)
-    {  if ($srcAtom == 'NULL')
+    {  if ($srcAtom === 'NULL')
        {  $srcAtom = $AtomC;
        } else // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
        {  ExecEngineSHOUTS ("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
@@ -272,7 +272,7 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
        }
     }
     if ($tgtConcept == $ConceptC)
-    {  if ($tgtAtom == 'NULL')
+    {  if ($tgtAtom === 'NULL')
        {  $tgtAtom = $AtomC;
        } else // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
        {  ExecEngineSHOUTS ("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
