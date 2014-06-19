@@ -84,14 +84,14 @@ emitLog ("\n\nCHECKING RULES\n\n");
         $values = array(); // values is a buffer containing the cells in a single excel row 
         for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++)
         { $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-          $values[] = $objPHPExcel->getActiveSheet()->getCell($columnletter . $row)->getValue();
+          $values[] = (string)$objPHPExcel->getActiveSheet()->getCell($columnletter . $row)->getCalculatedValue();
         }
 // var_dump($values);
         $line[] = $values; // add line (array of values) to the line buffer
 
         $row++;
         // Is this relation table done? Then we parse the current values into function calls and reset it
-        $firstCellInRow = $objPHPExcel->getActiveSheet()->getCell('A' . $row)->getValue();
+        $firstCellInRow = (string)$objPHPExcel->getActiveSheet()->getCell('A' . $row)->getCalculatedValue();
 // emitLog("First cell in row $row is: $firstCellInRow");
         if (substr($firstCellInRow, 0, 1) === '[')
         { // Relation table is complete, so it can be processed.
