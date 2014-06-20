@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 -- 
-module DatabaseDesign.Ampersand.Components 
+module Database.Design.Ampersand.Components 
   ( -- * Type checking and calculus
      makeFspec
     -- * Generators of output
@@ -18,15 +18,15 @@ module DatabaseDesign.Ampersand.Components
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.ADL1.P2A_Converters
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.ADL1.P2A_Converters
 import Text.Pandoc 
 import Text.Pandoc.Builder
-import DatabaseDesign.Ampersand.Basics 
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.GenerateUML
-import DatabaseDesign.Ampersand.Fspec.ShowXMLtiny (showXML)
-import DatabaseDesign.Ampersand.Output
+import Database.Design.Ampersand.Basics 
+import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.Fspec.GenerateUML
+import Database.Design.Ampersand.Fspec.ShowXMLtiny (showXML)
+import Database.Design.Ampersand.Output
 import Control.Monad
 import System.FilePath
 

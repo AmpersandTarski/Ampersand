@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
+module Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
---import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
---import DatabaseDesign.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+--import Database.Design.Ampersand.Output.Statistics (Statistics(..))
+--import Database.Design.Ampersand.Output.PandocAux
 
 
 ------------------ Function Point Analysis --------------------

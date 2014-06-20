@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
+module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
 where 
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
-import DatabaseDesign.Ampersand.Output.PandocAux
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Database.Design.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Data.List (sortBy)
 import Data.Function (on)
 
@@ -192,7 +192,7 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
      root = case clcpt cl of
        Nothing -> fatal 193 "A class in the logical data model should have a root concept."
        Just c  -> Left c
-     assocToRow :: DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow :: Database.Design.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =                 
         -- showDummy assoc <>
         if (null.assrhr) assoc

@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 -- | This module contains Version of Ampersand
-module DatabaseDesign.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatalMsg) where
+module Database.Design.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatalMsg) where
 
-import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
+import Database.Design.Ampersand.Basics.BuildInfo_Generated
 
 -- | a function to create error message in a structured way, containing the version of Ampersand. 
 --   It throws an error, showing a (module)name and a number. This makes debugging pretty easy. 

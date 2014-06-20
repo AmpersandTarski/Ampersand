@@ -7,7 +7,7 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module DatabaseDesign.Ampersand.Fspec.Fspec 
+module Database.Design.Ampersand.Fspec.Fspec 
           ( Fspc(..), concDefs, Atom(..)
           , Fswitchboard(..),  Clauses(..), Quad(..)
           , FSid(..), FProcess(..)
@@ -31,11 +31,11 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , RuleClause(..),DnfClause(..), dnf2expr
           )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.ADL1.Pair
-import DatabaseDesign.Ampersand.ADL1.Expression (notCpl)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.ADL1.Pair
+import Database.Design.Ampersand.ADL1.Expression (notCpl)
 --import Debug.Trace
 
 fatal :: Int -> String -> a

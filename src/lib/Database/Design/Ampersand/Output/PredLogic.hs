@@ -1,17 +1,17 @@
 {-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
-module DatabaseDesign.Ampersand.Output.PredLogic
+module Database.Design.Ampersand.Output.PredLogic
            ( PredLogicShow(..), showLatex, mkVar
            ) 
    where
 
    import Data.List
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.ShowADL
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.ADL1
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.Misc
+   import Database.Design.Ampersand.Fspec.ShowADL
    import Data.Char (toLower)
-   import DatabaseDesign.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
+   import Database.Design.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
    fatal :: Int -> String -> a
    fatal = fatalMsg "Output.PredLogic"

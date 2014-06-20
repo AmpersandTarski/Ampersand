@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
-module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
+module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Meta(..)
  , Theme(..)
@@ -34,20 +34,20 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , GenR
  , Association(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
-  -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
+  -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith 
  , smallerConcepts, largerConcepts, rootConcepts
  , showSign
  , aMarkup2String
- , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
+ , module Database.Design.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
-import DatabaseDesign.Ampersand.Misc
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
+import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
+import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 --import Debug.Trace
 import Data.List (intercalate,nub,delete)

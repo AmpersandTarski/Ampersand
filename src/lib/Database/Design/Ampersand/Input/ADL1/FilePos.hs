@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Input.ADL1.FilePos
+module Database.Design.Ampersand.Input.ADL1.FilePos
        ( FilePos(..), Origin(..), Pos(Pos) , Traced(..))
 where
-   import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
---   import DatabaseDesign.Ampersand.Basics      (fatalMsg)
+   import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
+--   import Database.Design.Ampersand.Basics      (fatalMsg)
 
 --   fatal :: Int -> String -> a
 --   fatal = fatalMsg "Input.ADL1.FilePos"

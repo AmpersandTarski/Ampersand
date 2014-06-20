@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules
+module Database.Design.Ampersand.Output.ToPandoc.ChapterECArules
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (proofPA)
-import DatabaseDesign.Ampersand.ADL1
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Fspec.ToFspec.NormalForms (proofPA)
+import Database.Design.Ampersand.ADL1
 
 chpECArules :: Fspc -> Options ->  Blocks
 chpECArules fSpec flags =

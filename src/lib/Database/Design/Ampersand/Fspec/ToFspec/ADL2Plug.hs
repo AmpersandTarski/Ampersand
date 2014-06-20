@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}  
-module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug 
+module Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug 
   (makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug 
   )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-import DatabaseDesign.Ampersand.Core.Poset as Poset hiding (sortWith)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+import Database.Design.Ampersand.Core.Poset as Poset hiding (sortWith)
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Fspec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)

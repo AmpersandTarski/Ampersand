@@ -2,18 +2,18 @@
 --TODO -> clean and stuff. Among which moving classdiagram2dot to Graphviz library implementation (see Classes/Graphics.hs).
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
-module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
+module Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..), MinValue(..), MaxValue(..),
           clAnalysis, cdAnalysis, tdAnalysis, classdiagram2dot)
 where
    import Data.List
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.ADL1  hiding (Association,Box)
-   import DatabaseDesign.Ampersand.Fspec.Plug
-   import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.ADL1  hiding (Association,Box)
+   import Database.Design.Ampersand.Fspec.Plug
+   import Database.Design.Ampersand.Misc
+   import Database.Design.Ampersand.Fspec.Fspec
    import Data.String
    import Data.Maybe
    import Data.GraphViz.Types.Canonical hiding (attrs)

@@ -1,16 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
+module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
     , math -- 
     , module Data.Monoid
-    , module DatabaseDesign.Ampersand.Basics  
-    , module DatabaseDesign.Ampersand.Fspec
-    , module DatabaseDesign.Ampersand.Misc
-    , module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+    , module Database.Design.Ampersand.Basics  
+    , module Database.Design.Ampersand.Fspec
+    , module Database.Design.Ampersand.Misc
+    , module Database.Design.Ampersand.Core.AbstractSyntaxTree
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -29,17 +29,17 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , orderingByTheme
     )
 where
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Fspec
+import Database.Design.Ampersand.Basics  
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Fspec
 import Text.Pandoc
 import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
-import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Output.PandocAux
 import Data.List             (intercalate,partition)
 import Data.Monoid
 import System.Locale

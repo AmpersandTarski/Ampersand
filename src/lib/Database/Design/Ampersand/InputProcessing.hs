@@ -2,19 +2,19 @@
 -- This module provides an interface to be able to parse a scritp and to 
 -- return an Fspec, conform the user defined flags. 
 -- This might include that RAP is included in the returned Fspec. 
-module DatabaseDesign.Ampersand.InputProcessing (
+module Database.Design.Ampersand.InputProcessing (
    createFspec
 )
 where
-import qualified DatabaseDesign.Ampersand.Basics as Basics
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.ADL1.P2A_Converters
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
-import DatabaseDesign.Ampersand.Input.ADL1.Parser
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(PE))
+import qualified Database.Design.Ampersand.Basics as Basics
+import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.ADL1.P2A_Converters
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
+import Database.Design.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
+import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Input.ADL1.CtxError (CtxError(PE))
 import Data.List
 import System.Directory
 import System.FilePath

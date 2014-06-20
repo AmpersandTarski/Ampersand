@@ -1,16 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.Graphic.Graphics 
+module Database.Design.Ampersand.Fspec.Graphic.Graphics 
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
 import Data.GraphViz 
-import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Classes 
-import DatabaseDesign.Ampersand.Fspec.Switchboard
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
+import Database.Design.Ampersand.ADL1 
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Classes 
+import Database.Design.Ampersand.Fspec.Switchboard
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
 import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String

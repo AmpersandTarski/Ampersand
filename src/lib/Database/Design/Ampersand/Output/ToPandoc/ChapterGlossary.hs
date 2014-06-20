@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary
+module Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Classes
 
 
 chpGlossary :: Int -> Fspc -> Options ->  Blocks

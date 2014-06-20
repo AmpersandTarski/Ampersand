@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.Switchboard
+module Database.Design.Ampersand.Fspec.Switchboard
     (SwitchBdDiagram(..),switchboardAct,sbDiagram,processModel) where
  
    import Data.GraphViz
    import Data.GraphViz.Attributes.Complete
    import Data.List
-   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Identified(..), flp)
-   import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
+   import Database.Design.Ampersand.Basics        (fatalMsg,Identified(..), flp)
+   import Database.Design.Ampersand.ADL1
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
    import Data.String
    
---   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) -- for testing purposes
+--   import Database.Design.Ampersand.Fspec.ShowECA (showECA) -- for testing purposes
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Switchboard"

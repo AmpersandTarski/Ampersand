@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Output.Fspec2Excel (fspec2Workbook,showSpreadsheet)
+module Database.Design.Ampersand.Output.Fspec2Excel (fspec2Workbook,showSpreadsheet)
 where
 import Text.XML.SpreadsheetML.Builder
 import Text.XML.SpreadsheetML.Types
 import Text.XML.SpreadsheetML.Writer (showSpreadsheet)
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Fspec.FPA
-import DatabaseDesign.Ampersand.Basics
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Fspec.FPA
+import Database.Design.Ampersand.Basics
 
 fspec2Workbook :: Fspc -> Options -> Workbook
 fspec2Workbook fSpec flags =

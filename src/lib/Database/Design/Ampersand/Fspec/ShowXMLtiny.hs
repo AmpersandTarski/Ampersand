@@ -1,19 +1,19 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
-module DatabaseDesign.Ampersand.Fspec.ShowXMLtiny (showXML)
+module Database.Design.Ampersand.Fspec.ShowXMLtiny (showXML)
 where
 
 -- TODO: Als het Ampersand bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
-   import DatabaseDesign.Ampersand.ADL1
---   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.ShowADL 
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.ADL1
+--   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.Fspec.ShowADL 
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.Fspec.Fspec
    import Data.Time.LocalTime
-   import DatabaseDesign.Ampersand.Fspec.Plug 
-   import DatabaseDesign.Ampersand.Misc.TinyXML 
+   import Database.Design.Ampersand.Fspec.Plug 
+   import Database.Design.Ampersand.Misc.TinyXML 
    import Data.List
    
    fatal :: Int -> String -> a

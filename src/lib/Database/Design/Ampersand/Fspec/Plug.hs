@@ -2,7 +2,7 @@
 -- SJC: is it possible to move this to the prototype part of ampersand? I mean,
 --      do functions like plugFields and plug-path really need to be here?
 --      perhaps we can at least move the largest part?
-module DatabaseDesign.Ampersand.Fspec.Plug
+module Database.Design.Ampersand.Fspec.Plug
      (Plugable(..), PlugInfo(..)
      ,SqlField(..)
      ,SqlFieldUsage(..)
@@ -16,12 +16,12 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      ,PlugSQL(..)
      )
 where
-import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Classes (fullContents,atomsOf,Relational(..))
-import DatabaseDesign.Ampersand.Basics
+import Database.Design.Ampersand.ADL1 
+import Database.Design.Ampersand.Classes (fullContents,atomsOf,Relational(..))
+import Database.Design.Ampersand.Basics
 import Data.List(nub,transpose)
 import GHC.Exts (sortWith)
-import DatabaseDesign.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Fspec.Fspec
 import Prelude hiding (Ordering(..))
 
 fatal :: Int -> String -> a

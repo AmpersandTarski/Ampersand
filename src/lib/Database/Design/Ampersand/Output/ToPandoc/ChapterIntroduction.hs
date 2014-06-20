@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction
+module Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import Data.Time.Format
 
 chpIntroduction :: Fspc -> Options -> Blocks

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC  -XScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Input.Parsing ( parseContext
+module Database.Design.Ampersand.Input.Parsing ( parseContext
                                         , parseADL1pExpr
                                         , ParseError)
 where
@@ -9,12 +9,12 @@ import Data.List
 import Data.Char
 import System.Directory
 import System.FilePath
-import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing -- (getMsgs,parse,evalSteps,parseIO)
-import DatabaseDesign.Ampersand.ADL1
+import Database.Design.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
+import Database.Design.Ampersand.Input.ADL1.UU_Parsing -- (getMsgs,parse,evalSteps,parseIO)
+import Database.Design.Ampersand.ADL1
 import Control.Exception
 
 type ParseError = Message Token
@@ -97,7 +97,7 @@ readAndParseFile flags depth alreadyParsed mIncluderFilepath fileDir relativeFil
             then do { verboseLn flags $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
                     ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
                     } 
-            else do { fileContents <- DatabaseDesign.Ampersand.Basics.readFile filepath
+            else do { fileContents <- Database.Design.Ampersand.Basics.readFile filepath
                     ; verboseLn flags $ replicate (3*depth) ' ' ++ filepath
                     ; parseFileContents flags (depth+1) (canonicFilepath:alreadyParsed)
                                         fileContents newFileDir newFilename     
