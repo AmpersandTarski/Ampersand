@@ -21,39 +21,34 @@ class Session {
 		
 		// Database connection for within this class
 		try {
- 	  $this->database = Database::singleton();
+			$this->database = Database::singleton();
 		
-		// AMPERSAND SESSION
-		if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
+			// AMPERSAND SESSION
+			if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
 
-			try {
-				$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
-			} catch (Exception $e) {
-				return;
-			}
-			
-			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-			$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
-			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
-			
-			// Create a new Ampersand session if $_SESSION['sessionAtom'] is not set (browser started a new session or Ampersand session was expired
-			if (!Concept::isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')){ 
-				$sessionAtom = $this->database->addAtomToConcept(Concept::createNewAtom('SESSION'), 'SESSION'); // TODO: change to PHP SESSION ID??
-				$_SESSION['sessionAtom'] = $sessionAtom;
+				try {
+					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
+				} catch (Exception $e) {
+					return;
+				}
 				
-			}
+				// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
+				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
+				
+				// Create a new Ampersand session if $_SESSION['sessionAtom'] is not set (browser started a new session or Ampersand session was expired
+				if (!Concept::isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')){ 
+					$sessionAtom = $this->database->addAtomToConcept(Concept::createNewAtom('SESSION'), 'SESSION'); // TODO: change to PHP SESSION ID??
+					$_SESSION['sessionAtom'] = $sessionAtom;
+					
+				}
 
-			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$sessionAtom."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
-		}
-		
-		$this->setRole();
-		$this->setInterface();
-		$this->setAtom();
-		$this->setViewer();
+				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$sessionAtom."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+			}
 	
-	} catch (Exception $e){
- 	  ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
- 	}	
+		} catch (Exception $e){
+		  ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
+		}	
 	}
 	
 	// Prevent any copy of this object
@@ -64,7 +59,7 @@ class Session {
 	
 	public static function singleton()
 	{
-		if(!is_object (self::$_instance) ) self::$_instance = new Session();
+		if(is_null (self::$_instance) ) self::$_instance = new Session();
 		return self::$_instance;
 	}
 	

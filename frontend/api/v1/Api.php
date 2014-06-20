@@ -38,6 +38,84 @@ class Api
         return "Return all attributes and links (depth: $depth) of atom $atom of concept $concept";
     }
 	
+	/**
+     * @url POST concept/{concept}/atom/
+	 * @status 201
+     */
+	function postAtom($concept){ 
+		$database = Database::singleton();
+	 
+		return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
+	}
+
+	/**
+	 * @url DELETE concept/{concept}/atom/{atom}/
+	 * @status 204
+	 */
+	function deleteAtom($concept, $atom){ 
+		$database = Database::singleton();
+		
+		$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+	}
+	
+/**************************** RELATIONS AND LINKS ****************************/
+	
+	/**
+	 * @url POST relation/{relationName}/link
+	 * @status 201
+	 */
+	public function postLink($relation, $srcConcept, $tgtConcept, $srcAtom = null, $tgtAtom = null){
+		$database = Database::singleton();
+	
+		// Check if combination of $relation, $srcConcept, $tgtConcept exists. Otherwise this causes database issues.
+		if (!Relation::isCombination($relation, $srcConcept, $tgtConcept)){
+			// Tip: If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration. TODO: create ticket for Prototype generator to fix this.
+			throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
+		}
+		
+		// If srcAtom is not specified, a new atom of srcConcept is created
+		if($srcAtom == null){
+			$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
+		}elseif(!Concept::isAtomInConcept($srcAtom, $srcConcept)){
+			$database->addAtomToConcept($srcAtom, $srcConcept);
+		}
+		
+		// If tgtAtom is not specified, a new atom of tgtConcept is created
+		if($tgtAtom == null){
+			$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
+		}elseif(!Concept::isAtomInConcept($tgtAtom, $tgtConcept)){
+			$database->addAtomToConcept($tgtAtom, $tgtConcept);
+		}
+		
+		$database->editUpdate($relation, false, $srcAtom, $tgtAtom, 'child', '');
+		
+		ErrorHandling::addLog('Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relation.'['.$srcConcept.'*'.$tgtConcept.']');
+		
+		return array('relation' => $relation
+					, 'srcConcept' => $srcConcept
+					, 'tgtConcept' => $tgtConcept
+					, 'srcAtom' => $srcAtom
+					, 'tgtAtom' => $tgtAtom);
+	}
+	
+	/**
+	 * @url DELETE relation/{relationName}/link
+	 * @status 204
+	 */
+	public function deleteLink($relation, $srcConcept, $srcAtom, $tgtConcept, $tgtAtom){
+		$database = Database::singleton();
+		
+		// Check if combination of $relation, $srcConcept, $tgtConcept exists. Otherwise this causes database issues.
+		if (!Relation::isCombination($relation, $srcConcept, $tgtConcept)){
+			// Tip: If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration. TODO: create ticket for Prototype generator to fix this.
+			throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
+		}
+		
+		$database->editDelete($relation, false, $srcAtom, $tgtAtom);
+		
+		ErrorHandling::addLog('Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relation.'['.$srcConcept.'*'.$tgtConcept.']');
+	}
+	
 /**************************** RULES AND VIOLATIONS ****************************/
 	
 	/**
@@ -81,7 +159,7 @@ class Api
 	
 	/**
 	 * @url GET role/{roleNr}/interfaces
-	 * @url GET role/{roleNr}/interface/{interfaceName}
+	 * @url GET role/{roleNr}/interface/{interfaceName}/
      */
 	public function getRoleInterfaces($roleNr, $interfaceName = NULL)
 	{
@@ -101,7 +179,7 @@ class Api
 	/**
      * @url GET interfaces/
 	 * @url GET interface/{interfaceName}/
-	 * @url GET interface/{interfaceName}/atom/{atom}
+	 * @url GET interface/{interfaceName}/atom/{atom}/
      */
     public function getInterfaces($interfaceName = NULL, $atom = "1")
     {
@@ -117,7 +195,7 @@ class Api
 	
 	/**
 	 * @url GET viewer/{viewerName}/interface/{interfaceName}/
-	 * @url GET viewer/{viewerName}/interface/{interfaceName}/atom/{atom}
+	 * @url GET viewer/{viewerName}/interface/{interfaceName}/atom/{atom}/
      */	
 	public function getInterfaceWithView($viewerName, $interfaceName, $atom = "1")
 	{
@@ -145,6 +223,7 @@ class Api
 
 		
     }
+	
 	
 }
 
