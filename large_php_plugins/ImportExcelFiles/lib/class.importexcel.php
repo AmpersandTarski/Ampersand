@@ -2,15 +2,10 @@
 
 date_default_timezone_set('Europe/London');
 
-/*
-require_once __DIR__.'/../../dbSettings.php';
-require_once __DIR__.'/../Database.php';
-require_once __DIR__.'/lib/excel/Classes/PHPExcel.php';
-*/
-// /root/php/plugins/ImportExcelFiles/lib/<HERE VE ARR>
-require_once '../../../../dbSettings.php';
-require_once '../../../Database.php';
-require_once './excel/Classes/PHPExcel.php';
+// /root/ImportExcelFiles/lib/<HERE WE ARR>
+require_once __DIR__.'../../dbSettings.php';
+require_once __DIR__.'../../php/Database.php';
+require_once __DIR__.'./excel/Classes/PHPExcel.php';
 
 class ImportExcel
 {
