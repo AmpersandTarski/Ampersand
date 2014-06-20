@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.Populated                 (fullContents,atomsOf)
+module Database.Design.Ampersand.Classes.Populated                 (fullContents,atomsOf)
 {- This file contains all functions to compute populations.
    The implementation is done through Haskell's Map mechanism, as defined in Data.Map, for reasons of efficiency.
 -}
 where
    import Prelude hiding (lookup)
-   import DatabaseDesign.Ampersand.ADL1.Pair
-   import DatabaseDesign.Ampersand.ADL1.Expression                 (notCpl)
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Identified(..))  
+   import Database.Design.Ampersand.ADL1.Pair
+   import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Identified(..))  
    import Data.Map (Map, (!), lookup, keys, assocs, elems, fromList, fromListWith, unionWith, unionsWith, differenceWith, mergeWithKey, empty)
       -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
    import Data.Maybe (maybeToList)

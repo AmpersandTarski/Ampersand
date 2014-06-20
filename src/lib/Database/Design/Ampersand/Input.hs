@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}  
-module DatabaseDesign.Ampersand.Input
-   ( module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-   , module DatabaseDesign.Ampersand.Input.Parsing
+module Database.Design.Ampersand.Input
+   ( module Database.Design.Ampersand.Input.ADL1.CtxError
+   , module Database.Design.Ampersand.Input.Parsing
    ) where
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError)
-import DatabaseDesign.Ampersand.Input.Parsing (parseADL1pExpr)
+import Database.Design.Ampersand.Input.ADL1.CtxError (CtxError)
+import Database.Design.Ampersand.Input.Parsing (parseADL1pExpr)

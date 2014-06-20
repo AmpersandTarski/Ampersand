@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-module DatabaseDesign.Ampersand.ADL1.Pair
+module Database.Design.Ampersand.ADL1.Pair
                     ( Paire,Pairs
                     , srcPaire,trgPaire
                     , mkPair

@@ -1,6 +1,6 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | This module contains some common String funcions
-  module DatabaseDesign.Ampersand.Basics.String
+  module Database.Design.Ampersand.Basics.String
    (unCap,upCap,escapeNonAlphaNum)
   where
    import Data.Char 

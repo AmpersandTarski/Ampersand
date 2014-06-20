@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.FPA 
+module Database.Design.Ampersand.Fspec.FPA 
     (FPAble(..)
     )
 where
    
-import DatabaseDesign.Ampersand.Misc (Lang(..))
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Basics
+import Database.Design.Ampersand.Misc (Lang(..))
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Basics
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.Calc"

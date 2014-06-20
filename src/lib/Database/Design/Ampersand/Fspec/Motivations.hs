@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module DatabaseDesign.Ampersand.Fspec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
+module Database.Design.Ampersand.Fspec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Fspec.Fspec(Fspc(..),FProcess(..), Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
-import DatabaseDesign.Ampersand.Basics
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Fspec.Fspec(Fspc(..),FProcess(..), Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
+import Database.Design.Ampersand.Basics
 import Text.Pandoc
 
 fatal :: Int -> String -> a

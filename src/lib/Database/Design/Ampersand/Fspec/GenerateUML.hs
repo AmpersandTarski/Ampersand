@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.GenerateUML (generateUML) where
+module Database.Design.Ampersand.Fspec.GenerateUML (generateUML) where
 
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
-import DatabaseDesign.Ampersand.Fspec
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
+import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
+import Database.Design.Ampersand.Fspec
 import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map

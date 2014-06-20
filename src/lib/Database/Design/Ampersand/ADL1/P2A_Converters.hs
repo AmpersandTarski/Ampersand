@@ -1,16 +1,16 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
 {-# LANGUAGE RelaxedPolyRec #-}
-module DatabaseDesign.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..) )
+module Database.Design.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..) )
 where
-import DatabaseDesign.Ampersand.ADL1.Disambiguate
-import DatabaseDesign.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError
-import DatabaseDesign.Ampersand.ADL1.Lattices
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import DatabaseDesign.Ampersand.Classes.ViewPoint hiding (interfaces,gens)
-import DatabaseDesign.Ampersand.Classes.ConceptStructure
-import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
-import DatabaseDesign.Ampersand.Misc
+import Database.Design.Ampersand.ADL1.Disambiguate
+import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
+import Database.Design.Ampersand.Input.ADL1.CtxError
+import Database.Design.Ampersand.ADL1.Lattices
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import Database.Design.Ampersand.Classes.ViewPoint hiding (interfaces,gens)
+import Database.Design.Ampersand.Classes.ConceptStructure
+import Database.Design.Ampersand.Basics (Identified(name), fatalMsg)
+import Database.Design.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
 import Data.Traversable

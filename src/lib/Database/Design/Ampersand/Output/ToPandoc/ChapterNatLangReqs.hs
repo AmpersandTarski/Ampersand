@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
+module Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
 
 import Data.Char hiding (Space)
 import Data.List
 import Data.List.Split
 import GHC.Exts (sortWith)
 import Data.Maybe
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sortWith)
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sortWith)
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Output.PandocAux
 import Text.Pandoc.Builder
 
 fatal :: Int -> String -> a

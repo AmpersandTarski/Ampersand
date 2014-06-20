@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
-module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
+module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
 
    import Data.Char
    import Data.List
    import Data.Maybe
-   import DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
-   import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
+   import Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
+   import Database.Design.Ampersand.Input.ADL1.UU_Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
 
    data TokenType
      = TkSymbol

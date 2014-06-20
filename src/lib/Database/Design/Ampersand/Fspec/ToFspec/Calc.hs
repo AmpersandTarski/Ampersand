@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
+module Database.Design.Ampersand.Fspec.ToFspec.Calc
             ( deriveProofs 
             , lambda
             , checkMono
@@ -10,20 +10,20 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
             )
 where
 
-   import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl,Flippable(..))
+   import Database.Design.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl,Flippable(..))
    import Data.List hiding (head)
    import GHC.Exts (sortWith)
 --   import Data.ByteString.Char8
 --   import Data.ByteString.Lazy.Char8
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-   import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.ADL1.Expression
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
-   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
-   import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+   import Database.Design.Ampersand.ADL1
+   import Database.Design.Ampersand.ADL1.Expression
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
+   import Database.Design.Ampersand.Fspec.ShowECA (showECA)
+   import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
+   import Database.Design.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc.Builder
    import Prelude hiding (head)
 -- import Debug.Trace

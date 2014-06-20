@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.Input.ADL1.CtxError
+module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr
   , cannotDisamb, cannotDisambRel
@@ -17,16 +17,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
-import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV,ECpl),A_Concept,SubInterface)
-import DatabaseDesign.Ampersand.Fspec.ShowADL
-import DatabaseDesign.Ampersand.Basics
+import Database.Design.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV,ECpl),A_Concept,SubInterface)
+import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
-import DatabaseDesign.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
+import Database.Design.Ampersand.Input.ADL1.UU_Parsing (Message)
+import Database.Design.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
+import Database.Design.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
 
 fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
@@ -178,6 +178,6 @@ showErr (PE s)
  = show s
 
 showFullOrig :: Origin -> String
-showFullOrig (FileLoc (FilePos (filename,DatabaseDesign.Ampersand.ADL1.Pos l c,t)))
+showFullOrig (FileLoc (FilePos (filename,Database.Design.Ampersand.ADL1.Pos l c,t)))
               = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show l++" : "++show c
 showFullOrig x = show x

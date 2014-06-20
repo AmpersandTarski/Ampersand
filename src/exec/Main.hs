@@ -5,7 +5,7 @@ import Control.Monad
 import System.Exit
 import Prelude hiding (readFile,writeFile)
 import Data.List (intersperse)
-import DatabaseDesign.Ampersand (getOptions, showErr, showVersion, showHelp, helpNVersionTexts, ampersandVersionStr, createFspec, Guarded(..), generateAmpersandOutput)
+import Database.Design.Ampersand (getOptions, showErr, showVersion, showHelp, helpNVersionTexts, ampersandVersionStr, createFspec, Guarded(..), generateAmpersandOutput)
 
 main :: IO ()
 main =

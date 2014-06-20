@@ -1,17 +1,17 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Basics 
-  ( module DatabaseDesign.Ampersand.Basics.Auxiliaries
-  , module DatabaseDesign.Ampersand.Basics.Collection
-  , module DatabaseDesign.Ampersand.Basics.String
-  , module DatabaseDesign.Ampersand.Basics.UTF8
-  , module DatabaseDesign.Ampersand.Basics.Version
+module Database.Design.Ampersand.Basics 
+  ( module Database.Design.Ampersand.Basics.Auxiliaries
+  , module Database.Design.Ampersand.Basics.Collection
+  , module Database.Design.Ampersand.Basics.String
+  , module Database.Design.Ampersand.Basics.UTF8
+  , module Database.Design.Ampersand.Basics.Version
   , Identified(..)
   ) where
-import DatabaseDesign.Ampersand.Basics.Auxiliaries
-import DatabaseDesign.Ampersand.Basics.Collection
-import DatabaseDesign.Ampersand.Basics.String
-import DatabaseDesign.Ampersand.Basics.UTF8
-import DatabaseDesign.Ampersand.Basics.Version
+import Database.Design.Ampersand.Basics.Auxiliaries
+import Database.Design.Ampersand.Basics.Collection
+import Database.Design.Ampersand.Basics.String
+import Database.Design.Ampersand.Basics.UTF8
+import Database.Design.Ampersand.Basics.Version
 
 
 class Identified a where

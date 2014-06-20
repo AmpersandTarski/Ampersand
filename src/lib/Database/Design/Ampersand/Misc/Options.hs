@@ -1,13 +1,13 @@
 {-# LANGUAGE PatternGuards #-}
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Misc.Options 
+module Database.Design.Ampersand.Misc.Options 
         (Options(..),getOptions,usageInfo'
         ,ParserVersion(..)
         ,verboseLn,verbose,FspecFormat(..),FileFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import DatabaseDesign.Ampersand.Misc.Languages (Lang(..))
+import Database.Design.Ampersand.Misc.Languages (Lang(..))
 import Data.Char (toUpper)
 import System.Console.GetOpt
 import System.FilePath
@@ -16,7 +16,7 @@ import Data.Time.Clock
 import Data.Time.LocalTime
 import Control.Monad
 import Data.Maybe
-import DatabaseDesign.Ampersand.Basics  
+import Database.Design.Ampersand.Basics  
 import Paths_ampersand (getDataDir)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List

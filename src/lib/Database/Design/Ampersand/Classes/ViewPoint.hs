@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..)) where
-import DatabaseDesign.Ampersand.Core.ParseTree
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+module Database.Design.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..)) where
+import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
-import DatabaseDesign.Ampersand.Classes.Relational  (Relational(multiplicities))
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Misc.Explain
+import Database.Design.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
+import Database.Design.Ampersand.Classes.Relational  (Relational(multiplicities))
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Misc.Explain
 import Data.List
  
 fatal :: Int -> String -> a

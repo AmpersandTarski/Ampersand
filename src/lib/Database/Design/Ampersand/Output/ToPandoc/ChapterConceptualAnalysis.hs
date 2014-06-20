@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
+module Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
-import DatabaseDesign.Ampersand.ADL1 (Prop(..)) 
-import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Database.Design.Ampersand.ADL1 (Prop(..)) 
+import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Output.PandocAux
 import Data.List (intercalate)
 
 fatal :: Int -> String -> a

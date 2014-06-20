@@ -10,10 +10,10 @@
 
 -- | 'Poset' and 'Sortable' instances for instances of 'Prelude.Ord'
 {-# LANGUAGE CPP #-}
-module DatabaseDesign.Ampersand.Core.Poset.Instances where
+module Database.Design.Ampersand.Core.Poset.Instances where
 
-import qualified DatabaseDesign.Ampersand.Core.Poset.Internal as Poset
-import DatabaseDesign.Ampersand.Core.Poset.Internal (Poset, Sortable, partialOrder, totalOrder)
+import qualified Database.Design.Ampersand.Core.Poset.Internal as Poset
+import Database.Design.Ampersand.Core.Poset.Internal (Poset, Sortable, partialOrder, totalOrder)
 
 import Data.Ratio
 import Data.List

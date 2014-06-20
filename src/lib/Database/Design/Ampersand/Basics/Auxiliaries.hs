@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Basics.Auxiliaries
+module Database.Design.Ampersand.Basics.Auxiliaries
   where
    import Data.List (nub,elemIndex)
    import Data.Graph (stronglyConnComp, SCC(CyclicSCC))

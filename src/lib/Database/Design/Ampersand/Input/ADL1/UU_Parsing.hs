@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes, ExistentialQuantification, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing 
+module Database.Design.Ampersand.Input.ADL1.UU_Parsing 
        (parseIO,parse,getMsgs,evalSteps
        , Steps(..),Pair(..)
                       ,Symbol(..),pPacked
@@ -122,7 +122,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
    --import PrelGHC
    --import IOExts
    import System.IO.Unsafe
-   import DatabaseDesign.Ampersand.Basics  
+   import Database.Design.Ampersand.Basics  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
    
    fatal :: Int -> String -> a

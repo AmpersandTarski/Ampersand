@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 -- | This module does some string manipulation based on natural languages
-module DatabaseDesign.Ampersand.Misc.Languages
+module Database.Design.Ampersand.Misc.Languages
               (  Lang(English,Dutch)
                , allLangs
                , plural
               ) where
    import Data.Char (toLower)
    import Data.List (isSuffixOf)
-   import DatabaseDesign.Ampersand.Core.ParseTree      (Lang(..))
+   import Database.Design.Ampersand.Core.ParseTree      (Lang(..))
    
    allLangs :: [Lang]
    allLangs = [Dutch,English] -- All supported natural languages in Ampersand

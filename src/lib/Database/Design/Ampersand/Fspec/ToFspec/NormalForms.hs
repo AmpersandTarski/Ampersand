@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
+module Database.Design.Ampersand.Fspec.ToFspec.NormalForms
   (delta,conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify)
 where
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.ADL1.ECArule
-   import DatabaseDesign.Ampersand.Classes.Relational 
-   import DatabaseDesign.Ampersand.ADL1.Expression 
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.ADL1.ECArule
+   import Database.Design.Ampersand.Classes.Relational 
+   import Database.Design.Ampersand.ADL1.Expression 
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Data.List (nub {- , intercalate -} )
 --   import Debug.Trace
    import Prelude hiding (head)

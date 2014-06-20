@@ -1,43 +1,43 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec
-   ( module DatabaseDesign.Ampersand.Fspec.Fspec
-   , module DatabaseDesign.Ampersand.Fspec.Plug
-   , module DatabaseDesign.Ampersand.Fspec.ShowHS
-   , module DatabaseDesign.Ampersand.Fspec.ShowADL
-   , module DatabaseDesign.Ampersand.Fspec.ShowECA
-   , module DatabaseDesign.Ampersand.Fspec.ShowMeatGrinder
-   , module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
-   , module DatabaseDesign.Ampersand.Fspec.Graphic.Graphics
-   , module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
-   , module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   , module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-   , module DatabaseDesign.Ampersand.Fspec.FPA
-   , module DatabaseDesign.Ampersand.Fspec.Motivations
+module Database.Design.Ampersand.Fspec
+   ( module Database.Design.Ampersand.Fspec.Fspec
+   , module Database.Design.Ampersand.Fspec.Plug
+   , module Database.Design.Ampersand.Fspec.ShowHS
+   , module Database.Design.Ampersand.Fspec.ShowADL
+   , module Database.Design.Ampersand.Fspec.ShowECA
+   , module Database.Design.Ampersand.Fspec.ShowMeatGrinder
+   , module Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
+   , module Database.Design.Ampersand.Fspec.Graphic.Graphics
+   , module Database.Design.Ampersand.Fspec.ToFspec.Calc
+   , module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
+   , module Database.Design.Ampersand.Fspec.ToFspec.NormalForms
+   , module Database.Design.Ampersand.Fspec.FPA
+   , module Database.Design.Ampersand.Fspec.Motivations
    )
 where
-import DatabaseDesign.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Fspec.Fspec
        (Fspc(..), concDefs, FProcess(..), ECArule(..), plugFields, lookupCpt, metaValues)
-import DatabaseDesign.Ampersand.Fspec.Plug
+import Database.Design.Ampersand.Fspec.Plug
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
         requiredFields, requires, plugpath, Plugable(..),
         showSQL, fldauto, isPlugIndex)
-import DatabaseDesign.Ampersand.Fspec.ShowHS
+import Database.Design.Ampersand.Fspec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
-import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
-import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
-import DatabaseDesign.Ampersand.Fspec.ShowMeatGrinder (meatGrinder)
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
+import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
+import Database.Design.Ampersand.Fspec.ShowECA (showECA)
+import Database.Design.Ampersand.Fspec.ShowMeatGrinder (meatGrinder)
+import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
        (clAnalysis, cdAnalysis, ClassDiag(..))
-import DatabaseDesign.Ampersand.Fspec.Graphic.Graphics
+import Database.Design.Ampersand.Fspec.Graphic.Graphics
        (makePicture,writePicture,Picture(..), PictureReq(..),imagePath)
-import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
+import Database.Design.Ampersand.Fspec.ToFspec.Calc
        (deriveProofs,showProof,showPrf)
-import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
+import Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
        (makeFspec)
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
+import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
        (conjNF, disjNF, cfProof, simplify)
-import DatabaseDesign.Ampersand.Fspec.FPA
+import Database.Design.Ampersand.Fspec.FPA
        ( fPoints)
-import DatabaseDesign.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.Fspec.Motivations
        (Meaning(..),Motivated(..))
        
