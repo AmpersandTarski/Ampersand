@@ -1,6 +1,6 @@
 <?php
 error_reporting(E_ALL);
-require_once './lib/class.importexcel.php';
+require_once __DIR__ . '/lib/class.importexcel.php';
 print "<pre>";
 
 if (is_uploaded_file($_FILES['userfile']['tmp_name'])) 

@@ -3,9 +3,9 @@
 date_default_timezone_set('Europe/London');
 
 // /root/ImportExcelFiles/lib/<HERE WE ARR>
-require_once __DIR__.'../../dbSettings.php';
-require_once __DIR__.'../../php/Database.php';
-require_once __DIR__.'./excel/Classes/PHPExcel.php';
+require_once __DIR__.'/../../dbSettings.php';
+require_once __DIR__.'/../../php/Database.php';
+require_once __DIR__.'/excel/Classes/PHPExcel.php';
 
 class ImportExcel
 {
