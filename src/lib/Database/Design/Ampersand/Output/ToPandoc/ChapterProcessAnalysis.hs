@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
+module Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Classes
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Classes
 import Data.List
-import DatabaseDesign.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Output.PandocAux
 
 --DESCR -> the process analysis contains a section for each process in the fSpec
 -- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.

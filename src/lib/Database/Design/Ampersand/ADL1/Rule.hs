@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL1.Rule    (
+module Database.Design.Ampersand.ADL1.Rule    (
                 consequent, antecedent, rulefromProp, ruleviolations, hasantecedent)
 where
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Core.ParseTree        ( Prop(..))
-   import DatabaseDesign.Ampersand.Classes.Populated              ( fullContents)
-   import DatabaseDesign.Ampersand.Misc
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.Core.ParseTree        ( Prop(..))
+   import Database.Design.Ampersand.Classes.Populated              ( fullContents)
+   import Database.Design.Ampersand.Misc
 
    fatal :: Int -> String -> a
    fatal = fatalMsg "ADL1.Rule"

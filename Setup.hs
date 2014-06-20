@@ -31,7 +31,7 @@ generateBuildInfoHook pd  lbi uh bf =
                            }
     ; clockTime <- getCurrentTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
-    ; writeFile "src/lib/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
+    ; writeFile "src/lib/Database/Design/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
@@ -43,7 +43,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion revision time = unlines
- [ "module DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where"
+ [ "module Database.Design.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where"
  , ""
  , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
  , ""

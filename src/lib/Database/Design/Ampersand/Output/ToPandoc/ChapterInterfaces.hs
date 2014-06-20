@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces
+module Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces
   ( chpInterfacesPics
   , chpInterfacesBlocks
   )
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.ADL1
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.ADL1
 import Data.List
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Output.PandocAux
 
 chpInterfacesPics :: Fspc -> Options -> [Picture]
 chpInterfacesPics fSpec flags =

@@ -1,19 +1,19 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-} 
-module DatabaseDesign.Ampersand.Fspec.ShowMeatGrinder 
+module Database.Design.Ampersand.Fspec.ShowMeatGrinder 
   (meatGrinder)
 where
 
 import Data.List
 import Data.Ord
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Fspec.Motivations
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.ShowADL
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.ADL1.Pair
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.ADL1.Pair
 import Data.Hashable
 import Data.Maybe
 

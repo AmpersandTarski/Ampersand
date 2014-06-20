@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Misc.Explain
+module Database.Design.Ampersand.Misc.Explain
     ( string2Blocks
     , blocks2String
     , PandocFormat(..)
@@ -8,7 +8,7 @@ where
 
 import Text.Pandoc
 import Data.List (isPrefixOf)
-import DatabaseDesign.Ampersand.Core.ParseTree      (PandocFormat(..))
+import Database.Design.Ampersand.Core.ParseTree      (PandocFormat(..))
 
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.

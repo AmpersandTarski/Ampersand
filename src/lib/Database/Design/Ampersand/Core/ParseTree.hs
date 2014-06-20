@@ -1,5 +1,5 @@
 ﻿{-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Core.ParseTree (
+module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..)
    , Meta(..)
    , MetaObj(..)
@@ -36,14 +36,14 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , Prop(..), Props
    -- Inherited stuff: 
-   , module DatabaseDesign.Ampersand.Input.ADL1.FilePos
-   , module DatabaseDesign.Ampersand.ADL1.Pair
+   , module Database.Design.Ampersand.Input.ADL1.FilePos
+   , module Database.Design.Ampersand.ADL1.Pair
    , gen_concs
   )
 where
-   import DatabaseDesign.Ampersand.Input.ADL1.FilePos           
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
+   import Database.Design.Ampersand.Input.ADL1.FilePos           
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
    import Data.Traversable
    import Data.Foldable
    import Prelude hiding (foldr, sequence)

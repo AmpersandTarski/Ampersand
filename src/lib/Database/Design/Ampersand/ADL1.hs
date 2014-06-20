@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL1 
-   ( module DatabaseDesign.Ampersand.Core.ParseTree
-   , module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   , module DatabaseDesign.Ampersand.ADL1.Expression
-   , module DatabaseDesign.Ampersand.ADL1.ECArule
-   , module DatabaseDesign.Ampersand.ADL1.Rule
+module Database.Design.Ampersand.ADL1 
+   ( module Database.Design.Ampersand.Core.ParseTree
+   , module Database.Design.Ampersand.Core.AbstractSyntaxTree
+   , module Database.Design.Ampersand.ADL1.Expression
+   , module Database.Design.Ampersand.ADL1.ECArule
+   , module Database.Design.Ampersand.ADL1.Rule
    ) 
 where
-import DatabaseDesign.Ampersand.Core.ParseTree (
+import Database.Design.Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , Paire, Pairs, mkPair , srcPaire, trgPaire
          , Label(..)
@@ -36,7 +36,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree (
          , ConceptDef(..)
          , gen_concs
          )
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
+import Database.Design.Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
          ,Sign(..),showSign,GenR()
          , (<==>),meet,join
@@ -60,12 +60,12 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
          ,Purpose(..), ExplObj(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
-import DatabaseDesign.Ampersand.ADL1.Expression
+import Database.Design.Ampersand.ADL1.Expression
          ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
-import DatabaseDesign.Ampersand.ADL1.ECArule (
+import Database.Design.Ampersand.ADL1.ECArule (
          isAll, isCHC, isBlk, isNop, isDo, eventsFrom)
-import DatabaseDesign.Ampersand.ADL1.Rule (
+import Database.Design.Ampersand.ADL1.Rule (
           rulefromProp, ruleviolations
          ,consequent,antecedent,hasantecedent)

@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
-module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStructure(..), prim2rel)
+module Database.Design.Ampersand.Classes.ConceptStructure          (ConceptStructure(..), prim2rel)
 where
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
-   import DatabaseDesign.Ampersand.Core.ParseTree (ConceptDef(..))
-   import DatabaseDesign.Ampersand.Basics
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree       
+   import Database.Design.Ampersand.Core.ParseTree (ConceptDef(..))
+   import Database.Design.Ampersand.Basics
    import Data.List
    import Data.Maybe
-   import DatabaseDesign.Ampersand.ADL1.Expression
+   import Database.Design.Ampersand.ADL1.Expression
    import Prelude hiding (Ordering(..))
    fatal :: Int -> String -> a
    fatal = fatalMsg "Classes.ConceptStructure"

@@ -1,19 +1,19 @@
 {-# OPTIONS_GHC -Wall -fno-enable-rewrite-rules #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
-module DatabaseDesign.Ampersand.Input.ADL1.Parser 
+module Database.Design.Ampersand.Input.ADL1.Parser 
    (pContext, pPopulations,pTerm, keywordstxt, keywordsops, specialchars, opchars) where
-   import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
+   import Database.Design.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
-   import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
+   import Database.Design.Ampersand.Input.ADL1.UU_Parsing
             (Parser
             , (<$>) , (<$), (<*>), (<*), (*>), (<|>), (<??>)
             ,pList,pListSep,pList1,pList1Sep,pSym
             ,pSucceed
             ,opt, Sequence,Alternative, IsParser
             )
-   import DatabaseDesign.Ampersand.Basics  (fatalMsg,Collection(..))
-   import DatabaseDesign.Ampersand.Core.ParseTree    
+   import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
+   import Database.Design.Ampersand.Core.ParseTree    
    import Data.List
    import Data.Maybe
    

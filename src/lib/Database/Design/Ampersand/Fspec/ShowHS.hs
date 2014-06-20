@@ -1,19 +1,19 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
+module Database.Design.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
-   import DatabaseDesign.Ampersand.Core.ParseTree
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Core.ParseTree
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Text.Pandoc hiding (Meta)
    import Data.Char                  (isAlphaNum)
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Fspec.Plug
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
---   import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.Fspec.Plug
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comment in the Haskell code.
+--   import Database.Design.Ampersand.Fspec.FPA   (fpa)
    import Data.List
-   import DatabaseDesign.Ampersand.Classes
-   import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
-   import DatabaseDesign.Ampersand.Misc
+   import Database.Design.Ampersand.Classes
+   import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner
+   import Database.Design.Ampersand.Misc
    import Data.Hashable
    import Data.Ord
    import Data.Function
@@ -26,7 +26,7 @@ where
            = "{-# OPTIONS_GHC -Wall #-}"
              ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
-             ++"\n  import DatabaseDesign.Ampersand"
+             ++"\n  import Database.Design.Ampersand"
              ++"\n  import Text.Pandoc hiding (Meta)"
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
@@ -805,7 +805,7 @@ where
     showHS _ _ = showHSName
     
    instance ShowHS FilePos where
-    showHS _ _ (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
+    showHS _ _ (FilePos (fn,Database.Design.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
 
    instance ShowHSName Origin where

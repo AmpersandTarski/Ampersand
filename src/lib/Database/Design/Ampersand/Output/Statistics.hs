@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Output.Statistics (Statistics(..)) where
+module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
 
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.FPA
-   import DatabaseDesign.Ampersand.Fspec.Plug ()
-   import DatabaseDesign.Ampersand.Basics (fatalMsg)
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.FPA
+   import Database.Design.Ampersand.Fspec.Plug ()
+   import Database.Design.Ampersand.Basics (fatalMsg)
 
    fatal :: Int -> String -> a
    fatal = fatalMsg "Output.Statistics"

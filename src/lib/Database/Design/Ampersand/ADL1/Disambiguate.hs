@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
 {-# LANGUAGE RelaxedPolyRec #-}
-module DatabaseDesign.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..)) where
-import DatabaseDesign.Ampersand.Core.ParseTree
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..)) where
+import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import Database.Design.Ampersand.Basics (Identified(name), fatalMsg)
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
 import Data.Traversable

@@ -1,25 +1,25 @@
 ﻿{-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
+module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
     (makeFspec,allClauses, quads, preEmpt, editable)
   where
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Core.Poset
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+   import Database.Design.Ampersand.Core.Poset
    import Prelude hiding (Ord(..),head)
-   import DatabaseDesign.Ampersand.ADL1.Rule
-   import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (delta,conjNF,disjNF,normPA)
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
---   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
-   import DatabaseDesign.Ampersand.Fspec.ShowADL
+   import Database.Design.Ampersand.ADL1.Rule
+   import Database.Design.Ampersand.Basics
+   import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.ADL1
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Misc
+   import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  --  (delta,conjNF,disjNF,normPA)
+   import Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug
+   import Database.Design.Ampersand.Fspec.ToFspec.Calc
+--   import Database.Design.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
+   import Database.Design.Ampersand.Fspec.ShowADL
    import Text.Pandoc
    import Data.Maybe
    import Data.List (nub,nubBy,intersect,partition,group,delete)
-   import DatabaseDesign.Ampersand.ADL1.Expression
+   import Database.Design.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
 --   import Debug.Trace -- only for diagnostic purposes during debugging
    head :: [a] -> a

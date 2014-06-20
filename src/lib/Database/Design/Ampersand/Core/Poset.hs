@@ -14,21 +14,21 @@
 -- We define our own 'Ord' class which is intended as a replacement for
 -- 'Prelude.Ord'.  Should the user wish to take advantage of existing libraries
 -- which use 'Prelude.Ord', just let Prelude.compare = (totalOrder .) . compare
-module DatabaseDesign.Ampersand.Core.Poset (
+module Database.Design.Ampersand.Core.Poset (
     Poset(..), Sortable(..), Ordering(..), Ord, comparableClass,greatest,least,maxima,minima,sortWith
 ) where
 import qualified Prelude
 import qualified GHC.Exts (sortWith)
 
 import Prelude hiding (Ord(..), Ordering(..))
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Core.Poset.Instances
-import DatabaseDesign.Ampersand.Core.Poset.Internal hiding (fatal)
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Core.Poset.Instances
+import Database.Design.Ampersand.Core.Poset.Internal hiding (fatal)
 
 import Data.Function
 import Data.Monoid
 
-import DatabaseDesign.Ampersand.Basics (eqCl,isc,fatalMsg)
+import Database.Design.Ampersand.Basics (eqCl,isc,fatalMsg)
 import qualified Data.List as List
 
 fatal :: Int -> String -> a

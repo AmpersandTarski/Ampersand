@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Misc.TinyXML where
+module Database.Design.Ampersand.Misc.TinyXML where
 
    -----------------some new data types for simple XML structures--------
    data XTree = Elem { etag :: XTag

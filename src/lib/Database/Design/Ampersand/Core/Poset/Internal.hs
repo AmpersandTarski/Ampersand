@@ -8,13 +8,13 @@
  -}
 
 {-# LANGUAGE FlexibleInstances, OverlappingInstances, UndecidableInstances #-}
-module DatabaseDesign.Ampersand.Core.Poset.Internal where
+module Database.Design.Ampersand.Core.Poset.Internal where
 
 import qualified Data.List as List
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
 import Data.Monoid
-import DatabaseDesign.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatalMsg)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.Poset.Internal"
 

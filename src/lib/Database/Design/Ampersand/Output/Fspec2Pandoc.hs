@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
+module Database.Design.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
 where
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces         (chpInterfacesBlocks, chpInterfacesPics)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction       (chpIntroduction)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs        (chpNatLangReqs)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis          (chpDiagnosis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis (chpConceptualAnalysis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis    (chpProcessAnalysis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules           (chpECArules)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis       (chpDataAnalysis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAnalysis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces         (chpInterfacesBlocks, chpInterfacesPics)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction       (chpIntroduction)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs        (chpNatLangReqs)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis          (chpDiagnosis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis (chpConceptualAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis    (chpProcessAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterECArules           (chpECArules)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis       (chpDataAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
 --import Debug.Trace

@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.Relational 
+module Database.Design.Ampersand.Classes.Relational 
    (Relational(..)
    ) where
 
 import Data.Maybe
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Core.ParseTree       (Prop(..))
-import DatabaseDesign.Ampersand.ADL1.Expression
-import DatabaseDesign.Ampersand.Basics
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.ParseTree       (Prop(..))
+import Database.Design.Ampersand.ADL1.Expression
+import Database.Design.Ampersand.Basics
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.Relational"

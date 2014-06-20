@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand
+module Database.Design.Ampersand
    ( -- Data Constructors:
      A_Context
    , P_Context(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), TermPrim(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
@@ -82,12 +82,12 @@ module DatabaseDesign.Ampersand
    -- * Other functions
    , eqCl, showErr, unCap,upCap,escapeNonAlphaNum, fatalMsg
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
-   , DatabaseDesign.Ampersand.Basics.putStr
-   , DatabaseDesign.Ampersand.Basics.hGetContents
-   , DatabaseDesign.Ampersand.Basics.hPutStr
-   , DatabaseDesign.Ampersand.Basics.hPutStrLn
-   , DatabaseDesign.Ampersand.Basics.readFile
-   , DatabaseDesign.Ampersand.Basics.writeFile
+   , Database.Design.Ampersand.Basics.putStr
+   , Database.Design.Ampersand.Basics.hGetContents
+   , Database.Design.Ampersand.Basics.hPutStr
+   , Database.Design.Ampersand.Basics.hPutStrLn
+   , Database.Design.Ampersand.Basics.readFile
+   , Database.Design.Ampersand.Basics.writeFile
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
@@ -95,17 +95,17 @@ module DatabaseDesign.Ampersand
    , Purpose(..), ExplObj(..)
    )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Fspec.FPA
-import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Basics 
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Input
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Components 
-import DatabaseDesign.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-import DatabaseDesign.Ampersand.InputProcessing
-import DatabaseDesign.Ampersand.ADL1.P2A_Converters
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.Fspec.FPA
+import Database.Design.Ampersand.ADL1 
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Basics 
+import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.Input
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Components 
+import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
+import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
+import Database.Design.Ampersand.InputProcessing
+import Database.Design.Ampersand.ADL1.P2A_Converters

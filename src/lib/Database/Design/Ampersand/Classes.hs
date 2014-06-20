@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes
-   ( module DatabaseDesign.Ampersand.Classes.Populated
-   , module DatabaseDesign.Ampersand.Classes.ConceptStructure
-   , module DatabaseDesign.Ampersand.Classes.Relational
-   , module DatabaseDesign.Ampersand.Classes.ViewPoint
+module Database.Design.Ampersand.Classes
+   ( module Database.Design.Ampersand.Classes.Populated
+   , module Database.Design.Ampersand.Classes.ConceptStructure
+   , module Database.Design.Ampersand.Classes.Relational
+   , module Database.Design.Ampersand.Classes.ViewPoint
    ) where
-import DatabaseDesign.Ampersand.Classes.Populated 
+import Database.Design.Ampersand.Classes.Populated 
        (fullContents,atomsOf)
-import DatabaseDesign.Ampersand.Classes.ConceptStructure 
+import Database.Design.Ampersand.Classes.ConceptStructure 
        (ConceptStructure(..),prim2rel)
-import DatabaseDesign.Ampersand.Classes.Relational
+import Database.Design.Ampersand.Classes.Relational
        (Relational(..))
-import DatabaseDesign.Ampersand.Classes.ViewPoint
+import Database.Design.Ampersand.Classes.ViewPoint
        (Language(..), ProcessStructure(..))

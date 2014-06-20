@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module DatabaseDesign.Ampersand.Output.PandocAux
+module Database.Design.Ampersand.Output.PandocAux
       ( writepandoc
       , labeledThing
       , symDefLabel, symDefRef
@@ -21,15 +21,15 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       , commaEngPandoc', commaNLPandoc'
       )
 where
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Fspec
 import Data.Char hiding (Space)
 import Text.Pandoc
 import Text.Pandoc.Builder
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Basics hiding (hPutStrLn)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Basics hiding (hPutStrLn)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-import DatabaseDesign.Ampersand.Misc        
+import Database.Design.Ampersand.Misc        
 import System.Process      (system)
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.IO              (hPutStrLn, stderr)

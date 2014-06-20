@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
-   import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL            (showPAclause, showREL)
+module Database.Design.Ampersand.Fspec.ShowECA (showECA) where
+   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.ShowADL            (showPAclause, showREL)
 
    class ECA a where 
     showECA :: String -> a -> String

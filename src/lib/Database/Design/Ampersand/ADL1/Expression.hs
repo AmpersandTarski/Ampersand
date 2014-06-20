@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances , OverlappingInstances #-}
-module DatabaseDesign.Ampersand.ADL1.Expression (
+module Database.Design.Ampersand.ADL1.Expression (
                        subst
                       ,foldlMapExpression,foldrMapExpression
                       ,primitives,isMp1, isEEps
@@ -8,8 +8,8 @@ module DatabaseDesign.Ampersand.ADL1.Expression (
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
-import DatabaseDesign.Ampersand.Basics (uni)
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Basics (uni)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
 
 -- fatal :: Int -> String -> a
