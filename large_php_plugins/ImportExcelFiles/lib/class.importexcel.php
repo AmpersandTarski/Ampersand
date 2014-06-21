@@ -2,6 +2,19 @@
 
 date_default_timezone_set('Europe/London');
 
+/* In 'http://phpexcel.codeplex.com/discussions/213825' I found some inspiration to fix the date reading problems: 
+And you can convert the Excel date to a PHP date/timestamp or a dateTime object using the shared date methods:
+
+$phpTimestamp = PHPExcel_Shared_Date::ExcelToPHP($excelDateValue);
+$phpDateTimeObject = PHPExcel_Shared_Date::ExcelToPHPObject($excelDateValue);
+
+And the code snippet:
+if (PHPExcel_Shared_Date::isDateTime($PHPExcelObject->getActiveSheet()->getCell('B1')))
+	echo "Works";
+else 
+	echo "Fail";
+*/
+
 // /root/ImportExcelFiles/lib/<HERE WE ARR>
 require_once __DIR__.'/../../dbSettings.php';
 require_once __DIR__.'/../../php/Database.php';
