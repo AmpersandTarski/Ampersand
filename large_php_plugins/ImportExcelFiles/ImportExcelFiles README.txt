@@ -5,10 +5,22 @@ This is the README file for the plugin 'ImportExcelFiles', which allows you to i
 Sources for this plugin are located in the directory '<OUrepository>\trunk\large_php_plugins\ImportExcelFiles'.
 Installation of this plugin consists of executing the command
 
-   xcopy "%OUrepository%\trunk\large_php_plugins\ImportExcelFiles\*.*" "%prototypehtdocs%\php\plugins" /s
+   xcopy "%OUrepository%\trunk\large_php_plugins\ImportExcelFiles\*.*" "%prototypehtdocs%\ImportExcelFiles\" /s
 
 where %OUrepository% is the directory where you keep your local copy of the SVN repository http://svnint.ou.nl:8080/svn/ADL/
-  and %prototypehtdocs% is the directory where you keep your prototype code (i.e. where the 'index.php' file of your prototype is located). 
+  and %prototypehtdocs% is the directory where you keep your prototype code (i.e. the directory in which the file 'index.php' of your prototype is located). 
+
+--[Calling the plugin when running a prototype]--
+Suppose your prototype is callable at 'http:\\localhost\prototype', where 'prototype' is the name of the prototype (context).
+Suppose you want to import a population into that prototype, that is specified  in file '<excelfile>.xlsx' that is located in directory '<dir>' (where <dir> includes the path).
+In the address bar of the browser, you type the url 'http:\\localhost\prototype\ImportExcelFiles'
+A page appears in which you are prompted to enter the file name.
+You can browse to the file, click on it and then upload it.
+
+Then a parser starts to parse the excel file, and one by one pairs are added to the population
+You will see a log of this happening on the screen, so if any odd things happen, you may very well see where this started.
+Also, if you did any typo's in relation names or concept names, you are likely to get an error, which you then can fix and retry.
+If all is well, the rules are checked, including any ExecEngine rules, and ultimately the invariants, precisely as if you had entered the population in one big transaction.
 
 --[Plugin use]--
 When you have a prototype running for an Ampersand context, you can import data for that prototype from an Excel file, which effectively adds the population specified in the Excel file to the population that is currently already in the database.
@@ -71,3 +83,5 @@ This means that the example is equivalent with the following population specific
 --[NOTES]--
 1) You need NOT know about the internals of the database to use this plugin.
 2) You may specify formulae instead of texts. The result of the formula will be read (and converted to text) before being inserted into the database. This allows for dynamic construction of identifiers, precomputation of tables, date adaptations to the date of today, etc.
+
+That's it, Folks!
