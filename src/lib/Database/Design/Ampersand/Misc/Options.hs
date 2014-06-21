@@ -101,6 +101,9 @@ getOptions =
       env <- getEnvironment
       haskellInstallationDirectoryOfAmpersand <- getDataDir
       let dataDirOfAmpersandInstallation = takeDirectory exePath </> ".." </> "AmpersandData" 
+      exists <- doesDirectoryExist  dataDirOfAmpersandInstallation 
+      let dataDir = if exists then dataDirOfAmpersandInstallation
+                    else haskellInstallationDirectoryOfAmpersand
       let usage = "\nType '"++ progName++" --help' for usage info."
       let (actions, nonOptions, errors) = getOpt Permute (each options) args
       let fName = head (nonOptions++(error $ "Please supply the name of an ampersand file" ++ usage))
@@ -108,7 +111,7 @@ getOptions =
       when ((not.null) errors) (error $ concat errors ++ usage)
       
       -- Here we thread startOptions through all supplied option actions
-      flags <- foldl (>>=) (return (startOptions fName localTime env exePath progName dataDirOfAmpersandInstallation)) actions
+      flags <- foldl (>>=) (return (startOptions fName localTime env exePath progName dataDir)) actions
     --  defaultOpts <- defaultOptionsM 
     --  let flags = foldl (flip id) opts actions
       if showHelp flags || showVersion flags
@@ -526,7 +529,7 @@ verboseLn flags x
                       mapM_ putStrLn (lines x)
    | otherwise      = return ()
 helpNVersionTexts :: String -> Options -> [String]
-helpNVersionTexts vs flags          = ["Executable: "++show (dirExec flags)++"\n"++
-                                       preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++
+helpNVersionTexts vs flags          = ["Executable: "++show (dirExec flags)++"\n"    | test flags       ]++
+                                      [preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++
                                       [usageInfo' flags                              | showHelp    flags]
 
