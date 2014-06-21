@@ -33,16 +33,17 @@ instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
 pCtx2aCtx :: P_Context -> Guarded A_Context
-pCtx2aCtx pCtx = finalChecksOnAContext <?> pCtx2aCtx' pCtx 
+pCtx2aCtx = checkUnique udefrules  -- Rules must have a unique name within the context
+          . checkUnique patterns   -- Patterns as well
+          . checkUnique ctxprocs   -- and so should Processes
+          . pCtx2aCtx' 
   where 
-    finalChecksOnAContext :: A_Context -> Guarded A_Context
-    finalChecksOnAContext ctx = checkUniqueRuleNames
-      where
-        checkUniqueRuleNames 
-          = case uniqueNames (udefrules ctx) of 
-              Checked _   -> Checked ctx
-              Errors err  -> Errors err
-
+    checkUnique f gCtx = 
+     case gCtx of
+       Checked ctx -> case uniqueNames (f ctx) of
+                         Checked () -> gCtx
+                         Errors err -> Errors err
+       Errors err -> Errors err 
 
 pCtx2aCtx' :: P_Context -> Guarded A_Context
 pCtx2aCtx' 
