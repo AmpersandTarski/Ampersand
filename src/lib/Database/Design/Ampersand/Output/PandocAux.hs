@@ -186,8 +186,13 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                       then do verboseLn flags $ "Using Template: "++fp
                               contents <- readFile fp
                               return $ Just contents 
-                      else do verboseLn flags $ "Template file does not exist: "++fp
-                              verboseLn flags "...trying without template...(but you might want to reinstall ampersand...)" 
+                      else do putStrLn ""
+                              putStrLn  "***WARNING: ***" 
+                              putStrLn ("Template file does not exist: "++fp)
+                              putStrLn  "It was part of the installation of Ampersand."
+                              putStrLn  "...trying without template, but that isn't likely going to work..."
+                              putStrLn  "    (reinstalling Ampersand should fix this problem...)"
+                              putStrLn  "***************"
                               return Nothing 
                      )
                    } 
