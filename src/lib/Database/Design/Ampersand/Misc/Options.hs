@@ -97,17 +97,28 @@ getOptions :: IO Options
 getOptions =
    do args     <- getArgs
       progName <- getProgName
-      exePath <- getExecutablePath -- findExecutable progName
+      exePath  <- getExecutablePath -- findExecutable progName
+      dataPath <- getDataDir
+      let haskellInstallationDirectory = dataPath </> "AmpersandData"
+      existshaskellInstallationDirectory <- doesDirectoryExist  haskellInstallationDirectory 
+--      putStrLn  $ "haskellInstallationDirectory: "  ++haskellInstallationDirectory
+
+      let ampersandInstallationDirectory = takeDirectory exePath </> ".." </> "AmpersandData" 
+      existsampersandInstallationDirectory <- doesDirectoryExist  ampersandInstallationDirectory 
+--      putStrLn  $ "ampersandInstallationDirectory: "++ampersandInstallationDirectory
+
+      let dataDir  
+            | existshaskellInstallationDirectory   = haskellInstallationDirectory
+            | existsampersandInstallationDirectory = ampersandInstallationDirectory
+            | otherwise                            = exePath 
+
       env <- getEnvironment
-      haskellInstallationDirectoryOfAmpersand <- getDataDir
-      let dataDirOfAmpersandInstallation = takeDirectory exePath </> ".." </> "AmpersandData" 
-      exists <- doesDirectoryExist  dataDirOfAmpersandInstallation 
-      let dataDir = if exists then dataDirOfAmpersandInstallation
-                    else haskellInstallationDirectoryOfAmpersand
       let usage = "\nType '"++ progName++" --help' for usage info."
       let (actions, nonOptions, errors) = getOpt Permute (each options) args
       let fName = head (nonOptions++(error $ "Please supply the name of an ampersand file" ++ usage))
-      localTime <- getLocalTime 
+      localTime <-  do utcTime <- getCurrentTime
+                       timeZone <- getCurrentTimeZone
+                       return (utcToLocalTime timeZone utcTime) 
       when ((not.null) errors) (error $ concat errors ++ usage)
       
       -- Here we thread startOptions through all supplied option actions
@@ -119,10 +130,6 @@ getOptions =
       else checkNSetOptionsAndFileNameM (flags,nonOptions) usage
         
   where 
-     getLocalTime :: IO LocalTime
-     getLocalTime = do utcTime <- getCurrentTime
-                       timeZone <- getCurrentTimeZone
-                       return (utcToLocalTime timeZone utcTime)
      startOptions  :: String -> LocalTime -> [(String,String)] -> FilePath -> String -> FilePath -> Options 
      startOptions  fName localTime env exePath progName dataDirOfAmpersandInstallation=
        Options {genTime       = localTime
