@@ -105,7 +105,7 @@ makeFailedPops imperr script flags usrfiles
     where fid = fileid (srcfile flags)
           errs pce (Cxes ces) = concat [errs pce ce | ce<-ces]
           errs pce (CxeOrig ch tp nm o) = map pce (errs (\x->CxeOrig x tp nm o) ch)
-          errs pce (Cxe ch ce) = map pce (errs (\x->Cxe x ce) ch)
+          errs pce (Cxe ch ce) = map pce (errs (`Cxe` ce) ch)
           errs pce CxeNone = [pce CxeNone]
           errs _ _ = []
           msg (Cxe CxeNone ce) = ce

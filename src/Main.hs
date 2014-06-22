@@ -37,13 +37,13 @@ generateProtoStuff flags fSpec
          ; isValid <- validateRulesSQL fSpec flags
          ; unless isValid (exitWith (ExitFailure 30))
          }
-  | export2adl flags && fileformat flags==Adl1Format =
+  | export2adl flags && fileformat flags==Just Adl1Format =
       do { verboseLn flags "Exporting Atlas DB content to .adl-file..."
          ; cx<-atlas2context fSpec flags
          ; writeFile (combine (dirOutput flags) (outputfile flags)) (showADL cx)
          ; verboseLn flags $ "Context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
          }
-  | export2adl flags && fileformat flags==Adl1PopFormat =
+  | export2adl flags && fileformat flags==Just Adl1PopFormat =
       do { verboseLn flags "Exporting Atlas DB content to .pop-file..."
          ; cxstr<-atlas2populations fSpec flags
          ; writeFile (combine (dirOutput flags) (outputfile flags)) cxstr
