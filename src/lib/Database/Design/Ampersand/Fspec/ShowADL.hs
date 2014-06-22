@@ -102,31 +102,26 @@ instance ShowADL MetaObj where
  
 instance ShowADL Purpose where
  showADL expl = "PURPOSE "++showADL (explObj expl)
-                ++showADL (amLang (explMarkup expl))
-                ++showADL (amFormat (explMarkup expl))
+                ++" "++showADL (amLang (explMarkup expl))
+                ++" "++showADL (amFormat (explMarkup expl))
                 ++(if null (explRefIds expl) then "" else " REF "++intercalate ";" (explRefIds expl))
                 ++ "{+"++aMarkup2String (explMarkup expl)++"-}"
 
 instance ShowADL PandocFormat where
- showADL LaTeX = "LATEX"
- showADL HTML  = "HTML"
- showADL ReST  = "REST"
- showADL Markdown = "MARKDOWN"
+ showADL LaTeX = "LATEX "
+ showADL HTML  = "HTML "
+ showADL ReST  = "REST "
+ showADL Markdown = "MARKDOWN "
  
 instance ShowADL A_Markup where
  showADL m 
-     = "IN " ++showADL (amLang m) 
+     = showADL (amLang m) 
     ++ " "++showADL (amFormat m) 
     ++ "{+"++aMarkup2String m++"-}"
     
 instance ShowADL Lang where
- showADL Dutch   = "DUTCH"
- showADL English = "ENGLISH"
-   
---instance ShowADL (Maybe Lang) where
--- showADL  Nothing       = "IN DUTCH"
--- showADL (Just Dutch  ) = "IN DUTCH"
--- showADL (Just English) = "IN ENGLISH"
+ showADL Dutch   = "IN DUTCH"
+ showADL English = "IN ENGLISH"
    
 instance ShowADL ExplObj where
  showADL e = case e of
@@ -190,13 +185,9 @@ instance ShowADL (PairViewSegment Expression) where
  showADL (PairViewExp srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
 
 instance ShowADL SrcOrTgt where
- showADL Src = "source"
- showADL Tgt = "target"
+ showADL Src = "SRC"
+ showADL Tgt = "TGT"
  
---showADLSrcOrTgt :: SrcOrTgt -> String
---showADLSrcOrTgt Src = "SRC"
---showADLSrcOrTgt Tgt = "TGT"
-        
 instance ShowADL Rule where
  showADL r
   = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
@@ -280,7 +271,7 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar (EEps i _)   = "Eps{"++name i++"}"
+          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr --HJO, 20140622: Modified this, because the output must comply to Ampersand syntax. 
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 
@@ -364,7 +355,7 @@ instance ShowADL Fspc where
     ++ (if null decls then "" else "\n"++intercalate "\n"   (map showADL decls) ++ "\n")
     ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
     ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")
-    ++ "TODO: Populations are not shown..\n" --TODO.
+    ++ "-- TODO: Populations are not shown..\n" --TODO.
 --    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
     ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
     ++ "\n\nENDCONTEXT"
