@@ -50,7 +50,7 @@ data Options = Options { showVersion :: Bool
                        , customCssFile :: Maybe FilePath                       
                        , importfile :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
-                       , fileformat :: FileFormat --file format e.g. of importfile or export2adl
+                       , fileformat :: Maybe FileFormat --file format e.g. of importfile or export2adl
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML :: Bool
                        , genFspec :: Bool   -- if True, generate a functional specification
@@ -111,136 +111,91 @@ getOptions =
             | existshaskellInstallationDirectory   = haskellInstallationDirectory
             | existsampersandInstallationDirectory = ampersandInstallationDirectory
             | otherwise                            = exePath 
-
-      env <- getEnvironment
-      let usage = "\nType '"++ progName++" --help' for usage info."
-      let (actions, nonOptions, errors) = getOpt Permute (each options) args
-      let fName = head (nonOptions++(error $ "Please supply the name of an ampersand file" ++ usage))
       localTime <-  do utcTime <- getCurrentTime
                        timeZone <- getCurrentTimeZone
                        return (utcToLocalTime timeZone utcTime) 
+      env <- getEnvironment
+      let usage = "\nType '"++ progName++" --help' for usage info."
+      let (actions, fNames, errors) = getOpt Permute (each options) args
       when ((not.null) errors) (error $ concat errors ++ usage)
-      
+      let fName = case fNames of 
+                   []  -> error ("Please supply the name of an ampersand file" ++ usage)
+                   [x] -> x
+                   _   -> error ("too many files: "++ intercalate ", " fNames  ++ usage)
+                   
+      let startOptions =
+               Options {genTime       = localTime
+                      , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
+                      , outputfile    = fatal 83 "No monadic options available."
+                      , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
+                                                  (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
+                      , dbName        = fromMaybe (takeBaseName fName) (lookup envdbName env)
+                      , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
+                      , dirExec       = takeDirectory exePath
+                      , ampersandDataDir = dataDir
+                      , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
+                      , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
+                      , theme         = DefaultTheme
+                      , showVersion   = False
+                      , showHelp      = False
+                      , verboseP      = False
+                      , development   = False
+                      , validateSQL   = False
+                      , genPrototype  = False
+                      , allInterfaces = False
+                      , genAtlas      = False   
+                      , namespace     = []
+                      , autoRefresh   = Nothing
+                      , testRule      = Nothing
+                      , customCssFile = Nothing
+                      , importfile    = []
+                      , fileformat    = Nothing
+                      , genXML        = False
+                      , genFspec      = False 
+                      , diag          = False 
+                      , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFspecFormats++"."
+                      , genGraphics   = True
+                      , genEcaDoc     = False
+                      , proofs        = False
+                      , haskell       = False
+                      , crowfoot      = False
+                      , blackWhite    = False
+                      , doubleEdges   = False
+                      , showPredExpr  = False
+                      , noDiagnosis   = False
+                      , diagnosisOnly = False
+                      , genLegalRefs  = False
+                      , genUML        = False
+                      , genFPAExcel   = False
+                      , genStaticFiles= True
+                      , genBericht    = False
+                      , genMeat       = False
+                      , language      = Nothing
+                      , progrName     = progName
+                      , fileName      = if hasExtension fName
+                                        then fName
+                                        else addExtension fName "adl"
+                      , baseName      = takeBaseName fName
+                      , export2adl    = False
+                      , test          = False
+                      , includeRap    = False
+                      , pangoFont     = "Sans"
+                      , sqlHost       = "localhost"
+                      , sqlLogin      = "ampersand"
+                      , sqlPwd        = "ampersand"
+                      , parserVersion = Current
+                      }
       -- Here we thread startOptions through all supplied option actions
-      flags <- foldl (>>=) (return (startOptions fName localTime env exePath progName dataDir)) actions
-    --  defaultOpts <- defaultOptionsM 
-    --  let flags = foldl (flip id) opts actions
-      if showHelp flags || showVersion flags
-      then return flags
-      else checkNSetOptionsAndFileNameM (flags,nonOptions) usage
-        
-  where 
-     startOptions  :: String -> LocalTime -> [(String,String)] -> FilePath -> String -> FilePath -> Options 
-     startOptions  fName localTime env exePath progName dataDirOfAmpersandInstallation=
-       Options {genTime       = localTime
-              , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
-              , outputfile    = fatal 83 "No monadic options available."
-              , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
-                                          (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
-              , dbName        = fromMaybe ""        (lookup envdbName       env)
-              , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
-              , dirExec       = takeDirectory exePath
-              , ampersandDataDir = dataDirOfAmpersandInstallation
-              , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
-              , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
-              , theme         = DefaultTheme
-              , showVersion   = False
-              , showHelp      = False
-              , verboseP      = False
-              , development   = False
-              , validateSQL   = False
-              , genPrototype  = False
-              , allInterfaces = False
-              , genAtlas      = False   
-              , namespace     = []
-              , autoRefresh   = Nothing
-              , testRule      = Nothing
-              , customCssFile = Nothing
-              , importfile    = []
-              , fileformat    = fatal 101 "--fileformat is required for --import."
-              , genXML        = False
-              , genFspec      = False 
-              , diag          = False 
-              , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFspecFormats++"."
-              , genGraphics   = True
-              , genEcaDoc     = False
-              , proofs        = False
-              , haskell       = False
-              , crowfoot      = False
-              , blackWhite    = False
-              , doubleEdges   = False
-              , showPredExpr  = False
-              , noDiagnosis   = False
-              , diagnosisOnly = False
-              , genLegalRefs  = False
-              , genUML        = False
-              , genFPAExcel   = False
-              , genStaticFiles= True
-              , genBericht    = False
-              , genMeat       = False
-              , language      = Nothing
-              , progrName     = progName
-              , fileName      = fatal 119 "no default value for fileName."
-              , baseName      = fatal 120 "no default value for baseName."
-              , export2adl    = False
-              , test          = False
-              , includeRap    = False
-              , pangoFont     = "Sans"
-              , sqlHost       = "localhost"
-              , sqlLogin      = "ampersand"
-              , sqlPwd        = "ampersand"
-              , parserVersion = Current
-              }
-
-
-
-     checkNSetOptionsAndFileNameM :: (Options,[String]) -> String -> IO Options 
-     checkNSetOptionsAndFileNameM (flags,fNames) usage= 
-          if showVersion flags || showHelp flags 
-          then return flags 
-          else case fNames of
-                []      -> error $ "no file to parse" ++usage
-                [fName] -> checkInvalidOptionCombinations flags
-                        >> verboseLn flags "Checking output directories..."
-                        >> checkLogName flags
-                        >> checkDirOutput flags
-                        --REMARK -> checkExecOpts in comments because it is redundant
-                        --          it may throw fatals about PATH not set even when you do not need the dir of the executable.
-                        --          if you need the dir of the exec, then you should use (dirExec flags) which will throw the fatal about PATH when needed.
-                        -- >> checkExecOpts flags
-                        >> checkProtoOpts flags
-                        >> return flags { fileName    = if hasExtension fName
-                                                         then fName
-                                                         else addExtension fName "adl" 
-                                        , baseName    = takeBaseName fName
-                                        , dbName      = case dbName flags of
-                                                            ""  -> takeBaseName fName
-                                                            str -> str
-                                        , genAtlas = not (null(importfile flags)) && fileformat flags==Adl1Format
-                                        , importfile  = if null(importfile flags) || hasExtension(importfile flags)
-                                                        then importfile flags
-                                                        else case fileformat flags of 
-                                                                Adl1Format -> addExtension (importfile flags) "adl"
-                                                                Adl1PopFormat -> addExtension (importfile flags) "pop"
-                                        }
-                x:xs    -> error $ "too many files: "++ intercalate ", " (x:xs) ++usage
-       
-       where
-          checkInvalidOptionCombinations :: Options -> IO ()
-          checkInvalidOptionCombinations f
-            | development f && validateSQL f = error "--dev and --validate must not be used at the same time." --(Reason: see ticket #378)
-            | otherwise = return()  
-          checkLogName :: Options -> IO ()
-          checkLogName   f = createDirectoryIfMissing True (takeDirectory (logName f))
-          checkDirOutput :: Options -> IO ()
-          checkDirOutput f = createDirectoryIfMissing True (dirOutput f)
-
-          --checkExecOpts :: Options -> IO ()
-          --checkExecOpts f = do execPath <- findExecutable (progrName f) 
-            --                   when (execPath == Nothing) 
-              --                      (fatal 206 $ "Specify the path location of "++(progrName f)++" in your system PATH variable.")
-          checkProtoOpts :: Options -> IO ()
-          checkProtoOpts f = when (genPrototype f) (createDirectoryIfMissing True (dirPrototype f))
+      flags <- foldl (>>=) (return startOptions) actions
+      -- Now we do some checks on the flags:
+      when (development flags && validateSQL flags) 
+           (error "--dev and --validate must not be used at the same time.") --(Reason: see ticket #378)) 
+      createDirectoryIfMissing True (takeDirectory (logName flags)) 
+      createDirectoryIfMissing True (dirOutput flags)
+      when (genPrototype flags)
+           (createDirectoryIfMissing True (dirPrototype flags))
+      return flags
+ 
             
 data DisplayMode = Public | Hidden 
 
@@ -341,10 +296,10 @@ options = map pp
           , (Option []      ["fileformat"]
                (ReqArg (\f flags -> return 
                              flags{fileformat = case map toUpper f of
-                                                 "ADL" -> Adl1Format
-                                                 "ADL1"-> Adl1Format
-                                                 "POP" -> Adl1PopFormat
-                                                 "POP1"-> Adl1PopFormat
+                                                 "ADL" -> Just Adl1Format
+                                                 "ADL1"-> Just Adl1Format
+                                                 "POP" -> Just Adl1PopFormat
+                                                 "POP1"-> Just Adl1PopFormat
                                                  _     -> fileformat flags
                                   }
                        ) "FORMAT")
