@@ -83,13 +83,12 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
      moreThanOne  _      = False
      messageFor :: (Identified a, Traced a) => [a] -> CtxError
      messageFor (x:xs) = CTXE (origin x) 
-                      ("Names / labels must be unique. "++(show . name) x++", however, is also used at:"++
-                        concatMap (("\n    "++ ) . show . origin) xs
+                      ("Names / labels must be unique. "++(show . name) x++", however, is used at:"++
+                        concatMap (("\n    "++ ) . show . origin) (x:xs)
                         ++"."
                        )             
      messageFor _ = fatal 90 "messageFor must only be used on lists with more thatn one element!"
---                  [r] -> Errors [CTXE (origin (head r))$ "Names / labels must be unique. "++(show . name) r++", however, is not."]
---                  r -> Errors [CTXE (origin (head a))$ "Names / labels must be unique. The following are not: "++concat ["\n  - "++l'|l'<-r]]
+
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String
