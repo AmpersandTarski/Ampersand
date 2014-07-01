@@ -5,8 +5,10 @@ class UserInterface {
 	public $name;
 	public $interfaceRoles = array();
 	public $editableConcepts = array();
+	public $relation;
 	public $srcConcept;
 	public $tgtConcept;
+	public $subInterfaces;
 	private $expressionSQL;
 
 	public function __construct($name, $interface = array()){
@@ -20,6 +22,7 @@ class UserInterface {
 			$this->name = $interface['name'];
 			$this->interfaceRoles = $interface['interfaceRoles'];
 			$this->editableConcepts = $interface['editableConcepts'];
+			$this->relation = $interface['relation'];
 			$this->srcConcept = $interface['srcConcept'];
 			$this->tgtConcept = $interface['tgtConcept'];
 			$this->expressionSQL = $interface['expressionSQL'];
@@ -27,15 +30,66 @@ class UserInterface {
 			
 			// determine subInterfaces
 			if(!empty($this->refSubInterface)){
-				// $subInterface = new UserInterface($this->refSubInterface);
 				$this->subInterfaces = $allInterfaceObjects[$this->refSubInterface]['boxSubInterfaces']; // $subInterface->subInterfaces;
-				
 			}else{
 				$this->subInterfaces = $interface['boxSubInterfaces'];
 			}
+			
 		}catch (Exception $e){
 			ErrorHandling::addError($e->getMessage());
 		}
+	}
+	
+	public function getInterface($srcAtom = "1"){
+		$result = array('interfaceObject' => $this->name
+							, 'relation' => $this->relation
+							, 'srcConcept' => $this->srcConcept
+							, 'tgtConcept' => $this->tgtConcept
+							// , 'editable' => $this->isEditable($interface->tgtConcept) // TODO: ticket voor prototype generator. Cascade editable concepts (change in relation) in generics voor subinterfaces
+							, 'label' => $this->name
+							// , 'subInterfaceObjects' => empty($interface->subInterfaces) ? array(array('interfaceObject' => $interface->name)) : $interface->getInterface($srcAtom)
+							);
+		
+		foreach ((array)$this->subInterfaces as $subInterface){
+			$interface = new UserInterface($subInterface['name'], $subInterface);
+			
+			$result['subInterfaceObjects'][] = $interface->getInterface($srcAtom);
+			
+		}
+		// if(empty($this->subInterfaces)) $result['subInterfaceObjects'] = $result;
+		
+		$result['links'] = $this->getAtoms($srcAtom);
+		
+		return $result;
+		
+	}
+	
+	public function getAtoms($srcAtom = "1"){
+		$database = Database::singleton();
+		foreach (array_column($database->Exe("SELECT DISTINCT `tgt` FROM (".$this->expressionSQL.") AS results WHERE src='".addslashes($srcAtom)."' AND `tgt` IS NOT NULL"), 'tgt') as $tgtAtom){
+			
+			$attributes[$this->name] = $tgtAtom;
+			
+			foreach ((array)$this->subInterfaces as $subInterface){
+				$interface = new UserInterface($subInterface['name'], $subInterface);
+				$attributes[$interface->name] = $interface->getAttributes($tgtAtom);
+			}
+						
+			$links[] = array('srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom, 'attributes' => $attributes);
+		}
+		return $links;
+		
+	}
+	
+	public function getAttributes($srcAtom = "1"){
+		$database = Database::singleton();
+		foreach (array_column($database->Exe("SELECT DISTINCT `tgt` FROM (".$this->expressionSQL.") AS results WHERE src='".addslashes($srcAtom)."' AND `tgt` IS NOT NULL"), 'tgt') as $tgtAtom){
+			$attributes[] = $tgtAtom;
+		}
+		
+		if(count($attributes) == 1) $attributes = current($attributes);
+		return $attributes;
+		
 	}
 	
 	public function getAtomsAndLinks($srcAtom = "1"){
@@ -82,6 +136,10 @@ class UserInterface {
 		}		
 		
 		return (in_array($roleName, $this->interfaceRoles) or empty($this->interfaceRoles));
+	}
+	
+	private function isEditable($tgtConcept){
+		return in_array($tgtConcept, (array)$this->editableConcepts);
 	}
 }
 

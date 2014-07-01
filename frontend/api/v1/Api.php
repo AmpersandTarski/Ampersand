@@ -185,7 +185,8 @@ class Api
     {
         if($interfaceName !== NULL){
 			$interface = new UserInterface($interfaceName);
-			return $interface->getAtomsAndLinks($atom); // "Return interface with properties as defined in class UserInterfae"
+			return $interface->getInterface($atom);
+			
 		}else{
 			return UserInterface::getAllInterfaces(); // "Return list of all interfaces"
 			
@@ -193,21 +194,7 @@ class Api
 		
     }
 	
-	/**
-	 * @url GET viewer/{viewerName}/interface/{interfaceName}/
-	 * @url GET viewer/{viewerName}/interface/{interfaceName}/atom/{atom}/
-     */	
-	public function getInterfaceWithView($viewerName, $interfaceName, $atom = "1")
-	{
-		
-		$session = Session::singleton();
-		$session->setInterface($interfaceName);
-		$session->setAtom($atom);
-		$session->setViewer($viewerName);
-		
-		return $session->viewer->getHtmlBody();
-	
-	}
+
 
 /**************************** POST ****************************/
 	/**

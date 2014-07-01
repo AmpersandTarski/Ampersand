@@ -1,0 +1,1 @@
+var AmpersandApp = angular.module('AmpersandApp', ['AmpersandControllers', 'AmpersandServices']);

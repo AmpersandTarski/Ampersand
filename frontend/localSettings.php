@@ -1,6 +1,6 @@
 <?php
 
-define ('IP', 'http://ampersand/EURent[FE]');
+// define ('IP', 'http://localhost/[APP]');
 
 /************ EXTENSIONS ****************/
 
@@ -13,6 +13,9 @@ require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');
 
 // Enable AmpersandViewer
 require_once(__DIR__ . '/viewers/AmpersandViewer/AmpersandViewer.php');
+
+// Enable AngularJSViewer
+require_once(__DIR__ . '/viewers/AngularJSViewer/AngularJSViewer.php');
 
 
 ?>

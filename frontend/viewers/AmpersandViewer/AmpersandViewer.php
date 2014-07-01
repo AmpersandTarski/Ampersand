@@ -8,27 +8,39 @@ class AmpersandViewer extends Viewer {
 	private $atomId;
 	
 	public function __construct($interface, $atomId = null){
-		// TODO: implement parent constructor
-		
+				
 		$this->interface = $interface;
 		$this->atomId = $atomId;
 		
-	}
-	
-	public function getHtmlBody(){
-		$body .= '<body onload="initialize(); $(\'.tooltip-to-be-initialized\').toggleClass(\'tooltip-to-be-initialized\').tooltip();">';
-		$body .= $this->getNavigationBar();
-		$body .= '<div class="container mainview">';
-		$body .= $this->getNotifications();
-		if(isset($this->interface)) $body .= $this->getView();
-		$body .= '</div>';
-		$body .= '<script src="extensions/statusColors/js/statusColors.js"></script>';
-		$body .= '</body>';
 		
-		return $body;
+		parent::__construct(); // call parent constructor
+		
 	}
 	
-	public function getView(){ 
+	protected function buildHtmlBody(){
+		$session = Session::singleton();
+		
+		$this->addHtmlBodyLine($this->getNavigationBar());
+		
+		$this->addHtmlBodyLine('<div class="container mainview">');
+		$this->addHtmlBodyLine($this->getNotifications());
+		if(isset($this->interface)) $this->addHtmlBodyLine($this->getView());
+		$this->addHtmlBodyLine('</div>');
+		
+		$this->addHtmlBodyLine('<script src="extensions/statusColors/js/statusColors.js"></script>');
+		$this->addHtmlBodyLine('<script type="text/javascript">$(\'.tooltip-to-be-initialized\').toggleClass(\'tooltip-to-be-initialized\').tooltip();</script>');
+		
+		// add some javascript functions needed by Ampersand.js
+		$this->addHtmlBodyLine('<script type="text/javascript">');
+		$this->addHtmlBodyLine($this->generateInterfaceMap());
+		$this->addHtmlBodyLine($this->genEditableConceptInfo($this->interface->name));
+		$this->addHtmlBodyLine('function getSelectedRole(){ return '.$session->role->id.';}');
+		$this->addHtmlBodyLine('initialize();'); // function initialize in Ampersand.js 
+		$this->addHtmlBodyLine('</script>');
+		
+	}
+	
+	private function getView(){ 
 		$db = Database::singleton();
 		$session = Session::singleton();
 		
@@ -92,14 +104,6 @@ class AmpersandViewer extends Viewer {
 				$db->Exe("ROLLBACK"); // TODO: vervangen door database transaction function
 			}
 		} 
-		
-		// add some javascript functions needed by Ampersand.js
-		$this->emit($html, '<script type="text/javascript">');
-		
-		$this->emit($html, $this->generateInterfaceMap());
-		$this->emit($html, $this->genEditableConceptInfo($this->interface->name));
-		$this->emit($html, 'function getSelectedRole(){ return '.$session->role->id.';}');
-		$this->emit($html, '</script>');
 
 		return $html;
 	
@@ -244,7 +248,6 @@ class AmpersandViewer extends Viewer {
 		return "function getEditableConceptInfo() { return ".$atomViewMapJson."; }";
 	}
 	
-	// TODO: can be deleted when not using Ampersand.js anymore
 	private function generateInterfaceMap(){
 		$session = Session::singleton();
 		
