@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis 
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
@@ -231,37 +232,27 @@ chpDiagnosis fSpec flags
                              [ Str "Relations "]++commaEngPandoc (Str "and") rs++
                              [ Str " are not used in any rule. "
                            ] ] ) ++
+       toList
        ( case (fsLang fSpec, pictsWithUnusedRels) of
-          (Dutch,[pict])     -> [ Para [ Str "Figuur "
-                                       , xrefReference pict
-                                       , Str " geeft een conceptueel diagram met alle relaties."
-                                       ] 
-                                , Plain ((toList . showImage flags) pict)
-                                ]
-          (English,[pict])   -> [ Para [ Str "Figure "
-                                       , xrefReference pict
-                                       , Str " shows a conceptual diagram with all relations."
-                                       ]
-                                , Plain ((toList . showImage flags) pict)
-                                ]
-          (Dutch,picts)   -> concat
-                                  [ Para [ Str "Figuur "
-                                         , xrefReference pict
-                                         , Str " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
-                                         , Quoted SingleQuote [Str (name pat)]
-                                         , Str "."
-                                         ] 
-                                    : [Plain ((toList . showImage flags) pict)]
+          (Dutch,[pict])   -> para ("Figuur " <> xRefReference flags pict <> " geeft een conceptueel diagram met alle relaties.") <>
+                              plain((showImage flags) pict)
+          (English,[pict]) -> para ("Figure " <> xRefReference flags pict <> " shows a conceptual diagram with all relations.") <>
+                              plain((showImage flags) pict)
+          (Dutch,picts)    -> mconcat
+                                  [ para (  "Figuur " <> xRefReference flags pict 
+                                         <> " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
+                                         <> (singleQuoted.str.name) pat <> "."
+                                         ) <>
+                                    (plain . showImage flags) pict
                                   | (pict,pat)<-zip picts pats ]
-          (English,picts) -> concat
-                                  [ Para [ Str "Figure "
-                                         , xrefReference pict
-                                         , Str " shows a conceptual diagram with all relations declared in "
-                                         , Quoted SingleQuote [Str (name pat)]
-                                         , Str "."
-                                         ]
-                                    : [Plain ((toList . showImage flags) pict)]
-                                  | (pict,pat)<-zip picts pats ] )
+          (English,picts) -> mconcat
+                                  [ para (  "Figure " <> xRefReference flags pict 
+                                         <> " shows a conceptual diagram with all relations declared in "
+                                         <> (singleQuoted.str.name) pat <> "."
+                                         )<>
+                                    (plain . showImage flags) pict
+                                  | (pict,pat)<-zip picts pats ] 
+       )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
      where notUsed = nub [(Math InlineMath . showMath) (EDcD d)
@@ -589,7 +580,7 @@ chpDiagnosis fSpec flags
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                if xrefSupported flags then [ Str "(", RawInline (Format "latex") $ symReqRef r, Str ") "] else []++
+                toList(if xrefSupported flags then "(" <> symReqRef flags r <> ") " else mempty )++
                 (case fsLang fSpec of
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]

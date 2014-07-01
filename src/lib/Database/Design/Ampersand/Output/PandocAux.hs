@@ -294,18 +294,24 @@ count    lang    n      x
       
 ------ Symbolic referencing ---------------------------------
 
-class SymRef a where
+class (Identified a) => SymRef a where
   symLabel :: a -> String -- unique label for symbolic reference purposes
   symReqLabel :: a -> String  -- labels the requirement of a
   symReqLabel   c = "\\label{Req"++symLabel c++"}"
   symDefLabel :: a -> String  -- labels the definition of a
   symDefLabel   c = "\\label{Def"++symLabel c++"}"
-  symReqRef :: a -> String  -- references the requirement of a
-  symReqRef     c = "\\ref{Req"++symLabel c++"}"
-  symDefRef :: a -> String  -- references the definition of a 
-  symDefRef     c = "\\ref{Def"++symLabel c++"}"
-  symReqPageRef :: a -> String  -- references the requirement of a
-  symReqPageRef c = "\\pageref{Req"++symLabel c++"}"
+  symReqRef :: Options -> a -> Inlines  -- references the requirement of a
+  symReqRef  flags   c = case fspecFormat flags of
+                           FLatex  -> rawInline "latex" ("\\ref{Req"++symLabel c++"}")
+                           _       -> (str.name) c
+  symDefRef :: Options -> a -> Inlines  -- references the definition of a 
+  symDefRef  flags   c = case fspecFormat flags of
+                           FLatex  -> rawInline "latex" ("\\ref{Def"++symLabel c++"}")
+                           _       -> (str.name) c
+  symReqPageRef :: Options -> a -> Inlines  -- references the requirement of a
+  symReqPageRef flags c = case fspecFormat flags of
+                           FLatex  -> rawInline "latex" ("\\pageref{Req"++symLabel c++"}")
+                           _       -> (str.name) c
   symDefPageRef :: a -> String  -- references the definition of a 
   symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
 
