@@ -84,7 +84,7 @@ chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
 -- | This function returns a header of a chapter
 chptHeader :: Lang -> Chapter -> Blocks
 chptHeader lang chap 
- = header 1 (chptTitle lang chap ) <> singleton (Para [xrefLabel chap])
+ = header 1 (chptTitle lang chap ) <> (para (xrefLabel chap))
  
 chptTitle :: Lang -> Chapter -> Inlines
 chptTitle lang cpt =
@@ -113,14 +113,14 @@ chptTitle lang cpt =
 
 class Xreferencable a where
   xLabel :: a  -> String
-  xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
-  xrefReference a = RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{"++xLabel a++"}")
+--  xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
+--  xrefReference a = fatal 117 $ "--Depreciated! TODO: use xRefReference instead"
   xRefReference :: Options -> a -> Inlines
   xRefReference flags a 
     | canXRefer flags = rawInline "latex" ("\\ref{"++xLabel a++"}")
     | otherwise       = mempty -- "fatal 89 xreferencing is not supported!"
-  xrefLabel :: a -> Inline
-  xrefLabel a = RawInline (Text.Pandoc.Builder.Format "latex") ("\\label{"++xLabel a++"}")
+  xrefLabel :: a -> Inlines
+  xrefLabel a = rawInline "latex" ("\\label{"++xLabel a++"}")
 
 canXRefer :: Options -> Bool
 canXRefer opts = fspecFormat opts `elem` [FLatex] 
@@ -143,7 +143,7 @@ showImage flags pict =
          FLatex  -> rawInline "latex" "}\n"
                   <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
          _       -> mempty
-   <> singleton (xrefLabel pict)
+   <> (xrefLabel pict)
    <> case fspecFormat flags of
          FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
          _       -> mempty
@@ -204,79 +204,83 @@ orderingByTheme fSpec
         
 --GMI: What's the meaning of the Int?
 dpRule :: Fspc -> Options -> [Rule] -> Int -> [A_Concept] -> [Declaration]
-          -> ([([Inline], [[Block]])], Int, [A_Concept], [Declaration])
+          -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
 dpRule fSpec flags = dpR
  where
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
-     = ( ( [Str (name r)]
-         , [ let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
-             toList (purposes2Blocks flags purps) ++
-             toList (purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]) ++  -- Dan de uitleg van de betreffende relaties
-             [ Plain text1 | not (null nds)] ++
-             pandocEqnArray [ ( texOnly_Id(name d)
-                              , ":"
-                              , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
-                              )
-                            |d<-nds] ++
-             [ Plain text2 | not (null rds)] ++
-             [ Plain text3 ] ++
-             (if showPredExpr flags
-              then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
-              else pandocEquation (showMath r++symDefLabel r)
-             )++
-             (if length nds>1 then text5 else [])
-           ] 
-         ): dpNext
+     = ( ( str (name r)
+         , [theBlocks]   
+          ): dpNext
        , n'
        , seenCs 
        , seenDs
        )
        where
+        theBlocks :: Blocks
+        theBlocks =
+           let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
+             (  (purposes2Blocks flags purps)
+             <> (purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
+             <> (if null nds then mempty else plain text1)
+             <> (fromList $ 
+                  pandocEqnArray [ ( texOnly_Id(name d)
+                                    , ":"
+                                    , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
+                                    )
+                                 |d<-nds])
+             <> (if null rds then mempty else plain text2)
+             <> (plain text3)
+             <> (if showPredExpr flags
+                 then fromList $ pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
+                 else fromList $ pandocEquation (showMath r++symDefLabel r)
+                )
+             <> (if length nds>1 then text5 else mempty)
+             )
+        text1, text2, text3  :: Inlines
         text1
-         = case (length nds,fsLang fSpec) of
-             (1,Dutch)   -> let d = head nds in
-                            [Str ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d,Str "):"]
-             (1,English) -> let d = head nds in
-                            [Str "In order to formalize this, a ", Str (if isFunction d then "function" else "relation"), Space, Str (name d),Str " is introduced (",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d,Str "):"]
-             (l,Dutch)   -> [Str "Om te komen tot de formalisatie in vergelijking",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (" zijn de volgende "++count Dutch l "relatie"++" nodig.")]
-             (l,English) -> [Str "To arrive at the formalization in equation",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef r,Str (", the following "++count English l "relation"++" are introduced.")]
+         = case (nds,fsLang fSpec) of
+             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> (symDefRef flags d) <> "):")
+             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> (symDefRef flags d) <> "):")
+             (_  ,Dutch)   -> ("Om te komen tot de formalisatie in vergelijking" <> (rawInline "latex" "~")<>(symDefRef flags r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
+             (_  ,English) -> ("To arrive at the formalization in equation"      <> (rawInline "latex" "~")<>(symDefRef flags r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
         text2
-         = (case (length nds,length rds,fsLang fSpec) of
-             (0,1,Dutch)   -> [Str "Definitie ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
-             (0,1,English) -> [Str "We use definition ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (0,_,Dutch)   -> Str "We gebruiken definities ":commaNLPandoc (Str "en") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-             (0,_,English) -> Str "We use definitions ":commaEngPandoc (Str "and") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-             (_,1,Dutch)   -> [Str "Daarnaast gebruiken we definitie ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,1,English) -> [Str "Beside that, we use definition ",RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,_,Dutch)   -> Str "Ook gebruiken we definities ":commaNLPandoc (Str "en") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-             (_,_,English) -> Str "We also use definitions ":commaEngPandoc (Str "and") [RawInline (Text.Pandoc.Builder.Format "latex") $ symDefRef d++" ("++texOnly_Id (name d)++")" |d<-rds]
-           )++
-           (case (length nds,fsLang fSpec) of
-             (1,Dutch)   -> [Str " om eis",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " (pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ") te formaliseren:"]
-             (1,English) -> [Str " to formalize requirement",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " (page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str "):"]
-             _           -> [Str ". "]
+         = (case ( nds, rds,fsLang fSpec) of
+             ([],[rd],Dutch)   -> ("Definitie " <>         (symDefRef flags rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
+             ([],[rd],English) -> ("We use definition " <> (symDefRef flags rd) <> "(" <> str (name rd) <> ")")
+             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> (symDefRef flags rd) <> "(" <> (str.name) rd <> ")" )
+             (_ ,[rd],English) -> ("Beside that, we use definition "   <> (symDefRef flags rd) <> "(" <> (str.name) rd <> ")" )
+             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+           )<>
+           (case (nds,fsLang fSpec) of
+             ([_],Dutch)   -> (" om eis" <> (symReqRef flags r) <> " te formaliseren: ")
+             ([_],English) -> (" to formalize requirement" <> (symReqRef flags r) <> ": ")
+             ( _, _)        -> ". "
            )
         text3
          = case (fsLang fSpec,isSignal r) of
-            (Dutch  ,False) -> [Str "De regel luidt: "]
-            (English,False) -> [Str "This means: "]
-            (Dutch  ,True)  -> [Str "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "]
-            (English,True)  -> [Str "Activities that are defined by this rule are finished when: "]
+            (Dutch  ,False) -> "De regel luidt: "
+            (English,False) -> "This means: "
+            (Dutch  ,True)  -> "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
+            (English,True)  -> "Activities that are defined by this rule are finished when: "
 --        text4
 --         = case fsLang fSpec of
 --                 Dutch   -> [Str " Deze activiteiten worden opgestart door:"]
 --                 English -> [Str " These activities are signalled by:"]
+        text5 :: Blocks
         text5
          = case (fsLang fSpec,isSignal r) of
-             (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (fsLang fSpec) r
-             (English,False) -> [ Plain [ Str "This corresponds to the requirement on page",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ":"]]++meaning2Blocks (fsLang fSpec) r
-             (Dutch  ,True)  -> [ Plain [ Str "Dit komt overeen met "
-                                        , Quoted  SingleQuote [Str (name r)]
-                                        , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
-             (English,True)  -> [ Plain [ Str "This corresponds to "
-                                        , Quoted  SingleQuote [Str (name r)]
-                                        , Str " (",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str " op pg.",RawInline (Text.Pandoc.Builder.Format "latex") "~",RawInline (Text.Pandoc.Builder.Format "latex") $ symReqPageRef r, Str ")."]]
+             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> (symReqPageRef flags r) <>":"
+                                      ) <> fromList (meaning2Blocks (fsLang fSpec) r)
+             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> (symReqPageRef flags r) <>":"
+                                      ) <> fromList (meaning2Blocks (fsLang fSpec) r)
+             (Dutch  ,True)  -> plain ( "Dit komt overeen met " <> (singleQuoted.str.name) r <> 
+                                        " (" <> symReqRef flags r <> " op pg."  <> (rawInline "latex" "~") <> (symReqPageRef flags r) <> ").")
+             (English,True)  -> plain ( "This corresponds to " <> (singleQuoted.str.name) r <> 
+                                        " (" <> symReqRef flags r <> " on page" <> (rawInline "latex" "~") <> (symReqPageRef flags r) <> ").")
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
@@ -318,6 +322,7 @@ purposes2Blocks flags ps
              Nothing -> []
              Just p  -> amPandoc p
        where   -- The reference information, if available for this purpose, is put
+        ref :: Purpose -> [Inline]
         ref purp = case fspecFormat flags of
                     FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") 
                                                              ("\\marge{"++intercalate "; " (map latexEscShw (explRefIds purp))++"}\n")]

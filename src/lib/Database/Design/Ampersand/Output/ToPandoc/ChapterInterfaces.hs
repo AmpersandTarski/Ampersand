@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces
   ( chpInterfacesPics
   , chpInterfacesBlocks
@@ -23,13 +24,8 @@ chpInterfacesBlocks lev fSpec flags =
    -- TODO: This should be one chapter for all interfaces.
     =  (labeledThing flags lev ("chpIfc"++name act) (name act)) <>
        ifcIntro act <>
-       fromList 
-       ( 
-         
-          (if genGraphics flags then txtKnowledgeGraph act else [])
-         -- ifcFieldTables
-         ++ (if graphic flags then txtSwitchboard act else [])
-       )
+       (if genGraphics flags then txtKnowledgeGraph act else mempty) <>
+       (if graphic     flags then txtSwitchboard act else mempty)
    ifcIntro :: Activity -> Blocks
    ifcIntro act
     =   purposes2Blocks flags purps
@@ -167,26 +163,31 @@ chpInterfacesBlocks lev fSpec flags =
                     c:cs   -> c : dealWithUnderscores cs
 -}
 
-   txtKnowledgeGraph :: Activity -> [Block]
+   txtKnowledgeGraph :: Activity -> Blocks
    txtKnowledgeGraph act
     = (case fsLang fSpec of                                     -- announce the knowledge graph
-           Dutch   -> [Para [ Str "Figuur ", xrefReference (picKnowledgeGraph flags fSpec act) 
-                            , Str " geeft de kennisgraaf weer voor deze interface."]]
-           English -> [Para [ Str "Figure ", xrefReference (picKnowledgeGraph flags fSpec act)
-                            , Str " shows the knowledge graph of this interface."]]
-      )
-      ++ [Plain ((toList . showImage flags) (picKnowledgeGraph flags fSpec act))]    -- draw the knowledge graph
+           Dutch   -> para ( "Figuur " <> (xRefReference flags (picKnowledgeGraph flags fSpec act)) 
+                           <>" geeft de kennisgraaf weer voor deze interface."
+                           )
+           English -> para ( "Figure " <> (xRefReference flags (picKnowledgeGraph flags fSpec act)) 
+                           <>" shows the knowledge graph of this interface."
+                           )
+      ) <>
+      ( (para . showImage flags) (picKnowledgeGraph flags fSpec act))    -- draw the knowledge graph
 
-   txtSwitchboard :: Activity ->[Block]
+   txtSwitchboard :: Activity -> Blocks
    txtSwitchboard act
-    = (if name act==name (head (fActivities fSpec)) then switchboardIntro else [])++
-     (case fsLang fSpec of                                     -- announce the switchboard diagram
-           Dutch   -> [Para [ Str "Figuur ", xrefReference (picSwitchboard flags fSpec act)
-                            , Str " geeft het schakelpaneel (switchboard diagram) weer voor deze interface."]]
-           English -> [Para [ Str "Figure ", xrefReference (picSwitchboard flags fSpec act)
-                            , Str " shows the switchboard diagram of this interface."]]
-     )
-     ++ [Plain ((toList . showImage flags) (picSwitchboard flags fSpec act))]        -- draw the switchboard
+    = (if name act==name (head (fActivities fSpec)) then fromList switchboardIntro else mempty
+      ) <>
+      (case fsLang fSpec of                                     -- announce the switchboard diagram
+           Dutch   -> para ( "Figuur " <> (xRefReference flags (picSwitchboard flags fSpec act))
+                           <>" geeft het schakelpaneel (switchboard diagram) weer voor deze interface."
+                           )
+           English -> para ( "Figure " <> (xRefReference flags (picSwitchboard flags fSpec act))
+                           <>" shows the switchboard diagram of this interface."
+                           )
+      ) <>
+      ( (para . showImage flags) (picSwitchboard flags fSpec act))        -- draw the switchboard
 
    switchboardIntro :: [Block]
    switchboardIntro
