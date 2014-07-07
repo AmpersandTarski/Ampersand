@@ -163,7 +163,7 @@ selectExpr fSpec i src trg expr
                 phpIndent (i+3)++showADL expr) (selectExpr fSpec i src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
           [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]-- this will occur quite often because of doSubsExpr
              -> sqlcomment i ("case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]"++phpIndent (i+3)++showADL expr) $
-                 "SELECT "++sqlAtomQuote atomSrc++" AS "++src++", "++sqlAtomQuote atomTgt++" AS "++trg
+                 "SELECT "++selectSelItem (sqlAtomQuote atomSrc,src)++", "++selectSelItem (sqlAtomQuote atomTgt, trg)
           (e@(EMp1 atom _):f:fx)
              -> let expr' = foldr1 (.:.) (f:fx)
                     src' = sqlExprSrc fSpec e
@@ -403,9 +403,9 @@ Based on this derivation:
              srcAlias = noCollide' relNames "RResLeft"
              tgtAlias = noCollide' relNames "RResRight"
              lsrc = sqlExprSrc fSpec l
-             ltrg = noCollide' [lsrc] (sqlExprTgt fSpec l)
+             ltrg = sqlExprTgt fSpec l  -- shouldn't this be a noCollide?
              rsrc = sqlExprSrc fSpec r
-             rtrg = noCollide' [rsrc] (sqlExprTgt fSpec r)
+             rtrg = sqlExprTgt fSpec r  -- shouldn't this be a noCollide?
              lCode = selectExprInFROM fSpec (i+13) lsrc ltrg l
              rCode = selectExprInFROM fSpec (i+21) rsrc rtrg r
          in sqlcomment i ("case: ERrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")")
@@ -441,9 +441,9 @@ selectExprInFROM fSpec i src trg expr
       case expr of
         EFlp e -> selectExprInFROM fSpec i trg src e
         EBrk e -> selectExprInFROM fSpec i src trg e
-        EDcD{} -> if srcAlias=="" && tgtAlias==""
+        EDcD{} -> if unquote (sqlExprSrc fSpec expr) == unquote src && unquote (sqlExprTgt fSpec expr) == unquote trg
                   then  declName
-                  else "( SELECT "++sqlExprSrc fSpec expr++srcAlias++", "++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+                  else "( SELECT "++selectSelItem (sqlExprSrc fSpec expr, src)++", "++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
                        "  FROM "++declName++" WHERE True )"
                   where
                    declName = case sqlRelPlugs fSpec expr of
@@ -458,7 +458,7 @@ selectExprInFROM fSpec i src trg expr
         EDcI c -> if cptAlias==""
                   then cpt
                   else "( /* Case EDcI "++name c++" */" ++ phpIndent (i+5) ++
-                       "  SELECT "++sqlAttConcept fSpec c++" AS "++cptAlias++ phpIndent (i+5) ++
+                       "  SELECT "++selectSelItem (sqlAttConcept fSpec c, cptAlias)++ phpIndent (i+5) ++
                        "  FROM "++quote cpt++" )"
                   where
                    cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
@@ -466,13 +466,13 @@ selectExprInFROM fSpec i src trg expr
         EDcV{} 
           | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
           | source expr == ONE 
-               -> "( SELECT 1, "++rightConcept++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+               -> "( SELECT 1, "++rightConcept++"."++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
                   "  FROM "++rightConcept ++" )"
           | target expr == ONE
-               -> "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", 1"++ phpIndent (i+5) ++
+               -> "( SELECT "++leftConcept++"."++selectSelItem (sqlExprSrc fSpec expr, src)++", 1"++ phpIndent (i+5) ++
                   "  FROM "++leftConcept ++" )"
           | otherwise
-               -> "( SELECT "++leftConcept++"."++sqlExprSrc fSpec expr++srcAlias++", "++rC++"."++sqlExprTgt fSpec expr++tgtAlias++ phpIndent (i+5) ++
+               -> "( SELECT "++leftConcept++"."++selectSelItem (sqlExprSrc fSpec expr, src)++", "++rC++"."++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
                   "  FROM "++leftConcept++", "++rightConcept ++(if rightConcept==rC then "" else " AS "++rC)++" WHERE True )"
                   where
                     leftConcept  = sqlConcept fSpec (source expr) 
@@ -482,9 +482,7 @@ selectExprInFROM fSpec i src trg expr
    where 
      unquoted [] = False
      unquoted (x:_) = x /= '`'
-     srcAlias = if unquote src==unquote (sqlExprSrc fSpec expr) then "" else " AS "++src
-     tgtAlias = if unquote trg==unquote (sqlExprTgt fSpec expr) then "" else " AS "++trg
-     
+    
 
 unquote :: String->String
 unquote ('`':xs) = init xs
