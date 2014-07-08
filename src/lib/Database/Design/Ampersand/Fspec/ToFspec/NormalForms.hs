@@ -313,6 +313,8 @@ where
          | isFalse l                     = (notCpl (EDcV (sign x)), ["-V/\\x = -V"], "<=>")
          | isFalse r                     = (notCpl (EDcV (sign x)), ["x/\\-V = -V"], "<=>")
 -- Absorb if r is antisymmetric:    r/\r~ --> I
+         | t/=l || f/=r
+              = (t ./\. f, steps++steps', fEqu [equ',equ''])
          | not eq && or [length cl>1 |cl<-absorbAsy]
               = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsy, let e=head cl] 
                 , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=head cl]
@@ -334,14 +336,14 @@ where
               = ( case head absor1 of
                     (_,[]) -> r
                     (_,ts) -> foldr1 (.\/.) ts ./\. r
-                , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
+                , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1] -- this take 1 is necessary. See Ticket #398
                 , "<=>"
                 )
          | isEUni r && not (null absor1')
               = ( case head absor1' of
                     (_,[]) -> l
                     (_,ts) -> l ./\. foldr1 (.\/.) ts
-                , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
+                , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1'] -- this take 1 is necessary. See Ticket #398
                 , "<=>"
                 )
          | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
@@ -362,6 +364,8 @@ where
      nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl/=dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
+         | t/=l || f/=r
+              = (t .\/. f, steps++steps', fEqu [equ',equ''])
          | or [length cl>1 |cl<-absorbClasses]   -- yields False if absorbClasses is empty
               = ( foldr1 (.\/.) [head cl | cl<-absorbClasses]  -- cl cannot be empty, because it is made by eqClass
                 , [shw e++" \\/ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
