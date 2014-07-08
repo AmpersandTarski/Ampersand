@@ -17,9 +17,7 @@ if(isset($_REQUEST['resetSession'])){ // TODO: reset working not working properl
 // ROLE
 if(isset($_REQUEST['role'])){	// new role selected
 	 $roleId = $_REQUEST['role'];
-}elseif(isset($_SESSION['role'])){	// role already selected
-	$roleId = $_SESSION['role'];
-}else{	// default role
+}else{ // no change, or default
 	$roleId = null;
 }		
 $session->setRole($roleId);
@@ -37,6 +35,7 @@ $session->setInterface($interfaceName);
 // ATOM
 if(isset($_REQUEST['atom'])){ // new atom selected
 	$atomId = $_REQUEST['atom'];
+	if(empty($atomId)) $atomId = null;
 }elseif(isset($_SESSION['atom'])){ // atom already selected
 	$atomId = $_SESSION['atom'];
 }else{ // default atom

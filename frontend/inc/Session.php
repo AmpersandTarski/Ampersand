@@ -22,13 +22,14 @@ class Session {
 		// Database connection for within this class
 		try {
 			$this->database = Database::singleton();
-		
+			
 			// AMPERSAND SESSION
 			if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
 
 				try {
 					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
 				} catch (Exception $e) {
+					ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
 					return;
 				}
 				
@@ -36,18 +37,19 @@ class Session {
 				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
 				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
 				
-				// Create a new Ampersand session if $_SESSION['sessionAtom'] is not set (browser started a new session or Ampersand session was expired
-				if (!Concept::isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')){ 
-					$sessionAtom = $this->database->addAtomToConcept(Concept::createNewAtom('SESSION'), 'SESSION'); // TODO: change to PHP SESSION ID??
-					$_SESSION['sessionAtom'] = $sessionAtom;
-					
+				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
+				if (!Concept::isAtomInConcept(session_id(), 'SESSION')){ 
+					$this->database->addAtomToConcept(session_id(), 'SESSION');					
 				}
 
-				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$sessionAtom."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+			}else{
+				ErrorHandling::addError('Script does not contain SESSION concept!');
+				return;
 			}
 	
 		} catch (Exception $e){
-		  ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
+		  	return;
 		}	
 	}
 	
@@ -66,9 +68,7 @@ class Session {
 	public function destroySession(){
 		global $conceptTableInfo;
 		
-		if (array_key_exists('SESSION', $conceptTableInfo)){
-			$this->deleteAmpersandSession($_SESSION['sessionAtom']);
-		}
+		$this->deleteAmpersandSession(session_id());
 		
 		$_SESSION = array(); // empty all $_SESSION variables
 		
@@ -78,32 +78,39 @@ class Session {
 	}
 	
 	public function setRole($roleId = null){
-	
-		if(isset($roleId)){
-			$this->role = new Role($roleId);
+		try{
+			if(isset($roleId)){
+				$this->role = new Role($roleId);	
+			}elseif(isset($_SESSION['role'])){
+				$this->role = new Role($_SESSION['role']);
+			}else{
+				$this->role = new Role();
+			}
 			
-		}elseif(isset($_SESSION['role'])){
-			$this->role = new Role($_SESSION['role']);
-		}else{
-			$this->role = new Role();
+			ErrorHandling::addLog("Role $role->name selected");
+			$_SESSION['role'] = $this->role->id;	// store roleId in $_SESSION['role']
+	
+			RuleEngine::checkRules($this->role->id); // TODO: ergens anders plaatsen?
+			return $this->role->id;
+		}catch(Exception $e){
+			throw $e;
 		}
-		ErrorHandling::addLog("Role $role->name selected");
-		$_SESSION['role'] = $this->role->id;	// store roleId in $_SESSION['role']
-
-		RuleEngine::checkRules($this->role->id); // TODO: ergens anders plaatsen?
-		return $this->role->id;
 	}
 	
 	public function setInterface($interfaceName = null){
 		
-		if(isset($interfaceName)) {
-			$this->interface = new UserInterface($interfaceName);
-			ErrorHandling::addLog("Interface $interfaceName selected");
-		}else{
-			$this->interface = null;
-			ErrorHandling::addNotification("No interface selected");
+		try{
+			if(isset($interfaceName)) {
+				$this->interface = new ObjectInterface($interfaceName);
+				ErrorHandling::addLog("Interface $interfaceName selected");
+			}else{
+				$this->interface = null;
+				ErrorHandling::addNotification("No interface selected");
+			}
+			$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
+		}catch (Exception $e){
+			throw $e;
 		}
-		$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
 		
 		return $interfaceName;
 	}
@@ -114,7 +121,7 @@ class Session {
 			$this->atom = $atomId;
 			ErrorHandling::addLog("Atom $atomId selected");
 		}else{
-			$this->atom = null;
+			$this->atom = session_id();
 		}
 		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
 		

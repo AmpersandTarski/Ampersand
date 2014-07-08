@@ -232,7 +232,7 @@ class AmpersandViewer extends Viewer {
 	
 	private function genEditableConceptInfo($interfaceName) {
 		$atomViewMap = array ();
-		$interface = new UserInterface($interfaceName);
+		$interface = new ObjectInterface($interfaceName);
 		
 		foreach ($interface->editableConcepts as $editableConcept) {
 			$atomsAndViews = array ();

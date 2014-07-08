@@ -11,19 +11,26 @@ class Role {
 		global $allRoles; // from Generics.php
 		global $allInterfaceObjects; // from Generics.php
 		
-		if(!isset($id)){ 
-			$id = 1;//key($allRoles); // TODO: config for default Role
+		// TODO: config for default Role
+		if(is_null($id)){ 
+			$id = 0;//key($allRoles); 
 			ErrorHandling::addLog("Default role selected");
 		}
 		
+		// Check if role exists
+		if(!key_exists($id, $allRoles)) throw new Exception ('Role with roleId \''.$id.'\' does not exists');
+		
+		// Name of role
 		$this->id = $id;
 		$this->name = $allRoles[$id]['name'];
+		
+		// Rules that are maintained by this role
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];
 		
+		// Interfaces that are accessible by this role
 		foreach ($allInterfaceObjects as $interfaceName => $interface){
-			if (UserInterface::isInterfaceForRole($this->name, $interfaceName)) $this->interfaces[] = $interfaceName;
-		}
-		
+			if (ObjectInterface::isInterfaceForRole($this->name, $interfaceName)) $this->interfaces[] = $interfaceName;
+		}		
 	}
 		
 	public static function getAllRoles(){
@@ -47,30 +54,30 @@ class Role {
 		return $rules;
 	}
 	
-	public function getInterfaces($srcConceptONE = null, $srcConcept = null){ // $srcConceptONE: true, false, null (=all), $srcConcept: <concept> or null (=all)
+	public function getInterfaces($srcConceptSESSION = null, $srcConcept = null){ // $srcConceptSESSION: true, false, null (=all), $srcConcept: <concept> or null (=all)
 		$interfaces = array();
 		
 		foreach($this->interfaces as $interfaceName){
-			$interface = new UserInterface($interfaceName);
+			$interface = new ObjectInterface($interfaceName);
 			
-			if(isset($srcConceptONE)){
-				switch ($srcConceptONE){
+			if(isset($srcConceptSESSION)){
+				switch ($srcConceptSESSION){
 					case true :
-						if($interface->srcConcept == 'ONE') $interfaces[$interfaceName] = $interface;
+						if($interface->srcConcept == 'SESSION') $interfaces[] = $interface;
 						break;
 					case false :
-						if($interface->srcConcept != 'ONE') $interfaces[$interfaceName] = $interface;
+						if($interface->srcConcept != 'SESSION') $interfaces[] = $interface;
 						break;
 				}
 			}else{
-				if(isset($srcConcept)){
+				if(isset($srcConcept)){ // TODO: moet dit niet het tgtConcept zijn??
 					if($interface->srcConcept == $srcConcept 
 						|| in_array($srcConcept, Concept::getSpecializations($interface->srcConcept)) ) {
 						
-						$interfaces[$interfaceName] = $interface;
+						$interfaces[] = $interface;
 					}
 				}else{
-					$interfaces[$interfaceName] = $interface;
+					$interfaces[] = $interface;
 				}
 			}
 		}

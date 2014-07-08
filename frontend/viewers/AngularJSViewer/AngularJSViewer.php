@@ -12,7 +12,9 @@ class AngularJSViewer extends Viewer {
 		$this->htmlTag = '<html ng-app="AmpersandApp">'; // denotates that it is a angular app
 		
 		$this->addHtmlHeaderLine('<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.13/angular.min.js"></script>');
+		$this->addHtmlHeaderLine('<script src="http://cdnjs.cloudflare.com/ajax/libs/restangular/1.4.0/restangular.js"></script>');
 		$this->addHtmlHeaderLine('<script type="text/javascript">var interface = "'.$interface->name.'"; var atom = "'.$atomId.'";</script>');
+		
 		
 		$this->interface = $interface;
 		$this->atomId = $atomId;

@@ -100,7 +100,7 @@ class Viewer {
 							
 							foreach($session->role->getInterfaces(true) as $interface) 
 		$return .= 			'<li id="'.Viewer::escapeHtmlAttrStr($interface->name).'">' // the interface attribute is there so we can style specific menu items with css
-								.'<a href="?interface='.Viewer::escapeHtmlAttrStr($interface->name).'&atom=1">'
+								.'<a href="?interface='.Viewer::escapeHtmlAttrStr($interface->name).'&atom=0">'
 								.'<span class="glyphicon glyphicon-list-alt"></span> '.htmlSpecialChars($interface->name).'</a>'
 							.'</li>';
 					

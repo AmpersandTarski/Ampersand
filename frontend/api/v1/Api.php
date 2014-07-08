@@ -157,43 +157,58 @@ class Api
 		}
     }
 	
-	/**
-	 * @url GET role/{roleNr}/interfaces
-	 * @url GET role/{roleNr}/interface/{interfaceName}/
-     */
-	public function getRoleInterfaces($roleNr, $interfaceName = NULL)
-	{
-		$role = new Role($roleNr);
-		
-		if(isset($interfaceName)){
-			if(!$role->isInterfaceForRole($interfaceName)) return false; // Interface is not for specified role
-			
-			return new UserInterface($interfaceName);
-		}else{
-			return $role->interfaces;
-		}
-	}
 	
 /**************************** INTERFACES ****************************/
 	
 	/**
      * @url GET interfaces/
 	 * @url GET interface/{interfaceName}/
-	 * @url GET interface/{interfaceName}/atom/{atom}/
+	 * @param string $interfaceName
+	 * @param int $roleId
      */
-    public function getInterfaces($interfaceName = NULL, $atom = "1")
+    public function getInterfaces($interfaceName = null, $roleId = null)
     {
-        if($interfaceName !== NULL){
-			$interface = new UserInterface($interfaceName);
-			return $interface->getInterface($atom);
-			
-		}else{
-			return UserInterface::getAllInterfaces(); // "Return list of all interfaces"
-			
+    	$session = Session::singleton();
+    	try{
+    		$session->setRole($roleId);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	
+    	if(!is_null($interfaceName)){
+	    	try{
+	    		$session->setInterface($interfaceName);
+	    	}catch(Exception $e){
+	    		throw new RestException(404, 'Interface \''.$interfaceName.'\' does not exists');
+	    	}
+    		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not for specified role: ' . $roleId );
+    		return $session->interface->getInterface();
+        }else{
+        	return $session->role->getInterfaces();  // "Return list of all interfaces"
 		}
-		
     }
-	
+    
+    /**
+     * @url GET interface/{interfaceName}/atom
+	 * @url GET interface/{interfaceName}/atom/{atom}/
+	 * @param string $interfaceName
+	 * @param string $atom
+	 * @param int $roleId
+     */
+    public function getInterfaceContent($interfaceName, $atom = null, $roleId = null)
+    {
+    	$session = Session::singleton();
+   		try{
+    		$session->setRole($roleId);
+    		$session->setInterface($interfaceName);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	
+    	if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+    	
+        return current($session->interface->getContent($atom));
+    }
 
 
 /**************************** POST ****************************/
@@ -203,12 +218,10 @@ class Api
     public function processCommands($commands, $role)
     {
 		$session = Session::singleton();
-		
 		$session->database->transaction(json_decode($commands), $role);
 		
 		return ErrorHandling::getAll();
 
-		
     }
 	
 	
