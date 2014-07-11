@@ -163,7 +163,7 @@ selectExpr fSpec i src trg expr
                 phpIndent (i+3)++showADL expr) (selectExpr fSpec i src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
           [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]-- this will occur quite often because of doSubsExpr
              -> sqlcomment i ("case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]"++phpIndent (i+3)++showADL expr) $
-                 "SELECT "++selectSelItem (sqlAtomQuote atomSrc,src)++", "++selectSelItem (sqlAtomQuote atomTgt, trg)
+                 "SELECT "++selectSelItem (sqlAtomQuote atomSrc, src)++", "++selectSelItem (sqlAtomQuote atomTgt, trg)
           (e@(EMp1 atom _):f:fx)
              -> let expr' = foldr1 (.:.) (f:fx)
                     src' = sqlExprSrc fSpec e
@@ -198,16 +198,23 @@ WHERE ECps0.`A`<>ECps2.`A
 -}
           es -> let selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTgt
                      where
-                      mainSrc = "ECps"++show n++"."++selectSelItem (sqlSrc,src)
+                      mainSrc = "ECps"++show n++"."++selectSelItem (sqlSrc, src)
                                 where (n,_,sqlSrc,_) = head fenceExprs
-                      mainTgt = "ECps"++show n++"."++selectSelItem (sqlTgt,trg) 
+                      mainTgt = "ECps"++show n++"."++selectSelItem (sqlTgt, trg) 
                                 where (n,_,_,sqlTgt) = last fenceExprs
                     fromClause   = "FROM " ++ intercalate (',':phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
                     whereClause
                             = "WHERE " ++ intercalate (phpIndent i++"  AND ")
-                              [ "ECps"++show n++"."++lSQLtrg++(if m==n+1 then "=" else "<>")++"ECps"++show m++"."++rSQLsrc
-                              | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
-                              ]
+                              ( [ "ECps"++show n++"."++lSQLtrg++(if m==n+1 then "=" else "<>")++"ECps"++show m++"."++rSQLsrc
+                                | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
+                                ] ++
+                                [ mainSrc++" IS NOT NULL  AND  "++mainTgt++" IS NOT NULL" ]
+                              )
+                     where
+                      mainSrc = "ECps"++show n++"."++sqlSrc
+                                where (n,_,sqlSrc,_) = head fenceExprs
+                      mainTgt = "ECps"++show n++"."++sqlTgt
+                                where (n,_,_,sqlTgt) = last fenceExprs
                     -- fenceExprs lists the expressions and their SQL-fragments.
                     -- In the poles-and-fences metaphor, they serve as the fences between the poles.
                     fenceExprs = -- the first part introduces a 'pole' that consists of the source concept.
@@ -266,7 +273,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                 ( case c of
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
                                     PlainConcept{} -> let cAtt = sqlAttConcept fSpec c in
-                                                      "  SELECT "++selectSelItem (cAtt,src)++", "++selectSelItem (cAtt,trg)++phpIndent (i+2)++"FROM "++sqlConcept fSpec c++phpIndent (i+2)++"WHERE "++cAtt++" IS NOT NULL"
+                                                      "  SELECT "++selectSelItem (cAtt, src)++", "++selectSelItem (cAtt, trg)++phpIndent (i+2)++"FROM "++sqlConcept fSpec c++phpIndent (i+2)++"WHERE "++cAtt++" IS NOT NULL"
                       -- obsolete:  PlainConcept{} -> selectExprRelation fSpec i src trg (Isn c)
                                 )
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
@@ -274,7 +281,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                 ( case inter of -- select the population of the most specific concept, which is the source.
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
                                     PlainConcept{} -> let cAtt = sqlAttConcept fSpec inter in
-                                                      "  SELECT "++selectSelItem (cAtt,src)++", "++selectSelItem (cAtt,trg)++phpIndent (i+2)++"FROM "++sqlConcept fSpec inter++phpIndent (i+2)++"WHERE "++cAtt++" IS NOT NULL"
+                                                      "  SELECT "++selectSelItem (cAtt, src)++", "++selectSelItem (cAtt, trg)++phpIndent (i+2)++"FROM "++sqlConcept fSpec inter++phpIndent (i+2)++"WHERE "++cAtt++" IS NOT NULL"
                                 )
     (EDcD d)             -> selectExprRelation fSpec i src trg d
 
@@ -385,7 +392,7 @@ Based on this derivation:
               | target l == ONE = fatal 332 ("ONE is unexpected as target of "++showADL l)
               | target r == ONE = fatal 333 ("ONE is unexpected as target of "++showADL r)
               | otherwise
-               =              "SELECT " ++ srcAlias++"."++selectSelItem (mainSrc,src)++", " ++tgtAlias++"."++selectSelItem (mainTgt,trg)++
+               =              "SELECT " ++ srcAlias++"."++selectSelItem (mainSrc, src)++", " ++tgtAlias++"."++selectSelItem (mainTgt, trg)++
                  phpIndent i++"FROM " ++ sqlConcept fSpec (target l) ++ " AS "++srcAlias++", " ++ sqlConcept fSpec (target r) ++ " AS "++tgtAlias++
                  phpIndent i++"WHERE NOT EXISTS"++
                  phpIndent i++"      ( SELECT *"++
@@ -403,9 +410,9 @@ Based on this derivation:
              srcAlias = noCollide' relNames "RResLeft"
              tgtAlias = noCollide' relNames "RResRight"
              lsrc = sqlExprSrc fSpec l
-             ltrg = sqlExprTgt fSpec l  -- shouldn't this be a noCollide?
+             ltrg = sqlExprTgt fSpec l  -- shouldn't this be a noCollide? Apparently not. Introducing noCollide here has produced ticket #389
              rsrc = sqlExprSrc fSpec r
-             rtrg = sqlExprTgt fSpec r  -- shouldn't this be a noCollide?
+             rtrg = sqlExprTgt fSpec r  -- shouldn't this be a noCollide? (idem)
              lCode = selectExprInFROM fSpec (i+13) lsrc ltrg l
              rCode = selectExprInFROM fSpec (i+21) rsrc rtrg r
          in sqlcomment i ("case: ERrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")")
