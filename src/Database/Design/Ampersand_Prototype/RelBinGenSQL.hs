@@ -179,12 +179,12 @@ selectExpr fSpec i src trg expr
                                 mid' = noCollide' [src'] (sqlExprTgt fSpec e)
                                 mid2'= sqlExprSrc fSpec f
                                 trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
-                            in sqlcomment i ("case:  (e:ERel (EDcV _) _:f:fx)"++phpIndent (i+3)++showADL e) $
+                            in sqlcomment i ("case:  (e:ERel (EDcV _) _:f:fx)"++phpIndent (i+3)++showADL expr) $
                                    selectGeneric i ("fst",src',src) 
                                                    ("snd",trg',trg)
                                                    (  selectExprInFROM fSpec i src'  mid' e++" AS fst,"++phpIndent (i+5)++
-                                                      selectExprInFROM fSpec i mid2' trg' f++" AS snd")
-                                                   ("fst."++src'++" IS NOT NULL")
+                                                      selectExprInFROM fSpec i mid2' trg' expr'++" AS snd")
+                                                   ("TRUE") -- was: "fst."++src'++" IS NOT NULL  AND  fst."++mid'++" IS NOT NULL")
           [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
           [e]-> selectExpr fSpec i src trg e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
 {-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
@@ -434,6 +434,7 @@ Based on this derivation:
 -- | selectExprInFROM is meant for SELECT expressions inside a FROM clause.
 --   It generates a simple table reference for primitive expressions (EDcD, EDcI, and EDcV) and a bracketed SQL expression in more complicated situations.
 --   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
+--   Note that the resulting pairs do not contain any NULL values.
 selectExprInFROM :: Fspc
                -> Int         -- ^ indentation
                -> String      -- ^ source name (preferably quoted)
@@ -449,18 +450,26 @@ selectExprInFROM fSpec i src trg expr
         EFlp e -> selectExprInFROM fSpec i trg src e
         EBrk e -> selectExprInFROM fSpec i src trg e
         EDcD{} -> if unquote (sqlExprSrc fSpec expr) == unquote src && unquote (sqlExprTgt fSpec expr) == unquote trg
-                  then  declName
+                  then ( if not mayContainNulls then declName else
+                         "( SELECT "++selectSelItem (sqlExprSrc fSpec expr, src)++", "++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
+                         "  FROM "++declName++" WHERE "++src++" IS NOT NULL  AND  "++trg++" IS NOT NULL)"
+                       )
                   else "( SELECT "++selectSelItem (sqlExprSrc fSpec expr, src)++", "++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
-                       "  FROM "++declName++" WHERE True )"
+                       "  FROM "++declName++
+                       if mayContainNulls
+                       then " WHERE "++src++" IS NOT NULL  AND  "++trg++" IS NOT NULL)"
+                       else " WHERE TRUE)"
                   where
-                   declName = case sqlRelPlugs fSpec expr of
-                                []           -> fatal 371 ("No plug found for expression "++showADL expr)
-                                [(plug,_,_)] -> quote (name plug)
-                                [(plug,s,t),(plug',s',t')]  --This can be the case for a Prop -relation.
-                                             -> if plug == plug' && s == t' && t == s'
-                                                then quote (name plug)
-                                                else fatal 390 ("Multiple plugs found for expression "++showADL expr)
-                                _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
+                   (declName,mayContainNulls)
+                     = case sqlRelPlugs fSpec expr of
+                         []           -> fatal 371 ("No plug found for expression "++showADL expr)
+                         [(plug@TblSQL{},_,_)] -> (quote (name plug), True)
+                         [(plug,_,_)]          -> (quote (name plug), False )
+                         [(plug,s,t),(plug',s',t')]  --This can be the case for a Prop -relation.
+                                      -> if plug == plug' && s == t' && t == s'
+                                         then (quote (name plug), True)
+                                         else fatal 390 ("Multiple plugs found for expression "++showADL expr)
+                         _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
         EDcI c -> if cptAlias==""
                   then cpt
