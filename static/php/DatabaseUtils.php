@@ -4,6 +4,18 @@ require __DIR__.'/../dbSettings.php';
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
 // by php/Database.php, we would need '../dbSettings.php'.
 
+global $DB_host;
+global $DB_user;
+global $DB_pass;
+global $dbName;
+  
+$DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass,$dbName);
+
+// Check connection
+	if (mysqli_connect_errno()) {
+	die("Failed to connect to MySQL (username/password are probably incorrect): " . mysqli_connect_error());
+}
+
 // let PHP also report undefined variable references
 function terminate_missing_variables($errno, $errstr, $errfile, $errline)
 { if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
@@ -83,22 +95,11 @@ function DB_doquer($quer) {
 
 function DB_doquerErr($quer, &$error) {
   global $_SESSION; // when using $_SESSION, we get a nonsense warning if not declared global  
-  global $dbName;
   global $DB_link;
   global $DB_errs;
 
-  global $DB_host;
-  global $DB_user;
-  global $DB_pass;
-
   //Replace the special atom value _SESSION by the current sessionAtom
   $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
-  
-  $DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass,$dbName);
-  // Check connection
-  if (mysqli_connect_errno()) {
-    die("Failed to connect to MySQL (username/password are probably incorrect): " . mysqli_connect_error());
-  }
           
   $result=mysqli_query($DB_link,$quer);
   if(!$result){
