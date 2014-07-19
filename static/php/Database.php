@@ -170,7 +170,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
       emitLog($query);
       queryDb($query);
     }
-    $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
+    $query = "INSERT IGNORE INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
     emitLog($query);
     queryDb($query);
   }
