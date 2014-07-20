@@ -375,10 +375,26 @@ Until the new normalizer works, we will have to work with this one. So I have in
                eList  = rs++exprIsc2list l++exprIsc2list r
      nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl/=dnf    = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl/=dnf    = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
-     nM _      (EUni (ECpl x,ELrs (z,y))) _              = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
-     nM _      (EUni (ELrs (z,y),ECpl x)) _              = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
-     nM _      (EUni (ERrs (x,z),ECpl y)) _              = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
-     nM _      (EUni (ECpl y,ERrs (x,z))) _              = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+     nM posCpl (EUni (ECpl x,r@(ELrs (z,y)))) _          = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+                                                           then (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+                                                           else (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                                              where (t,steps, equ')  = nM (not posCpl) x []
+                                                                    (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EUni (l@(ELrs (z,y)),ECpl x)) _          = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+                                                           then (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+                                                           else (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                                              where (t,steps, equ')  = nM (not posCpl) x []
+                                                                    (f,steps',equ'') = nM posCpl l []
+     nM posCpl (EUni (l@(ERrs (x,z)),ECpl y)) _          = if sign y==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+                                                           then (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+                                                           else (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                                              where (t,steps, equ')  = nM (not posCpl) y []
+                                                                    (f,steps',equ'') = nM posCpl l []
+     nM posCpl (EUni (ECpl y,r@(ERrs (x,z)))) _          = if sign y==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+                                                           then (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+                                                           else (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                                              where (t,steps, equ')  = nM (not posCpl) y []
+                                                                    (f,steps',equ'') = nM posCpl r []
      nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
          | t/=l || f/=r
