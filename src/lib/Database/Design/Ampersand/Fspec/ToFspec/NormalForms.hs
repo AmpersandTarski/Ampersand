@@ -162,7 +162,12 @@ where
             eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
             dnf   -- If dnf==True, the result is in disjunctive normal form, otherwise in conjunctive normal form
             simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
-            expr = (res,ss,equ)
+            expr = if sign expr==sign res then (res,ss,equ) else
+                   fatal 166 ("Violation of sign expr==sign res in the normalizer\n  expr: sign( "++showADL expr++" ) == "++showSign res++"\n  res:  sign( "++showADL res++" ) == "++showSign res)
+{-SJ 20140720: You might wonder why we test sign expr==sign res, which was introduced as a result of ticket #409 (the residu bug)
+It turns out that many rewrite rules in the normalizer change the type of an expression; an aspect I have been overlooking all the time.
+Until the new normalizer works, we will have to work with this one. So I have inserted this test to ensure that the type remains constant during normalization.
+-}
     where
      (res,ss,equ) = nM True expr []
      nM :: Bool -> Expression -> [Expression] -> (Expression,[String],String)
@@ -215,8 +220,16 @@ where
      nM _      x _                | simpl = (x,[],"<=>")
 -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
      nM _      (EEqu (l,r)) _                            = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
-     nM _      (EImp (x,ELrs (z,y))) _                   = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
-     nM _      (EImp (y,ERrs (x,z))) _                   = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+     nM posCpl (EImp (x,r@(ELrs (z,y)))) _               = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+                                                           then (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+                                                           else (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                                              where (t,steps, equ')  = nM (not posCpl) x []
+                                                                    (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EImp (y,r@(ERrs (x,z)))) _               = if sign y==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+                                                           then (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+                                                           else (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                                              where (t,steps, equ')  = nM (not posCpl) y []
+                                                                    (f,steps',equ'') = nM posCpl r []
      nM _      (EImp (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
 --   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
 --   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
@@ -255,17 +268,17 @@ where
      nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
      nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
      nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
-     nM posCpl (ECps (l,r))           rs                   = (t .:. f, steps++steps', fEqu [equ',equ''])
-                                                               where (t,steps, equ')  = nM posCpl l []
-                                                                     (f,steps',equ'') = nM posCpl r (l:rs)
+     nM posCpl (ECps (l,r))           rs                 = (t .:. f, steps++steps', fEqu [equ',equ''])
+                                                             where (t,steps, equ')  = nM posCpl l []
+                                                                   (f,steps',equ'') = nM posCpl r (l:rs)
      nM _      x@(EEps i sgn) _ | source sgn==i && i==target sgn = (EDcI i, ["source and target are equal to "++name i++", so "++showADL x++"="++showADL (EDcI i)], "<=>")
-     nM _      (ELrs (ECps (x,y),z)) _ | not eq && y==z    = (x,     ["(x;y)/y |- x"], "==>")
+     nM _      (ELrs (ECps (x,y),z)) _ | not eq && y==z  = (x,     ["(x;y)/y |- x"], "==>")
      nM _      (ELrs (ECps (x,y),z)) _ | not eq && flp x==z= (flp y, [case (x, y) of
                                                                            (EFlp _, EFlp _) -> "(SJ) (x~;y~)/x |- y"
                                                                            (     _, EFlp _) -> "(SJ) (x;y~)/x~ |- y"
                                                                            (EFlp _,      _) -> "(SJ) (x~;y)/x |- y~"
                                                                            (     _,      _) -> "(SJ) (x;y)/x~ |- y~"], "==>")
-     nM _      (ELrs (ELrs (x,z),y)) _                     = (ELrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>")
+     nM _      (ELrs (ELrs (x,z),y)) _                     = (ELrs (x,ECps (y,z)), ["Jipsen&Tsinakis: x/yz = (x/z)/y"], "<=>") -- note: sign (x/yz) == sign ((x/z)/y)
      nM posCpl (ELrs (l,r)) _                              = (t ./. f, steps++steps', fEqu [equ',equ''])
                                                              where (t,steps, equ')  = nM posCpl l []
                                                                    (f,steps',equ'') = nM (not posCpl) r []
@@ -360,8 +373,12 @@ where
                absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
                absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
                eList  = rs++exprIsc2list l++exprIsc2list r
-     nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl/=dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
-     nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl/=dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl/=dnf    = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl/=dnf    = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM _      (EUni (ECpl x,ELrs (z,y))) _              = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+     nM _      (EUni (ELrs (z,y),ECpl x)) _              = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+     nM _      (EUni (ERrs (x,z),ECpl y)) _              = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+     nM _      (EUni (ECpl y,ERrs (x,z))) _              = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
      nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
          | t/=l || f/=r
