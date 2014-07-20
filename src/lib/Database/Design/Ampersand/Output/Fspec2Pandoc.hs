@@ -30,7 +30,7 @@ import Data.List (nub)
 --also called the theme. Functionalities defined on the theme by one or more plugs are
 --described together with the rules that apply to the dataset. Rules not described by
 --the dataset are described in the last section of chapter 2.
---The following chapters each present a INTERFACE
+--The following chapters each present one INTERFACE
 --The specification end with a glossary.
 
 
