@@ -239,13 +239,12 @@ generateRoles fSpec =
     (indent 4 
       (blockParenthesize  "(" ")" "," 
          [ [ "array ( 'name' => "++showPhpStr role
-           , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rulez) ++")"
+           , "      , 'ruleNames' => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
            , "      )" ]
-         | (role,rulez) <- rulesPerRole ]
+         | role <- fRoles fSpec ]
     ) )
-        
- where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- fRoles fSpec ]
-       
+  where maintainedByRole role (role',_) = role == role' 
+
 generateViews :: Fspc -> Options -> [String]
 generateViews fSpec _ =
   [ "//$allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView())."
