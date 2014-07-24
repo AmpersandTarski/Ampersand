@@ -69,53 +69,52 @@ chpConceptualAnalysis lev fSpec flags = (
                (True,English) -> para ("Figure " <> xRefReference flags (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
                                <>((plain . showImage flags . pictOfPat) pat)
                _              -> mempty
-        ) <> fromList
+        ) <> 
     (    
         -- now provide the text of this pattern.
         (case fsLang fSpec of
-           Dutch   -> [Para [Str "De definities van concepten zijn te vinden in de index."]
-                      ]++
-                      toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
-                      ++
-                      [Para [Str "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."]]
-           English -> [Para [Str "The definitions of concepts can be found in the glossary."]
-                      ]++
-                      toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
-                      ++
-                      [Para [Str "This section itemizes the declared relations with properties and purpose."]])
-     ++ [DefinitionList blocks | let blocks = map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat], not(null blocks)]
-     ++ (case fsLang fSpec of
-           Dutch   -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
-                      ++
-                      [Plain [Str "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."]]
-           English -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
-                      ++
-                      [Plain [Str "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."]])
-     ++ [DefinitionList blocks | let blocks = map caRule (invariants pat `isc` udefrules pat), not(null blocks)]
+           Dutch   -> para "De definities van concepten zijn te vinden in de index."
+                   <> (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
+                   <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
+           English -> para "The definitions of concepts can be found in the glossary."
+                   <> (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
+                   <> para "This section itemizes the declared relations with properties and purpose."
+        )
+     <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
+     <> (case fsLang fSpec of
+           Dutch   -> (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
+                   <> plain "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
+           English -> (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
+                   <> plain "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."
+        )
+     <> fromList [DefinitionList blocks | let blocks = map caRule (invariants pat `isc` udefrules pat), not(null blocks)]
     )
-  caRelation :: Declaration -> ([Inline], [[Block]])
+  caRelation :: Declaration -> (Inlines, [Blocks])
   caRelation d 
         = let purp = toList (purposes2Blocks flags [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
-          in ([]
+          in (mempty
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
-                ( if null purp
-                  then [ Plain$[ Str ("De volgende "++nladjs d++" is gedefinieerd ")      | fsLang fSpec==Dutch]
-                            ++ [ Str ("The following "++ukadjs d++" has been defined ") | fsLang fSpec==English] ]
-                  else purp++
-                       [ Plain$[ Str ("Voor dat doel is de volgende "++nladjs d++" gedefinieerd ")      | fsLang fSpec==Dutch]
-                            ++ [ Str ("For this purpose, the following "++ukadjs d++" has been defined ") | fsLang fSpec==English] ] )
+                ( case ( null purp, fsLang fSpec) of
+                   (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
+                   (True , English) -> plain ("The following " <> str(ukadjs d) <> " has been defined ")
+                   (False, Dutch)   -> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " is gedefinieerd ")
+                   (False, English) -> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
+                )
                   -- Then the declaration of the relation with its properties and its intended meaning 
-               ++ pandocEqnArray 
+               <> fromList ( pandocEqnArray 
                      [ ( texOnly_Id(name d)
                        , ":"
-                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
-                       )  ]
-               ++ [Plain$[Str $ let langs=commaNL "en" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=Dutch] in
-                                if null langs then "(Geen betekenis gespecificeerd)" else "(Geen betekenis gespecificeerd, maar wel in het "++langs++")"| fsLang fSpec==Dutch]++
-                         [Str $ let langs=commaEng "and" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=Dutch] in
-                                if null langs then "(No meaning has been specified)" else "(No meaning has been specified, except in "++langs++")"| fsLang fSpec==English]
-                  | null (meaning2Blocks (fsLang fSpec) d)]
-               ++ meaning2Blocks (fsLang fSpec) d
+                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d)) ++symDefLabel d -- TODO: HJO,20140724 Dit is niet de plaats van een label, want de relatie kan in meerdere patterns voorkomen. Maar wat is dan wél de juiste plaats? 
+                       )  ])
+               <> case meaning2Blocks (fsLang fSpec) d of
+                    [] -> case fsLang fSpec of
+                           Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
+                                       []    -> plain "(Geen betekenis gespecificeerd)"
+                                       langs -> plain (str ("(Geen betekenis gespecificeerd, maar wel in het "++langs++")"))
+                           English -> case commaEng "and" [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
+                                       []    -> plain "(No meaning has been specified)"
+                                       langs -> plain (str ("(No meaning has been specified, except in "++langs++")"))
+                    ms -> fromList ms                     
               ])
   ukadjs d  = case [Uni,Tot]>-multiplicities d of
                [] -> commaEng "and" (map ukadj (multiplicities d>-[Uni,Tot]))++" function"
