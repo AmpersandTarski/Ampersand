@@ -1,6 +1,12 @@
 body {
 	padding-top: 0px;
 }
+input {
+	padding: 0px;	
+}
+input.ng-invalid.ng-dirty {
+    border:2px solid red;
+  }
 
 .mainview {
 	padding: 100px 15px 0px 15px;
@@ -58,4 +64,17 @@ svg {
 .panel .list-group-item {
 	padding-top : 5px;
 	padding-bottom : 5px;
+}
+
+.glyphicon-remove {
+	color:red; 
+	cursor:pointer;
+}
+.glyphicon-ok {
+	color:green; 
+	cursor:pointer;
+}
+.glyphicon-plus {
+	color:green; 
+	cursor:pointer;
 }

@@ -119,7 +119,7 @@ class Api
 /**************************** RULES AND VIOLATIONS ****************************/
 	
 	/**
-     * @url GET rules/
+     * @url GET rule/
 	 * @url GET rule/{ruleName}/
      */
     public function getRules($ruleName = NULL)
@@ -144,7 +144,7 @@ class Api
 /**************************** ROLES ****************************/
 	
 	/**
-     * @url GET roles/
+     * @url GET role/
 	 * @url GET role/{roleNr}/
      */
     public function getRoles($roleNr = NULL)
@@ -161,7 +161,7 @@ class Api
 /**************************** INTERFACES ****************************/
 	
 	/**
-     * @url GET interfaces/
+     * @url GET interface/
 	 * @url GET interface/{interfaceName}/
 	 * @param string $interfaceName
 	 * @param int $roleId
@@ -189,8 +189,8 @@ class Api
     }
     
     /**
-     * @url GET interface/{interfaceName}/atom
-	 * @url GET interface/{interfaceName}/atom/{atom}/
+     * @url GET interface/{interfaceName}/atoms
+	 * @url GET interface/{interfaceName}/atoms/{atom}/
 	 * @param string $interfaceName
 	 * @param string $atom
 	 * @param int $roleId
@@ -209,9 +209,32 @@ class Api
     	
         return current($session->interface->getContent($atom));
     }
+    
+	/**
+     * @url POST interface/{interfaceName}/atoms/{atom}/
+	 * @param string $interfaceName
+	 * @param string $atom
+	 * @param int $roleId
+     */
+    public function putAtom($interfaceName, $atom = null, $roleId = null)
+    {
+    	$session = Session::singleton();
+   		try{
+    		$session->setRole($roleId);
+    		$session->setInterface($interfaceName);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	
+    	if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+    	
+        return current($session->interface->getContent($atom));
+    }
+    
+    
 
 
-/**************************** POST ****************************/
+/**************************** OLD TRANSACTION ****************************/
 	/**
      * @url POST transaction/
      */

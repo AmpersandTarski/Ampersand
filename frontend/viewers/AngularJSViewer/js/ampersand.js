@@ -5,7 +5,7 @@ AmpersandApp.config(function($routeProvider) {
 		.when('/',
 			{
 				controller: 'InterfaceObjectController',
-				templateUrl: 'http://localhost/CB/viewers/AngularJSViewer/templates/DefaultInterfaceView.html'
+				templateUrl: 'viewers/AngularJSViewer/templates/DefaultInterfaceView.html'
 			})
 		.otherwise({redirectTo: '/'});
 });
@@ -15,22 +15,30 @@ AmpersandApp.controller('InterfaceObjectController', ['$scope', 'InterfaceObject
 }]);
 
 AmpersandApp.controller('InterfaceObjectContentController', ['$scope', 'InterfaceObjectContentFactory', function ($scope, InterfaceObjectContentFactory) {
-	$scope.atom = InterfaceObjectContentFactory.get();
+	$scope.atom = InterfaceObjectContentFactory.get({atom : atom}, function(){
+		// function when GET request is succeeded.
+	});
+	
+	$scope.save = function(){
+		$scope.atom.$save({atom : atom});	// .... save data to server
+	}
+	
 }]);
 
 AmpersandApp.factory('InterfaceObjectFactory', ['$resource', function($resource){
-	var url = 'http://localhost/CB/api/v1/interface/' + interface + '.json';
+	var url = 'api/v1/interface/:interface.json';
 	
-	return $resource(url, {}, {
+	return $resource(url, {interface : interface}, {
 		get: {method:'GET'}
 	});
 }]);
 
 AmpersandApp.factory('InterfaceObjectContentFactory', ['$resource', function($resource){
-	var url = 'http://localhost/CB/api/v1/interface/' + interface + '/atom/' + atom + '.json';
+	var url = 'api/v1/interface/:interface/atoms/:atom.json';
 	
-	return $resource(url, {}, {
-		get: {method:'GET'}
+	return $resource(url, {interface : interface}, {
+		get: {method:'GET'},
+		save: {method:'POST'}
 	});
 }]);
 

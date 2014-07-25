@@ -12,7 +12,6 @@ class AngularJSViewer extends Viewer {
 		$this->htmlTag = '<html ng-app="AmpersandApp">'; // denotates that it is a angular app
 		
 		$this->addHtmlHeaderLine('<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.13/angular.min.js"></script>');
-		$this->addHtmlHeaderLine('<script src="http://cdnjs.cloudflare.com/ajax/libs/restangular/1.4.0/restangular.js"></script>');
 		$this->addHtmlHeaderLine('<script type="text/javascript">var interface = "'.$interface->name.'"; var atom = "'.$atomId.'";</script>');
 		
 		
@@ -32,7 +31,8 @@ class AngularJSViewer extends Viewer {
 		$this->addHtmlBodyLine('</div>');
 			
 		$this->addHtmlBodyLine('<script src="extensions/statusColors/js/statusColors.js"></script>');
-		$this->addHtmlBodyLine('<script>$(\'.tooltip-to-be-initialized\').toggleClass(\'tooltip-to-be-initialized\').tooltip(); $(document).on("click",".delLink", function() { $( this ).closest(\'tr\').remove(); });</script>'); // TODO: verplaatsen naar Angular??
+		$this->addHtmlBodyLine('<script>$(\'.tooltip-to-be-initialized\').toggleClass(\'tooltip-to-be-initialized\').tooltip();</script>'); // TODO: verplaatsen naar Angular??
+		
 	}
 	
 	protected function getView(){

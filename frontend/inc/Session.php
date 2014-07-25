@@ -139,6 +139,7 @@ class Session {
 			$this->viewer = new $viewerClass($this->interface, $this->atom);
 		}catch (Exception $e){
 			ErrorHandling::addError($e->getMessage);
+			throw $e;
 		}
 		return $viewerName;
 	}
