@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC  -XScopedTypeVariables #-}
 module Database.Design.Ampersand.Input.Parsing ( parseContext
                                         , parseADL1pExpr
-                                        , ParseError)
+                                        , ParseError
+                                        , runParser)
 where
 
 import Control.Monad

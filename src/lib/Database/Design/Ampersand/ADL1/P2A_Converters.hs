@@ -1,6 +1,6 @@
 ﻿{-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
 {-# LANGUAGE RelaxedPolyRec #-}
-module Database.Design.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..) )
+module Database.Design.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..), pCpt2aCpt )
 where
 import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
@@ -31,6 +31,12 @@ instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
 instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
+
+pCpt2aCpt :: P_Concept -> A_Concept
+pCpt2aCpt pc
+    = case pc of
+        PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
+        P_Singleton -> ONE   
 
 pCtx2aCtx :: P_Context -> Guarded A_Context
 pCtx2aCtx = checkUnique udefrules  -- Rules must have a unique name within the context
@@ -194,12 +200,6 @@ pCtx2aCtx'
     castConcept x
      = PlainConcept {cptnm = x}
 
-    pCpt2aCpt :: P_Concept -> A_Concept
-    pCpt2aCpt pc
-        = case pc of
-            PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
-            P_Singleton -> ONE   
-
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }
@@ -307,8 +307,8 @@ pCtx2aCtx'
                                    PVee _ -> (False,False)
                                    _ -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
-         Pequ _ a b -> binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
-         Pimp _ a b -> binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
+         PEqu _ a b -> binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
+         PImp _ a b -> binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
          PIsc _ a b -> binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PUni _ a b -> binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PDif _ a b -> binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)

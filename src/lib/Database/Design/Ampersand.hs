@@ -55,7 +55,7 @@ module Database.Design.Ampersand
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
-   , cfProof,dfProof,nfProof,normPA
+   , cfProof,dfProof,normPA
    , lookupCpt
    , showPrf
    , notCpl, isCpl, isPos, isNeg, foldrMapExpression

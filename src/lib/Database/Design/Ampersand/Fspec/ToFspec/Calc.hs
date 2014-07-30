@@ -22,7 +22,7 @@ where
    import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import Database.Design.Ampersand.Fspec.ShowECA (showECA)
-   import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,proofPA)
+   import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,simplify,normPA,proofPA)
    import Database.Design.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc.Builder
    import Prelude hiding (head)
@@ -135,7 +135,7 @@ where
                    bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                       <>linebreak<>"derivation:"
                                      )<>
-                                (showProof (para.str.showADL).nfProof showADL) d<>  -- nfProof produces its result in disjunctive normal form
+                                (showProof (para.str.showADL).dfProof) d<>  -- Produces its result in disjunctive normal form
                                 para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF) d)
                               | verboseP flags, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
                  | ecarule <- ecaRs]
@@ -229,10 +229,10 @@ where
                                   | r<-[dc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
-                 prf = cfProof showADL e
+                 prf = cfProof e
                  (exx',_,_) = last prf
-            --     conjProof = showProof (para.str.showADL) . cfProof showADL
-                 disjProof = showProof (para.str.showADL) . dfProof showADL
+            --     conjProof = showProof (para.str.showADL) . cfProof
+                 disjProof = showProof (para.str.showADL) . dfProof
 --                 showPr    = showProof (para.str.showADL)  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
 -}
@@ -514,7 +514,7 @@ Rewrite rules:
                                )<>
                           para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
                                 "This means to negate the result (notClau = notCpl clause'): ")<>
-                          (showProof (para.str.showADL). cfProof showADL) notClau<>
+                          (showProof (para.str.showADL). cfProof) notClau<>
                           para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
                                 ( if viols==viols'
                                   then "This expression is in disjunctive normal form as well."
@@ -522,7 +522,7 @@ Rewrite rules:
                           ( if isTrue clause'
                             then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
                                        <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
-                                 (showProof (para.str.showADL). cfProof showADL) (expr .|-. clause')
+                                 (showProof (para.str.showADL). cfProof) (expr .|-. clause')
                             else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
                                        "We must compute a reaction to compensate for violations..."<>linebreak<>
                                        "That would be to reinsert violations that originate from "<>
@@ -530,7 +530,7 @@ Rewrite rules:
                                          then str (showADL (conjNF negs))<>" into "<> str (showADL (disjNF poss))<>"."
                                          else str (showADL (disjNF poss))<>" into "<> str (showADL (conjNF negs))<>"."
                                        )<>linebreak<>"deltFr: ")<>
-                                 (showProof (para.str.showADL). dfProof showADL) deltFr<>
+                                 (showProof (para.str.showADL). dfProof) deltFr<>
                                  ( let pr=proofPA act in
                                    if length pr>1
                                    then para "Now let us remove redundancy from the ECA action:\n     "<>
@@ -545,8 +545,8 @@ Rewrite rules:
                                                    "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
                                                    "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
                                    else if ev==Ins
-                                   then (showProof (para.str.showADL). cfProof showADL) (viols'.\/.toExpr)<>linebreak
-                                   else (showProof (para.str.showADL). dfProof showADL) (notCpl viols./\.toExpr)<>linebreak
+                                   then (showProof (para.str.showADL). cfProof) (viols'.\/.toExpr)<>linebreak
+                                   else (showProof (para.str.showADL). dfProof) (notCpl viols./\.toExpr)<>linebreak
                                  ) -}
                           ))
                         | Clauses ts rule<-quadClauses, conj<-ts                  -- get conjuncts from the clauses
