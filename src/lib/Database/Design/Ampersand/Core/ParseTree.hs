@@ -203,10 +203,24 @@ where
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | PTrel Origin String P_Sign             -- ^ type cast expression 
       deriving Show
+
+{- For whenever it may turn out to be useful
+   instance Eq TermPrim where
+     PI _           == PI _            = True
+     Pid _ (Just c) == Pid _ (Just c') = p_cptnm c==p_cptnm c'
+     Pid _ Nothing  == Pid _ Nothing   = True
+     Patm _ x c     == Patm _ x' c'    = x==x' && p_cptnm c==p_cptnm c'
+     PVee _         == PVee _          = True
+     Pfull _ c d    == Pfull _ c' d'   = p_cptnm c==p_cptnm c' && d==d'
+     Prel _ x       == Prel _ x'       = x==x'
+     PTrel _ x s    == PTrel _ x' s'   = x==x' && pSrc s==pSrc s' && pTgt s==pTgt s'
+     _ == _ = False
+-}
+
    data Term a
       = Prim a
-      | Pequ Origin (Term a) (Term a)  -- ^ equivalence             =
-      | Pimp Origin (Term a) (Term a)  -- ^ implication             |-
+      | PEqu Origin (Term a) (Term a)  -- ^ equivalence             =
+      | PImp Origin (Term a) (Term a)  -- ^ implication             |-
       | PIsc Origin (Term a) (Term a)  -- ^ intersection            /\
       | PUni Origin (Term a) (Term a)  -- ^ union                   \/
       | PDif Origin (Term a) (Term a)  -- ^ difference              -
@@ -228,8 +242,8 @@ where
     traverse f' x
      = case x of
        Prim a -> Prim <$> f' a
-       Pequ o a b -> Pequ o <$> (f a) <*> (f b)
-       Pimp o a b -> Pimp o <$> (f a) <*> (f b)
+       PEqu o a b -> PEqu o <$> (f a) <*> (f b)
+       PImp o a b -> PImp o <$> (f a) <*> (f b)
        PIsc o a b -> PIsc o <$> (f a) <*> (f b)
        PUni o a b -> PUni o <$> (f a) <*> (f b)
        PDif o a b -> PDif o <$> (f a) <*> (f b)
@@ -285,8 +299,8 @@ where
    instance Traced a => Traced (Term a) where
     origin e = case e of
       Prim a         -> origin a
-      Pequ orig _ _  -> orig
-      Pimp orig _ _  -> orig
+      PEqu orig _ _  -> orig
+      PImp orig _ _  -> orig
       PIsc orig _ _  -> orig
       PUni orig _ _  -> orig
       PDif orig _ _  -> orig
@@ -562,9 +576,9 @@ where
    instance Traced P_Gen where
     origin = gen_fp
 
-   data Lang = Dutch | English deriving (Show, Eq)
+   data Lang = Dutch | English deriving (Show, Eq, Ord)
 
-   data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
+   data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
    type Props = [Prop]
 

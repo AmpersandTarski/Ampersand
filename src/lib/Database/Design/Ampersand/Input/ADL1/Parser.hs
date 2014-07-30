@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -fno-enable-rewrite-rules #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 module Database.Design.Ampersand.Input.ADL1.Parser 
-   (pContext, pPopulations,pTerm, keywordstxt, keywordsops, specialchars, opchars) where
+   (pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
    import Database.Design.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
@@ -612,15 +612,15 @@ In practice, we have it a little different.
    pRule  =  fEequ <$> pTrm1  <*>  pKey_pos "="   <*>  pTerm   <|>
              fEimp <$> pTrm1  <*>  pKey_pos "|-"  <*>  pTerm   <|>
              pTrm1
-             where fequ  lExp orig rExp = Pequ orig lExp rExp
-                   fEimp lExp orig rExp = Pimp orig lExp rExp
+             where fequ  lExp orig rExp = PEqu orig lExp rExp
+                   fEimp lExp orig rExp = PImp orig lExp rExp
 -- However elegant, this solution needs to be left-factored in order to get a performant parser.
 -}
    pRule :: Parser Token (Term TermPrim)
    pRule  =  pTerm <??> (fEqu  <$> pKey_pos "="  <*> pTerm <|>
                          fImpl <$> pKey_pos "|-" <*> pTerm )
-             where fEqu  orig rExp lExp = Pequ orig lExp rExp
-                   fImpl orig rExp lExp = Pimp orig lExp rExp
+             where fEqu  orig rExp lExp = PEqu orig lExp rExp
+                   fImpl orig rExp lExp = PImp orig lExp rExp
 
 {-
    pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
