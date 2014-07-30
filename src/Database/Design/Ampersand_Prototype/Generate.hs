@@ -181,7 +181,7 @@ generateRules fSpec flags =
            ] ++
            ( if violExpr /= violationsExpr && verboseP flags
              then   ["        // Normalization steps:"]
-                  ++["        // "++escapePhpStr ls | ls<-(showPrf showADL . cfProof showADL) violExpr]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof) violExpr]
                   ++["        // "]
              else   []
            ) ++
@@ -300,7 +300,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if objctx object /= normalizedInterfaceExp && verboseP flags
       then   ["      // Normalization steps:"]
-           ++["      // "++escapePhpStr ls | ls<-(showPrf showADL.cfProof showADL.objctx) object] -- escapePhpStr for the pathological case that one of the names in the relation contains a newline
+           ++["      // "++ls | ls<-(showPrf showADL.cfProof.objctx) object] -- let's hope that none of the names in the relation contains a newline
            ++["      //"]      
       else   []
      )
