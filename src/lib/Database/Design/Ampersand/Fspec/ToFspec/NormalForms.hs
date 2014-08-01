@@ -22,6 +22,20 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.NormalForms"
 
+{-
+Ideas for future work:
+-> Create a Unifier data type / class with
+   > extend :: key -> value -> Unifier -> Maybe Unifier
+   (returns Nothing if the key is already in the Unifier)
+   > obtain :: key -> Unifier -> value
+   (something like this twice! Handle types separate from relations)
+   > think of a way in which substitution never fails (unify matching and substitution for this)
+-> Make RTerm polymorphic, so we can treat variables and constants separately.
+   We'd have RTerm Expression and RTerm (String,String,String)
+   We'd be able to derive fmap, and make RTerm Foldable.
+-> Really long term: Unify RTerm and Expression in a way that still allows us to write simple code for binary operators. Would require separating = and |- from Expression, which is also nice.
+-}
+
 -- Deriving normal forms and representing the neccessary derivation rules are defined by means of RTerms.
 -- The data structure RTerm is a representation of relation algebra expressions,
 -- which is not redundant with respect to associativity and commutativity.
@@ -45,8 +59,27 @@ where
               | RAtm String A_Concept
               | RVar String String String  -- relation name, source name, target name.
               | RConst Expression
-              deriving (Eq,Ord)
-
+              deriving (Eq,Ord,Show)
+   instance Association RTerm where
+     sign (RIsc a)      = sign$ Set.findMin a
+     sign (RUni a)      = sign$ Set.findMin a
+     sign (RDif a _)    = sign a
+     sign (RCpl a)      = sign a
+     sign (RDia a b)    = Sign (source a) (target b)
+     sign (RLrs a b)    = Sign (source a) (source b)
+     sign (RRrs a b)    = Sign (target a) (target b)
+     sign (RRad as)     = Sign (source (head as)) (target (last as))
+     sign (RCps as)     = Sign (source (head as)) (target (last as))
+     sign (RPrd as)     = Sign (source (head as)) (target (last as))
+     sign (RKl0 a)      = sign a
+     sign (RKl1 a)      = sign a
+     sign (RFlp a)      = Sign (target a) (source a)
+     sign (RId  a)      = Sign a a
+     sign (RVee a b)    = Sign a b
+     sign (RAtm _ b)    = Sign b b
+     sign (RVar _ _ _)  = fatal 79 "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
+     sign (RConst e)    = sign e
+     
    instance ShowADL RTerm where
     showADL term = showADL (rTerm2expr term)
 
@@ -371,7 +404,7 @@ where
        subs (RCpl e  )   = RCpl (subs e)
        subs (RVar r _ _) = case [ e | (v,e)<-Set.toList dePairs, v==r] of
                               [e] -> e
-                              [] ->  fatal 378 ("Rule:  "++ruleDoc++"\nVariable "++r++" is not in term "++showADL term)
+                              [] ->  fatal 378 ("Rule:  "++ruleDoc++"\nVariable "++r++" is not in term "++showADL term++ " using unifier "++show dePairs)
                               es ->  fatal 379 ("Rule:  "++ruleDoc++"\nVariable "++r++" in term "++showADL term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showADL e | e<-es])
        subs (RId c)      = case [ e | (v,e)<-Set.toList dePairs, v==name c] of
                               [e] -> e  -- This is e@(RId c')
@@ -379,7 +412,7 @@ where
                               es  -> fatal 383 ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showADL term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showADL e | e<-es])
        subs (RVee s t)   = case ([ e | (v,e)<-Set.toList dePairs, v==name s], [ e | (v,e)<-Set.toList dePairs, v==name t]) of
                               ([RId s'], [RId t']) -> RVee s' t'
-                              _  -> fatal 386 ("Rule:  "++ruleDoc++"\nSomething wrong with RVee "++" in term "++showADL term)
+                              (a,b)  -> fatal 386 ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showADL term++" with unifier "++show dePairs)
        subs (RAtm a c)   = case [ e | (v,e)<-Set.toList dePairs, v==name c] of
                               [RId c'] -> RAtm a c'
                               []  -> fatal 389 ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showADL term)
@@ -422,7 +455,7 @@ where
         (RCpl e,         RCpl e')    -> matches(e,e')
         (RId  c,         RId _     ) -> Just (Set.singleton (Set.fromList [(name c,expr)]))
         (RVee s t,       RVee s' t') -> Just (Set.singleton (Set.fromList [(name s,RId s'), (name t,RId t')]))
-        (RVar v _ _,     r         ) -> Just (Set.singleton (Set.fromList [(v,r)]))
+        (RVar v s t,     r         ) -> Just (Set.singleton (Set.fromList [(v,r),(s,RId (source r)),(t,RId (target r))]))
         (RAtm a c,       RAtm a' c') -> if a==a' then Just (Set.singleton (Set.fromList [(name c,RId c')])) else Nothing
         (RConst e,       RConst e' ) -> if e==e' then Just Set.empty else Nothing
         (_, _)                       -> Nothing
@@ -437,7 +470,10 @@ where
 
    matchSets :: Set RTerm -> Set RTerm -> Maybe (Set Unifier)
    matchSets es es'
-    = if Set.size rest > Set.size rels   -- All subexpressions in expr can be matched to a variable.
+    = if Set.size rest == Set.size rels   -- All subexpressions in expr can be matched to a variable.
+      -- Note: we will have to match "x \/ y" to "a \/ b \/ c" by x = a \/ b and y = c
+      -- Note2: when looking for matches in subexpressions, x \/ y will have to match a \/ c too...
+      -- Note3: how about matching with x = a \/ b and y = b \/ c ?
       then (Just . Set.fromList)
            [ subs0 `Set.union` subs1
            | subs0<-ss                                               -- bindings that originate from the top level
