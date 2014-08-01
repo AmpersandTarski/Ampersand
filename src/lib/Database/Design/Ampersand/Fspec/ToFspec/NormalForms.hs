@@ -15,7 +15,7 @@ where
    import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Data.List (nub, intercalate)
---   import Debug.Trace
+   import Debug.Trace
    import Prelude hiding (head)
    import Data.Set (Set)
    import qualified Data.Set as Set
@@ -60,6 +60,30 @@ Ideas for future work:
               | RVar String String String  -- relation name, source name, target name.
               | RConst Expression
               deriving (Eq,Ord,Show)
+   subterms :: RTerm -> [(RTerm, RTerm -> RTerm)]
+   subterms x = (x,id):subterms' x
+    where
+     map2 f lst = [(a,f . b) | (a,b)<-lst]
+     fromListAcc pre (a:rst) = (pre,a,rst):fromListAcc (a:pre) rst
+     fromListAcc _ [] = []
+     fromList lst = [(reverse pre,a,rst)|(pre,a,rst)<-fromListAcc [] lst]
+     subterms' :: RTerm -> [(RTerm, RTerm -> RTerm)]
+     subterms' (RIsc s)     = concat [map2 (\v -> RIsc (Set.fromList (pre++v:post))) (subterms a) | (pre,a,post)<-fromList (Set.toList s)]
+     subterms' (RUni s)     = concat [map2 (\v -> RUni (Set.fromList (pre++v:post))) (subterms a) | (pre,a,post)<-fromList (Set.toList s)]
+     subterms' (RDif a b)   = map2 (flip RDif b) (subterms a) ++ map2 (RDif b) (subterms b)
+     subterms' (RCpl a)     = map2 RCpl (subterms a)
+     subterms' (RDia a b)   = map2 (flip RDia b) (subterms a) ++ map2 (RDia a) (subterms b)
+     subterms' (RLrs a b)   = map2 (flip RLrs b) (subterms a) ++ map2 (RLrs a) (subterms b)
+     subterms' (RRrs a b)   = map2 (flip RRrs b) (subterms a) ++ map2 (RRrs a) (subterms b)
+     subterms' (RRad as)    = concat [map2 (\v -> RRad (pre++v:post)) (subterms a) | (pre,a,post)<-fromList as]
+     subterms' (RCps as)    = concat [map2 (\v -> RCps (pre++v:post)) (subterms a) | (pre,a,post)<-fromList as]
+     subterms' (RPrd as)    = concat [map2 (\v -> RPrd (pre++v:post)) (subterms a) | (pre,a,post)<-fromList as]
+     subterms' (RKl0 a)     = map2 RKl0 (subterms a)
+     subterms' (RKl1 a)     = map2 RKl1 (subterms a)
+     subterms' (RFlp a)     = map2 RFlp (subterms a)
+     subterms' _ = []
+
+   
    instance Association RTerm where
      sign (RIsc a)      = sign$ Set.findMin a
      sign (RUni a)      = sign$ Set.findMin a
@@ -219,9 +243,9 @@ Ideas for future work:
                        [e] -> e
                        []  -> fatal 185 "empty set in RPrd is illegal."
                        es  -> let oper l r = EPrd (l,r) in foldr1 oper es
-        RKl0 e     -> rTerm2expr e
-        RKl1 e     -> rTerm2expr e
-        RFlp e     -> rTerm2expr e
+        RKl0 e     -> EKl0$ rTerm2expr e
+        RKl1 e     -> EKl1$ rTerm2expr e
+        RFlp e     -> EFlp$ rTerm2expr e
         RVar r s t -> EDcD (makeDecl r (Sign (makeConcept s) (makeConcept t)))
         RId  c     -> EDcI c
         RVee s t   -> EDcV (Sign s t)
@@ -312,12 +336,14 @@ Ideas for future work:
    dRule term         = fatal 279 ("Illegal use of dRule with term "++show term)
 
    dSteps :: RTerm -> [DerivStep]
-   dSteps term = [ DStep { lhs = term, rul = drul, rhs = substitute (show drul) unif (rTerm drul) }
-                 | drul<-tceDerivRules, Just ss<-[matches (lTerm drul, term)]   -- drul   matches  DEquR{}
+   dSteps term = [ DStep { lhs = term, rul = drul, rhs = environment (substitute (show drul) unif (rTerm drul)) }
+                 | drul<-tceDerivRules, (subterm,environment) <- subterms term
+                 , Just ss<-[matches (lTerm drul, subterm)]   -- drul   matches  DEquR{}
                  , unif <- Set.toList ss
                  ] ++
-                 [ DStep { rhs = term, rul = drul, lhs = substitute (show drul) unif (lTerm drul) }
-                 | drul<-tceDerivRules, Just ss<-[matches (rTerm drul, term)]   -- drul   matches  DEquR{}
+                 [ DStep { rhs = term, rul = drul, lhs = environment (substitute (show drul) unif (lTerm drul)) }
+                 | drul<-tceDerivRules, (subterm,environment) <- subterms term
+                 , Just ss<-[matches (rTerm drul, subterm)]   -- drul   matches  DEquR{}
                  , unif <- Set.toList ss
                  ]
 
@@ -330,9 +356,8 @@ Ideas for future work:
 
    conjNF, disjNF :: Expression -> Expression
    (conjNF, disjNF) = (pr False, pr True)
-    where pr dnf expr = case (reverse.slideDown (weightNF dnf).expr2RTerm) expr of
-                         (_,d):_ -> rTerm2expr (rhs d)
-                         _       -> expr
+    where pr dnf expr = (rTerm2expr.last.((:) (rterm)).map (rhs.snd).slideDown (weightNF dnf)) rterm
+                        where rterm = expr2RTerm expr
 
    cfProof, dfProof :: Expression -> Proof Expression
    (cfProof,dfProof) = (proof False, proof True)
@@ -361,8 +386,8 @@ Ideas for future work:
      w :: RTerm -> Integer
      w trm
       = case trm of
-          RIsc ls  -> (sum (map w (Set.toList ls))+1) ^ if dnf then two else 1
-          RUni ls  -> (sum (map w (Set.toList ls))+1) ^ if dnf then 1 else two
+          RIsc ls  -> (sum (map w (Set.toList ls))+1) ^ if dnf then two else 3
+          RUni ls  -> (sum (map w (Set.toList ls))+1) ^ if dnf then 3 else two
           RDif l r -> (w l+w r+1) ^ two
           RCpl e   -> (w e + 1)   ^ two
           RDia l r -> (w l+w r+1) ^ two
@@ -374,9 +399,7 @@ Ideas for future work:
           RKl0 e   -> (w e)     + 1
           RKl1 e   -> (w e)     + 1
           RFlp e   -> (w e)     + 1
-          _        -> case [hash nm | nm<-names trm] of
-                       [h] -> h
-                       _   -> fatal 346 ("Something wrong with hashing...")
+          _        -> 1
 
 -- If  'matches (d, expr')  yields  'Just ss', then  'substitute ss (lTerm d) == expr'
 
@@ -412,7 +435,7 @@ Ideas for future work:
                               es  -> fatal 383 ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showADL term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showADL e | e<-es])
        subs (RVee s t)   = case ([ e | (v,e)<-Set.toList dePairs, v==name s], [ e | (v,e)<-Set.toList dePairs, v==name t]) of
                               ([RId s'], [RId t']) -> RVee s' t'
-                              (a,b)  -> fatal 386 ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showADL term++" with unifier "++show dePairs)
+                              (_,_)  -> fatal 386 ("Rule:  "++ruleDoc++"\nSomething wrong with RVee in term "++showADL term++" with unifier "++show dePairs)
        subs (RAtm a c)   = case [ e | (v,e)<-Set.toList dePairs, v==name c] of
                               [RId c'] -> RAtm a c'
                               []  -> fatal 389 ("Rule:  "++ruleDoc++"\nVariable "++name c++" is not in term "++showADL term)
@@ -561,13 +584,13 @@ Ideas for future work:
     , "(r[A*B];s[B*C]);q[C*D] = r[A*B];(s[B*C];q[C*D])"           --  Associativity of ;
     , "(r[A*B]#s[B*C])#q[C*D] = r[A*B]#(s[B*C]#q[C*D])"           --  Associativity of #
     , "(r[A*B]!s[B*C])!q[C*D] = r[A*B]!(s[B*C]!q[C*D])"           --  Associativity of !
-    , "-(-r[A*A]) = r[A*A]"                                       --  Double negation
-    , "(r[A*A]~)~ = r[A*A]"                                       --  Double flip
-    , "-(r[A*A]~) = (-r[A*A])~"                                   --  Peirce's[A*A] trick, which allows us to write -r[A*A]~
-    , "-r[A*A]/\\-s[A*A] = -(r[A*A]\\/s[A*A])"                    --  De Morgan
-    , "-r[A*A]\\/-s[A*A] = -(r[A*A]/\\s[A*A])"                    --  De Morgan
-    , "-r[A*A];-s[A*C] = -(r[A*A]!s[A*C])"                        --  De Morgan
-    , "-r[A*A]!-s[A*C] = -(r[A*A];s[A*C])"                        --  De Morgan
+    , "-(-r[A*B]) = r[A*B]"                                       --  Double negation
+    , "(r[A*B]~)~ = r[A*B]"                                       --  Double flip
+    , "-(r[A*B]~) = (-r[A*B])~"                                   --  Peirce's[A*A] trick, which allows us to write -r[A*A]~
+    , "-r[A*B]/\\-s[A*B] = -(r[A*B]\\/s[A*B])"                    --  De Morgan
+    , "-r[A*B]\\/-s[A*B] = -(r[A*B]/\\s[A*B])"                    --  De Morgan
+    , "-r[B*A];-s[A*C] = -(r[B*A]!s[A*C])"                        --  De Morgan
+    , "-r[B*A]!-s[A*C] = -(r[B*A];s[A*C])"                        --  De Morgan
     , "(r[A*A]\\r[A*A]);(r[A*A]\\r[A*A]) = r[A*A]\\r[A*A]"        --  Jipsen&Tsinakis      
     , "(r[A*A]/r[A*A]);(r[A*A]/r[A*A]) = r[A*A]/r[A*A]"           --  Jipsen&Tsinakis   
     , "r[A*A];(r[A*A]\\r[A*A]) = r[A*A]"                          --  Jipsen&Tsinakis  
@@ -593,10 +616,7 @@ Ideas for future work:
     , "r[A*B]\\/-r[A*B] =  V[A*B]"                                --  Tautology
     , "-r[A*B]\\/r[A*B] = V[A*B]"                                 --  Tautology
     , "(r[A*B]\\/s[A*B])/\\s[A*B] = s[A*B]"                       --  Absorption
-    , "(s[A*B]\\/r[A*B])/\\s[A*B] = s[A*B]"                       --  Absorption
     , "(r[A*B]\\/-s[A*B])/\\s[A*B] = r[A*B]/\\s[A*B]"             --  Absorption
-    , "(-s[A*B]\\/r[A*B])/\\s[A*B] = r[A*B]/\\s[A*B]"             --  Absorption
-    , "r[A*B]/\\(s[A*B]\\/-r[A*B]) = r[A*B]/\\s[A*B]"             --  Absorption
     , "r[A*B]/\\(s[A*B]\\/-r[A*B]) = r[A*B]/\\s[A*B]"             --  Absorption
     ]
 
