@@ -179,7 +179,7 @@ generateRules fSpec flags =
            , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
            ] ++
-           ( if violExpr /= violationsExpr && verboseP flags
+           ( if verboseP flags
              then   ["        // Normalization steps:"]
                   ++["        // "++ls | ls<-(showPrf showADL . cfProof) violExpr]
                   ++["        // "]
@@ -298,7 +298,7 @@ generateInterface fSpec flags interface =
 genInterfaceObjects :: Fspc -> Options -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
-  ++ (if objctx object /= normalizedInterfaceExp && verboseP flags
+  ++ (if verboseP flags  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
            ++["      // "++ls | ls<-(showPrf showADL.cfProof.objctx) object] -- let's hope that none of the names in the relation contains a newline
            ++["      //"]      
