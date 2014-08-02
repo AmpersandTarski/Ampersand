@@ -268,7 +268,7 @@ where
            rev x = x
 
    showProof :: (expr->Blocks) -> Proof expr -> Blocks
-   showProof shw [(expr,_,_)]        = shw expr
+   showProof shw [(expr,ss,_)]       = shw expr<> para ( str(" { "++intercalate " and " ss++" }"))
    showProof shw ((expr,ss,equ):prf) = shw expr<>
                                        para (if null ss  then str equ else
                                              if null equ then str (unwords ss) else
