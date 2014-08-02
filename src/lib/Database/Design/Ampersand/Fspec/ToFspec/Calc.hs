@@ -278,8 +278,8 @@ where
    showProof _  []                   = fromList []
 
    showPrf :: (expr->String) -> Proof expr -> [String]
-   showPrf shw [(expr,_,_)]        = [ "    "++shw expr]
-   showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++
+   showPrf shw [(expr,ss,_)]       = [ "    "++shw expr++" { "++intercalate " and " ss++" }"]
+   showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr++" { "++intercalate " and " ss++" }"] ++
                                      (if null ss  then [ equ ] else
                                       if null equ then [ unwords ss ] else
                                       [ equ++" { "++intercalate " and " ss++" }" ])++
