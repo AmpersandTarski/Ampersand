@@ -72,37 +72,37 @@ MEANING IN ENGLISH "The purposes of a concept."
 cpttp:: PlainConcept*Blob
 MEANING IN ENGLISH "The (technical) type of a concept"
 
-CONCEPT Order "The order of the is-a-relation between concepts."
-KEY Order: Order(ordername)
-
-ordername :: Order -> String [INJ]
-MEANING IN ENGLISH "The name of a class of is-a-related concepts."
-order :: Concept -> Order
-MEANING IN ENGLISH "A concept belongs to a class of is-a-related concepts."
-RULE "order": order~;genspc~;gengen;order |- I
-MEANING IN ENGLISH "Is-a-related concepts belong to the same class of is-a-related concepts."
+--CONCEPT Order "The order of the is-a-relation between concepts."
+--KEY Order: Order(ordername)
+--
+--ordername :: Order -> String [INJ]
+--MEANING IN ENGLISH "The name of a class of is-a-related concepts."
+--order :: Concept -> Order
+--MEANING IN ENGLISH "A concept belongs to a class of is-a-related concepts."
+--RULE "order": order~;genspc~;gengen;order |- I
+--MEANING IN ENGLISH "Is-a-related concepts belong to the same class of is-a-related concepts."
 --RULE "different order": ???, a closure would be nice...
 --MEANING IN ENGLISH "Concepts, that are not is-a-related, are in different orders of the is-a-relation."
 
 --NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
 --if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so -> risk for awkward messages in new interface
-RULE "referential integrity": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- order;order~;cptos
-MEANING IN ENGLISH "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
-MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
-VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
+--RULE "referential integrity": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- order;order~;cptos
+--MEANING IN ENGLISH "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
+--MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
+--VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
 
 
 CONCEPT AtomID "An atomID is the identity of an atomic term."
 CONCEPT Atom "An atom is the value of an atomic term." TYPE "Blob"
              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn568"
-KEY AtomID: AtomID( atomvalue , TXT " :: ", cptos~;order;ordername)
+--KEY AtomID: AtomID( atomvalue , TXT " :: ", cptos~;order;ordername)
 
 atomvalue::AtomID->Atom
 MEANING IN ENGLISH "The value of an atom."
-RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
-MEANING IN ENGLISH "An atom of a concept has a unique value within the class of that concept."
-MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
-VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
+--RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
+--MEANING IN ENGLISH "An atom of a concept has a unique value within the class of that concept."
+--MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
+--VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
 
 ENDPATTERN
 
@@ -166,15 +166,15 @@ MEANING IN ENGLISH "There cannot be two relationships in the population of a rel
 MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
 VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
 
-RULE "typed domain": decpopu;left;cptos~;order  |- decsgn;src;order
-MEANING IN ENGLISH "The atoms in the domain of a relation belong to the same class as the source of that relation."
-MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
-VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC decsgn;src)
+--RULE "typed domain": decpopu;left;cptos~;order  |- decsgn;src;order
+--MEANING IN ENGLISH "The atoms in the domain of a relation belong to the same class as the source of that relation."
+--MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
+--VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC decsgn;src)
 
-RULE "typed codomain": decpopu;right;cptos~;order |- decsgn;trg;order
-MEANING IN ENGLISH "The atoms in the codomain of a relation belong to the same class as the target of that relation."
-MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
-VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
+--RULE "typed codomain": decpopu;right;cptos~;order |- decsgn;trg;order
+--MEANING IN ENGLISH "The atoms in the codomain of a relation belong to the same class as the target of that relation."
+--MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
+--VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
 ENDPATTERN
 
 PATTERN Expression
