@@ -86,16 +86,12 @@ instance AdlId Sign where
 instance AdlId Paire where
  uri p = "Paire"++(show.hash) (srcPaire p++"_"++trgPaire p)
  
-data RelPopuType = InitPop | CurrPop deriving Show
-mkUriRelPopu :: Declaration -> RelPopuType  -> String
-mkUriRelPopu d t = show t++"Of"++uri d
-
 instance AdlId Atom where
  uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a  
 
 
 mkAtom :: A_Concept -> String -> Atom
-mkAtom cpt value = Atom { atmRoot = cpt -- Was: root cpt.  <SJ 20131117> Han, "root cpt" cannot be correct in this spot. I am quite sure that "cpt" is correct. Please confer.
+mkAtom cpt value = Atom { atmRoot = cpt
                         , atmVal  = value
                         }
 
@@ -117,19 +113,21 @@ instance MetaPopulations Fspc where
            [(uri fSpec,name fSpec)]
     ]
   ++[ Comment " ", Comment $ "*** Patterns: (count="++(show.length.vpatterns) fSpec++") ***"]
-  ++   concat [metaPops flags fSpec pat | pat <- (sortBy (comparing name).vpatterns  )    fSpec]
+  ++   concatMap (metaPops flags fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
   ++[ Comment " ", Comment $ "*** Rules: (count="++(show.length.allRules) fSpec++")***"]
-  ++   concat [metaPops flags fSpec rul | rul <- (sortBy (comparing name).allRules)    fSpec]
+  ++   concatMap (metaPops flags fSpec) ((sortBy (comparing name).allRules)    fSpec)
 
 
   ++[ Comment " ", Comment $ "*** Concepts: (count="++(show.length.allConcepts) fSpec++")***"]
-  ++   concat [metaPops flags fSpec cpt | cpt <- (sortBy (comparing name).allConcepts)    fSpec]
+  ++   concatMap (metaPops flags fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
   ++[ Comment " ", Comment $ "*** Generalisations: (count="++(show.length.vgens) fSpec++") ***"]
-  ++   concat [metaPops flags fSpec gen | gen <- vgens          fSpec]
+  ++   concatMap (metaPops flags fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "*** Declarations: (count="++(show.length.allDecls) fSpec++") ***"]
-  ++   concat [metaPops flags fSpec dcl | (_,dcl) <- (declOrder.allDecls)       fSpec]
-  ++[ Comment " ", Comment $ "*** Atoms: ***"]
-  ++   concat [metaPops flags fSpec atm | atm <- allAtoms]
+  ++   concatMap (metaPops flags fSpec) ((map snd.declOrder.allDecls)       fSpec)
+  ++[ Comment " ", Comment $ "*** Atoms: (count="++(show.length) allAtoms++") ***"]
+  ++   concatMap (metaPops flags fSpec) allAtoms
+  ++[ Comment " ", Comment $ "*** Pairs: (count="++(show.length) allPairs++") ***"]
+  ++   concatMap (metaPops flags fSpec) allPairs    
   )
    where
     allAtoms :: [Atom]
@@ -140,6 +138,13 @@ instance MetaPopulations Fspc where
           PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp) 
                       ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp) 
           PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
+    allPairs :: [Paire]
+    allPairs= nub (concatMap pairs (initialPops fSpec))
+      where
+        pairs :: Population -> [Paire]
+        pairs udp = case udp of
+          PRelPopu{} -> popps udp
+          PCptPopu{} -> []
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
     nullContent _ = False
@@ -225,11 +230,15 @@ instance MetaPopulations Declaration where
       , Pop "declaredthrough" "PropertyRule" "Property" 
              [(uri rul,show prp) | rul <- filter ofDecl (allRules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
       , Pop "decpopu" "Declaration" "PairID"
-             [(uri dcl,mkUriRelPopu dcl CurrPop)] 
+             [(uri dcl, uri p) | p <- pairsOf dcl] 
 --      , Pop "inipopu" "Declaration" "PairID"
 --             [(uri dcl,mkUriRelPopu dcl InitPop)] 
       , Pop "decsgn" "Declaration" "Sign"
              [(uri dcl,uri (decsgn dcl))]
+      , Pop "src" "Sign" "Concept"
+             [((uri.decsgn) dcl,(uri.source.decsgn) dcl)]
+      , Pop "trg" "Sign" "Concept"
+             [((uri.decsgn) dcl,(uri.target.decsgn) dcl)]
       , Pop "decprL" "Declaration" "String"
              [(uri dcl,decprL dcl)]
       , Pop "decprM" "Declaration" "String"
@@ -239,9 +248,7 @@ instance MetaPopulations Declaration where
       , Pop "decnm" "Declaration" "Varid"
              [(uri dcl, name dcl)]
  --TODO HIER GEBLEVEN. (HJO, 20130802)
-
 --      , Pop "cptos" "PlainConcept" "AtomID"
---      , Pop "exprvalue" "ExpressionID" "Expression"
 --      , Pop "rels" "ExpressionID" "Declaration"
 --relnm : Relation × Varid The name of a relation used as a relation token.
 --relsgn : Relation × Sign The sign of a relation.
@@ -258,7 +265,16 @@ instance MetaPopulations Declaration where
       ofDecl :: Rule -> Bool
       ofDecl rul = case rrdcl rul of
                      Nothing -> False
-                     Just (_,d) -> d == dcl   
+                     Just (_,d) -> d == dcl  
+      pairsOf :: Declaration -> Pairs
+      pairsOf d = case filter theDecl (initialPops fSpec) of
+                    []    -> []
+                    [pop] -> popps pop
+                    _     -> fatal 273 "Multiple entries found in populationTable"
+        where
+          theDecl :: Population -> Bool
+          theDecl p = popdcl p == d
+ 
 instance MetaPopulations Atom where
  metaPops _ _ _ = []
 --   [ Pop "root"  "AtomID" "Concept"
@@ -319,4 +335,9 @@ instance MetaPopulations Sign where
              [(uri sgn, uri (target sgn))]
       ]
 
-   
+instance MetaPopulations Expression where
+ metaPops _ _ e = 
+      [ Pop "exprvalue" "ExpressionID" "Expression"
+             [(showADL e, showADL e)]
+      ]
+  
