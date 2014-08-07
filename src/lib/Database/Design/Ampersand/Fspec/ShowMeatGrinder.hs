@@ -273,7 +273,9 @@ instance MetaPopulations Declaration where
                     _     -> fatal 273 "Multiple entries found in populationTable"
         where
           theDecl :: Population -> Bool
-          theDecl p = popdcl p == d
+          theDecl p = case p of
+                        PRelPopu{} -> popdcl p == d
+                        PCptPopu{} -> False
  
 instance MetaPopulations Atom where
  metaPops _ _ _ = []
