@@ -593,18 +593,18 @@ Ideas for future work:
       = case trm of
           RIsc ls  -> (sum (map w (Set.toList ls))+1) ^ if dnf then two else 3
           RUni ls  -> (sum (map w (Set.toList ls))+1) ^ if dnf then 3 else two
-          RDif l r -> (w l+w r+11) ^ two
-          RCpl e   -> (w e + 5)   ^ 3
+          RDif l r -> (w l+w r+1) ^ two
+          RCpl e   -> (w e + 1)   ^ two
           RDia l r -> (w l+w r+1) ^ two
-          RLrs l r -> (w l+w r+5) ^ two
-          RRrs l r -> (w l+w r+3) ^ two
-          RRad ls  -> (sum (map w ls)+4) * two
-          RCps ls  -> (sum (map w ls)+1) * two
-          RPrd ls  -> (sum (map w ls)+2) * two
-          RKl0 e   -> w e + 2
-          RKl1 e   -> w e + 3
+          RLrs l r -> (w l+w r+1) ^ two
+          RRrs l r -> (w l+w r+1) ^ two
+          RRad ls  -> (sum (map w ls)+1) ^ two
+          RCps ls  -> (sum (map w ls)+1) ^ two
+          RPrd ls  -> (sum (map w ls)+1) ^ two
+          RKl0 e   -> w e + 1
+          RKl1 e   -> w e + 1
           RFlp e   -> w e + 1
-          _        -> 7
+          _        -> 1
 
 -- If  'matches d expr'  yields  'Just ss', then  'substitute anything ss (lTerm d) == expr'
 
