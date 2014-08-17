@@ -196,8 +196,10 @@ Ideas for future work:
                                }
                        | (term, rewriteTerms)<-matchableRules, isrComb term    -- select rewrite rules with the proper combinator
                        , let subLft = rTermLft term; subRht = rTermRht term    -- now:   rCombinator subTerm = term
-                       , unif <- matches subLft a ++ matches subRht b   -- find unifiers such that: substitute "" unif term==rCombinator a
-                       , noDoubles unif                             -- if one variable is bound to more than one different expressions, the deal is off.
+                       , unif1 <- matches subLft a
+                       , unif2 <- matches subRht b    -- find unifiers such that: substitute "" unif term==rCombinator a
+                       , let unif = Set.union unif1 unif2
+                       , noDoubles unif                          -- if one variable is bound to more than one different expressions, the deal is off.
                        , term'<-rewriteTerms                     -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
 --                     , if substitute rd unif term==rCombinator a b then True else
@@ -615,16 +617,16 @@ Ideas for future work:
      w :: RTerm -> Integer
      w trm
       = case trm of
-          RIsc ls  -> (sum (map w (Set.toList ls))*3) ^ if dnf then two else 3
-          RUni ls  -> (sum (map w (Set.toList ls))*3) ^ if dnf then 3 else two
-          RDif l r -> (w l+w r+1)*2 ^ two
-          RCpl e   -> (w e + 1)*3   ^ two
-          RDia l r -> (w l+w r+1)*2 ^ two
-          RLrs l r -> (w l+w r+1)*2 ^ two
-          RRrs l r -> (w l+w r+1)*2 ^ two
-          RRad ls  -> (sum (map w ls)+1) ^ two
-          RCps ls  -> (sum (map w ls)+1) ^ two
-          RPrd ls  -> (sum (map w ls)+1) ^ two
+          RIsc ls  -> (sum (map w (Set.toList ls))+3) ^ if dnf then two else 3
+          RUni ls  -> (sum (map w (Set.toList ls))+3) ^ if dnf then 3 else two
+          RDif l r -> (w l+w r+10) -- here we give preference to a single complement!
+          RCpl e   -> (w e + 1)  
+          RDia l r -> (w l+w r+10)
+          RLrs l r -> (w l+w r+10)
+          RRrs l r -> (w l+w r+10)
+          RRad ls  -> (sum (map w ls)+1)
+          RCps ls  -> (sum (map w ls)+1)
+          RPrd ls  -> (sum (map w ls)+1)
           RKl0 e   -> w e + 1
           RKl1 e   -> w e + 1
           RFlp e   -> w e + 1
