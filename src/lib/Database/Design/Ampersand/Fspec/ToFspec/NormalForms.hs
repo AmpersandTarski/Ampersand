@@ -209,9 +209,9 @@ Ideas for future work:
 
      dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm 
      dStepLists isrComb rCombinator ls
-      = [ DStep { lhs  = rCombinator ls              -- derivs gives the top level rewrites.
-                , ruls = (term, unif, term')  -- only one rewrite is done in parallel in the top level.
-                , rhs  = rCombinator (red isrComb (pre ++ substitute rd unif term':post)) -- so rest is left alone, if partition can be rewritten.
+      = [ DStep { lhs  = rCombinator ls       -- The original expression
+                , ruls = (term, unif, term')  -- only one rewrite step is done without parallelism.
+                , rhs  = result
                 }
         | (term, rewriteTerms)<-matchableRules, isrComb term
         , let subTerms = rTermList term
@@ -221,8 +221,17 @@ Ideas for future work:
         , noDoubles unif                                      -- if one variable is bound to more than one different expressions, the deal is off.
         , term'<-rewriteTerms
         , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
-        , if substitute (rd++" for original of "++showADL (rCombinator ls)) unif term==rCombinator ls then True else
-          fatal 225 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator s:  "++showADL (rCombinator ls))
+        , let original=rCombinator (red isrComb (pre ++ substitute rd unif term :post))  -- is equal to rCombinator ls
+        , let result  =rCombinator (red isrComb (pre ++ substitute rd unif term':post))
+        , if original==rCombinator ls then True else
+          fatal 225 ("When analysing rule "++rd++" with unifier "++showADL unif++" on:  "++showADL (rCombinator ls)++
+                     "\nWe substitute:  "++showADL (substitute rd unif term)++
+                     "\nby:             "++showADL (substitute rd unif term')++
+                     ".\nHowever, the original RTerm:  "++showADL (rCombinator ls)++
+                     "\ndiffers from rCombinator (red isrComb (pre ++ substitute rd unif term :post)):\n  "++
+                     showADL original++
+                     "\nso, there is an error in rCombinator (red isrComb (pre ++ substitute rd unif term :post))"
+                    )
         ] ++
         [ DStep { lhs = rCombinator ls -- is equal to: (pre++lhs dstep:post)
                 , ruls = ruls dstep
