@@ -117,9 +117,9 @@ Ideas for future work:
                           | (term@(RId a'), rewriteTerms)<-matchableRules          -- select rewrite rules with the proper combinator
                           , let unif = Set.fromList [(name a',x)]                  -- find unifiers such that: substitute "" unif term==rCombinator a
                           , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
-                          , let rd = showADL term++" -> "++showADL term'            -- rule documentation for fatals in 'substitute'
---                        , if substitute rd unif term==x then True else
---                          fatal 122 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
+                          , let rd = showADL term++" -> "++showADL term'           -- rule documentation for fatals in 'substitute'
+                          , if substitute rd unif term==x then True else
+                            fatal 122 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
                           ]
      dStps (RVee a b)   = [ DStep { lhs  = x                                       -- derivs gives the top level rewrites.
                                   , ruls = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
@@ -127,10 +127,11 @@ Ideas for future work:
                                   }
                           | (term@(RVee a' b'), rewriteTerms)<-matchableRules      -- select rewrite rules with the proper combinator
                           , let unif = Set.fromList [(name a',RId a), (name b',RId b)] -- find unifiers such that: substitute "" unif term==rCombinator a
+                          , noDoubles unif                                         -- if one variable is bound to more than one different expressions, the deal is off.
                           , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
-                          , let rd = showADL term++" -> "++showADL term'            -- rule documentation for fatals in 'substitute'
---                        , if substitute rd unif term==x then True else
---                          fatal 133 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
+                          , let rd = showADL term++" -> "++showADL term'           -- rule documentation for fatals in 'substitute'
+                          , if substitute rd unif term==x then True else
+                            fatal 134 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
                           ]
      dStps (RAtm a c)   = [ DStep { lhs  = x                                       -- derivs gives the top level rewrites.
                                   , ruls = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
@@ -141,11 +142,11 @@ Ideas for future work:
                           , let unif = Set.fromList [(name c',RId c)]              -- find unifiers such that: substitute "" unif term==rCombinator a
                           , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                           , let rd = showADL term++" -> "++showADL term'            -- rule documentation for fatals in 'substitute'
---                        , if substitute rd unif term==x then True else
---                          fatal 145 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
+                          , if substitute rd unif term==x then True else
+                            fatal 146 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
                           ]
      dStps (RVar _ _ _) = fatal 147 "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
-     dStps (RConst e)   = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist
+     dStps (RConst _)   = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
 
 
      dStepUny :: (RTerm -> Bool)    -- a predicate, isrComb, which tests whether some RTerm r has rCombinator as its root.
@@ -172,8 +173,8 @@ Ideas for future work:
                        , unif<-matches subTerm a                                -- find unifiers such that: substitute "" unif term==rCombinator a
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showADL term++" -> "++showADL term'            -- rule documentation for fatals in 'substitute'
---                     , if substitute rd unif term==rCombinator a then True else
---                       fatal 185 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator a:  "++showADL (rCombinator a))
+                       , if substitute rd unif term==rCombinator a then True else
+                         fatal 177 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator a:  "++showADL (rCombinator a))
                        ]
                  
 -- dStepBin follows the same pattern as dStepUny, but for binary RTerms
@@ -202,8 +203,8 @@ Ideas for future work:
                        , noDoubles unif                          -- if one variable is bound to more than one different expressions, the deal is off.
                        , term'<-rewriteTerms                     -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
---                     , if substitute rd unif term==rCombinator a b then True else
---                       fatal 221 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator a b:  "++showADL (rCombinator a b))
+                       , if substitute rd unif term==rCombinator a b then True else
+                         fatal 207 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator a b:  "++showADL (rCombinator a b))
                        ]
 
      dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm 
@@ -215,31 +216,35 @@ Ideas for future work:
         | (term, rewriteTerms)<-matchableRules, isrComb term
         , let subTerms = rTermList term
         , let n=length subTerms
-        , (pre,segmentList,post) <- segments n ls
+        , (pre,segmentList,post) <- segments n
         , unif <- mix [ matches l r | (l,r)<-zip subTerms (map comb segmentList) ]
+        , noDoubles unif                                      -- if one variable is bound to more than one different expressions, the deal is off.
         , term'<-rewriteTerms
-        , let rd = showADL term++" -> "++showADL term'] ++
+        , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
+        , if substitute (rd++" for original of "++showADL (rCombinator ls)) unif term==rCombinator ls then True else
+          fatal 225 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator s:  "++showADL (rCombinator ls))
+        ] ++
         [ DStep { lhs = rCombinator ls -- is equal to: (pre++lhs dstep:post)
                 , ruls = ruls dstep
                 , rhs = rCombinator (red isrComb (pre++rhs dstep:post))
                 }
         | (pre,l,post) <- splitList ls
         , dstep <- dStps l]
-        where dist :: Int -> [a] -> [[[a]]]
-              dist 1 ls = [[ls]]
-              dist 2 ls = [ [ take i ls , drop i ls ] | i<-[1..length ls-1] ]
-              dist n ls = [ init ds++st | ds<-dist (n-1) ls, let staart=last ds, length staart>=2, st<-dist 2 staart ]
-              segments :: Int -> [a] -> [([a],[[a]],[a])]
-              segments n ls
+        where dist :: Int -> [RTerm] -> [[[RTerm]]]
+              dist 1 es = [[es]]
+              dist 2 es = [ [ take i es , drop i es ] | i<-[1..length es-1] ]
+              dist n es = [ init ds++st | ds<-dist (n-1) es, let staart=last ds, length staart>=2, st<-dist 2 staart ]
+              segments :: Int -> [([RTerm],[[RTerm]],[RTerm])]
+              segments n
                = [ ([], ds, []) | ds<-dist n ls] ++
                  [ (head ds, tail ds, []) | ds<-dist (n+1) ls ] ++
                  [ ([], init ds, last ds) | ds<-dist (n+1) ls ] ++
                  [ (head ds, (init.tail) ds, last ds) | ds<-dist (n+2) ls ]
               comb :: [RTerm] -> RTerm
-              comb ls = case ls of
+              comb es = case es of
                           []  -> fatal 740 "Not allowed."
                           [e] -> e
-                          _   -> rCombinator ls
+                          _   -> rCombinator es
      
      dStepSets  :: (RTerm -> Bool) -> (Set RTerm -> RTerm) -> Set RTerm -> [DerivStep]
      dStepSets isrComb rCombinator s
@@ -251,11 +256,11 @@ Ideas for future work:
                 }
         | (term, rewriteTerms)<-matchableRules, isrComb term
         , let subTerms = rTermSet term
-        , unif <- matchSets rCombinator subTerms s
+        , unif <- matchSets rCombinator subTerms s  -- noDoubles is guaranteed by matchSets, so there is no need to repeat that check here.
         , term' <- rewriteTerms
         , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
         , if substitute (rd++" for original of "++showADL (rCombinator s)) unif term==rCombinator s then True else
-          fatal 278 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator s:  "++showADL (rCombinator s))
+          fatal 263 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator s:  "++showADL (rCombinator s))
         ] ++
         [ DStep { lhs = rCombinator s -- is equal to: (pre \/ lhs dstep)
                 , ruls = ruls dstep
@@ -263,16 +268,11 @@ Ideas for future work:
                 }
         | (pre,l,post) <- splitList (Set.toList s)
         , dstep <- dStps l]
-        where subsets :: [a] -> [[a]]
-              subsets []  = [[]]                                
-              subsets (x:xs) = map (x:) (subsets xs) ++ subsets xs
-              comb :: [RTerm] -> RTerm
-              comb s = case s of
-                        []  -> fatal 784 "Not allowed."
-                        [e] -> e
-                        lst -> rCombinator (Set.fromList lst)
-              
-     
+        where comb :: [RTerm] -> RTerm
+              comb es = case es of
+                         []  -> fatal 784 "Not allowed."
+                         [e] -> e
+                         _   -> rCombinator (Set.fromList es)
 
      matchableRules :: [(RTerm,[RTerm])]
      matchableRules
