@@ -626,19 +626,19 @@ Ideas for future work:
      w :: RTerm -> Integer
      w trm
       = case trm of
-          RIsc ls  -> (sum (map w (Set.toList ls))+3) ^ if dnf then two else 3
-          RUni ls  -> (sum (map w (Set.toList ls))+3) ^ if dnf then 3 else two
-          RDif l r -> (w l+w r+10) -- here we give preference to a single complement!
-          RCpl e   -> (w e + 1)  
-          RDia l r -> (w l+w r+10)
-          RLrs l r -> (w l+w r+10)
-          RRrs l r -> (w l+w r+10)
-          RRad ls  -> (sum (map w ls)+1)
-          RCps ls  -> (sum (map w ls)+1)
-          RPrd ls  -> (sum (map w ls)+1)
-          RKl0 e   -> w e + 1
-          RKl1 e   -> w e + 1
-          RFlp e   -> w e + 1
+          RIsc ls  -> (sum (map w (Set.toList ls))+3) * if dnf then two else 1
+          RUni ls  -> (sum (map w (Set.toList ls))+3) * if dnf then 1 else two
+          RDif l r -> (w l+w r+10) * 2
+          RCpl e   -> (w e + 1) * 2
+          RDia l r -> (w l+w r+10) * 2
+          RLrs l r -> (w l+w r+10) * 2
+          RRrs l r -> (w l+w r+10) * 2
+          RRad ls  -> (sum (map w ls)+1) * 2
+          RCps ls  -> (sum (map w ls)+1) * 2
+          RPrd ls  -> (sum (map w ls)+1) * 2
+          RKl0 e   -> (w e + 1) * 2
+          RKl1 e   -> (w e + 1) * 2
+          RFlp e   -> (w e + 1) * 4
           _        -> 1
 
 -- If  'matches d expr'  yields  'Just ss', then  'substitute anything ss (lTerm d) == expr'
@@ -891,6 +891,8 @@ Ideas for future work:
     , "-r[A*B]\\/-s[A*B] = -(r[A*B]/\\s[A*B])"                    --  De Morgan
     , "-r[B*A];-s[A*C] = -(r[B*A]!s[A*C])"                        --  De Morgan
     , "-r[B*A]!-s[A*C] = -(r[B*A];s[A*C])"                        --  De Morgan
+    , "r[A*B]~/\\s[A*B]~ = (r[A*B]/\\s[A*B])~"                    --  Distribute flip
+    , "r[A*B]~\\/s[A*B]~ = (r[A*B]\\/s[A*B])~"                    --  Distribute flip
     , "(r[A*A]\\r[A*A]);(r[A*A]\\r[A*A]) = r[A*A]\\r[A*A]"        --  Jipsen&Tsinakis      
     , "(r[A*A]/r[A*A]);(r[A*A]/r[A*A]) = r[A*A]/r[A*A]"           --  Jipsen&Tsinakis   
     , "r[A*A];(r[A*A]\\r[A*A]) = r[A*A]"                          --  Jipsen&Tsinakis  
@@ -915,9 +917,12 @@ Ideas for future work:
     , "r[A*B]/\\-r[A*B] = -V[A*B]"                                --  Contradiction
     , "r[A*B]\\/-r[A*B] =  V[A*B]"                                --  Tautology
     , "-r[A*B]\\/r[A*B] = V[A*B]"                                 --  Tautology
-    , "(r[A*B]\\/s[A*B])/\\s[A*B] = s[A*B]"                       --  Absorption
-    , "(r[A*B]\\/-s[A*B])/\\s[A*B] = r[A*B]/\\s[A*B]"             --  Absorption
-    , "r[A*B]/\\(s[A*B]\\/-r[A*B]) = r[A*B]/\\s[A*B]"             --  Absorption
+    , "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]"                      --  Absorption
+    , "(r[A*B]\\/-s[A*B])/\\ s[A*B] = r[A*B]/\\s[A*B]"             --  Absorption
+    , "(r[A*B]\\/ s[A*B])/\\-s[A*B] = r[A*B]/\\-s[A*B]"            --  Absorption
+    , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                      --  Absorption
+    , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"             --  Absorption
+    , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"            --  Absorption
  
     ]
 
