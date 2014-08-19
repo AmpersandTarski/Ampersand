@@ -61,33 +61,35 @@ Ideas for future work:
               | RConst Expression
               deriving (Eq,Ord,Show)
 
-   isRIsc, isRUni, isRDif, isRCpl, isRDia, isRLrs, isRRrs, isRRad, isRCps, isRPrd, isRKl0, isRKl1, isRFlp :: RTerm -> Bool
-   isRIsc (RIsc _)   = True
-   isRIsc _          = False
-   isRUni (RUni _)   = True
-   isRUni _          = False
-   isRDif (RDif _ _) = True
-   isRDif _          = False
-   isRCpl (RCpl _)   = True
-   isRCpl _          = False
-   isRDia (RDia _ _) = True
-   isRDia _          = False
-   isRLrs (RLrs _ _) = True
-   isRLrs _          = False
-   isRRrs (RRrs _ _) = True
-   isRRrs _          = False
-   isRRad (RRad _)   = True
-   isRRad _          = False
-   isRCps (RCps _)   = True
-   isRCps _          = False
-   isRPrd (RPrd _)   = True
-   isRPrd _          = False
-   isRKl0 (RKl0 _)   = True
-   isRKl0 _          = False
-   isRKl1 (RKl1 _)   = True
-   isRKl1 _          = False
-   isRFlp (RFlp _)   = True
-   isRFlp _          = False
+   isRIsc, isRUni, isRDif, isRCpl, isRDia, isRLrs, isRRrs, isRRad, isRCps, isRPrd, isRKl0, isRKl1, isRFlp, isRVar :: RTerm -> Bool
+   isRIsc (RIsc{}) = True
+   isRIsc _        = False
+   isRUni (RUni{}) = True
+   isRUni _        = False
+   isRDif (RDif{}) = True
+   isRDif _        = False
+   isRCpl (RCpl{}) = True
+   isRCpl _        = False
+   isRDia (RDia{}) = True
+   isRDia _        = False
+   isRLrs (RLrs{}) = True
+   isRLrs _        = False
+   isRRrs (RRrs{}) = True
+   isRRrs _        = False
+   isRRad (RRad{}) = True
+   isRRad _        = False
+   isRCps (RCps{}) = True
+   isRCps _        = False
+   isRPrd (RPrd{}) = True
+   isRPrd _        = False
+   isRKl0 (RKl0{}) = True
+   isRKl0 _        = False
+   isRKl1 (RKl1{}) = True
+   isRKl1 _        = False
+   isRFlp (RFlp{}) = True
+   isRFlp _        = False
+   isRVar (RVar{}) = True
+   isRVar _        = False
 
 {- dSteps computes the expressions that can be obtained in one rewrite step.
    It yields the steps, for the purpose of constructing the entire proof.
@@ -110,9 +112,9 @@ Ideas for future work:
      dStps (RKl0 a)     = dStepUny isRKl0 RKl0 a
      dStps (RKl1 a)     = dStepUny isRKl1 RKl1 a
      dStps (RFlp a)     = dStepUny isRFlp RFlp a
-     dStps (RId _)      = [ DStep { lhs  = x                                       -- derivs gives the top level rewrites.
-                                  , ruls = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
-                                  , rhs  = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
+     dStps (RId _)      = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
+                                  , rul = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
+                                  , rhs = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
                                   }
                           | (term@(RId a'), rewriteTerms)<-matchableRules          -- select rewrite rules with the proper combinator
                           , let unif = Set.fromList [(name a',x)]                  -- find unifiers such that: substitute "" unif term==rCombinator a
@@ -121,9 +123,9 @@ Ideas for future work:
                           , if substitute rd unif term==x then True else
                             fatal 122 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
                           ]
-     dStps (RVee a b)   = [ DStep { lhs  = x                                       -- derivs gives the top level rewrites.
-                                  , ruls = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
-                                  , rhs  = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
+     dStps (RVee a b)   = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
+                                  , rul = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
+                                  , rhs = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
                                   }
                           | (term@(RVee a' b'), rewriteTerms)<-matchableRules      -- select rewrite rules with the proper combinator
                           , let unif = Set.fromList [(name a',RId a), (name b',RId b)] -- find unifiers such that: substitute "" unif term==rCombinator a
@@ -133,9 +135,9 @@ Ideas for future work:
                           , if substitute rd unif term==x then True else
                             fatal 134 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from:  "++showADL x)
                           ]
-     dStps (RAtm a c)   = [ DStep { lhs  = x                                       -- derivs gives the top level rewrites.
-                                  , ruls = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
-                                  , rhs  = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
+     dStps (RAtm a c)   = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
+                                  , rul = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
+                                  , rhs = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
                                   }
                           | (term@(RAtm a' c'), rewriteTerms)<-matchableRules      -- select rewrite rules with the proper combinator
                           , a==a'
@@ -159,14 +161,14 @@ Ideas for future work:
 -}
      dStepUny isrComb rCombinator a
       = derivs ++
-        [ DStep { lhs  = rCombinator a                                     -- try to find steps recursively
-                , ruls = ruls step
-                , rhs  = rCombinator (rhs step)
+        [ DStep { lhs = rCombinator a                                     -- try to find steps recursively
+                , rul = rul step
+                , rhs = rCombinator (rhs step)
                 }
         | step<-dStps a ]
-        where derivs = [ DStep { lhs  = rCombinator a                           -- derivs gives the top level rewrites.
-                               , ruls = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
-                               , rhs  = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
+        where derivs = [ DStep { lhs = rCombinator a                           -- derivs gives the top level rewrites.
+                               , rul = (term, unif, term')                     -- only one rewrite is done in parallel in the top level.
+                               , rhs = substitute rd unif term'                -- so rest is left alone, if partition can be rewritten.
                                }
                        | (term, rewriteTerms)<-matchableRules, isrComb term     -- select rewrite rules with the proper combinator
                        , let subTerm = rTermUny term                            -- now:   rCombinator subTerm = term
@@ -181,19 +183,19 @@ Ideas for future work:
      dStepBin :: (RTerm -> Bool) -> (RTerm -> RTerm -> RTerm) -> RTerm -> RTerm -> [DerivStep]
      dStepBin isrComb rCombinator a b
       = derivs ++
-        [ DStep { lhs  = rCombinator a b
-                , ruls = ruls rStp
-                , rhs  = rCombinator a (rhs rStp)
+        [ DStep { lhs = rCombinator a b
+                , rul = rul rStp
+                , rhs = rCombinator a (rhs rStp)
                 }
         | rStp<-dStps b ] ++
-        [ DStep { lhs  = rCombinator a b
-                , ruls = ruls lStp
-                , rhs  = rCombinator (rhs lStp) b
+        [ DStep { lhs = rCombinator a b
+                , rul = rul lStp
+                , rhs = rCombinator (rhs lStp) b
                 }
         | lStp<-dStps a ]
-        where derivs = [ DStep { lhs  = rCombinator a b             -- derivs gives the top level rewrites.
-                               , ruls = (term, unif, term')         -- only one rewrite is done in parallel in the top level.
-                               , rhs  = substitute rd unif term'    -- so rest is left alone, if partition can be rewritten.
+        where derivs = [ DStep { lhs = rCombinator a b             -- derivs gives the top level rewrites.
+                               , rul = (term, unif, term')         -- only one rewrite is done in parallel in the top level.
+                               , rhs = substitute rd unif term'    -- so rest is left alone, if partition can be rewritten.
                                }
                        | (term, rewriteTerms)<-matchableRules, isrComb term    -- select rewrite rules with the proper combinator
                        , let subLft = rTermLft term; subRht = rTermRht term    -- now:   rCombinator subTerm = term
@@ -209,33 +211,33 @@ Ideas for future work:
 
      dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm 
      dStepLists isrComb rCombinator ls
-      = [ DStep { lhs  = rCombinator ls       -- The original expression
-                , ruls = (term, unif, term')  -- only one rewrite step is done without parallelism.
-                , rhs  = result
+      = [ DStep { lhs = rCombinator ls       -- The original expression
+                , rul = (term, unif, term')  -- only one rewrite step is done without parallelism.
+                , rhs = result
                 }
         | (term, rewriteTerms)<-matchableRules, isrComb term
         , let subTerms = rTermList term
         , let n=length subTerms
         , (pre,segmentList,post) <- segments n
-        , unif <- mix [ matches l r | (l,r)<-zip subTerms (map comb segmentList) ]
+        , unif <- mix [ matches l r | (l,r)<-zip subTerms (map (combLst rCombinator) segmentList) ]
         , noDoubles unif                                      -- if one variable is bound to more than one different expressions, the deal is off.
         , term'<-rewriteTerms
         , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
-        , let original=rCombinator (red isrComb (pre ++ substitute rd unif term :post))  -- is equal to rCombinator ls
-        , let result  =rCombinator (red isrComb (pre ++ substitute rd unif term':post))
+        , let subs = combLst rCombinator . flat isrComb
+        , let original=subs (pre ++ substitute rd unif term :post)  -- is equal to rCombinator ls
+        , let result  =subs (pre ++ substitute rd unif term':post)
         , if original==rCombinator ls then True else
-          fatal 225 ("When analysing rule "++rd++" with unifier "++showADL unif++" on:  "++showADL (rCombinator ls)++
+          fatal 228 ("When analysing rule "++rd++" with unifier "++showADL unif++" on:  "++showADL (rCombinator ls)++
                      "\nWe substitute:  "++showADL (substitute rd unif term)++
                      "\nby:             "++showADL (substitute rd unif term')++
                      ".\nHowever, the original RTerm:  "++showADL (rCombinator ls)++
-                     "\ndiffers from rCombinator (red isrComb (pre ++ substitute rd unif term :post)):\n  "++
-                     showADL original++
-                     "\nso, there is an error in rCombinator (red isrComb (pre ++ substitute rd unif term :post))"
+                     "\ndiffers from subs (pre ++ substitute rd unif term :post):\n  "++
+                     showADL original
                     )
         ] ++
         [ DStep { lhs = rCombinator ls -- is equal to: (pre++lhs dstep:post)
-                , ruls = ruls dstep
-                , rhs = rCombinator (red isrComb (pre++rhs dstep:post))
+                , rul = rul dstep
+                , rhs = rCombinator (flat isrComb (pre++rhs dstep:post))
                 }
         | (pre,l,post) <- splitList ls
         , dstep <- dStps l]
@@ -249,39 +251,51 @@ Ideas for future work:
                  [ (head ds, tail ds, []) | ds<-dist (n+1) ls ] ++
                  [ ([], init ds, last ds) | ds<-dist (n+1) ls ] ++
                  [ (head ds, (init.tail) ds, last ds) | ds<-dist (n+2) ls ]
-              comb :: [RTerm] -> RTerm
-              comb es = case es of
-                          []  -> fatal 740 "Not allowed."
-                          [e] -> e
-                          _   -> rCombinator es
      
      dStepSets  :: (RTerm -> Bool) -> (Set RTerm -> RTerm) -> Set RTerm -> [DerivStep]
      dStepSets isrComb rCombinator s
-     -- We try to perform a rewrite on the top level, i.e. on some subset of RTerms from s. The result is 'derivs'
-     -- If that doesn't work, we try to perform rewrites on any of the subexpressins in s.
-      = [ DStep { lhs  = rCombinator s            -- derivs gives the top level rewrites.
-                , ruls = (term, unif, term')      -- only one rewrite is done in parallel in the top level.
-                , rhs  = substitute rd unif term' -- so rest is left alone, if partition can be rewritten.
+     -- We try to perform a rewrite on the top level, i.e. on some subset of RTerms from s.
+     -- Then, we add rewrites on any of the subexpressins in s.
+     -- Example rCombinator s  = RUni { '1', aap, aap\noot, 'Piet', mies;vuur}
+      = [ DStep { lhs = rCombinator s            -- derivs gives the top level rewrites.
+                , rul = (term, unif, term')      -- only one rewrite is done in parallel in the top level.
+                , rhs = substitute rd unif term' -- so rest is left alone, if partition can be rewritten.
                 }
-        | (term, rewriteTerms)<-matchableRules, isrComb term
-        , let subTerms = rTermSet term
-        , unif <- matchSets rCombinator subTerms s  -- noDoubles is guaranteed by matchSets, so there is no need to repeat that check here.
-        , term' <- rewriteTerms
-        , let rd = showADL term++" -> "++showADL term'        -- rule documentation for fatals in 'substitute'
-        , if substitute (rd++" for original of "++showADL (rCombinator s)) unif term==rCombinator s then True else
-          fatal 263 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator s:  "++showADL (rCombinator s))
+        | (term, rewriteTerms)<-matchableRules, isrComb term       -- e.g. term = 'Piet' \/ r \/ p\q
+        , let subTerms = rTermSet term                             -- e.g. subTerms = { 'Piet', r, p\q }
+        , let termVars = Set.filter isRVar subTerms                -- e.g. termVars = { r }
+        , let sameTrms = subTerms `Set.intersection` s             -- e.g. sameTrms = { 'Piet' }
+        , let subExprs = s `Set.difference` sameTrms               -- { '1', aap, aap\noot, mies;vuur }
+        , let toMatchs = (subTerms `Set.difference` sameTrms) `Set.difference` termVars -- e.g. toMatchs = { p\q }
+        , let n=Set.size toMatchs -- each element of toMatchs can be matched to one subTerm from subExprs.
+        , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
+        , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
+        , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
+        , let restTerms = Set.map (combSet rCombinator) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+        , unif0 <- matchSets rCombinator toMatchs matchCandidates  -- e.g. unif0={ p->aap, q->noot }
+        , unif1 <- matchSets rCombinator termVars restTerms        -- e.g. unif1={ r->RUni {'1', aap, mies;vuur} }
+        , let unif = unif0 `Set.union` unif1                       -- e.g. unif={ p->aap, q->noot, r->RUni {'1', aap, mies;vuur} }
+        , noDoubles unif
+        , term'<-rewriteTerms
+        , let rd = showADL term++" -> "++showADL term'             -- rule documentation for fatals in 'substitute'
+        , let original=substitute rd unif term   -- is equal to rCombinator ls
+        , let result  =substitute rd unif term'
+        , if original==rCombinator s then True else
+          fatal 227 ("When analysing rule "++rd++" with unifier "++showADL unif++" on:  "++showADL (rCombinator s)++
+                     "\nWe substitute:  "++showADL original++
+                     "\nby:             "++showADL result++
+                     "\nHowever, the original RTerm:  "++showADL (rCombinator s)++
+                     "\ndiffers from subs term:       "++showADL original
+                    )
         ] ++
         [ DStep { lhs = rCombinator s -- is equal to: (pre \/ lhs dstep)
-                , ruls = ruls dstep
-                , rhs = comb (red isrComb (pre++rhs dstep:post))
+                , rul = rul dstep
+                , rhs = (combSet rCombinator . Set.fromList . flat isrComb) (pre++rhs dstep:post)
                 }
         | (pre,l,post) <- splitList (Set.toList s)
         , dstep <- dStps l]
-        where comb :: [RTerm] -> RTerm
-              comb es = case es of
-                         []  -> fatal 784 "Not allowed."
-                         [e] -> e
-                         _   -> rCombinator (Set.fromList es)
+        where partsplus :: Ord a => Int -> Set a -> [(Set (Set a), Set a)]
+              partsplus n s = [ (p,Set.empty) | p<-parts n ls ] ++ [ (Set.delete p prt, p) | prt<-parts (n+1) ls, p<-set.toList prt ]
 
      matchableRules :: [(RTerm,[RTerm])]
      matchableRules
@@ -303,8 +317,6 @@ Ideas for future work:
       = concat ["\n   "++showADL l++" = "++showADL t | (l,tms) <- rs, t<-tms ]
 -}
 
-
-     
    splitList :: [a] -> [([a],a,[a])]
    splitList lst = [(take i lst,l,drop (i+1) lst) | (i,l) <- zip [0..] lst]
 
@@ -333,18 +345,8 @@ Ideas for future work:
    term2rTerm :: Term TermPrim -> RTerm
    term2rTerm term
     = case term of
-        PEqu _ l r               -> RIsc (Set.fromList [RUni (Set.singleton (RCpl lt) `Set.union` rTrm), RUni (Set.singleton (RCpl rt) `Set.union` lTrm)])
-                                    where lt=term2rTerm l; rt=term2rTerm r
-                                          lTrm = case lt of
-                                                   RUni terms -> terms
-                                                   trm        -> Set.singleton trm
-                                          rTrm = case rt of
-                                                   RUni terms -> terms
-                                                   trm        -> Set.singleton trm
-        PImp _ l r               -> RUni (Set.singleton (RCpl (term2rTerm l)) `Set.union` rTrm)
-                                    where rTrm = case term2rTerm r of
-                                                   RUni terms -> terms
-                                                   trm        -> Set.singleton trm
+        PEqu o l r               -> term2rTerm (PIsc o (PImp o l r) (PImp o r l))
+        PImp o l r               -> term2rTerm (PUni o (PCpl o l) r)
         PIsc _ l r               -> RIsc (lSet `Set.union` rSet)
                                     where lSet = case term2rTerm l of
                                                    RIsc terms -> terms
@@ -377,7 +379,6 @@ Ideas for future work:
         PKl1 _ e                 -> RKl1 (term2rTerm e)
         PFlp _ e                 -> RFlp (term2rTerm e)
         PBrk _ e                 -> term2rTerm e 
-        Prim (Prel _ _)          -> fatal 376 ("Cannot cope with untyped "++showADL term++" in a dRule inside the normalizer.")
         Prim (PTrel _ str sgn)   -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
         Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
         Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
@@ -387,18 +388,8 @@ Ideas for future work:
    expr2RTerm :: Expression -> RTerm
    expr2RTerm expr
       = case expr of
-          EEqu (l,r)           -> RIsc (Set.fromList [RUni (Set.singleton (RCpl lt) `Set.union` rTrm), RUni (Set.singleton (RCpl rt) `Set.union` lTrm)])
-                                  where lt=expr2RTerm l; rt=expr2RTerm r
-                                        lTrm = case lt of
-                                                 RUni terms -> terms
-                                                 trm        -> Set.singleton trm
-                                        rTrm = case rt of
-                                                 RUni terms -> terms
-                                                 trm        -> Set.singleton trm
-          EImp (l,r)           -> RUni (Set.singleton (RCpl (expr2RTerm l)) `Set.union` rTrm)
-                                  where rTrm = case expr2RTerm r of
-                                                 RUni terms -> terms
-                                                 trm        -> Set.singleton trm
+          EEqu (l,r)           -> expr2RTerm (EIsc (EImp (l,r), EImp (r,l)))
+          EImp (l,r)           -> expr2RTerm (EUni (ECpl l, r))
           EIsc (l,r)           -> RIsc (lSet `Set.union` rSet)
                                   where lSet = case expr2RTerm l of
                                                  RIsc terms -> terms
@@ -525,11 +516,8 @@ Ideas for future work:
         wrap :: Int -> Int -> String -> String
         wrap i j e' = if i<=j then e' else lpar++e'++rpar
 
-{- momentarily redundant
-   isVar :: RTerm -> Bool
-   isVar (RVar{}) = True
-   isVar _ = False
 
+{- momentarily redundant
    unVar :: RTerm -> String
    unVar (RVar r _ _) = r
    unVar _ = fatal 501 "Illegal call on unVar"
@@ -569,13 +557,13 @@ Ideas for future work:
     
 -- For documentation purposes, the derivation rule which proves the step is included.
 
-   data DerivStep = DStep { lhs  :: RTerm
-                          , ruls :: (RTerm,Unifier,RTerm)
-                          , rhs  :: RTerm
+   data DerivStep = DStep { lhs :: RTerm
+                          , rul :: (RTerm,Unifier,RTerm)
+                          , rhs :: RTerm
                           }
 
 -- instance Show DerivStep where
---  showsPrec _ r@DStep{}  = showString ("    "++showADL (lhs r)++"\n =  {" ++show (ruls r)++"}\n    " ++showADL (rhs r))
+--  showsPrec _ r@DStep{}  = showString ("    "++showADL (lhs r)++"\n =  {" ++show (rul r)++"}\n    " ++showADL (rhs r))
 
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
@@ -613,7 +601,7 @@ Ideas for future work:
         pr term
            = case slideDown (weightNF dnf) term of
               [] -> [ (term, ["weight: "++show (weightNF dnf term)], "<=>") ]
-              ds -> [ (lhs d, ["  (weight: "++show w++")"++ "\n   "++showADL tmpl++" = "++showADL step++"  with unifier: "++showADL unif | let (tmpl,unif,step) = ruls d], "<=>")
+              ds -> [ (lhs d, ["  (weight: "++show w++")"++ "\n   "++showADL tmpl++" = "++showADL step++"  with unifier: "++showADL unif | let (tmpl,unif,step) = rul d], "<=>")
                     | (w,d)<-ds ] ++
                     [ (rhs d, [], "<=>")
                     | let (_,d) = last ds ]
@@ -648,6 +636,7 @@ Ideas for future work:
    instance ShowADL Unifier where
      showADL s = "{"++intercalate ", " [ str++"->"++showADL t | (str,t)<-Set.toList s ]++"}"
 
+
    substitute :: String    -- A string to document fatals
               -> Unifier   -- the substitution, which in reality is a set of string/expression pairs.
               -> RTerm     -- The term to be transformed to an expression, with all variables replaced by subexpressions
@@ -655,15 +644,15 @@ Ideas for future work:
    substitute ruleDoc unifier term = subs term
     where
        subs :: RTerm -> RTerm
-       subs (RIsc s)     = (RIsc . Set.fromList . red isRIsc . map subs . Set.toList) s
-       subs (RUni s)     = (RUni . Set.fromList . red isRUni . map subs . Set.toList) s
+       subs (RIsc s)     = (combSet RIsc . Set.fromList . flat isRIsc . map subs . Set.toList) s
+       subs (RUni s)     = (combSet RUni . Set.fromList . flat isRUni . map subs . Set.toList) s
        subs (RDif l r)   = RDif (subs l) (subs r)
        subs (RLrs l r)   = RLrs (subs l) (subs r)
        subs (RRrs l r)   = RRrs (subs l) (subs r)
        subs (RDia l r)   = RDia (subs l) (subs r)
-       subs (RCps ls)    = (RCps . red isRCps . map subs) ls
-       subs (RRad ls)    = (RRad . red isRRad . map subs) ls
-       subs (RPrd ls)    = (RPrd . red isRPrd . map subs) ls
+       subs (RCps ls)    = (RCps . flat isRCps . map subs) ls
+       subs (RRad ls)    = (RRad . flat isRRad . map subs) ls
+       subs (RPrd ls)    = (RPrd . flat isRPrd . map subs) ls
        subs (RKl0 e  )   = RKl0 (subs e)
        subs (RKl1 e  )   = RKl1 (subs e)
        subs (RFlp e  )   = RFlp (subs e)
@@ -687,11 +676,13 @@ Ideas for future work:
        subs e@RConst{}   = e
 --     subs t            = fatal 392 ("Rule:  "++ruleDoc++"\nError: "++showADL t++"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
    
-   red :: (RTerm -> Bool) -> [RTerm] -> [RTerm]
-   red isrComb ls
+   flat :: (RTerm -> Bool) -> [RTerm] -> [RTerm]
+   flat isrComb ls
     = case ls of
        []  -> fatal 689 "Illegal empty list"
-       es  -> concat [ if isrComb e then rTermListForSets e else [e] | e<-es]
+       es  -> if or [isrComb e | e<-es]   -- SJ: Apparently, the recursion in 'flat' is required. Without it, Misc/Kernmodel.adl did fail on 18 aug 2014.
+              then (flat isrComb . concat) [ if isrComb e then rTermListForSets e else [e] | e<-es]
+              else es
    rTermListForSets :: RTerm -> [RTerm]
    rTermListForSets (RIsc s) = Set.toList s
    rTermListForSets (RUni s) = Set.toList s
@@ -702,23 +693,23 @@ Ideas for future work:
    matches term expr
      = case (term,expr) of
         (RIsc es,        RIsc es')   -> if or [isRIsc t | t<-Set.toList es++Set.toList es']
-                                        then fatal 656 "Nested RIsc"
+                                        then fatal 656 ("Nested RIsc\n term: "++showADL term++"\n expr: "++showADL expr)
                                         else matchSets RIsc es es'
         (RUni es,        RUni es')   -> if or [isRUni t | t<-Set.toList es++Set.toList es']
-                                        then fatal 659 "Nested RUni"
+                                        then fatal 659 ("Nested RUni\n term: "++showADL term++"\n expr: "++showADL expr)
                                         else matchSets RUni es es'
         (RDif l r,       RDif l' r') -> matches l l' ++ matches r r'
         (RLrs l r,       RLrs l' r') -> matches l l' ++ matches r r'
         (RRrs l r,       RRrs l' r') -> matches l l' ++ matches r r'
         (RDia l r,       RDia l' r') -> matches l l' ++ matches r r'
         (RCps ls,        RCps ls')   -> if or [isRCps t | t<-ls++ls']
-                                        then fatal 666 "Nested RCps"
+                                        then fatal 666 ("Nested RCps\n term: "++showADL term++"\n expr: "++showADL expr)
                                         else matchLists RCps ls ls'
         (RRad ls,        RRad ls')   -> if or [isRRad t | t<-ls++ls']
-                                        then fatal 669 "Nested RRad"
+                                        then fatal 669 ("Nested RRad\n term: "++showADL term++"\n expr: "++showADL expr)
                                         else matchLists RRad ls ls'
         (RPrd ls,        RPrd ls')   -> if or [isRPrd t | t<-ls++ls']
-                                        then fatal 672 "Nested RPrd"
+                                        then fatal 672 ("Nested RPrd\n term: "++showADL term++"\n expr: "++showADL expr)
                                         else matchLists RPrd ls ls'
         (RKl0 e,         RKl0 e')    -> matches e e' 
         (RKl1 e,         RKl1 e')    -> matches e e' 
@@ -740,16 +731,11 @@ Ideas for future work:
       , if or [null m | m<-ms]
         then fatal 683 (concat ["\nms:  ["++intercalate ", " (map showADL m)++"]" | m<-ms])
         else True
-      , let subTerms = map comb ms     -- make an RTerm from each sublist in ms
+      , let subTerms = map (combLst rCombinator) ms     -- make an RTerm from each sublist in ms
       , unif<-mix [ matches l r | (l,r)<-zip es subTerms ]
       , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
       ]
       where
-        comb :: [RTerm] -> RTerm
-        comb ls = case ls of
-                   []  -> fatal 740 "Not allowed."
-                   [e] -> e
-                   _   -> rCombinator ls
         dist :: Int -> [a] -> [[[a]]]
         dist 1 ls = [[ls]]
         dist 2 ls = [ [ take i ls , drop i ls ] | i<-[1..length ls-1] ]
@@ -783,7 +769,7 @@ Ideas for future work:
     = [ unif
       | let n = Set.size cdes                      -- the length of the template, which contains variables
       , partition <- parts n cdes'                 -- determine segments from the expression with the same length. partition :: Set (Set RTerm)
-      , let subTerms = Set.map comb partition      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
+      , let subTerms = Set.map (combSet rCombinator) partition      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
       , template <- permutations (Set.toList cdes)
       , unif <- mix [ matches l r | (l,r) <- safezip template (Set.toList subTerms) ]
       , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
@@ -792,37 +778,55 @@ Ideas for future work:
         isct  = es `Set.intersection` es'            -- E.g.:  {'Piet'}
         cdes  = es  `Set.difference` isct            -- the terms of es that are not in es' (a set of templates). E.g.: { r;s }  
         cdes' = es' `Set.difference` isct            -- candidates for binding to a variable: { a\b , a;b;c , d , e;f }  (a set of expressions)
-        -- parts produces a fixed number of subsets
-        parts :: Ord a => Int -> Set a -> [Set (Set a)]  -- ,   but within this where clause we must make it more specific.
-        parts n xsss = (Set.toList . Set.fromList . map Set.fromList . map (map Set.fromList) . p n . Set.toList) xsss
-         where
-           p :: Eq a => Int -> [a] -> [[[a]]]
-           p 0 _  = []
-           p 1 xs = [ [xs] ]
-           p 2 xs = [ [ss,rest] | ss<-init (subsets xs), let rest=[ e | e<-xs, e `notElem` ss ], not (null rest) ]
-           p i xs = [ twoSets++tl | (hd:tl)<-p (i-1) xs, twoSets<-p 2 hd ]
-        {- examples:
-           parts 1 "abcd" = {{"abcd"}}
-           parts 2 "abcd" = {{"a","bcd"},{"ab","cd"},{"abc","d"},{"abd","c"},{"ac","bd"},{"acd","b"},{"ad","bc"}}
-           parts 3 "abcd" = {{"a","b","cd"},{"a","bc","d"},{"a","bd","c"},{"ab","c","d"},{"ac","b","d"},{"ad","b","c"}}
-           parts 4 "abcd" = {{"a","b","c","d"}}
-           parts 3 "abcde"
-            = { {"a","b","cde"},{"a","bc","de"},{"a","bcd","e"},{"a","bce","d"},{"a","bd","ce"},{"a","bde","c"}
-              , {"a","be","cd"},{"ab","c","de"},{"ab","cd","e"},{"ab","ce","d"},{"abc","d","e"},{"abd","c","e"}
-              , {"abe","c","d"},{"ac","b","de"},{"ac","bd","e"},{"ac","be","d"},{"acd","b","e"},{"ace","b","d"}
-              , {"ad","b","ce"},{"ad","bc","e"},{"ad","be","c"},{"ade","b","c"},{"ae","b","cd"},{"ae","bc","d"}
-              , {"ae","bd","c"}
-              }
-           parts 6 "abcde" = {}
-        -}
-        subsets :: [a] -> [[a]]
-        subsets []  = [[]]                                
-        subsets (x:xs) = map (x:) (subsets xs) ++ subsets xs
-        comb :: Set RTerm -> RTerm
-        comb s = case Set.toList s of
-                  []  -> fatal 784 "Not allowed."
-                  [e] -> e
-                  _   -> rCombinator s
+
+   separate :: Ord a => Int -> Set a -> [(Set a, Set a)]
+   separate n s = [ (part, s `Set.difference` part) | part <- subsetLength n (Set.toList s) ]
+    where
+      subsetLength :: Ord a => Int -> [a] -> [Set a]
+      subsetLength 0 _      = [Set.empty]                                
+      subsetLength n (x:xs) = map (Set.insert x) (subsetLength (n-1) xs) ++ subsetLength n xs
+      subsetLength _ []     = []
+
+    -- parts produces a fixed number of subsets
+   parts :: Ord a => Int -> Set a -> [Set (Set a)]  -- ,   but within this where clause we must make it more specific.
+   parts n xsss = (Set.toList . Set.fromList . map Set.fromList . map (map Set.fromList) . p n . Set.toList) xsss
+    where
+      p :: Eq a => Int -> [a] -> [[[a]]]
+      p 0 _  = []
+      p 1 xs = [ [xs] ]
+      p 2 xs = [ [ss,rest] | ss<-init (subsets xs), let rest=[ e | e<-xs, e `notElem` ss ], not (null rest) ]
+      p i xs = [ twoSets++tl | (hd:tl)<-p (i-1) xs, twoSets<-p 2 hd ]
+   {- examples:
+      parts 1 "abcd" = {{"abcd"}}
+      parts 2 "abcd" = {{"a","bcd"},{"ab","cd"},{"abc","d"},{"abd","c"},{"ac","bd"},{"acd","b"},{"ad","bc"}}
+      parts 3 "abcd" = {{"a","b","cd"},{"a","bc","d"},{"a","bd","c"},{"ab","c","d"},{"ac","b","d"},{"ad","b","c"}}
+      parts 4 "abcd" = {{"a","b","c","d"}}
+      parts 3 "abcde"
+       = { {"a","b","cde"},{"a","bc","de"},{"a","bcd","e"},{"a","bce","d"},{"a","bd","ce"},{"a","bde","c"}
+         , {"a","be","cd"},{"ab","c","de"},{"ab","cd","e"},{"ab","ce","d"},{"abc","d","e"},{"abd","c","e"}
+         , {"abe","c","d"},{"ac","b","de"},{"ac","bd","e"},{"ac","be","d"},{"acd","b","e"},{"ace","b","d"}
+         , {"ad","b","ce"},{"ad","bc","e"},{"ad","be","c"},{"ade","b","c"},{"ae","b","cd"},{"ae","bc","d"}
+         , {"ae","bd","c"}
+         }
+      parts 6 "abcde" = {}
+   -}
+      subsets :: [a] -> [[a]]
+      subsets []  = [[]]                                
+      subsets (x:xs) = map (x:) (subsets xs) ++ subsets xs
+
+   combLst :: ([RTerm] -> RTerm) -> [RTerm] -> RTerm
+   combLst rCombinator es
+    = case es of
+           []  -> fatal 791 "Not allowed."
+           [e] -> e
+           _   -> rCombinator es
+
+   combSet :: (Set RTerm -> RTerm) -> Set RTerm -> RTerm
+   combSet rCombinator s
+    = case Set.toList s of
+           []  -> fatal 798 "Not allowed."
+           [e] -> e
+           _   -> rCombinator s
 
    -- Example: noDoubles { p->A;B, q->'Piet', p->'Z', r->A* } is False, because p binds two different expressions.
    noDoubles :: Unifier -> Bool
