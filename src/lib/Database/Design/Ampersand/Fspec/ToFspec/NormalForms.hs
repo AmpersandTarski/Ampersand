@@ -78,6 +78,22 @@ Ideas for future work:
    isValid (RFlp e)   = isValid e
    isValid _          = True
 
+   normRT :: RTerm -> RTerm
+   normRT (RIsc s)   = (combSet RIsc . Set.fromList . flat isRIsc . map normRT . Set.toList) s
+   normRT (RUni s)   = (combSet RUni . Set.fromList . flat isRUni . map normRT . Set.toList) s
+   normRT (RDif l r) = RDif (normRT l) (normRT r)
+   normRT (RCpl e)   = RCpl (normRT e)
+   normRT (RDia l r) = RDia (normRT l) (normRT r)
+   normRT (RLrs l r) = RLrs (normRT l) (normRT r)
+   normRT (RRrs l r) = RRrs (normRT l) (normRT r)
+   normRT (RRad ls)  = (combLst RRad . flat isRRad . map normRT) ls
+   normRT (RCps ls)  = (combLst RCps . flat isRCps . map normRT) ls
+   normRT (RPrd ls)  = (combLst RPrd . flat isRPrd . map normRT) ls
+   normRT (RKl0 e)   = RKl0 (normRT e)
+   normRT (RKl1 e)   = RKl1 (normRT e)
+   normRT (RFlp e)   = RFlp (normRT e)
+   normRT term       = term
+
    isRIsc, isRUni, isRDif, isRCpl, isRDia, isRLrs, isRRrs, isRRad, isRCps, isRPrd, isRKl0, isRKl1, isRFlp, isRVar :: RTerm -> Bool
    isRIsc (RIsc{}) = True
    isRIsc _        = False
@@ -291,6 +307,7 @@ Ideas for future work:
         | (term, rewriteTerms)<-matchableRules, isrComb term       -- e.g. term = 'Piet' \/ r \/ p\q
         , let subTerms = rTermSet term                             -- e.g. subTerms = { 'Piet', r, p\q }
         , let termVars = Set.filter isRVar subTerms                -- e.g. termVars = { r }
+        , null [ () | e<-Set.toList s, not (isValid e), fatal 313 ("Invalid subexpr: "++showADL e) ]
         , let sameTrms = subTerms `Set.intersection` s             -- e.g. sameTrms = { 'Piet' }
         , let subExprs = s `Set.difference` sameTrms               -- { '1', aap, aap\noot, mies;vuur }
         , let toMatchs = (subTerms `Set.difference` sameTrms) `Set.difference` termVars -- e.g. toMatchs = { p\q }
@@ -298,11 +315,16 @@ Ideas for future work:
         , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
         , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
         , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
-        , let restTerms = Set.map (combSet rCombinator) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
-        , let remTerm   = if Set.null remainder
-                          then fatal 302 "empty remTerm"
-                          else combSet rCombinator remainder            -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+        , let restTerms = (Set.map (flatSet . Set.toList)) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+        , if Set.null restTerms then True else
+          if (isValid . flatSet . Set.toList) restTerms then True else fatal 305 ("Invalid restTerms: "++showADL (rCombinator restTerms))
+        , let remTerm   = let remT = combSet rCombinator remainder in
+                          if Set.null remainder
+                          then fatal 308 "empty remTerm"
+                          else if isValid remT then remT else fatal 309 ("Invalid remTerm: "++showADL remT)            -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
         , unif0 <- if Set.null toMatchs then [Set.empty] else
+                   if (not.isValid.combSet rCombinator) toMatchs        then fatal 311 ("Invalid toMatchs: "++showADL (rCombinator toMatchs)) else
+                   if (not.isValid.combSet rCombinator) matchCandidates then fatal 312 ("Invalid matchCandidates: "++showADL (rCombinator matchCandidates)) else
                    matchSets rCombinator toMatchs matchCandidates  -- e.g. unif0={ p->aap, q->noot }
         , unif1 <- if Set.null termVars then [Set.empty] else
                    matchSets rCombinator termVars restTerms        -- e.g. unif1={ r->RUni {'1', aap, mies;vuur} }
@@ -317,7 +339,7 @@ Ideas for future work:
                          then substitute rd unif term'
                          else flatSet [substitute rd unif term', remTerm]
         , if original==rCombinator s then True else
-          fatal 227 ("When analysing rule "++rd++" with unifier "++showADL unif++" on:  "++showADL (rCombinator s)++
+          fatal 327 ("When analysing rule "++rd++" with unifier "++showADL unif++" on:  "++showADL (rCombinator s)++
                      "\nWe substitute:  "++showADL original++
                      "\nby:             "++showADL result++
                      "\nHowever, the original RTerm:  "++showADL (rCombinator s)++
@@ -333,7 +355,7 @@ Ideas for future work:
         where partsplus :: Ord a => Int -> Set a -> [(Set (Set a), Set a)]
               partsplus n ss = [ (p,Set.empty) | p<-parts n ss ] ++ [ (Set.delete p prt, p) | prt<-parts (n+1) ss, p<-Set.toList prt ]
               flatSet :: [RTerm] -> RTerm
-              flatSet = combSet rCombinator . Set.fromList . flat isrComb
+              flatSet = normRT . rCombinator . Set.fromList . flat isrComb
               
      matchableRules :: [(RTerm,[RTerm])]
      matchableRules
@@ -382,115 +404,121 @@ Ideas for future work:
 -- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
    term2rTerm :: Term TermPrim -> RTerm
    term2rTerm term
-    = case term of
-        PEqu o l r               -> term2rTerm (PIsc o (PImp o l r) (PImp o r l))
-        PImp o l r               -> term2rTerm (PUni o (PCpl o l) r)
-        PIsc _ l r               -> combSet RIsc (lSet `Set.union` rSet)
-                                    where lSet = case term2rTerm l of
-                                                   RIsc terms -> terms
-                                                   trm        -> Set.singleton trm
-                                          rSet = case term2rTerm r of
-                                                   RIsc terms -> terms
-                                                   trm        -> Set.singleton trm
-        PUni _ l r               -> combSet RUni (lSet `Set.union` rSet)
-                                    where lSet = case term2rTerm l of
-                                                   RUni terms -> terms
-                                                   trm        -> Set.singleton trm
-                                          rSet = case term2rTerm r of
-                                                   RUni terms -> terms
-                                                   trm        -> Set.singleton trm
-        PDif _ l r               -> RDif (term2rTerm l) (term2rTerm r)
-        PCpl _ e                 -> RCpl (term2rTerm e)
-        PDia _ l r               -> RDia (term2rTerm l) (term2rTerm r)
-        PLrs _ l r               -> RLrs (term2rTerm l) (term2rTerm r)
-        PRrs _ l r               -> RRrs (term2rTerm l) (term2rTerm r)
-        PRad _ l r               -> RRad (lLst++rLst)
-                                    where lLst = case term2rTerm l of
-                                                   RRad terms -> terms
-                                                   trm        -> [trm]
-                                          rLst = case term2rTerm r of
-                                                   RRad terms -> terms
-                                                   trm        -> [trm]
-        PCps _ l r               -> RCps (lLst++rLst)
-                                    where lLst = case term2rTerm l of
-                                                   RCps terms -> terms
-                                                   trm        -> [trm]
-                                          rLst = case term2rTerm r of
-                                                   RCps terms -> terms
-                                                   trm        -> [trm]
-        PPrd _ l r               -> RPrd (lLst++rLst)
-                                    where lLst = case term2rTerm l of
-                                                   RPrd terms -> terms
-                                                   trm        -> [trm]
-                                          rLst = case term2rTerm r of
-                                                   RPrd terms -> terms
-                                                   trm        -> [trm]
-        PKl0 _ e                 -> RKl0 (term2rTerm e)
-        PKl1 _ e                 -> RKl1 (term2rTerm e)
-        PFlp _ e                 -> RFlp (term2rTerm e)
-        PBrk _ e                 -> term2rTerm e 
-        Prim (PTrel _ str sgn)   -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
-        Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
-        Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
-        Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
-        _                        -> fatal 381 ("Cannot cope with untyped "++showADL term++" in a dRule inside the normalizer.")
+      = if isValid result then result else fatal 385 ("term2rTerm has produced an invalid result: "++showADL result)
+        where
+         result
+          = case term of
+              PEqu o l r               -> term2rTerm (PIsc o (PImp o l r) (PImp o r l))
+              PImp o l r               -> term2rTerm (PUni o (PCpl o l) r)
+              PIsc _ l r               -> combSet RIsc (lSet `Set.union` rSet)
+                                          where lSet = case term2rTerm l of
+                                                         RIsc terms -> terms
+                                                         trm        -> Set.singleton trm
+                                                rSet = case term2rTerm r of
+                                                         RIsc terms -> terms
+                                                         trm        -> Set.singleton trm
+              PUni _ l r               -> combSet RUni (lSet `Set.union` rSet)
+                                          where lSet = case term2rTerm l of
+                                                         RUni terms -> terms
+                                                         trm        -> Set.singleton trm
+                                                rSet = case term2rTerm r of
+                                                         RUni terms -> terms
+                                                         trm        -> Set.singleton trm
+              PDif _ l r               -> RDif (term2rTerm l) (term2rTerm r)
+              PCpl _ e                 -> RCpl (term2rTerm e)
+              PDia _ l r               -> RDia (term2rTerm l) (term2rTerm r)
+              PLrs _ l r               -> RLrs (term2rTerm l) (term2rTerm r)
+              PRrs _ l r               -> RRrs (term2rTerm l) (term2rTerm r)
+              PRad _ l r               -> RRad (lLst++rLst)
+                                          where lLst = case term2rTerm l of
+                                                         RRad terms -> terms
+                                                         trm        -> [trm]
+                                                rLst = case term2rTerm r of
+                                                         RRad terms -> terms
+                                                         trm        -> [trm]
+              PCps _ l r               -> RCps (lLst++rLst)
+                                          where lLst = case term2rTerm l of
+                                                         RCps terms -> terms
+                                                         trm        -> [trm]
+                                                rLst = case term2rTerm r of
+                                                         RCps terms -> terms
+                                                         trm        -> [trm]
+              PPrd _ l r               -> RPrd (lLst++rLst)
+                                          where lLst = case term2rTerm l of
+                                                         RPrd terms -> terms
+                                                         trm        -> [trm]
+                                                rLst = case term2rTerm r of
+                                                         RPrd terms -> terms
+                                                         trm        -> [trm]
+              PKl0 _ e                 -> RKl0 (term2rTerm e)
+              PKl1 _ e                 -> RKl1 (term2rTerm e)
+              PFlp _ e                 -> RFlp (term2rTerm e)
+              PBrk _ e                 -> term2rTerm e 
+              Prim (PTrel _ str sgn)   -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
+              Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
+              Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
+              Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
+              _                        -> fatal 381 ("Cannot cope with untyped "++showADL term++" in a dRule inside the normalizer.")
 
    expr2RTerm :: Expression -> RTerm
    expr2RTerm expr
-      = case expr of
-          EEqu (l,r)           -> expr2RTerm (EIsc (EImp (l,r), EImp (r,l)))
-          EImp (l,r)           -> expr2RTerm (EUni (ECpl l, r))
-          EIsc (l,r)           -> combSet RIsc (lSet `Set.union` rSet)
-                                  where lSet = case expr2RTerm l of
-                                                 RIsc terms -> terms
-                                                 trm        -> Set.singleton trm
-                                        rSet = case expr2RTerm r of
-                                                 RIsc terms -> terms
-                                                 trm        -> Set.singleton trm
-          EUni (l,r)           -> combSet RUni (lSet `Set.union` rSet)
-                                  where lSet = case expr2RTerm l of
-                                                 RUni terms -> terms
-                                                 trm        -> Set.singleton trm
-                                        rSet = case expr2RTerm r of
-                                                 RUni terms -> terms
-                                                 trm        -> Set.singleton trm
-          EDif (l,r)           -> RDif (expr2RTerm l) (expr2RTerm r)
-          ECpl e               -> RCpl (expr2RTerm e)
-          EDia (l,r)           -> RDia (expr2RTerm l) (expr2RTerm r)
-          ELrs (l,r)           -> RLrs (expr2RTerm l) (expr2RTerm r)
-          ERrs (l,r)           -> RRrs (expr2RTerm l) (expr2RTerm r)
-          ERad (l,r)           -> RRad (lLst++rLst)
-                                  where lLst = case expr2RTerm l of
-                                                 RRad terms -> terms
-                                                 trm        -> [trm]
-                                        rLst = case expr2RTerm r of
-                                                 RRad terms -> terms
-                                                 trm        -> [trm]
-          ECps (l,r)           -> RCps (lLst++rLst)
-                                  where lLst = case expr2RTerm l of
-                                                 RCps terms -> terms
-                                                 trm        -> [trm]
-                                        rLst = case expr2RTerm r of
-                                                 RCps terms -> terms
-                                                 trm        -> [trm]
-          EPrd (l,r)           -> RPrd (lLst++rLst)
-                                  where lLst = case expr2RTerm l of
-                                                 RPrd terms -> terms
-                                                 trm        -> [trm]
-                                        rLst = case expr2RTerm r of
-                                                 RPrd terms -> terms
-                                                 trm        -> [trm]
-          EKl0 e               -> RKl0 (expr2RTerm e)
-          EKl1 e               -> RKl1 (expr2RTerm e)
-          EFlp e               -> RFlp (expr2RTerm e)
-          EBrk e               -> expr2RTerm e 
-          EDcD{}               -> RConst expr
-          EDcI c               -> RId c
-          EEps{}               -> RConst expr
-          EDcV sgn             -> RVee (source sgn) (target sgn)
-          EMp1 a c             -> RAtm a c
---        _                    -> RConst expr   -- This alternative has been commented out to avoid an "overlapping patterns" warning from Haskell.
-
+      = if isValid result then result else fatal 443 ("expr2RTerm has produced an invalid result: "++showADL result)
+        where
+         result
+          = case expr of
+             EEqu (l,r)           -> expr2RTerm (EIsc (EImp (l,r), EImp (r,l)))
+             EImp (l,r)           -> expr2RTerm (EUni (ECpl l, r))
+             EIsc (l,r)           -> combSet RIsc (lSet `Set.union` rSet)
+                                     where lSet = case expr2RTerm l of
+                                                    RIsc terms -> terms
+                                                    trm        -> Set.singleton trm
+                                           rSet = case expr2RTerm r of
+                                                    RIsc terms -> terms
+                                                    trm        -> Set.singleton trm
+             EUni (l,r)           -> combSet RUni (lSet `Set.union` rSet)
+                                     where lSet = case expr2RTerm l of
+                                                    RUni terms -> terms
+                                                    trm        -> Set.singleton trm
+                                           rSet = case expr2RTerm r of
+                                                    RUni terms -> terms
+                                                    trm        -> Set.singleton trm
+             EDif (l,r)           -> RDif (expr2RTerm l) (expr2RTerm r)
+             ECpl e               -> RCpl (expr2RTerm e)
+             EDia (l,r)           -> RDia (expr2RTerm l) (expr2RTerm r)
+             ELrs (l,r)           -> RLrs (expr2RTerm l) (expr2RTerm r)
+             ERrs (l,r)           -> RRrs (expr2RTerm l) (expr2RTerm r)
+             ERad (l,r)           -> RRad (lLst++rLst)
+                                     where lLst = case expr2RTerm l of
+                                                    RRad terms -> terms
+                                                    trm        -> [trm]
+                                           rLst = case expr2RTerm r of
+                                                    RRad terms -> terms
+                                                    trm        -> [trm]
+             ECps (l,r)           -> RCps (lLst++rLst)
+                                     where lLst = case expr2RTerm l of
+                                                    RCps terms -> terms
+                                                    trm        -> [trm]
+                                           rLst = case expr2RTerm r of
+                                                    RCps terms -> terms
+                                                    trm        -> [trm]
+             EPrd (l,r)           -> RPrd (lLst++rLst)
+                                     where lLst = case expr2RTerm l of
+                                                    RPrd terms -> terms
+                                                    trm        -> [trm]
+                                           rLst = case expr2RTerm r of
+                                                    RPrd terms -> terms
+                                                    trm        -> [trm]
+             EKl0 e               -> RKl0 (expr2RTerm e)
+             EKl1 e               -> RKl1 (expr2RTerm e)
+             EFlp e               -> RFlp (expr2RTerm e)
+             EBrk e               -> expr2RTerm e 
+             EDcD{}               -> RConst expr
+             EDcI c               -> RId c
+             EEps{}               -> RConst expr
+             EDcV sgn             -> RVee (source sgn) (target sgn)
+             EMp1 a c             -> RAtm a c
+--   --      _                    -> RConst expr   -- This alternative has been commented out to avoid an "overlapping patterns" warning from Haskell.
+        
    rTerm2expr :: RTerm -> Expression
    -- implementation note: because RTerms contain variables, it is cumbersome to reconstruct the type. So we don't.
    -- Once the variables have been replaced (by means of substitutions) by real expressions, we get a type correct expression again.
@@ -703,10 +731,12 @@ Ideas for future work:
               -> Unifier   -- the substitution, which in reality is a set of string/expression pairs.
               -> RTerm     -- The term to be transformed to an expression, with all variables replaced by subexpressions
               -> RTerm
-   substitute ruleDoc unifier term = subs term
-    where
+   substitute ruleDoc unifier term
+    = if isValid result then result else fatal 713 ("substitute has produced an invalid result: "++showADL result)
+      where
+       result = subs term
        subs :: RTerm -> RTerm
-       subs t | not (isValid t) = fatal 680 ("Substituting invalid term "++showADL t)
+       subs t | not (isValid t) = fatal 680 ("Substituting an invalid term "++showADL t)
        subs (RIsc s)     = (combSet RIsc . Set.fromList . flat isRIsc . map subs . Set.toList) s
        subs (RUni s)     = (combSet RUni . Set.fromList . flat isRUni . map subs . Set.toList) s
        subs (RDif l r)   = RDif (subs l) (subs r)
@@ -825,9 +855,9 @@ Ideas for future work:
    matchSets :: (Set RTerm -> RTerm) -> Set RTerm -> Set RTerm -> [Unifier]
    matchSets rCombinator es es'
     = -- set sizes are not necessarily equal.
-      if Set.null es then fatal 824 "cannot match empty sets" else
-      if not (isValid (combSet rCombinator es) ) then fatal 796 ("Invalid term " ++showADL (rCombinator es)++"\nbeing matched to expression "++showADL (rCombinator es')) else
-      if not (isValid (combSet rCombinator es')) then fatal 797 ("Matching term "++showADL (rCombinator es)++"\nto invalid expression " ++showADL (rCombinator es')) else
+      if Set.null es || Set.null es' then fatal 858 "cannot match empty sets" else
+      if or [ not (isValid e) | e<-Set.toList es ] then fatal 859 ("Invalid subterm(s): "++intercalate ", " [ showADL e | e<-Set.toList es,  not (isValid e) ]) else
+      if or [ not (isValid e) | e<-Set.toList es'] then fatal 860 ("Invalid subexpr(s): "++intercalate ", " [ showADL e | e<-Set.toList es', not (isValid e) ]) else
       [ unif
       | let n = Set.size cdes                      -- the length of the template, which contains variables
       , partition <- parts n cdes'                 -- determine segments from the expression with the same length. partition :: Set (Set RTerm)
