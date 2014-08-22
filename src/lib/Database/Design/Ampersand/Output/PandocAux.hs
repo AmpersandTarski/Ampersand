@@ -29,7 +29,7 @@ import Text.Pandoc.Builder
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (hPutStrLn)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-import Database.Design.Ampersand.Misc        
+import Database.Design.Ampersand.Misc
 import System.Process      (system)
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.IO              (hPutStrLn, stderr)
@@ -44,15 +44,14 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.PandocAux"
 
-
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: Options -> Fspc -> [(String , String)]
-defaultWriterVariables flags fSpec
-  = [ ("title", (case (fsLang fSpec, diagnosisOnly flags) of
+defaultWriterVariables :: Fspc -> [(String , String)]
+defaultWriterVariables fSpec
+  = [ ("title", (case (fsLang fSpec, diagnosisOnly (flags fSpec)) of
                         (Dutch  , False) -> "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
                         (Dutch  ,  True) -> "Diagnose van "
-                        (English,  True) -> "Diagnosis of " 
+                        (English,  True) -> "Diagnosis of "
                 )++name fSpec)
  --   , ("mainfont",
  --   , ("sansfont",
@@ -67,8 +66,8 @@ defaultWriterVariables flags fSpec
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly flags)]++
-    [ ("header-includes", unlines 
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly (flags fSpec))]++
+    [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
          , "\\usepackage[toc]{glossaries}    % package used to define terms"
          , "\\makeglossaries"
@@ -104,17 +103,16 @@ defaultWriterVariables flags fSpec
          ])
 --    , ("geometry", "margin=2cm, a4paper")
     ]
-         
-     
+
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
-writepandoc :: Options -> Fspc -> Pandoc -> (String,IO(),IO())
-writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
+writepandoc :: Fspc -> Pandoc -> (String,IO(),IO())
+writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
-         outputFile = addExtension (combine (dirOutput flags) (baseName flags)) 
-                                       (case fspecFormat flags of        
+         outputFile = addExtension (combine (dirOutput (flags fSpec)) (baseName (flags fSpec)))
+                                       (case fspecFormat (flags fSpec) of
                                                  Fasciidoc     -> ".txt"
                                                  Fcontext      -> ".context"
                                                  Fdocbook      -> ".docbook"
@@ -134,24 +132,24 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                        )
          makeOutput
             =  do template <- readDefaultTemplate fSpecFormatString
-                  verboseLn flags ("Generating "++fSpecFormatString++" to : "++outputFile)
+                  verboseLn (flags fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
                   writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
-                  verboseLn flags "Variables to set in the template:"
-                  verboseLn flags (intercalate "\n   " (map show (writerVariables (writerOptions template))))
-                  verboseLn flags "... done."
-           where 
+                  verboseLn (flags fSpec) "Variables to set in the template:"
+                  verboseLn (flags fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
+                  verboseLn (flags fSpec) "... done."
+           where
               pandocWriter :: WriterOptions -> Pandoc -> String
               pandocWriter =
-                case fspecFormat flags of
-                  Fasciidoc -> fatal 145 "No current support for asciidoc" 
-                  FPandoc   -> writeNative 
+                case fspecFormat (flags fSpec) of
+                  Fasciidoc -> fatal 145 "No current support for asciidoc"
+                  FPandoc   -> writeNative
                   Fcontext  -> writeConTeXt
-                  Fdocbook  -> writeDocbook 
+                  Fdocbook  -> writeDocbook
                   Fhtml     -> writeHtmlString
                   FLatex    -> writeLaTeX
                   Fman      -> writeMan
-                  Fmarkdown -> writeMarkdown 
-                  Fmediawiki -> writeMediaWiki 
+                  Fmarkdown -> writeMarkdown
+                  Fmediawiki -> writeMediaWiki
                   Fopendocument -> writeOpenDocument
                   Forg -> writeOrg
                   Fplain -> writePlain
@@ -161,7 +159,7 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Ftextile -> writeTextile
               fSpecFormatString :: String
               fSpecFormatString =
-                case fspecFormat flags of
+                case fspecFormat (flags fSpec) of
                   FPandoc   -> "pandoc"
                   Fasciidoc -> "asciidoc"
                   Fcontext  -> "context"
@@ -177,28 +175,28 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Frst -> "rst"
                   Frtf -> "rtf"
                   Ftexinfo -> "texinfo"
-                  Ftextile -> "textile"                  
+                  Ftextile -> "textile"
               readDefaultTemplate :: String -> IO(Maybe String)
-              readDefaultTemplate  s = 
-                do { let fp = ampersandDataDir flags </> ".." </> "outputTemplates" </> "default."++s
+              readDefaultTemplate  s =
+                do { let fp = ampersandDataDir (flags fSpec) </> ".." </> "outputTemplates" </> "default."++s
                    ; exists <- doesFileExist fp
-                   ; (if exists 
-                      then do verboseLn flags $ "Using Template: "++fp
+                   ; (if exists
+                      then do verboseLn (flags fSpec) $ "Using Template: "++fp
                               contents <- readFile fp
-                              return $ Just contents 
+                              return $ Just contents
                       else do putStrLn ""
-                              putStrLn  "***WARNING: ***" 
+                              putStrLn  "***WARNING: ***"
                               putStrLn ("Template file does not exist: "++fp)
                               putStrLn  "It was part of the installation of Ampersand."
                               putStrLn  "...trying without template, but that isn't likely going to work..."
                               putStrLn  "    (reinstalling Ampersand should fix this problem...)"
                               putStrLn  "***************"
-                              return Nothing 
+                              return Nothing
                      )
-                   } 
+                   }
               writerOptions :: Maybe String -> WriterOptions
-              writerOptions template = case theme flags of
-                          ProofTheme -> ampersandDefaultWriterOptions 
+              writerOptions template = case theme (flags fSpec) of
+                          ProofTheme -> ampersandDefaultWriterOptions
                                            { writerTableOfContents=False
                                            , writerNumberSections=False
                                            }
@@ -210,48 +208,48 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                             , writerTableOfContents=True
                             , writerNumberSections=True
                             , writerTemplate=fromMaybe "" template
-                            , writerVariables=defaultWriterVariables flags fSpec}
+                            , writerVariables=defaultWriterVariables fSpec}
          postProcessMonad :: IO()
-         postProcessMonad = 
-           case fspecFormat flags of   
-               FLatex  -> do 
+         postProcessMonad =
+           case fspecFormat (flags fSpec) of
+               FLatex  -> do
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
-                          verboseLn flags ("PdfLatex was called "++
+                          verboseLn (flags fSpec) ("PdfLatex was called "++
                                           (if nrOfRounds>1 then show nrOfRounds++" times" else "once")++
                                           if ready then "."
                                                    else ", but did not solve all references!")
-                             where 
+                             where
                                 doRestOfPdfLatex :: (Bool,Int) -> IO (Bool,Int)
                                 doRestOfPdfLatex (ready, roundsSoFar)
                                   = if ready || roundsSoFar > 4    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
                                     then return (ready, roundsSoFar)
                                     else do callPdfLatexOnce
-                                            let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed. 
+                                            let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed.
                                             {- The log file should be renamed before reading, because readFile opens the file
                                                for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
-                                               was read using readFile, it will fail because the file is still open. 8-((  
-                                            -} 
+                                               was read using readFile, it will fail because the file is still open. 8-((
+                                            -}
                                             renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
-                                            haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))  
+                                            haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))
                                             let notReady =  needle `isInfixOf` haystack
-                                            when notReady (verboseLn flags "Another round of pdfLatex is required. Hang on...")
+                                            when notReady (verboseLn (flags fSpec) "Another round of pdfLatex is required. Hang on...")
                                           --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
                                             doRestOfPdfLatex (not notReady, roundsSoFar +1)
 
                                 callPdfLatexOnce :: IO ()
-                                callPdfLatexOnce = 
+                                callPdfLatexOnce =
                                    do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
                                                 then system ( pdfLatexCommand++
-                                                              if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog" ) >>
+                                                              if verboseP (flags fSpec) then "" else "> "++combine (dirOutput (flags fSpec)) "pdflog" ) >>
                                                      system  makeIndexCommand
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                                else system ( "cd "++dirOutput flags++
+                                                else system ( "cd "++dirOutput (flags fSpec)++
                                                               " && pdflatex "++commonFlags++
-                                                              texFilename ++ if verboseP flags then "" else "> "++addExtension(baseName flags) ".pdflog" ) >>
+                                                              texFilename ++ if verboseP (flags fSpec) then "" else "> "++addExtension(baseName (flags fSpec)) ".pdflog" ) >>
                                                      system makeIndexCommand
-                                      case result of 
-                                         ExitSuccess   -> verboseLn flags "PDF file created."
-                                         ExitFailure _ -> hPutStrLn stderr $  if verboseP flags 
+                                      case result of
+                                         ExitSuccess   -> verboseLn (flags fSpec) "PDF file created."
+                                         ExitFailure _ -> hPutStrLn stderr $  if verboseP (flags fSpec)
                                                                               then "" -- in verbose mode, Latex already gave plenty of information
                                                                               else "\nLatex error.\nFor more information, run pdflatex on "++texFilename++
                                                                                     " or rerun ampersand with the --verbose option"
@@ -259,15 +257,15 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
                                       --makeindex uses the error stream for verbose stuff...
-                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput flags) "glossaries.log"
-                                      pdfflags = (if verboseP flags then "" else " --disable-installer") ++
-                                                 " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
-                                      texFilename = addExtension (baseName flags) ".tex"
-                                      commonFlags = if verboseP flags then "" else "--interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted 
+                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (flags fSpec)) "glossaries.log"
+                                      pdfflags = (if verboseP (flags fSpec) then "" else " --disable-installer") ++
+                                                 " -include-directory="++dirOutput (flags fSpec)++ " -output-directory="++dirOutput (flags fSpec)++" "
+                                      texFilename = addExtension (baseName (flags fSpec)) ".tex"
+                                      commonFlags = if verboseP (flags fSpec) then "" else "--interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
                                       -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it
                                       -- on windows, we also do --disable-installer, since otherwise a missing package may cause interaction,
                                       -- even with --interaction=nonstopmode.
-               _  -> return()            
+               _  -> return()
 
 -----Linguistic goodies--------------------------------------
 
@@ -290,8 +288,7 @@ count    lang    n      x
       (English, 5) -> "five "++plural English x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
-    
-      
+
 ------ Symbolic referencing ---------------------------------
 
 class (Identified a) => SymRef a where
@@ -301,18 +298,18 @@ class (Identified a) => SymRef a where
   symDefLabel :: a -> String  -- labels the definition of a
   symDefLabel   c = "\\label{Def"++symLabel c++"}"
   symReqRef :: Options -> a -> Inlines  -- references the requirement of a
-  symReqRef  flags   c = case fspecFormat flags of
+  symReqRef  opts   c = case fspecFormat opts of
                            FLatex  -> rawInline "latex" ("\\ref{Req"++symLabel c++"}")
                            _       -> (str.name) c
-  symDefRef :: Options -> a -> Inlines  -- references the definition of a 
-  symDefRef  flags   c = case fspecFormat flags of
+  symDefRef :: Options -> a -> Inlines  -- references the definition of a
+  symDefRef  opts   c = case fspecFormat opts of
                            FLatex  -> rawInline "latex" ("\\ref{Def"++symLabel c++"}")
                            _       -> (str.name) c
   symReqPageRef :: Options -> a -> Inlines  -- references the requirement of a
-  symReqPageRef flags c = case fspecFormat flags of
+  symReqPageRef opts c = case fspecFormat opts of
                            FLatex  -> rawInline "latex" ("\\pageref{Req"++symLabel c++"}")
                            _       -> (str.name) c
-  symDefPageRef :: a -> String  -- references the definition of a 
+  symDefPageRef :: a -> String  -- references the definition of a
   symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
 
 instance SymRef ConceptDef where
@@ -344,21 +341,20 @@ instance SymRef PlugInfo where
 
 -- TODO: Fix the other labeled 'things', to make a neat reference.
 labeledThing :: Options -> Int -> String -> String -> Blocks
-labeledThing flags lev lbl t =
-    header (lev+1) 
-       ((text t <> xrefLabel flags lbl))  
- 
+labeledThing opts lev lbl t =
+    header (lev+1)
+       ((text t <> xrefLabel opts lbl))
+
 -- | A label that can be cross referenced to. (only for output formats that support this feature)
 xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere rendering dan LaTeX
-xrefLabel flags myLabel
-   = if xrefSupported flags
+xrefLabel opts myLabel
+   = if xrefSupported opts
      then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
      else mempty -- fatal 508 "Illegal use of xrefLabel."
 xrefSupported :: Options -> Bool
-xrefSupported flags = fspecFormat flags `elem` [FLatex] 
+xrefSupported opts = fspecFormat opts `elem` [FLatex]
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
 xrefCitation myLabel = RawInline (Text.Pandoc.Builder.Format "latex") ("\\cite{"++escapeNonAlphaNum myLabel++"}")
-
 
 -- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
 pandocEqnArray :: [(String,String,String)] -> [Block]
@@ -367,7 +363,7 @@ pandocEqnArray xs
                                intercalate "\\\\\n   " [ a++"&"++b++"&"++c | (a,b,c)<-xs ]++
                                "\n\\end{eqnarray}") ]
    | not (null xs)]
-   
+
 pandocEqnArrayOnelabel :: String -> [(String,String,String)] -> [Block]
 pandocEqnArrayOnelabel label xs
  = case xs of
@@ -376,7 +372,7 @@ pandocEqnArrayOnelabel label xs
                                intercalate "\\nonumber\\\\\n   " [ l++"&"++m++"&"++r | (l,m,r)<-rest ]++
                                "\\nonumber\n\\end{eqnarray}")
                     ]      ]
-   
+
 pandocEquation :: String -> [Block]
 pandocEquation x
  = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{equation}\n   "++ x ++"\n\\end{equation}") ]
@@ -545,7 +541,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
   f 'n' = "\\~{n}"         --  tilde
   f 'Ñ' = "\\~{N}"         --  tilde
   f 'Ȯ' = "\\.{O}"         --  dot over the letter
-  f 'ȯ' = "\\.{o}"         --  dot over the letter 
+  f 'ȯ' = "\\.{o}"         --  dot over the letter
   f 'ö' = "\\\"{o}"        --  umlaut or dieresis
   f 'Ö' = "\\\"{O}"        --  umlaut or dieresis
   f 'ô' = "\\^{o}"         --  circumflex
@@ -584,7 +580,6 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
   f _   = [c] -- let us think if this should be:    fatal 661 ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
-             
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
@@ -599,8 +594,8 @@ uniquecds fSpec c
 -- was: [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
 
 makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
-makeDefinition flags i nm lbl defin ref =
-  case fspecFormat flags of
+makeDefinition opts i nm lbl defin ref =
+  case fspecFormat opts of
     FLatex ->  [ Para ( [ RawInline (Text.Pandoc.Builder.Format "latex") $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
                         [ RawInline (Text.Pandoc.Builder.Format "latex") $ lbl ++ "\n" | i == 0] ++
                         [ RawInline (Text.Pandoc.Builder.Format "latex") $ insertAfterFirstWord refStr defStr] ++
@@ -609,7 +604,7 @@ makeDefinition flags i nm lbl defin ref =
                ]
     _      ->  [ Para ( Str defin : [ Str (" ["++ref++"]") | not (null ref) ] )
                ]
- where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}" 
+ where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}"
        defStr = latexEscShw defin
        -- by putting the ref after the first word of the definition, it aligns nicely with the definition
        insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr

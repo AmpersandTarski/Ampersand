@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
    import Data.Maybe (fromMaybe)
 
    -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
-   -- that each sublist in the result contains only equal elements, and all equal elements are in 
+   -- that each sublist in the result contains only equal elements, and all equal elements are in
    -- the same sublist.  For example,
    --
    -- > eqClass "Mississippi" = ["M","iiii","ssss","pp"]
@@ -26,7 +26,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
    --   and a list of to-vertices)
    getCycles :: Eq a => [(a, [a])] -> [[a]]
    getCycles edges =
-     let allVertices = nub . concat $ [ from : to | (from, to) <- edges ] 
+     let allVertices = nub . concat $ [ from : to | (from, to) <- edges ]
          keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
          graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
      in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
@@ -39,7 +39,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
    combinations :: [[a]] -> [[a]]
    combinations []       = [[]]
    combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
-                              
+
    commaEng :: String -> [String] -> String
    commaEng str [a,b,c] = a++", "++b++", "++str++" "++c
    commaEng str [a,b]   = a++" "++str++" "++b

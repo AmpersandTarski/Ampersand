@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.ADL1 
+module Database.Design.Ampersand.ADL1
    ( module Database.Design.Ampersand.Core.ParseTree
    , module Database.Design.Ampersand.Core.AbstractSyntaxTree
    , module Database.Design.Ampersand.ADL1.Expression
    , module Database.Design.Ampersand.ADL1.ECArule
    , module Database.Design.Ampersand.ADL1.Rule
-   ) 
+   )
 where
 import Database.Design.Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)

@@ -25,7 +25,6 @@ head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
 
-
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowADL"
 
@@ -68,13 +67,12 @@ instance LanguageDependent Event where
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
   showADL (P_InterfaceRef _ nm) = " INTERFACE "++showstr nm
-  
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
 --              Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'source' en
 --              'target' hier al bekend zijn.
---              Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'. 
+--              Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'.
 -- BECAUSE (SJ): Dit blijft nog even zo, omdat showADL gebruikt wordt in het genereren van interfaces.
 --              Zolang we dat nog niet onder de knie hebben blijft de code wat troebel.
  showADL obj = " : "++showADL (objctx obj)++
@@ -84,7 +82,7 @@ instance ShowADL ObjectDef where
         recur ind (Just (InterfaceRef nm)) = ind++" INTERFACE "++showstr nm
         recur ind (Just (Box _ objs))
          = ind++" BOX [ "++
-           intercalate (ind++"     , ") 
+           intercalate (ind++"     , ")
                                [ showstr (name o)++
                                   (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
                                   " : "++showADL (objctx o)++
@@ -94,12 +92,12 @@ instance ShowADL ObjectDef where
            ind++"     ]"
 
 instance ShowADL Meta where
- showADL (Meta _ metaObj nm val) = 
+ showADL (Meta _ metaObj nm val) =
    "META "++(if null $ showADL metaObj then "" else showADL metaObj++" ") ++show nm++" "++show val
 
 instance ShowADL MetaObj where
  showADL ContextMeta = ""
- 
+
 instance ShowADL Purpose where
  showADL expl = "PURPOSE "++showADL (explObj expl)
                 ++" "++showADL (amLang (explMarkup expl))
@@ -112,17 +110,17 @@ instance ShowADL PandocFormat where
  showADL HTML  = "HTML "
  showADL ReST  = "REST "
  showADL Markdown = "MARKDOWN "
- 
+
 instance ShowADL A_Markup where
- showADL m 
-     = showADL (amLang m) 
-    ++ " "++showADL (amFormat m) 
+ showADL m
+     = showADL (amLang m)
+    ++ " "++showADL (amFormat m)
     ++ "{+"++aMarkup2String m++"-}"
-    
+
 instance ShowADL Lang where
  showADL Dutch   = "IN DUTCH"
  showADL English = "IN ENGLISH"
-   
+
 instance ShowADL ExplObj where
  showADL e = case e of
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
@@ -140,11 +138,11 @@ showstr str = "\""++str++"\""
 
 instance ShowADL Process where
  showADL prc
-  = "PROCESS " ++ name prc 
+  = "PROCESS " ++ name prc
     ++ (if null (udefrules prc) then "" else "\n  " ++intercalate "\n  " (map showADL (udefrules prc)) ++ "\n")
     ++ (if null (maintains prc) then "" else "\n  " ++                        showRM prc               ++ "\n")
     ++ (if null (mayEdit prc)   then "" else "\n  " ++                        showRR prc               ++ "\n")
--- concept definitions are not printed, because we have no way of telling where they come from.... 
+-- concept definitions are not printed, because we have no way of telling where they come from....
     ++ (if null (prcIds prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcIds prc))    ++ "\n")
     ++ (if null (prcXps prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcXps prc))    ++ "\n")
 -- The relations declared in the pattern are supplemented by all relations used by the rules.
@@ -169,14 +167,14 @@ instance ShowADL (String,Declaration) where
 
 instance ShowADL (String,Interface) where
  showADL (role,ifc) = "ROLE "++role++" USES "++show (name ifc)
- 
+
 instance ShowADL Pattern where
  showADL pat
   = "PATTERN " ++ showstr (name pat) ++ "\n"
     ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
     ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
--- concept definitions are not printed, because we have no way of telling where they come from.... 
+-- concept definitions are not printed, because we have no way of telling where they come from....
     ++ (if null (ptids pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptids pat)) ++ "\n")
     ++ "ENDPATTERN"
 
@@ -187,7 +185,7 @@ instance ShowADL (PairViewSegment Expression) where
 instance ShowADL SrcOrTgt where
  showADL Src = "SRC"
  showADL Tgt = "TGT"
- 
+
 instance ShowADL Rule where
  showADL r
   = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
@@ -196,7 +194,7 @@ instance ShowADL Rule where
      ++ case rrviol r of
           Nothing                -> ""
           Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showADL pvSegs)++")"
-       
+
 instance ShowADL A_Gen where
  showADL g =
    case g of
@@ -211,7 +209,7 @@ instance ShowADL RoleRule where
  showADL r = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
 
 instance ShowADL Interface where
- showADL ifc 
+ showADL ifc
   = "INTERFACE "++showstr(name ifc)
           ++(if null (ifcParams ifc) then "" else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
           ++(if null (ifcArgs ifc) then "" else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
@@ -219,7 +217,7 @@ instance ShowADL Interface where
           ++showADL (ifcObj ifc)
 
 instance ShowADL IdentityDef where
- showADL identity 
+ showADL identity
   = "IDENT "++idLbl identity
           ++ ": " ++name (idCpt identity)
           ++ "(" ++intercalate ", " (map showADL $ identityAts identity) ++ ")"
@@ -228,7 +226,7 @@ instance ShowADL IdentitySegment where
  showADL (IdentityExp objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
 
 instance ShowADL ViewDef where
- showADL vd 
+ showADL vd
   = "VIEW "++vdlbl vd
           ++ ": " ++name (vdcpt vd)
           ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
@@ -246,7 +244,7 @@ instance ShowADL ViewSegment where
 instance ShowADL Expression where
  showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", " <> ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]")
 -- NOTE: retain space after \\, because of unexpected side effects if it is used just before an 'r' or 'n'....
-   where 
+   where
      showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
      showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rDia, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
@@ -271,7 +269,7 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr --HJO, 20140622: Modified this, because the output must comply to Ampersand syntax. 
+          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr --HJO, 20140622: Modified this, because the output must comply to Ampersand syntax.
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 
@@ -279,7 +277,7 @@ instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
 
 instance ShowADL Declaration where
- showADL decl = 
+ showADL decl =
   case decl of
      Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
               (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
@@ -312,7 +310,7 @@ instance ShowADL P_Markup where
                                      Just f  -> " "++show f++" "
                                  ++
                                   "{+"++str++"-} "
- 
+
 instance ShowADL Prop where
  showADL = show
 
@@ -343,8 +341,8 @@ instance ShowADL A_Context where
 instance ShowADL Fspc where
  showADL fSpec
   = "CONTEXT " ++name fSpec
-    ++ (if null (map ifcObj [] {- map fsv_ifcdef (fActivities fSpec) -})     
-        then "" 
+    ++ (if null (map ifcObj [] {- map fsv_ifcdef (fActivities fSpec) -})
+        then ""
         else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
     ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
@@ -382,8 +380,8 @@ instance ShowADL P_Population where
             P_RelPopu{} -> null (p_popps pop)
             P_TRelPop{} -> null (p_popps pop)
             P_CptPopu{} -> null (p_popas pop)
-        ) 
-     then "" 
+        )
+     then ""
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
@@ -403,23 +401,21 @@ instance ShowADL Population where
   ++ if (case pop of
             PRelPopu{} -> null (popps pop)
             PCptPopu{} -> null (popas pop)
-        ) 
-     then "" 
+        )
+     then ""
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
                           PRelPopu{} -> map showPaire (popps pop)
                           PCptPopu{} -> map showAtom  (popas pop)
 
-
 -- showADL (PRelPopu r pairs)
 --  = "POPULATION "++showADL r++" CONTAINS\n"++
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
-
 showAtom :: String -> String
-showAtom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
+showAtom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
 instance ShowADL TermPrim where
  showADL (PI _)                                   = "I"
@@ -431,7 +427,6 @@ instance ShowADL TermPrim where
  showADL (Prel _ rel)                             = rel
  showADL (PTrel _ rel psgn)                       = rel++showsign psgn
   where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"
-
 
 --used to compose error messages at p2a time
 instance (ShowADL a, Traced a) => ShowADL (Term a) where
@@ -482,7 +477,6 @@ insP_Parentheses = insPar 0
        insPar i (PBrk _ e)   = insPar i e
        insPar _ x            = x
 
-
 --used to compose error messages at p2a time
 instance ShowADL P_Concept where
  showADL = name
@@ -522,7 +516,7 @@ showPAclause indent (Blk cj_ruls)
        = "BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
 showPAclause  _ (Let _ _ _)  = fatal 55 "showPAclause is missing for `Let`. Contact your dealer!"
 showPAclause  _ (Ref _)      = fatal 56 "showPAclause is missing for `Ref`. Contact your dealer!"
-                     
+
 motivate :: [Char] -> [Char] -> [(Expression, [Rule])] -> [Char]
 motivate indent motive motives = concat [ indent++showConj cj_rul | cj_rul<-motives ]
    where showConj (conj,rs) = "("++motive++" "++showADL conj++" FROM "++intercalate ", " (map name rs) ++")"

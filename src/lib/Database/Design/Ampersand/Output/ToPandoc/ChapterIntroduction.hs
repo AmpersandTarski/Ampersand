@@ -2,16 +2,16 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format
 
-chpIntroduction :: Fspc -> Options -> Blocks
-chpIntroduction fSpec flags =
+chpIntroduction :: Fspc -> Blocks
+chpIntroduction fSpec =
       chptHeader (fsLang fSpec) Intro
-   <> fromList purposesOfContext  -- the motivation(s) of this context 
+   <> fromList purposesOfContext  -- the motivation(s) of this context
    <> readingGuide                -- tells what can be expected in this document.
-  where 
-    readingGuide 
+  where
+    readingGuide
       = case fsLang fSpec of
           Dutch
             -> para ( text "Dit document"
@@ -22,29 +22,29 @@ chpIntroduction fSpec flags =
                    <> text "Het definieert de database en de business-services van " <> (text.name) fSpec <> text " door middel van bedrijfsregels"
                    <> (note.para.text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
                    <> text ". "
-                   <> (if SharedLang `elem` chaptersInDoc flags
-                       then ( if canXRefer flags 
+                   <> (if SharedLang `elem` chaptersInDoc (flags fSpec)
+                       then ( if canXRefer (flags fSpec)
                               then text "Deze afspraken staan opgesomd in hoofdstuk "
-                                <> xRefReference flags SharedLang
+                                <> xRefReference (flags fSpec) SharedLang
                               else text "Deze afspraken staan opgesomd in het hoofdstuk genaamd "
                                 <> (doubleQuoted.chptTitle (fsLang fSpec)) SharedLang
                             ) <> text ", geordend op thema. "
                        else text "Deze afspraken zijn niet opgenomen in dit document."
                       )
                     )
-            <> if Diagnosis `elem` chaptersInDoc flags
-               then para ((if canXRefer flags 
+            <> if Diagnosis `elem` chaptersInDoc (flags fSpec)
+               then para ((if canXRefer (flags fSpec)
                            then text "De diagnose in hoofdstuk "
-                             <> xRefReference flags Diagnosis
+                             <> xRefReference (flags fSpec) Diagnosis
                            else text "De diagnose in het hoofdstuk genaamd"
                              <> (doubleQuoted.chptTitle (fsLang fSpec)) Diagnosis
                           ) <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                          )
                else mempty
-            <> if ConceptualAnalysis `elem` chaptersInDoc flags
-               then para ( ( if canXRefer flags 
+            <> if ConceptualAnalysis `elem` chaptersInDoc (flags fSpec)
+               then para ( ( if canXRefer (flags fSpec)
                              then text "De conceptuele analyse in hoofdstuk "
-                               <> xRefReference flags ConceptualAnalysis
+                               <> xRefReference (flags fSpec) ConceptualAnalysis
                              else text "De conceptuele analyse in het hoofdstuk genaamd"
                                <> (doubleQuoted.chptTitle (fsLang fSpec)) ConceptualAnalysis
                            ) <> text " is bedoeld voor requirements engineers en architecten om de gemaakte afspraken"
@@ -54,13 +54,13 @@ chpIntroduction fSpec flags =
                              <> text "Ook garandeert het een eenduidige interpretatie van de afspraken."
                          )
                else mempty
-            <> if DataAnalysis `elem` chaptersInDoc flags
+            <> if DataAnalysis `elem` chaptersInDoc (flags fSpec)
                then para ( text "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van "
                         <> (singleQuoted.text.name) fSpec
                         <> text ". "
-                        <> ( if canXRefer flags 
+                        <> ( if canXRefer (flags fSpec)
                              then text "De gegevensanalyse in hoofdstuk "
-                               <> xRefReference flags DataAnalysis
+                               <> xRefReference (flags fSpec) DataAnalysis
                              else text "De gegevensanalyse in het hoofdstuk genaamd"
                                <> (doubleQuoted.chptTitle (fsLang fSpec)) DataAnalysis
                            )
@@ -77,7 +77,6 @@ chpIntroduction fSpec flags =
                          )
                else mempty
 
-
           English
             -> para ( text "This document"
                    <> (note.para.text) ("This document was generated at "++date++" on "++time++", using "++ampersandVersionStr++".")
@@ -87,30 +86,30 @@ chpIntroduction fSpec flags =
                    <> text "It defines the database and the business services of " <> (text.name) fSpec <> text " by means of business rules"
                    <> (note.para.text) "Rule based design characterizes the Ampersand approach, which has been used to produce this document. "
                    <> text ". "
-                   <> (if SharedLang `elem` chaptersInDoc flags
-                       then ( if canXRefer flags 
+                   <> (if SharedLang `elem` chaptersInDoc (flags fSpec)
+                       then ( if canXRefer (flags fSpec)
                               then text "Those rules are listed in chapter "
-                                <> xRefReference flags SharedLang
+                                <> xRefReference (flags fSpec) SharedLang
                                 <> text ", ordered by theme. "
                               else text "Those rules are listed in the chapter named "
                                 <> (doubleQuoted.chptTitle (fsLang fSpec)) SharedLang
-                            ) <> text ", ordered by theme. " 
+                            ) <> text ", ordered by theme. "
                        else text "Those rules are not included in this document."
                       )
-                    ) 
-             <> if Diagnosis `elem` chaptersInDoc flags
-               then para ((if canXRefer flags 
+                    )
+             <> if Diagnosis `elem` chaptersInDoc (flags fSpec)
+               then para ((if canXRefer (flags fSpec)
                            then text "The diagnosis in chapter "
-                             <> xRefReference flags Diagnosis
+                             <> xRefReference (flags fSpec) Diagnosis
                            else text "The diagnosis in the chapter named "
                              <> (doubleQuoted.chptTitle (fsLang fSpec)) Diagnosis
                           ) <> text " is meant to help the authors identify shortcomings in their Ampersand script."
                          )
                else mempty
-            <> if ConceptualAnalysis `elem` chaptersInDoc flags
-               then para ( ( if canXRefer flags 
+            <> if ConceptualAnalysis `elem` chaptersInDoc (flags fSpec)
+               then para ( ( if canXRefer (flags fSpec)
                              then text "The conceptual analysis in chapter "
-                               <> xRefReference flags ConceptualAnalysis
+                               <> xRefReference (flags fSpec) ConceptualAnalysis
                              else text "The conceptual analysis in the chapter named "
                                <> (doubleQuoted.chptTitle (fsLang fSpec)) ConceptualAnalysis
                            ) <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
@@ -119,13 +118,13 @@ chpIntroduction fSpec flags =
                              <> text "It also yields an unambiguous interpretation of all requirements."
                          )
                else mempty
-            <> if DataAnalysis `elem` chaptersInDoc flags
+            <> if DataAnalysis `elem` chaptersInDoc (flags fSpec)
                then para ( text "Chapters that follow have the builders of "
                         <> (singleQuoted.text.name) fSpec
                         <> text " as their intended audience. "
-                        <> ( if canXRefer flags 
+                        <> ( if canXRefer (flags fSpec)
                              then text "The data analysis in chapter "
-                               <> xRefReference flags DataAnalysis
+                               <> xRefReference (flags fSpec) DataAnalysis
                              else text "The data analysis in the chapter named "
                                <> (doubleQuoted.chptTitle (fsLang fSpec)) DataAnalysis
                            )
@@ -141,10 +140,10 @@ chpIntroduction fSpec flags =
                         <> text " ensures compliance to all rules aggreed upon."
                          )
                else mempty
-      
-    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" (genTime flags)
-    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" (genTime flags)
- 
+
+    date = formatTime (lclForLang (fsLang fSpec)) "%-d-%-m-%Y" (genTime (flags fSpec))
+    time = formatTime (lclForLang (fsLang fSpec)) "%H:%M:%S" (genTime (flags fSpec))
+
     purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (fsLang fSpec) fSpec]
-    
+
  

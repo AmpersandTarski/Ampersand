@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Fspec.ShowMeatGrinder 
+{-# LANGUAGE FlexibleInstances #-}
+module Database.Design.Ampersand.Fspec.ShowMeatGrinder
   (meatGrinder)
 where
 
@@ -20,17 +20,17 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowMeatGrinder"
 
-meatGrinder :: Options -> Fspc -> (FilePath, String)
-meatGrinder flags fSpec = ("TemporaryPopulationsFileOfRap" ,content)
- where 
+meatGrinder :: Fspc -> (FilePath, String)
+meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
+ where
   content = unlines
      ([ "{- Do not edit manually. This code has been generated!!!"
       , "    Generated with "++ampersandVersionStr
-      , "    Generated at "++show (genTime flags)
+      , "    Generated at "++show (genTime (flags fSpec))
       , "-}"
       , ""
       , "CONTEXT RapPopulations"]
-      ++ (concat.intersperse  []) (map (lines.showADL) (metaPops flags fSpec fSpec)) 
+      ++ (concat.intersperse  []) (map (lines.showADL) (metaPops fSpec fSpec))
       ++
       [ ""
       , "ENDCONTEXT"
@@ -39,56 +39,54 @@ data Pop = Pop { popName ::String
                , popSource :: String
                , popTarget :: String
                , popPairs :: [(String,String)]
-               } 
+               }
          | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
-                   } 
+                   }
 instance ShowADL Pop where
- showADL pop = 
+ showADL pop =
   case pop of
       Pop{} -> "POPULATION "++ popName pop++
                   " ["++popSource pop++" * "++popTarget pop++"] CONTAINS"
               ++
               if null (popPairs pop)
-              then "[]" 
+              then "[]"
               else "\n"++indent++"[ "++intercalate ("\n"++indent++"; ") showContent++indent++"]"
-      Comment{} -> "-- "++comment pop        
+      Comment{} -> "-- "++comment pop
     where indent = "   "
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
-
 
 techId :: Identified a => a -> String
 techId = show.hash.name
 class AdlId a where
  uri :: a -> String
 
-instance AdlId Fspc where 
+instance AdlId Fspc where
  uri a= "Ctx"++techId a
-instance AdlId Pattern where 
+instance AdlId Pattern where
  uri a= "Pat"++techId a
-instance AdlId A_Concept where 
+instance AdlId A_Concept where
  uri a= "Cpt"++techId a
-instance AdlId ConceptDef where 
+instance AdlId ConceptDef where
  uri a= "CDf"++techId a
-instance AdlId Rule where 
+instance AdlId Rule where
  uri a= "Rul"++techId a
-instance AdlId A_Gen where 
+instance AdlId A_Gen where
  uri a= "Gen"++(show.hash) g
         where g = case a of
                     Isa{} -> ((name.gengen) a++(name.genspc) a)
                     IsE{} -> ((concat.map name.genrhs) a++(name.genspc) a)
-instance AdlId Declaration where 
+instance AdlId Declaration where
  uri a= "Dcl"++techId a
-instance AdlId Purpose where 
+instance AdlId Purpose where
  uri a= "Prp"++(show.hash)((show.origin) a)
-instance AdlId Sign where 
+instance AdlId Sign where
  uri (Sign s t) = "Sgn"++(show.hash) (uri s++uri t)
 instance AdlId Paire where
  uri p = "Paire"++(show.hash) (srcPaire p++"_"++trgPaire p)
- 
-instance AdlId Atom where
- uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a  
 
+instance AdlId Atom where
+ uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a
 
 mkAtom :: A_Concept -> String -> Atom
 mkAtom cpt value = Atom { atmRoot = cpt
@@ -96,10 +94,10 @@ mkAtom cpt value = Atom { atmRoot = cpt
                         }
 
 class MetaPopulations a where
- metaPops :: Options -> Fspc -> a -> [Pop]
+ metaPops :: Fspc -> a -> [Pop]
 
 instance MetaPopulations Fspc where
- metaPops flags _ fSpec = 
+ metaPops _ fSpec =
    filter (not.nullContent)
     (
     [ Comment " "
@@ -113,30 +111,29 @@ instance MetaPopulations Fspc where
            [(uri fSpec,name fSpec)]
     ]
   ++[ Comment " ", Comment $ "*** Patterns: (count="++(show.length.vpatterns) fSpec++") ***"]
-  ++   concatMap (metaPops flags fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
+  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
   ++[ Comment " ", Comment $ "*** Rules: (count="++(show.length.allRules) fSpec++")***"]
-  ++   concatMap (metaPops flags fSpec) ((sortBy (comparing name).allRules)    fSpec)
-
+  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allRules)    fSpec)
 
   ++[ Comment " ", Comment $ "*** Concepts: (count="++(show.length.allConcepts) fSpec++")***"]
-  ++   concatMap (metaPops flags fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
+  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
   ++[ Comment " ", Comment $ "*** Generalisations: (count="++(show.length.vgens) fSpec++") ***"]
-  ++   concatMap (metaPops flags fSpec) (vgens          fSpec)
+  ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "*** Declarations: (count="++(show.length.allDecls) fSpec++") ***"]
-  ++   concatMap (metaPops flags fSpec) ((map snd.declOrder.allDecls)       fSpec)
+  ++   concatMap (metaPops fSpec) ((map snd.declOrder.allDecls)       fSpec)
   ++[ Comment " ", Comment $ "*** Atoms: (count="++(show.length) allAtoms++") ***"]
-  ++   concatMap (metaPops flags fSpec) allAtoms
+  ++   concatMap (metaPops fSpec) allAtoms
   ++[ Comment " ", Comment $ "*** Pairs: (count="++(show.length) allPairs++") ***"]
-  ++   concatMap (metaPops flags fSpec) allPairs    
+  ++   concatMap (metaPops fSpec) allPairs
   )
    where
     allAtoms :: [Atom]
     allAtoms = nub (concatMap atoms (initialPops fSpec))
-      where 
+      where
         atoms :: Population -> [Atom]
         atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp) 
-                      ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp) 
+          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
+                      ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
           PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
     allPairs :: [Paire]
     allPairs= nub (concatMap pairs (initialPops fSpec))
@@ -148,10 +145,10 @@ instance MetaPopulations Fspc where
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
     nullContent _ = False
-    -- | the order of relations is done by an order of the concepts, which is a hardcoded list 
+    -- | the order of relations is done by an order of the concepts, which is a hardcoded list
     declOrder ::[Declaration] -> [(Int,Declaration)]
     declOrder decls = zip [1..] (concatMap (sortBy f) (declGroups conceptOrder decls))
-      where 
+      where
         conceptOrder = ["Pattern"
                        ,"Rule"
                        ,"Declaration"
@@ -162,7 +159,7 @@ instance MetaPopulations Fspc where
         f a b =
           case comparing (name.source) a b of
             EQ -> case comparing (name.target) a b of
-                    EQ -> comparing (name) a b 
+                    EQ -> comparing (name) a b
                     x  -> x
             x -> x
         declGroups :: [String] -> [Declaration] -> [[Declaration]]
@@ -172,7 +169,7 @@ instance MetaPopulations Fspc where
              (x,y) = partition crit ds
              crit dcl = or [(name.source) dcl == nm, (name.target) dcl == nm]
 instance MetaPopulations Pattern where
- metaPops _ fSpec pat = 
+ metaPops fSpec pat =
    [ Comment " "
    , Comment $ "*** Pattern `"++name pat++"` ***"
    , Pop "ctxpats" "Context" "Pattern"
@@ -195,7 +192,7 @@ instance MetaPopulations Pattern where
           [(uri pat,uri x) | x <- ptrls pat]
    ]
 instance MetaPopulations Rule where
- metaPops _ fSpec rul =
+ metaPops fSpec rul =
    [ Comment " "
    , Comment $ "*** Rule `"++name rul++"` ***"
    , Pop "rrnm"  "Rule" "ADLid"
@@ -214,8 +211,8 @@ instance MetaPopulations Rule where
 
    ]
 instance MetaPopulations Declaration where
- metaPops _ fSpec dcl = 
-   case dcl of 
+ metaPops fSpec dcl =
+   case dcl of
      Sgn{} ->
       [ Comment " "
       , Comment $ "*** Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` ***"
@@ -227,12 +224,12 @@ instance MetaPopulations Declaration where
 --             [(uri dcl, unwords ["PRAGMA",show (decprL dcl),show (decprM dcl),show (decprR dcl)])]
       , Pop "decprps" "Declaration" "PropertyRule"
              [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
-      , Pop "declaredthrough" "PropertyRule" "Property" 
+      , Pop "declaredthrough" "PropertyRule" "Property"
              [(uri rul,show prp) | rul <- filter ofDecl (allRules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
       , Pop "decpopu" "Declaration" "PairID"
-             [(uri dcl, uri p) | p <- pairsOf dcl] 
+             [(uri dcl, uri p) | p <- pairsOf dcl]
 --      , Pop "inipopu" "Declaration" "PairID"
---             [(uri dcl,mkUriRelPopu dcl InitPop)] 
+--             [(uri dcl,mkUriRelPopu dcl InitPop)]
       , Pop "decsgn" "Declaration" "Sign"
              [(uri dcl,uri (decsgn dcl))]
       , Pop "src" "Sign" "Concept"
@@ -257,15 +254,15 @@ instance MetaPopulations Declaration where
 --rrexp : Rule × ExpressionID The rule expressed in relation algebra.
 --rrmean : Rule × Blob The meanings of a rule.
 --rrpurpose : Rule × Blob The purposes of a rule.
-      ] 
-             
+      ]
+
      Isn{} -> fatal 157 "Isn is not implemented yet"
      Vs{}  -> fatal 158 "Vs is not implemented yet"
     where
       ofDecl :: Rule -> Bool
       ofDecl rul = case rrdcl rul of
                      Nothing -> False
-                     Just (_,d) -> d == dcl  
+                     Just (_,d) -> d == dcl
       pairsOf :: Declaration -> Pairs
       pairsOf d = case filter theDecl (initialPops fSpec) of
                     []    -> []
@@ -276,23 +273,23 @@ instance MetaPopulations Declaration where
           theDecl p = case p of
                         PRelPopu{} -> popdcl p == d
                         PCptPopu{} -> False
- 
+
 instance MetaPopulations Atom where
- metaPops _ _ _ = []
+ metaPops _ _ = []
 --   [ Pop "root"  "AtomID" "Concept"
 --          [(uri atm,uri(atmRoot atm))]
 --   , Pop "atomvalue"  "AtomID" "AtomValue"
 --          [(uri atm,atmVal atm)]
 --   ]
 instance MetaPopulations Paire where
- metaPops _ _ p =
+ metaPops _ p =
   [ Pop "left" "PairID" "AtomID"
          [(uri p, srcPaire p)]
   , Pop "right" "PairID" "AtomID"
          [(uri p, trgPaire p)]
   ]
 instance MetaPopulations A_Gen where
- metaPops _ _ gen =
+ metaPops _ gen =
   [ Pop "genspc"  "Gen" "PlainConcept"
             [(uri gen,uri(genspc gen))]
   ]++
@@ -300,20 +297,20 @@ instance MetaPopulations A_Gen where
    Isa{} ->
      [ Pop "gengen"  "Gen" "PlainConcept"
             [(uri gen,uri(gengen gen))]
-     ] 
+     ]
    IsE{} ->
      [ Pop "genrhs"  "Gen" "PlainConcept"
           [(uri gen,uri c) | c<-genrhs gen]
      ]
 instance MetaPopulations A_Concept where
- metaPops _ fSpec cpt = 
+ metaPops fSpec cpt =
    case cpt of
      PlainConcept{} ->
       [ Comment " "
       , Comment $ "*** Concept `"++name cpt++"` ***"
       , Pop "ctxcs"   "Context" "PlainConcept"
            [(uri fSpec,uri cpt)]
-      , Pop "cptnm"      "Concept" "Conid"   
+      , Pop "cptnm"      "Concept" "Conid"
              [(uri cpt, name cpt)]
 -- removed: equals ctxcs~
 --     , Pop "context"    "PlainConcept" "Context"
@@ -330,7 +327,7 @@ instance MetaPopulations A_Concept where
      ONE -> [
             ]
 instance MetaPopulations Sign where
- metaPops _ _ sgn = 
+ metaPops _ sgn =
       [ Pop "src"    "Sign" "Concept"
              [(uri sgn, uri (source sgn))]
       , Pop "trg"   "Sign" "Concept"
@@ -338,7 +335,7 @@ instance MetaPopulations Sign where
       ]
 
 instance MetaPopulations Expression where
- metaPops _ _ e = 
+ metaPops _ e =
       [ Pop "exprvalue" "ExpressionID" "Expression"
              [(showADL e, showADL e)]
       ]

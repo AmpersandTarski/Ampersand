@@ -78,15 +78,15 @@ uniqueNames :: (Identified a, Traced a) =>
 uniqueNames a = case (filter moreThanOne . groupWith name)  a of
                   [] -> pure ()
                   xs -> Errors (map messageFor xs)
-    where 
+    where
      moreThanOne (_:_:_) = True
      moreThanOne  _      = False
      messageFor :: (Identified a, Traced a) => [a] -> CtxError
-     messageFor (x:xs) = CTXE (origin x) 
+     messageFor (x:xs) = CTXE (origin x)
                       ("Names / labels must be unique. "++(show . name) x++", however, is used at:"++
                         concatMap (("\n    "++ ) . show . origin) (x:xs)
                         ++"."
-                       )             
+                       )
      messageFor _ = fatal 90 "messageFor must only be used on lists with more thatn one element!"
 
 class ErrorConcept a where
@@ -124,8 +124,6 @@ mustBeOrderedLst o lst
              | (c,st,a) <- lst ] ++
              "\n  if you think there is no type error, add an order between the mismatched concepts."
           ]
- 
-
 
 mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded a
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
@@ -137,7 +135,6 @@ mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
 newtype Slash a = Slash [a]
 instance ShowADL a => ShowADL (Slash a) where
   showADL (Slash x) = intercalate "/" (map showADL x)
-  
 
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]
@@ -159,11 +156,11 @@ data Guarded a = Errors [CtxError] | Checked a deriving Show
 instance Functor Guarded where
  fmap _ (Errors a) = (Errors a)
  fmap f (Checked a) = Checked (f a)
- 
+
 instance Applicative Guarded where
  pure = Checked
  (<*>) (Checked f) (Checked a) = Checked (f a)
- (<*>) (Errors  a) (Checked _) = Errors a 
+ (<*>) (Errors  a) (Checked _) = Errors a
  (<*>) (Checked _) (Errors  b) = Errors b
  (<*>) (Errors  a) (Errors  b) = Errors (a ++ b) -- this line makes Guarded not a monad
  -- Guarded is NOT a monad!

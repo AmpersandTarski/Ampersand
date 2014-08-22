@@ -20,21 +20,18 @@ import Data.List (nub)
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
 --Because we assume these stakeholders to speak the language of the primary process without any technical knowledge,
---the second chapter contains natural language only. 
+--the second chapter contains natural language only.
 --The third chapter is intended for the analyst. It contains all the rules mentioned in
 --natural language in the second chapter. It presents the trace from natural language
 --to the formal rule.
 --The fourth chapter presents a datamodel together with all the multiplicity rules.
 -- by datasets and rules.
---Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept, 
+--Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept,
 --also called the theme. Functionalities defined on the theme by one or more plugs are
 --described together with the rules that apply to the dataset. Rules not described by
 --the dataset are described in the last section of chapter 2.
 --The following chapters each present one INTERFACE
 --The specification end with a glossary.
-
-
-
 
 --TODO: Invent a syntax for meta information that is included in the source file...
 
@@ -63,13 +60,13 @@ import Data.List (nub)
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
-fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
-  where 
-    myDoc = 
-      ( (setTitle  
+fSpec2Pandoc :: Fspc -> (Pandoc, [Picture])
+fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
+  where
+    myDoc =
+      ( (setTitle
            (case metaValues "title" fSpec of
-                [] -> text (case (fsLang fSpec, diagnosisOnly flags) of
+                [] -> text (case (fsLang fSpec, diagnosisOnly (flags fSpec)) of
                                  (Dutch  , False) -> "Functionele Specificatie van "
                                  (English, False) -> "Functional Specification of "
                                  (Dutch  ,  True) -> "Diagnose van "
@@ -84,23 +81,22 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
                         English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
                 xs -> map text (nub xs))  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
         )
-      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime flags))))
-      ) 
+      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (flags fSpec)))))
+      )
       (doc (foldr (<>) mempty docContents))
     docContents :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc flags]
+    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (flags fSpec)]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
-    fspec2Blocks Intro              = (chpIntroduction        fSpec flags, [])
-    fspec2Blocks SharedLang         = (chpNatLangReqs       0 fSpec flags, [])
-    fspec2Blocks Diagnosis          = chpDiagnosis            fSpec flags
-    fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis 0 fSpec flags
-    fspec2Blocks ProcessAnalysis    = chpProcessAnalysis    0 fSpec flags
-    fspec2Blocks DataAnalysis       = chpDataAnalysis         fSpec flags 
-    fspec2Blocks SoftwareMetrics    = (fpAnalysis             fSpec flags, [])
-    fspec2Blocks EcaRules           = (chpECArules            fSpec flags, [])
-    fspec2Blocks Interfaces         = (chpInterfacesBlocks  0 fSpec flags, chpInterfacesPics fSpec flags)
-    fspec2Blocks Glossary           = (chpGlossary          0 fSpec flags, [])
-    
+    fspec2Blocks Intro              = (chpIntroduction        fSpec, [])
+    fspec2Blocks SharedLang         = (chpNatLangReqs       0 fSpec, [])
+    fspec2Blocks Diagnosis          = chpDiagnosis            fSpec
+    fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis 0 fSpec
+    fspec2Blocks ProcessAnalysis    = chpProcessAnalysis    0 fSpec
+    fspec2Blocks DataAnalysis       = chpDataAnalysis         fSpec
+    fspec2Blocks SoftwareMetrics    = (fpAnalysis             fSpec, [])
+    fspec2Blocks EcaRules           = (chpECArules            fSpec, [])
+    fspec2Blocks Interfaces         = (chpInterfacesBlocks  0 fSpec, chpInterfacesPics fSpec)
+    fspec2Blocks Glossary           = (chpGlossary          0 fSpec, [])
 

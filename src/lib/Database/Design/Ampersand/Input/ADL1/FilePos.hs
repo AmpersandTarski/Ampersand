@@ -23,7 +23,7 @@ where
          | otherwise = bl < linenr x && linenr x < el
    posIn _ _ _ = False
 -}
- 
+
    instance Show FilePos where
      show (FilePos (fn,Pos l c,_))
        = "line " ++ show l++":"++show c
@@ -39,17 +39,16 @@ where
     filenm :: a -> String
     linenr :: a -> Int
     colnr :: a -> Int
-    filenm x = case origin x of 
+    filenm x = case origin x of
                      FileLoc (FilePos (nm, _, _)) -> nm
                      _ -> ""
-    linenr x = case origin x of 
+    linenr x = case origin x of
                      FileLoc (FilePos (_,Pos l _,_)) -> l
                      _ -> 0
-    colnr x  = case origin x of 
+    colnr x  = case origin x of
                      FileLoc (FilePos (_,Pos _ c,_)) -> c
                      _ -> 0
 
    instance Traced Origin where
     origin = id
-
 

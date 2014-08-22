@@ -25,23 +25,22 @@ import Database.Design.Ampersand.Basics     (fatalMsg)
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.ECArule"
 
-
 isAll :: PAclause -> Bool
 isAll ALL{} = True
 isAll _     = False
-  
+
 isCHC :: PAclause -> Bool
 isCHC CHC{} = True
 isCHC _     = False
-  
+
 isBlk :: PAclause -> Bool
 isBlk Blk{} = True
 isBlk _     = False
-  
+
 isNop :: PAclause -> Bool
 isNop Nop{} = True
 isNop _     = False
-  
+
 isDo :: PAclause -> Bool
 isDo Do{}   = True
 isDo _      = False
@@ -51,7 +50,7 @@ isDo _      = False
                     , paTo :: Declaration                 -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
- 
+
               | New { paCpt :: A_Concept                  -- make a new instance of type c
                     , paCl :: String->PAclause            -- to be done after creating the concept
                     , paMotiv :: [(Expression,[Rule] )]
@@ -61,7 +60,7 @@ isDo _      = False
                     , paMotiv :: [(Expression,[Rule] )]
                     }
 -}
- 
+
 -- | eventsFrom is written for constructing switchboard diagrams.
 eventsFrom :: PAclause -> [Event]   -- gather all Do's from a PAclause
 eventsFrom p@CHC{}          = concatMap eventsFrom (paCls p)

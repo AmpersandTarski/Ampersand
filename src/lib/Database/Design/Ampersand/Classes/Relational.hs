@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Classes.Relational 
+module Database.Design.Ampersand.Classes.Relational
    (Relational(..)
    ) where
 
@@ -18,31 +18,31 @@ class Association r => Relational r where
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
     isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
     isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
-    isFunction :: r -> Bool     
+    isFunction :: r -> Bool
     isFunction r   = null ([Uni,Tot]>-multiplicities r)
-    isTot :: r -> Bool  -- 
+    isTot :: r -> Bool  --
     isTot r = Tot `elem` multiplicities r
-    isUni :: r -> Bool  -- 
+    isUni :: r -> Bool  --
     isUni r = Uni `elem` multiplicities r
-    isSur :: r -> Bool  -- 
+    isSur :: r -> Bool  --
     isSur r = Sur `elem` multiplicities r
-    isInj :: r -> Bool  -- 
+    isInj :: r -> Bool  --
     isInj r = Inj `elem` multiplicities r
-    isRfx :: r -> Bool  -- 
+    isRfx :: r -> Bool  --
     isRfx r = Rfx `elem` multiplicities r
-    isIrf :: r -> Bool  -- 
+    isIrf :: r -> Bool  --
     isIrf r = Irf `elem` multiplicities r
-    isTrn :: r -> Bool  -- 
+    isTrn :: r -> Bool  --
     isTrn r = Trn `elem` multiplicities r
-    isSym :: r -> Bool  -- 
+    isSym :: r -> Bool  --
     isSym r = Sym `elem` multiplicities r
-    isAsy :: r -> Bool  -- 
+    isAsy :: r -> Bool  --
     isAsy r = Asy `elem` multiplicities r
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
 --instance Relational Relation where
---    multiplicities rel 
+--    multiplicities rel
 --      = case rel of
 --           Rel{}               -> multiplicities (reldcl rel)
 --           V {}                -> [Tot]
@@ -73,7 +73,7 @@ instance Relational Declaration where
     multiplicities d = case d of
            Sgn {}       -> case decprps_calc d of
                              Nothing -> decprps d
-                             Just ps -> ps 
+                             Just ps -> ps
            Isn{}        -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            Vs{}         -> [Tot,Sur]
     isProp d = case d of         -- > tells whether the argument is a property.
@@ -81,7 +81,7 @@ instance Relational Declaration where
            Isn{}        -> True
            Vs{}         -> isEndo (sign d) && isSingleton (source d)
     isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
-    isTrue d = case d of 
+    isTrue d = case d of
            Vs{}         -> True
            _            -> False
     isFalse _ = False
@@ -129,7 +129,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EEqu (l,r) -> l == r
      EImp (l,_) -> isTrue l
      EIsc (l,r) -> isTrue l && isTrue r
-     EUni (l,r) -> isTrue l || isTrue r 
+     EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
      ECps (l,r) | null ([Uni,Tot]>-multiplicities l) -> isTrue r
                 | null ([Sur,Inj]>-multiplicities r) -> isTrue l
@@ -173,7 +173,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.
- --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value. 
+ --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
  isIdent expr = case expr of
      EEqu (l,r) -> isIdent (EIsc (EImp (l,r), EImp (r,l)))    -- TODO: maybe derive something better?
      EImp (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
@@ -195,7 +195,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isEpsilon e = case e of
                 EEps{} -> True
                 _      -> False
- 
+
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
      EEqu (l,r) -> isImin (EIsc (EImp (l,r), EImp (r,l)))       -- TODO: maybe derive something better?
      EImp (l,r) -> isImin (EUni (ECpl l, r))                  -- TODO: maybe derive something better?

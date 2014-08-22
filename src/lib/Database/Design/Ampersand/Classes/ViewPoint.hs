@@ -8,7 +8,7 @@ import Database.Design.Ampersand.Classes.Relational  (Relational(multiplicities)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
 import Data.List
- 
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ViewPoint"
 
@@ -36,8 +36,6 @@ class Language a where
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
-  
-
 
 class ProcessStructure a where
   processes :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
@@ -50,7 +48,7 @@ class ProcessStructure a where
   mayEdit :: a -> [(String,Declaration)] -- ^ the string represents a Role
   workFromProcessRules :: [A_Gen] -> [Population] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations gens' udp r]
-   
+
 rulesFromIdentity :: IdentityDef -> [Rule]
 rulesFromIdentity identity
  = [ if null (identityAts identity) then fatal 81 ("Moving into foldr1 with empty list (identityAts identity).") else
@@ -65,7 +63,7 @@ rulesFromIdentity identity
          Ru { rrnm   = ruleName
             , rrexp  = expression
             , rrfps  = origin identity     -- position in source file
-            , rrmean = AMeaning 
+            , rrmean = AMeaning
                          [ A_Markup English ReST (string2Blocks ReST meaningEN)
                          , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
                          ]
@@ -83,7 +81,7 @@ rulesFromIdentity identity
                             , decprL  = ""
                             , decprM  = ""
                             , decprR  = ""
-                            , decMean = AMeaning 
+                            , decMean = AMeaning
                                           [ A_Markup English ReST (string2Blocks ReST meaningEN)
                                           , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
                                           ]
@@ -139,7 +137,6 @@ instance ProcessStructure A_Context where
   maintains    context = maintains (ctxprocs context)
   mayEdit      context = mayEdit (ctxprocs context)
 
-
 instance Language Process where
   objectdef    prc = Obj { objnm   = name prc
                          , objpos  = origin prc
@@ -175,9 +172,9 @@ instance Language Pattern where
   relsDefdIn pat = ptdcs pat
   udefrules      = ptrls   -- all user defined rules in this pattern
 --  invariants pat = [r |r<-ptrls pat, not (isSignal r)]
-  identities     = ptids 
-  viewDefs       = ptvds 
-  gens           = ptgns 
+  identities     = ptids
+  viewDefs       = ptvds
+  gens           = ptgns
   patterns   pat = [pat]
 
 instance Language Rule where

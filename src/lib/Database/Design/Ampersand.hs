@@ -65,7 +65,7 @@ module Database.Design.Ampersand
    -- * Functions with plugs:
    , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
    -- * Parser related stuff
-   , parseADL1pExpr, CtxError 
+   , parseADL1pExpr, CtxError
    , createFspec
    , getGeneralizations, getSpecializations
     -- * Type checking and calculus
@@ -98,13 +98,13 @@ where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Fspec.FPA
-import Database.Design.Ampersand.ADL1 
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Basics 
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Fspec
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Components 
+import Database.Design.Ampersand.Components
 import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
 import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
 import Database.Design.Ampersand.InputProcessing

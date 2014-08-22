@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Classes.ConceptStructure          (ConceptStructure(..), prim2rel)
 where
-   import Database.Design.Ampersand.Core.AbstractSyntaxTree       
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Database.Design.Ampersand.Core.ParseTree (ConceptDef(..))
    import Database.Design.Ampersand.Basics
    import Data.List
@@ -20,7 +20,7 @@ where
     relsMentionedIn = nub . map prim2rel . primsMentionedIn
     primsMentionedIn :: a -> [Expression]
     primsMentionedIn = nub . concatMap primitives . expressionsIn
-    expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 
+    expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
     mp1Exprs = filter isMp1.primsMentionedIn
     -- | mp1Pops draws the population from singleton expressions.
@@ -36,7 +36,7 @@ where
    prim2rel e
     = case e of
        EDcD d@Sgn{} -> d
-       EDcD{}       -> fatal 23 "invalid declaration in EDcD{}" 
+       EDcD{}       -> fatal 23 "invalid declaration in EDcD{}"
        EDcI c       -> Isn c
        EDcV sgn     -> Vs sgn
        EMp1 _ c     -> Isn c
@@ -49,12 +49,12 @@ where
    instance ConceptStructure a => ConceptStructure (Maybe a) where
     concs    ma = maybe [] concs ma
     expressionsIn ma = maybe [] expressionsIn ma
- 
+
    instance ConceptStructure a => ConceptStructure [a] where
     concs     = nub . concatMap concs
-    expressionsIn = foldr ((uni) . expressionsIn) [] 
-    
-   instance ConceptStructure A_Context where 
+    expressionsIn = foldr ((uni) . expressionsIn) []
+
+   instance ConceptStructure A_Context where
     concs ctx = foldr uni []
                 [ (concs.ctxpats) ctx
                 , (concs.ctxprocs) ctx
@@ -97,7 +97,6 @@ where
     concs e            = foldrMapExpression uni concs [] e
     expressionsIn e = [e]
 
-
    instance ConceptStructure A_Concept where
     concs         c = [c]
     expressionsIn _ = []
@@ -119,11 +118,11 @@ where
 
    -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
    instance ConceptStructure SubInterface where
-    concs (Box _ objs)         = concs objs 
-    concs (InterfaceRef _)   = [] 
-    expressionsIn (Box _ objs)       = expressionsIn objs 
-    expressionsIn (InterfaceRef _) = [] 
-          
+    concs (Box _ objs)         = concs objs
+    concs (InterfaceRef _)   = []
+    expressionsIn (Box _ objs)       = expressionsIn objs
+    expressionsIn (InterfaceRef _) = []
+
    instance ConceptStructure Pattern where
     concs pat = foldr uni []
                 [ (concs.ptrls) pat
@@ -138,7 +137,6 @@ where
                        , (expressionsIn.ptids) p
                        , (expressionsIn.ptvds) p
                        ]
-
 
    instance ConceptStructure Process where
     concs prc = foldr uni []
@@ -173,7 +171,7 @@ where
                      [ (expressionsIn.rrexp ) r
                      , (expressionsIn.rrviol) r
                      ]
-   
+
    instance ConceptStructure (PairView Expression) where
     concs         (PairView ps) = concs         ps
     expressionsIn (PairView ps) = expressionsIn ps
@@ -190,14 +188,14 @@ where
    instance ConceptStructure ExplObj where
     concs (ExplConceptDef cd) = concs cd
     concs (ExplDeclaration d) = concs d
-    concs (ExplRule _)        = [{-beware of loops...-}] 
+    concs (ExplRule _)        = [{-beware of loops...-}]
     concs (ExplIdentityDef _) = [{-beware of loops...-}]
     concs (ExplViewDef _)     = [{-beware of loops...-}]
     concs (ExplPattern _)     = [{-beware of loops...-}]
     concs (ExplProcess _)     = [{-beware of loops...-}]
     concs (ExplInterface _)   = [{-beware of loops...-}]
     concs (ExplContext _)     = [{-beware of loops...-}]
-    
+
     expressionsIn _ = []
 
    instance ConceptStructure (PairViewSegment Expression) where
@@ -205,9 +203,9 @@ where
     concs       (PairViewExp _ x) = concs x
     expressionsIn    (PairViewText _)  = []
     expressionsIn    (PairViewExp _ x) = expressionsIn x
-     
+
    instance ConceptStructure A_Gen where
-    concs g@Isa{}  = nub [gengen g,genspc g]  
+    concs g@Isa{}  = nub [gengen g,genspc g]
     concs g@IsE{}  = nub (genspc g: genrhs g)
     expressionsIn _ = fatal 160 "expressionsIn not allowed on A_Gen"
     

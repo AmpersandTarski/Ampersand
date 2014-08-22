@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Fspec.ToFspec.Calc
-            ( deriveProofs 
+            ( deriveProofs
             , lambda
             , checkMono
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
@@ -27,7 +27,7 @@ where
    import Text.Pandoc.Builder
    import Prelude hiding (head)
 -- import Debug.Trace
-   
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.Calc"
 
@@ -35,8 +35,8 @@ where
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
 
-   conjuncts :: Rule -> [DnfClause]
-   conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
+   conjuncts :: Options -> Rule -> [DnfClause]
+   conjuncts opts = map disjuncts.exprIsc2list.conjNF opts.rrexp
    disjuncts :: Expression -> DnfClause
    disjuncts conj = (split (Dnf [] []).exprUni2list) conj
     where split :: DnfClause -> [Expression] -> DnfClause
@@ -44,21 +44,20 @@ where
           split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
           split dc             []             = dc
 
-
 -- testInterface :: Fspc -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
---   testInterface :: Options -> Fspc -> Interface -> String
---   testInterface flags fSpec ifc
+--   testInterface :: Fspc -> Interface -> String
+--   testInterface fSpec ifc
 --    = "\nInterface "++ name ifc++"("++intercalate ", " [showADL r++":"++name (target r) | r<-rels]++")\n"++
 --      " - The parameters correspond to editable fields in a user interface.\n   "++
 --      showADL ifc++"\n"++
 --      " - Invariants:\n   "++intercalate "\n   " [showADL rule    | rule<-invs]++"\n"++
 --      " - Derivation of clauses for ECA-rules:"   ++
---      concat [showClause fSpec (allClauses flags rule) | rule<-invs]++"\n"++
+--      concat [showClause fSpec (allClauses (flags fSpec) rule) | rule<-invs]++"\n"++
 --{-
---      " - ECA rules:"++concat  [ "\n\n     "++showECA "\n     "  (eca{ecaAction=normPA (ecaAction eca)})
---                                 ++"\n------ Derivation ----->"++showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+--      " - ECA rules:"++concat  [ "\n\n     "++showECA "\n     "  (eca{ecaAction=normPA (flags fSpec) (ecaAction eca)})
+--                                 ++"\n------ Derivation ----->"++showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (flags fSpec) (ecaAction eca))++"\n<------End Derivation --"
 --                               | eca<-ecaRs]++"\n\n"++
 ---}
 --      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADL r  | r<-vis])++"\n"
@@ -86,17 +85,17 @@ where
 --         where f stored []       = [stored | not (null stored)]
 --               f [] (cs:css)     = f cs css
 --               f stored (cs:css) | length stored > n = stored: f cs css
---                                 | length new   <= n = f new css 
+--                                 | length new   <= n = f new css
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
 
-   deriveProofs :: Options -> Fspc -> Blocks
-   deriveProofs flags fSpec
+   deriveProofs :: Fspc -> Blocks
+   deriveProofs fSpec
     = para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
       bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
                          "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
-                         "conjNF:   "<>str (showADL (conjNF (rrexp r)))<>linebreak<>
-                         interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts r ]
+                         "conjNF:   "<>str (showADL (conjNF (flags fSpec) (rrexp r)))<>linebreak<>
+                         interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts (flags fSpec) r ]
                         )
                  | r<-grules fSpec++vrules fSpec]<>
       para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
@@ -125,19 +124,19 @@ where
                        ]
                  ]<>
       para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) fSpec<>" ECA rules"<>
-            if verboseP flags
+            if verboseP (flags fSpec)
              then " (Turn --verbose off if you want to see ECA rules only)"
              else " (Turn on --verbose if you want to see more detail)"
            )<>
-      ( if verboseP flags then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
+      ( if verboseP (flags fSpec) then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
       bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
-                   codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)})<>
+                   codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (flags fSpec) (ecaAction ecarule)})<>
                    bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                       <>linebreak<>"derivation:"
                                      )<>
-                                (showProof (para.str.showADL).dfProof) d<>  -- Produces its result in disjunctive normal form
-                                para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF) d)
-                              | verboseP flags, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
+                                (showProof (para.str.showADL).dfProof (flags fSpec)) d<>  -- Produces its result in disjunctive normal form
+                                para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF (flags fSpec)) d)
+                              | verboseP (flags fSpec), e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
                  | ecarule <- ecaRs]
       {-
       ++
@@ -154,14 +153,14 @@ where
 {- TODO: readdress preEmpt. It is wrong
       interText []
         [ [linebreak<>"-- Preempted ECA rule "<>(str.show.ecaNum) er<>"------------"<>linebreak<>str (showECA "\n  " er)]
-        | er<- preEmpt ecaRs]
+        | er<- preEmpt (flags fSpec) ecaRs]
       ++ -}
 {-
       [ linebreak<>"--------------", linebreak]
       ++ -- TODO: make an ontological analysis, which explains the delete behaviour.
       [ Str "Ontological analysis: ", linebreak<>"  "]
       ++
-      interText [linebreak, linebreak<>"  "] 
+      interText [linebreak, linebreak<>"  "]
           [ [Str (name ifc)<>"("]
             ++ interText ", "
                  [str (name a)<>"["<>(str.name.target.ctx) a<>"]"
@@ -172,14 +171,14 @@ where
       [ linebreak<>"--------------", linebreak
       <>"Analyzing interfaces:", linebreak<>"     "]
       ++
-      interText [linebreak<>"     "] 
-         [[Str (testInterface flags fSpec ifc)]
+      interText [linebreak<>"     "]
+         [[Str (testInterface fSpec ifc)]
          | ifc<-take 1 (interfaceG fSpec)]
       ++
       [ linebreak<>"--------------", linebreak]
       -}
 -}
-      where 
+      where
   --     visible _  = True -- We take all quads into account.
        qs         = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
           --   assembleECAs :: Fspc -> [ECArule]
@@ -198,24 +197,24 @@ where
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
                                    [ ["event = ", str (show ev), space, str (showADL rel), linebreak ] <>
-                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
+                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
                                      ["r'    = "] <> conjProof r' <> [linebreak ] <>
                                      ["viols = r'-"] <> disjProof (ECpl r') <> [ linebreak ] <>
-                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem ev (EDcD rel) (delta (sign rel)))<>
+                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))<>
                                      "            "<>conjProof (ECpl r) <>"\n"<>
-                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF) (notCpl r .\/. r')<>")"<>
+                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF (flags fSpec)) (notCpl r .\/. r')<>")"<>
                                         conjProof (notCpl r .\/. r')<>"\n"<>
                                      "delta: r-/\\r' = "<>conjProof (EIsc[notCpl r,r'])<>
-                                     "\nNow compute a reaction\n(isTrue.conjNF) (notCpl r .\/. r') = "<>show ((isTrue.conjNF) (notCpl r .\/. r'))<>"\n"<>
+                                     "\nNow compute a reaction\n(isTrue.conjNF (flags fSpec)) (notCpl r .\/. r') = "<>show ((isTrue.conjNF (flags fSpec)) (notCpl r .\/. r'))<>"\n"<>
                                      (if null (lambda ev (ERel rel ) r)
                                       then "lambda "<>showADL rel<>" ("<>showADL r<>") = empty\n"
                                       else -- for debug purposes:
                                            -- "lambda "<>show ev<>" "<>showADL rel<>" ("<>showADL r<>") = \n"<>(interText "\n\n".map showPr.lambda ev (ERel rel)) r<>"\n"<>
                                            -- "derivMono ("<>showADL r<>") "<>show ev<>" "<>showADL rel<>"\n = "<>({-interText "\n". map -}showPr.derivMono r ev) rel<>"\n"<>
-                                           -- "\nNow compute checkMono r ev rel = \n"<>show (checkMono r ev rel)<>"\n"<>
-                                           if (isTrue.conjNF) (notCpl r .\/. r')
+                                           -- "\nNow compute checkMono (flags fSpec) r ev rel = \n"<>show (checkMono (flags fSpec) r ev rel)<>"\n"<>
+                                           if (isTrue.conjNF (flags fSpec)) (notCpl r .\/. r')
                                            then "A reaction is not required, because  r |- r'. Proof:"<>conjProof (notCpl r .\/. r')<>"\n"
-                                           else if checkMono r ev rel
+                                           else if checkMono (flags fSpec) r ev rel
                                            then "A reaction is not required, because  r |- r'. Proof:"{-<>(str.showPr.derivMono r ev) rel-}<>"NIET TYPECORRECT: (showPr.derivMono r ev) rel"<>"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ _ = delta (sign rel) in
                                                 "An appropriate reaction on this event is required."
@@ -223,16 +222,16 @@ where
                                      )
                                    | rel<-relsUsedIn r   -- nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
-                                   , r'<-[subst (rel, actSem ev (EDcD rel) (delta (sign rel))) r]
-                        --        , viols<-[conjNF (ECpl r')]
-                                   , True ]  -- (isTrue.conjNF) (notCpl r .\/. r')
-                                  | r<-[dc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, dc<-dnfClauses]
+                                   , r'<-[subst (rel, actSem (flags fSpec) ev (EDcD rel) (delta (sign rel))) r]
+                        --        , viols<-[conjNF (flags fSpec) (ECpl r')]
+                                   , True ]  -- (isTrue.conjNF (flags fSpec)) (notCpl r .\/. r')
+                                  | r<-[dc | cs<-[allClauses (flags fSpec) rule], (_,dnfClauses)<-cl_conjNF cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
-                 prf = cfProof e
+                 prf = cfProof (flags fSpec) e
                  (exx',_,_) = last prf
-            --     conjProof = showProof (para.str.showADL) . cfProof
-                 disjProof = showProof (para.str.showADL) . dfProof
+            --     conjProof = showProof (para.str.showADL) . cfProof (flags fSpec)
+                 disjProof = showProof (para.str.showADL) . dfProof (flags fSpec)
 --                 showPr    = showProof (para.str.showADL)  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
 -}
@@ -242,18 +241,18 @@ where
 --        {r} DEL rel FROM expr {r'}
 -- Dan toetst checkMono of r|-r' waar is op grond van de afleiding uit derivMono.
 -- Als dat waar is, betekent dat dat invariant r waar blijft wanneer actie a wordt uitgevoerd.
-   checkMono :: Expression
+   checkMono :: Options
+             -> Expression
              -> InsDel
              -> Declaration
              -> Bool
-   checkMono expr ev dcl
+   checkMono opts expr ev dcl
      = case ruleType conclusion of
         Truth -> fatal 247 "derivMono came up with a Truth!"
         _     -> simplify expr == simplify (antecedent conclusion) &&
-                 simplify (subst (dcl, actSem ev (EDcD dcl) (delta (sign dcl))) expr) ==
+                 simplify (subst (dcl, actSem opts ev (EDcD dcl) (delta (sign dcl))) expr) ==
                  simplify (consequent conclusion)
      where (conclusion,_,_) = last (derivMono expr ev dcl)
-
 
    type Proof expr = [(expr,[String],String)]
    reversePrf :: Proof e -> Proof e
@@ -274,12 +273,12 @@ where
                                              if null equ then str (unwords ss) else
                                              str equ<>str (" { "++intercalate " and " ss++" }"))<>
                                        showProof shw prf
-                                       --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
+                                       --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr
    showProof _  []                   = fromList []
 
    showPrf :: (expr->String) -> Proof expr -> [String]
-   showPrf shw [(expr,ss,_)]       = [ "    "++shw expr++" { "++intercalate " and " ss++" }"]
-   showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr++" { "++intercalate " and " ss++" }"] ++
+   showPrf shw [(expr,ss,_)]       = [ "    "++shw expr++"\n   { "++intercalate " and " ss++" }"]
+   showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr++"\n   { "++intercalate " and " ss++" }"] ++
                                      (if null ss  then [ equ ] else
                                       if null equ then [ unwords ss ] else
                                       [ equ++" { "++intercalate " and " ss++" }" ])++
@@ -295,8 +294,8 @@ where
              dcl' -- re relatie, zodat de actie bestaat uit INSERT rel' INTO expr of DELETE rel' FROM expr
     = f (head (lambda tOp (EDcD dcl') expr++[[]])) (start tOp)
     where
-     f :: [(Expression, [String], whatever)] 
-        -> (Expression, Expression) 
+     f :: [(Expression, [String], whatever)]
+        -> (Expression, Expression)
         -> [(Rule, [String], String)]
      f [] (_,_) = []
      f [(e',_,_)] (neg',pos')
@@ -307,7 +306,7 @@ where
      f ((e1,_,_): prf@((e2,_,_):_)) (neg',pos')
       = (rule (subst (dcl',neg') e1) (subst (dcl',pos') e1),["Monotony of "++showOp e2],"==>"):
          f prf (neg',pos')
-         
+
      start Ins  = (EDcD dcl',EDcD dcl' .\/. delta (sign dcl'))
      start Del  = (EDcD dcl' ./\. notCpl (delta (sign dcl')),EDcD dcl')
 
@@ -364,8 +363,8 @@ where
 Rewrite rules:
 -r;-s -> -(r!s)
 -}
-   lambda :: InsDel -> Expression 
-                    -> Expression 
+   lambda :: InsDel -> Expression
+                    -> Expression
                     -> [Proof Expression]
    lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
                           | (e'',_,txt,op)<-prf]
@@ -401,7 +400,7 @@ Rewrite rules:
                                                | prf<-lam tOp e3 deMrg
                                                ] -- isNeg is nog niet helemaal correct.
                      | or[null p|p<-fPrfs]  -> []
-                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]        
+                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]
              ERad{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | and [isNeg f |f<-exprRad2list expr]
                                             -> let deMrg = deMorganERad expr in
@@ -461,22 +460,21 @@ Rewrite rules:
      first :: [(a,b,c,d)] -> a
      first ((e'',_,_,_):_) = e''
      first _ = fatal 472 "wrong pattern in first"
-     
+
    ruleType :: Rule -> RuleType
    ruleType r = case rrexp r of
                  EEqu{} -> Equivalence
                  EImp{} -> Implication
                  _      -> Truth
 
-
    -- | Action semantics for inserting a delta into a relation dcl.
-   actSem :: InsDel -> Expression -> Expression -> Expression
-   actSem Ins dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem Ins"
-                       | dcl==delt           = dcl
-                       | otherwise           = disjNF (dcl .\/. delt)
-   actSem Del dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem Del"
-                       | dcl==delt           = notCpl (EDcV (sign dcl))
-                       | otherwise           = conjNF (dcl ./\. notCpl delt)
+   actSem :: Options -> InsDel -> Expression -> Expression -> Expression
+   actSem opts Ins dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem Ins"
+                            | dcl==delt           = dcl
+                            | otherwise           = disjNF opts (dcl .\/. delt)
+   actSem opts Del dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem Del"
+                            | dcl==delt           = notCpl (EDcV (sign dcl))
+                            | otherwise           = conjNF opts (dcl ./\. notCpl delt)
 
    -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
    assembleECAs :: Fspc -> [(ECArule,Blocks)]
@@ -503,10 +501,10 @@ Rewrite rules:
            , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
            , ev<-[Ins,Del]
            , let acts = [ -- go through all the events that affect that clause:
-                          (normPA act, conj, rule,
+                          (normPA (flags fSpec) act, conj, rule,
                           para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>(singleQuoted.str.name) rule<>".")<>
                           para ("event = "<>str (show ev)<>space<>str (showREL rel)<>" means doing the following substitution")<>
-                          para (str (showADL clause<>"["<>showREL rel<>":="<>showADL (actSem ev (EDcD rel) (delta (sign rel)))<>"] = clause'"))<>
+                          para (str (showADL clause<>"["<>showREL rel<>":="<>showADL (actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))<>"] = clause'"))<>
                           para ("clause' = "<>str (showADL ex')<>
                                 if clause'==ex'
                                 then ", which is already in conjunctive normal form."<>linebreak
@@ -514,7 +512,7 @@ Rewrite rules:
                                )<>
                           para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
                                 "This means to negate the result (notClau = notCpl clause'): ")<>
-                          (showProof (para.str.showADL). cfProof) notClau<>
+                          (showProof (para.str.showADL). cfProof (flags fSpec)) notClau<>
                           para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
                                 ( if viols==viols'
                                   then "This expression is in disjunctive normal form as well."
@@ -522,19 +520,19 @@ Rewrite rules:
                           ( if isTrue clause'
                             then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
                                        <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
-                                 (showProof (para.str.showADL). cfProof) (expr .|-. clause')
+                                 (showProof (para.str.showADL). cfProof (flags fSpec)) (expr .|-. clause')
                             else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
                                        "We must compute a reaction to compensate for violations..."<>linebreak<>
                                        "That would be to reinsert violations that originate from "<>
                                        ( if ev==Ins
-                                         then str (showADL (conjNF negs))<>" into "<> str (showADL (disjNF poss))<>"."
-                                         else str (showADL (disjNF poss))<>" into "<> str (showADL (conjNF negs))<>"."
+                                         then str (showADL (conjNF (flags fSpec) negs))<>" into "<> str (showADL (disjNF (flags fSpec) poss))<>"."
+                                         else str (showADL (disjNF (flags fSpec) poss))<>" into "<> str (showADL (conjNF (flags fSpec) negs))<>"."
                                        )<>linebreak<>"deltFr: ")<>
-                                 (showProof (para.str.showADL). dfProof) deltFr<>
-                                 ( let pr=proofPA act in
+                                 (showProof (para.str.showADL). dfProof (flags fSpec)) deltFr<>
+                                 ( let pr=proofPA (flags fSpec) act in
                                    if length pr>1
                                    then para "Now let us remove redundancy from the ECA action:\n     "<>
-                                        showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA act)
+                                        showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (flags fSpec) act)
                                    else fromList []
                                  )
                           {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL rel)
@@ -545,20 +543,20 @@ Rewrite rules:
                                                    "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
                                                    "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
                                    else if ev==Ins
-                                   then (showProof (para.str.showADL). cfProof) (viols'.\/.toExpr)<>linebreak
-                                   else (showProof (para.str.showADL). dfProof) (notCpl viols./\.toExpr)<>linebreak
+                                   then (showProof (para.str.showADL). cfProof (flags fSpec)) (viols'.\/.toExpr)<>linebreak
+                                   else (showProof (para.str.showADL). dfProof (flags fSpec)) (notCpl viols./\.toExpr)<>linebreak
                                  ) -}
                           ))
                         | Clauses ts rule<-quadClauses, conj<-ts                  -- get conjuncts from the clauses
                         , clause@(Dnf antcs conss) <- rc_dnfClauses conj          -- the DNF form of each clause
                         , let expr    = dnf2expr clause                           -- Note that this differs from:  rc_conjunct conj
                         , let vee     = EDcV (sign expr)
-                        , let ex'     = subst (rel, actSem ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
-                        , let clause' = conjNF ex'                                                -- its CNF
+                        , let ex'     = subst (rel, actSem (flags fSpec) ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
+                        , let clause' = conjNF (flags fSpec) ex'                                                -- its CNF
                         , not (isTrue clause')
                         , let notClau = notCpl clause'                                            -- the violations after the edit action
-                        , let viols   = conjNF notClau                                            -- the violations after the edit action
-                        , let viols'  = disjNF notClau                                            -- the violations after the edit action
+                        , let viols   = conjNF (flags fSpec) notClau                                            -- the violations after the edit action
+                        , let viols'  = disjNF (flags fSpec) notClau                                            -- the violations after the edit action
                         , let negs    = if (length.nub.map sign) (vee:antcs)>1
                                         then fatal 265 ("type inconsistencies in antcs: "++show (map showADL (vee:antcs)))
                                         else foldr (./\.) vee antcs
@@ -566,18 +564,18 @@ Rewrite rules:
                                         then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss)))
                                         else foldr (.\/.) (notCpl vee) conss
                         , let frExpr  = case ev of
-                                         Ins -> disjNF (notCpl negs)
-                                         Del -> disjNF poss
+                                         Ins -> disjNF (flags fSpec) (notCpl negs)
+                                         Del -> disjNF (flags fSpec) poss
                         , let deltFr  = if sign poss/=sign negs
                                         then fatal 274 ("type inconsistencies in deltFr: "++showADL clause)
                                         else if ev==Ins
-                                        then (subst (rel, actSem ev (EDcD rel) (delta (sign rel)))) negs ./\. notCpl poss
-                                        else (notCpl . subst (rel, actSem ev (EDcD rel) (delta (sign rel)))) poss ./\. negs
-                        , let deltFr' = disjNF deltFr
+                                        then (subst (rel, actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))) negs ./\. notCpl poss
+                                        else (notCpl . subst (rel, actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))) poss ./\. negs
+                        , let deltFr' = disjNF (flags fSpec) deltFr
                         , rel `elem` relsMentionedIn frExpr
                         , let toExpr  = if ev==Ins
-                                        then disjNF poss
-                                        else disjNF (notCpl negs)
+                                        then disjNF (flags fSpec) poss
+                                        else disjNF (flags fSpec) (notCpl negs)
                         , let visible _ = True
                         , if length (nub (map sign [toExpr, deltFr', expr]))>1
                           then fatal 285 "type problem"
@@ -589,8 +587,8 @@ Rewrite rules:
                                ++ [act' | (ev',rel',act')<-rulesDecls++rulesGens rel, ev==ev', rel==rel' ]
                               )
                               [ (rc_conjunct conj,[rule]) | (_,conj,rule,_)<-acts] --motivation is of type [(Expression,[Rule])]
-           , let normEcaAct = normPA ecaAct
-           , let ecaProof = proofPA ecaAct
+           , let normEcaAct = normPA (flags fSpec) ecaAct
+           , let ecaProof = proofPA (flags fSpec) ecaAct
            , let ecaEvt = On ev rel
            , let ecaRule = ECA ecaEvt delt normEcaAct
            ]

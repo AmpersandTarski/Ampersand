@@ -108,7 +108,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
 
    keyToken,token :: TokenType -> String -> Pos -> Filename -> Token
    keyToken tp key  = Tok tp key key
-   token  tp  = Tok tp ""  
+   token  tp  = Tok tp ""
 
    errToken :: String -> Pos -> Filename -> Token
    errToken = token TkError
@@ -214,8 +214,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
           f [] es op     = ("",cs)
           f ops [] op    = (op,[])
 
-
-
    lexNest fn cont pos inp = lexNest' cont pos inp
     where lexNest' c p ('-':'}':s) = c (advc 2 p) s
           lexNest' c p ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) s
@@ -303,10 +301,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
            | isUpper c = ord c - ord 'A' + 10
            | isLower c = ord c - ord 'a' + 10
 
-
-
-
-
    get_tok_val (Tok _ _ s _ _) = s
 
    gsym :: IsParser p Token => TokenType -> String -> String -> p String
@@ -360,4 +354,4 @@ module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
    pParens_pCommas = pParens.pCommas
    pBracks_pCommas = pBracks.pCommas
    pCurly_pSemics  = pCurly .pSemics
-   
+

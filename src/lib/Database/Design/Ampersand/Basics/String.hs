@@ -3,11 +3,11 @@
   module Database.Design.Ampersand.Basics.String
    (unCap,upCap,escapeNonAlphaNum)
   where
-   import Data.Char 
+   import Data.Char
 
-   -- | Converts the first character of a string to lowercase, with the exception that there is a second character, which is uppercase. 
+   -- | Converts the first character of a string to lowercase, with the exception that there is a second character, which is uppercase.
    -- uncap "AbcDe" == "abcDe"
-   -- uncap "ABcDE" == "ABcDE"  
+   -- uncap "ABcDE" == "ABcDE"
    unCap :: String -> String
    unCap [] = []
    unCap [h] = [toLower h]
@@ -15,15 +15,14 @@
                   | otherwise  = toLower h:h':t
    -- | Converts the first character of a string to uppercase
    upCap :: String -> String
-   upCap [] = []  
+   upCap [] = []
    upCap (h:t) = toUpper h:t
 
-   
    -- | escape anything except regular characters and digits to _<character code>
    -- e.g. escapeNonAlphaNum "a_é" = "a_95_233"
    escapeNonAlphaNum :: String -> String
    escapeNonAlphaNum = concatMap escapeNonAlphaNumChar
-    where escapeNonAlphaNumChar c 
+    where escapeNonAlphaNumChar c
             | isAlphaNum c && isAscii c = [c]
             | otherwise                 = '_' : show (ord c)
    

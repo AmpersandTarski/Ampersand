@@ -3,7 +3,7 @@ module Database.Design.Ampersand.Fspec.ShowECA (showECA) where
    import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL            (showPAclause, showREL)
 
-   class ECA a where 
+   class ECA a where
     showECA :: String -> a -> String
 
    instance ECA ECArule where

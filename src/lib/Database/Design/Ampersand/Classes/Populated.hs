@@ -8,7 +8,7 @@ where
    import Database.Design.Ampersand.ADL1.Pair
    import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
    import Database.Design.Ampersand.Core.AbstractSyntaxTree
-   import Database.Design.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Identified(..))  
+   import Database.Design.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Identified(..))
    import Data.Map (Map, (!), lookup, keys, assocs, elems, fromList, fromListWith, unionWith, unionsWith, differenceWith, mergeWithKey, empty)
       -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
    import Data.Maybe (maybeToList)
@@ -16,7 +16,6 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "Classes.Populated"
 
-   
    -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
    atomsOf :: [A_Gen]      -- the generalisation relations from the context
            -> [Population] -- the user defined populations in the context
@@ -79,7 +78,7 @@ where
                           [(x,[y]) | x<-atomsOf gens pt (source l), y<-atomsOf gens pt (target r)
                                    , null (atomsOf gens pt (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
                                    ]
-            EPrd (l,r) -> fromList $ 
+            EPrd (l,r) -> fromList $
                           [ (a,cod) | a <- atomsOf gens pt (source l), let cod=atomsOf gens pt (target r), not (null cod) ]
             ECps (l,r) -> fromListWith uni
                           [(x,[y]) | x<-keys (contents l), y<-keys flipr

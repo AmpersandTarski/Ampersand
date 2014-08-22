@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.Switchboard
     (SwitchBdDiagram(..),switchboardAct,sbDiagram,processModel) where
- 
+
    import Data.GraphViz
    import Data.GraphViz.Attributes.Complete
    import Data.List
@@ -11,9 +11,9 @@ module Database.Design.Ampersand.Fspec.Switchboard
    import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
    import Data.String
-   
+
 --   import Database.Design.Ampersand.Fspec.ShowECA (showECA) -- for testing purposes
-   
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Switchboard"
 
@@ -29,7 +29,7 @@ module Database.Design.Ampersand.Fspec.Switchboard
     = DotGraph { strictGraph = False
                , directedGraph = True
                , graphID = Just (Str (fromString "Process Model"))
-               , graphStatements 
+               , graphStatements
                   = DotStmts { attrStmts = [GraphAttrs [{-Splines SplineEdges,-} RankDir FromLeft]]
                              , subGraphs = []
                              , nodeStmts = activityNodes
@@ -87,14 +87,14 @@ data Event = On { eSrt :: InsDel
                 | otherwise  = Green
 
    sbDiagram :: Fspc -> SwitchBdDiagram
-   sbDiagram fSpec 
+   sbDiagram fSpec
     = SBdgrm
         { sbName = name fSpec
         , sbdotGraph
            = DotGraph { strictGraph = False
                       , directedGraph = True
                       , graphID = Just (Str (fromString "Switchboard"))
-                      , graphStatements 
+                      , graphStatements
                          = DotStmts { attrStmts = [GraphAttrs [Splines SplineEdges, RankDir FromLeft]]
                                     , subGraphs = []
                                     , nodeStmts = inEvNodes++conjNodes++ecaNodes++outEvNods
@@ -164,7 +164,7 @@ data Event = On { eSrt :: InsDel
            = DotGraph { strictGraph = False
                       , directedGraph = True
                       , graphID = Just (Str (fromString "Switchboard"))
-                      , graphStatements 
+                      , graphStatements
                          = DotStmts { attrStmts = [GraphAttrs [Splines SplineEdges, RankDir FromLeft]]
                                     , subGraphs = []
                                     , nodeStmts = inMorNodes++conjunctNodes++outMorNodes
@@ -203,7 +203,7 @@ data Event = On { eSrt :: InsDel
         --DESCR -> Each edge represents an insert between a relation on the left and a term on the right to which the relation contributes to an insert.
         edgesIn       = [ DotEdge { fromNode       = nameINode fromRels r
                                   , toNode         = nameCNode conjuncts (rul,c)
-                                  , edgeAttributes = [Label (StrLabel (fromString 
+                                  , edgeAttributes = [Label (StrLabel (fromString
                                                                       (if or (positiveIn c r) then "-" else
                                                                        if or [not b |b<-positiveIn c r] then "+" else
                                                                        "+-")))
@@ -224,7 +224,6 @@ data Event = On { eSrt :: InsDel
         nameCNode = nmLkp fSpec "cj_"
         nameONode :: [Declaration] -> Declaration -> String
         nameONode = nmLkp fSpec "out_"
-
 
    nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => Fspc -> String -> [a] -> a -> String
    nmLkp _ prefix xs x

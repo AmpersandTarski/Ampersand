@@ -8,11 +8,11 @@ where
    import Database.Design.Ampersand.Basics
    import Database.Design.Ampersand.ADL1.ECArule
    import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
-   import Database.Design.Ampersand.ADL1.Expression 
-   import Database.Design.Ampersand.Classes.Relational 
+   import Database.Design.Ampersand.ADL1.Expression
+   import Database.Design.Ampersand.Classes.Relational
    import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Database.Design.Ampersand.Core.ParseTree
-   import Database.Design.Ampersand.Misc.Options (ParserVersion(..))
+   import Database.Design.Ampersand.Misc.Options
    import Database.Design.Ampersand.Input.ADL1.Parser (pRule)
    import Database.Design.Ampersand.Input.Parsing
    import Database.Design.Ampersand.Fspec.Fspec
@@ -61,7 +61,7 @@ Ideas for future work:
               | RConst Expression
               deriving (Eq,Ord,Show)
 
--- The following condition must hold at all times for every RTerm, in order to make equality work 
+-- The following condition must hold at all times for every RTerm, in order to make equality work
    isValid :: RTerm -> Bool
    isValid (RIsc s)   = and [not (isRIsc e) && isValid e && length ls>1 | let ls=Set.toList s, e<-ls]
    isValid (RUni s)   = and [not (isRUni e) && isValid e && length ls>1 | let ls=Set.toList s, e<-ls]
@@ -183,7 +183,6 @@ Ideas for future work:
      dStps (RVar _ _ _) = fatal 147 "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
      dStps (RConst _)   = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
 
-
      dStepUny :: (RTerm -> Bool)    -- a predicate, isrComb, which tests whether some RTerm r has rCombinator as its root.
               -> (RTerm -> RTerm)   -- the combinator
               -> RTerm              -- its argument  (So, we are working with the RTerm   rCombinator a)
@@ -214,7 +213,7 @@ Ideas for future work:
                        , if substitute rd unif term==rCombinator a then True else
                          fatal 177 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator a:  "++showADL (rCombinator a))
                        ]
-                 
+
 -- dStepBin follows the same pattern as dStepUny, but for binary RTerms
      dStepBin :: (RTerm -> Bool) -> (RTerm -> RTerm -> RTerm) -> RTerm -> RTerm -> [DerivStep]
      dStepBin isrComb rCombinator a b
@@ -248,7 +247,7 @@ Ideas for future work:
                          fatal 207 ("When analysing rule "++rd++" with unifier "++showADL unif++"\nsubstitute rd unif term:  "++showADL (substitute rd unif term)++"\ndiffers from\nrCombinator a b:  "++showADL (rCombinator a b))
                        ]
 
-     dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm 
+     dStepLists :: (RTerm -> Bool) -> ([RTerm] -> RTerm) -> [RTerm] -> [DerivStep] -- Note: a and b are both RTerm
      dStepLists isrComb rCombinator ls
       = if (not . isValid . rCombinator) ls
         then fatal 231 ("Invalid expression in dStepLists: "++showADL (rCombinator ls))
@@ -356,7 +355,7 @@ Ideas for future work:
               partsplus n ss = [ (p,Set.empty) | p<-parts n ss ] ++ [ (Set.delete p prt, p) | prt<-parts (n+1) ss, p<-Set.toList prt ]
               flatSet :: [RTerm] -> RTerm
               flatSet = normRT . rCombinator . Set.fromList . flat isrComb
-              
+
      matchableRules :: [(RTerm,[RTerm])]
      matchableRules
       = [ (template, rewriteTerms )     -- each tuple may represent multiple rules.
@@ -399,7 +398,7 @@ Ideas for future work:
      sign (RAtm _ b)    = Sign b b
      sign (RVar _ _ _)  = fatal 324 "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
      sign (RConst e)    = sign e
-     
+
 -- In order to write deriviation rules in the Ampersand syntax, RTerms are obtained by means of the (already available) Ampersand parser.
 -- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
    term2rTerm :: Term TermPrim -> RTerm
@@ -453,7 +452,7 @@ Ideas for future work:
               PKl0 _ e                 -> RKl0 (term2rTerm e)
               PKl1 _ e                 -> RKl1 (term2rTerm e)
               PFlp _ e                 -> RFlp (term2rTerm e)
-              PBrk _ e                 -> term2rTerm e 
+              PBrk _ e                 -> term2rTerm e
               Prim (PTrel _ str sgn)   -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
               Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
               Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
@@ -511,14 +510,14 @@ Ideas for future work:
              EKl0 e               -> RKl0 (expr2RTerm e)
              EKl1 e               -> RKl1 (expr2RTerm e)
              EFlp e               -> RFlp (expr2RTerm e)
-             EBrk e               -> expr2RTerm e 
+             EBrk e               -> expr2RTerm e
              EDcD{}               -> RConst expr
              EDcI c               -> RId c
              EEps{}               -> RConst expr
              EDcV sgn             -> RVee (source sgn) (target sgn)
              EMp1 a c             -> RAtm a c
 --   --      _                    -> RConst expr   -- This alternative has been commented out to avoid an "overlapping patterns" warning from Haskell.
-        
+
    rTerm2expr :: RTerm -> Expression
    -- implementation note: because RTerms contain variables, it is cumbersome to reconstruct the type. So we don't.
    -- Once the variables have been replaced (by means of substitutions) by real expressions, we get a type correct expression again.
@@ -579,8 +578,8 @@ Ideas for future work:
 
    instance ShowADL RTerm where
     showADL = showExpr 0
-      where 
-        (   inter,   union',  diff,  lresi, rresi,  rDia,   rMul,rAdd,rPrd,closK0,closK1,flp',compl,   lpar, rpar, lbr, star,  rbr) 
+      where
+        (   inter,   union',  diff,  lresi, rresi,  rDia,   rMul,rAdd,rPrd,closK0,closK1,flp',compl,   lpar, rpar, lbr, star,  rbr)
          = (" /\\ ", " \\/ ", " - ", " / ", " \\ ", " <> ", ";", "!", "*", "*"  , "+",   "~", ("-"++), "(",  ")",  "[", "*",   "]")
         showExpr :: Int -> RTerm -> String
         showExpr i expr
@@ -605,7 +604,6 @@ Ideas for future work:
              RAtm a c   -> "'"++a++"'"++lbr++name c++rbr
         wrap :: Int -> Int -> String -> String
         wrap i j e' = if i<=j then e' else lpar++e'++rpar
-
 
 {- momentarily redundant
    unVar :: RTerm -> String
@@ -633,7 +631,6 @@ Ideas for future work:
    vars (RConst{})    = Set.empty
    vars  RAtm{}       = Set.empty
 
-
    data DerivRule = DEquR { lTerm :: RTerm
                           , rTerm :: RTerm
                           }
@@ -644,7 +641,7 @@ Ideas for future work:
    instance Show DerivRule where
     showsPrec _ r@DEquR{}  = showString (showADL (lTerm r)++" = " ++showADL (rTerm r))
     showsPrec _ r@DImpR{}  = showString (showADL (lTerm r)++" |- "++showADL (rTerm r))
-    
+
 -- For documentation purposes, the derivation rule which proves the step is included.
 
    data DerivStep = DStep { lhs :: RTerm
@@ -676,26 +673,6 @@ Ideas for future work:
         dstep: _ -> (w,dstep): (slideDown weight) (rhs dstep)
         _        -> []
 
-   conjNF, disjNF :: Expression -> Expression
-   (conjNF, disjNF) = (pr False, pr True)
-    where pr dnf expr = (rTerm2expr.last.((:) (rterm)).map (rhs.snd).slideDown (weightNF dnf)) rterm
-                        where rterm = expr2RTerm expr
-
-   cfProof, dfProof :: Expression -> Proof Expression
-   (cfProof,dfProof) = (proof False, proof True)
-    where 
-      proof :: Bool -> Expression -> Proof Expression
-      proof dnf expr = [ (rTerm2expr term, explStr, logicSym) | (term, explStr, logicSym)<-pr (expr2RTerm expr) ]
-       where
-        pr :: RTerm -> [(RTerm, [String], String)]
-        pr term
-           = case slideDown (weightNF dnf) term of
-              [] -> [ (term, ["weight: "++show (weightNF dnf term)], "<=>") ]
-              ds -> [ (lhs d, ["  (weight: "++show w++")"++ "\n   "++showADL tmpl++" = "++showADL step++"  with unifier: "++showADL unif | let (tmpl,unif,step) = rul d], "<=>")
-                    | (w,d)<-ds ] ++
-                    [ (rhs d, [], "<=>")
-                    | let (_,d) = last ds ]
-
    weightNF :: Bool -> RTerm -> Integer
    weightNF dnf term = w term
     where
@@ -725,7 +702,6 @@ Ideas for future work:
 
    instance ShowADL Unifier where
      showADL s = "{"++intercalate ", " [ str++"->"++showADL t | (str,t)<-Set.toList s ]++"}"
-
 
    substitute :: String    -- A string to document fatals
               -> Unifier   -- the substitution, which in reality is a set of string/expression pairs.
@@ -768,7 +744,7 @@ Ideas for future work:
                               es  -> fatal 390 ("Rule:  "++ruleDoc++"\nVariable "++name c++" in term "++showADL term++" has been bound to multiple expressions:\n   "++intercalate "\n   " [showADL e | e<-es])
        subs e@RConst{}   = e
 --     subs t            = fatal 392 ("Rule:  "++ruleDoc++"\nError: "++showADL t++"is not a variable.")  -- commented out, because it causes Haskell to emit an overlapping pattern warning.
-   
+
    flat :: (RTerm -> Bool) -> [RTerm] -> [RTerm]
    flat isrComb ls
     = case ls of
@@ -781,7 +757,6 @@ Ideas for future work:
    rTermListForSets (RIsc s) = Set.toList s
    rTermListForSets (RUni s) = Set.toList s
    rTermListForSets x = rTermList x
-       
 
    matches :: RTerm -> RTerm -> [Unifier]
    matches term expr
@@ -797,10 +772,10 @@ Ideas for future work:
         (RCps ls,        RCps ls')   -> matchLists RCps ls ls'
         (RRad ls,        RRad ls')   -> matchLists RRad ls ls'
         (RPrd ls,        RPrd ls')   -> matchLists RPrd ls ls'
-        (RKl0 e,         RKl0 e')    -> matches e e' 
-        (RKl1 e,         RKl1 e')    -> matches e e' 
-        (RFlp e,         RFlp e')    -> matches e e' 
-        (RCpl e,         RCpl e')    -> matches e e' 
+        (RKl0 e,         RKl0 e')    -> matches e e'
+        (RKl1 e,         RKl1 e')    -> matches e e'
+        (RFlp e,         RFlp e')    -> matches e e'
+        (RCpl e,         RCpl e')    -> matches e e'
         (RId  c,         RId _     ) -> [Set.fromList [(name c,expr)]]
         (RVee s t,       RVee s' t') -> [Set.fromList [(name s,RId s'), (name t,RId t')]]
         (RVar v s t,     _         ) -> [Set.fromList [(v,expr),(s,RId (source expr)),(t,RId (target expr))]]
@@ -843,7 +818,7 @@ Ideas for future work:
            , ["abc","d","ef"]
            , ["abc","de","f"]
            , ["abcd","e","f"]
-           ] 
+           ]
         -}
    mix :: [[Unifier]] -> [Unifier]
    mix (ls:lss) = [ Set.union e str | e<-ls, str<-mix lss ]
@@ -868,14 +843,14 @@ Ideas for future work:
       ]
       where
         isct  = es `Set.intersection` es'            -- E.g.:  {'Piet'}
-        cdes  = es  `Set.difference` isct            -- the terms of es that are not in es' (a set of templates). E.g.: { r;s }  
+        cdes  = es  `Set.difference` isct            -- the terms of es that are not in es' (a set of templates). E.g.: { r;s }
         cdes' = es' `Set.difference` isct            -- candidates for binding to a variable: { a\b , a;b;c , d , e;f }  (a set of expressions)
 
    separate :: Ord a => Int -> Set a -> [(Set a, Set a)]
    separate n s = [ (part, s `Set.difference` part) | part <- subsetLength n (Set.toList s) ]
     where
       subsetLength :: Ord a => Int -> [a] -> [Set a]
-      subsetLength 0 _      = [Set.empty]                                
+      subsetLength 0 _      = [Set.empty]
       subsetLength i (x:xs) = map (Set.insert x) (subsetLength (i-1) xs) ++ subsetLength i xs
       subsetLength _ []     = []
 
@@ -903,7 +878,7 @@ Ideas for future work:
       parts 6 "abcde" = {}
    -}
       subsets :: [a] -> [[a]]
-      subsets []  = [[]]                                
+      subsets []  = [[]]
       subsets (x:xs) = map (x:) (subsets xs) ++ subsets xs
 
    combLst :: ([RTerm] -> RTerm) -> [RTerm] -> RTerm
@@ -923,12 +898,12 @@ Ideas for future work:
    -- Example: noDoubles { p->A;B, q->'Piet', p->'Z', r->A* } is False, because p binds two different expressions.
    noDoubles :: Unifier -> Bool
    noDoubles unif = and [ n==1 | n<-(map length . eqCl fst . Set.toList) unif ]
-   
+
    safezip :: [a] -> [b] -> [(a,b)]
    safezip (a:as) (b:bs) = (a,b):safezip as bs
    safezip [] [] = []
    safezip _ _ = fatal 827 "Zip of two lists with different lengths!"
-   
+
 {-
    assignments {a,p} {2,3,4}
 =
@@ -989,12 +964,12 @@ Ideas for future work:
     , "-r[B*A]!-s[A*C] = -(r[B*A];s[A*C])"                        --  De Morgan
     , "r[A*B]~/\\s[A*B]~ = (r[A*B]/\\s[A*B])~"                    --  Distribute flip
     , "r[A*B]~\\/s[A*B]~ = (r[A*B]\\/s[A*B])~"                    --  Distribute flip
-    , "(r[A*A]\\r[A*A]);(r[A*A]\\r[A*A]) = r[A*A]\\r[A*A]"        --  Jipsen&Tsinakis      
-    , "(r[A*A]/r[A*A]);(r[A*A]/r[A*A]) = r[A*A]/r[A*A]"           --  Jipsen&Tsinakis   
-    , "r[A*A];(r[A*A]\\r[A*A]) = r[A*A]"                          --  Jipsen&Tsinakis  
-    , "(r[A*A]/r[A*A]);r[A*A] = r[A*A]"                           --  Jipsen&Tsinakis  
-    , "I[A];r[A*B] = r[A*B]"                
-    , "r[A*B];I[B] = r[A*B]"                
+    , "(r[A*A]\\r[A*A]);(r[A*A]\\r[A*A]) = r[A*A]\\r[A*A]"        --  Jipsen&Tsinakis
+    , "(r[A*A]/r[A*A]);(r[A*A]/r[A*A]) = r[A*A]/r[A*A]"           --  Jipsen&Tsinakis
+    , "r[A*A];(r[A*A]\\r[A*A]) = r[A*A]"                          --  Jipsen&Tsinakis
+    , "(r[A*A]/r[A*A]);r[A*A] = r[A*A]"                           --  Jipsen&Tsinakis
+    , "I[A];r[A*B] = r[A*B]"
+    , "r[A*B];I[B] = r[A*B]"
     , "(r[A*B]\\/s[A*B]);q[B*C] = r[A*B];q[B*C]\\/s[A*B];q[B*C]"  --  Distribution
     , "r[A*B];(s[B*C]\\/q[B*C]) = r[A*B];s[B*C]\\/r[A*B];q[B*C]"  --  Distribution
     , "-r[A*B]~!s[A*C] = r[A*B]\\s[A*C]"                          --  eliminate dagger
@@ -1019,24 +994,30 @@ Ideas for future work:
     , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                      --  Absorption
     , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"             --  Absorption
     , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"            --  Absorption
- 
+    , "r[A*A]* = r[A*A];r[A*A]*"
+    , "r[A*A]* = r[A*A]*;r[A*A]"
+    , "r[A*A]+ = r[A*A];r[A*A]+"
+    , "r[A*A]+ = r[A*A]+;r[A*A]"
+    , "I[A]\\/r[A*A]+ = r[A*A]*"
     ]
 
 -- Type conserving implications: The following implications have an identical signature on either side.
    tciDerivRules :: [DerivRule]
    tciDerivRules = concatMap (dRule.parseRule)
-    [ "(r[A*B]\\I[A]);s[A*C] |- r[A*B]\\s[A*C]"                   --  T{r\\I[A]}=[B*A] ; T{(r\\I[A]);s}=[B*C] ; T{r\\s}=[B*C] ; Jipsen&Tsinakis  
-    , "r[A*C];(I[C]/s[B*C]) |- r[A*C]/s[B*C]"                     --  Jipsen&Tsinakis  
-    , "(r[A*B]\\s[A*C]);q[C*D] |- r[A*B]\\(s[A*C];q[C*D])"        --  Jipsen&Tsinakis      
-    , "r[A*B];(s[B*C]/q[D*C]) |- (r[A*B];s[B*C])/q[D*C]"          --  Jipsen&Tsinakis    
-    , "(r[A*B]\\s[A*C]);(s[A*C]\\q[A*D]) |- r[A*B]\\q[A*D]"       --  Jipsen&Tsinakis       
-    , "(r[A*B]/s[A*C]);(s[A*C]/q[D*B]) |- r[A*B]/q[D*B]"          --  Jipsen&Tsinakis    
+    [ "(r[A*B]\\I[A]);s[A*C] |- r[A*B]\\s[A*C]"                   --  T{r\\I[A]}=[B*A] ; T{(r\\I[A]);s}=[B*C] ; T{r\\s}=[B*C] ; Jipsen&Tsinakis
+    , "r[A*C];(I[C]/s[B*C]) |- r[A*C]/s[B*C]"                     --  Jipsen&Tsinakis
+    , "(r[A*B]\\s[A*C]);q[C*D] |- r[A*B]\\(s[A*C];q[C*D])"        --  Jipsen&Tsinakis
+    , "r[A*B];(s[B*C]/q[D*C]) |- (r[A*B];s[B*C])/q[D*C]"          --  Jipsen&Tsinakis
+    , "(r[A*B]\\s[A*C]);(s[A*C]\\q[A*D]) |- r[A*B]\\q[A*D]"       --  Jipsen&Tsinakis
+    , "(r[A*B]/s[A*C]);(s[A*C]/q[D*B]) |- r[A*B]/q[D*B]"          --  Jipsen&Tsinakis
     , "r[A*B];(s[B*C]!q[C*D]) |- (r[A*B];s[B*C])!q[C*D]"          --  Peirce
     , "(r[A*B]!s[B*C]);q[C*D] |- r[A*B]!(s[B*C];q[C*D])"          --  Peirce
     , "(r[A*B]/\\s[A*B]);q[B*C] |- r[A*B];q[B*C]/\\s[A*B];q[B*C]" --  Distribution
     , "r[A*B];(s[B*C]/\\q[B*C]) |- r[A*B];s[B*C]/\\r[A*B];q[B*C]" --  Distribution
     , "(r[A*B];s[B*C])/s[B*C] |- r[A*B]"                          --  Absorption
     , "r[A*B]\\(r[A*B];s[B*C]) |- s[B*C]"                         --  Absorption
+    , "I[A] |- r[A*A]*"
+    , "r[A*B] |- V[A*B]"
     ]
 
 -- Type altering equivalences: The following equivalences have an different signature on either side.
@@ -1068,25 +1049,25 @@ Ideas for future work:
                  , decusr  = False
                  , decpat  = ""
                  , decplug = True
-                 } 
+                 }
 
 {- Normalization of process algebra clauses -}
 
-   normPA :: PAclause -> PAclause
-   normPA pac = pac' 
-       where (pac',_,_) = if null (proofPA pac) then fatal 21 "last: empty list" else last (proofPA pac)
+   normPA :: Options -> PAclause -> PAclause
+   normPA opts pac = pac'
+       where (pac',_,_) = if null (proofPA opts pac) then fatal 21 "last: empty list" else last (proofPA opts pac)
 
    type Proof a = [(a, [String], String)]
 
-   proofPA :: PAclause -> Proof PAclause
-   proofPA = {-reverse.take 3.reverse.-}pPA
-    where pPA pac' = case normstepPA pac' of
+   proofPA :: Options -> PAclause -> Proof PAclause
+   proofPA opts = {-reverse.take 3.reverse.-}pPA
+    where pPA pac' = case normstepPA opts pac' of
                        ( _ , []  ,equ) -> [(pac',[]   ,equ)]    -- is dus (pac,[],"<=>")
                        (res,steps,equ) -> (pac',steps,equ):pPA res
 
 {- The following rewriter is used to simplify the actions inside eca rules.
 -- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
--- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
+-- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter.
 -- BECAUSE! Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
 -- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
 -- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
@@ -1094,8 +1075,8 @@ Ideas for future work:
 -- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
 -- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
 -}
-   normstepPA :: PAclause -> (PAclause,[String],String)
-   normstepPA pac = (res,ss,"<=>")
+   normstepPA :: Options -> PAclause -> (PAclause,[String],String)
+   normstepPA opts pac = (res,ss,"<=>")
     where
      (res,ss) = norm pac
      norm :: PAclause -> (PAclause,[String])
@@ -1103,7 +1084,7 @@ Ideas for future work:
      norm (CHC [r] ms) = (r', ["Flatten ONE"])
                        where r' = case r of
                                     Blk{} -> r
-                                    _     -> r{paMotiv = ms} 
+                                    _     -> r{paMotiv = ms}
      norm (CHC ds ms)  | (not.null) msgs = (CHC ops ms, msgs)
                        | (not.null) [d | d<-ds, isCHC d] = (CHC (nub [ d' | d<-ds, d'<-if isCHC d then let CHC ops' _ = d in ops' else [d] ]) ms, ["flatten CHC"])  -- flatten
                        | (not.null) [Nop | Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
@@ -1120,13 +1101,13 @@ Ideas for future work:
                            = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isNop p)] ms, ["Remove unneccessary SELECT."])
                        | (not.null) doubles = (GCH [ (fst3 (head cl), foldr1 (.\/.) (map snd3 cl), thd3 (head cl)) | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds ] ms, ["remove double occurrences"])
                        | otherwise = (GCH ds ms, [])
-                       where normds = [ (tOp, conjNF links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
+                       where normds = [ (tOp, conjNF opts links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
                              doubles = [ d | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds, length cl>1, d<-cl ]
      norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
      norm (ALL [d] ms) = (d', ["Flatten ONE"])
                        where d' = case d of
                                     Blk{} -> d
-                                    _     -> d{paMotiv = ms} 
+                                    _     -> d{paMotiv = ms}
      norm (ALL ds ms)  | (not.null) msgs = (ALL ops ms, msgs)
                        | (not.null) [d | d<-ds, isAll d] = (ALL (nub [ d' | d<-ds, d'<-if isAll d then let ALL ops' _ = d in ops' else [d] ]) ms, ["flatten ALL"])  -- flatten
                        | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
@@ -1135,7 +1116,7 @@ Ideas for future work:
                        | (not.null) long    = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [name (paTo (head cl)) |cl<-long]++"together"])
                        | otherwise = (ALL ds ms, [])
                        where ds'     = [ let p=head cl in
-                                           if length cl==1 then p else p{paDelta=disjNF (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
+                                           if length cl==1 then p else p{paDelta=disjNF opts (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
                                        | cl<-dCls {- not (null cl) is guaranteed by eqCl -} ]
                                        ++[d | d<-ds, not (isDo d)]
                              nds     = map norm ds
@@ -1146,7 +1127,7 @@ Ideas for future work:
                              dCls = eqCl to [d | d<-ds, isDo d]
                              long :: [[PAclause]]
                              long = [cl | cl<-dCls, length cl>1]
-                             to d = case d of 
+                             to d = case d of
                                       Do{} -> (paSrt d, paTo d)
                                       _    -> fatal 74 "illegal call of to(d)"
      norm (New c p ms)        = ( case p' of
@@ -1164,17 +1145,16 @@ Ideas for future work:
 {- Normalization of expressions -}
 
    simplify :: Expression -> Expression
-   simplify expr = expr' 
+   simplify expr = expr'
        where (expr',_,_) = if null (simpProof shw expr) then fatal 101 "last: empty list" else last (simpProof shw expr)
              shw _ = ""
 
    simpProof :: (Expression -> String) -> Expression -> Proof Expression
-   simpProof shw expr    
+   simpProof shw expr
     = if expr==res
       then [(expr,[],"<=>")]
       else (expr,steps,equ):simpProof shw res
     where (res,steps,equ) = normStep shw True True True expr
-
 
    -- | The purpose of "normStep" is to elaborate a single step in a rewrite process,
    -- in which the expression is normalized by means of rewrite rules.
@@ -1215,7 +1195,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
      nM posCpl (EIsc (l,r)) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posCpl l []
                                                   (f,steps',equ'') = nM posCpl r (l:rs)
-     nM posCpl (ECps (ECps (l,k),r)) rs   = nM posCpl (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
+     nM posCpl (ECps (ECps (l,k),r)) rs   = nM posCpl (l .:. (k .:. r)) rs  -- standardize, using associativity of .:.
                                                 -- Note: function shiftL and shiftR make use of the fact that this normalizes to (l .:. (k .:. r))
      nM posCpl (ECps (l,r)) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
                                              where (t,steps, equ')  = nM posCpl l []
@@ -1354,13 +1334,13 @@ Until the new normalizer works, we will have to work with this one. So I have in
          | t/=l || f/=r
               = (t ./\. f, steps++steps', fEqu [equ',equ''])
          | not eq && or [length cl>1 |cl<-absorbAsy]
-              = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsy, let e=head cl] 
+              = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsy, let e=head cl]
                 , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=head cl]
                 , "==>"
                 )
 -- Absorb if r is antisymmetric and reflexive:    r/\r~ = I
          | or [length cl>1 |cl<-absorbAsyRfx]
-              = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsyRfx, let e=head cl] 
+              = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsyRfx, let e=head cl]
                 , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=head cl]
                 , "<=>"
                 )
@@ -1473,6 +1453,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
 {-
    nfProof :: (Expression -> String) -> Expression -> Proof Expression
    nfProof shw = nfPr shw True True -- The first boolean True means that clauses are derived using <=> derivations. The second True means that a disjunctive normal form is produced.
+-}
+
    nfPr :: (Expression -> String) -> Bool -> Bool -> Expression -> [(Expression, [String], String)]
    nfPr shw eq dnf expr
     = {-if showADL expr=="r \\/ s"
@@ -1487,42 +1469,77 @@ Until the new normalizer works, we will have to work with this one. So I have in
       else (expr,steps,equ):nfPr shw eq dnf (simplify res)
     where (res,steps,equ) = normStep shw eq dnf False expr
 
-   cfProof :: (Expression -> String) -> Expression -> Proof Expression
-   cfProof shw expr
+   conjNF, disjNF :: Options -> Expression -> Expression
+   (conjNF, disjNF) = (pr False, pr True)
+    where pr dnf opts expr
+           = case oldNormalizer opts of
+              False -> let rterm = expr2RTerm expr
+                       in (rTerm2expr.last.((:) (rterm)).map (rhs.snd).slideDown (weightNF dnf)) rterm
+              True  -> let proof = if dnf then dfProof opts else cfProof opts
+                           (e,_,_) = if null (proof expr) then fatal 340 "last: empty list" else last (proof expr)
+                       in e
+
+   cfProof, dfProof :: Options -> Expression -> Proof Expression
+   (cfProof,dfProof) = (proof False, proof True)
+    where
+      proof :: Bool -> Options -> Expression -> Proof Expression
+      proof dnf opts expr
+       = case oldNormalizer opts of
+          False -> [ (rTerm2expr term, explStr, logicSym) | (term, explStr, logicSym)<-prRT (expr2RTerm expr) ]
+          True  -> [line | step, line<-init pr]++
+                   [line | step', line<-init pr']++
+                   [last ([(expr,[],"<=>")]++
+                          [line | step, line<-pr]++
+                          [line | step', line<-pr']
+                         )]
+         where
+           prRT :: RTerm -> [(RTerm, [String], String)]
+           prRT term
+              = case slideDown (weightNF dnf) term of
+                  [] -> [ (term, ["weight: "++show (weightNF dnf term)], "<=>") ]
+                  ds -> [ (lhs d, [" weight: "++show w++",   "++showADL tmpl++" = "++showADL stp++"  with unifier: "++showADL unif | let (tmpl,unif,stp) = rul d], "<=>")
+                        | (w,d)<-ds ] ++
+                        [ (rhs d, [], "<=>")
+                        | let (_,d) = last ds ]
+           pr           = nfPr showADL True dnf expr
+           (expr',_,_)  = if null pr then fatal 356 "last: empty list" else last pr
+           step         = simplify expr/=simplify expr'
+           pr'          = nfPr showADL True dnf expr'
+           step'        = simplify expr'/=simplify expr''
+           (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'
+
+{-
+   cfProof :: Expression -> Proof Expression
+   cfProof expr
     = [line | step, line<-init pr]++
       [line | step', line<-init pr']++
       [last ([(expr,[],"<=>")]++
              [line | step, line<-pr]++
              [line | step', line<-pr']
             )]
-      where pr           = nfPr shw True False (simplify expr)
+      where pr           = nfPr showADL True False (simplify expr)
             (expr',_,_)  = if null pr then fatal 328 "last: empty list" else last pr
             step         = simplify expr/=expr' -- obsolete?    || and [null s | (_,ss,_)<-pr, s<-ss]
-            pr'          = nfPr shw True False (simplify expr')
+            pr'          = nfPr showADL True False (simplify expr')
             step'        = simplify expr'/=simplify expr'' -- obsolete?    || and [null s | (_,ss,_)<-pr', s<-ss]
             (expr'',_,_) = if null pr' then fatal 337 "last: empty list" else last pr'
 
-   conjNF :: Expression -> Expression
-   conjNF expr = e where (e,_,_) = if null (cfProof (\_->"") expr) then fatal 340 "last: empty list" else last (cfProof (\_->"") expr)
-
-   disjNF :: Expression -> Expression
-   disjNF expr = e where (e,_,_) = if null (dfProof (\_->"") expr) then fatal 343 "last: empty list" else last (dfProof (\_->"") expr)
-
-   dfProof :: (Expression -> String) -> Expression -> Proof Expression
-   dfProof shw expr
+   dfProof :: Expression -> Proof Expression
+   dfProof expr
     = [line | step, line<-init pr]++
       [line | step', line<-init pr']++
       [last ([(expr,[],"<=>")]++
              [line | step, line<-pr]++
              [line | step', line<-pr']
             )]
-      where pr           = nfPr shw True True expr
+      where pr           = nfPr showADL True True expr
             (expr',_,_)  = if null pr then fatal 356 "last: empty list" else last pr
             step         = simplify expr/=simplify expr'
-            pr'          = nfPr shw True True expr'
+            pr'          = nfPr showADL True True expr'
             step'        = simplify expr'/=simplify expr''
             (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'
 -}
+
    isEUni :: Expression -> Bool
    isEUni EUni{}  = True
    isEUni _       = False

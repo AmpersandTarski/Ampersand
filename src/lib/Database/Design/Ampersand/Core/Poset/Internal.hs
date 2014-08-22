@@ -18,7 +18,6 @@ import Database.Design.Ampersand.Basics (fatalMsg)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.Poset.Internal"
 
-
 data Ordering = LT | EQ | GT | CP | NC
     deriving (Eq, Show, Read, Bounded, Enum)
 

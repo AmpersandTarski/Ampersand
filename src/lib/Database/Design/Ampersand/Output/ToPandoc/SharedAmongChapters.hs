@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
-    , math -- 
+    , math --
     , module Data.Monoid
-    , module Database.Design.Ampersand.Basics  
+    , module Database.Design.Ampersand.Basics
     , module Database.Design.Ampersand.Fspec
     , module Database.Design.Ampersand.Misc
     , module Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -29,7 +29,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , orderingByTheme
     )
 where
-import Database.Design.Ampersand.Basics  
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
@@ -47,9 +47,9 @@ import System.Locale
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
 
-data Chapter = Intro 
+data Chapter = Intro
              | SharedLang
-             | Diagnosis 
+             | Diagnosis
              | ConceptualAnalysis
              | ProcessAnalysis
              | DataAnalysis
@@ -60,18 +60,18 @@ data Chapter = Intro
              deriving (Eq, Show)
 
 -- | Define the order of the chapters in the document.
-chaptersInDoc :: Options -> [Chapter]  
-chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
+chaptersInDoc :: Options -> [Chapter]
+chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
  where
    -- temporarily switch off chapters that need too much refactoring, but keep this Haskell code compilable.
     disabled = [Interfaces]
     chapters
-     | test flags                  = [SharedLang]
-     | diagnosisOnly flags         = [Diagnosis]
-     | theme flags == StudentTheme = [Intro,SharedLang,Diagnosis,ConceptualAnalysis,DataAnalysis]
-     | otherwise                   = [ Intro 
+     | test opts                  = [SharedLang]
+     | diagnosisOnly opts         = [Diagnosis]
+     | theme opts == StudentTheme = [Intro,SharedLang,Diagnosis,ConceptualAnalysis,DataAnalysis]
+     | otherwise                   = [ Intro
                                      , SharedLang
-                                     , Diagnosis 
+                                     , Diagnosis
                                      , ConceptualAnalysis
                                      , ProcessAnalysis
                                      , DataAnalysis
@@ -83,9 +83,9 @@ chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
 
 -- | This function returns a header of a chapter
 chptHeader :: Lang -> Chapter -> Blocks
-chptHeader lang chap 
+chptHeader lang chap
  = header 1 (chptTitle lang chap ) <> (para (xrefLabel chap))
- 
+
 chptTitle :: Lang -> Chapter -> Inlines
 chptTitle lang cpt =
      (case (cpt,lang) of
@@ -93,8 +93,8 @@ chptTitle lang cpt =
         (Intro             , English) -> text "Introduction"
         (SharedLang        , Dutch  ) -> text "Gemeenschappelijke taal"
         (SharedLang        , English) -> text "Shared Language"
-        (Diagnosis         , Dutch  ) -> text "Diagnose" 
-        (Diagnosis         , English) -> text "Diagnosis" 
+        (Diagnosis         , Dutch  ) -> text "Diagnose"
+        (Diagnosis         , English) -> text "Diagnosis"
         (ConceptualAnalysis, Dutch  ) -> text "Conceptuele Analyse"
         (ConceptualAnalysis, English) -> text "Conceptual Analysis"
         (ProcessAnalysis   , Dutch  ) -> text "Procesanalyse"
@@ -103,9 +103,9 @@ chptTitle lang cpt =
         (DataAnalysis      , English) -> text "Data structure"
         (SoftwareMetrics   , Dutch  ) -> text "Functiepunt Analyse"
         (SoftwareMetrics   , English) -> text "Function Point Analysis"
-        (EcaRules          , Dutch  ) -> text "ECA regels" 
-        (EcaRules          , English) -> text "ECA rules (Flash points)" 
-        (Interfaces        , Dutch  ) -> text "Koppelvlakken" 
+        (EcaRules          , Dutch  ) -> text "ECA regels"
+        (EcaRules          , English) -> text "ECA rules (Flash points)"
+        (Interfaces        , Dutch  ) -> text "Koppelvlakken"
         (Interfaces        , English) -> text "Interfaces"
         (Glossary          , Dutch  ) -> text "Begrippen"
         (Glossary          , English) -> text "Glossary"
@@ -116,70 +116,70 @@ class Xreferencable a where
 --  xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
 --  xrefReference a = fatal 117 $ "--Depreciated! TODO: use xRefReference instead"
   xRefReference :: Options -> a -> Inlines
-  xRefReference flags a 
-    | canXRefer flags = rawInline "latex" ("\\ref{"++xLabel a++"}")
+  xRefReference opts a
+    | canXRefer opts = rawInline "latex" ("\\ref{"++xLabel a++"}")
     | otherwise       = mempty -- "fatal 89 xreferencing is not supported!"
   xrefLabel :: a -> Inlines
   xrefLabel a = rawInline "latex" ("\\label{"++xLabel a++"}")
 
 canXRefer :: Options -> Bool
-canXRefer opts = fspecFormat opts `elem` [FLatex] 
+canXRefer opts = fspecFormat opts `elem` [FLatex]
 
 instance Xreferencable Chapter where
   xLabel a = "chapter" ++ escapeNonAlphaNum (show a)
-  
+
 instance Xreferencable Picture where
   xLabel a = "figure" ++ escapeNonAlphaNum (caption a)
 
 --Image [Inline] Target
 --      alt.text (URL,title)
 showImage :: Options -> Picture -> Inlines
-showImage flags pict = 
-      case fspecFormat flags of
+showImage opts pict =
+      case fspecFormat opts of
          FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
-   <> image (imagePath flags pict) (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
-   <> case fspecFormat flags of
+   <> image (imagePath opts pict) (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
+   <> case fspecFormat opts of
          FLatex  -> rawInline "latex" "}\n"
-                  <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
+                  <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n")
          _       -> mempty
    <> (xrefLabel pict)
-   <> case fspecFormat flags of
+   <> case fspecFormat opts of
          FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
          _       -> mempty
 
--- | This function orders the content to print by theme. It returns a list of 
+-- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
-orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern or a process. 
+orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern or a process.
                             , [Rule]        -- The rules of that theme
                             , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
                             , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
                             )
                            ]
-orderingByTheme fSpec 
+orderingByTheme fSpec
  = f (allRules fSpec) (filter isUserDefined (relsMentionedIn fSpec)) (allConcepts fSpec) tms
  where
   isUserDefined d = case d of
                        Sgn{} -> decusr d
-                       _     -> False  
+                       _     -> False
   -- | The themes that should be taken into account for this ordering
   tms = if null (themes fSpec)
         then map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
         else [ PatternTheme pat           | pat <-patterns   fSpec, name pat  `elem` themes fSpec ]
-           ++[ ProcessTheme (fpProc fprc) | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
+           ++[ ProcessTheme (fpProc fprc) | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
   f ruls rels cpts ts
    = case ts of
        t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
                      , (relsOfTheme,relsNotOfTheme)
                      , (cptsOfTheme,cptsNotOfTheme)
-                     ) = partitionByTheme t ruls rels cpts 
+                     ) = partitionByTheme t ruls rels cpts
                 in (Just t, rulsOfTheme, relsOfTheme, cptsOfTheme)
                    : f rulsNotOfTheme relsNotOfTheme cptsNotOfTheme ts'
        []    -> [(Nothing, ruls, rels, cpts)]
-  -- | This function takes care of partitioning each of the 
+  -- | This function takes care of partitioning each of the
   --   lists in a pair of lists of elements which do and do not belong
-  --   to the theme, respectively 
+  --   to the theme, respectively
   partitionByTheme :: Theme
                    -> [Rule]
                    -> [Declaration]
@@ -190,7 +190,7 @@ orderingByTheme fSpec
                       )
   partitionByTheme thme ruls rels cpts
       = ((rulsOfTheme,rulsNotOfTheme), (relsOfTheme,relsNotOfTheme), (cptsOfTheme,cptsNotOfTheme))
-     where 
+     where
        (rulsOfTheme,rulsNotOfTheme) = partition isRulOfTheme ruls
        isRulOfTheme r = r `elem` (case thme of
                                     PatternTheme pat -> ptrls pat
@@ -200,30 +200,29 @@ orderingByTheme fSpec
        isRelOfTheme r = r `elem` (concatMap relsDefdIn rulsOfTheme++concatMap relsUsedIn rulsOfTheme)
        (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts
        isCptOfTheme c = c `elem` concatMap concs relsOfTheme
-        
-        
+
 --GMI: What's the meaning of the Int?
-dpRule :: Fspc -> Options -> [Rule] -> Int -> [A_Concept] -> [Declaration]
+dpRule :: Fspc -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
-dpRule fSpec flags = dpR
+dpRule fSpec = dpR
  where
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( str (name r)
-         , [theBlocks]   
+         , [theBlocks]
           ): dpNext
        , n'
-       , seenCs 
+       , seenCs
        , seenDs
        )
        where
         theBlocks :: Blocks
         theBlocks =
            let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
-             (  (purposes2Blocks flags purps)
-             <> (purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
+             (  (purposes2Blocks (flags fSpec) purps)
+             <> (purposes2Blocks (flags fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
              <> (if null nds then mempty else plain text1)
-             <> (fromList $ 
+             <> (fromList $
                   pandocEqnArray [ ( texOnly_Id(name d)
                                     , ":"
                                     , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
@@ -231,7 +230,7 @@ dpRule fSpec flags = dpR
                                  |d<-nds])
              <> (if null rds then mempty else plain text2)
              <> (plain text3)
-             <> (if showPredExpr flags
+             <> (if showPredExpr (flags fSpec)
                  then fromList $ pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
                  else fromList $ pandocEquation (showMath r++symDefLabel r)
                 )
@@ -240,24 +239,24 @@ dpRule fSpec flags = dpR
         text1, text2, text3  :: Inlines
         text1
          = case (nds,fsLang fSpec) of
-             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> (symDefRef flags d) <> "):")
-             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> (symDefRef flags d) <> "):")
-             (_  ,Dutch)   -> ("Om te komen tot de formalisatie in vergelijking" <> (rawInline "latex" "~")<>(symDefRef flags r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
-             (_  ,English) -> ("To arrive at the formalization in equation"      <> (rawInline "latex" "~")<>(symDefRef flags r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
+             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> (symDefRef (flags fSpec) d) <> "):")
+             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> (symDefRef (flags fSpec) d) <> "):")
+             (_  ,Dutch)   -> ("Om te komen tot de formalisatie in vergelijking" <> (rawInline "latex" "~")<>(symDefRef (flags fSpec) r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
+             (_  ,English) -> ("To arrive at the formalization in equation"      <> (rawInline "latex" "~")<>(symDefRef (flags fSpec) r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
         text2
          = (case ( nds, rds,fsLang fSpec) of
-             ([],[rd],Dutch)   -> ("Definitie " <>         (symDefRef flags rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
-             ([],[rd],English) -> ("We use definition " <> (symDefRef flags rd) <> "(" <> str (name rd) <> ")")
-             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> (symDefRef flags rd) <> "(" <> (str.name) rd <> ")" )
-             (_ ,[rd],English) -> ("Beside that, we use definition "   <> (symDefRef flags rd) <> "(" <> (str.name) rd <> ")" )
-             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [symDefRef flags d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([],[rd],Dutch)   -> ("Definitie " <>         (symDefRef (flags fSpec) rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
+             ([],[rd],English) -> ("We use definition " <> (symDefRef (flags fSpec) rd) <> "(" <> str (name rd) <> ")")
+             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> (symDefRef (flags fSpec) rd) <> "(" <> (str.name) rd <> ")" )
+             (_ ,[rd],English) -> ("Beside that, we use definition "   <> (symDefRef (flags fSpec) rd) <> "(" <> (str.name) rd <> ")" )
+             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
            )<>
            (case (nds,fsLang fSpec) of
-             ([_],Dutch)   -> (" om eis" <> (symReqRef flags r) <> " te formaliseren: ")
-             ([_],English) -> (" to formalize requirement" <> (symReqRef flags r) <> ": ")
+             ([_],Dutch)   -> (" om eis" <> (symReqRef (flags fSpec) r) <> " te formaliseren: ")
+             ([_],English) -> (" to formalize requirement" <> (symReqRef (flags fSpec) r) <> ": ")
              ( _, _)        -> ". "
            )
         text3
@@ -273,14 +272,14 @@ dpRule fSpec flags = dpR
         text5 :: Blocks
         text5
          = case (fsLang fSpec,isSignal r) of
-             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> (symReqPageRef flags r) <>":"
+             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <>":"
                                       ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> (symReqPageRef flags r) <>":"
+             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <>":"
                                       ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (Dutch  ,True)  -> plain ( "Dit komt overeen met " <> (singleQuoted.str.name) r <> 
-                                        " (" <> symReqRef flags r <> " op pg."  <> (rawInline "latex" "~") <> (symReqPageRef flags r) <> ").")
-             (English,True)  -> plain ( "This corresponds to " <> (singleQuoted.str.name) r <> 
-                                        " (" <> symReqRef flags r <> " on page" <> (rawInline "latex" "~") <> (symReqPageRef flags r) <> ").")
+             (Dutch  ,True)  -> plain ( "Dit komt overeen met " <> (singleQuoted.str.name) r <>
+                                        " (" <> symReqRef (flags fSpec) r <> " op pg."  <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <> ").")
+             (English,True)  -> plain ( "This corresponds to " <> (singleQuoted.str.name) r <>
+                                        " (" <> symReqRef (flags fSpec) r <> " on page" <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <> ").")
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
@@ -293,7 +292,7 @@ relsInThemes fSpec
         -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
  = [d | d<-relsDefdIn fSpec
    , decusr d
-   , (  decpat d `elem` themes fSpec  
+   , (  decpat d `elem` themes fSpec
          || d `elem` relsMentionedIn [p | p<-            patterns fSpec   , name p `elem` themes fSpec]
          || d `elem` relsMentionedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` themes fSpec]
      )
@@ -313,7 +312,7 @@ incEis :: Counter -> Counter
 incEis x = x{getEisnr = getEisnr x + 1}
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
-purposes2Blocks flags ps
+purposes2Blocks opts ps
  = fromList $
      case ps of
       [] -> []
@@ -323,8 +322,8 @@ purposes2Blocks flags ps
              Just p  -> amPandoc p
        where   -- The reference information, if available for this purpose, is put
         ref :: Purpose -> [Inline]
-        ref purp = case fspecFormat flags of
-                    FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex") 
+        ref purp = case fspecFormat opts of
+                    FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex")
                                                              ("\\marge{"++intercalate "; " (map latexEscShw (explRefIds purp))++"}\n")]
                     _                                  -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
@@ -339,8 +338,7 @@ concatMarkup es
                       intercalate "\n   " [(show.f.head) cl | cl<-cls])
    where f e = (amLang e, amFormat e)
 
-
--- Insert an inline after the first inline in the list of blocks, if possible. 
+-- Insert an inline after the first inline in the list of blocks, if possible.
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]
 insertAfterFirstInline inlines (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines++inls)) : pblocks
 insertAfterFirstInline inlines (            Para (inl:inls):pblocks)         =             Para (inl : (inlines++inls)) : pblocks
@@ -349,7 +347,7 @@ insertAfterFirstInline inlines blocks                                        = P
 
 isMissing :: Maybe Purpose -> Bool
 isMissing mp =
-  case mp of 
+  case mp of
     Nothing -> True
     Just p  -> (not . explUserdefd) p
 
@@ -364,13 +362,12 @@ lclForLang lang = defaultTimeLocale { months =
                       , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
            }
 
-
 inlineIntercalate :: Inlines -> [Inlines] -> Inlines
 inlineIntercalate _  [] = mempty
 inlineIntercalate _ [x] = x
 inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 
--- Temporary fixes of Pandoc builder. ---  
+-- Temporary fixes of Pandoc builder. ---
 bulletList :: [Blocks] -> Blocks
 bulletList [] = mempty
 bulletList xs = BuggyBuilder.bulletList xs

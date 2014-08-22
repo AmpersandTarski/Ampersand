@@ -12,26 +12,24 @@ module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
    fatal = fatalMsg "Output.Statistics"
 
  -- TODO Deze module moet nog verder worden ingekleurd...
- 
+
    class Statistics a where
     nInterfaces :: a -> Int      -- ^ The number of interfaces in a
     nPatterns :: a -> Int      -- ^ The number of patterns in a
     nFpoints :: a -> Int      -- ^ The number of function points in a
-    
-    
+
    instance Statistics a => Statistics [a] where
     nInterfaces xs = sum (map nInterfaces xs)
     nPatterns   xs = sum (map nPatterns xs)
     nFpoints    xs = sum (map nFpoints xs)
 
-
    instance Statistics Fspc where
     nInterfaces fSpec = length (fActivities fSpec) --TODO -> check correctness
     nPatterns   fSpec = nPatterns (patterns fSpec)
-    nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)] 
+    nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)]
                 --       + sum [fPoints (fpa plug) | InternalPlug plug <- plugInfos fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...
-   
+
    instance Statistics Pattern where
     nInterfaces _ = 0 --TODO -> check correctness
     nPatterns   _ = 1

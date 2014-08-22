@@ -16,7 +16,6 @@ module Database.Design.Ampersand.Misc.TinyXML where
                    , attValue :: String
                    }
 
-
    showXTree :: XTree -> String
    showXTree tree = case tree of
                         Elem{} -> showStart tag
@@ -26,22 +25,22 @@ module Database.Design.Ampersand.Misc.TinyXML where
                         Node{} -> showNode (ntag tree)
                         PlainText{} -> show (ptstr tree)
    showStart :: XTag -> String
-   showStart a = "<" ++ tName a ++ showAtts (tAtts a) ++ ">" 
-  
+   showStart a = "<" ++ tName a ++ showAtts (tAtts a) ++ ">"
+
    showAtts :: [XAtt] -> String
    showAtts = concatMap showAtt
       where showAtt :: XAtt -> String
             showAtt a= " "++attName a++"="++show (attValue a)
 
    showEnd :: XTag -> String
-   showEnd a = "</" ++ tName a ++ ">"   
-   
+   showEnd a = "</" ++ tName a ++ ">"
+
    showNode :: XTag -> String
-   showNode a = "<" ++ tName a ++ showAtts (tAtts a) ++ "/>"   
+   showNode a = "<" ++ tName a ++ showAtts (tAtts a) ++ "/>"
 
    mkAttr :: String -> String -> XAtt
-   mkAttr  = Att 
-   
+   mkAttr  = Att
+
    simpleTag :: String -> XTag
    simpleTag nm = Tag nm []
-   
+

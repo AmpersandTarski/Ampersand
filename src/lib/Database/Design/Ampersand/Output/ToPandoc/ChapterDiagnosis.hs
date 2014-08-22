@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis 
+module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Data.List
@@ -12,10 +12,10 @@ import Database.Design.Ampersand.Output.PandocAux
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
-chpDiagnosis :: Fspc -> Options -> (Blocks,[Picture])
-chpDiagnosis fSpec flags
- = ( (chptHeader (fsLang fSpec) Diagnosis) <> 
-     fromList 
+chpDiagnosis :: Fspc -> (Blocks,[Picture])
+chpDiagnosis fSpec
+ = ( (chptHeader (fsLang fSpec) Diagnosis) <>
+     fromList
      (
      diagIntro ++             -- an introductory text
      roleomissions ++         -- tells which role-rule, role-interface, and role-relation assignments are missing
@@ -26,16 +26,16 @@ chpDiagnosis fSpec flags
      relsNotUsed ++           -- tells which relations are not used in any rule
      missingRules ++          -- tells which rule definitions are missing
      ruleRelationRefTable ++  -- table that shows percentages of relations and rules that have references
-     invariantsInProcesses ++ -- 
-     processrulesInPatterns++ -- 
+     invariantsInProcesses ++ --
+     processrulesInPatterns++ --
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
      wipReport++              -- sums up the work items (i.e. the violations of process rules)
      toList violationReport          -- sums up the violations caused by the population of this script.
-     )   
+     )
    , pics )
   where
   diagIntro :: [Block]
-  diagIntro = 
+  diagIntro =
     case fsLang fSpec of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van het Ampersand-script van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
@@ -47,12 +47,11 @@ chpDiagnosis fSpec flags
                   , Str "This analysis is intended for the authors of this script. "
                   , Str "It can be used to complete the script or to improve possible flaws. "
                   ]]
-   
 
   roleRuleTable :: [Block]
   roleRuleTable
     | null ruls = []
-    | null (fRoles fSpec) = 
+    | null (fRoles fSpec) =
         case fsLang fSpec of
           Dutch    -> [Para [ Str $ upCap (name fSpec)++" specificeert geen rollen. " ]]
           English  -> [Para [ Str $ upCap (name fSpec)++" does not define any roles. " ]]
@@ -71,11 +70,11 @@ chpDiagnosis fSpec flags
         (AlignLeft:[AlignCenter |_<-fRoles fSpec])
         (0.0:[0.0 |_<-fRoles fSpec])
         (( case fsLang fSpec of
-          Dutch   -> [Plain [Str "regel"]] 
-          English -> [Plain [Str "rule" ]] 
+          Dutch   -> [Plain [Str "regel"]]
+          English -> [Plain [Str "rule" ]]
         ) :    [ [Plain [Str r]] | r <- fRoles fSpec ]
         )
-        [ [Plain [Str (name rul)]]:[f r rul | r<-fRoles fSpec] | rul<-ruls ] 
+        [ [Plain [Str (name rul)]]:[f r rul | r<-fRoles fSpec] | rul<-ruls ]
         ]
      where
       ruls = if null (themes fSpec)
@@ -89,14 +88,14 @@ chpDiagnosis fSpec flags
       maintained  -- (r,rul) `elem` maintained means that r can maintain rul without restrictions.
         = [ (role,rul)
           | (role,rul)<-fRoleRuls fSpec
-          , and (map (mayEdit role) (relsUsedIn rul))
+          , and (map (mayedit role) (relsUsedIn rul))
           ]
-      mayEdit :: String -> Declaration -> Bool
-      mayEdit role decl = decl `elem` ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec))) 
+      mayedit :: String -> Declaration -> Bool
+      mayedit role decl = decl `elem` ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec)))
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role,rul)
          | (role,rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayEdit role) (relsUsedIn rul))
+         , (not.or) (map (mayedit role) (relsUsedIn rul))
          ]
 
   roleomissions :: [Block]
@@ -136,10 +135,10 @@ chpDiagnosis fSpec flags
       (Dutch,xs)  -> [Para $
                        [Str "De bestaansreden van de concepten: "]++commaNLPandoc (Str "en") (map (Str . name) xs)++[Str " is niet gedocumenteerd."]
                      ]
-      (English,[])  -> [Para 
+      (English,[])  -> [Para
                         [Str "All concepts in this document have been provided with a purpose."]
                      | (not.null.concs) fSpec]
-      (English,[c]) -> [Para 
+      (English,[c]) -> [Para
                          [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " remains without a purpose."]
                      ]
       (English,xs)  -> [Para $
@@ -163,26 +162,24 @@ chpDiagnosis fSpec flags
       (Dutch,xs)  -> [Para $
                        [Str "De concepten: "]++commaNLPandoc (Str "en") (map (Str . name) xs)++[Str " zijn gedefinieerd, maar worden niet gebruikt."]
                      ]
-      (English,[])  -> [Para 
+      (English,[])  -> [Para
                         [Str "All concept definitions in this document are used in relations."]
                      | (not.null.cDefsInScope) fSpec]
-      (English,[c]) -> [Para 
+      (English,[c]) -> [Para
                          [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " is defined, but isn't used."]
                      ]
       (English,xs)  -> [Para $
                        [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " are defined, but not used."]
                      ]
    where unused = [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (allConcepts fSpec)]
-         
-    
-  
+
   missingRels :: [Block]
   missingRels
    = case (fsLang fSpec, missing) of
-      (Dutch,[])  -> [Para 
+      (Dutch,[])  -> [Para
                        [Str "Alle relaties in dit document zijn voorzien van een reden van bestaan (purpose)."]
                      | (not.null.relsMentionedIn.udefrules) fSpec]
-      (Dutch,[r]) -> [Para 
+      (Dutch,[r]) -> [Para
                        [ Str "De reden waarom relatie ", r
                        , Str " bestaat wordt niet uitgelegd."
                      ] ]
@@ -190,10 +187,10 @@ chpDiagnosis fSpec flags
                        [ Str "Relaties "]++commaNLPandoc (Str "en") rs++
                        [ Str " zijn niet voorzien van een reden van bestaan (purpose)."
                      ] ]
-      (English,[])  -> [Para 
+      (English,[])  -> [Para
                          [Str "All relations in this document have been provided with a purpose."]
                        | (not.null.relsMentionedIn.udefrules) fSpec]
-      (English,[r]) -> [Para 
+      (English,[r]) -> [Para
                          [ Str "The purpose of relation ", r
                          , Str " remains unexplained."
                        ] ]
@@ -201,7 +198,7 @@ chpDiagnosis fSpec flags
                          [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
                          [ Str " is not documented."
                        ] ]
-     where missing = [(Math InlineMath . showMath) (EDcD d) 
+     where missing = [(Math InlineMath . showMath) (EDcD d)
                      | d@Sgn{} <- relsInThemes fSpec
                      , null (purposesDefinedIn fSpec (fsLang fSpec) d)
                      ]
@@ -210,10 +207,10 @@ chpDiagnosis fSpec flags
   pics :: [Picture]
   (relsNotUsed,pics)
    = ( ( case (fsLang fSpec, notUsed) of
-          (Dutch,[])  -> [Para 
+          (Dutch,[])  -> [Para
                            [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
                          | (not.null.relsMentionedIn.udefrules) fSpec]
-          (Dutch,[r]) -> [Para 
+          (Dutch,[r]) -> [Para
                            [ Str "De relatie ", r
                            , Str " wordt in geen enkele regel gebruikt. "
                          ] ]
@@ -221,10 +218,10 @@ chpDiagnosis fSpec flags
                            [ Str "Relaties "]++commaNLPandoc (Str "en") rs++
                            [ Str " worden niet gebruikt in regels. "
                          ] ]
-          (English,[])  -> [Para 
+          (English,[])  -> [Para
                              [Str "All relations in this document are being used in one or more rules."]
                            | (not.null.relsMentionedIn.udefrules) fSpec]
-          (English,[r]) -> [Para 
+          (English,[r]) -> [Para
                              [ Str "Relation ", r
                              , Str " is not being used in any rule. "
                            ] ]
@@ -234,24 +231,24 @@ chpDiagnosis fSpec flags
                            ] ] ) ++
        toList
        ( case (fsLang fSpec, pictsWithUnusedRels) of
-          (Dutch,[pict])   -> para ("Figuur " <> xRefReference flags pict <> " geeft een conceptueel diagram met alle relaties.") <>
-                              plain((showImage flags) pict)
-          (English,[pict]) -> para ("Figure " <> xRefReference flags pict <> " shows a conceptual diagram with all relations.") <>
-                              plain((showImage flags) pict)
+          (Dutch,[pict])   -> para ("Figuur " <> xRefReference (flags fSpec) pict <> " geeft een conceptueel diagram met alle relaties.") <>
+                              plain((showImage (flags fSpec)) pict)
+          (English,[pict]) -> para ("Figure " <> xRefReference (flags fSpec) pict <> " shows a conceptual diagram with all relations.") <>
+                              plain((showImage (flags fSpec)) pict)
           (Dutch,picts)    -> mconcat
-                                  [ para (  "Figuur " <> xRefReference flags pict 
+                                  [ para (  "Figuur " <> xRefReference (flags fSpec) pict
                                          <> " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                          <> (singleQuoted.str.name) pat <> "."
                                          ) <>
-                                    (plain . showImage flags) pict
+                                    (plain . showImage (flags fSpec)) pict
                                   | (pict,pat)<-zip picts pats ]
           (English,picts) -> mconcat
-                                  [ para (  "Figure " <> xRefReference flags pict 
+                                  [ para (  "Figure " <> xRefReference (flags fSpec) pict
                                          <> " shows a conceptual diagram with all relations declared in "
                                          <> (singleQuoted.str.name) pat <> "."
                                          )<>
-                                    (plain . showImage flags) pict
-                                  | (pict,pat)<-zip picts pats ] 
+                                    (plain . showImage (flags fSpec)) pict
+                                  | (pict,pat)<-zip picts pats ]
        )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
@@ -263,14 +260,14 @@ chpDiagnosis fSpec flags
            pats  = [ pat | pat<-patterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
-           pictsWithUnusedRels = [makePicture flags fSpec (PTDeclaredInPat pat) | pat<-pats ]
+           pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: [Block]
   missingRules
    = case (fsLang fSpec, missingPurp, missingMeaning) of
       (Dutch,[],[])    -> [ Para [Str "Alle regels in dit document zijn voorzien van een uitleg."]
                           | (length.udefrules) fSpec>1]
-      (Dutch,rs,rs')   -> [Para 
+      (Dutch,rs,rs')   -> [Para
                            (case rs>-rs' of
                               []  -> []
                               [r] -> [ Str "De bestaansreden van regel ", Emph [Str (name r)]
@@ -381,31 +378,31 @@ chpDiagnosis fSpec flags
 
   ruleRelationRefTable =
     [ Para [ Str descriptionStr ]
-    , Table [] (AlignLeft : replicate 6 AlignCenter) [0.0,0.0,0.0,0.0,0.0,0.0,0.0] 
+    , Table [] (AlignLeft : replicate 6 AlignCenter) [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
             (map strCell [ themeStr, relationsStr, withRefStr, "%", rulesStr, withRefStr, "%"])
-            (map mkTableRowPat (vpatterns fSpec) ++ map mkTableRowProc (vprocesses fSpec) ++ 
+            (map mkTableRowPat (vpatterns fSpec) ++ map mkTableRowProc (vprocesses fSpec) ++
             [[]] ++ -- empty row
             [mkTableRow contextStr (filter decusr $ vrels fSpec) (vrules fSpec)])
     ]
     where mkTableRowPat p = mkTableRow (name p) (ptdcs p) (ptrls p)
-          mkTableRowProc (FProc p _) = mkTableRow (name p) (prcDcls p) (prcRules p) 
-          mkTableRow nm decls ruls = 
+          mkTableRowProc (FProc p _) = mkTableRow (name p) (prcDcls p) (prcRules p)
+          mkTableRow nm decls ruls =
             let nrOfRels = length decls
                 nrOfRefRels = length $ filter hasRef decls
                 nrOfRules = length ruls
                 nrOfRefRules = length $ filter hasRef ruls
             in  map strCell [ nm
                             , show nrOfRels, show nrOfRefRels, showPercentage nrOfRels nrOfRefRels
-                            , show nrOfRules, show nrOfRefRules, showPercentage nrOfRules nrOfRefRules 
+                            , show nrOfRules, show nrOfRefRules, showPercentage nrOfRules nrOfRefRules
                             ]
-        
+
           hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)
-          
-          showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%" 
-          
+
+          showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
+
           strCell strng = [Plain [Str strng]]
-          
-          (descriptionStr, themeStr, relationsStr, withRefStr, rulesStr, contextStr) = 
+
+          (descriptionStr, themeStr, relationsStr, withRefStr, rulesStr, contextStr) =
             case fsLang fSpec of Dutch -> ( "Onderstaande tabel bevat per thema (dwz. proces of patroon) tellingen van het aantal relaties en regels, " ++
                                             "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
                                             "gedeclareerd worden, worden ook meerdere keren geteld."
@@ -482,7 +479,7 @@ chpDiagnosis fSpec flags
                                   , Str "This has as consequence that these rule(s) will be maintained in the corresponding process(es)."
                                   ]
      | (not.null.vprocesses) fSpec && (not.null) [rra | prc<-procs, rra<-maintains prc]
-     ]        ++          
+     ]        ++
 -- the table containing the role-rule assignments
      [ Table []
        ([AlignLeft]++[AlignLeft | multProcs]++[AlignLeft,AlignLeft])
@@ -495,7 +492,7 @@ chpDiagnosis fSpec flags
        )
        [ [[Plain [Str rol]]]++[[Plain [Str (name p)]] | multProcs]++[[Plain [Str (name rul)]], [Plain [Str (r_env rul)]]]
        | (p,rol,rul)<-prs
-       ] 
+       ]
      | length prs>1]
      where prs = [(p,rol,rul) | p<-procs, (rol,rul)<-maintains p, name rul `notElem` map name (udefrules p) ]
            multProcs = length procs>1
@@ -559,7 +556,7 @@ chpDiagnosis fSpec flags
               (Dutch,  _,_)        -> [ Str "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden." ]
               (English,_,_)        -> [ Str "This script contains work in progress. The following tables provide details with line numbers from the original script files." ]
             )
-     ]        ++          
+     ]        ++
 -- the following table actually belongs to the intro
      [ Table []
        [AlignLeft,AlignRight,AlignRight]
@@ -573,18 +570,18 @@ chpDiagnosis fSpec flags
        [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
        | (r,ps)<-cl, length ps>0
        ]
-     | (length.concat) popwork>1, cl<-popwork ]        ++          
+     | (length.concat) popwork>1, cl<-popwork ]        ++
 -- the tables containing the actual work in progress population
      concat
      [ [ Para ( (case fsLang fSpec of
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                toList(if xrefSupported flags then "(" <> symReqRef flags r <> ") " else mempty )++
+                toList(if xrefSupported (flags fSpec) then "(" <> symReqRef (flags fSpec) r <> ") " else mempty )++
                 (case fsLang fSpec of
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]
-                )  
+                )
               )]  ++meaning2Blocks (fsLang fSpec) r++
        [Plain ( case fsLang fSpec of
                   Dutch  ->
@@ -598,15 +595,15 @@ chpDiagnosis fSpec flags
                      commaEngPandoc (Str "or") (nub [Str rol | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
                      if length ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
                       [ Str ("The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")]
-                     
+
               ) ]++
        [ violtable r ps | length ps>1]
      | (r,ps)<-concat popwork ]
      where
 --      text r
 --       = if null expls
---         then explains2Blocks (autoMeaning (fsLang fSpec) r) 
---         else expls 
+--         then explains2Blocks (autoMeaning (fsLang fSpec) r)
+--         else expls
 --         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (fsLang fSpec) || l==Nothing, Para block<-econt]
       quoterule r
        = if name r==""
@@ -622,23 +619,23 @@ chpDiagnosis fSpec flags
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
       popwork :: [[(Rule,Pairs)]];
       popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
-  partofThemes r = 
-        or [ null (themes fSpec) 
+  partofThemes r =
+        or [ null (themes fSpec)
            , r `elem` concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]
            , r `elem` concat [udefrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
            ]
 
-  violationReport :: Blocks    
+  violationReport :: Blocks
   violationReport
    = let (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
          showViolatedRule :: (Rule,Pairs) -> Blocks
-         showViolatedRule (r,ps) 
+         showViolatedRule (r,ps)
              = let capt = case (fsLang fSpec,isSignal r) of
                                (Dutch  , False) -> text "Overtredingen van regel "<>  text (name r)
                                (English, False) -> text "Violations of rule "<>  text (name r)
                                (Dutch  , True ) -> text "Openstaande taken voor " <> text (commaNL  "of" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
                                (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
-                         
+
                    showRow :: Paire -> [Blocks]
                    showRow p = [(para.text.srcPaire) p,(para.text.trgPaire) p]
                in para ( case fsLang fSpec of
@@ -653,20 +650,20 @@ chpDiagnosis fSpec flags
                                (English, True ) -> "Total number of work items: " ++show (length ps)
                              )
                        )
-               <> table capt 
+               <> table capt
                    [(AlignLeft,0)                          ,(AlignLeft,0)          ]
                    [(para.strong.text.name.source.rrexp) r,(para.strong.text.name.target.rrexp) r]
                    (map showRow ps)
-            
+
      in (para (case (fsLang fSpec, invariantViolations, processViolations) of
                 (Dutch  ,[] , [] ) -> text "De populatie in dit script overtreedt geen regels. "
                 (English,[] , [] ) -> text "The population in this script violates no rule. "
-                (Dutch  ,iVs, pVs) 
+                (Dutch  ,iVs, pVs)
                    -> text ("De populatie in dit script overtreedt "
                              ++show(length iVs)++" invariant"++(if length iVs == 1 then "" else "en")++" en "
                              ++show(length pVs)++" procesregel"++if length pVs == 1 then "" else "s"++"."
                            )
-                (English,iVs, pVs) 
+                (English,iVs, pVs)
                    -> text ("The population in this script violates "
                              ++show(length iVs)++" invariant"++(if length iVs == 1 then "" else "s")++" and "
                              ++show(length pVs)++" process rule"++if length pVs == 1 then "" else "s"++"."
@@ -675,8 +672,7 @@ chpDiagnosis fSpec flags
         )
      <> bulletList  [showViolatedRule vs | vs<- invariantViolations]
      <> bulletList  [showViolatedRule vs | vs<- processViolations]
-        
-             
+
 ---- the table containing the rule violation counts
 --     [ Table []
 --       [AlignLeft,AlignRight,AlignRight]
@@ -690,7 +686,7 @@ chpDiagnosis fSpec flags
 --       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
 --       | (r,ps)<-cl, length ps>0
 --       ]
---     | (length.concat) popviol>1, cl<-popviol, not (null cl) ]        ++          
+--     | (length.concat) popviol>1, cl<-popviol, not (null cl) ]        ++
 ---- the table containing the multiplicity counts
 --     [ Table []
 --       [AlignLeft,AlignRight,AlignRight]
@@ -704,14 +700,14 @@ chpDiagnosis fSpec flags
 --       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
 --       | (r,ps)<-cl, length ps>0
 --       ]
---     | (length.concat) multviol>1, cl<-multviol, not (null cl) ]        ++          
+--     | (length.concat) multviol>1, cl<-multviol, not (null cl) ]        ++
 -- the tables containing the actual violations of user defined rules
 --     concat
 --     [ [ Para ( (case fsLang fSpec of
 --                   Dutch   -> Str "Regel"
 --                   English -> Str "Rule"):
 --                [Space,quoterule r,Space]++
---                if fspecFormat flags==FLatex then [ Str "(", RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str ") "] else []++
+--                if fspecFormat (flags fSpec)==FLatex then [ Str "(", RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str ") "] else []++
 --                (case fsLang fSpec of
 --                    Dutch   -> [ Str "luidt: " ]
 --                    English -> [ Str "says: "])
@@ -737,11 +733,11 @@ chpDiagnosis fSpec flags
 --                   Dutch   ->
 --                     if length ps == 1 then [Str "Deze regel wordt overtreden door "]++oneviol r ps++[Str ". "] else
 --                      [ Str ("De volgende tabel laat de "++(if length ps>10 then "eerste tien overtredingen zien." else count Dutch (length ps) ((unCap.name.source)r)++" zien die deze regel overtreden."))]
---                     
+--
 --                   English ->
 --                     if length ps == 1 then [Str "This rule is violated by "]++oneviol r ps++[Str ". "] else
 --                      [ Str ("The following table shows the "++(if length ps>10 then "first ten violations." else count English (length ps) ((unCap.name.source)r)++" that violate this rule."))]
---                     
+--
 --                )]++
 --         [ violtable r ps | length ps>1]
 --       | (r,ps)<-multviols, length multviols>1 ]
@@ -751,7 +747,7 @@ chpDiagnosis fSpec flags
 --       = concat [    [Plain [Str "De relatie ",Space]]
 --                  ++ amPandoc mrkup
 --                  ++ [Plain [Str ".",Space]]
---                  
+--
 --                 | mrkup <- (ameaMrk . rrmean) r, amLang mrkup==fsLang fSpec]
 --     quoterule r = if name r==""
 --                   then Str ("on "++show (origin r))
@@ -763,7 +759,6 @@ chpDiagnosis fSpec flags
 --     oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
 --     popviols  = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r,      r_usr r == UserDefined ]
 --     multviols = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r, not (r_usr r == UserDefined)]
-     
 
 --     popviols = [(r,ps) | r<-invs++identityRs
 --                        , let ps=ruleviolations r, not (null ps)]
@@ -803,5 +798,4 @@ chpDiagnosis fSpec flags
              [ [[Plain [Str (srcPaire p)]], [Plain [Str (trgPaire p)]]]
              | p <-take 10 ps
              ]
-        
 

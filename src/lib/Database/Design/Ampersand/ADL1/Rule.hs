@@ -11,7 +11,6 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "ADL1.Rule"
 
-
    hasantecedent :: Rule -> Bool
    hasantecedent r
     = case rrexp r of
