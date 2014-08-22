@@ -6,31 +6,31 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces
   , chpInterfacesBlocks
   )
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Data.List
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Output.PandocAux
 
-chpInterfacesPics :: Fspc -> Options -> [Picture]
-chpInterfacesPics fSpec flags =
-   concat [picKnowledgeGraph flags fSpec act : [picSwitchboard flags fSpec act | graphic flags] | act <- fActivities fSpec ]
-chpInterfacesBlocks :: Int -> Fspc -> Options -> Blocks
-chpInterfacesBlocks lev fSpec flags =
-   foldr (<>) mempty (map interfaceChap (fActivities fSpec))  
- where 
+chpInterfacesPics :: Fspc -> [Picture]
+chpInterfacesPics fSpec =
+   concat [picKnowledgeGraph fSpec act : [picSwitchboard fSpec act | graphic (flags fSpec)] | act <- fActivities fSpec ]
+chpInterfacesBlocks :: Int -> Fspc -> Blocks
+chpInterfacesBlocks lev fSpec =
+   foldr (<>) mempty (map interfaceChap (fActivities fSpec))
+ where
    interfaceChap :: Activity -> Blocks
    interfaceChap act
    -- TODO: This should be one chapter for all interfaces.
-    =  (labeledThing flags lev ("chpIfc"++name act) (name act)) <>
+    =  (labeledThing (flags fSpec) lev ("chpIfc"++name act) (name act)) <>
        ifcIntro act <>
-       (if genGraphics flags then txtKnowledgeGraph act else mempty) <>
-       (if graphic     flags then txtSwitchboard act else mempty)
+       (if genGraphics (flags fSpec) then txtKnowledgeGraph act else mempty) <>
+       (if graphic     (flags fSpec) then txtSwitchboard act else mempty)
    ifcIntro :: Activity -> Blocks
    ifcIntro act
-    =   purposes2Blocks flags purps
+    =   purposes2Blocks (flags fSpec) purps
       <> fromList (ifcAutoRules act)
-      <> fromList (if genEcaDoc flags then ifcEcaRules act else [])
+      <> fromList (if genEcaDoc (flags fSpec) then ifcEcaRules act else [])
       where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
 
 {-
@@ -81,7 +81,7 @@ chpInterfacesBlocks lev fSpec flags =
                   )]
       where
          auts = nub [ Quoted  SingleQuote [Str (name r)] | q<-actQuads act, let r=(cl_rule.qClauses) q, r_usr r == UserDefined]
-         rols = nub [Str r | (r,rul)<-fRoleRuls fSpec, rul==actRule act] 
+         rols = nub [Str r | (r,rul)<-fRoleRuls fSpec, rul==actRule act]
 
    ifcEcaRules :: Activity -> [Block]
    ifcEcaRules act
@@ -105,7 +105,7 @@ chpInterfacesBlocks lev fSpec flags =
         [ [ [Plain [ (Str . show . eSrt.ecaTriggr) eca]]
           , [Plain [ (Str . show . eDcl.ecaTriggr) eca]]
           , [Plain (shwEca eca)]
-          ] 
+          ]
         | eca<-actEcas act  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
         ]]
      where
@@ -121,7 +121,7 @@ chpInterfacesBlocks lev fSpec flags =
                                                    in s
                                                   )]
                        | (_,rs)<-paMotiv (ecaAction eca)
-                       ] 
+                       ]
        | isNop (ecaAction eca)
             = [ Str "no op"]
        | otherwise = [ Str "ECA rule ", Str ((show . ecaNum ) eca) ]
@@ -148,16 +148,16 @@ chpInterfacesBlocks lev fSpec flags =
                             | otherwise        = fld e f ++
                                                  [ BulletList [recur (ECps [e,fld_expr f']) f' | f'<-fld_sub f] ]
            fld e f = [ Para [ Str (dealWithUnderscores (fld_name f)++if null cols then "" else "("++intercalate ", " cols++")") ]
-                     , Para [ Str "display on start: ", Math InlineMath $ showMath (conjNF e) ]
-                     ] 
+                     , Para [ Str "display on start: ", Math InlineMath $ showMath (conjNF (flags fSpec) e) ]
+                     ]
             where cols = ["lijst"         | fld_list    f]++
                          ["verplicht"     | fld_must    f]++
                          ["nieuw"         | fld_insAble f]++
                          ["verwijderbaar" | fld_delAble f]
-                     
+
            dealWithUnderscores :: String -> String
-           dealWithUnderscores x = 
-                  case x of 
+           dealWithUnderscores x =
+                  case x of
                     []     -> []
                     '_':cs -> "\\_" ++ dealWithUnderscores cs
                     c:cs   -> c : dealWithUnderscores cs
@@ -166,32 +166,32 @@ chpInterfacesBlocks lev fSpec flags =
    txtKnowledgeGraph :: Activity -> Blocks
    txtKnowledgeGraph act
     = (case fsLang fSpec of                                     -- announce the knowledge graph
-           Dutch   -> para ( "Figuur " <> (xRefReference flags (picKnowledgeGraph flags fSpec act)) 
+           Dutch   -> para ( "Figuur " <> (xRefReference (flags fSpec) (picKnowledgeGraph fSpec act))
                            <>" geeft de kennisgraaf weer voor deze interface."
                            )
-           English -> para ( "Figure " <> (xRefReference flags (picKnowledgeGraph flags fSpec act)) 
+           English -> para ( "Figure " <> (xRefReference (flags fSpec) (picKnowledgeGraph fSpec act))
                            <>" shows the knowledge graph of this interface."
                            )
       ) <>
-      ( (para . showImage flags) (picKnowledgeGraph flags fSpec act))    -- draw the knowledge graph
+      ( (para . showImage (flags fSpec)) (picKnowledgeGraph fSpec act))    -- draw the knowledge graph
 
    txtSwitchboard :: Activity -> Blocks
    txtSwitchboard act
     = (if name act==name (head (fActivities fSpec)) then fromList switchboardIntro else mempty
       ) <>
       (case fsLang fSpec of                                     -- announce the switchboard diagram
-           Dutch   -> para ( "Figuur " <> (xRefReference flags (picSwitchboard flags fSpec act))
+           Dutch   -> para ( "Figuur " <> (xRefReference (flags fSpec) (picSwitchboard fSpec act))
                            <>" geeft het schakelpaneel (switchboard diagram) weer voor deze interface."
                            )
-           English -> para ( "Figure " <> (xRefReference flags (picSwitchboard flags fSpec act))
+           English -> para ( "Figure " <> (xRefReference (flags fSpec) (picSwitchboard fSpec act))
                            <>" shows the switchboard diagram of this interface."
                            )
       ) <>
-      ( (para . showImage flags) (picSwitchboard flags fSpec act))        -- draw the switchboard
+      ( (para . showImage (flags fSpec)) (picSwitchboard fSpec act))        -- draw the switchboard
 
    switchboardIntro :: [Block]
    switchboardIntro
-    = if not (graphic flags) then [] else
+    = if not (graphic (flags fSpec)) then [] else
      [ Para $ case fsLang fSpec of                             -- tells us for who this interface exists
         Dutch   -> [ Str "Iedere sectie in dit hoofdstuk beschrijft één activiteit. "
                    , Str "Tijdens het uitvoeren van een activiteit zal een gebruiker populatie invoegen of verwijderen in verschillende relaties. "
@@ -225,14 +225,13 @@ chpInterfacesBlocks lev fSpec flags =
                    ]
      ]
 
-picKnowledgeGraph :: Options -> Fspc -> Activity ->Picture
-picKnowledgeGraph flags fSpec act = makePicture flags fSpec (PTFinterface act)
+picKnowledgeGraph :: Fspc -> Activity -> Picture
+picKnowledgeGraph fSpec act = makePicture fSpec (PTFinterface act)
 
-picSwitchboard :: Options -> Fspc -> Activity -> Picture
-picSwitchboard flags fSpec act
-    = makePicture flags fSpec (PTSwitchBoard act) -- the Picture that represents this interface's knowledge graph
-
+picSwitchboard :: Fspc -> Activity -> Picture
+picSwitchboard fSpec act
+    = makePicture fSpec (PTSwitchBoard act) -- the Picture that represents this interface's knowledge graph
 
 graphic :: Options -> Bool
-graphic flags = genGraphics flags && theme flags /= StudentTheme
+graphic opts = genGraphics opts && theme opts /= StudentTheme
 

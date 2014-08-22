@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Fspec.Graphic.Graphics 
+module Database.Design.Ampersand.Fspec.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
-import Data.GraphViz 
-import Database.Design.Ampersand.ADL1 
+import Data.GraphViz
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Classes 
+import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Fspec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
@@ -21,7 +21,7 @@ import System.Directory
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Graphic.Graphics"
 
-data PictureReq = PTClassDiagram 
+data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
                 | PTDeclaredInPat Pattern
                 | PTProcess FProcess
@@ -40,87 +40,86 @@ data Picture = Pict { pType :: PictureReq             -- ^ the type of the pictu
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 
-
-makePicture :: Options -> Fspc -> PictureReq -> Picture
-makePicture flags fSpec pr =
-  case pr of 
+makePicture :: Fspc -> PictureReq -> Picture
+makePicture fSpec pr =
+  case pr of
    PTClassDiagram      -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot flags (clAnalysis fSpec flags)
+                               , dotSource = classdiagram2dot (flags fSpec) (clAnalysis fSpec)
                                , dotProgName = Dot
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Classification of " ++ name fSpec
                                       Dutch   -> "Classificatie van " ++ name fSpec
                                }
    PTLogicalDM         -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot flags (cdAnalysis fSpec flags)
+                               , dotSource = classdiagram2dot (flags fSpec) (cdAnalysis fSpec)
                                , dotProgName = Dot
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Logical data model of " ++ name fSpec
                                       Dutch   -> "Logisch gegevensmodel van " ++ name fSpec
                                }
    PTTechnicalDM       -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot flags (tdAnalysis fSpec flags)
+                               , dotSource = classdiagram2dot (flags fSpec) (tdAnalysis fSpec)
                                , dotProgName = Dot
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Technical data model of " ++ name fSpec
                                       Dutch   -> "Technisch gegevensmodel van " ++ name fSpec
                                }
    PTConcept cpt       -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Concept diagram of the rules about " ++ name cpt
                                       Dutch   -> "Conceptueel diagram van de regels rond " ++ name cpt
                                }
    PTDeclaredInPat pat -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Concept diagram of relations in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
                                }
    PTIsaInPattern pat  -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Classifications of " ++ name pat
                                       Dutch   -> "Classificaties van " ++ name pat
                                }
    PTRelsUsedInPat pat -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Concept diagram of the rules in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
                                }
    PTFinterface act    -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Concept diagram of interface " ++ name act
                                       Dutch   -> "Conceptueel diagram van interface " ++ name act
                                }
    PTSingleRule rul    -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = conceptualGraph' fSpec flags pr
+                               , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
@@ -129,7 +128,7 @@ makePicture flags fSpec pr =
                                , scale = scale'
                                , dotSource = processModel fp
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Process model of " ++ name fp
                                       Dutch   -> "Procesmodel van " ++ name fp
@@ -138,7 +137,7 @@ makePicture flags fSpec pr =
                                , scale = scale'
                                , dotSource = sbdotGraph (switchboardAct fSpec act)
                                , dotProgName = graphVizCmdForConceptualGraph
-                               , caption = 
+                               , caption =
                                    case fsLang fSpec of
                                       English -> "Switchboard diagram of " ++ name act
                                       Dutch   -> "Schakelpaneel van " ++ name act
@@ -158,9 +157,9 @@ makePicture flags fSpec pr =
             PTLogicalDM    -> "0.7"
             PTTechnicalDM  -> "0.7"
    graphVizCmdForConceptualGraph = Sfdp
-   
+
 pictureID :: PictureReq -> String
-pictureID pr = 
+pictureID pr =
      case pr of
       PTClassDiagram   -> "Classification"
       PTLogicalDM      -> "LogicalDataModel"
@@ -174,13 +173,13 @@ pictureID pr =
       PTSwitchBoard x     -> "SwitchBoard"++name x
       PTSingleRule r      -> "SingleRule"++name r
 
-conceptualGraph' :: Fspc -> Options -> PictureReq -> DotGraph String
-conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
-  where 
+conceptualGraph' :: Fspc -> PictureReq -> DotGraph String
+conceptualGraph' fSpec pr = conceptual2Dot (flags fSpec) cstruct
+  where
     cstruct =
-      case pr of 
-        PTConcept c -> 
-          let gs = fsisa fSpec 
+      case pr of
+        PTConcept c ->
+          let gs = fsisa fSpec
               cpts' = concs rs
               rs    = [r | r<-udefrules fSpec, c `elem` concs r]
           in
@@ -190,7 +189,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
-        --  PTRelsUsedInPat makes a picture of at least the relations within pat; 
+        --  PTRelsUsedInPat makes a picture of at least the relations within pat;
         --  extended with a limited number of more general concepts;
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTRelsUsedInPat pat ->
@@ -200,7 +199,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                         , source r /= target r, decusr r
                         ]
               idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-              gs   = fsisa fSpec 
+              gs   = fsisa fSpec
               cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `uni` concs rels
               rels = [r | r@Sgn{}<-relsMentionedIn pat
@@ -212,7 +211,7 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                   , csIdgs = idgs
                   }
 
-        -- PTDeclaredInPat makes a picture of relations and gens within pat only 
+        -- PTDeclaredInPat makes a picture of relations and gens within pat only
         PTDeclaredInPat pat ->
           let gs   = fsisa fSpec
               cpts = concs decs `uni` concs (gens pat)
@@ -266,63 +265,58 @@ conceptualGraph' fSpec flags pr = conceptual2Dot flags cstruct
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        _  -> fatal 276 "No conceptual graph defined for this type."  
-
+        _  -> fatal 276 "No conceptual graph defined for this type."
 
 writePicture :: Options -> Picture -> IO()
-writePicture flags pict
+writePicture opts pict
     = sequence_ (
-      [createDirectoryIfMissing True  (takeDirectory (imagePath flags pict)) | genAtlas flags ]++
-      [writeDot Canon  | {- genFspec flags || -} genAtlas flags ]++
---      [writeDot XDot   | genFspec flags || genAtlas flags ]++
-      [writeDot Png    | genFspec flags || genAtlas flags ]++
-      [writeDot Cmapx  |                   genAtlas flags ]
+      [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) | genAtlas opts ]++
+      [writeDot Canon  | {- genFspec opts || -} genAtlas opts ]++
+--      [writeDot XDot   | genFspec opts || genAtlas opts ]++
+      [writeDot Png    | genFspec opts || genAtlas opts ]++
+      [writeDot Cmapx  |                   genAtlas opts ]
           )
-   where 
+   where
      writeDot :: GraphvizOutput
               -> IO ()
-     writeDot  gvOutput  = 
-         do verboseLn flags ("Generating "++show gvOutput++" using "++show gvCommand++".")
-            path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath flags) pict)
-            verboseLn flags (path++" written.")
+     writeDot  gvOutput  =
+         do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
+            path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath opts) pict)
+            verboseLn opts (path++" written.")
        where  gvCommand = dotProgName pict
-              
-             
+
 class ReferableFromPandoc a where
-  imagePath :: Options ->a -> FilePath   -- ^ the full file path to the image file
+  imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
 
 instance ReferableFromPandoc Picture where
-  imagePath flags p = 
-     (if genAtlas flags then dirPrototype flags </> "images" else dirOutput flags)
+  imagePath opts p =
+     (if genAtlas opts then dirPrototype opts </> "images" else dirOutput opts)
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
 
 class Identified a => Navigatable a where
-   interfacename :: a -> String 
-   itemstring :: a -> String 
+   interfacename :: a -> String
+   itemstring :: a -> String
    theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
-   theURL flags x 
+   theURL opts x
      = fromString ("Atlas.php?content=" ++ interfacename x
                    ++  "&User=" ++ user
                    ++  "&Script=" ++ script
                    ++  "&"++interfacename x ++"="++qualify++itemstring x
                   )
       where --copied from atlas.hs
-      script = fileName flags
-      user = namespace flags
-      qualify = "("++user ++ "." ++ script ++ ")"  
-
+      script = fileName opts
+      user = namespace opts
+      qualify = "("++user ++ "." ++ script ++ ")"
 
 instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl
    itemstring = name  --copied from atlas.hs
- 
-instance Navigatable Declaration where 
+
+instance Navigatable Declaration where
    interfacename _ = "Relatiedetails"
    itemstring x = name x ++ "["
                   ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
                   ++ "]"
-
-
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
                                    , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
@@ -330,12 +324,12 @@ data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ Th
                                    }
 
 conceptual2Dot :: Options -> ConceptualStructure -> DotGraph String
-conceptual2Dot flags (CStruct cpts' rels idgs)
+conceptual2Dot opts (CStruct cpts' rels idgs)
      = DotGraph { strictGraph = False
                 , directedGraph = True
                 , graphID = Nothing
-                , graphStatements 
-                      = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture flags)]
+                , graphStatements
+                      = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture opts)]
                                  , subGraphs = []
                                  , nodeStmts = conceptNodes ++ relationNodes
                                  , edgeStmts = relationEdges ++ isaEdges
@@ -343,13 +337,13 @@ conceptual2Dot flags (CStruct cpts' rels idgs)
                 }
        where
         cpts = cpts' `uni` concs rels `uni` concs idgs
-        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) flags | c<-cpts]
-        (relationNodes,relationEdges) = (concat a, concat b) 
+        conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) opts | c<-cpts]
+        (relationNodes,relationEdges) = (concat a, concat b)
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
-        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge  flags | (s,g)<-idgs]
-              
-        baseNodeId :: A_Concept -> String  -- returns the NodeId of the node where edges to this node should connect to. 
-        baseNodeId c 
+        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge opts | (s,g)<-idgs]
+
+        baseNodeId :: A_Concept -> String  -- returns the NodeId of the node where edges to this node should connect to.
+        baseNodeId c
             = case lookup c (zip cpts [(1::Int)..]) of
                 Just i -> "cpt_"++show i
                 _      -> fatal 169 $ "element "++name c++" not found by nodeLabel."
@@ -359,35 +353,35 @@ conceptual2Dot flags (CStruct cpts' rels idgs)
              (Declaration,Int)           -- ^ tuple contains the declaration and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
-          | doubleEdges flags
+          | doubleEdges opts
              = (  [ relNameNode ]    -- node to place the name of the relation
-               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) flags     -- edge to connect the source with the hinge
-                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) flags]     -- edge to connect the hinge to the target
+               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) opts     -- edge to connect the source with the hinge
+                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) opts]     -- edge to connect the hinge to the target
                )
           | otherwise
                = ( [] --No intermediate node
-                 , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r)  flags]
+                 , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r)  opts]
                  )
           where
-        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
-            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
-                                   
+        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   opts
+            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) opts
+
 constrNode :: a -> PictureObject -> Options -> DotNode a
-constrNode nodeId pObj flags
+constrNode nodeId pObj opts
   = DotNode { nodeID = nodeId
             , nodeAttributes = [ FontSize 10
-                               , FontName (fromString(pangoFont flags))
+                               , FontName (fromString(pangoFont opts))
                            --    , Width 0.1
                            --    , Height  0.1
-                               ]++handleFlags pObj flags
+                               ]++handleFlags pObj opts
             }
 
 constrEdge :: a -> a -> PictureObject -> Options -> DotEdge a
-constrEdge nodeFrom nodeTo pObj flags 
+constrEdge nodeFrom nodeTo pObj opts
   = DotEdge { fromNode = nodeFrom
             , toNode   = nodeTo
             , edgeAttributes = [ FontSize 12
-                               , FontName (fromString(pangoFont flags))
+                               , FontName (fromString(pangoFont opts))
                                , Dir Forward
                             --   , LabelAngle (-25.0)
                                , Color [WC(X11Color Gray35)Nothing]
@@ -396,7 +390,7 @@ constrEdge nodeFrom nodeTo pObj flags
                                , Decorate False
                             --   , LabelDistance 2.0
                             --   , (HeadLabel . StrLabel . fromString) "Test"
-                               ]++handleFlags pObj flags
+                               ]++handleFlags pObj opts
             }
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept
@@ -415,39 +409,39 @@ data PictureObject = CptOnlyOneNode A_Concept    -- ^ Node of a concept that ser
                    | RelIntermediateNode    Declaration  -- ^ Intermediate node, as a hindge for the relation edges
                    | IsaOnlyOneEdge              -- ^ Edge of an ISA relation without a hinge node
                    | TotalPicture                -- ^ Graph attributes
-         
+
 handleFlags :: PictureObject  -> Options -> [Attribute]
-handleFlags po flags = 
+handleFlags po opts =
     case po of
-      CptConnectorNode c 
-         -> if crowfoot flags
-            then 
+      CptConnectorNode c
+         -> if crowfoot opts
+            then
                  [ (Label . StrLabel . fromString . name) c
                  , Shape PlainText
                  , Style [filled]
-                 , URL (theURL flags c)
+                 , URL (theURL opts c)
                  ]
             else [ Shape PointShape
                  , Style [filled]
                  ]
-      CptNameNode c  -> if crowfoot flags
+      CptNameNode c  -> if crowfoot opts
                         then [ Shape PointShape
                              , Style [invis]]
-                        else 
+                        else
                              [ (Label . StrLabel . fromString . name) c
                              , Shape PlainText
                              , Style [filled]
-                             , URL (theURL flags c)
+                             , URL (theURL opts c)
                              ]
       CptEdge    -> [Style [invis]
                     ]
-      CptOnlyOneNode c -> 
+      CptOnlyOneNode c ->
                           [(Label . StrLabel . fromString . name) c
                           , Shape BoxShape
-                          , Style [filled] 
-                          , URL (theURL flags c)
+                          , Style [filled]
+                          , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ URL (theURL flags r)
+      RelOnlyOneEdge r -> [ URL (theURL opts r)
                           , (XLabel . StrLabel .fromString.name) r
                           ]
                     --    ++[ (HeadLabel . StrLabel .fromString) "1" | isTot r && isUni r]
@@ -456,12 +450,12 @@ handleFlags po flags =
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
-      RelSrcEdge r -> [ ArrowHead ( if crowfoot flags  then normal                    else
+      RelSrcEdge r -> [ ArrowHead ( if crowfoot opts  then normal                    else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then noArrow                   else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot flags  then crowfootArrowType False r else
+                      , ArrowTail ( if crowfoot opts  then crowfootArrowType False r else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then normal                    else
                                     noArrow
@@ -470,30 +464,30 @@ handleFlags po flags =
                 --      , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ]
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
-                      , ArrowHead ( if crowfoot flags  then crowfootArrowType True r  else
+                      , ArrowHead ( if crowfoot opts  then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
                                     if isInvFunction r then noArrow                   else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot flags  then noArrow                   else
+                      , ArrowTail ( if crowfoot opts  then noArrow                   else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then AType [(noMod ,Inv)]      else
                                     AType [(noMod ,Inv)]
                                   )
                    --   , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ,TailClip False
-                      ] 
-      RelIntermediateNode r -> 
+                      ]
+      RelIntermediateNode r ->
                        [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White
-                       , URL (theURL flags r) 
+                       , URL (theURL opts r)
                        ]
       IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow
-                       , if blackWhite flags then Style [dotted] else Color [WC(X11Color Red)Nothing]
+                       , if blackWhite opts then Style [dotted] else Color [WC(X11Color Red)Nothing]
                        ]
-      TotalPicture -> [ Sep (DVal (if doubleEdges flags then 1/2 else 2)) -- The minimal amount of whitespace between nodes
+      TotalPicture -> [ Sep (DVal (if doubleEdges opts then 1/2 else 2)) -- The minimal amount of whitespace between nodes
                       , OutputOrder  EdgesFirst --make sure the nodes are always on top...
                       , Overlap ScaleXYOverlaps
                       , Splines PolyLine  -- SplineEdges could work as well.
@@ -503,14 +497,13 @@ handleFlags po flags =
 isInvFunction :: Declaration -> Bool
 isInvFunction d = isInj d && isSur d
 
-
 crowfootArrowType :: Bool -> Declaration -> ArrowType
-crowfootArrowType isHead r 
+crowfootArrowType isHead r
    = AType (case isHead of
                True  -> getCrowfootShape (isUni r) (isTot r)
                False -> getCrowfootShape (isInj r) (isSur r)
            )
-       where 
+       where
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]
          getCrowfootShape a b =
            case (a,b) of
@@ -518,7 +511,7 @@ crowfootArrowType isHead r
             (False,True ) -> [my_crow, my_tee ]
             (True ,False) -> [my_odot, my_tee ]
             (False,False) -> [my_crow, my_odot]
-             
+
          my_tee :: ( ArrowModifier , ArrowShape )
          my_tee = ( noMod , Tee )
          my_odot :: ( ArrowModifier , ArrowShape )

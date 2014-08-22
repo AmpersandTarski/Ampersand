@@ -10,17 +10,17 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Fspec.FPA
 import Database.Design.Ampersand.Basics
 
-fspec2Workbook :: Fspc -> Options -> Workbook
-fspec2Workbook fSpec flags =
+fspec2Workbook :: Fspc -> Workbook
+fspec2Workbook fSpec =
    Workbook
       { workbookDocumentProperties = Just
-          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName flags
+          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName (flags fSpec)
                              , documentPropertiesSubject = Nothing
                              , documentPropertiesKeywords  = Nothing
                              , documentPropertiesDescription = Just $ "Dit document is gegenereerd dmv. "++ampersandVersionStr++"."
                              , documentPropertiesRevision = Nothing
                              , documentPropertiesAppName = Just "Ampersand"
-                             , documentPropertiesCreated = Just $ show (genTime flags)
+                             , documentPropertiesCreated = Just $ show (genTime (flags fSpec))
                              }
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
@@ -31,12 +31,12 @@ fspec2Workbook fSpec flags =
                             Name $ case lang of
                                     English -> "Resume"
                                     Dutch   -> "Overzicht"
-                , worksheetTable = Just $ emptyTable 
-                    { tableRows = 
+                , worksheetTable = Just $ emptyTable
+                    { tableRows =
                           [ mkRow [string $ case lang of
                                                English -> "Detailed function point count (according to NESMA 2.1) of the application "
                                                Dutch   -> "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
-                                             ++ baseName flags
+                                             ++ baseName (flags fSpec)
                                   ]
                           , emptyRow
                           , mkRow [string totalen]
@@ -58,13 +58,13 @@ fspec2Workbook fSpec flags =
                                   ]
                           ]
                     }
-                }    
-    wsDatasets = 
+                }
+    wsDatasets =
       Worksheet { worksheetName = Name $ gegevensverzamelingen
-                , worksheetTable = Just $ emptyTable 
-                    { tableRows = 
+                , worksheetTable = Just $ emptyTable
+                    { tableRows =
                           [ mkRow [string gegevensverzamelingen, (number.fromIntegral.length.plugInfos) fSpec]
-                          ] ++ 
+                          ] ++
                           map (mkRow.showDetailsOfPlug)(plugInfos fSpec)
                        ++ map mkRow [replicate 3 emptyCell ++ [string totaal, (number.fromIntegral) totaalFPgegevensverzamelingen]]
                     }
@@ -72,12 +72,12 @@ fspec2Workbook fSpec flags =
     -- TODO: Also count the PHP plugs
     totaalFPgegevensverzamelingen :: Int
     totaalFPgegevensverzamelingen = (sum.(map fPoints)) [pSql | InternalPlug pSql <- plugInfos fSpec]
-    wsFunctions = 
+    wsFunctions =
       Worksheet { worksheetName  = Name $ gebruikerstransacties
-                , worksheetTable = Just $ emptyTable 
-                    { tableRows = 
+                , worksheetTable = Just $ emptyTable
+                    { tableRows =
                           [ mkRow [string $ gebruikerstransacties, (number.fromIntegral.length.interfaceS) fSpec]
-                          ] 
+                          ]
                           ++ map (mkRow.showDetailsOfFunction) (interfaceS fSpec)
                           ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map fPoints)) (interfaceS fSpec)]]
                           ++ map mkRow [[string "Gegenereerde interfaces" , (number.fromIntegral.length.interfaceG) fSpec]]
@@ -109,7 +109,7 @@ fspec2Workbook fSpec flags =
     grandTotaal = case lang of
        Dutch   -> "Grandtotaal:"
        English -> "Grand total:"
-    
+
     showDetailsOfPlug :: PlugInfo -> [Cell]
     showDetailsOfPlug plug =
        [ emptyCell
@@ -132,7 +132,7 @@ fspec2Workbook fSpec flags =
                    (English, InternalPlug   ScalarSQL{}) -> "Enumeration tabel"
                    (Dutch  , InternalPlug   ScalarSQL{}) -> "Toegestane waarden tabel"
                 )
-       ] 
+       ]
     showDetailsOfFunction :: Interface -> [Cell]
     showDetailsOfFunction ifc =
        [ emptyCell
@@ -140,12 +140,12 @@ fspec2Workbook fSpec flags =
        , string (showFPA lang ifc)
        , (number.fromIntegral.fPoints) ifc
        ]
-    
+
 pimpWs :: Worksheet -> Worksheet
 pimpWs ws = ws{worksheetTable = fmap pimpWsT (worksheetTable ws)
               }
 pimpWsT :: Table -> Table
-pimpWsT t = t{tableColumns = map (\c -> c{columnAutoFitWidth = Just AutoFitWidth}) 
+pimpWsT t = t{tableColumns = map (\c -> c{columnAutoFitWidth = Just AutoFitWidth})
                               (tableColumns t ++ replicate (maximum (map (length.rowCells) (tableRows t))) emptyColumn)
              ,tableRows = map pimpRow (tableRows t)
              }

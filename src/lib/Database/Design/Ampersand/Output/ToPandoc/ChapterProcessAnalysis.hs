@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Data.List
 import Database.Design.Ampersand.Output.PandocAux
@@ -15,8 +15,8 @@ import Database.Design.Ampersand.Output.PandocAux
 noProcesses :: Fspc -> Bool
 noProcesses fSpec = null (fRoles fSpec)
 
-chpProcessAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
-chpProcessAnalysis lev fSpec flags
+chpProcessAnalysis :: Int -> Fspc -> (Blocks,[Picture])
+chpProcessAnalysis lev fSpec
  = ( if null procs
      then mempty
      else headerBlocks <> roleRuleBlocks <> fromList roleRelationBlocks <> processSections
@@ -32,8 +32,8 @@ chpProcessAnalysis lev fSpec flags
   headerBlocks :: Blocks
   headerBlocks
    = (chptHeader (fsLang fSpec) ProcessAnalysis) <>
-     purposes2Blocks flags purps <> -- This explains the purpose of this context.
-     fromList( 
+     purposes2Blocks (flags fSpec) purps <> -- This explains the purpose of this context.
+     fromList(
      [ case fsLang fSpec of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" benoemt geen enkele rol. "
@@ -60,7 +60,7 @@ chpProcessAnalysis lev fSpec flags
   roleRuleBlocks
    = if null (fRoleRuls fSpec) && (not.null.udefrules) fSpec then mempty else
       (case fsLang fSpec of
-          Dutch   -> 
+          Dutch   ->
             para ( (str.upCap.name) fSpec <> " kent regels aan rollen toe. "
                  <> "De volgende tabel toont de regels die door een bepaalde rol worden gehandhaafd."
                  )
@@ -76,7 +76,7 @@ chpProcessAnalysis lev fSpec flags
                   Dutch   -> RawInline (Format "latex") "Rol&Regel\\\\ \\hline\n"
                   English -> RawInline (Format "latex") "Role&Rule\\\\ \\hline\n"
                ]++
-               [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   " 
+               [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
                        [ role++" & "++name r++
                          concat[ "\\\\\n   &"++name rul | rul<-map snd (tail rrClass)]
                        | rrClass<-eqCl fst (fRoleRuls fSpec)
@@ -106,7 +106,7 @@ chpProcessAnalysis lev fSpec flags
                        Dutch   -> "Rol&Relatie\\\\ \\hline\n"
                        English -> "Role&Relation\\\\ \\hline\n")
                ]++
-               [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   " 
+               [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
                        [ role++" & $"++showMath r++"$"++
                          concat[ "\\\\\n   &$"++showMath (snd rs)++"$" | rs<-tail rrClass]
                        | rrClass<-eqCl fst (fRoleRels fSpec)
@@ -130,31 +130,28 @@ chpProcessAnalysis lev fSpec flags
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
-     = (  (labeledThing flags (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
-       <> (purposes2Blocks flags (purposesDefinedIn fSpec (fsLang fSpec) fproc))  
+     = (  (labeledThing (flags fSpec) (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
+       <> (purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
    --    <> (txtProcessModel fproc)
        <> (if null sctRules then mempty else definitionList sctRules)
        ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (udefrules (fpProc fproc)) i seenConcepts seenDeclarations
+         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec(udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
   txtProcessModel :: FProcess->Blocks
   txtProcessModel p
-   = if not (genGraphics flags) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
+   = if not (genGraphics (flags fSpec)) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
      then mempty
      else
         (case fsLang fSpec of                                     -- announce the processModel diagram
-             Dutch   -> para ( "Figuur " <> xRefReference flags pict <> " geeft het procesmodel weer.")
-             English -> para ( "Figure " <> xRefReference flags pict <> " shows the process model.")
+             Dutch   -> para ( "Figuur " <> xRefReference (flags fSpec) pict <> " geeft het procesmodel weer.")
+             English -> para ( "Figure " <> xRefReference (flags fSpec) pict <> " shows the process model.")
         ) <>
-        plain (showImage flags pict)
+        plain (showImage (flags fSpec) pict)
      where pict = picProcessModel p
-
-
 
   -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
   picProcessModel :: FProcess->Picture
-  picProcessModel fproc = makePicture flags fSpec (PTProcess fproc) 
-
+  picProcessModel fproc = makePicture fSpec (PTProcess fproc)
 

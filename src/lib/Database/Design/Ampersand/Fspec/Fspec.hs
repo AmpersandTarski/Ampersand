@@ -7,7 +7,7 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module Database.Design.Ampersand.Fspec.Fspec 
+module Database.Design.Ampersand.Fspec.Fspec
           ( Fspc(..), concDefs, Atom(..)
           , Fswitchboard(..),  Clauses(..), Quad(..)
           , FSid(..), FProcess(..)
@@ -34,6 +34,7 @@ where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Misc.Options (Options)
 import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 --import Debug.Trace
@@ -42,6 +43,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
 
 data Fspc = Fspc { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+                 , flags ::        Options                  -- ^ The command line options that were used when this Fspc was compiled  by Ampersand.
                  , fspos ::        [Origin]                 -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
                  , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                    , pattsInScope :: [Pattern]
@@ -58,7 +60,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                  , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                  , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
-                 , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
+                 , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
                  , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
                  , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
                  , fRoles ::       [String]                 -- ^ All roles mentioned in this context.
@@ -83,7 +85,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
                  , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                  , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
-                 , metas ::        [Meta]                   -- ^ All meta relations from the entire context      
+                 , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                  , initialPops ::  [Population]             -- all user defined populations of relations and concepts
                  , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
                  }
@@ -106,7 +108,7 @@ instance ConceptStructure Fspc where
                         , (expressionsIn.vIndices) fSpec
                         ]
   mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an Fspc"
-  
+
 instance Language Fspc where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language Fspc)"
@@ -114,7 +116,7 @@ instance Language Fspc where
                            , objmsub = Just . Box ONE $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
-   --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
+   --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?).
   relsDefdIn = vrels
   udefrules  = vrules -- only user defined rules
   invariants = invars
@@ -126,9 +128,9 @@ instance Language Fspc where
 data FProcess
   = FProc { fpProc :: Process
           , fpActivities :: [Activity]
-          }  
+          }
 instance Identified FProcess where
-  name = name . fpProc 
+  name = name . fpProc
 
 instance Language FProcess where
   objectdef  = objectdef.fpProc
@@ -148,7 +150,6 @@ data Fswitchboard
            , fsbECAs :: [ECArule]
            }
 
-    
 --type Fields = [Field]
 --data Field  = Att { fld_name :: String        -- The name of this field
 --                  , fld_sub :: Fields        -- all sub-fields
@@ -163,8 +164,7 @@ data Fswitchboard
 --                  , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this field
 --                  , fld_delAble :: Bool          -- can the user delete this field?
 --                  , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this field
---                  } 
-   
+--                  }
 
 {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
  - "The properties of the Interface Operation component are as follows:
@@ -172,16 +172,14 @@ data Fswitchboard
  - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
  - ..."
 -}
-   
+
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Identified Fspc where
   name = fsName
 
-
 instance Identified FSid where
   name (FS_id nm) = nm
-
 
 data Activity = Act { actRule ::   Rule
                     , actTrig ::   [Declaration]
@@ -195,7 +193,7 @@ instance Identified Activity where
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
 --   whenever qRel is affected (i.e. tuples in qRel are inserted or deleted), qRule may have to be restored using functionality from qClauses.
 --   The rule is taken along for traceability.
-       
+
 instance ConceptStructure Activity where
  concs         act = concs (actRule act) `uni` concs (actAffect act)
  expressionsIn act = expressionsIn (actRule act)
@@ -205,7 +203,7 @@ data Quad
           { qDcl :: Declaration   -- The relation that, when affected, triggers a restore action.
           , qClauses :: Clauses   -- The clauses
           } deriving (Eq, Show)
- 
+
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
 
@@ -218,7 +216,7 @@ data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is 
                   }
 instance Eq (ECArule) where
    e==e' = ecaNum e==ecaNum e'
-   
+
 data Event = On { eSrt :: InsDel
                 , eDcl :: Declaration
                 } deriving (Show,Eq)
@@ -270,7 +268,6 @@ instance Eq PAclause where
    p@Rmv{}  ==  p'@Rmv{} = paCpt p==paCpt p'
    _ == _ = False
 
-
 data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
 
 --
@@ -310,7 +307,7 @@ data FPA = FPA { fpType :: FPtype
                } deriving (Show)
 
 -- | These types are defined bij Nesma. See http://www.nesma.nl/sectie/fpa/hoefpa.asp
-data FPtype 
+data FPtype
  = ILGV -- ^ bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
  | KGV  -- ^ bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
  | IF   -- ^ verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
@@ -320,10 +317,7 @@ data FPtype
 
 data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
 
-
-
-
-data PlugInfo = InternalPlug PlugSQL 
+data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
                 deriving (Show, Eq)
 instance Identified PlugInfo where
@@ -338,13 +332,12 @@ instance ConceptStructure PlugSQL where
   concs     p = concs   (plugFields p)
   expressionsIn   p = expressionsIn (plugFields p)
   mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
-   
 
 data PlugSQL
    -- | stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
-   --   i.e. a list of SqlField given some A -> [target r | r::A*B,isUni r,isTot r, isInj r] 
+   --   i.e. a list of SqlField given some A -> [target r | r::A*B,isUni r,isTot r, isInj r]
    --                                        ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
-   --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ] 
+   --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
    --              (r=fldexpr of kernel field holding instances of B, in practice r is I or a makeRelation(flipped declaration))
    --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
    --              (r=fldexpr of attMor field, in practice r is a makeRelation(declaration))
@@ -358,9 +351,9 @@ data PlugSQL
                                                            -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
            }
    -- | stores one relation r in two ordered columns
-   --   i.e. a tuple of SqlField -> (source r,target r) with (fldexpr=I/\r;r~, fldexpr=r) 
+   --   i.e. a tuple of SqlField -> (source r,target r) with (fldexpr=I/\r;r~, fldexpr=r)
    --   (note: if r TOT then (I/\r;r~ = I). Thus, the concept (source r) is stored in this plug too)
-   --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r]. 
+   --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: String
            , columns :: (SqlField,SqlField)
@@ -378,7 +371,7 @@ data PlugSQL
            , sqlColumn :: SqlField
            , cLkp :: A_Concept -- the concept implemented by this plug
            }
-   deriving (Show) 
+   deriving (Show)
 instance Identified PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
@@ -392,9 +385,8 @@ plugFields plug = case plug of
     BinSQL{}    -> [fst(columns plug),snd(columns plug)]
     ScalarSQL{} -> [sqlColumn plug]
 
-
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
--- columns need to be updated 
+-- columns need to be updated
 lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
 lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
@@ -420,13 +412,11 @@ instance ConceptStructure SqlField where
   expressionsIn   f = expressionsIn   (fldexpr f)
   mp1Exprs = fatal 452 "mp1Exprs is not meant to be for a plug."
 
-                    
-                    
 data SqlType = SQLChar    Int
              | SQLBlob              -- cannot compare, but can show (as a file)
              | SQLPass              -- password, encrypted: cannot show, but can compare
-             | SQLSingle  
-             | SQLDouble  
+             | SQLSingle
+             | SQLDouble
              | SQLText              -- cannot compare, but can show (as a text)
              | SQLuInt    Int
              | SQLsInt    Int

@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes, ExistentialQuantification, FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Database.Design.Ampersand.Input.ADL1.UU_Parsing 
+module Database.Design.Ampersand.Input.ADL1.UU_Parsing
        (parseIO,parse,getMsgs,evalSteps
        , Steps(..),Pair(..)
                       ,Symbol(..),pPacked
@@ -122,9 +122,9 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    --import PrelGHC
    --import IOExts
    import System.IO.Unsafe
-   import Database.Design.Ampersand.Basics  
+   import Database.Design.Ampersand.Basics
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-   
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "Input.ADL1.UU_Parsing"
 
@@ -257,11 +257,11 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
     = rp Pair handleEof
 
    parseIO (pp) inp
-    = do  (Pair v final) <- evalStepsIO (parsebasic (pars pp) inp) 
+    = do  (Pair v final) <- evalStepsIO (parsebasic (pars pp) inp)
           final `seq` return v -- in order to force the trailing error messages to be printed
 
    parse (pp)
-    = parsebasic (pars pp) 
+    = parsebasic (pars pp)
 
    handleEof input = case splitStateE input
                       of Left'  s  ss  ->  StRepair (deleteCost s)  (Msg ("deleting symbol " ++ show s
@@ -269,10 +269,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                                                          , EStr "eof"
                                                                          )) (handleEof ss)
                          Right' final  ->  NoMoreSteps (Pair final undefined)
-
-
-
-
 
    infixl 2 <?>
    infixl 3 <|>
@@ -283,11 +279,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    infixl 2 `opt`
    infixl 5 <..>
 
-
-
-
-
-   type Parser = AnaParser []  Pair 
+   type Parser = AnaParser []  Pair
 
    data Pair a r = Pair a r
 
@@ -304,19 +296,19 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
     getPosition (s:ss) = "before " ++ show s
     {-# INLINE splitStateE #-}
     {-# INLINE splitState  #-}
-    
+
    instance OutputState Pair  where
      acceptR            = Pair
-     nextR       acc  f   ~(Pair a r) = acc  (f a) r  
+     nextR       acc  f   ~(Pair a r) = acc  (f a) r
      dollarR     acc  f  v = acc  (f v)
      {-# INLINE acceptR #-}
      {-# INLINE nextR   #-}
      {-# INLINE dollarR #-}
 
    instance (Symbol s, InputState state s, OutputState result) => Sequence (AnaParser state result s)    where
-     (<*>) = anaSeq libDollar  libSeq  ($) 
+     (<*>) = anaSeq libDollar  libSeq  ($)
      (<* ) = anaSeq libDollarL libSeqL const
-     ( *>) = anaSeq libDollarR libSeqR (flip const) 
+     ( *>) = anaSeq libDollarR libSeqR (flip const)
      pSucceed = anaSucceed
      pLow     = anaLow
 
@@ -342,10 +334,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    pDynE = anaDynE
    pDynL = anaDynL
    pDynN = anaDynN
-
-
-
-
 
    class    (Sequence p, Alternative p, SymParser p s, SplitParser p,  Show s) => IsParser p s | p -> s
 
@@ -401,10 +389,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
     symBefore  = fatal 398 "You should have made your token type an instance of the Class Symbol. eg by defining symBefore = pred"
     symAfter   = fatal 399 "You should have made your token type an instance of the Class Symbol. eg by defining symAfter  = succ"
 
-
-
-
-
    type Result val s = Steps val s
 
    newtype RealParser    state result s a = P(forall r r' b. (a -> result b r -> r') ->
@@ -420,10 +404,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    {-# INLINE unR #-}
    unP  (P  p) = p
    unR  (R  p) = p
-
-
-
-
 
    libAccept            =  PR  (P (\ acc k state ->
                                    case splitState state of
@@ -477,13 +457,8 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    libFail                                      = PR ( P (\ _ _  _  -> (usererror  "calling an always failing parser"    ))
                                                      , R (\   _  _  -> (usererror  "calling an always failing recogniser"))
                                                      )
-         
 
-
-
-
-
-   data Steps val s 
+   data Steps val s
                 = forall a . OkVal           (a -> val)                             (Steps a   s)
                 |            Ok         {                                    rest :: Steps val s}
                 |            Cost       {costing::Int{-I-}                 , rest :: Steps val s}
@@ -531,7 +506,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    getMsgs (Best _ m _ _)        = getMsgs m
    getMsgs (NoMoreSteps _      ) = []
 
-   newtype Message s  =  Msg (String, String, Exp s) -- action, position, expecting 
+   newtype Message s  =  Msg (String, String, Exp s) -- action, position, expecting
                          deriving Eq
    getStart (Msg (_,_,st)) = st
 
@@ -541,7 +516,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
            where qmarks = '?':qmarks
 
    instance Symbol s => Show (Message s) where
-    show (Msg (action, position, expecting))  
+    show (Msg (action, position, expecting))
       =  "\n" ++ position ++
          "\nExpecting " ++ show expecting ++
          "\nTry " ++ action ++ "\n"
@@ -576,20 +551,15 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
     show (EOr  (e:ee))  = show e ++ " or " ++ show (EOr ee)
     show (ESeq  seq)    = concatMap show seq
 
-
-
-
-
-
    libBest ls rs = libBest' ls rs id id
    libBest' (OkVal v ls) (OkVal w rs) lf rf = Ok (libBest' ls rs (lf.v) (rf.w))
    libBest' (OkVal v ls) (Ok      rs) lf rf = Ok (libBest' ls rs (lf.v)  rf   )
    libBest' (Ok      ls) (OkVal w rs) lf rf = Ok (libBest' ls rs  lf    (rf.w))
    libBest' (Ok      ls) (Ok      rs) lf rf = Ok (libBest' ls rs  lf     rf   )
-   libBest' (OkVal v ls) _            lf rf = OkVal (lf.v) ls 
-   libBest' _            (OkVal w rs) lf rf = OkVal (rf.w) rs 
-   libBest' (Ok      ls) _            lf rf = OkVal lf ls           
-   libBest' _            (Ok      rs) lf rf = OkVal rf rs   
+   libBest' (OkVal v ls) _            lf rf = OkVal (lf.v) ls
+   libBest' _            (OkVal w rs) lf rf = OkVal (rf.w) rs
+   libBest' (Ok      ls) _            lf rf = OkVal lf ls
+   libBest' _            (Ok      rs) lf rf = OkVal rf rs
    libBest' l@(Cost i ls ) r@(Cost j rs ) lf rf
     | i =={-I-} j = Cost i (libBest' ls rs lf rf)
     | i <{-I-} j  = Cost i (val lf ls)
@@ -601,7 +571,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    libBest' l                 r                 lf rf = libCorrect l r lf rf
 
    libCorrect ls rs lf rf
-    =  let (Pairs  _ select) = traverse (traverse (Pairs 999{-I-} fst) (Pairs 0{-I-} fst) ls 4{-I-})  (Pairs 0{-I-} snd) rs 4{-I-} 
+    =  let (Pairs  _ select) = traverse (traverse (Pairs 999{-I-} fst) (Pairs 0{-I-} fst) ls 4{-I-})  (Pairs 0{-I-} snd) rs 4{-I-}
            leftstart  = starting ls
            rightstart = starting rs
        in Best ls
@@ -618,10 +588,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    traverse b@(Pairs bv br) t@(Pairs tv tr) (StRepair     i   msgs     r) n = if i +{-I-} tv >={-I-} bv then b else traverse b (Pairs (i +{-I-} tv) tr) r (n -{-I-} 1{-I-})
    traverse b@(Pairs bv br) t@(Pairs tv tr) (NoMoreSteps _)               n = if bv <{-I-} tv then b else t
 
-
-
-
-
    data AnaParser  state result s a
     = AnaParser { pars :: ParsRec state result s a
                 , zerop :: Maybe (Bool, Either a (ParsRec state result s a))
@@ -632,12 +598,8 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                 , firsts :: Exp s
                 , table :: [(SymbolR s, TableEntry state result s a)]
                 } -- deriving Show
-                
+
    data TableEntry state result s a = TableEntry (ParsRec  state result s a) (Exp s -> ParsRec state result s a)
-
-
-
-
 
    anaFail = AnaParser { pars    = libFail
                        , zerop   = Nothing
@@ -654,7 +616,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    anaLow      v = pEmpty (libSucceed v) (True,  Left v)
    anaDynE     p = pEmpty p              (False, Right p)
    anaDynL     p = pEmpty p              (True , Right p)
-   anaDynN  fi len range p = mkParser  Nothing (OneDescr len fi [(range, p)]) 
+   anaDynN  fi len range p = mkParser  Nothing (OneDescr len fi [(range, p)])
 
    anaOr ld@(AnaParser _ zl ol)  rd@(AnaParser _ zr or)
     = mkParser newZeroDescr newOneDescr
@@ -677,7 +639,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
       _            ->  AnaParser  (pl `libseq` pr) Nothing  (mapOnePars (`libseq` pr) (`nat_add` (pLength rd)) ol)
 
    seqZeroZero Nothing             _                    _          _      _   = Nothing
-   seqZeroZero _                   Nothing              _          _      _   = Nothing 
+   seqZeroZero _                   Nothing              _          _      _   = Nothing
    seqZeroZero (Just (llow, left)) (Just (rlow, right))  libdollar libseq comb
        = Just      ( llow || rlow
                   , case left of
@@ -690,7 +652,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                   )
 
    orOneOneDescr ~(OneDescr ll fl tl) ~(OneDescr lr fr tr)  b
-                     = let newfirsts       = (fl `eor` fr) 
+                     = let newfirsts       = (fl `eor` fr)
                            (newlength, maybeswap) = ll `nat_min` lr
                            (tla, tra)      = if b then (tl, tr) else maybeswap (tl, tr)
                            keystr          = map fst tra
@@ -699,9 +661,9 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
 
    anaCostRange _        _     EmptyR = anaFail
    anaCostRange ins_cost ins_sym range
-     = mkParser Nothing ( OneDescr (Succ Zero) (ESym range) [(range, TableEntry  libAccept 
+     = mkParser Nothing ( OneDescr (Succ Zero) (ESym range) [(range, TableEntry  libAccept
                                                                                  (libInsert ins_cost ins_sym)
-                                                            )]) 
+                                                            )])
 
    anaCostSym   i ins sym = pCostRange i ins (Range sym sym)
 
@@ -713,32 +675,24 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    anaSetFirsts newexp (AnaParser  _ zd od)
     = mkParser zd (od{firsts = newexp })
 
-
-
-
-
    mapOnePars fp fl ~(OneDescr l fi t) = OneDescr (fl l) fi [ (k, TableEntry (fp p) (fp.corr))
                                                             | (k, TableEntry     p      corr ) <- t
                                                             ]
 
-
-
-
-
    mkParser  zd ~descr@(OneDescr _ firsts tab) -- pattern matching should be lazy for lazy computation of length for empty parsers
     = let parstab    = if null tab then fatal 726 "parstab undefined" else
                        foldr1 mergeTables  [[(k, p)] | (k, TableEntry p _) <- tab]
-          mkactualparser getp 
+          mkactualparser getp
             = let find       = case  parstab of
                                [(ran,  pp)]     -> let comp = symInRange ran
-                                                       pars = Just (getp pp) 
+                                                       pars = Just (getp pp)
                                                    in \ s -> if comp s then pars else Nothing
                                _           -> btLookup.tab2tree $  [(k,Just (getp pr) ) | (k, pr) <- parstab]
                   zerop      = getp (case zd of
                                     Nothing           -> libFail
                                     Just (_, Left v)  -> libSucceed v
                                     Just (_, Right p) -> p
-                                    ) 
+                                    )
                   insertsyms = if null tab then fatal 739 "insertsyms undefined" else
                                foldr1 lib_correct [   getp (pr firsts) | (_ , TableEntry _ pr) <- tab    ]
                   correct k inp
@@ -746,38 +700,34 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                           ({-L-} s, ss {-R-}) -> libCorrect (StRepair(deleteCost s) (Msg  ("deleting symbol " ++ show s
                                                                                           , getPosition inp
                                                                                           , firsts
-                                                                                    )     ) (result k ss)) 
+                                                                                    )     ) (result k ss))
                                                             (insertsyms k inp) id id
                   result = if null tab then zerop
                            else case zd of
                            Nothing        ->(\k inp -> case splitStateE inp of
-                                                       Left' s ss -> case find s of 
+                                                       Left' s ss -> case find s of
                                                                      Just p  ->  p k inp
                                                                      Nothing -> correct k inp
                                                        Right' _   -> insertsyms   k inp)
                            Just (True, _) ->(\k inp -> case splitStateE inp of
-                                                       Left' s ss -> case find s of 
-                                                                     Just p  -> p k inp 
-                                                                     Nothing -> let r = zerop k inp 
+                                                       Left' s ss -> case find s of
+                                                                     Just p  -> p k inp
+                                                                     Nothing -> let r = zerop k inp
                                                                                 in if hasSuccess r then r else libCorrect r (correct k inp) id id
                                                        Right' _   -> zerop k inp)
                            Just (False, _) ->(\k inp -> case splitStateE inp of
-                                                       Left' s ss -> case find s of 
+                                                       Left' s ss -> case find s of
                                                                      Just p  -> p k inp `libBest` zerop k inp
-                                                                     Nothing -> let r = zerop k inp 
+                                                                     Nothing -> let r = zerop k inp
                                                                                 in if hasSuccess r then r else libCorrect r (correct k inp) id id
                                                        Right' _   -> zerop k inp)
               in result
           res    = PR (P ( \ acc ->  mkactualparser (\ (PR (P p, _)) -> p acc))
                       ,R (           mkactualparser (\ (PR (_, R p)) -> p    ))
-                      )            
+                      )
       in AnaParser res zd descr
-      
+
    lib_correct p q k inp = libCorrect (p k inp) (q k inp) id id
-
-
-
-
 
    data Nat = Zero
             | Succ Nat
@@ -800,10 +750,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    nat_add Zero      r = r
    nat_add (Succ l)  r = Succ (nat_add l r)
 
-
-
-
-
    mergeTables l []  = l
    mergeTables [] r  = r
    mergeTables lss@(l@(le@(Range a b),ct ):ls) rss@(r@(re@(Range c d),ct'):rs)
@@ -815,15 +761,11 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
           else if b>d then mergeTables rss lss
                       else (le,ct'') : mergeTables ls rs-- equals
 
-
-
-
-
-   libMap ::    (forall r r'' . (b -> r -> r'') -> state s -> Result (a, r) s -> ( state s, Result  r'' s)) 
+   libMap ::    (forall r r'' . (b -> r -> r'') -> state s -> Result (a, r) s -> ( state s, Result  r'' s))
              -> (forall r      .                   state s -> Result     r  s -> ( state s, Result  r   s))
              -> ParsRec state result s a -> ParsRec state result s b
    libMap f f' (PR (P p, R r))       = PR ( P(\acc -> let pp   = p (,)
-                                                          facc = f acc 
+                                                          facc = f acc
                                                       in \ k instate  -> let inresult = pp k outstate
                                                                              (outstate, outresult) = facc instate inresult
                                                                          in outresult
@@ -834,7 +776,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                           )
 
    pMap ::    OutputState result =>
-                (forall r r'' . (b -> r -> r'') -> state s -> Result (a, r) s -> ( state s, Result r'' s)) 
+                (forall r r'' . (b -> r -> r'') -> state s -> Result (a, r) s -> ( state s, Result r'' s))
              -> (forall r     .                    state s -> Result     r  s -> ( state s, Result r   s))
              ->  AnaParser state result s a -> AnaParser state result s b
 
@@ -845,15 +787,15 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                                                       Left w   -> Right (libMap f f' (libSucceed w))
                                                                       Right pp -> Right (libMap f f' pp)))
                                              (mapOnePars (libMap f f') id o)
-   libWrap ::    (forall r r'' .   (b -> r -> r'') 
-                                       -> state s 
-                                       -> Result (a, r) s 
-                                       -> (state s -> Result r s) 
+   libWrap ::    (forall r r'' .   (b -> r -> r'')
+                                       -> state s
+                                       -> Result (a, r) s
+                                       -> (state s -> Result r s)
                                        -> (state s, Result r'' s, state s -> Result r s))
-              -> (forall r         .   state s 
-                                   -> Result r  s 
-                                   -> (state s -> Result r s) 
-                                   -> (state s, Result r s, state s -> Result r s)) 
+              -> (forall r         .   state s
+                                   -> Result r  s
+                                   -> (state s -> Result r s)
+                                   -> (state s, Result r s, state s -> Result r s))
               -> ParsRec state result s a -> ParsRec state result s b
    libWrap f f' (PR (P p, R r)) = PR ( P(\ acc -> let pp = p (,)
                                                       facc = f acc
@@ -866,16 +808,16 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                                          in  ar)
                                      )
 
-   pWrap ::    OutputState result 
-              => (forall r  r''.   (b -> r -> r'') 
-                                       -> state s 
-                                       -> Result (a, r) s 
-                                       -> (state s -> Result r s) 
+   pWrap ::    OutputState result
+              => (forall r  r''.   (b -> r -> r'')
+                                       -> state s
+                                       -> Result (a, r) s
+                                       -> (state s -> Result r s)
                                        -> (state s, Result r'' s, state s -> Result r s))
-              -> (forall r         .   state s 
-                                   -> Result r s 
-                                   -> (state s -> Result r s) 
-                                   -> (state s, Result r s, state s -> Result r s)) 
+              -> (forall r         .   state s
+                                   -> Result r s
+                                   -> (state s -> Result r s)
+                                   -> (state s, Result r s, state s -> Result r s))
               -> AnaParser state result s a -> AnaParser state result s b
 
    pWrap f f'  (AnaParser p z o) = AnaParser (libWrap f f' p)
@@ -885,10 +827,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                                                       Left w   -> Right (libWrap f f' (libSucceed w))
                                                                       Right pp -> Right (libWrap f f' pp)))
                                              (mapOnePars (libWrap f f') id o)
-
-
-
-
 
    data  SymbolR s  =  Range s s | EmptyR deriving (Eq,Ord)
 
@@ -915,18 +853,10 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                            then [mk_range l (symBefore elem), mk_range (symAfter elem) r]
                                            else [ran]
 
-
-
-
-
    usererror   m = fatal 917 $ "Your grammar contains a problem:\n" ++ m
    systemerror modname m
      = fatal 919 $ "I apologise: I made a mistake in my design. This should not have happened.\n" ++
                    " Please report: " ++ modname ++": " ++ m ++ " to doaitse@cs.uu.nl\n"
-
-
-
-
 
    newtype Perms p a = Perms (Maybe (p a), [Br p a])
    data Br p a = forall b. Br (Perms p (b -> a)) (p b)
@@ -953,15 +883,11 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                                           | Br pp  p <- nonempty
                                           ]
 
-   pPermsSep  = p2p (pSucceed ()) 
+   pPermsSep  = p2p (pSucceed ())
 
    p2p fsep sep (Perms (mbempty, nonempties)) = foldr (<|>) empty (map pars nonempties)
     where empty      = fromMaybe  pFail mbempty
           pars (Br t p)  = flip ($) <$ fsep <*> p <*> p2p sep sep t
-
-
-
-
 
    acceptsepsilon p       = case getzerop p of {Nothing -> False; _ -> True}
 
@@ -976,10 +902,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
                      ))
         else v
 
-
-
-
-
    a <..> b   = pRange a (Range a b)
    (l,r,err) `pExcept` elems = let ranges = filter (/= EmptyR) (Range l r `except` elems)
                                in if null ranges then pFail
@@ -988,10 +910,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    p `opt` v       = mnz p (p  <|> pLow v)   -- note that opt is greedy, if you do not want this
                                                  -- use "... <|> pSucceed v"  instead
                                                  -- p should not recognise the empty string
-
-
-
-
 
    asList  exp = setfirsts (ESeq [EStr "(",  exp, EStr  " ...)*"])
    asList1 exp = setfirsts (ESeq [EStr "(",  exp, EStr  " ...)+"])
@@ -1002,10 +920,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    p <??> q        = p <**> (q `opt` id)
    p <?>  str      = setfirsts  (EStr str) p
    pPacked l r x   =   l *>  x <*   r
-
-
-
-
 
    pFoldr_ng      alg@(op,e)     p = mnz p (asList (getfirsts p) pfm)
                                      where pfm = (op <$> p <*> pfm)  <|> pSucceed e
@@ -1029,13 +943,13 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
 
    list_alg = ((:), [])
 
-   pList_gr        = pFoldr_gr     list_alg  
-   pList_ng        = pFoldr_ng     list_alg  
+   pList_gr        = pFoldr_gr     list_alg
+   pList_ng        = pFoldr_ng     list_alg
    pList           = pList_gr
 
-   pList1_gr       = pFoldr1_gr    list_alg  
-   pList1_ng       = pFoldr1_ng    list_alg  
-   pList1          = pList1_gr               
+   pList1_gr       = pFoldr1_gr    list_alg
+   pList1_ng       = pFoldr1_ng    list_alg
+   pList1          = pList1_gr
 
    pListSep_gr     = pFoldrSep_gr  list_alg
    pListSep_ng     = pFoldrSep_ng  list_alg
@@ -1067,11 +981,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
    pAny  f l = if null l then usererror "pAny: argument may not be empty list" else foldr1 (<|>) (map f l)
    pAnySym   = pAny pSym -- used to be called pAnySym
 
-
-
-
-
-
    (pe, pp, punp) <||> (qe, qp, qunp)
     =( (pe, qe)
      , (\f (pv, qv) -> (f pv, qv)) <$> pp
@@ -1092,10 +1001,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
 
    pLocate = pAny pToks
 
-
-
-
-
    data BinSearchTree a b
     = Node (BinSearchTree a b) (a, b) (BinSearchTree a b)
     | Nil
@@ -1110,8 +1015,6 @@ module Database.Design.Ampersand.Input.ADL1.UU_Parsing
          (lt,a:list1) = sl2bst ll list
          (rt,  list2) = sl2bst rl list1
         in (Node lt a rt, list2)
-
-
 
    btLookup
     = find_in

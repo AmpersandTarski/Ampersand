@@ -46,14 +46,14 @@ fatal = fatalMsg "Core.Poset"
 --
 --   examples on data X = A | B | C | D | E | F deriving (Eq,Show):
 --   [bottom]       (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F)]) :: (A <= B /\ C <= B \/ C <= D <= E /\ F <= E \/ F)
---   [ringish]      (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A),(F,A)]) _ _ = LT 
+--   [ringish]      (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A),(F,A)]) _ _ = LT
 --   [ringish]      (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A)])       F A = GT
 --                  (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A)])       _ _ = LT
 --   [bottom,total] (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(E,F)]) :: ( A <= B /\ C <= B \/ C <= D , E <= F )
 --   [2x total]     (makePartialOrder [(A,B),(B,C),(C,D),(E,F)]) :: ( A <= B <= C <= D , E <= F )
 --   [total]        (makePartialOrder [(A,B),(B,C),(C,D),(D,E),(E,F)]) :: ( A <= B <= C <= D <= E <= F )
 --   [3x total]     (makePartialOrder [(A,B),(B,C),(C,D)]) :: ( A <= B <= C <= D , E , F )
---   [partial]      (makePartialOrder [(A,B),(C,D),(B,D),(D,E),(D,F)]) :: ( (A <= B <= D <= E /\ F <= E \/ F) + (C <= D <= E /\ F <= E \/ F) ) 
+--   [partial]      (makePartialOrder [(A,B),(C,D),(B,D),(D,E),(D,F)]) :: ( (A <= B <= D <= E /\ F <= E \/ F) + (C <= D <= E /\ F <= E \/ F) )
 --
 --   a sorted list will have the x left of y for all x and y. x <= y
 --   like x==y, the intraposition of x and y is without meaning for all x and y. x `compare` y = CP
@@ -61,7 +61,6 @@ fatal = fatalMsg "Core.Poset"
 --    + sort  [F,E,D,C,B,A] = [F,C,A,B,D,E]
 --    + sort  [F,E,D,B,A,C] = [F,A,B,C,D,E]
 --    + sort  [B,F,E,C,D,A] = [A,B,F,C,D,E]
-
 
 instance Poset a => Poset (Maybe a) where
     Just x  <= Just y = x <= y
@@ -81,14 +80,14 @@ comparing = on compare
 
 -- example where b=A_Concept: sortWith (snd . order , concs fSpec) idCpt (vIndices fSpec)
 sortWith :: (Show b,Poset b) => (b -> [[b]], [b]) -> (a -> b) -> [a] -> [a]
-sortWith _   _  [] = [] 
-sortWith (tos,allb) f xs 
+sortWith _   _  [] = []
+sortWith (tos,allb) f xs
  = let xtos = [ [x | x<-xs, elem (f x) to] --group xs such that each elem of (map f xtos) is a total order
               | to<-(tos . f . head) xs --non-trivial total orders
                     ++ [[b] | b<-allb, not( elem b (concat((tos . f . head) xs))) ] --trivial total orders
-              ] 
+              ]
        sortwith = List.sortBy (\x y -> comparableClass(compare (f x) (f y))) --sortwith of Poset, which should be a total order
-   in  concat(map sortwith xtos) --sortwith each total order and concat them         
+   in  concat(map sortwith xtos) --sortwith each total order and concat them
 
 -- | Elements can be arranged into classes of comparable elements, not necessarily a total order
 --   It makes sense to sort such a class.

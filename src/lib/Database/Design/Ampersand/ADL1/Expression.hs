@@ -134,7 +134,7 @@ isPos :: Expression -> Bool
 isPos (ECpl{}) = False
 isPos _ = True
 isNeg :: Expression -> Bool
-isNeg = not . isPos 
+isNeg = not . isPos
 
 isMp1 :: Expression -> Bool
 isMp1 EMp1{} = True
@@ -198,8 +198,6 @@ insParentheses expr = insPar 0 expr
    foldr1 f [r,s,t,x,y] |- p   where f x y = EIsc (x,y)
 =
    r/\s/\t/\x/\y |- p
-
-
 
    insPar 0 (r;s;t;x;y |- p)
 =
