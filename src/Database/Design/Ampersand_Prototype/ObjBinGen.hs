@@ -1,131 +1,131 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces) where
- 
+
 import Database.Design.Ampersand_Prototype.Installer           (installerDBstruct,installerDefPop,dumpPopulationToADL)
 import Database.Design.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
 import Database.Design.Ampersand_Prototype.Apps
 import Database.Design.Ampersand_Prototype.Generate            (generateAll)
 import Control.Monad
-import System.FilePath               
+import System.FilePath
 import System.Directory
 import qualified Data.ByteString as Bin
-import Database.Design.Ampersand_Prototype.CoreImporter  
+import Database.Design.Ampersand_Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
 
-
 import Database.Design.Ampersand_Prototype.StaticFiles_Generated
-#ifdef MIN_VERSION_MissingH 
-import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file 
+#ifdef MIN_VERSION_MissingH
+import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file
 import System.Time
 
 import Data.Time.Clock.POSIX
 #endif
 
-phpObjInterfaces :: Fspc -> Options -> IO()
-phpObjInterfaces fSpec flags =
- do { writeStaticFiles flags
-    ; verboseLn flags "---------------------------"
-    ; verboseLn flags "Generating php Object files with Ampersand"
-    ; verboseLn flags "---------------------------"
-    ; write "InstallerDBstruct.php"     (installerDBstruct fSpec flags)
-    ; write "InstallerDefPop.php"       (installerDefPop fSpec )
+phpObjInterfaces :: Fspc -> IO()
+phpObjInterfaces fSpec =
+ do { writeStaticFiles (flags fSpec)
+    ; verboseLn (flags fSpec) "---------------------------"
+    ; verboseLn (flags fSpec) "Generating php Object files with Ampersand"
+    ; verboseLn (flags fSpec) "---------------------------"
+    ; write "InstallerDBstruct.php"     (installerDBstruct fSpec)
+--    ; write "InstallerTriggers.php"     (installerTriggers fSpec)
+    ; write "InstallerDefPop.php"       (installerDefPop fSpec)
     ; write "DumpPopulationToADL.php"   (dumpPopulationToADL fSpec)
-    
+
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php only if it does not exist already.
     ; if dbSettingsExists
-      then verboseLn flags "  Using existing dbSettings.php."
-      else do { verboseLn flags "  Writing dbSettings.php."
+      then verboseLn (flags fSpec) "  Using existing dbSettings.php."
+      else do { verboseLn (flags fSpec) "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
 
-    ; generateAll fSpec flags          
-    ; when (genAtlas flags) $ doGenAtlas fSpec flags
-    ; verboseLn flags "\n"
+    ; generateAll fSpec
+    ; when (genAtlas (flags fSpec)) $ doGenAtlas fSpec
+    ; verboseLn (flags fSpec) "\n"
     }
    where
     write fname content =
-     do { verboseLn flags ("  Generating "++fname)
+     do { verboseLn (flags fSpec) ("  Generating "++fname)
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = unlines
        [ "<?php"
        , ""
        , "global $DB_host,$DB_user,$DB_pass;"
-       , "$DB_host='"++addSlashes (sqlHost flags)++"';"
-       , "$DB_user='"++addSlashes (sqlLogin flags)++"';"
-       , "$DB_pass='"++addSlashes (sqlPwd flags)++"';"
+       , "$DB_host='"++addSlashes (sqlHost (flags fSpec))++"';"
+       , "$DB_user='"++addSlashes (sqlLogin (flags fSpec))++"';"
+       , "$DB_pass='"++addSlashes (sqlPwd (flags fSpec))++"';"
        , ""
        , "$DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass)"
        , "      or exit(\"Error connecting to the database: username / password are probably incorrect.\");"
        , ""
        , "?>"
        ]
-    targetDir = dirPrototype flags
+    targetDir = dirPrototype (flags fSpec)
 
-doGenAtlas :: Fspc -> Options -> IO()
-doGenAtlas fSpec flags =
- do { verboseLn flags "Installing the Atlas application:"
-    ; verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
-    ; verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
-    ; fillAtlas fSpec flags
-    }             
-                
+doGenAtlas :: Fspc -> IO()
+doGenAtlas fSpec =
+ do { verboseLn (flags fSpec) "Installing the Atlas application:"
+    ; verboseLn (flags fSpec) ("Importing "++show (importfile (flags fSpec))++" into namespace "++ show (namespace (flags fSpec)) ++" of the Atlas ...")
+    ; verboseLn (flags fSpec) ("The atlas application should have been installed in " ++ show (dirPrototype (flags fSpec)) ++ ".")
+    ; fillAtlas fSpec
+    }
+
 writeStaticFiles :: Options -> IO()
-writeStaticFiles flags =
-  if genStaticFiles flags
-  then 
+writeStaticFiles opts =
+  if genStaticFiles opts
+  then
  do {
-#ifdef MIN_VERSION_MissingH 
-      verboseLn flags "Updating static files"
+#ifdef MIN_VERSION_MissingH
+      verboseLn opts "Updating static files"
 #else
-      verboseLn flags "Writing static files"
+      verboseLn opts "Writing static files"
 #endif
-    ; sequence_ [ writeWhenMissingOrOutdated flags sf (writeStaticFile flags sf) | sf <- allStaticFiles ]
+    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) | sf <- allStaticFiles ]
     }
   else
-      verboseLn flags "Skipping static files (because of command line argument)"
-          
+      verboseLn opts "Skipping static files (because of command line argument)"
+
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
-writeWhenMissingOrOutdated flags staticFile act =
-#ifdef MIN_VERSION_MissingH 
- do { exists <- doesFileExist $ absFilePath flags staticFile 
+writeWhenMissingOrOutdated opts staticFile act =
+#ifdef MIN_VERSION_MissingH
+ do { exists <- doesFileExist $ absFilePath opts staticFile
     ; if exists then
-       do { oldTimeStamp <- getModificationTime $ absFilePath flags staticFile
+       do { oldTimeStamp <- getModificationTime $ absFilePath opts staticFile
           ; if oldTimeStamp < timeStamp staticFile then
-             do { verboseLn flags $ "  Replacing static file "++ filePath staticFile ++" with current version."
+             do { verboseLn opts $ "  Replacing static file "++ filePath staticFile ++" with current version."
                 ; act
                 }
             else
               return () -- skip is not really worth logging
           }
       else
-       do { verboseLn flags $ "  Writing static file "++ filePath staticFile
+       do { verboseLn opts $ "  Writing static file "++ filePath staticFile
           ; act
           }
-    }       
+    }
 #else
 -- On windows we cannot set the file modification time without requiring a cygwin or mingw build environment,
 -- so we simply replace all static files on each generation.
- do { verboseLn flags $ "  Writing static file "++ filePath staticFile
+ do { verboseLn opts $ "  Writing static file "++ filePath staticFile
     ; act
     }
 #endif
-                                    
+
 writeStaticFile :: Options -> StaticFile -> IO()
-writeStaticFile flags sf = 
-  do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
-     ; write (absFilePath flags sf) (contentString sf) 
-#ifdef MIN_VERSION_MissingH 
+writeStaticFile opts sf =
+  do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
+     ; write (absFilePath opts sf) (contentString sf)
+#ifdef MIN_VERSION_MissingH
      ; let t = (fromIntegral . fromEnum . utcTimeToPOSIXSeconds) (timeStamp sf)
-     ; setFileTimes (absFilePath flags sf) t t
+     ; setFileTimes (absFilePath opts sf) t t
 #endif
      }
- where write a b = if isBinary sf 
+ where write a b = if isBinary sf
                    then Bin.writeFile a (read b)
                    else writeFile a b
 
 absFilePath :: Options -> StaticFile -> FilePath
-absFilePath flags sf = combine (dirPrototype flags) (filePath sf)
+absFilePath opts sf = combine (dirPrototype opts) (filePath sf)

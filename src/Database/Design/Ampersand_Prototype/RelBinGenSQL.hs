@@ -2,13 +2,13 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTgt,sqlExprSrc,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
- ) where 
+ ) where
 import Database.Design.Ampersand_Prototype.CoreImporter
 
 import Database.Design.Ampersand_Prototype.RelBinGenBasics (quote,sqlAtomQuote,addSlashes,phpIndent)
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
-import Database.Design.Ampersand_Prototype.Version 
+import Database.Design.Ampersand_Prototype.Version
 -- import Debug.Trace
 
 fatal :: Int -> String -> a
@@ -20,7 +20,7 @@ fatal = fatalMsg "RelBinGenSQL"
 -- als dit zo is, hoeven we alleen dat ene A_Concept te tonen
 --
 -- Bovenstaand commentaar snap ik niet (gmi)
--- in de php code heb je een instantie van een A_Concept (ID=,$id,etc.) 
+-- in de php code heb je een instantie van een A_Concept (ID=,$id,etc.)
 -- soms is het id constant i.e. source (contextOf o) == ONE.
 -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
 -- daarom heb ik ze opgesplitst
@@ -29,7 +29,7 @@ fatal = fatalMsg "RelBinGenSQL"
 isOne' :: ObjectDef -> Bool
 isOne' = isOne     -- isOneExpr$contextOf o
                    --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.
-                   --      isOneExpr (rev:771) kan in de problemen komen bij doSqlGet (error "line 578 Object.hs"). 
+                   --      isOneExpr (rev:771) kan in de problemen komen bij doSqlGet (error "line 578 Object.hs").
                    --      in dat geval komt isOne (huidige rev) ook in de problemen (error iets met viewgroup)
                    --      Dit heeft te maken met ingewikkelde kernels.
                    --      case waarbij INJ cruciale rol speelt:
@@ -45,14 +45,14 @@ isOne :: ObjectDef -> Bool
 isOne o = source (contextOf o) == ONE
 
 -- | add comments, for example for debugging purposes
-sqlcomment :: Int -> String -> String -> String 
+sqlcomment :: Int -> String -> String -> String
 sqlcomment i cmt sql = "/* "++addSlashes cmt++" */"++phpIndent i++sql
 
 {- selectExpr translates an Expression (which is in Ampersand's A-structure) into an SQL expression in textual form.
 -}
 selectExpr ::    Fspc       -- current context
               -> Int        -- indentation
-              -> String     -- SQL name of the source of this expression, as assigned by the environment 
+              -> String     -- SQL name of the source of this expression, as assigned by the environment
               -> String     -- SQL name of the target of this expression, as assigned by the environment
               -> Expression -- expression to be translated
               -> String     -- resulting SQL expression
@@ -130,13 +130,12 @@ selectExpr fSpec i src trg expr
                                               (intercalate (", "++phpIndent (i+5)) exprbracs) (intercalate " AND " wherecl)
                    _       -> fatal 123 "A list shorter than 2 cannot occur in the query at all! If it does, we have made a mistake earlier."
 
-
     EUni{}   -> sqlcomment i ("case: EUni (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
                 intercalate " UNION " [ "(" ++ str ++ phpIndent i ++ ")" | e<-exprUni2list expr , str<-[selectExpr fSpec (i+4) src trg e]]
     ECps (EDcV (Sign ONE _), ECpl expr')
      -> case target expr' of
          ONE -> fatal 137 "TODO: sqlConcept not defined for ONE"
-         _   -> let src'  = sqlAttConcept fSpec (source expr') 
+         _   -> let src'  = sqlAttConcept fSpec (source expr')
                     trg'  = sqlAttConcept fSpec (target expr')
                     trg2  = noCollide' [src'] (sqlAttConcept fSpec (target expr'))
                 in sqlcomment i ("case:  ECps (EDcV (Sign ONE _), ECpl expr')"++phpIndent (i+3)++showADL expr) $
@@ -180,7 +179,7 @@ selectExpr fSpec i src trg expr
                                 mid2'= sqlExprSrc fSpec f
                                 trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
                             in sqlcomment i ("case:  (e:ERel (EDcV _) _:f:fx)"++phpIndent (i+3)++showADL expr) $
-                                   selectGeneric i ("fst",src',src) 
+                                   selectGeneric i ("fst",src',src)
                                                    ("snd",trg',trg)
                                                    (  selectExprInFROM fSpec i src'  mid' e++" AS fst,"++phpIndent (i+5)++
                                                       selectExprInFROM fSpec i mid2' trg' expr'++" AS snd")
@@ -200,7 +199,7 @@ WHERE ECps0.`A`<>ECps2.`A
                      where
                       mainSrc = "ECps"++show n++"."++selectSelItem (sqlSrc, src)
                                 where (n,_,sqlSrc,_) = head fenceExprs
-                      mainTgt = "ECps"++show n++"."++selectSelItem (sqlTgt, trg) 
+                      mainTgt = "ECps"++show n++"."++selectSelItem (sqlTgt, trg)
                                 where (n,_,_,sqlTgt) = last fenceExprs
                     fromClause   = "FROM " ++ intercalate (',':phpIndent (i+5)) [ lSQLexp++" AS ECps"++show n | (n,lSQLexp,_,_)<-fenceExprs ]
                     whereClause
@@ -249,7 +248,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                  | length es>1, e@(ECpl (EDcI c)) <- [last es]
                                  , let cAtt = (sqlAttConcept fSpec.target) e
                                  ]
-                    fencesSQL = 
+                    fencesSQL =
                       sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++showADL expr)
                         (phpIndent i++selectClause ++
                          phpIndent i++fromClause   ++
@@ -268,8 +267,8 @@ WHERE ECps0.`A`<>ECps2.`A
                                     , let tbls = if null (s'++t') then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                                     ] of
                                  []    -> fatal 216 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
-                                 sql:_ -> sql 
-    (EDcI c)             -> sqlcomment i ("I["++name c++"]") 
+                                 sql:_ -> sql
+    (EDcI c)             -> sqlcomment i ("I["++name c++"]")
                                 ( case c of
                                     ONE            -> "SELECT 1 AS "++src++", 1 AS "++trg
                                     PlainConcept{} -> let cAtt = sqlAttConcept fSpec c in
@@ -317,7 +316,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                                                           ("TRUE")
                                                        ++ ")"
                                                   )
-                                  where src' = sqlAttConcept fSpec (source e) 
+                                  where src' = sqlAttConcept fSpec (source e)
                                         trg' = "1"
                                         src2 = sqlExprSrc fSpec e
                                         trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
@@ -329,7 +328,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                                                           ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
                                                        ++ ")"
                                                   )
-                                  where src' = sqlAttConcept fSpec (source e) 
+                                  where src' = sqlAttConcept fSpec (source e)
                                         trg' = sqlAttConcept fSpec (target e)
                                         src2 = sqlExprSrc fSpec e
                                         trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
@@ -367,19 +366,19 @@ WHERE ECps0.`A`<>ECps2.`A
     ERrs (l,r) -- The right residual l\r is defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
 {- In order to obtain an SQL-query, we make a Haskell derivation of the right residual:
              and [    (z,x)    `elem` contents l -> (z,y) `elem` contents r  | z<-contents (source l)]
-   = 
+   =
              and [    (z,x) `notElem` contents l || (z,y) `elem` contents r  | z<-contents (source l)]
-   = 
+   =
         not ( or [not((z,x) `notElem` contents l || (z,y) `elem` contents r) | z<-contents (source l)])
-   = 
+   =
         not ( or [    (z,x)  `elem` contents l && (z,y) `notElem` contents r | z<-contents (source l)])
-   = 
+   =
         null [ () | z<-contents (source l), (z,x)  `elem` contents l && (z,y) `notElem` contents r]
-   = 
+   =
         null [ () | z<-contents (source l), (z,x)  `elem` contents l, (z,y) `notElem` contents r]
-   = 
+   =
         null [ () | (z,x') <- contents l, x==x', (z,y) `notElem` contents r ]
-   = 
+   =
         null [ () | (z,x') <- contents l, x==x' && (z,y) `notElem` contents r ]
 
 Based on this derivation:
@@ -436,16 +435,16 @@ Based on this derivation:
 --   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
 --   Note that the resulting pairs do not contain any NULL values.
 selectExprInFROM :: Fspc
-               -> Int         -- ^ indentation
-               -> String      -- ^ source name (preferably quoted)
-               -> String      -- ^ target name (preferably quoted)
-               -> Expression  -- ^ Whatever expression to generate an SQL query for
-               -> String
+                 -> Int         -- ^ indentation
+                 -> String      -- ^ source name (preferably quoted)
+                 -> String      -- ^ target name (preferably quoted)
+                 -> Expression  -- ^ Whatever expression to generate an SQL query for
+                 -> String
 selectExprInFROM fSpec i src trg expr
    | src == trg && (not.isIdent) expr = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
    | unquoted src = selectExprInFROM fSpec i (quote src) trg         expr
    | unquoted trg = selectExprInFROM fSpec i src         (quote trg) expr
-   | otherwise    = 
+   | otherwise    =
       case expr of
         EFlp e -> selectExprInFROM fSpec i trg src e
         EBrk e -> selectExprInFROM fSpec i src trg e
@@ -479,9 +478,9 @@ selectExprInFROM fSpec i src trg expr
                   where
                    cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
                    cpt = sqlConcept fSpec c
-        EDcV{} 
+        EDcV{}
           | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
-          | source expr == ONE 
+          | source expr == ONE
                -> "( SELECT 1, "++rightConcept++"."++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
                   "  FROM "++rightConcept ++" )"
           | target expr == ONE
@@ -491,19 +490,18 @@ selectExprInFROM fSpec i src trg expr
                -> "( SELECT "++leftConcept++"."++selectSelItem (sqlExprSrc fSpec expr, src)++", "++rC++"."++selectSelItem (sqlExprTgt fSpec expr, trg)++ phpIndent (i+5) ++
                   "  FROM "++leftConcept++", "++rightConcept ++(if rightConcept==rC then "" else " AS "++rC)++" WHERE True )"
                   where
-                    leftConcept  = sqlConcept fSpec (source expr) 
+                    leftConcept  = sqlConcept fSpec (source expr)
                     rightConcept = sqlConcept fSpec (target expr)
                     rC  = noCollide' [leftConcept] rightConcept
         _      -> phpIndent (i+5) ++ "( " ++ selectExpr fSpec (i+7) src trg expr++ phpIndent(i+5)++")"
-   where 
+   where
      unquoted [] = False
      unquoted (x:_) = x /= '`'
-    
 
 unquote :: String->String
 unquote ('`':xs) = init xs
 unquote xs = xs
--- | changes its second argument by appending a digit, such that it does not occur in its first argument 
+-- | changes its second argument by appending a digit, such that it does not occur in its first argument
 
 -- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
 noCollide' :: [String] -> String -> String
@@ -536,9 +534,9 @@ selectExprRelation :: Fspc
                    -> String
 selectExprRelation fSpec i srcAS trgAS dcl =
   case dcl of
-    Sgn{}  -> leafCode (EDcD dcl) 
+    Sgn{}  -> leafCode (EDcD dcl)
     Isn{}  -> leafCode (EDcI (source dcl))
-    Vs sgn 
+    Vs sgn
      | source sgn == ONE -> fatal 468 "ONE is not expected at this place"
      | target sgn == ONE -> fatal 469 "ONE is not expected at this place"
      | otherwise
@@ -556,7 +554,7 @@ selectExprRelation fSpec i srcAS trgAS dcl =
                                          (intercalate " AND " [quote (fldname c)++" IS NOT NULL" | c<-nub [s,t]])
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
-               
+
 selectExists' :: Int -> String -> String -> String
 selectExists' i tbl whr
  = "SELECT * FROM " ++ tbl ++ phpIndent i ++ "WHERE " ++ whr
@@ -570,12 +568,12 @@ selectGeneric :: Int             -- ^ indentation
               -> String
 selectGeneric i (sPrefix,s,s') (tPrefix,t,t') tbl whr
  = selectcl ++
-   phpIndent i ++ "FROM " ++ 
+   phpIndent i ++ "FROM " ++
    (if whr=="1" then tbl else tbl++(phpIndent i ++ "WHERE "++whr))
    where  selectcl | s'==t' && sPrefix==tPrefix = fatal 421 "Source and target are \"\", use selectExists' for this purpose"
                    | s'==""           = "SELECT DISTINCT " ++ tTxt
                    | t'==""           = "SELECT DISTINCT " ++ sTxt
-                   | s'=="tgt"        = "SELECT DISTINCT " ++ tTxt ++", "++sTxt  -- added because of flipped expression (see ticket #342) 
+                   | s'=="tgt"        = "SELECT DISTINCT " ++ tTxt ++", "++sTxt  -- added because of flipped expression (see ticket #342)
                    | otherwise        = "SELECT DISTINCT " ++ sTxt ++", "++tTxt
           sTxt = (if null sPrefix then "" else sPrefix ++ ".") ++ selectSelItem (s,s')
           tTxt = (if null tPrefix then "" else tPrefix ++ ".") ++ selectSelItem (t,t')
@@ -585,7 +583,6 @@ selectSelItem (att,alias)
   | unquote att == unquote alias = quote att
   | att == "1"                   = att++" AS "++quote alias
   | otherwise                    = quote att++" AS "++quote alias
-
 
 --WHY bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin (primitieve) expressie e is opgeslagen.
@@ -597,14 +594,14 @@ sqlRelPlugs :: Fspc -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,sour
 sqlRelPlugs fSpec e
    = [ (plug,fld0,fld1)
      | InternalPlug plug<-plugInfos fSpec
-     , (fld0,fld1)<-sqlPlugFields plug e
+     , (fld0,fld1)<-sqlPlugFields fSpec plug e
      ]
- 
+
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
 getDeclarationTableInfo :: Fspc -> Declaration -> (PlugSQL,SqlField,SqlField)
 getDeclarationTableInfo fSpec decl =
- case decl of 
-   Sgn{} -> 
+ case decl of
+   Sgn{} ->
       case sqlRelPlugs fSpec (EDcD decl) of
             [plugInfo] -> plugInfo
             []         -> fatal 527 "Reference to a non-existing plug."
@@ -615,7 +612,7 @@ getDeclarationTableInfo fSpec decl =
                             intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
             pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
                             intercalate "\n\n" (map showPInfo pinfos)
-                      -- TODO: some relations return multiple plugs (see ticket #217) 
+                      -- TODO: some relations return multiple plugs (see ticket #217)
    _     -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
    where
     showPInfo (tab, src, trg) = intercalate "  \n"
@@ -627,9 +624,9 @@ getDeclarationTableInfo fSpec decl =
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
 --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
-sqlPlugFields :: PlugSQL -> Expression  -> [(SqlField, SqlField)]
-sqlPlugFields p e' =
-    let e = disjNF e' -- SJ20140207 Why is this normalization necessary?
+sqlPlugFields :: Fspc -> PlugSQL -> Expression  -> [(SqlField, SqlField)]
+sqlPlugFields fSpec p e' =
+    let e = disjNF (flags fSpec) e' -- SJ20140207 Why is this normalization necessary?
     in nub
         [(fld0,fld1)
         | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
@@ -637,12 +634,12 @@ sqlPlugFields p e' =
         , Just plugexpr <- [plugpath p fld0 fld1] --the smallest expression from fld0 to fld1 (both in same plug)
         , let se = fldexpr fld0
               te = fldexpr fld1
-              bs = (isTrue.disjNF) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
-              bt = (isTrue.disjNF) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
+              bs = (isTrue.disjNF (flags fSpec)) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
+              bt = (isTrue.disjNF (flags fSpec)) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
         , --reasons why e is equivalent to plugexpr:
            --because e and plugexpr are equal
            e==plugexpr
-     --   || because1 e fld0 fld1              
+     --   || because1 e fld0 fld1
      --OR e is equivalent to plugexpr for some other reason (requires reasoning)
         || bs && bt     ]                                          --       e = se~;te
         {- the above should be enough.. but the relation algebra calculations
@@ -651,13 +648,13 @@ sqlPlugFields p e' =
            and
              isTrue  ((I/\e;e~);e \/ -e)
            do not work (these should yield True instead of False in both cases)
-           
+
            The code below fixes exactly these ommissions
-      --  
+      --
         || (isProp (se) && (te == e)
-           && (isTrue$disjNF$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl se))
+           && (isTrue$disjNF (flags fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl se))
         || (isProp (te) && se==flp e
-           && (isTrue$disjNF$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl te))
+           && (isTrue$disjNF (flags fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl te))
         -- found another exception:
         --     isFalse (I;I /\ -I)
         --   and
@@ -666,7 +663,7 @@ sqlPlugFields p e' =
         --
         || (  (se == te) && isIdent e && (isSur se)  )
         , --TODO -> reasons why e is not equivalent to plugexpr:
-        True 
+        True
         ]
   where
   -- simplF: replace a;a~ by I if INJ&TOT
@@ -676,7 +673,7 @@ sqlPlugFields p e' =
                  t@ECps{} -> simplify (replF (exprCps2list t))
                  _        -> simplify (replF ks)
            -- null occurs especialy in cases of [I;e] and [e;I]
-  
+
   replF [k:k2]    | k == flp k2 && isInj k && isTot k = EDcI (source k)
   replF (k:k2:ks) | k == flp k2 && isInj k && isTot k = replF ks
   replF [a]                                           = a
@@ -691,16 +688,16 @@ sqlPlugFields p e' =
   replF ks = ECps (ks)
   -----------------
   -}
-  
+
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
 --   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TGT" would suffice)
-sqlExprSrc :: Fspc->Expression -> String
+sqlExprSrc :: Fspc -> Expression -> String
 sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprSrc fSpec (EEps _ (Sign a _)) = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
-sqlExprSrc fSpec expr@EDcD{}         = case sqlRelPlugs fSpec expr of 
+sqlExprSrc fSpec expr@EDcD{}         = case sqlRelPlugs fSpec expr of
                                         [(_,s,_)] -> quote $ fldname s
                                         []        -> fatal 614 ("No plug for relation "++showADL expr)
                                         [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname s
@@ -708,13 +705,13 @@ sqlExprSrc fSpec expr@EDcD{}         = case sqlRelPlugs fSpec expr of
 sqlExprSrc _     expr                = quote $ "Src"++name (source expr)
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
-sqlExprTgt :: Fspc->Expression -> String
+sqlExprTgt :: Fspc -> Expression -> String
 sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprTgt fSpec (EEps _ (Sign _ b)) = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
 sqlExprTgt fSpec expr@EDcD{}         = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
-                                       case sqlRelPlugs fSpec expr of 
+                                       case sqlRelPlugs fSpec expr of
                                         [(_,_,t)] -> fldname t
                                         []        -> fatal 628 ("No plug for relation "++showADL expr)
                                         [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> fldname t
@@ -725,7 +722,7 @@ sqlExprTgt _     expr                = quote $ "Tgt"++name (target expr)
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
 sqlConcept :: Fspc -> A_Concept -> String
 sqlConcept fSpec = quote.name.sqlConceptPlug fSpec
-   
+
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: Fspc -> A_Concept -> PlugSQL
 sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
@@ -734,7 +731,6 @@ sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represente
                head ps
                where ps = [plug |InternalPlug plug<-plugInfos fSpec
                                 , not (null (case plug of ScalarSQL{} -> [c |c==cLkp plug]; _ -> [c' |(c',_)<-cLkpTbl plug, c'==c]))]
-
 
 sqlAttConcept :: Fspc -> A_Concept -> String
 sqlAttConcept fSpec c | c==ONE = "ONE"

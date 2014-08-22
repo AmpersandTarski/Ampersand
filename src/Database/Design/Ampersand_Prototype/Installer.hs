@@ -1,26 +1,25 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand_Prototype.Installer
-  (installerDBstruct,installerDefPop,dumpPopulationToADL,
+  (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
    createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
 import Database.Design.Ampersand_Prototype.CoreImporter
 import Database.Design.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr, quote, sqlAtomQuote)
 import Database.Design.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
-import Database.Design.Ampersand_Prototype.Version 
+import Database.Design.Ampersand_Prototype.Version
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"
 
-
-installerDBstruct :: Fspc -> Options -> String
-installerDBstruct fSpec flags = unlines $
+installerDBstruct :: Fspc -> String
+installerDBstruct fSpec = unlines $
       ["<?php"
       , "// Try to connect to the database"
       , ""
       , "include \"dbSettings.php\";"
       , ""
-      , "$DB_name='"++addSlashes (dbName flags)++"';"
+      , "$DB_name='"++addSlashes (dbName (flags fSpec))++"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
@@ -47,10 +46,46 @@ installerDBstruct fSpec flags = unlines $
       , ""
       ] ++
       createTablesPHP fSpec ++
-      [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');" 
+      [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
       , "?>"
       ]
-      
+
+installerTriggers :: Fspc -> String
+installerTriggers fSpec = unlines $
+      [ "<?php"
+      , ""
+      , ""
+      , "// Array for trigger queries that need to be installed"
+      , "$queries = array();"
+      , ""
+      , ""
+      ] ++ [] -- something like:     map unlines [ trigger tablename query | ]
+       ++
+      [ "$queries[] = \"CREATE TRIGGER etc\";"
+      , ""
+      , ""
+      , ""
+      , ""
+      , "// Execute queries"
+      , "foreach ($queries as $query){"
+      , " print $query.\"<br/>\";"
+      , " // $db->Exe($query); "
+      , " // print($db->error());"
+      , ""
+      , "}"
+      , "?>"
+      ]
+  where
+      trigger tablename query
+       = [ "// Trigger for DELETE Atom or Pair in function in Concept table"
+         , "$queries['delete_"++tablename++"']"
+         , " = \"CREATE TRIGGER `delete_"++tablename++"` BEFORE DELETE ON `"++tablename++"`"
+         , "    FOR EACH ROW"
+         , "    BEGIN "
+         , "        DELETE FROM <other table> WHERE <other table>.<column name> = OLD.<column name>; "
+         , "    END\";"
+         ]
+
 installerDefPop :: Fspc -> String
 installerDefPop fSpec = unlines $
       ["<?php"
@@ -79,7 +114,7 @@ dumpPopulationToADL fSpec = unlines $
       ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
       ]
       ++
-      ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
+      ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));"
       | d<-relsDefdIn fSpec, decusr d
       , let dbrel = case sqlRelPlugs fSpec (EDcD d) of
                       [] -> fatal 82 "null dbrel"
@@ -100,11 +135,10 @@ dumpPopulationToADL fSpec = unlines $
       ,"  }"
       ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
       ,"  ?>';"
-      ,"  file_put_contents(\"dbdump.php.\",$content);"  
+      ,"  file_put_contents(\"dbdump.php.\",$content);"
       , ""
       , "?>"
       ]
-
 
 createTablesPHP :: Fspc ->[String]
 createTablesPHP fSpec =
@@ -118,7 +152,7 @@ createTablesPHP fSpec =
         [ "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
-        , "" 
+        , ""
         , "// Timestamp table"
         , "if($columns = mysqli_query($DB_link, "++showPhpStr "SHOW COLUMNS FROM `__History__`"++")){"
         , "    mysqli_query($DB_link, "++showPhpStr "DROP TABLE `__History__`"++");"
@@ -130,24 +164,24 @@ createTablesPHP fSpec =
         , "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
         , "$microseconds = substr($time[0], 2,6);"
         , "$seconds =$time[1].$microseconds;"
-        , "date_default_timezone_set(\"Europe/Amsterdam\");" 
-        -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones 
-        , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;" 
+        , "date_default_timezone_set(\"Europe/Amsterdam\");"
+        -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones
+        , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;"
         , "mysqli_query($DB_link, \"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
         , "if($err=mysqli_error($DB_link)) {"
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
-        
+
         -- The next statements will drop each table if exists:
         , "if(true){"
         ] ++ indentBlock 2 (concatMap checkPlugexists (plugInfos fSpec))
         ++ ["}"]
-        
+
         -- The next statements will create all plugs
         ++ concatMap createPlugPHP [p | InternalPlug p <- plugInfos fSpec]
-  where 
+  where
     checkPlugexists (ExternalPlug _) = []
     checkPlugexists (InternalPlug plug)
          = [ "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
@@ -159,7 +193,7 @@ createTablesPHP fSpec =
            ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
 
 populateTablesPHP :: Fspc -> [String]
-populateTablesPHP fSpec = 
+populateTablesPHP fSpec =
     concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
@@ -172,28 +206,28 @@ populateTablesPHP fSpec =
                                         ++");"
                              ):
                              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
-     where 
+     where
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
 
 -- (CREATE TABLE name, fields, engine)
 type CreateTable = (String,[String],String)
 
-createTablePHP :: Int -> CreateTable -> [String] 
+createTablePHP :: Int -> CreateTable -> [String]
 createTablePHP i (crtbl,crflds,crengine)
          = [ "mysqli_query($DB_link,\""++ crtbl]
            ++ indentBlock i crflds
            ++ [replicate i ' ' ++ crengine ++ "\");"]
-           
+
 plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
  = ( "CREATE TABLE "++quote (name plug)
-   , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
+   , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
      | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
       case (plug, (head.plugFields) plug) of
            (BinSQL{}, _)   -> []
-           (_,    primFld) -> 
+           (_,    primFld) ->
                 case flduse primFld of
-                   TableKey isPrim _ -> [ ", "++ (if isPrim then "PRIMARY " else "") 
+                   TableKey isPrim _ -> [ ", "++ (if isPrim then "PRIMARY " else "")
                                           ++ "KEY (`"++fldname primFld++"`)"
                                         ]
                    ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")

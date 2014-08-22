@@ -1,15 +1,15 @@
-{-# LANGUAGE FlexibleInstances #-}  
-{-# OPTIONS_GHC -Wall #-}  
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wall #-}
 --hdbc and hdbc-odbc must be installed (from hackage)
-module Database.Design.Ampersand_Prototype.Apps.RAP 
+module Database.Design.Ampersand_Prototype.Apps.RAP
    (fillAtlas,picturesForAtlas,atlas2context,atlas2populations)
-where 
+where
 import Database.Design.Ampersand_Prototype.CoreImporter
 import Database.Design.Ampersand_Prototype.AutoInstaller (odbcinstall)
-import Database.HDBC.ODBC 
+import Database.HDBC.ODBC
 import Database.HDBC
 import Database.Design.Ampersand_Prototype.RelBinGenSQL
--- import Database.Design.Ampersand_Prototype.Version 
+-- import Database.Design.Ampersand_Prototype.Version
 
 -- fatal :: Int -> String -> a
 -- fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"
@@ -19,12 +19,12 @@ dsnatlas = "DSN=RAPv1"
 
 ----------------------------------------------------
 
-fillAtlas :: Fspc -> Options -> IO()
-fillAtlas fSpec flags = odbcinstall flags fSpec dsnatlas
+fillAtlas :: Fspc -> IO()
+fillAtlas fSpec = odbcinstall fSpec dsnatlas
 
-picturesForAtlas :: Options -> Fspc -> [Picture]
-picturesForAtlas flags fSpec
-   = map (makePicture flags fSpec) 
+picturesForAtlas :: Fspc -> [Picture]
+picturesForAtlas fSpec
+   = map (makePicture fSpec)
          ( [PTRelsUsedInPat pat   | pat <- patterns fSpec] ++
            [PTSingleRule userRule | userRule <- udefrules fSpec]++
            [PTConcept cpt         | cpt <- concs fSpec]
@@ -36,17 +36,17 @@ picturesForAtlas flags fSpec
 --REMARK quickQuery' is strict and needed to keep results for use after disconnecting
 type AtomVal = String
 type RelTbl = [(AtomVal,AtomVal)]
-selectdecl :: (IConnection conn) => conn 
-      -> Fspc 
-      -> String   -- ^The name of the declaration  
+selectdecl :: (IConnection conn) => conn
+      -> Fspc
+      -> String   -- ^The name of the declaration
       -> IO RelTbl
 selectdecl conn fSpec dclName
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
    where stmt = selectExprRelation fSpec (-1) "fld1" "fld2" dcl
          dcl = therel dclName "" ""
-         therel ::String -> String -> String -> Declaration 
-         therel relname relsource reltarget 
+         therel ::String -> String -> String -> Declaration
+         therel relname relsource reltarget
           = theonly [ d |
                        d<-relsDefdIn fSpec
                       ,relname==name d
@@ -62,11 +62,11 @@ theonly xs err
 geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
 
-atlas2populations :: Fspc -> Options -> IO String
-atlas2populations fSpec flags =
-   do verboseLn flags "Connecting to atlas..."
+atlas2populations :: Fspc -> IO String
+atlas2populations fSpec =
+   do verboseLn (flags fSpec) "Connecting to atlas..."
       conn<-connectODBC dsnatlas
-      verboseLn flags "Connected."
+      verboseLn (flags fSpec) "Connected."
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context with populations only
       --Context--
@@ -86,7 +86,7 @@ atlas2populations fSpec flags =
       r_right           <- selectdecl conn fSpec "right" --right::Pair->AtomID
       -----------
       disconnect conn
-      verboseLn flags "Disconnected."
+      verboseLn (flags fSpec) "Disconnected."
       makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
 
 makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
@@ -96,12 +96,12 @@ makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
    pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
 
-atlas2context :: Fspc -> Options -> IO A_Context
-atlas2context fSpec flags =
-   do --tbls <- readAtlas fSpec flags
-      verboseLn flags "Connecting to atlas..."
+atlas2context :: Fspc -> IO A_Context
+atlas2context fSpec =
+   do --tbls <- readAtlas fSpec
+      verboseLn (flags fSpec) "Connecting to atlas..."
       conn<-connectODBC dsnatlas
-      verboseLn flags "Connected."
+      verboseLn (flags fSpec) "Connected."
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
       --Context--
@@ -154,46 +154,46 @@ atlas2context fSpec flags =
       --reldcl :: Relation -> Declaration
       -----------
       disconnect conn
-      verboseLn flags "Disconnected."
+      verboseLn (flags fSpec) "Disconnected."
       let r_exprvalue = parseexprs r_exprvalue' --parsing is the safest way to get the Term
-      --verboseLn flags (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
+      --verboseLn (flags fSpec) (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
       actx <- makectx r_ctxnm (fsLang fSpec)
-                     r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
+                     r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      r_gengen r_genspc r_genrhs
-                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue      
-                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
-                     r_decpopu r_left r_right          
+                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue
+                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
+                     r_decpopu r_left r_right
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
       case actx of
        (Errors x)  -> error (show x)
        (Checked x) -> return x
       where
       parseexprs :: RelTbl -> [(AtomVal, Term TermPrim)]
-      parseexprs = map f 
+      parseexprs = map f
          where
            f :: (AtomVal,AtomVal) -> (AtomVal, Term TermPrim)
-           f (str, expr) = 
+           f (str, expr) =
                (str , case parseADL1pExpr expr "Atlas(Rule)" of
                         Left err   -> error err
                         Right term -> term
-               ) 
-              
+               )
+
 makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> {- RelTbl -> -} RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> IO (Guarded A_Context)
-makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
+makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      r_gengen r_genspc r_genrhs
-                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue      
-                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
-                     r_decpopu r_left r_right          
+                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue
+                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
+                     r_decpopu r_left r_right
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = return a_context
    where
    (a_context) = pCtx2aCtx rawctx
-   rawctx 
+   rawctx
     = PCtx {
          ctx_nm    = snd(theonly r_ctxnm "not one context in Atlas DB")
        , ctx_pos   = [DBLoc "Atlas(Context)"]
@@ -201,10 +201,10 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_markup= Just LaTeX --ADLImportable writes LaTeX
        , ctx_thms  = []
        , ctx_pats  = [atlas2pattern p lang
-                                    r_ptrls r_ptdcs r_ptgns          
+                                    r_ptrls r_ptdcs r_ptgns
                                     r_gengen r_genspc r_genrhs
                                     r_cptnm
-                                    r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
+                                    r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
                                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
                      |p<-r_ptnm]
        , ctx_PPrcs = []
@@ -219,17 +219,17 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                          , cdref = []
                          , cdfrom = ""
                          }
-                     | (cid,cdf)<-r_cptdf, not(null cdf) 
+                     | (cid,cdf)<-r_cptdf, not(null cdf)
                      , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")  -} ]
        , ctx_ks    = []
        , ctx_vs    = []
        , ctx_gs    = []
        , ctx_ifcs  = []
        , ctx_ps    = [PRef2 (DBLoc "Atlas(PatPurpose)") (PRef2Pattern pnm) (P_Markup Nothing Nothing ppurp) []
-                     | (pid,ppurp)<-r_ptxps, not(null ppurp) 
+                     | (pid,ppurp)<-r_ptxps, not(null ppurp)
                      , let pnm = geta r_ptnm pid (error "while geta r_ptnm for ppurp.")]
                   ++ [PRef2 (DBLoc "Atlas(CptPurpose)") (PRef2ConceptDef cnm) (P_Markup Nothing Nothing cpurp) []
-                     | (cid,cpurp)<-r_cptpurpose, not(null cpurp) 
+                     | (cid,cpurp)<-r_cptpurpose, not(null cpurp)
                      , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cpurp.")]
        , ctx_pops  = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
        , ctx_sql   = []
@@ -240,16 +240,16 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
 atlas2pattern :: (AtomVal,AtomVal) -> Lang -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Pattern 
-atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns          
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Pattern
+atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                              r_gengen r_genspc _ {- r_genrhs -}
                              r_cptnm
-                             r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
+                             r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
                              r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = P_Pat { pt_nm  = pnm
          , pt_pos = DBLoc "Atlas(Pattern)"
          , pt_end = DBLoc "Atlas(Pattern)"
-         , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
+         , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
                     | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
          , pt_gns = [PGen{ gen_fp = DBLoc "Atlas(Isa)"
                           ,gen_gen= PCpt gnm,gen_spc=(PCpt snm)}  -- TODO: Han, would you please look after the CLASSIFY IS statements?
@@ -269,7 +269,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     | (pid',rid)<-r_ptrls, pid==pid'
                     , (rid',rpurp)<-r_rrpurpose, rid==rid', not(null rpurp)
                     , let rnm = geta r_rrnm rid (error "while geta r_rrnm for rpurp.")]
-                 ++ [PRef2 (DBLoc "Atlas(RelPurpose)") 
+                 ++ [PRef2 (DBLoc "Atlas(RelPurpose)")
                            (PRef2Declaration (PTrel OriginUnknown rnm (atlas2sign rid r_decsgn r_src r_trg r_cptnm)))
                            (P_Markup Nothing Nothing rpurp) []
                     | (pid',rid)<-r_ptdcs, pid==pid'
@@ -299,7 +299,7 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
          trgnm = geta r_cptnm trgid (error "while geta r_cptnm of trgid.")
 
 atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
-atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue 
+atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
  = [ P_TRelPop { p_rnme  = rnm
                , p_orig  = OriginUnknown
                , p_type  = rsgn
@@ -315,19 +315,19 @@ atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos
               , p_popas=[a | (_,aid)<-cl, let a=geta r_atomvalue aid (error "while geta r_atomvalue of aid.")]
               }
    | cl<-eqCl fst r_cptos, not (null cl)]
-   where 
-   makepair pid = mkPair src trg 
+   where
+   makepair pid = mkPair src trg
          where lid = geta r_left pid (error "while geta r_left.")
                rid = geta r_right pid (error "while geta r_right.")
                src = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
                trg = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
 
-atlas2decl :: AtomVal -> Int -> Lang 
+atlas2decl :: AtomVal -> Int -> Lang
               -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> P_Declaration
 atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
  = P_Sgn { dec_nm = geta r_decnm rid (error "while geta r_decnm.")
          , dec_sign = atlas2sign rid r_decsgn r_src r_trg r_cptnm
-         , dec_prps = [case geta r_declaredthrough prp (error "while geta r_declaredthrough.") of 
+         , dec_prps = [case geta r_declaredthrough prp (error "while geta r_declaredthrough.") of
                         "UNI"->Uni
                         "TOT"->Tot
                         "INJ"->Inj
@@ -346,4 +346,4 @@ atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredt
          , dec_popu = []
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False
-         }    
+         }

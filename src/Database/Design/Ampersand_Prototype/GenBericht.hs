@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE NamedFieldPuns #-}  
+{-# LANGUAGE NamedFieldPuns #-}
 module Database.Design.Ampersand_Prototype.GenBericht (doGenBericht) where
 
 import Prelude hiding (writeFile)
@@ -23,22 +23,22 @@ data Entity = Entity { entName ::     String
                      , refType ::     String
                      , properties ::  [Entity]
                      } deriving Show
- 
-doGenBericht :: Fspc -> Options -> IO ()
-doGenBericht fSpec flags =
- do { verboseLn flags "Generating 'Berichtendefinities'..."
-    ; createDirectoryIfMissing True $ combine (dirPrototype flags) "Berichten"
+
+doGenBericht :: Fspc -> IO ()
+doGenBericht fSpec =
+ do { verboseLn (flags fSpec) "Generating 'Berichtendefinities'..."
+    ; createDirectoryIfMissing True $ combine (dirPrototype (flags fSpec)) "Berichten"
     ; let entities = genEntity_Interfaces $ interfaceS fSpec
     ; let berichtenCSV = allEntitiesToCSV entities
-    ; when (development flags) $ verboseLn flags $ layout berichtenCSV
+    ; when (development (flags fSpec)) $ verboseLn (flags fSpec) $ layout berichtenCSV
     ; genFile "Berichten/Berichten.csv" $ printSemicolonSeparated berichtenCSV
     ; genFile "Berichten/Gegevenswoordenboek.html" $ genGegevensWB entities
     ; genFile "Berichten/Berichtdefinitie.html" $ genBerichtDef entities
     }
- where 
-   genFile filename contents = 
-        do { writeFile (combine (dirPrototype flags) filename) contents
-           ; verboseLn flags $ "\nGenerated file "++filename
+ where
+   genFile filename contents =
+        do { writeFile (combine (dirPrototype (flags fSpec)) filename) contents
+           ; verboseLn (flags fSpec) $ "\nGenerated file "++filename
            }
    genEntity_Interfaces :: [Interface] -> [Entity]
    genEntity_Interfaces interfaces' = map genEntity_Interface interfaces'
@@ -47,24 +47,24 @@ doGenBericht fSpec flags =
        genEntity_Interface interface = genEntity_ObjDef 0 (ifcObj interface)
          where
            genEntity_ObjDef :: Int -> ObjectDef -> Entity
-           genEntity_ObjDef dpth objDef = 
+           genEntity_ObjDef dpth objDef =
                Entity { entName = name objDef
                       , depth = dpth
                       , cardinality = card $ objctx objDef
-                      , definition  = def $ objctx objDef 
+                      , definition  = def $ objctx objDef
                       , refType     = name (target $ objctx objDef)
                       , properties  =
                           case objmsub objDef of
                             Nothing -> []
-                            Just (Box _ objs)        -> map (genEntity_ObjDef (dpth+1)) objs           
+                            Just (Box _ objs)        -> map (genEntity_ObjDef (dpth+1)) objs
                             Just (InterfaceRef nm) -> map (genEntity_ObjDef (dpth+1)) $ objsForInterfaceNamed nm
                       }
             where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
-          
+
                   def rel = case concDefs fSpec (target rel) of
                                 Cd {cddef=def'} : _ | def' /= "" -> def'
                                 _                                -> "** NO DEFINITION **"
-       
+
                   objsForInterfaceNamed :: String -> [ObjectDef]
                   objsForInterfaceNamed nm =
                     case objmsub $ ifcObj $ getInterfaceByName interfaces' nm of
@@ -73,10 +73,10 @@ doGenBericht fSpec flags =
                   -- NOTE: We ignore the interface relation for interfaces refs
 
 allEntitiesToCSV :: [Entity] -> CSV
-allEntitiesToCSV entities = ["Naam", "Card.", "Definitie", "Type"] : 
+allEntitiesToCSV entities = ["Naam", "Card.", "Definitie", "Type"] :
                             intercalate [["","","",""]] (map entityToCSV  entities)
 
-entityToCSV :: Entity -> CSV 
+entityToCSV :: Entity -> CSV
 entityToCSV (Entity nm dpth card def refTp props) =
   [ concat (replicate dpth ". ") ++ nm, card, def, refTp] : concatMap entityToCSV props
 
@@ -85,15 +85,15 @@ entityToCSV (Entity nm dpth card def refTp props) =
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
                                 [ifc] -> ifc
-                                _     -> fatal 63 $ "getInterface by name: multiple or no interfaces named "++show nm 
+                                _     -> fatal 63 $ "getInterface by name: multiple or no interfaces named "++show nm
 layout :: [[String]] -> String
-layout linez = 
+layout linez =
   let columns = transpose linez
       formatColumn col = let width = maximum . map length $ col
                          in  map (fill width) col
   in  unlines . map unwords . transpose . map formatColumn $ columns
- where fill i str = str ++ take (i - length str) (replicate i ' ') 
- 
+ where fill i str = str ++ take (i - length str) (replicate i ' ')
+
 -- Modified version of Text.CSV.printCSV
 printSemicolonSeparated :: CSV -> String
 printSemicolonSeparated records = unlines (printRecord `map` records)
@@ -102,12 +102,10 @@ printSemicolonSeparated records = unlines (printRecord `map` records)
           escape '"' = "\"\""
           escape x = [x]
 
-
- 
 -- Html
 
 genGegevensWB :: [Entity] -> String
-genGegevensWB entities = gegevensWB_Header ++ 
+genGegevensWB entities = gegevensWB_Header ++
                          gegevensWB_Toc ++
                          gegevensWB_Middle ++
                          concatMap gegevensWB_Element entities ++
@@ -119,13 +117,12 @@ genGegevensWB entities = gegevensWB_Header ++
     | Entity{ entName = concept' } <- entities
     ]
 
-
   -- TODO: it's not the concept, but the interface name, yet refTp is a concept? or also an interface name?
   gegevensWB_Element :: Entity -> String
   gegevensWB_Element (Entity concept' _ _ _ _ props) =
     wbElement_Header ++
-    concatMap (wbElement_Element concept') props ++ 
-    wbElement_Footer 
+    concatMap (wbElement_Element concept') props ++
+    wbElement_Footer
    where
       wbElement_Header :: String
       wbElement_Header  =
@@ -134,11 +131,10 @@ genGegevensWB entities = gegevensWB_Header ++
         "      <div class=\"objectclass\">"++concept'++"</div>\n" ++
         "      <div class=\"definition\">"++concept'++"</div>\n" ++
         "      <table class=\"properties\">\n" ++
-        "        <tr><td class=\"head\">Property term</td><td class=\"head\">Cardinality</td><td class=\"head\">Representation term</td></tr>\n" 
+        "        <tr><td class=\"head\">Property term</td><td class=\"head\">Cardinality</td><td class=\"head\">Representation term</td></tr>\n"
        where
         mkAnchor :: String -> String
         mkAnchor entityName = "<a name=\"abie-"++escapeNonAlphaNum entityName++"\" id=\"abie-"++escapeNonAlphaNum entityName++"\"> </a>\n"
-
 
       wbElement_Element :: String -> Entity -> String
       wbElement_Element parentConcept (Entity _ _ card def refTp _) =
@@ -147,14 +143,13 @@ genGegevensWB entities = gegevensWB_Header ++
         -- NOTE: don't want def twice here
         "          <div class=\"info d1e110\"></div><td class=\"cardinality\">"++card++"</td>\n" ++
         "          <td class=\"representationterm\">" ++ mkLink entities refTp refTp ++ "</a></td>\n" ++
-        -- TODO: leave out <a> if this is not a defined data type 
+        -- TODO: leave out <a> if this is not a defined data type
         "        </tr>\n"
-  
 
   wbElement_Footer :: String
   wbElement_Footer =
     "      </table>\n" ++
-    "    </div>\n" 
+    "    </div>\n"
 
   gegevensWB_Header :: String
   gegevensWB_Header =
@@ -170,8 +165,8 @@ genGegevensWB entities = gegevensWB_Header ++
     "<div id=\"index\">\n" ++
     "  <div id=\"abie\" class=\"index-group\">\n" ++
     "    <h2>Aggregate BIEs</h2>\n" ++
-    "    <ol>\n" 
-           
+    "    <ol>\n"
+
   gegevensWB_Middle :: String
   gegevensWB_Middle =
     "    </ol>\n" ++
@@ -179,16 +174,13 @@ genGegevensWB entities = gegevensWB_Header ++
     "</div>\n" ++
     "<div id=\"main\">\n" ++
     "  <div id=\"main-abie\">\n"
-  
+
   gegevensWB_Footer :: String
-  gegevensWB_Footer =  
+  gegevensWB_Footer =
     "  </div>\n" ++
     "</div>\n" ++
     "</body>\n" ++
     "</html>\n"
-
-
-
 
 mkLocalLink :: String -> String -> String
 mkLocalLink nm html = "<a href=\"#abie-"++escapeNonAlphaNum nm++"\" title=\""++nm++"\">" ++
@@ -196,7 +188,7 @@ mkLocalLink nm html = "<a href=\"#abie-"++escapeNonAlphaNum nm++"\" title=\""++n
 
 mkLink :: [Entity] -> String -> String -> String
 mkLink entities nm html =
-  if isEntity entities nm 
+  if isEntity entities nm
   then "<a id=\"abie-"++escapeNonAlphaNum nm++"\" href=\"Gegevenswoordenboek.html#abie-"++escapeNonAlphaNum nm++"\">\n"++
        html ++ "</a>"
   else html
@@ -217,8 +209,7 @@ genBerichtDef entities =
     [ "    <li><a href=\"#abie-"++escapeNonAlphaNum entNm++"\" title=\"\">"++entNm++"</a></li>"
     | Entity{ entName = entNm } <- entities
     ]
-  
-  
+
   berichtDef_ElementLine :: Entity -> String
   berichtDef_ElementLine (Entity entNm depth card def refTp props) =
     "        <tr>\n" ++
@@ -230,12 +221,11 @@ genBerichtDef entities =
     "        </tr>\n" ++
     concatMap berichtDef_ElementLine props
    where padding = if depth > 0  then " style=\"padding-left:"++show (depth*25)++"px\"" else ""
-  
-  
+
   -- Html-page strings
-  
+
   berichtDef_Header :: String
-  berichtDef_Header =   
+  berichtDef_Header =
     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" ++
     "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" ++
     "<head>\n" ++
@@ -261,7 +251,7 @@ genBerichtDef entities =
     "  </table>\n" ++
     "  <h3>Document Properties</h3>\n" ++
     "  <ol>\n"
-  
+
   berichtDef_Middle :: String
   berichtDef_Middle =
     "  </ol>\n" ++
@@ -276,4 +266,4 @@ genBerichtDef entities =
     "</div>\n" ++
     "</body>\n" ++
     "</html>\n"
-  
+

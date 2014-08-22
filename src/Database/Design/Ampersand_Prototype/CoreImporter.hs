@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand_Prototype.CoreImporter 
+module Database.Design.Ampersand_Prototype.CoreImporter
     ( module Database.Design.Ampersand
     )
 where
