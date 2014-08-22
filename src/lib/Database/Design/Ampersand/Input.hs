@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}  
+{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Input
    ( module Database.Design.Ampersand.Input.ADL1.CtxError
    , module Database.Design.Ampersand.Input.Parsing

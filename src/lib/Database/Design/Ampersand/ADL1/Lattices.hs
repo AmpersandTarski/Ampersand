@@ -49,7 +49,7 @@ getGroups (ES1 tran _ imap)
       -- newItm' is all (old) items that must be renamed
       ~(newItm', newRev') = IntMap.partitionWithKey (\k _ -> IntSet.member k oldKeySet) rev
       newItm :: IntSet.IntSet
-      newItm = IntSet.unions (im : IntMap.elems newItm') -- all 
+      newItm = IntSet.unions (im : IntMap.elems newItm') -- all
       newRev = IntMap.insert newKey newItm newRev'
       newElems = IntMap.union (IntMap.fromSet (const newKey) newItm) allElems -- overwrites some of the allElems items with the new key
 
@@ -96,7 +96,6 @@ latticeToTranslatable (ES1 m _ _) lt = t lt
    t (Atom a)   = do{r<-Map.lookup a m;return [r]}
    t (Meet a b) = do{a'<-t a;b'<- t b;return [IntSet.union ta tb | ta <- a', tb <- b']}
    t (Join a b) = do{a'<-t a;b'<- t b;return (a'++b')}
-   
 
 -- how to lookup something in a RevMap (Precondition: list is sorted!)
 lookupInRevMap :: (Ord a, SetLike x) => [Int] -> RevMap a -> x a
@@ -137,7 +136,6 @@ listAndRest :: [t] -> [(t, [t])]
 listAndRest [] = []
 listAndRest (a:rst) = (a,rst):listAndRest rst
 
-
 data RevMap a
  = RevMap (Set.Set a) -- all elements equivalent to this point in the map
           (IntMap.IntMap (RevMap a)) -- recursive
@@ -163,7 +161,7 @@ reverseMap lst
      = IntMap.insert f (reverseMap (map tail2 h)) (buildMap tl)
      where tail2 (a,b) = (a, tail b)
            (h,tl) = partition ((== f) . head . snd) o
-     
+
 optimize1 :: Ord a => EqualitySystem a -> Op1EqualitySystem a
 optimize1 (ES oldmap oldimap)
  = ES1 newmap
@@ -172,7 +170,7 @@ optimize1 (ES oldmap oldimap)
  where notEmpty [] = Nothing
        notEmpty a = Just a
        maybeMapper :: [(IntSet.IntSet,IntSet.IntSet)] -> Maybe [(IntSet.IntSet,IntSet.IntSet)]
-       maybeMapper x = notEmpty [ (s1,imapTranslate oldimap s2 (IntSet.empty)) 
+       maybeMapper x = notEmpty [ (s1,imapTranslate oldimap s2 (IntSet.empty))
                                 | (s1,s2) <- x
                                 , not (IntSet.null s1)
                                 , not (IntSet.null s2)
@@ -223,7 +221,7 @@ data FreeLattice a
  = Join (FreeLattice a) (FreeLattice a)
  | Meet (FreeLattice a) (FreeLattice a)
  | Atom a
- 
+
 instance SetLike [] where
   fromList = id
   fromSet = Set.toList
@@ -274,7 +272,6 @@ class SetLike x where -- I dislike having to put Ord everywhere, is there anothe
   slInsert :: Ord a => a -> x a -> x a
   slInsert x = slUnion (fromList [x])
   toSet :: Ord a => x a -> Set.Set a
-  
 
 nub' :: Eq a => [a] -> [a]
 nub' (a:b:bs) | a == b = nub' (b:bs)

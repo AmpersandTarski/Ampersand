@@ -36,23 +36,23 @@ pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc
     = case pc of
         PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
-        P_Singleton -> ONE   
+        P_Singleton -> ONE
 
 pCtx2aCtx :: P_Context -> Guarded A_Context
 pCtx2aCtx = checkUnique udefrules  -- Rules must have a unique name within the context
           . checkUnique patterns   -- Patterns as well
           . checkUnique ctxprocs   -- and so should Processes
-          . pCtx2aCtx' 
-  where 
-    checkUnique f gCtx = 
+          . pCtx2aCtx'
+  where
+    checkUnique f gCtx =
      case gCtx of
        Checked ctx -> case uniqueNames (f ctx) of
                          Checked () -> gCtx
                          Errors err -> Errors err
-       Errors err -> Errors err 
+       Errors err -> Errors err
 
 pCtx2aCtx' :: P_Context -> Guarded A_Context
-pCtx2aCtx' 
+pCtx2aCtx'
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
@@ -114,14 +114,14 @@ pCtx2aCtx'
                ]
     genLattice :: Op1EqualitySystem String
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
-    
+
     concGroups :: [[String]]
     concGroups = getGroups genLattice
     allConcs :: Set.Set String
     allConcs = Set.fromList (map (name . source) decls ++ map (name . target) decls)
     soloConcs :: [String]
     soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
-    
+
     deflangCtxt = fromMaybe English lang  -- explanation: if lang==Nothing, then English, if lang==Just l then l
     deffrmtCtxt = fromMaybe ReST pandocf
 
@@ -131,7 +131,7 @@ pCtx2aCtx'
     ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
     patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
     patProcs  = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The relations declared in all processes within this context.
-      
+
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap
@@ -144,10 +144,10 @@ pCtx2aCtx'
     -- TODO
     accumDecl :: Declaration -> Declaration -> Declaration
     accumDecl a _ = a
-    
-    pDecl2aDecl :: 
+
+    pDecl2aDecl ::
          String         -- The name of the pattern
-      -> Lang           -- The default language 
+      -> Lang           -- The default language
       -> PandocFormat   -- The default pandocFormat
       -> P_Declaration -> (Declaration, Population)
     pDecl2aDecl patNm defLanguage defFormat pd
@@ -159,14 +159,14 @@ pCtx2aCtx'
                      , decprM  = dec_prM pd
                      , decprR  = dec_prR pd
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
-                     , decfpos = dec_fpos pd 
+                     , decfpos = dec_fpos pd
                      , deciss  = True
                      , decusr  = True
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
        in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd})
-    
+
     pSign2aSign :: P_Sign -> Sign
     pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
@@ -185,7 +185,7 @@ pCtx2aCtx'
 
 {- SJ20140216: The function castConcept is used in the type system, but looks similar to pCpt2aCpt.
    However, castConcept makes an erroneous concept, which we should prevent in the first place.
-   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work. 
+   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work.
 -}
     leastConcept :: A_Concept -> String -> A_Concept
     leastConcept c str
@@ -209,15 +209,15 @@ pCtx2aCtx'
     pPop2aPop orig@(P_TRelPop { p_rnme = rnm, p_type = tp, p_popps = ps })
      = fmap (\dcl -> PRelPopu { popdcl = dcl, popps = ps})
             (findDeclTyped orig rnm (pSign2aSign tp))
-    
+
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
      where tpda = disambiguate termPrimDisAmb x
-     
+
     pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
     pViewDef2aViewDef x = typecheckViewDef tpda
      where tpda = disambiguate termPrimDisAmb x
-     
+
     typecheckViewDef :: P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
     typecheckViewDef
        o@(P_Vd { vd_pos = orig
@@ -232,7 +232,7 @@ pCtx2aCtx'
               , vdats = vdts
               })
        <$> traverse (typeCheckViewSegment o) pvs
-    
+
     typeCheckViewSegment :: (P_ViewD a) -> (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
     typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
      = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
@@ -243,7 +243,7 @@ pCtx2aCtx'
      where c = name (vd_cpt o)
     typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
     typeCheckViewSegment _ P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
-    
+
     typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
     typecheckObjDef o@(P_Obj { obj_nm = nm
                              , obj_pos = orig
@@ -284,7 +284,7 @@ pCtx2aCtx'
     addEpsilon s t e
      = (if s==name (source e) then id else (EEps (leastConcept (source e) s) (castSign s (name (source e))) .:.)) $
        (if t==name (target e) then id else (.:. EEps (leastConcept (target e) t) (castSign (name (target e)) t))) e
-    
+
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
     pSubi2aSubi o@(P_Box _ []) = hasNone [] o
@@ -298,8 +298,7 @@ pCtx2aCtx'
                             [] -> pure (Box (castConcept (head r)) (map fst lst))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
        ) <?> (traverse typecheckObjDef l <* uniqueNames l)
-    
-    
+
     typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
     typecheckTerm tct
      = case tct of
@@ -307,7 +306,7 @@ pCtx2aCtx'
                                    PVee _ -> (False,False)
                                    _ -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
-         PEqu _ a b -> binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
+         PEqu _ a b -> binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PImp _ a b -> binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
          PIsc _ a b -> binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
          PUni _ a b -> binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
@@ -368,7 +367,7 @@ pCtx2aCtx'
           = (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
             where lrDecide side e = case side of Src -> addEpsilonLeft' cpt e; Tgt -> addEpsilonRight' cpt e
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
-    
+
     deriv1 o x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
@@ -406,14 +405,14 @@ pCtx2aCtx'
            Prel _ r    -> Rel [EDcD dc | dc <- (Map.elems $ findDecls r)]
            PTrel _ r s -> Rel [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
         )
-    
+
     termPrim2Decl :: TermPrim -> Guarded Declaration
     termPrim2Decl o@(Prel _ r   ) = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
     termPrim2Decl o@(PTrel _ r s) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
     termPrim2Decl _ = fatal 231 "Expecting Declaration"
     termPrim2Expr :: TermPrim -> Guarded Expression
     termPrim2Expr = pDisAmb2Expr . termPrimDisAmb
-    
+
     pIfc2aIfc :: P_Interface -> Guarded Interface
     pIfc2aIfc P_Ifc { ifc_Params = tps
                     , ifc_Args = args
@@ -468,7 +467,7 @@ pCtx2aCtx'
          <*> traverse pIdentity2aIdentity idefs
          <*> traverse pViewDef2aViewDef viewdefs
          <*> traverse pPurp2aPurp purposes
-    
+
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
      = f <$> parRuls ppat <*> parKeys ppat <*> parPops ppat <*> parViews ppat <*> parPrps ppat <*> sequenceA rrels
@@ -496,7 +495,7 @@ pCtx2aCtx'
         parPops  = traverse pPop2aPop . pt_pop
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
-    
+
     pRul2aRul':: [String] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
               -> (P_Rule TermPrim) -> Guarded ([String],Rule)  -- roles in the lhs
@@ -561,7 +560,7 @@ pCtx2aCtx'
     pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
     pIdentSegment2IdentSegment (P_IdentExp ojd)
      = IdentityExp <$> pObjDef2aObjDef ojd
-    
+
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst
@@ -607,7 +606,7 @@ pCtx2aCtx'
        where cs = [cd | cd<-allConceptDefs, name cd==s]
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns++concatMap procCds p_processes
-    
+
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 -- SJ 20140211 @SJC: TODO graag een typefout genereren voor een SESSION atoom anders dan _SESSION.
 pDisAmb2Expr (_,Known x) = pure x
@@ -615,18 +614,18 @@ pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
-pMean2aMean :: Lang           -- The default language 
+pMean2aMean :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> [PMeaning] -> AMeaning
 pMean2aMean defLanguage defFormat pmeanings
  = AMeaning [ pMarkup2aMarkup defLanguage defFormat pmarkup | PMeaning pmarkup <-pmeanings ]
-pMess2aMess :: Lang           -- The default language 
+pMess2aMess :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
             -> PMessage -> A_Markup
 pMess2aMess defLanguage defFormat (PMessage x) = pMarkup2aMarkup defLanguage defFormat x
-pMarkup2aMarkup :: Lang           -- The default language 
+pMarkup2aMarkup :: Lang           -- The default language
                 -> PandocFormat   -- The default pandocFormat
-                -> P_Markup -> A_Markup 
+                -> P_Markup -> A_Markup
 pMarkup2aMarkup defLanguage defFormat
    P_Markup  { mLang   = ml
              , mFormat = mpdf

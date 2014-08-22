@@ -5,7 +5,7 @@ module Database.Design.Ampersand.ADL1.Pair
                     ( Paire,Pairs
                     , srcPaire,trgPaire
                     , mkPair
-                    ) 
+                    )
 where
 
    type Pairs = [Paire]
@@ -20,6 +20,4 @@ where
 --                      ,trgPaire ::String
 --                      } deriving (Show ,Eq)
 --   mkPair = Paire
-
-
 

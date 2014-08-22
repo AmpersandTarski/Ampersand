@@ -20,13 +20,12 @@ where
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
    import Data.GraphViz.Attributes.HTML as Html
-   
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
 
    class CdNode a where
     nodes :: a->[String]
-
 
    instance CdNode ClassDiag where
     nodes cd = nub (concat (  map nodes (classes cd)
@@ -34,7 +33,6 @@ where
                             ++map nodes (aggrs   cd)
                             ++map nodes (geners  cd)
                    )       )
-
 
    instance CdNode Class where
     nodes cl = [clName cl]
@@ -61,13 +59,13 @@ where
 
    -- | This function makes the classification diagram.
    -- It focuses on generalizations and specializations.
-   clAnalysis :: Fspc -> Options -> ClassDiag
-   clAnalysis fSpec _ = 
+   clAnalysis :: Fspc -> ClassDiag
+   clAnalysis fSpec =
        OOclassdiagram { cdName  = "classification_"++name fSpec
                       , classes = [ OOClass { clName = name c
                                             , clcpt  = Just c
                                             , clAtts = attrs c
-                                            , clMths = [] 
+                                            , clMths = []
                                             } | c<-cpts]
                       , assocs  = []
                       , aggrs   = []
@@ -83,22 +81,21 @@ where
        lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
 
-
    -- | This function, cdAnalysis, generates a conceptual data model.
    -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
    -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
    -- Properties and identities are not shown.
-   cdAnalysis :: Fspc -> Options -> ClassDiag
-   cdAnalysis fSpec _ = 
+   cdAnalysis :: Fspc -> ClassDiag
+   cdAnalysis fSpec =
      OOclassdiagram { cdName  = "logical_"++name fSpec
-                    , classes = 
+                    , classes =
                         [ OOClass{ clName = name root
                                  , clcpt  = Just root
                                  , clAtts = map ooAttr ooClass
                                  , clMths = []
                                  }
                         | ooClass <- ooClasses, let root=source (head ooClass)]
-                    , assocs  = 
+                    , assocs  =
                         [ OOAssoc { assSrc = Left (source r)
                                   , assSrcPort = name d
                                   , asslhm = (mults.flp) r
@@ -122,7 +119,7 @@ where
                         }
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isInj r then MaxOne else MaxMany
-                in  Mult minVal maxVal 
+                in  Mult minVal maxVal
       allrels = [ EDcD r -- restricted to those themes that must be printed.
                 | r@Sgn{} <- (nub.concat)
                              ([relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ]++
@@ -134,19 +131,18 @@ where
       ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
       roots = map (source.head) ooClasses
 
-
    -- | This function generates a technical data model.
    -- It is based on the plugs that are calculated.
-   tdAnalysis :: Fspc -> Options -> ClassDiag
-   tdAnalysis fSpec _ = 
+   tdAnalysis :: Fspc -> ClassDiag
+   tdAnalysis fSpec =
      OOclassdiagram {cdName  = "technical_"++name fSpec
-                    ,classes = 
+                    ,classes =
                        [ OOClass{ clName = sqlname table
                                 , clcpt  = primKey table
                                 , clAtts = case table of
                                               TblSQL{fields=attribs
                                                     ,mLkpTbl=t} -> map (ooAttr.lookInFor t.fldexpr) attribs
-                                              BinSQL{columns=(a,b)}      -> 
+                                              BinSQL{columns=(a,b)}      ->
                                                  [OOAttr { attNm       = fldname a
                                                          , attTyp      = (name.target.fldexpr) a
                                                          , attOptional = False
@@ -167,18 +163,18 @@ where
                     }
      where
       lookInFor [] _ = fatal 191 "Expression not found!"
-      lookInFor ((expr,_,t):xs) a 
+      lookInFor ((expr,_,t):xs) a
                  | expr == a = t
-                 | otherwise = lookInFor xs a 
+                 | otherwise = lookInFor xs a
       tables = [ pSql | InternalPlug pSql <- plugInfos fSpec, not (isScalar pSql)]
          where isScalar ScalarSQL{} = True
-               isScalar _           = False 
+               isScalar _           = False
       roots :: [A_Concept]
       roots = catMaybes (map primKey tables)
       primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f))
       primKey _                    = Nothing
       ooAttr :: SqlField -> CdAttribute
-      ooAttr f= OOAttr { attNm = fldname f 
+      ooAttr f= OOAttr { attNm = fldname f
                        , attTyp = (name.target.fldexpr) f
                        , attOptional = fldnull f
                        }
@@ -191,10 +187,10 @@ where
                                Right _ -> False
           kernelConcepts = map fst (concatMap cLkpTbl tables)
           rootOf c = head [(source.fldexpr.snd.head.cLkpTbl) t | t<-tables, c `elem` map fst ( cLkpTbl t)]
-          relsOf t = 
+          relsOf t =
             case t of
               TblSQL{} -> map mkRel (catMaybes [relOf fld | fld <- fields t])
-              BinSQL{columns=(a,b)} -> 
+              BinSQL{columns=(a,b)} ->
                         [ OOAssoc { assSrc = Right (sqlname t)
                                   , assSrcPort = fldname a
                                   , asslhm = Mult MinZero MaxMany
@@ -213,7 +209,7 @@ where
                                   }
                         ]
               _  -> fatal 195 "Unexpeced type of table!"
-          relOf f = 
+          relOf f =
             let expr = fldexpr f in
             case expr of
               EDcI{} -> Nothing
@@ -232,8 +228,7 @@ where
                        }
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isInj r then MaxOne else MaxMany
-                in  Mult minVal maxVal 
-
+                in  Mult minVal maxVal
 
 ---- In order to make classes, all relations that are univalent and injective are flipped
 ---- attRels contains all relations that occur as attributes in classes.
@@ -244,10 +239,10 @@ where
 --       attrs rs   = [ OOAttr ((name.head.relsMentionedIn) r) (name (target r)) (not(isTot r))
 --                    | r<-rs, not (isPropty r)]
 --       isPropty r = null([Sym,Asy]>-multiplicities r)
-       
-   -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture. 
+
+   -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
    classdiagram2dot :: Options -> ClassDiag -> DotGraph String
-   classdiagram2dot flags  cd
+   classdiagram2dot opts cd
     = DotGraph { strictGraph     = False
                , directedGraph   = True
                , graphID         = Nothing
@@ -268,78 +263,76 @@ where
                          (map aggregation2edge (aggrs cd))  ++
                          (concatMap generalization2edges (geners cd))
            }
-        
-        
+
           where
           allNodes :: [Class] -> [String] -> [DotNode String]
-          allNodes cs others = 
-             map class2node cs ++ 
+          allNodes cs others =
+             map class2node cs ++
              map nonClass2node others
-          
+
           class2node :: Class -> DotNode String
-          class2node cl = DotNode 
+          class2node cl = DotNode
             { nodeID         = name cl
             , nodeAttributes = [ Shape PlainText
                                , GVcomp.Color [WC (X11Color Purple) Nothing]
                                , Label (HtmlLabel (Table htmlTable))
                                ]
-            } where 
+            } where
              htmlTable = HTable { tableFontAttrs = Nothing
                                 , tableAttrs     = [ Html.BGColor (X11Color White)
                                                    , Html.Color (X11Color Black) -- the color used for all cellborders
                                                    , Html.Border 0  -- 0 = no border
-                                                   , CellBorder 1  
+                                                   , CellBorder 1
                                                    , CellSpacing 0
                                                    ]
                                 , tableRows      = [ Cells -- Header row, containing the name of the class
-                                                      [ LabelCell 
+                                                      [ LabelCell
                                                             [ Html.BGColor (X11Color Gray10)
                                                             , Html.Color   (X11Color Black)
                                                             ]
                                                             (Html.Text [ Html.Font [ Html.Color   (X11Color White)
-                                                                                 ]                                                            
+                                                                                 ]
                                                                                  [Html.Str (fromString (name cl))]
                                                                       ]
                                                             )
                                                       ]
-                                                   ]++ 
+                                                   ]++
                                                    map attrib2row (clAtts cl) ++
-                                                   map method2row (clMths cl) 
-                                                   
-                                                   
-                                } 
+                                                   map method2row (clMths cl)
+
+                                }
                  where
                    attrib2row a = Cells
                                     [ Html.LabelCell [ Html.Align HLeft
                                                      , (Port .PN .fromString) (attNm a)
-                                                     ] 
+                                                     ]
                                          ( Html.Text [ Html.Str (fromString (if attOptional a then "o " else "+ "))
                                                      , Html.Str (fromString (name a))
                                                      , Html.Str (fromString " : ")
                                                      , Html.Str (fromString (attTyp a))
                                                      ]
-                                         ) 
+                                         )
                                     ]
                    method2row m = Cells
-                                    [ Html.LabelCell [ Html.Align HLeft] 
+                                    [ Html.LabelCell [ Html.Align HLeft]
                                          ( Html.Text [ Html.Str (fromString "+ ")
                                                      , Html.Str (fromString (show m))
                                                      ]
-                                         ) 
+                                         )
                                     ]
-                    
+
           nonClass2node :: String -> DotNode String
           nonClass2node str = DotNode { nodeID = str
                                       , nodeAttributes = [ Shape Box3D
                                                          , Label (StrLabel (fromString str))
                                                          ]
                                       }
-          
+
   -------------------------------
   --        ASSOCIATIONS:      --
   -------------------------------
           association2edge :: Association -> DotEdge String
-          association2edge ass = 
+          association2edge ass =
              DotEdge { fromNode       = (case assSrc ass of
                                           Left c  -> name c
                                           Right s -> s)
@@ -361,7 +354,7 @@ where
                  mult2Str (Mult MinZero MaxMany) = "*"
                  mult2Str (Mult MinOne  MaxOne)  = "1"
                  mult2Str (Mult MinOne  MaxMany) = "1-*"
-                  
+
   -------------------------------
   --        AGGREGATIONS:      --
   -------------------------------
@@ -370,19 +363,17 @@ where
              DotEdge { fromNode       = (name.aggSrc) agg
                      , toNode         = (name.aggTgt) agg
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod (case aggDel agg of 
+                                        , ArrowTail (AType [(ArrMod (case aggDel agg of
                                                                       Open -> OpenArrow
                                                                       Close -> FilledArrow
                                                                     ) BothSides , Diamond)
-                                                           ]) 
+                                                           ])
                                         ]
                      }
-                 
- 
- 
+
   -------------------------------
   --        GENERALIZATIONS:   --       -- Ampersand statements such as "GEN Dolphin ISA Animal" are called generalization.
-  --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead 
+  --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
   -------------------------------
           generalization2edges :: Generalization -> [DotEdge String]
           generalization2edges ooGen = sub2edges (genAgen ooGen)
@@ -390,18 +381,18 @@ where
              sub2edges gen
               = [DotEdge { fromNode = name spec
                          , toNode   = name gener
-                         , edgeAttributes 
+                         , edgeAttributes
                                     = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
                                       , ArrowSize  2.0
                                       ] ++
-                                      ( if blackWhite flags
+                                      ( if blackWhite opts
                                         then [Style [SItem Dashed []]]
                                         else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                       )
                          }
                 | (spec,gener)<-splits gen]
-             splits gen = case gen of 
+             splits gen = case gen of
                                   Isa{} -> [(genspc gen, gengen gen)]
                                   IsE{} -> [(genspc gen, x ) | x<-(genrhs gen)]
 
@@ -415,7 +406,7 @@ where
                             deriving Show
    instance Identified ClassDiag where
       name = cdName
-        
+
    data Class          = OOClass  { clName :: String          -- ^ name of the class
                                   , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
                                   , clAtts :: [CdAttribute]   -- ^ Attributes of the class
@@ -430,11 +421,11 @@ where
    instance Identified CdAttribute where
       name = attNm
    data MinValue = MinZero | MinOne deriving (Show, Eq)
-   
+
    data MaxValue = MaxOne | MaxMany deriving (Show, Eq)
-   
+
    data Multiplicities = Mult MinValue MaxValue deriving Show
-   
+
    data Association    = OOAssoc  { assSrc :: Either A_Concept String -- ^ source: the left hand side class. In case of a link table, the name of that table.
                                   , assSrcPort :: String       -- ^ the name of the field in the source table
                                   , asslhm :: Multiplicities   -- ^ left hand side multiplicities
@@ -443,14 +434,12 @@ where
                                   , assrhm :: Multiplicities   -- ^ right hand side multiplicities
                                   , assrhr :: String           -- ^ right hand side role
                                   }  deriving Show
-   data Aggregation    = OOAggr   { aggDel :: Deleting         -- 
+   data Aggregation    = OOAggr   { aggDel :: Deleting         --
                                   , aggSrc :: A_Concept           --
                                   , aggTgt :: A_Concept           --
                                   } deriving (Show, Eq)
    data Generalization = OOGener  { genAgen :: A_Gen             --
                                   } deriving (Show)
-
-
 
    data Deleting       = Open | Close                      --
                                     deriving (Show, Eq)

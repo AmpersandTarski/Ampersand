@@ -9,14 +9,14 @@ module Database.Design.Ampersand.Fspec.Plug
      ,SqlType(..)
      ,showSQL
      ,requiredFields,requires,plugpath,eLkpTbl
-     
+
      ,tblcontents
      ,fldauto
      ,isPlugIndex,kernelrels,attrels,bijectivefields
      ,PlugSQL(..)
      )
 where
-import Database.Design.Ampersand.ADL1 
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes (fullContents,atomsOf,Relational(..))
 import Database.Design.Ampersand.Basics
 import Data.List(nub,transpose)
@@ -46,12 +46,10 @@ fatal = fatalMsg "Fspec.Plug"
 
 class (Identified p, Eq p, Show p) => Plugable p where
   makePlug :: PlugInfo -> p
-  
+
 instance Plugable PlugSQL where
   makePlug (InternalPlug p) = p
   makePlug (ExternalPlug _) = fatal 112 "external plug is not Plugable"
- 
-
 
 ----------------------------------------------
 --PlugSQL
@@ -76,7 +74,7 @@ instance Plugable PlugSQL where
 --                  with ID    -> there will always be one or more kernel field k1 such that (value;(fldexpr k1)~)[UNI,INJ,TOT,SUR].
 --                                any of those k1 can serve as ID of the plug (a.k.a. concept p / source p)
 --                  without ID -> any of those k1 can still serve as ID of the plug (a.k.a. concept p / source p)
---               In other words, the imaginary concept is never needed 
+--               In other words, the imaginary concept is never needed
 --                               because there always is an existing one with the correct properties by definition of kernel.
 --               Implementation without optional ID:
 --                        -> fldexpr of some kernel field k1 will be r~
@@ -98,24 +96,23 @@ instance Plugable PlugSQL where
 --                                            sqlRelFields r = (r,idfld/\r;r~,idfld;m1) where r = (idfld/\r;r~)~;idfld;(fldexpr m1)
 --                                            (sqlRelFields r~  to get the target of r)
 --                                            (scalar tables can of course also have an ID field)
---                           option2) sqlRelFields e = (e, k1;k2;..kn, a1) 
+--                           option2) sqlRelFields e = (e, k1;k2;..kn, a1)
 --                                    where e=(fldexpr kn)~;..;(fldexpr k2)~;(fldexpr k1)~;(fldexpr k1)(fldexpr k2);..;(fldexpr kn);(fldexpr a1)
 --                           If I am right the function isTrue tries to support sqlRelFields e by ignoring the type error in kn;a1.
---                           That is wrong! 
+--                           That is wrong!
 
 --the entityfield is not implemented as part of the data type PlugSQL
 --It is a constant which may or may not be used (you may always imagine it)
 --TODO151210 -> generate the entityfield if options = --autoid -p
---REMARK151210 -> one would expect I[entityconcept p], 
+--REMARK151210 -> one would expect I[entityconcept p],
 --                but any p (as instance of Object) has one always existing concept p suitable to replace entityconcept p.
 --                concept p and entityconcept p are related uni,tot,inj,sur.
 
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 
-
 --Maintain rule: Object ObjectDef = Object (makeUserDefinedSqlPlug :: ObjectDef -> PlugSQL)
---TODO151210 -> Build a check which checks this rule for userdefined/showADL generated plugs(::[ObjectDef]) 
+--TODO151210 -> Build a check which checks this rule for userdefined/showADL generated plugs(::[ObjectDef])
 --TODO151210 -> The ObjectDef of a BinSQL plug for relation r is that:
 --           1) SQLPLUG mybinplug: r      , or
 --           2) SQLPLUG labelforsourcem : I /\ r;r~ --(or just I if r is TOT)
@@ -130,7 +127,7 @@ instance Object PlugSQL where
                             --to be able to point out one concept to be the source we are looking for one without NULLs in its field
                             -- i.e. there is a concept A such that
                             --      for all kernel field expr (s~)::B*C[UNI,INJ]:
-                            --      s~ is total and there exists an expr::A*B[UNI,INJ,TOT,SUR] (possibly A=B => I[A][UNI,INJ,TOT,SUR]) 
+                            --      s~ is total and there exists an expr::A*B[UNI,INJ,TOT,SUR] (possibly A=B => I[A][UNI,INJ,TOT,SUR])
                             --If A is such a concept,
                             --   and A is not B,
                             --   and there exist an expr::A*B[UNI,INJ,TOT,SUR]
@@ -141,7 +138,7 @@ instance Object PlugSQL where
    ScalarSQL{} -> cLkp p
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
  attributes p@TblSQL{}
-  = [ Obj (fldname tFld)                                                   -- objnm 
+  = [ Obj (fldname tFld)                                                   -- objnm
           (Origin "This object is generated by attributes (Object PlugSQL)")                        -- objpos
           (if source a==concept p then a  else f (source a) [[a]])  -- objctx
           Nothing []                                                            -- objats and objstrs
@@ -156,20 +153,18 @@ instance Object PlugSQL where
                             [] -> foldr1 (.:.) hd  -- pick the shortest path and turn it into an expression.
                             lrs -> fatal 204 ("illegal compositions " ++show lrs)
       where
-        mms' = if [] `elem` mms 
+        mms' = if [] `elem` mms
                then fatal 295 "null in mms."
                else [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
         stop = if [] `elem` mms'
                then fatal 298 "null in mms'."
-               else [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
+               else [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a
  attributes _ = [] --no attributes for BinSQL and ScalarSQL
- contextOf p@BinSQL{} = mLkp p 
+ contextOf p@BinSQL{} = mLkp p
  contextOf p = EDcI (concept p)
-
 
 fldauto::SqlField->Bool -- is the field auto increment?
 fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f -- && isIdent (fldexpr f)
-
 
 showSQL :: SqlType -> String
 showSQL (SQLChar    n) = "CHAR("++show n++")"
@@ -183,21 +178,21 @@ showSQL (SQLsInt    n) = "INT("++show n++")"
 showSQL (SQLId       ) = "INT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLBool     ) = "BOOLEAN"
-          
+
 -- Every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL (which has one column only)
 -- isPlugIndex refers to UNIQUE key -- TODO: this is wrong
 --isPlugIndex may contain NULL, but their key (the entityfield of the plug) must be unique for a kernel field (isPlugIndex=True)
 --the field that is isIdent and isPlugIndex (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE key
 --IdentityDefs define UNIQUE key (fld1,fld2,..,fldn)
---REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is 
+--REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is
 --          thus I must check whether fldexpr isUni && isInj && isSur
 isPlugIndex :: PlugSQL->SqlField->Bool
 isPlugIndex plug f =
-  case plug of 
+  case plug of
     ScalarSQL{} -> sqlColumn plug==f
     BinSQL{}  --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\r;r~=I i.e. a key for this plug
      | isUni(mLkp plug) || isInj(mLkp plug) -> fatal 366 "BinSQL may not store a univalent or injective rel, use TblSQL instead."
-     | otherwise                            -> False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
+     | otherwise                            -> False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug))
     TblSQL{}    -> elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
 
 --mLkpTbl stores the relation of some target field with one source field
@@ -206,13 +201,11 @@ isPlugIndex plug f =
 kernelrels::PlugSQL ->[(SqlField,SqlField)]
 kernelrels plug@ScalarSQL{} = [(sqlColumn plug,sqlColumn plug)]
 kernelrels (BinSQL{})       = fatal 375 "Binary plugs do not know the concept of kernel fields."
-kernelrels plug@TblSQL{}    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,isPlugIndex plug tfld] 
+kernelrels plug@TblSQL{}    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,isPlugIndex plug tfld]
 attrels::PlugSQL ->[(SqlField,SqlField)]
 attrels plug@ScalarSQL{}    = [(sqlColumn plug,sqlColumn plug)]
 attrels BinSQL{}            = fatal 379 "Binary plugs do not know the concept of attribute fields."
-attrels plug@TblSQL{}       = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(isPlugIndex plug tfld)] 
-
-
+attrels plug@TblSQL{}       = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(isPlugIndex plug tfld)]
 
 --the kernel of SqlFields is ordered by existence of elements for some instance of the entity stored in the plug.
 --fldexpr of key is the relation with a similar or larger key.
@@ -228,21 +221,21 @@ attrels plug@TblSQL{}       = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(isPl
 requiredFields :: PlugSQL -> SqlField ->[SqlField]
 requiredFields plug@ScalarSQL{} _ = [sqlColumn plug]
 requiredFields plug@BinSQL{}    _ = [fst(columns plug),snd(columns plug)]
-requiredFields plug@TblSQL{} fld 
- = [f |f<-requiredkeys++requiredatts, not (fldauto f)] 
+requiredFields plug@TblSQL{} fld
+ = [f |f<-requiredkeys++requiredatts, not (fldauto f)]
   where
   kfld | null findfld = fatal 401 $ "fld "++fldname fld++" must be in the plug "++name plug++"."
        | isPlugIndex plug fld = fld
        | otherwise = fst(head findfld) --fld is an attribute field, take its kernel field
   findfld = [(k,maybek) |(_,k,maybek)<-mLkpTbl plug,fld==maybek]
-  requiredkeys = similar++requiredup 
+  requiredkeys = similar++requiredup
   requiredatts = [a |k<-requiredkeys,(k',a)<-attrels plug,k==k',isTot(fldexpr a)]
   -----------
   --kernelclusters is a list of kernel field clusters clustered by similarity
   --similar is the cluster where kfld is in
   similar = [c |Cluster cs<-kernelclusters plug,kfld `elem` cs,c<-cs]
   --the kernel fields in which a similar field is included, but not a similar field
-  --(clusterBy includeskey [Cluster [x]] (kernelrels plug) returns one inclusion chain (cluster) from ID to x 
+  --(clusterBy includeskey [Cluster [x]] (kernelrels plug) returns one inclusion chain (cluster) from ID to x
   --Thus, similar elements of elements in the chain (except x) are not taken into account yet (see similarskeysup and requiredup)
   keysup = nub[rf |x<-similar
                   ,cs<-map cslist(clusterBy includeskey [Cluster [x]] (kernelrels plug))
@@ -251,7 +244,7 @@ requiredFields plug@TblSQL{} fld
   --there can be a key1 similar to a key2 in keysup, but key1 is not in keysup.
   --key1 is required just like key2 because they are similar
   similarskeysup = nub[key1 | Cluster cs<-kernelclusters plug
-                            , key1<-cs 
+                            , key1<-cs
                             , key2<-keysup
                             , key2 `elem` cs
                             , key1 `notElem` keysup]
@@ -269,14 +262,14 @@ composeCheck :: Expression -> Expression -> Expression
 composeCheck l r
  = if target l/=source r then fatal 316 ("\nl: "++show l++"with target "++show (target l)++"\nl: "++show r++"with source "++show (source r)) else
    l .:. r
- 
+
 --composition from srcfld to trgfld, if there is an expression for that
 plugpath :: PlugSQL -> SqlField -> SqlField -> Maybe Expression
 plugpath p srcfld trgfld =
  case p of
   BinSQL{}
    | srcfld==trgfld -> let tm=mLkp p --(note: mLkp p is the relation from fst to snd column of BinSQL)
-                       in if srcfld==fst(columns p) 
+                       in if srcfld==fst(columns p)
                           then Just$ tm .:. flp tm --domain of r
                           else Just$ flp tm .:. tm --codomain of r
    | srcfld==fst(columns p) && trgfld==snd(columns p) -> Just$ fldexpr trgfld
@@ -285,7 +278,7 @@ plugpath p srcfld trgfld =
   ScalarSQL{}
    | srcfld==trgfld -> Just$ fldexpr trgfld
    | otherwise -> fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
-  TblSQL{}  
+  TblSQL{}
    | srcfld==trgfld && isPlugIndex p trgfld -> Just$ EDcI (target (fldexpr trgfld))
    | srcfld==trgfld && not(isPlugIndex p trgfld) -> Just$ composeCheck (flp (fldexpr srcfld)) (fldexpr trgfld) --codomain of r of morAtt
    | (not . null) (paths srcfld trgfld)
@@ -304,12 +297,12 @@ plugpath p srcfld trgfld =
   where
   paths s t = [e |(e,es,et)<-eLkpTbl p,s==es,t==et]
   --paths from I to field t
-  pathsfromIs t = [(e,es,et) |(e,es,et)<-eLkpTbl p,et==t,not (null e),isIdent(head e)] 
+  pathsfromIs t = [(e,es,et) |(e,es,et)<-eLkpTbl p,et==t,not (null e),isIdent(head e)]
   --paths from s to t over I[X]
-  pathsoverIs s t = [flpsrce++tail trge 
+  pathsoverIs s t = [flpsrce++tail trge
                     |(srce,srces,_)<-pathsfromIs s
                     ,(trge,trges,_)<-pathsfromIs t
-                    ,srces==trges, let flpsrce = (map flp.reverse.tail) srce] 
+                    ,srces==trges, let flpsrce = (map flp.reverse.tail) srce]
 
 --the expression LkpTbl of a plug is the transitive closure of the mLkpTbl of the plug
 --Warshall's transitive closure algorithm clos1 :: (Eq a) => [(a,a)] -> [(a,a)] is extended to combine paths i.e. r++r'
@@ -346,8 +339,8 @@ includeskey (_,t) = not(isTot (fldexpr t)) && isSur (fldexpr t) && isInj (fldexp
 --clusterBy clusters similar items like eqClass clusters equal items
 --[(a,a)] defines flat relations between items (not closed)
 --((a,a) -> Bool) defines some transitive relation between two items (for example similarity, equality, inclusion)
---[Cluster a] defines the initial set of clusters which may be [] 
---            EXAMPLE USE -> 
+--[Cluster a] defines the initial set of clusters which may be []
+--            EXAMPLE USE ->
 --            if the relation is not symmetric and you need one chain from x to the top
 --            then set [Cluster [x]]
 --            (note: ClusterBy does not take into account any other relation than the one provided!)
@@ -359,20 +352,19 @@ cslist :: Cluster a -> [a]
 cslist (Cluster xs) = xs
 clusterBy :: (Show a,Eq a) => ((a,a) -> Bool) -> [Cluster a] -> [(a,a)] -> [Cluster a]
 clusterBy f [] xs = clusterBy f [Cluster [b] |(_,b)<-xs] xs --initial clusters, for every target there will be a cluster at first (see mergeclusters)
-clusterBy f cs xs  
-   | cs==nxtrun = mergeclusters cs 
+clusterBy f cs xs
+   | cs==nxtrun = mergeclusters cs
    | otherwise = clusterBy f (mergeclusters nxtrun) xs
-   where 
+   where
    nxtrun = [Cluster (addtohead (head ys)++ys) |Cluster ys<-cs, not(null ys)]
-   addtohead y =[fst x | x<-xs, snd x==y, f x] --if x=(fst x);y and (f x), then fst x is chained to y 
+   addtohead y =[fst x | x<-xs, snd x==y, f x] --if x=(fst x);y and (f x), then fst x is chained to y
    --we can merge clusters with equal heads, because
    -- + similar things are chained to the head of the cluster
    -- + and the head of mergeclusters == head of every cluster in cs' because we mergecluster each time we add one thing to the head of some cluster
-   mergeclusters cs' = [Cluster (nub(concat cl)) |cl<-eqClass eqhead (map cslist cs')] 
-   eqhead c1 c2 
+   mergeclusters cs' = [Cluster (nub(concat cl)) |cl<-eqClass eqhead (map cslist cs')]
+   eqhead c1 c2
      | null (c1++c2) = fatal 547 "clusters are not expected to be empty at this point."
      | otherwise = head c1==head c2
-
 
 -- | tblcontents is meant to compute the contents of an entity table.
 --   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.
@@ -384,7 +376,7 @@ tblcontents gens udp plug@BinSQL{}
    = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gens udp (mLkp plug)]
 tblcontents gens udp plug@TblSQL{}
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
- --fields are assumed to be in the order kernel+other, 
+ --fields are assumed to be in the order kernel+other,
  --where NULL in a kernel field implies NULL in the following kernel fields
  --and the first field is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different

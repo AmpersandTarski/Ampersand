@@ -8,10 +8,9 @@ module Database.Design.Ampersand.Misc.Languages
    import Data.Char (toLower)
    import Data.List (isSuffixOf)
    import Database.Design.Ampersand.Core.ParseTree      (Lang(..))
-   
+
    allLangs :: [Lang]
    allLangs = [Dutch,English] -- All supported natural languages in Ampersand
-
 
    -- | Returns the plural of a given word based on a specific language
    plural :: Lang -> String -> String

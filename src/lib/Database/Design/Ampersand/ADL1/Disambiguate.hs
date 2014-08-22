@@ -203,7 +203,7 @@ pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc
     = case pc of
         PCpt{} -> findConcept (p_cptnm pc)
-        P_Singleton -> ONE   
+        P_Singleton -> ONE
 
 data Change a = Change a Bool
 instance Functor Change where

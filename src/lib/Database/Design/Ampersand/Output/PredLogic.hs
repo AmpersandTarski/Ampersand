@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
 module Database.Design.Ampersand.Output.PredLogic
            ( PredLogicShow(..), showLatex, mkVar
-           ) 
+           )
    where
 
    import Data.List
@@ -16,8 +16,8 @@ module Database.Design.Ampersand.Output.PredLogic
    fatal :: Int -> String -> a
    fatal = fatalMsg "Output.PredLogic"
 
- --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO. 
-   data PredLogic       
+ --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
+   data PredLogic
     = Forall [Var] PredLogic            |
       Exists [Var] PredLogic            |
       Implies PredLogic PredLogic       |
@@ -36,13 +36,13 @@ module Database.Design.Ampersand.Output.PredLogic
 
    data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
 
---   predKeyWords l = 
+--   predKeyWords l =
 --     case l of
---        English  -> 
+--        English  ->
 
    class PredLogicShow a where
      showPredLogic :: Lang -> a -> String
-     showPredLogic l r =  
+     showPredLogic l r =
        predLshow (natLangOps l) (toPredLogic r) -- predLshow produces raw LaTeX
      toPredLogic :: a -> PredLogic
 
@@ -51,7 +51,6 @@ module Database.Design.Ampersand.Output.PredLogic
 
    instance PredLogicShow Expression where
      toPredLogic = assemble
-
 
 -- showLatex ought to produce PandDoc mathematics instead of LaTeX source code.
 -- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
@@ -72,7 +71,7 @@ module Database.Design.Ampersand.Output.PredLogic
                  _        -> lhs++"\\ \\id{"++latexEscShw (name r)++"}\\ "++rhs
             fun r e = "\\id{"++latexEscShw (name r)++"}("++e++")"
             implies antc cons = antc++" \\Rightarrow "++cons
-            apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. 
+            apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken.
             apply decl d c =
                case decl of
                  Sgn{}     -> d++"\\ \\id{"++latexEscShw (name decl)++"}\\ "++c
@@ -121,36 +120,36 @@ module Database.Design.Ampersand.Output.PredLogic
                where
                   rel r = apply r
                   fun r x' = texOnly_Id(name r)++"("++x'++")"
-                  implies antc cons = case l of 
+                  implies antc cons = case l of
                                         English  -> "If "++antc++", then "++cons
                                         Dutch    -> "Als "++antc++", dan "++cons
                   apply decl d c =
                      case decl of
-                       Sgn{}     -> if null (prL++prM++prR) 
+                       Sgn{}     -> if null (prL++prM++prR)
                                       then "$"++d++"$ "++decnm decl++" $"++c++"$"
                                       else prL++" $"++d++"$ "++prM++" $"++c++"$ "++prR
                           where prL = decprL decl
                                 prM = decprM decl
                                 prR = decprR decl
-                       Isn{}     -> case l of 
+                       Isn{}     -> case l of
                                         English  -> "$"++d++"$ equals $"++c++"$"
                                         Dutch    -> "$"++d++"$ is gelijk aan $"++c++"$"
-                       Vs{}      -> case l of 
+                       Vs{}      -> case l of
                                         English  -> show True
                                         Dutch    -> "Waar"
                   langVars :: String -> [(String, A_Concept)] -> String
                   langVars q vs
                       = case l of
                          English | null vs     -> ""
-                                 | q=="Exists" -> 
-                                     intercalate " and " 
+                                 | q=="Exists" ->
+                                     intercalate " and "
                                      ["there exist"
                                       ++(if length vs'==1 then "s a "++dType else ' ':plural English dType)
                                       ++" called "
                                       ++intercalate ", " ['$':v'++"$" | v'<-vs'] | (vs',dType)<-vss]
                                  | otherwise   -> "If "++langVars "Exists" vs++", "
                          Dutch   | null vs     -> ""
-                                 | q=="Er is"  -> 
+                                 | q=="Er is"  ->
                                      intercalate " en "
                                      ["er "
                                        ++(if length vs'==1 then "is een "++dType else "zijn "++plural Dutch dType)
@@ -192,11 +191,11 @@ module Database.Design.Ampersand.Output.PredLogic
                   Exists vars restr   -> wrap i 1 (showVarsP existsP vars  ++ charshow 1 restr)
                   Implies antc conseq -> wrap i 2 (breakP++impliesP (charshow 2 antc) (charshow 2 conseq))
                   Equiv lhs rhs       -> wrap i 2 (breakP++charshow 2 lhs++spaceP++equivP++spaceP++ charshow 2 rhs)
-                  Disj rs             -> if null rs 
-                                         then "" 
+                  Disj rs             -> if null rs
+                                         then ""
                                          else wrap i 3 (intercalate (spaceP++orP ++spaceP) (map (charshow 3) rs))
-                  Conj rs             -> if null rs 
-                                         then "" 
+                  Conj rs             -> if null rs
+                                         then ""
                                          else wrap i 4 (intercalate (spaceP++andP++spaceP) (map (charshow 4) rs))
                   Funs x ls           -> case ls of
                                             []    -> x
@@ -351,7 +350,7 @@ module Database.Design.Ampersand.Output.PredLogic
       mkvar _ [] = []
 
       fERad :: [Var] -> Expression -> (Var,Var) -> PredLogic
-      fERad exclVars e (a,b) 
+      fERad exclVars e (a,b)
         | and[isCpl e' |e'<-es] = f exclVars (deMorganERad e) (a,b)                      -- e.g.  -r!-s!-t
         | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b)  -- e.g.  -r!-s! t  antr cannot be empty, because isCpl (head es) is True; conr cannot be empty, because es has an element that is not isCpl.
         | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b)  -- e.g.   r!-s!-t  antl cannot be empty, because isCpl (head es) is True; conl cannot be empty, because es has an element that is not isCpl.
@@ -404,9 +403,9 @@ module Database.Design.Ampersand.Output.PredLogic
             EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t'])
             EMp1 atom _     -> \_ _->Atom atom
             EFlp EMp1{}     -> relFun exclVars lhs e rhs
-            _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
+            _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)
 
-      pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)] 
+      pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
       pars3 exclVars (lhs: [e]: rhs: ts)
        | denotes lhs==Flr && denote e==Rn && denotes rhs==Frl
           = ( relFun exclVars lhs e rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
@@ -450,7 +449,7 @@ module Database.Design.Ampersand.Output.PredLogic
            | null([Uni,Inj,Tot,Sur] >- multiplicities d)  -> Rn
            | isUni d && isTot d                           -> Flr
            | isInj d && isSur d                           -> Frl
-           | otherwise                                    -> Rn 
+           | otherwise                                    -> Rn
          _                                                -> Rn
       denotes :: [Expression] -> Notation
       denotes = denote . head
@@ -462,17 +461,16 @@ module Database.Design.Ampersand.Output.PredLogic
        = --if denote e `eq` Wrap      then (e:spl):spls else
          if denote e `eq` denote e' then (e:spl):spls else
                                          [e]:spl:spls
-         where 
+         where
            spl:spls = split (e':es)
            Flr `eq` Flr = True
            Frl `eq` Frl = True
            _ `eq` _     = False
 
-        
 -- mkVar is bedoeld om nieuwe variabelen te genereren, gegeven een set (ex) van reeds vergeven variabelen.
 -- mkVar garandeert dat het resultaat niet in ex voorkomt, dus postconditie:   not (mkVar ex cs `elem` ex)
 -- Dat gebeurt door het toevoegen van apostrofes.
-   mkVar :: [Var] -> [A_Concept] -> [Var]  
+   mkVar :: [Var] -> [A_Concept] -> [Var]
    mkVar ex cs = mknew (map fst ex) [([(toLower.head.(++"x").name) c],c) |c<-cs]
     where
      mknew _ [] = []

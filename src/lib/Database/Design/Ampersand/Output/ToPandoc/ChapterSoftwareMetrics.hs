@@ -2,22 +2,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 --import Database.Design.Ampersand.Output.Statistics (Statistics(..))
 --import Database.Design.Ampersand.Output.PandocAux
-
 
 ------------------ Function Point Analysis --------------------
 -- TODO: Engels en Nederlands netjes scheiden.
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
-fpAnalysis :: Fspc -> Options ->  Blocks
-fpAnalysis _ _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
- where 
+fpAnalysis :: Fspc -> Blocks
+fpAnalysis _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
+ where
 --  header :: Blocks
 --  header = chptHeader (fsLang fSpec) SoftwareMetrics
 --  caIntro :: [Block]
---  caIntro = 
+--  caIntro =
 --   case fsLang fSpec of
 --      Dutch   -> [Para
 --                  [ Str "De specificatie van "
@@ -35,7 +34,7 @@ fpAnalysis _ _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2
 --                  , Str ". "
 --                  , Str $ "This has resulted in an estimated total of "++(show.nFpoints) fSpec++" function points."
 --                  ]]
---   
+--
 --
 --  fpa2Blocks' :: [Block]
 --  fpa2Blocks' = []
@@ -70,5 +69,5 @@ fpAnalysis _ _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2
 --               , [Plain [(Str . show . fPoints . actFPA) act]]]
 --             | act<-fActivities fSpec
 --             ]
---     ]            
+--     ]
 

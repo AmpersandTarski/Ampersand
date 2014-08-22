@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Fspec.FPA 
+module Database.Design.Ampersand.Fspec.FPA
     (FPAble(..)
     )
 where
-   
+
 import Database.Design.Ampersand.Misc (Lang(..))
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Fspec.Fspec
@@ -13,42 +13,41 @@ import Database.Design.Ampersand.Basics
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.Calc"
 
-
 class FPAble a where
   fpa :: a->FPA
   fPoints :: a ->Int
   fPoints x = fPoints'(fpa x)
   showFPA :: Lang -> a -> String
   showFPA l x = showLang l (fpa x)
-   
+
 instance FPAble PlugSQL where
-  fpa x = FPA 
+  fpa x = FPA
     ILGV -- It is assumed that all persistent storage of information is done withing the scope of the system.
     $
     case x of
       TblSQL{}    | (length.fields) x < 2 -> Eenvoudig
                   | (length.fields) x < 6 -> Gemiddeld
-                  | otherwise             -> Moeilijk 
+                  | otherwise             -> Moeilijk
       BinSQL{}    -> Gemiddeld
-      ScalarSQL{} -> Eenvoudig  
+      ScalarSQL{} -> Eenvoudig
 
 instance FPAble Interface where
-  fpa x 
-     | (not.null.ifcParams) x  = FPA IF complxy  -- In case there are editeble relations, this must be an import function. 
-     | (isUni.objctx.ifcObj) x = FPA OF complxy  -- If there is max one atom, this is a simple function. 
+  fpa x
+     | (not.null.ifcParams) x  = FPA IF complxy  -- In case there are editeble relations, this must be an import function.
+     | (isUni.objctx.ifcObj) x = FPA OF complxy  -- If there is max one atom, this is a simple function.
      | otherwise               = FPA UF complxy  -- Otherwise, it is a UF
-   
-    where 
+
+    where
       complxy = case depth (ifcObj x) of
                    0 -> Eenvoudig
                    1 -> Eenvoudig
                    2 -> Gemiddeld
-                   _ -> Moeilijk 
+                   _ -> Moeilijk
       depth :: ObjectDef -> Int
       depth Obj{objmsub=Nothing} = 0
       depth Obj{objmsub=Just si}
          = case si of
-             Box _ os       -> 1 + maximum (map depth os) 
+             Box _ os       -> 1 + maximum (map depth os)
              InterfaceRef{} -> 1
 
 instance FPAble PlugInfo where
@@ -73,13 +72,11 @@ instance ShowLang FPtype where
  showLang English IF   = "EI"  -- External Input
  showLang English UF   = "EO"  -- External Output
  showLang English OF   = "EQ"  -- External inQuiry
- 
+
 instance ShowLang FPA where
  showLang lang x = showLang lang (fpType x)++" "++showLang lang (complexity x)
-                  
- 
 
--- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL) 
+-- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL)
 fPoints' :: FPA -> Int
 fPoints' (FPA ILGV Eenvoudig) = 7
 fPoints' (FPA ILGV Gemiddeld) = 10
@@ -96,5 +93,4 @@ fPoints' (FPA UF   Moeilijk ) = 7
 fPoints' (FPA OF   Eenvoudig) = 3
 fPoints' (FPA OF   Gemiddeld) = 4
 fPoints' (FPA OF   Moeilijk ) = 6
-   
 

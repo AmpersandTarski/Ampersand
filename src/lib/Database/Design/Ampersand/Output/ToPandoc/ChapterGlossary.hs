@@ -3,15 +3,14 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters 
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 
-
-chpGlossary :: Int -> Fspc -> Options ->  Blocks
-chpGlossary _ fSpec flags
+chpGlossary :: Int -> Fspc ->  Blocks
+chpGlossary _ fSpec
  = fromList $
-   if fspecFormat flags==FLatex
+   if fspecFormat (flags fSpec)==FLatex
    then [ Para [RawInline (Format "latex") "\\printglossaries"] ]
    else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
           ( case fsLang fSpec of
