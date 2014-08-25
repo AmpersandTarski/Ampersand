@@ -226,33 +226,33 @@ each opts = [o |(o,_) <- opts]
 type OptionDef = OptDescr (Options -> IO Options)
 options :: [(OptionDef, DisplayMode) ]
 options = map pp
-          [ (Option "v"     ["version"]
+          [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{showVersion = True}))
                "show version and exit."
             , Public)
-          , (Option "h?"    ["help"]
+          , (Option ['h','?'] ["help"]
                (NoArg (\opts -> return opts{showHelp = True}))
                "get (this) usage information."
             , Public)
-          , (Option ""      ["verbose"]
+          , (Option ['V']   ["verbose"]
                (NoArg (\opts -> return opts{verboseP = True}))
                "verbose error message format."
             , Public)
-          , (Option ""      ["dev"]
+          , (Option []      ["dev"]
                (NoArg (\opts -> return opts{development = True}))
                "Report and generate extra development information"
             , Hidden)
-          , (Option ""      ["validate"]
+          , (Option []      ["validate"]
                (NoArg (\opts -> return opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
             , Hidden)
-          , (Option "p"     ["proto"]
+          , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> return opts {dirPrototype = fromMaybe (dirPrototype opts) nm
                                                   ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (overwrites environment variable "++ envdirPrototype ++ ").")
             , Public)
-          , (Option "d"     ["dbName"]
+          , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> return opts{dbName = if nm == ""
                                                            then baseName opts
                                                            else nm}
@@ -269,16 +269,16 @@ options = map pp
                         ) "THEME")
                "differentiate between certain outputs e.g. student"
             , Public)
-          , (Option "x"     ["interfaces"]
+          , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> return opts{allInterfaces  = True}))
                "generate interfaces."
             , Public)
-          , (Option "e"     ["export"]
+          , (Option ['e']     ["export"]
                (OptArg (\mbnm opts -> return opts{export2adl = True
                                                    ,outputfile = fromMaybe "Export.adl" mbnm}) "file")
                "export as plain Ampersand script."
             , Public)
-          , (Option "o"     ["outputDir"]
+          , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> return opts{dirOutput = nm}
                        ) "DIR")
                ("output directory (dir overwrites environment variable "++ envdirOutput ++ ").")
@@ -310,7 +310,7 @@ options = map pp
                        ) "NAMESPACE")
                "places the population in this namespace within the context."
             , Public)
-          , (Option "f"     ["fspec"]
+          , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> return opts
                                 { genFspec=True
                                 , fspecFormat= case map toUpper w of
@@ -458,7 +458,7 @@ options = map pp
                        ) "STR")
                "specify database password."
             , Hidden)
-          , (Option "on"     ["oldNormalizer"]
+          , (Option []        ["oldNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = True}))
                "use the old normalizer at your own risk."
             , Hidden)
