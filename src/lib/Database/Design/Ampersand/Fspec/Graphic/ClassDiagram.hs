@@ -246,25 +246,23 @@ where
     = DotGraph { strictGraph     = False
                , directedGraph   = True
                , graphID         = Nothing
-               , graphStatements = dotstmts
+               , graphStatements = 
+                       DotStmts
+                           { attrStmts =  [ GraphAttrs [ RankDir FromLeft
+                                                       , bgColor White]
+                                          ]
+                                   --    ++ [NodeAttrs  [ ]]
+                                       ++ [EdgeAttrs  [ FontSize 11
+                                                      , MinLen 4
+                                          ]           ]
+                           , subGraphs = []
+                           , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
+                           , edgeStmts = (map association2edge (assocs cd))  ++
+                                         (map aggregation2edge (aggrs cd))  ++
+                                         (concatMap generalization2edges (geners cd))
+                           }
                }
         where
-         dotstmts = DotStmts
-           { attrStmts =  [ GraphAttrs [ RankDir FromLeft
-                                       , bgColor White]
-                          ]
-                   --    ++ [NodeAttrs  [ ]]
-                       ++ [EdgeAttrs  [ FontSize 11
-                                      , MinLen 4
-                          ]           ]
-           , subGraphs = []
-           , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
-           , edgeStmts = (map association2edge (assocs cd))  ++
-                         (map aggregation2edge (aggrs cd))  ++
-                         (concatMap generalization2edges (geners cd))
-           }
-
-          where
           allNodes :: [Class] -> [String] -> [DotNode String]
           allNodes cs others =
              map class2node cs ++
@@ -372,15 +370,15 @@ where
                      }
 
   -------------------------------
-  --        GENERALIZATIONS:   --       -- Ampersand statements such as "GEN Dolphin ISA Animal" are called generalization.
+  --        GENERALIZATIONS:   --       -- Ampersand statements such as "SPEC Dolphin ISA Animal" are called generalization.
   --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
   -------------------------------
           generalization2edges :: Generalization -> [DotEdge String]
           generalization2edges ooGen = sub2edges (genAgen ooGen)
            where
              sub2edges gen
-              = [DotEdge { fromNode = name spec
-                         , toNode   = name gener
+              = [DotEdge { toNode   = name spec
+                         , fromNode = name gener
                          , edgeAttributes
                                     = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
