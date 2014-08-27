@@ -197,46 +197,44 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
         else case fsLang fSpec of
            Dutch   -> para (   text "Ieder(e) "
                             <> (emph.text.nm.assSrc) assoc
-                            <> let rel = (singleQuoted.text.assrhr) assoc
-                                   rel' = ""
-                               in (case assrhm assoc of
-                                     Mult MinZero MaxOne  -> " " <> rel <> " maximaal één "
-                                     Mult MinZero MaxMany -> " " <> rel <> " geen tot meerdere "
-                                     Mult MinOne  MaxOne  -> " moet " <> rel <> " precies één "
-                                     Mult MinOne  MaxMany -> " moet " <> rel <> " ten minste één "
-                                  )
+                            <> " " <> (singleQuoted.text.assrhr) assoc 
+                            <> (case assrhm assoc of
+                                     Mult MinZero MaxOne  -> " maximaal één "
+                                     Mult MinZero MaxMany -> " geen tot meerdere "
+                                     Mult MinOne  MaxOne  -> " precies één "
+                                     Mult MinOne  MaxMany -> " ten minste één "
+                               )
                             <> (emph.text.nm.assTgt) assoc
                             <>  ". Over deze relatie geldt omgekeerd dat "
                             <>  "ieder(e) "
                             <> (emph.text.nm.assTgt) assoc
                             <> (case asslhm assoc of
-                                     Mult MinZero MaxOne  -> " "  <> rel' <> " maximaal één "
-                                     Mult MinZero MaxMany -> " "  <> rel' <> " geen tot meerdere "
-                                     Mult MinOne  MaxOne  -> " moet " <> rel' <> " precies één "
-                                     Mult MinOne  MaxMany -> " moet " <> rel' <> " ten minste één "
+                                     Mult MinZero MaxOne  -> " maximaal één "
+                                     Mult MinZero MaxMany -> " geen tot meerdere "
+                                     Mult MinOne  MaxOne  -> " precies één "
+                                     Mult MinOne  MaxMany -> " ten minste één "
                                   )
                             <> (emph.text.nm.assSrc) assoc
                             <> " kan hebben."
                            )
            English -> para (   "Every "
                             <> (emph.text.nm.assSrc) assoc
-                            <> let rel = (singleQuoted.text.assrhr) assoc
-                                   rel' = ""
-                               in (case assrhm assoc of
-                                     Mult MinZero MaxOne  -> " "  <> rel <> " at most one "
-                                     Mult MinZero MaxMany -> " "  <> rel <> " zero or more "
-                                     Mult MinOne  MaxOne  -> " must " <> rel <> " exactly one "
-                                     Mult MinOne  MaxMany -> " must " <> rel <> " at least one "
-                                  )
+                            <> " " <> (singleQuoted.text.assrhr) assoc 
+                            <> (case assrhm assoc of
+                                     Mult MinZero MaxOne  -> " at most one "
+                                     Mult MinZero MaxMany -> " zero or more "
+                                     Mult MinOne  MaxOne  -> " exactly one "
+                                     Mult MinOne  MaxMany -> " at least one "
+                               )
                             <> (emph.text.nm.assTgt) assoc
                             <> ". For the other way round, for this relation holds that "
                             <> "each "
                             <> (emph.text.nm.assTgt) assoc
                             <> (case asslhm assoc of
-                                     Mult MinZero MaxOne  -> " "  <> rel' <> " at most one "
-                                     Mult MinZero MaxMany -> " "  <> rel' <> " zero or more "
-                                     Mult MinOne  MaxOne  -> " must " <> rel' <> " exactly one "
-                                     Mult MinOne  MaxMany -> " must " <> rel' <> " at least one "
+                                     Mult MinZero MaxOne  -> " at most one "
+                                     Mult MinZero MaxMany -> " zero or more "
+                                     Mult MinOne  MaxOne  -> " exactly one "
+                                     Mult MinOne  MaxMany -> " at least one "
                                   )
                             <> (emph.text.nm.assSrc) assoc
                             <> "."
