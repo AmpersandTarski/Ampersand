@@ -118,7 +118,7 @@ where
                         , attOptional = (not.isTot) r
                         }
       mults r = let minVal = if isTot r then MinOne else MinZero
-                    maxVal = if isInj r then MaxOne else MaxMany
+                    maxVal = if isUni r then MaxOne else MaxMany
                 in  Mult minVal maxVal
       allrels = [ EDcD r -- restricted to those themes that must be printed.
                 | r@Sgn{} <- (nub.concat)
@@ -227,7 +227,7 @@ where
                        , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
                        }
       mults r = let minVal = if isTot r then MinOne else MinZero
-                    maxVal = if isInj r then MaxOne else MaxMany
+                    maxVal = if isUni r then MaxOne else MaxMany
                 in  Mult minVal maxVal
 
 ---- In order to make classes, all relations that are univalent and injective are flipped
