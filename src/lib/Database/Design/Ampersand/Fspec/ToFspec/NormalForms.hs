@@ -1113,7 +1113,7 @@ Ideas for future work:
                        | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop | Nop{}<-ops] = (ALL [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
                        | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
-                       | (not.null) long    = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [name (paTo (head cl)) |cl<-long]++"together"])
+                       | (not.null) long    = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [(name . paTo . head) cl |cl<-long]++"together"])
                        | otherwise = (ALL ds ms, [])
                        where ds'     = [ let p=head cl in
                                            if length cl==1 then p else p{paDelta=disjNF opts (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
-    (makeFspec,allClauses, quads, preEmpt, editable)
+    (makeFspec,makeCjcts, quads, preEmpt, editable)
   where
    import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Database.Design.Ampersand.Core.Poset
@@ -62,8 +62,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , grules       = gRules
                  , invars       = invariants context
                  , allRules     = allrules
-                 , vconjs       = let equalOnConjunct a b = rc_conjunct a == rc_conjunct b
-                                  in nubBy equalOnConjunct (concatMap qClauses allQuads)
+                 , vconjs       = nub (concatMap qConjuncts allQuads)   -- note that equality on Conjunct a and b is defined as:  rc_conjunct a == rc_conjunct b
                  , vquads       = allQuads
                  , vEcas        = ( {-preEmpt opts . -} fst . assembleECAs) fSpec   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
@@ -133,7 +132,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs :: [Expression]
         totsurs
          = nub [rel | q<-quads opts visible (invariants context), isIdent (qDcl q)
-                    , x<-qClauses q, Dnf antcs conss<-rc_dnfClauses x
+                    , x<-qConjuncts q, Dnf antcs conss<-rc_dnfClauses x
                     , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
                     , cons<-map exprCps2list conss
@@ -408,19 +407,19 @@ while maintaining all invariants.
    quads opts visible rs
     = [ Quad { qDcl     = d
              , qRule    = rule
-             , qClauses = allClauses opts rule
+             , qConjuncts = makeCjcts opts rule
              }
       | rule<-rs, d<-relsUsedIn rule, visible d
       ]
 
--- The function allClauses yields an expression which has constructor EUni in every case.
-   allClauses :: Options -> Rule -> [RuleClause]
-   allClauses opts rule = [RC { rc_int = i
-                              , rc_rulename = name rule
-                              , rc_conjunct = dnf2expr dnfClause
-                              , rc_dnfClauses = allShifts opts dnfClause
-                              }
-                          | (dnfClause,i)<-zip (conjuncts opts rule) [0..] ]
+-- The function makeCjcts yields an expression which has constructor EUni in every case.
+   makeCjcts :: Options -> Rule -> [Conjunct]
+   makeCjcts opts rule = [Cjct { rc_int = i
+                               , rc_rulename = name rule
+                               , rc_conjunct = dnf2expr dnfClause
+                               , rc_dnfClauses = allShifts opts dnfClause
+                               }
+                         | (dnfClause,i)<-zip (conjuncts opts rule) [0..] ]
 
    allShifts :: Options -> DnfClause -> [DnfClause]
    allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
@@ -611,7 +610,7 @@ while maintaining all invariants.
         qs :: [Quad]
         qs        = quads (flags fSpec) visible (invariants fSpec)
         (ecas, _) = assembleECAs fSpec
-        conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qClauses q]
+        conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qConjuncts q]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
         eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]
         visible _ = True

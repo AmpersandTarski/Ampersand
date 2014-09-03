@@ -31,7 +31,7 @@ import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
 import Database.Design.Ampersand.Fspec.Graphic.Graphics
        (makePicture,writePicture,Picture(..), PictureReq(..),imagePath)
 import Database.Design.Ampersand.Fspec.ToFspec.Calc
-       (deriveProofs,showProof,showPrf)
+       (deriveProofs,showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc')
 import Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
        (makeFspec)
 import Database.Design.Ampersand.Fspec.ToFspec.NormalForms

@@ -28,7 +28,7 @@ module Database.Design.Ampersand.Fspec.Fspec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations
-          , RuleClause(..),DnfClause(..), dnf2expr
+          , Conjunct(..),DnfClause(..), dnf2expr
           )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -78,7 +78,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
-                 , vconjs ::       [RuleClause]             -- ^ All conjuncts generated (by ADL2Fspec)
+                 , vconjs ::       [Conjunct]             -- ^ All conjuncts generated (by ADL2Fspec)
                  , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
                  , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
                  , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -191,7 +191,7 @@ data Activity = Act { actRule ::   Rule
 instance Identified Activity where
   name act = name (actRule act)
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
---   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qClauses.
+--   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qConjuncts.
 --   The rule is taken along for traceability.
 
 instance ConceptStructure Activity where
@@ -201,8 +201,8 @@ instance ConceptStructure Activity where
 data Quad
      = Quad
           { qDcl ::     Declaration   -- The relation that, when affected, triggers a restore action.
-          , qRule ::    Rule          -- The rule from which qClauses is derived.
-          , qClauses :: [RuleClause]  -- The clauses
+          , qRule ::    Rule          -- The rule from which qConjuncts is derived.
+          , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
           } deriving Show
 
 instance Eq Quad where
@@ -280,13 +280,13 @@ dnf2expr (Dnf antcs conss)
     (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
     (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
-data RuleClause = RC { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
+data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
                      , rc_rulename   :: String -- the name of the rule
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving Show
 
-instance Eq RuleClause where
+instance Eq Conjunct where
  rc==rc' = rc_conjunct rc==rc_conjunct rc'
  
 data FPA = FPA { fpType :: FPtype

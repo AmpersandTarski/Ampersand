@@ -572,30 +572,6 @@ daBasicsSection lev fSpec = theBlocks
 
      ]
 -- the endo-properties have already been reported in the general section of this chapter.
-{-     where
---  voorgestelde multipliciteitenanalyse....
-      clauses = nub [clause | q<-vquads fSpec, (_,dnfClauses)<-qClauses q, clause<-dnfClauses]
-      is = nub [r | EUni fus<-clauses
-                  , isIdent (EIsc [notCpl f | f<-fus, isPos f] sgn)
-                  , f<-filter isNeg fus
-                  , s<-strands f
-                  , e<-[head s, flp (last s)]
-                  , r<-relsUsedIn e
-                ]
-      ts = nub [r | EUni fus<-clauses
-                  , isIdent (EIsc [notCpl f | f<-fus, isNeg f] sgn)
-                  , f<-filter isPos fus
-                  , s<-strands f
-                  , e<-[head s, flp (last s)]
-                  , r<-relsUsedIn e
-                  ]
-      strands (ECps fs) = [fs]
-      strands _      = []    -- <--  we could maybe do better than this...
-      tots = [d | t<-ts, inline t, d<-map makeDeclaration (relsUsedIn t)]
-      unis = [d | t<-is, inline t, d<-map makeDeclaration (relsUsedIn t)]
-      surs = [d | t<-ts, not (inline t), d<-map makeDeclaration (relsUsedIn t)]
-      injs = [d | t<-is, not (inline t), d<-map makeDeclaration (relsUsedIn t)]
--}
 
   -- daPlugs describes data sets.
   -- These can be recognized by:
@@ -711,7 +687,7 @@ daBasicsSection lev fSpec = theBlocks
           where irs = [ dnf2expr dc
                       | q<-vquads fSpec
                       , r_usr (qRule q)==UserDefined, isIdent (qDcl q), source (qDcl q) `elem` pcpts
-                      , x<-qClauses q
+                      , x<-qConjuncts q
                       , dc@(Dnf [EDcD nega] _)<-rc_dnfClauses x
                       , qDcl q==nega
                       ]
