@@ -176,8 +176,8 @@ data Event = On { eSrt :: InsDel
         fromRels     = nub (actTrig act)
         toRels :: [Declaration]
         toRels       = nub (actAffect act)
-        conjuncts    = nub [(cl_rule ccrs,c)
-                           | Quad _ ccrs<-actQuads act, c<- map rc_conjunct (cl_conjNF ccrs)]
+        conjuncts    = nub [ (qRule q,c)
+                           | q<-actQuads act, c<-(map rc_conjunct . qClauses) q]
         --DESCR -> The relations from which changes can come
         inMorNodes    = [ DotNode { nodeID         = nameINode fromRels r
                                   , nodeAttributes = [Label (StrLabel (fromString (showADL r)))]

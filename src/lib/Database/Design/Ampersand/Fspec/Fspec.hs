@@ -9,7 +9,7 @@ are merely different ways to show Fspc.
 -}
 module Database.Design.Ampersand.Fspec.Fspec
           ( Fspc(..), concDefs, Atom(..)
-          , Fswitchboard(..),  Clauses(..), Quad(..)
+          , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
           , InsDel(..)
           , ECArule(..)
@@ -191,7 +191,7 @@ data Activity = Act { actRule ::   Rule
 instance Identified Activity where
   name act = name (actRule act)
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
---   whenever qRel is affected (i.e. tuples in qRel are inserted or deleted), qRule may have to be restored using functionality from qClauses.
+--   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qClauses.
 --   The rule is taken along for traceability.
 
 instance ConceptStructure Activity where
@@ -200,9 +200,13 @@ instance ConceptStructure Activity where
 
 data Quad
      = Quad
-          { qDcl :: Declaration   -- The relation that, when affected, triggers a restore action.
-          , qClauses :: Clauses   -- The clauses
-          } deriving (Eq, Show)
+          { qDcl ::     Declaration   -- The relation that, when affected, triggers a restore action.
+          , qRule ::    Rule          -- The rule from which qClauses is derived.
+          , qClauses :: [RuleClause]  -- The clauses
+          } deriving Show
+
+instance Eq Quad where
+  q == q'  = qDcl q == qDcl q' && qRule q == qRule q'
 
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
@@ -210,7 +214,7 @@ instance Eq Activity where
 data InsDel   = Ins | Del
                  deriving (Show,Eq)
 data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is activated
-                  , ecaDelta :: Declaration  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
+                  , ecaDelta ::  Declaration  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
                   , ecaAction :: PAclause    -- The action to be taken when triggered.
                   , ecaNum :: Int            -- A unique number that identifies the ECArule within its scope.
                   }
@@ -255,9 +259,6 @@ data PAclause
               | Ref { paVar :: String
                     }
 
-   -- The data structure Clauses is meant for calculation purposes.
-   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, dnfClauses)<-cl_conjNF cl, disj<-[conj!!i]]
-   -- Every rule is transformed to this form, as a step to derive eca-rules
 instance Eq PAclause where
    CHC ds _ == CHC ds' _ = ds==ds'
    GCH ds _ == GCH ds' _ = ds==ds'
@@ -279,29 +280,15 @@ dnf2expr (Dnf antcs conss)
     (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
     (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
-data Clauses  = Clauses
-                  { cl_conjNF :: [RuleClause]   -- The list of pairs (conj, dnfClauses) in which conj is a conjunct of the rule
-                                                    -- and dnfClauses contains all derived expressions to be used for eca-rule construction.
-                  , cl_rule :: Rule -- The rule that is restored by this clause (for traceability purposes)
-                  } deriving Show
 data RuleClause = RC { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
                      , rc_rulename   :: String -- the name of the rule
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving Show
-instance Eq Clauses where
-  cl==cl' = cl_rule cl==cl_rule cl'
 
-{-
-   showClauses :: Fspc -> Clauses -> String
-   showClauses _ cl
-    = "\nRule: "++showADL (cl_rule cl) ++concat
-       [if null dnfClauses then "\nNo clauses" else
-        "\nConjunct: "++showADL conj++
-        concat ["\n   Clause: "++showADL clause | clause<-dnfClauses]
-       | (conj, dnfClauses)<-cl_conjNF cl]
--}
-
+instance Eq RuleClause where
+ rc==rc' = rc_conjunct rc==rc_conjunct rc'
+ 
 data FPA = FPA { fpType :: FPtype
                , complexity :: FPcompl
                } deriving (Show)

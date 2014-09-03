@@ -189,12 +189,13 @@ where
 
    instance ShowHSName Quad where
     showHSName q
-      = haskellIdentifier ("quad_"++(showHSName.qDcl) q++"_"++(name.cl_rule.qClauses) q)
+      = haskellIdentifier ("quad_"++(showHSName.qDcl) q++"_"++(name.qRule) q)
 
    instance ShowHS Quad where
     showHS opts indent q
       = intercalate indent
                [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
+               , "    , qRule    = " ++ showHSName (qRule q)
                , "    , qClauses = " ++ showHS opts newindent (qClauses q)
                , "    }"
                ]
@@ -218,14 +219,6 @@ where
          newindent'' = newindent' ++ "    "
          shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS opts newindent'' conj++newindent++"   )"
 
-   instance ShowHS Clauses where
-    showHS _ indent c
-      = intercalate indent
-          [ "Clauses{ cl_conjNF = " ++ showHSName (cl_conjNF c)
-          , "       , cl_rule   = " ++ showHSName (cl_rule c)
-          , "       }"
-          ]
-
    instance ShowHS DnfClause where
     showHS opts indent (Dnf antcs conss)
       = intercalate indent
@@ -234,7 +227,7 @@ where
           ]
 
    instance ShowHSName RuleClause where
-    showHSName x = haskellIdentifier ("conj_"++rc_rulename x++"["++show (rc_int x)++"]")
+    showHSName x = haskellIdentifier ("conj_"++rc_rulename x++"_"++show (rc_int x))
 
    instance ShowHS RuleClause where
     showHS opts indent x
@@ -332,7 +325,7 @@ where
         "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fSpec++" interfaces) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-interfaceG fSpec ]++"\n"
        )++
-       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fSpec `uni` nub (map qDcl (vquads fs)) in
+       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fSpec `uni` (nub . map qDcl . vquads) fs in
         if null (ds fSpec)     then "" else
         "\n -- *** Declared relations (in total: "++(show.length.ds) fSpec++" relations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-ds fSpec]++"\n"

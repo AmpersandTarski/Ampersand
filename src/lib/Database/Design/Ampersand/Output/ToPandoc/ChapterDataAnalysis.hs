@@ -574,7 +574,7 @@ daBasicsSection lev fSpec = theBlocks
 -- the endo-properties have already been reported in the general section of this chapter.
 {-     where
 --  voorgestelde multipliciteitenanalyse....
-      clauses = nub [clause | Quad _ ccrs<-vquads fSpec, (_,dnfClauses)<-cl_conjNF ccrs, clause<-dnfClauses]
+      clauses = nub [clause | q<-vquads fSpec, (_,dnfClauses)<-qClauses q, clause<-dnfClauses]
       is = nub [r | EUni fus<-clauses
                   , isIdent (EIsc [notCpl f | f<-fus, isPos f] sgn)
                   , f<-filter isNeg fus
@@ -709,11 +709,11 @@ daBasicsSection lev fSpec = theBlocks
                                 else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
           where irs = [ dnf2expr dc
-                      | Quad r ccrs<-vquads fSpec
-                      , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
-                      , x<-cl_conjNF ccrs
+                      | q<-vquads fSpec
+                      , r_usr (qRule q)==UserDefined, isIdent (qDcl q), source (qDcl q) `elem` pcpts
+                      , x<-qClauses q
                       , dc@(Dnf [EDcD nega] _)<-rc_dnfClauses x
-                      , r==nega
+                      , qDcl q==nega
                       ]
                 pcpts = case p of
                   ScalarSQL{} -> [cLkp p]
