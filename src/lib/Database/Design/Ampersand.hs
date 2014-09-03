@@ -26,7 +26,7 @@ module Database.Design.Ampersand
    , Prop(..), RuleOrigin(..)
    , Lang(..)
    , SqlFieldUsage(..)
-   , DnfClause(..), Clauses(..)
+   , DnfClause(..)
    , Options(..), DocTheme(..)
    , Picture(..), writePicture , PictureReq(..), makePicture
    , FilePos(..), Origin(..), Pos(Pos)

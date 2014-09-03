@@ -63,9 +63,9 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , invars       = invariants context
                  , allRules     = allrules
                  , vconjs       = let equalOnConjunct a b = rc_conjunct a == rc_conjunct b
-                                  in nubBy equalOnConjunct (concatMap (cl_conjNF.qClauses)allQuads)
+                                  in nubBy equalOnConjunct (concatMap qClauses allQuads)
                  , vquads       = allQuads
-                 , vEcas        = let (ecas,_)=unzip (assembleECAs fSpec) in {-preEmpt opts-} ecas -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+                 , vEcas        = ( {-preEmpt opts . -} fst . assembleECAs) fSpec   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = relsUsedIn context
                  , allDecls     = relsDefdIn context
@@ -107,7 +107,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                       | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
           where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)
 
---      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
+--      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==qRule q]
         allrules = vRules ++ gRules
         vRules = udefrules context   -- all user defined rules
         gRules = multrules context++identityRules context
@@ -133,7 +133,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs :: [Expression]
         totsurs
          = nub [rel | q<-quads opts visible (invariants context), isIdent (qDcl q)
-                    , x<-cl_conjNF (qClauses q), Dnf antcs conss<-rc_dnfClauses x
+                    , x<-qClauses q, Dnf antcs conss<-rc_dnfClauses x
                     , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
                     , cons<-map exprCps2list conss
@@ -330,6 +330,12 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
         --END: making interfaces
         ----------------------
 
+   ifcQuads :: Interface -> [Quad]
+   ifcQuads ifc = []
+    where
+     fromDecls = relsMentionedIn ifc
+     toRels = ifcParams ifc
+
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
    editable (EDcD Sgn{}) = True
    editable _            = False
@@ -372,10 +378,10 @@ while maintaining all invariants.
 -- the quads that induce automated action on an editable relation.
 -- (A quad contains the conjunct(s) to be maintained.)
 -- Those are the quads that originate from invariants.
-        invQs       = [q | q@(Quad _ ccrs)<-vquads fSpec, (not.isSignal.cl_rule.qClauses) q
-                         , (not.null) ((relsUsedIn.cl_rule) ccrs `isc` decls)] -- SJ 20111201 TODO: make this selection more precise (by adding inputs and outputs to a quad).
+        invQs       = [q | q<-vquads fSpec, (not.isSignal.qRule) q
+                         , (not.null) ((relsUsedIn.qRule) q `isc` decls)] -- SJ 20111201 TODO: make this selection more precise (by adding inputs and outputs to a quad).
 -- a relation affects another if there is a quad (i.e. an automated action) that links them
-        affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(relsUsedIn.cl_rule.qClauses) q]
+        affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(relsUsedIn.qRule) q]
 -- the relations affected by automated action
 --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
 ----------------------------------------------------
@@ -401,21 +407,23 @@ while maintaining all invariants.
    quads :: Options -> (Declaration->Bool) -> [Rule] -> [Quad]
    quads opts visible rs
     = [ Quad { qDcl     = d
+             , qRule    = rule
              , qClauses = allClauses opts rule
              }
       | rule<-rs, d<-relsUsedIn rule, visible d
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
-   allClauses :: Options -> Rule -> Clauses
-   allClauses opts rule = Clauses [RC { rc_int = i
-                                       , rc_rulename = name rule
-                                       , rc_conjunct = dnf2expr dnfClause
-                                       , rc_dnfClauses = allShifts opts dnfClause
-                                       } | (dnfClause,i)<-zip (conjuncts opts rule) [0..] ] rule
+   allClauses :: Options -> Rule -> [RuleClause]
+   allClauses opts rule = [RC { rc_int = i
+                              , rc_rulename = name rule
+                              , rc_conjunct = dnf2expr dnfClause
+                              , rc_dnfClauses = allShifts opts dnfClause
+                              }
+                          | (dnfClause,i)<-zip (conjuncts opts rule) [0..] ]
 
    allShifts :: Options -> DnfClause -> [DnfClause]
-   allShifts opts conjunct = (map head.eqCl (disjNF opts.dnf2expr)) [ e'| e'<-shiftL conjunct++shiftR conjunct]  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
+   allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
     where
     {-
@@ -509,6 +517,18 @@ while maintaining all invariants.
       --  sh :: String -> [Expression] -> String
       --  sh str es = intercalate str [ showADL e | e<-es]
 
+     normDNF :: DnfClause -> DnfClause
+     normDNF (Dnf antcs conss) = Dnf lhs rhs
+      where lhs = case antcs of
+                   [] -> []
+                   _  -> (exprIsc2list . conjNF opts . foldr1 (./\.)) antcs
+            rhs = case conss of
+                   [] -> []
+                   _  -> (exprUni2list . disjNF opts . foldr1 (.\/.)) conss
+
+     pnEq :: DnfClause -> Bool
+     pnEq (Dnf antcs conss) = antcs/=conss
+
      headECps :: Expression -> Expression
      headECps expr = f expr
       where f (ECps (l@ECps{},_)) = f l
@@ -590,8 +610,8 @@ while maintaining all invariants.
       where
         qs :: [Quad]
         qs        = quads (flags fSpec) visible (invariants fSpec)
-        (ecas, _) = unzip (assembleECAs fSpec)
-        conjs     = nub [ (cl_rule ccrs,rc_conjunct x) | Quad _ ccrs<-qs, x<-cl_conjNF ccrs]
+        (ecas, _) = assembleECAs fSpec
+        conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qClauses q]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
         eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]
         visible _ = True
@@ -609,4 +629,3 @@ while maintaining all invariants.
 
    instance Rename PlugSQL where
     rename p x = p{sqlname=x}
-   
