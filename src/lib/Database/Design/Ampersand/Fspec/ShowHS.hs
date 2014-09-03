@@ -196,7 +196,7 @@ where
       = intercalate indent
                [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
                , "    , qRule    = " ++ showHSName (qRule q)
-               , "    , qClauses = " ++ showHS opts newindent (qClauses q)
+               , "    , qConjuncts = " ++ showHS opts newindent (qConjuncts q)
                , "    }"
                ]
        where
@@ -226,17 +226,17 @@ where
           , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) conss
           ]
 
-   instance ShowHSName RuleClause where
-    showHSName x = haskellIdentifier ("conj_"++rc_rulename x++"_"++show (rc_int x))
+   instance ShowHSName Conjunct where
+    showHSName x = haskellIdentifier ("cjct_"++rc_rulename x++"_"++show (rc_int x))
 
-   instance ShowHS RuleClause where
+   instance ShowHS Conjunct where
     showHS opts indent x
-      = intercalate (indent ++"  ")
-          [   "RC{ rc_int        = " ++ show (rc_int x)
-          ,     ", rc_rulename   = " ++ show (rc_rulename x)
-          ,     ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
-          ,wrap ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
-          ,     "}"
+      = intercalate (indent ++"    ")
+          [   "Cjct{ rc_int        = " ++ show (rc_int x)
+          ,       ", rc_rulename   = " ++ show (rc_rulename x)
+          ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
+          , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
+          ,       "}"
           ]
         where indentA = indent ++"                    "
 

@@ -17,27 +17,25 @@ module Database.Design.Ampersand.Output.PandocAux
       , texOnly_Id
       , texOnly_fun
       , texOnly_rel
-      , commaEngPandoc, commaNLPandoc
-      , commaEngPandoc', commaNLPandoc'
       )
 where
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Fspec
-import Data.Char hiding (Space)
+import Data.Char hiding    (Space)
 import Text.Pandoc
 import Text.Pandoc.Builder
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (hPutStrLn)
-import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import Database.Design.Ampersand.Misc
 import System.Process      (system)
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
-import System.IO              (hPutStrLn, stderr)
-import System.FilePath       -- (combine,addExtension,replaceExtension)
+import System.IO           (hPutStrLn, stderr)
+import System.FilePath  -- (combine,addExtension,replaceExtension)
 import System.Directory
-import System.Info (os)
+import System.Info         (os)
 import Data.Monoid
-import Data.List              (isInfixOf,intercalate)
+import Data.List           (isInfixOf,intercalate)
 import Control.Monad
 import Data.Maybe
 
@@ -609,30 +607,6 @@ makeDefinition opts i nm lbl defin ref =
        -- by putting the ref after the first word of the definition, it aligns nicely with the definition
        insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
                                          in  fstWord ++ s ++ rest
-commaEngPandoc' :: Inlines -> [Inlines] -> Inlines
-commaEngPandoc' s [a,b,c]= a <> ", " <> b <> ", " <> s <> space <> c
-commaEngPandoc' s [a,b]  = a <> space <> s <> space <> b
-commaEngPandoc' _   [a]    = a
-commaEngPandoc' s (a:as) = a <> ", " <> commaEngPandoc' s as
-commaEngPandoc' _   []     = mempty
-
-commaEngPandoc :: Inline -> [Inline] -> [Inline]
-commaEngPandoc s [a,b,c]= [a,Str ", ",b,Str ", ",s, Str " ", c]
-commaEngPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
-commaEngPandoc _   [a]    = [a]
-commaEngPandoc s (a:as) = [a, Str ", "]++commaEngPandoc s as
-commaEngPandoc _   []     = []
-
-commaNLPandoc' :: Inlines -> [Inlines] -> Inlines
-commaNLPandoc' s [a,b]  = a <> space <> s <> space <> b
-commaNLPandoc'  _  [a]    = a
-commaNLPandoc' s (a:as) = a <> ", " <> commaNLPandoc' s as
-commaNLPandoc'  _  []     = mempty
-commaNLPandoc :: Inline -> [Inline] -> [Inline]
-commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
-commaNLPandoc  _  [a]    = [a]
-commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
-commaNLPandoc  _  []     = []
 
 ---------------------------
 --- LaTeX related stuff ---
