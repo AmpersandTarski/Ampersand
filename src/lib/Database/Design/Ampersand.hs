@@ -8,7 +8,7 @@ module Database.Design.Ampersand
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Activity(..)
    , AMeaning(..)
-   , Quad(..), RuleClause(..)
+   , Quad(..), Conjunct(..)
    , Fswitchboard(..), ECArule(..), Event(..), InsDel(..) -- (required for --haskell output)
    , Pattern(..)
    , Declaration(..)

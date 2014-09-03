@@ -6,15 +6,18 @@ module Database.Design.Ampersand.Fspec.ToFspec.Calc
             , lambda
             , checkMono
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
+            , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc'
           --  , testInterface
             )
 where
 
-   import Database.Design.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl,Flippable(..))
+   import Database.Design.Ampersand.Basics (fatalMsg,Collection (isc),Identified(..),eqCl,Flippable(..))
    import Data.List hiding (head)
+   import Data.Monoid
    import GHC.Exts (sortWith)
 --   import Data.ByteString.Char8
 --   import Data.ByteString.Lazy.Char8
+   import Database.Design.Ampersand.Basics.Auxiliaries (commaEng)
    import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
    import Database.Design.Ampersand.ADL1
    import Database.Design.Ampersand.ADL1.Expression
@@ -23,7 +26,7 @@ where
    import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import Database.Design.Ampersand.Fspec.ShowECA (showECA)
    import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,simplify,normPA,proofPA)
-   import Database.Design.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
+   import Database.Design.Ampersand.Misc (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc.Builder
    import Prelude hiding (head)
 -- import Debug.Trace
@@ -54,7 +57,7 @@ where
 --      showADL ifc++"\n"++
 --      " - Invariants:\n   "++intercalate "\n   " [showADL rule    | rule<-invs]++"\n"++
 --      " - Derivation of clauses for ECA-rules:"   ++
---      concat [showClause fSpec (allClauses (flags fSpec) rule) | rule<-invs]++"\n"++
+--      concat [showClause fSpec (makeCjcts (flags fSpec) rule) | rule<-invs]++"\n"++
 --{-
 --      " - ECA rules:"++concat  [ "\n\n     "++showECA "\n     "  (eca{ecaAction=normPA (flags fSpec) (ecaAction eca)})
 --                                 ++"\n------ Derivation ----->"++showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (flags fSpec) (ecaAction eca))++"\n<------End Derivation --"
@@ -102,12 +105,12 @@ where
       para (linebreak<>"--------------"<>linebreak<>"First step: determine the "<>(str.show.length) quads<>" quads:")<>
       bulletList [ para ( "-- quad ------------"<>linebreak<>"When relation "<>(str . showADL . qDcl) q<>" is changed,"
                           <>linebreak<>(str . showADL . qRule) q
-                          <>(if (length . qClauses) q<=1 then space else " ("<>(str . show . length . qClauses) q<>" conjuncts)")
+                          <>(if (length . qConjuncts) q<=1 then space else " ("<>(str . show . length . qConjuncts) q<>" conjuncts)")
                           <>" must be restored."<>linebreak<>"This quad has conjunct: "<>(str . showADL . rc_conjunct) x
                           <>" and "<>(str.show.length.rc_dnfClauses) x<>" dnf clauses."
                         ) <>
                    bulletList [ para (linebreak<>"Dnf clause "<>str (showADL dc)) | dc<-rc_dnfClauses x]
-                 | q<-quads, x<-qClauses q ] <>
+                 | q<-quads, x<-qConjuncts q ] <>
       para (linebreak<>linebreak<>"Second step: assemble dnf clauses.") <>
       bulletList [ para ( "Dnf clause "<>str (showADL dc)
                           <>linebreak<>"is derived from rule "<>str (showADL r)
@@ -119,7 +122,7 @@ where
                         )
                  | (ms,dc,r)<-
                        [ (nub [ dcl |(dcl,_,_)<-cl],dc,r)
-                       | cl<-eqCl (\(_,_,dc)->dc) [(qDcl q,dc,qRule q) |q<-quads, x<-qClauses q, dc<-rc_dnfClauses x]
+                       | cl<-eqCl (\(_,_,dc)->dc) [(qDcl q,dc,qRule q) |q<-quads, x<-qConjuncts q, dc<-rc_dnfClauses x]
                        , let (_,dc,r) = head cl
                        ]
                  ]<>
@@ -181,11 +184,6 @@ where
       where
   --     visible _  = True -- We take all quads into account.
        quads  = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
-       commaEng :: String -> [String] -> String
-       commaEng  _  []       = ""
-       commaEng  _  [x]      = x
-       commaEng chs [x,y]    = x++" "++chs++" "++y
-       commaEng chs (x:y:ys) = x++", "++commaEng chs (y:ys)
     -- interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
        interText _ [] = ""
        interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
@@ -224,7 +222,7 @@ where
                                    , r'<-[subst (rel, actSem (flags fSpec) ev (EDcD rel) (delta (sign rel))) r]
                         --        , viols<-[conjNF (flags fSpec) (ECpl r')]
                                    , True ]  -- (isTrue.conjNF (flags fSpec)) (notCpl r .\/. r')
-                                  | r<-[dc | cs<-[allClauses (flags fSpec) rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
+                                  | r<-[dc | cs<-[makeCjcts (flags fSpec) rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
                  prf = cfProof (flags fSpec) e
@@ -495,12 +493,12 @@ Rewrite rules:
                        )
              )
            | rel <- allDecls fSpec ++ [ Isn c | c<-allConcepts fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
-           , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qClauses
+           , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
            , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
            , ev<-[Ins,Del]
            , let acts = [ -- go through all the events that affect that clause:
-                          (normPA options act, ruleClause, rule,
-                          para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>(singleQuoted.str.name) rule<>".")<>
+                          (normPA options act, conjunct, map snd quadEqClass,
+                          para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>commaEngPandoc' "and" (map (singleQuoted.str.name.snd) quadEqClass)<>".")<>
                           para ("event = "<>str (show ev)<>space<>str (showREL rel)<>" means doing the following substitution")<>
                           para (str (showADL clause<>"["<>showREL rel<>":="<>showADL (actSem options ev (EDcD rel) (delta (sign rel)))<>"] = clause'"))<>
                           para ("clause' = "<>str (showADL ex')<>
@@ -545,10 +543,10 @@ Rewrite rules:
                                    else (showProof (para.str.showADL). dfProof options) (notCpl viols./\.toExpr)<>linebreak
                                  ) -}
                           ))
-                        | quadEqClass <- eqCl fst [ (qClauses q, qRule q) | q<-relEq ]
-                        , ruleClause <- (fst.head) quadEqClass                  -- get conjuncts from the clauses
-                        , clause@(Dnf antcs conss) <- rc_dnfClauses ruleClause          -- the DNF form of each clause
-                        , let expr    = dnf2expr clause                           -- Note that this differs from:  rc_conjunct ruleClause
+                        | quadEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
+                        , conjunct <- (fst.head) quadEqClass                  -- get conjuncts from the clauses
+                        , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
+                        , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct
                         , let vee     = EDcV (sign expr)
                         , let ex'     = subst (rel, actSem options ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
                         , let clause' = conjNF options ex'                                                -- its CNF
@@ -579,14 +577,13 @@ Rewrite rules:
                         , if length (nub (map sign [toExpr, deltFr', expr]))>1
                           then fatal 285 "type problem"
                           else True
-                        , rule<-map snd quadEqClass
-                        , let act = genPAclause visible Ins toExpr deltFr' [(expr,[rule])]
+                        , let act = genPAclause visible Ins toExpr deltFr' [(expr, map snd quadEqClass)]
                         ]
            , let ecaAct = ALL (map fst4 acts
            -- The following acts add the implicit rules, which allows the user to add and delete atoms from concepts in a safe way.
                                ++ [act' | (ev',rel',act')<-rulesDecls++rulesGens rel, ev==ev', rel==rel' ]
                               )
-                              [ (rc_conjunct conj,[rule]) | (_,conj,rule,_)<-acts] --motivation is of type [(Expression,[Rule])]
+                              [ (rc_conjunct conj,ruls) | (_,conj,ruls,_)<-acts] --motivation is of type [(Expression,[Rule])]
            , let normEcaAct = normPA options ecaAct
            , let ecaProof = proofPA options ecaAct
            , let ecaEvt = On ev rel
@@ -746,3 +743,28 @@ Rewrite rules:
       deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x+)
       deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
 
+   commaEngPandoc' :: Inlines -> [Inlines] -> Inlines
+   commaEngPandoc' s [a,b,c] = a <> ", " <> b <> ", " <> s <> space <> c
+   commaEngPandoc' s [a,b]   = a <> space <> s <> space <> b
+   commaEngPandoc' _   [a]   = a
+   commaEngPandoc' s (a:as)  = a <> ", " <> commaEngPandoc' s as
+   commaEngPandoc' _   []    = mempty
+   
+   commaEngPandoc :: Inline -> [Inline] -> [Inline]
+   commaEngPandoc s [a,b,c] = [a,Str ", ",b,Str ", ",s, Str " ", c]
+   commaEngPandoc s [a,b]   = [a,Str " ",s, Str " ", b]
+   commaEngPandoc _   [a]   = [a]
+   commaEngPandoc s (a:as)  = [a, Str ", "]++commaEngPandoc s as
+   commaEngPandoc _   []    = []
+   
+   commaNLPandoc' :: Inlines -> [Inlines] -> Inlines
+   commaNLPandoc' s [a,b]  = a <> space <> s <> space <> b
+   commaNLPandoc'  _  [a]  = a
+   commaNLPandoc' s (a:as) = a <> ", " <> commaNLPandoc' s as
+   commaNLPandoc'  _  []   = mempty
+   commaNLPandoc :: Inline -> [Inline] -> [Inline]
+   commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
+   commaNLPandoc  _  [a]  = [a]
+   commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
+   commaNLPandoc  _  []   = []
+   
