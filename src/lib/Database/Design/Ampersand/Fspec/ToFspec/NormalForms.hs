@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module Database.Design.Ampersand.Fspec.ToFspec.NormalForms
-  (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify)
+  (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
+  ,cfProofs, dfProofs  -- these are for confluence testing.
+  )
 where
    import Data.Set (Set)
    import qualified Data.Set as Set
@@ -35,6 +37,27 @@ Ideas for future work:
    We'd be able to derive fmap, and make RTerm Foldable.
 -> Really long term: Unify RTerm and Expression in a way that still allows us to write simple code for binary operators. Would require separating = and |- from Expression, which is also nice.
 -}
+
+-- The following was built for the purpose of testing confluence.
+-- These functions produce all derivations of results from the normalizer.
+-- A useful side effect is that it implicitly tests for soundness.
+   cfProofs, dfProofs :: Expression -> [(Expression, Proof Expression)]
+   (cfProofs, dfProofs) = (prfs False, prfs True)
+    where
+      prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
+      prfs dnf expr
+       = nub [ (rTerm2expr t, map makeExpr derivs) | (t, derivs)<-f (expr2RTerm expr) ]
+         where
+           f :: RTerm -> [(RTerm,[(RTerm, [String], String)])]
+           f term = [ (term,[(term, [], "<=>")]) | null dsteps ]++
+                    [ (t, (term, [showStep dstep], "<=>"):deriv)
+                    | dstep<-dsteps, (t,deriv)<-f (rhs dstep)
+                    ]
+                    where dsteps = [ dstep | dstep<-dSteps tceDerivRules term, w (rhs dstep)<w term]
+           w = weightNF dnf -- the weight function for disjunctive normal form.
+           showStep dstep = " weight: "++(show.w.lhs) dstep++",   "++showADL tmpl++" = "++showADL stp++"  with unifier: "++showADL unif
+                            where (tmpl,unif,stp) = rul dstep
+           makeExpr (term, explStr, logicSym) = (rTerm2expr term, explStr, logicSym)
 
 -- Deriving normal forms and representing the neccessary derivation rules are defined by means of RTerms.
 -- The data structure RTerm is a representation of relation algebra expressions,
@@ -989,8 +1012,7 @@ Ideas for future work:
     , "r[A*B]\\/-r[A*B] =  V[A*B]"                                --  Tautology
     , "-r[A*B]\\/r[A*B] = V[A*B]"                                 --  Tautology
     , "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]"                      --  Absorption
-    , "(r[A*B]\\/-s[A*B])/\\ s[A*B] = r[A*B]/\\s[A*B]"             --  Absorption
-    , "(r[A*B]\\/ s[A*B])/\\-s[A*B] = r[A*B]/\\-s[A*B]"            --  Absorption
+    , "(r[A*B]\\/-s[A*B])/\\ s[A*B] = s[A*B]-r[A*B]"               --  Absorption
     , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                      --  Absorption
     , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"             --  Absorption
     , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"            --  Absorption
@@ -1349,19 +1371,19 @@ Until the new normalizer works, we will have to work with this one. So I have in
               = let t'=head absor0  in (r, ["absorb "++shw l++" because of "++shw t'++", using law  (x\\/y)/\\y = y"], "<=>")
          | isEUni r && not (null absor0')
               = let t'=head absor0' in (r, ["absorb "++shw r++" because of "++shw t'++", using law  (x\\/y)/\\x = x"], "<=>")
--- Absorb:    (x\\/-y)/\\y  =  x/\\y
+-- Absorb:    (x\\/-y)/\\y  =  y-x
          | isEUni l && not (null absor1)
               = ( case head absor1 of
                     (_,[]) -> r
-                    (_,ts) -> foldr1 (.\/.) ts ./\. r
-                , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1] -- this take 1 is necessary. See Ticket #398
+                    (_,ts) -> r .-. foldr1 (.\/.) ts
+                , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  y-x" | (t',_)<-absor1] -- this take 1 is necessary. See Ticket #398
                 , "<=>"
                 )
          | isEUni r && not (null absor1')
               = ( case head absor1' of
                     (_,[]) -> l
-                    (_,ts) -> l ./\. foldr1 (.\/.) ts
-                , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1'] -- this take 1 is necessary. See Ticket #398
+                    (_,ts) -> l .-. foldr1 (.\/.) ts
+                , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x-y" | (t',_)<-absor1'] -- this take 1 is necessary. See Ticket #398
                 , "<=>"
                 )
          | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
