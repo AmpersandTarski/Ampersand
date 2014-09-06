@@ -25,7 +25,7 @@ where
    import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
    import Database.Design.Ampersand.Fspec.ShowECA (showECA)
-   import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  (delta,conjNF,disjNF,cfProof,dfProof,simplify,normPA,proofPA)
+   import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
    import Database.Design.Ampersand.Misc (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc.Builder
    import Prelude hiding (head)
@@ -91,10 +91,25 @@ where
 --                                 | length new   <= n = f new css
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
+   testConfluence :: Fspc -> Blocks
+   testConfluence fSpec
+    = let tcss = [(expr,tcs) | expr<-expressionsIn fSpec, let tcs=dfProofs expr, length tcs>1]
+          sumt = sum (map (length.snd) tcss)
+      in
+      para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) fSpec<>" expressions."<>linebreak)<>
+      para ("This script contains "<>linebreak<>(str.show.length) tcss<> " non-confluent expressions "<>linebreak)<>
+      para (linebreak<>"Total number of derived expressions: "<>(str.show) sumt<>linebreak)<>
+      para ("Confluence analysis for "<>(str.name) fSpec)<>
+      mconcat
+        [ para (linebreak<>"expression:   "<>(str . showADL) expr<>linebreak)<>
+          bulletList [ showProof (para.str.showADL) prf | (_,prf)<-tcs ]
+        | (expr,tcs)<-tcss]
 
    deriveProofs :: Fspc -> Blocks
    deriveProofs fSpec
-    = para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
+    = testConfluence fSpec<>
+      para (linebreak<>"--------------"<>linebreak)<>
+      para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
       bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
                          "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
                          "conjNF:   "<>str (showADL (conjNF (flags fSpec) (rrexp r)))<>linebreak<>
@@ -274,7 +289,7 @@ where
    showProof _  []                   = fromList []
 
    showPrf :: (expr->String) -> Proof expr -> [String]
-   showPrf shw [(expr,ss,_)]       = [ "    "++shw expr]
+   showPrf shw [(expr,_ ,_)]       = [ "    "++shw expr]
    showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++
                                      (if null ss  then [ equ ] else
                                       if null equ then [ unwords ss ] else
