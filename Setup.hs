@@ -13,6 +13,7 @@ import Control.Exception
 import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
+import Data.Time.LocalTime
 import System.Locale
 
 main :: IO ()
@@ -33,7 +34,7 @@ generateBuildInfoHook pd  lbi uh bf =
                           else return r
                         }
 
-    ; clockTime <- getCurrentTime 
+    ; clockTime <- getCurrentTime >>= utcToLocalZonedTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile "src/Database/Design/Ampersand_Prototype/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
