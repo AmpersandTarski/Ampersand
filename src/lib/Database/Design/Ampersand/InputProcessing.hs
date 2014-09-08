@@ -46,7 +46,7 @@ createFspec opts =
      case bothCtx of
         Errors err -> return (Errors err)
         Checked pCtx
-           -> do let (gaCtx) = pCtx2aCtx pCtx
+           -> do let (gaCtx) = pCtx2aCtx opts pCtx
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
                    (Checked aCtx) -> return (Checked (makeFspec opts aCtx ))
@@ -56,7 +56,7 @@ createFspec opts =
      (case gp of
        Errors _ -> return (Errors []) -- The errors are already in the error list
        Checked pCtx
-         -> case pCtx2aCtx pCtx of
+         -> case pCtx2aCtx opts pCtx of
               (Errors  err ) -> return (Errors err)
               (Checked aCtx)
                  -> do let fSpec = makeFspec opts aCtx

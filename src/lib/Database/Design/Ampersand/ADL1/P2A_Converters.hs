@@ -38,11 +38,11 @@ pCpt2aCpt pc
         PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
         P_Singleton -> ONE
 
-pCtx2aCtx :: P_Context -> Guarded A_Context
-pCtx2aCtx = checkUnique udefrules  -- Rules must have a unique name within the context
-          . checkUnique patterns   -- Patterns as well
-          . checkUnique ctxprocs   -- and so should Processes
-          . pCtx2aCtx'
+pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
+pCtx2aCtx opts = checkUnique udefrules  -- Rules must have a unique name within the context
+               . checkUnique patterns   -- Patterns as well
+               . checkUnique ctxprocs   -- and so should Processes
+               . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
      case gCtx of
@@ -51,8 +51,8 @@ pCtx2aCtx = checkUnique udefrules  -- Rules must have a unique name within the c
                          Errors err -> Errors err
        Errors err -> Errors err
 
-pCtx2aCtx' :: P_Context -> Guarded A_Context
-pCtx2aCtx'
+pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
+pCtx2aCtx' opts
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
@@ -122,7 +122,12 @@ pCtx2aCtx'
     soloConcs :: [String]
     soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
 
-    deflangCtxt = fromMaybe English lang  -- explanation: if lang==Nothing, then English, if lang==Just l then l
+    deflangCtxt = case lang of
+                    Just l -> l -- use language specified on context in adl source
+                    Nothing -> case language opts of
+                                 Just l -> l -- use language from command-line option
+                                 Nothing -> English -- use default language
+
     deffrmtCtxt = fromMaybe ReST pandocf
 
     (decls,dclPops)= unzip dps
