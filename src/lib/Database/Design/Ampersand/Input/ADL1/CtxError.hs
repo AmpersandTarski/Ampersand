@@ -87,7 +87,7 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
                         concatMap (("\n    "++ ) . show . origin) (x:xs)
                         ++"."
                        )
-     messageFor _ = fatal 90 "messageFor must only be used on lists with more thatn one element!"
+     messageFor _ = fatal 90 "messageFor must only be used on lists with more that one element!"
 
 class ErrorConcept a where
   showEC :: a -> String
