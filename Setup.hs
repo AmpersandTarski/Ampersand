@@ -11,7 +11,6 @@ import System.FilePath
 import qualified Data.ByteString as BS
 import Control.Exception
 import Data.Time.Clock
-import Data.Time.Calendar
 import Data.Time.Format
 import Data.Time.LocalTime
 import System.Locale
@@ -105,12 +104,9 @@ getStaticFilesModuleContents =
     ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
     ; return $ "module "++staticFileModuleName++" where\n"++
                "\n"++
-               "import Data.Time.Calendar\n"++
-               "import Data.Time.Clock\n"++
-               "\n"++
-               "data StaticFile = SF { filePath ::      FilePath -- relative path, including extension\n"++
-               "                     , timeStamp ::     UTCTime\n"++
-               "                     , isBinary ::      Bool\n"++
+               "data StaticFile = SF { filePath      :: FilePath -- relative path, including extension\n"++
+               "                     , timeStamp     :: Integer -- unix epoch time\n"++
+               "                     , isBinary      :: Bool\n"++
                "                     , contentString :: String\n"++
                "                     }\n"++
                "\n"++
@@ -132,16 +128,12 @@ readStaticFiles isBin base fileOrDir =
         do { timeStamp <- getModificationTime path
            ; fileContents <- if isBin then fmap show $ BS.readFile path 
                                       else readFile path
-           ; return ["SF "++show fileOrDir++" ("++showTimestamp timeStamp++") {- "++show timeStamp++" -} "++
+           ; return ["SF "++show fileOrDir++" "++utcToEpochTime timeStamp++" {- "++show timeStamp++" -} "++
                             show isBin++" "++show fileContents]
            }
      }
-  where showTimestamp :: UTCTime -> String
-        showTimestamp ts = "UTCTime (ModifiedJulianDay "++(show.toModifiedJulianDay.utctDay) ts++
-                                 ") "++(removeS.show.utctDayTime) ts
-        removeS :: String -> String
-        removeS s = case reverse s of
-                        's':theInt -> theInt
-                        other -> other  
+  where utcToEpochTime :: UTCTime -> String
+        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
+          
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth 

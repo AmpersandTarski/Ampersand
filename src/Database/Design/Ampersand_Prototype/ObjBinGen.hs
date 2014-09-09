@@ -16,9 +16,8 @@ import Prelude hiding (writeFile,readFile,getContents)
 import Database.Design.Ampersand_Prototype.StaticFiles_Generated
 #ifdef MIN_VERSION_MissingH
 import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file
-import System.Time
-
-import Data.Time.Clock.POSIX
+import Data.Time.Format
+import System.Locale
 #endif
 
 phpObjInterfaces :: Fspc -> IO()
@@ -89,28 +88,31 @@ writeStaticFiles opts =
       verboseLn opts "Skipping static files (because of command line argument)"
 
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
-writeWhenMissingOrOutdated opts staticFile act =
+writeWhenMissingOrOutdated opts staticFile writeFileAction =
 #ifdef MIN_VERSION_MissingH
+-- On Mac/Linux we set the modification time for generated static files to the modification time of the compiled versions
+-- in StaticFiles_Generated.hs. This allows us to only replace those static files that are outdated (or missing.) 
  do { exists <- doesFileExist $ absFilePath opts staticFile
     ; if exists then
-       do { oldTimeStamp <- getModificationTime $ absFilePath opts staticFile
+       do { oldTimeStampUTC <- getModificationTime $ absFilePath opts staticFile
+          ; let oldTimeStamp = read $ formatTime defaultTimeLocale "%s" oldTimeStampUTC -- convert to epoch seconds
           ; if oldTimeStamp < timeStamp staticFile then
-             do { verboseLn opts $ "  Replacing static file "++ filePath staticFile ++" with current version."
-                ; act
-                }
+              do { verboseLn opts $ "  Replacing static file "++ filePath staticFile ++" with current version."
+                 ; writeFileAction
+                 }
             else
               return () -- skip is not really worth logging
           }
       else
        do { verboseLn opts $ "  Writing static file "++ filePath staticFile
-          ; act
+          ; writeFileAction
           }
     }
 #else
 -- On windows we cannot set the file modification time without requiring a cygwin or mingw build environment,
 -- so we simply replace all static files on each generation.
  do { verboseLn opts $ "  Writing static file "++ filePath staticFile
-    ; act
+    ; writeFileAction
     }
 #endif
 
@@ -119,7 +121,7 @@ writeStaticFile opts sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
      ; write (absFilePath opts sf) (contentString sf)
 #ifdef MIN_VERSION_MissingH
-     ; let t = (fromIntegral . fromEnum . utcTimeToPOSIXSeconds) (timeStamp sf)
+     ; let t = (fromIntegral $ timeStamp sf)
      ; setFileTimes (absFilePath opts sf) t t
 #endif
      }

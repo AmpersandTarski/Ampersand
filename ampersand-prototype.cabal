@@ -41,7 +41,8 @@ Executable prototype
   if !os(windows)
     build-depends: 
       unix >= 2.6,
-      MissingH >= 1.2
+      MissingH >= 1.2,
+      old-locale >= 1.0 && < 1.1
 
   other-modules: 
                  Database.Design.Ampersand_Prototype.Apps,
