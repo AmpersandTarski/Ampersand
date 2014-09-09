@@ -73,7 +73,7 @@ doGenProto fSpec =
               }
       else do { verboseLn (flags fSpec) "Generating prototype..."
               ; phpObjInterfaces fSpec
-              ; verboseLn (flags fSpec) $ "Prototype files have been written to " ++ dirPrototype (flags fSpec) ++ "."
+              ; verboseLn (flags fSpec) $ "Prototype files have been written to " ++ dirPrototype (flags fSpec)
               }
     }
  where reportViolations []    = verboseLn (flags fSpec) "No violations found."
