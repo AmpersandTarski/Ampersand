@@ -294,7 +294,7 @@ pCtx2aCtx' opts
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
     pSubi2aSubi o@(P_Box _ []) = hasNone [] o
     pSubi2aSubi o@(P_Box _ l)
-     = (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
+     = (\lst -> case findExact genLattice (foldr1 Meet (map (Atom . name . source . objctx . fst) lst)) of
                   [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
                   r -> case [ objctx a
                             | (a,False) <- lst
