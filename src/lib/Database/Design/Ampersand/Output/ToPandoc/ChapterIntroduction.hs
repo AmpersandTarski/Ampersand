@@ -137,7 +137,7 @@ chpIntroduction fSpec =
                  <> para ( text "Together, these services fulfill all commitments. "
                         <> text "By disclosing all functionality exclusively through these services, "
                         <> (singleQuoted.text.name) fSpec
-                        <> text " ensures compliance to all rules aggreed upon."
+                        <> text " ensures compliance to all rules agreed upon."
                          )
                else mempty
 
