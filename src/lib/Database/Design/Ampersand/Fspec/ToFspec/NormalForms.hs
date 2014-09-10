@@ -704,19 +704,19 @@ Ideas for future work:
      w :: RTerm -> Integer
      w trm
       = case trm of
-          RIsc ls  -> (sum (map w (Set.toList ls))+3) * if dnf then two else 1
-          RUni ls  -> (sum (map w (Set.toList ls))+3) * if dnf then 1 else two
-          RDif l r -> (w l+w r+10) * 2
-          RCpl e   -> (w e + 1) * 2
-          RDia l r -> (w l+w r+10) * 2
-          RLrs l r -> (w l+w r+10) * 2
-          RRrs l r -> (w l+w r+10) * 2
-          RRad ls  -> (sum (map w ls)+1) * 2
-          RCps ls  -> (sum (map w ls)+1) * 2
-          RPrd ls  -> (sum (map w ls)+1) * 2
-          RKl0 e   -> (w e + 1) * 2
-          RKl1 e   -> (w e + 1) * 2
-          RFlp e   -> (w e + 1) * 4
+          RIsc ls  -> (sum (map w (Set.toList ls))+3) * if dnf then 1 else 2
+          RUni ls  -> (sum (map w (Set.toList ls))+3) * if dnf then 2 else 1
+          RDif l r -> (w l+w r+10) * 4
+          RCpl e   -> (w e + 1) * 4
+          RDia l r -> (w l+w r+10) * 4
+          RLrs l r -> (w l+w r+10) * 4
+          RRrs l r -> (w l+w r+10) * 4
+          RRad ls  -> (sum (map w ls)+1)*4
+          RCps ls  -> (sum (map w ls)+1)*4
+          RPrd ls  -> (sum (map w ls)+1)*4
+          RKl0 e   -> (w e + 1) * 4
+          RKl1 e   -> (w e + 1) * 4
+          RFlp e   -> (w e + 1) * 8
           _        -> 1
 
 -- If  'matches d expr'  yields  'Just ss', then  'substitute anything ss (lTerm d) == expr'
