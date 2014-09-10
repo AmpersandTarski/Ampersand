@@ -610,7 +610,7 @@ where
    data Label = Lbl { lblnm :: String
                     , lblpos :: Origin
                     , lblstrs :: [[String]]
-                    }
+                    } deriving Show
    instance Eq Label where
     l==l' = lblnm l==lblnm l'
 
