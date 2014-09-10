@@ -96,8 +96,8 @@ makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
    pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
 
-atlas2context :: Fspc -> IO A_Context
-atlas2context fSpec =
+atlas2context :: Options -> Fspc -> IO A_Context
+atlas2context opts fSpec =
    do --tbls <- readAtlas fSpec
       verboseLn (flags fSpec) "Connecting to atlas..."
       conn<-connectODBC dsnatlas
@@ -157,7 +157,7 @@ atlas2context fSpec =
       verboseLn (flags fSpec) "Disconnected."
       let r_exprvalue = parseexprs r_exprvalue' --parsing is the safest way to get the Term
       --verboseLn (flags fSpec) (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
-      actx <- makectx r_ctxnm (fsLang fSpec)
+      actx <- makectx opts r_ctxnm (fsLang fSpec)
                      r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      r_gengen r_genspc r_genrhs
                      r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue
@@ -178,21 +178,21 @@ atlas2context fSpec =
                         Right term -> term
                )
 
-makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> {- RelTbl -> -} RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> IO (Guarded A_Context)
-makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
-                     r_gengen r_genspc r_genrhs
-                     r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue
-                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
-                     r_decpopu r_left r_right
-                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
+makectx :: Options -> RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                             -> RelTbl -> RelTbl -> RelTbl
+                             -> RelTbl -> RelTbl -> {- RelTbl -> -} RelTbl -> RelTbl
+                             -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                             -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                             -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> IO (Guarded A_Context)
+makectx opts r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
+                          r_gengen r_genspc r_genrhs
+                          r_cptnm r_cptpurpose {- r_cptdf -} r_cptos r_atomvalue
+                          r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
+                          r_decpopu r_left r_right
+                          r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = return a_context
    where
-   (a_context) = pCtx2aCtx rawctx
+   (a_context) = pCtx2aCtx opts rawctx
    rawctx
     = PCtx {
          ctx_nm    = snd(theonly r_ctxnm "not one context in Atlas DB")

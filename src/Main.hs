@@ -28,10 +28,10 @@ main =
                                mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                exitWith $ ExitFailure 10
               Checked fSpec -> generateAmpersandOutput fSpec
-                             >> generateProtoStuff fSpec
+                             >> generateProtoStuff opts fSpec
 
-generateProtoStuff :: Fspc -> IO ()
-generateProtoStuff fSpec
+generateProtoStuff :: Options -> Fspc -> IO ()
+generateProtoStuff opts fSpec
   | validateSQL (flags fSpec) =
       do { verboseLn (flags fSpec) "Validating SQL expressions..."
          ; isValid <- validateRulesSQL fSpec
@@ -39,7 +39,7 @@ generateProtoStuff fSpec
          }
   | export2adl (flags fSpec) && fileformat (flags fSpec)==Just Adl1Format =
       do { verboseLn (flags fSpec) "Exporting Atlas DB content to .adl-file..."
-         ; cx<-atlas2context fSpec
+         ; cx<-atlas2context opts fSpec
          ; writeFile (combine (dirOutput (flags fSpec)) (outputfile (flags fSpec))) (showADL cx)
          ; verboseLn (flags fSpec) $ "Context written to " ++ combine (dirOutput (flags fSpec)) (outputfile (flags fSpec)) ++ "."
          }
