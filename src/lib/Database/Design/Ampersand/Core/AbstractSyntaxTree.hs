@@ -116,7 +116,7 @@ data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role
         , rrRels :: [Declaration]   -- ^ name of a Relation
         , rrPos :: Origin       -- ^ position in the Ampersand script
-        } --deriving (Eq, Show)     -- just for debugging
+        } deriving Show
 instance Traced RoleRelation where
    origin = rrPos
 
@@ -133,7 +133,7 @@ data Pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   --deriving (Show)    -- for debugging purposes
+           } deriving Show    -- for debugging purposes
 instance Identified Pattern where
  name = ptnm
 instance Traced Pattern where
@@ -354,7 +354,7 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
                      , explRefIds :: [String]     -- ^ The references of the explaination
-                     }
+                     } deriving Show
 instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 &&
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
@@ -367,7 +367,7 @@ data Population -- The user defined populations
              }
   | PCptPopu { popcpt :: A_Concept
              , popas ::  [String]  -- The user-defined atoms that populate the concept
-             } deriving Eq
+             } deriving (Show, Eq)
 
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
