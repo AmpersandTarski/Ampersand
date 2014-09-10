@@ -243,7 +243,7 @@ pCtx2aCtx' opts
      = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
                       [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
                       r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft c r (name (source (objctx obj))) (objctx obj)})
-                            else mustBeBound (origin obj) [(Tgt,objctx obj)]
+                            else mustBeOrdered o o (Src,(source (objctx obj)),obj)
        ) <?> typecheckObjDef ojd
      where c = name (vd_cpt o)
     typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
@@ -265,7 +265,7 @@ pCtx2aCtx' opts
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
                     r  -> if (name c) `elem` r
                           then pure (obj (addEpsilonRight' (name c) (fst expr), snd expr) (Just$ b))
-                          else mustBeBound (origin o) [(Tgt,fst expr)]
+                          else mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr)) -- mustBeBound (origin o) [(Tgt,fst expr)]
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
       obj (e,(sr,_)) s
