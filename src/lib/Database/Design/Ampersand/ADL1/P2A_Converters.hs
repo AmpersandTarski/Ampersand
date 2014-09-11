@@ -18,7 +18,6 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Maybe
 import Data.List(nub)
-import Debug.Trace
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -40,10 +39,10 @@ pCpt2aCpt pc
         P_Singleton -> ONE
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkUnique udefrules  -- Rules must have a unique name within the context
+pCtx2aCtx opts = checkPurposes          -- Check whether all purpose refer to existing objects
+               . checkUnique udefrules  -- Rules must have a unique name within the context
                . checkUnique patterns   -- Patterns as well
                . checkUnique ctxprocs   -- and so should Processes
-               . checkPurposes
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -67,8 +66,7 @@ checkPurposes gCtx =
                        purposesInProcesses = concat (map ptxps  (ctxpats ctx))
                        allPurposes = topLevelPurposes ++ purposesInPatterns ++ purposesInProcesses
                        danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
-                   in  trace (show (concs ctx)) $
-                       if null danglingPurposes then gCtx else Errors $ map mkDanglingPurposeError danglingPurposes
+                   in  if null danglingPurposes then gCtx else Errors $ map mkDanglingPurposeError danglingPurposes
 
 -- Return True if the ExplObj in this Purpose does not exist.
 isDanglingPurpose :: A_Context -> Purpose -> Bool
