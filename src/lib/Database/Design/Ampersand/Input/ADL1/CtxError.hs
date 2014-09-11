@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames
+  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , Guarded(..)
   , (<?>)
   )
@@ -17,7 +17,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
-import Database.Design.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV,ECpl),A_Concept,SubInterface)
+import Database.Design.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV,ECpl),A_Concept,SubInterface, Purpose(..))
 import Database.Design.Ampersand.Fspec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
@@ -88,6 +88,10 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
                         ++"."
                        )
      messageFor _ = fatal 90 "messageFor must only be used on lists with more that one element!"
+
+mkDanglingPurposeError :: Purpose -> CtxError
+mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
+-- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
 class ErrorConcept a where
   showEC :: a -> String
