@@ -18,6 +18,7 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Maybe
 import Data.List(nub)
+import Debug.Trace
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -42,6 +43,7 @@ pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkUnique udefrules  -- Rules must have a unique name within the context
                . checkUnique patterns   -- Patterns as well
                . checkUnique ctxprocs   -- and so should Processes
+               . checkPurposes
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -50,6 +52,37 @@ pCtx2aCtx opts = checkUnique udefrules  -- Rules must have a unique name within 
                          Checked () -> gCtx
                          Errors err -> Errors err
        Errors err -> Errors err
+
+-- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
+-- sense to do type checking when there are static errors. However, in Ampersand all collect functions (e.g. in ViewPoint)
+-- only exist on the A-Structure, so we do it afterwards. Static purpose errors won't affect types, so in this case it is no problem. 
+
+-- Check whether all purpose refer to existing objects.
+checkPurposes :: Guarded A_Context -> Guarded A_Context
+checkPurposes gCtx =
+  case gCtx of
+    Errors err -> Errors err
+    Checked ctx -> let topLevelPurposes = ctxps ctx
+                       purposesInPatterns = concat (map prcXps  (ctxprocs ctx))
+                       purposesInProcesses = concat (map ptxps  (ctxpats ctx))
+                       allPurposes = topLevelPurposes ++ purposesInPatterns ++ purposesInProcesses
+                       danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
+                   in  trace (show (concs ctx)) $
+                       if null danglingPurposes then gCtx else Errors $ map mkDanglingPurposeError danglingPurposes
+
+-- Return True if the ExplObj in this Purpose does not exist.
+isDanglingPurpose :: A_Context -> Purpose -> Bool
+isDanglingPurpose ctx purp = 
+  case explObj purp of
+    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (ctxcds ctx )
+    ExplDeclaration decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
+    ExplRule nm -> nm `notElem` map name (udefrules ctx) 
+    ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
+    ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
+    ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
+    ExplProcess nm -> nm `notElem` map name (ctxprocs ctx)
+    ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
+    ExplContext nm -> ctxnm ctx /= nm
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' opts
