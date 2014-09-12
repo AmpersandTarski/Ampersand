@@ -123,7 +123,7 @@ parse1File2pContext (fPath, fContent) =
    in  case  getMsgs steps of
          []  -> let Pair (pCtx,includes) _ = evalSteps steps
                 in Checked (pCtx,map normalize includes)
-         msg:_ -> Errors (map PE [msg])
+         msg:_ -> Errors [PE msg]
   where
   normalize ::FilePath -> FilePath
   normalize name = takeDirectory fPath </> name
