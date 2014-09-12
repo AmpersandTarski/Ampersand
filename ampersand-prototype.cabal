@@ -9,7 +9,7 @@ description:   You can define your business processes by means of rules, written
 homepage:      ampersand.sourceforge.net
 category:      Database Design
 stability:     alpha
-cabal-version:  >= 1.16
+cabal-version:  >= 1.10
 build-type:    Custom
 license:       OtherLicense
 copyright:     Stef Joosten
@@ -20,17 +20,17 @@ Executable prototype
   Hs-Source-Dirs:   src
   build-depends:    ghc >= 7.4,
                     ampersand  == 3.0.3,
-                    directory == 1.2.0.1,
-                    process >= 1.1.0.1 && < 1.2,
-                    filepath >= 1.3.0.0 && < 1.4,
-                    csv >= 0.1.2 && < 0.2,
-                    split >= 0.1 && < 0.2,
-                    old-time   >= 1.1 && < 1.2,
-                    HDBC-odbc  >= 2.3.1.0 && < 2.4 ,
-                    HDBC       == 2.4.0.0 ,
+                    directory >= 1.2.0.1,
+                    process >= 1.1.0.1 ,
+                    filepath >= 1.3.0.0,
+                    csv >= 0.1.2,
+                    split >= 0.1,
+                    old-time   >= 1.1,
+                    HDBC-odbc  >= 2.3.1.0 ,
+                    HDBC       >= 2.4.0.0 ,
                     bytestring >= 0.10,
                     base >= 4.5.0.0,
-                    time == 1.4.0.1,
+                    time >= 1.4.0.1,
                     graphviz >=2999.16.0.0
   default-language: Haskell2010
   ghc-options:      -rtsopts +RTS -K4000000000 -RTS 
