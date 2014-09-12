@@ -3,6 +3,11 @@ CONTEXT RAP IN ENGLISH LATEX
    Each concept of the RAP metamodel has its own section, where sections are separated by comments -}
 
 -- Context
+PATTERN Contexts
+PURPOSE PATTERN Contexts IN ENGLISH LATEX
+{+The rules that govern contexts are brought together in one pattern,
+in order to formalize contexts and determine their meaning.
+-}
 CONCEPT Context "A context is a set of statements in a formal language that are true within that context."
      --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Context(ctxnm,ctxpats,ctxcs):svn1020"
 PURPOSE CONCEPT Context IN ENGLISH LATEX
@@ -30,12 +35,14 @@ Within one context, there is a single truth and there are no contradictions.
 For this reason, a context defines a language by means of concepts and relations, in which utterances can be made.
 We say that these utterances {\emph make sense} in that context.
 -}
-PURPOSE PATTERN Contexts IN ENGLISH LATEX
-{+The rules that govern contexts are brought together in one pattern,
-in order to formalize contexts and determine their meaning.
--}
+ENDPATTERN
 
 -- Rule
+PATTERN Rules
+PURPOSE PATTERN Rules IN ENGLISH LATEX
+{+The rules that govern rules are brought together in one pattern,
+in order to formalize rules and determine their meaning.
+-}
 CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
   --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Rule(rrnm,rrexp):svn1020"
 PURPOSE CONCEPT Rule IN ENGLISH LATEX
@@ -59,12 +66,14 @@ All contexts in which this rule is valid are called the scope of this rule.
 Outside its scope, a rule has no meaning.
 For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
 -}
-PURPOSE PATTERN Rules IN ENGLISH LATEX
-{+The rules that govern rules are brought together in one pattern,
-in order to formalize rules and determine their meaning.
--}
+ENDPATTERN
 
 -- Pattern
+PATTERN Patterns
+PURPOSE PATTERN Patterns IN ENGLISH LATEX
+{+The rules that govern patterns are brought together in one pattern,
+in order to formalize patterns and determine their meaning.
+-}
 CONCEPT Pattern "A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem."
      --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Pattern(ptnm,ptdcs,ptgns,ptrls):svn1020"
 PURPOSE CONCEPT Pattern IN ENGLISH LATEX
@@ -84,12 +93,14 @@ Therefore, they are independent from a particular context.
 The problem of identifying which persons have been using an information system can be solved by making rules
 about log-in, users and sessions.
 -}
-PURPOSE PATTERN Patterns IN ENGLISH LATEX
-{+The rules that govern patterns are brought together in one pattern,
-in order to formalize patterns and determine their meaning.
--}
+ENDPATTERN
 
 -- Expression
+PATTERN Expressions
+PURPOSE PATTERN Expressions IN ENGLISH LATEX
+{+The rules that govern expressions are brought together in one pattern,
+in order to formalize expressions and determine their meaning.
+-}
 CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
 CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
         --    "DatabaseDesign.Ampersand.Input.ADL1.Parser.pExpr:svn1020"
@@ -107,12 +118,14 @@ In ampersand, you calculate with relations rather than numbers.
 The problem of identifying which persons have been using an information system can be solved by making rules
 about log-in, users and sessions.
 -}
-PURPOSE PATTERN Expressions IN ENGLISH LATEX
-{+The rules that govern expressions are brought together in one pattern,
-in order to formalize expressions and determine their meaning.
--}
+ENDPATTERN
 
 -- Concept
+PATTERN Concepts
+PURPOSE PATTERN Concepts IN ENGLISH LATEX
+{+The rules that govern concepts are brought together in one pattern,
+in order to formalize concepts and determine their meaning.
+-}
 CONCEPT A_Concept "A concept is a name for a category of similar objects."
  --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn1020"
 CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
@@ -132,11 +145,13 @@ without referring to the actual instances of those concepts.
 The distinction between an object (Amsterdam) and the corresponding concept (City)
 has been studied for a long time [e.g.\ Frege, 1892] and is highly relevant for Ampersand.
 -}
-PURPOSE PATTERN Concepts IN ENGLISH LATEX
-{+The rules that govern concepts are brought together in one pattern,
-in order to formalize concepts and determine their meaning.
--}
+ENDPATTERN
 
+PATTERN Populations
+PURPOSE PATTERN Populations IN ENGLISH LATEX
+{+The rules that govern atoms, pairs, and populations are brought together in one pattern,
+in order to formalize them and determine their meaning.
+-}
 -- Atom
 CONCEPT AtomID "An atomID is the identity of an atomic term."
 CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept." TYPE "Blob"
@@ -153,10 +168,6 @@ Atoms populate relations.
 Ampersand works with binary relations, so you will find pairs of atoms in a relation.
 In an information system, the population of relations can change because of edit actions by users in user interfaces.
 This means that pairs are inserted into and deleted from relations as time goes by.
--}
-PURPOSE PATTERN Populations IN ENGLISH LATEX
-{+The rules that govern atoms, pairs, and populations are brought together in one pattern,
-in order to formalize them and determine their meaning.
 -}
 
 CONCEPT Population "The contents of a Concept or Relation"
@@ -206,4 +217,5 @@ CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-de
 CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
       --    "DatabaseDesign.Ampersand.ADL1.Prop.Prop(..):svn1020"
 CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
+ENDPATTERN
 ENDCONTEXT
