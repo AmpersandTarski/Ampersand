@@ -219,10 +219,6 @@ pCtx2aCtx' opts
     castSign :: String -> String -> Sign
     castSign a b = Sign (castConcept a) (castConcept b)
 
-{- SJ20140216: The function castConcept is used in the type system, but looks similar to pCpt2aCpt.
-   However, castConcept makes an erroneous concept, which we should prevent in the first place.
-   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work.
--}
     leastConcept :: A_Concept -> String -> A_Concept
     leastConcept c str
      = case (name c `elem` leastConcepts, str `elem` leastConcepts) of
@@ -231,6 +227,24 @@ pCtx2aCtx' opts
          (_, _)    -> fatal 178 ("Either "++name c++" or "++str++" should be a subset of the other." )
        where
          leastConcepts = findExact genLattice (Atom (name c) `Meet` (Atom str))
+
+{- SJ20140216: The function castConcept is used in the type system, but looks similar to pCpt2aCpt.
+   However, castConcept makes an erroneous concept, which we should prevent in the first place.
+   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work.
+   SJC20140915: The function castConcept has an entirely different signature: it converts from a string.
+   It does not create erroneous concepts!
+   If the parser would return a P_Concept in all these places, we could unify castConcept and pCpt2aCpt.
+   So the solution would be to replace castConcept by:
+    castConcept :: P_Concept -> A_Concept
+    castConcept = pCpt2aCpt
+   and additionally:
+    genRules = [ ( Set.singleton (gen_spc x), Set.fromList (gen_concs x))
+               | x <- p_gens ++ concatMap pt_gns p_patterns ++ concatMap procGens p_processes
+               ]
+    genLattice :: Op1EqualitySystem P_Concept
+   And then solving all type errors in this file by changing the data types (e.g. p_cnme :: P_Population -> P_Concept)
+   .. seems like a lot of work => future work
+-}
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x
@@ -274,7 +288,7 @@ pCtx2aCtx' opts
      = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
                       [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
                       r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft c r (name (source (objctx obj))) (objctx obj)})
-                            else mustBeOrdered o o (Src,(source (objctx obj)),obj)
+                            else mustBeBound (origin obj) [(Tgt,objctx obj)]
        ) <?> typecheckObjDef ojd
      where c = name (vd_cpt o)
     typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
@@ -292,11 +306,9 @@ pCtx2aCtx' opts
             Nothing -> pure (obj expr Nothing)
             Just (InterfaceRef s) -> pure (obj expr (Just$InterfaceRef s)) --TODO: check type!
             Just b@(Box c _)
-              -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
+              -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
-                    r  -> if (name c) `elem` r
-                          then pure (obj (addEpsilonRight' (name c) (fst expr), snd expr) (Just$ b))
-                          else mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr)) -- mustBeBound (origin o) [(Tgt,fst expr)]
+                    r  -> pure (obj (addEpsilonRight' (head r) (fst expr), snd expr) (Just$ b))
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
       obj (e,(sr,_)) s

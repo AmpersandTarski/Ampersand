@@ -151,9 +151,9 @@ mustBeBound o lst
 
 writeBind :: Expression -> String
 writeBind (ECpl e)
- = "("++showADL (EDcV (sign e))++"["++showADL (source e)++"*"++showADL (target e)++"]"++" - "++showADL e++")"
+ = "("++showADL (EDcV (sign e))++" - "++showADL e++")"
 writeBind e
- = "("++showADL e++") /\\ "++showADL (EDcV (sign e))++"["++showADL (source e)++"*"++showADL (target e)++"]"
+ = "("++showADL e++") /\\ "++showADL (EDcV (sign e))
 
 data Guarded a = Errors [CtxError] | Checked a deriving Show
 
