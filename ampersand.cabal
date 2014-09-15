@@ -133,7 +133,6 @@ library
                     Database.Design.Ampersand.Input.ADL1.FilePos,
                     Database.Design.Ampersand.Input.ADL1.Parser,
                     Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
-                    Database.Design.Ampersand.Input.ADL1.UU_Parsing,
                     Database.Design.Ampersand.Input.ADL1.UU_Scanner,
                     Database.Design.Ampersand.Input.Parsing,
                     Database.Design.Ampersand.InputProcessing,

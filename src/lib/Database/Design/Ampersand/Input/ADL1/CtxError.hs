@@ -23,7 +23,7 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token, Pos(..))
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
 import UU.Parsing (Message(..),Action(..))
 import Database.Design.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)

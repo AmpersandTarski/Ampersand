@@ -78,7 +78,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser
                , ctx_php    = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
                , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
                , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]
-               , ctx_metas  = [m | CMeta m <-ces]
+               , ctx_metas  = [meta | CMeta meta <-ces]
                }
           , [s | CIncl s<-ces]) -- the INCLUDE filenames
 
