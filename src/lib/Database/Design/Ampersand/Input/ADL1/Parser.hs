@@ -5,13 +5,8 @@ module Database.Design.Ampersand.Input.ADL1.Parser
    import Database.Design.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
-   import Database.Design.Ampersand.Input.ADL1.UU_Parsing
-            (Parser
-            , (<$>) , (<$), (<*>), (<*), (*>), (<|>), (<??>)
-            ,pList,pListSep,pList1,pList1Sep,pSym
-            ,pSucceed
-            ,opt, Sequence,Alternative, IsParser
-            )
+   import UU.Parsing.Interface
+   import UU.Parsing.Derived
    import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
    import Database.Design.Ampersand.Core.ParseTree
    import Data.List
@@ -754,8 +749,9 @@ In practice, we have it a little different.
    pADLid_val_pos :: Parser Token (String, Origin)
    pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
 
-   optional :: (Sequence p, Alternative p) => p a -> p (Maybe a)
-   optional a        = Just <$> a <|> pSucceed Nothing
+   optional :: IsParser p s => p a -> p (Maybe a)
+   optional p        = Just <$> p <|> pSucceed Nothing
+   
 
    get_tok_pos :: Token -> Origin
    get_tok_pos     (Tok _ _ s l f) = FileLoc(FilePos (f,l,s))
