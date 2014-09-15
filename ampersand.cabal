@@ -79,7 +79,9 @@ library
                     process >= 1.1.0.1 ,
                     split >= 0.1 ,
                     old-locale >= 1.0.0.4,
-                    ConfigFile >= 1.1.1
+                    ConfigFile >= 1.1.1,
+                    uulib >= 0.9 && < 1.0
+                    
   exposed-modules:  Database.Design.Ampersand
   other-modules:    
                     Database.Design.Ampersand.ADL1,

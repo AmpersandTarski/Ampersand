@@ -11,7 +11,7 @@ import Database.Design.Ampersand.Fspec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
-import Database.Design.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
+import UU.Parsing (getMsgs,parse,evalSteps,Steps,Pair(..))
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Input.ADL1.CtxError (CtxError(PE))
@@ -115,14 +115,15 @@ parseWithIncluded opts fp = tailRounds [] (emptyContext,[fp])
                    Checked prs -> Checked ( foldl mergeContexts pCtx (map fst prs)
                                           , concatMap snd prs)
                    Errors errs -> Errors errs
+
 parse1File2pContext :: FileContent -> Guarded ParseResult
 parse1File2pContext (fPath, fContent) =
    let scanner = scan keywordstxt keywordsops specialchars opchars fPath initPos
-       steps :: Steps (Pair ParseResult (Pair [Token] a)) Token
+       steps :: Steps (Pair ParseResult (Pair [Token] ())) Token (Maybe Token)
        steps = parse pContext (scanner fContent)
    in  case  getMsgs steps of
-         []  -> let Pair (pCtx,includes) _ = evalSteps steps
-                in Checked (pCtx,map normalize includes)
+         []   -> let Pair (pCtx,includes) _ = evalSteps steps
+                 in  Checked (pCtx,map normalize includes)
          msg:_ -> Errors [PE msg]
   where
   normalize ::FilePath -> FilePath

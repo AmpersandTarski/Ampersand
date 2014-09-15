@@ -1,11 +1,12 @@
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash #-}
+
 module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
 
    import Data.Char
    import Data.List
    import Data.Maybe
    import Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
-   import Database.Design.Ampersand.Input.ADL1.UU_Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
+   import UU.Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
 
    data TokenType
      = TkSymbol
@@ -29,7 +30,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
    type Line = Int
    type Column = Int
 
-   data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord)
+   data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord, Show)
    type Filename   = String
 
    data Token = Tok { tp :: TokenType
@@ -103,8 +104,8 @@ module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
           )
 
    instance  Symbol Token where
-     deleteCost (Tok TkKeyword _ _ _ _) = 10
-     deleteCost _                       = 5
+     deleteCost (Tok TkKeyword _ _ _ _) = 10#
+     deleteCost _                       = 5#
 
    keyToken,token :: TokenType -> String -> Pos -> Filename -> Token
    keyToken tp key  = Tok tp key key

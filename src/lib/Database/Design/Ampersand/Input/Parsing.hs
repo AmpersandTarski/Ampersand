@@ -14,11 +14,11 @@ import Database.Design.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
-import Database.Design.Ampersand.Input.ADL1.UU_Parsing -- (getMsgs,parse,evalSteps,parseIO)
+import UU.Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import Database.Design.Ampersand.ADL1
 import Control.Exception
 
-type ParseError = Message Token
+type ParseError = Message Token (Maybe Token)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.Parsing"
@@ -199,11 +199,9 @@ parsePops str fn pv =
 
 runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either ParseError res
 runParser parserVersion parser filename input =
-  let scanner = case parserVersion of
-                  Current -> scan              keywordstxt              keywordsops              specialchars              opchars filename initPos
-      steps :: Steps (Pair res (Pair [Token] a)) Token
-      steps = parse parser $ scanner input
+  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
+      steps = parse parser (scanner input)
   in  case  getMsgs steps of
-        []       -> Right $ let Pair result _ = evalSteps steps in result
-        msg:msgs -> Left msg
-
+         []    -> let Pair res _ = evalSteps steps
+                  in  Right res
+         msg:_ -> Left msg
