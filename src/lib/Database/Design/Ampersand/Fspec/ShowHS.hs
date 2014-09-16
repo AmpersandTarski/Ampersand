@@ -673,6 +673,7 @@ where
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
            , "    , ifcRoles  = " ++ show(ifcRoles ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
+           , "    , ifcEcas   = " ++ showHS opts (indent++"           ") (ifcEcas ifc)
            , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
            , "    , ifcPrp    = " ++ show(ifcPrp ifc)
            ]++indent++"    }"

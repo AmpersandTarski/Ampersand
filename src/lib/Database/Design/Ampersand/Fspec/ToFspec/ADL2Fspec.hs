@@ -1,6 +1,6 @@
 ﻿{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
-    (makeFspec,makeCjcts, quads, preEmpt, editable)
+    (makeFspec, quads, preEmpt, editable)
   where
    import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Database.Design.Ampersand.Core.Poset
@@ -18,8 +18,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
    import Database.Design.Ampersand.Fspec.ShowADL
    import Text.Pandoc
    import Data.Maybe
-   import Data.List (nub,nubBy,intersect,partition,group,delete)
-   import Database.Design.Ampersand.ADL1.Expression
+   import Data.List (nub,intersect,partition,group,delete)
    import Data.Char        (toLower)
 --   import Debug.Trace -- only for diagnostic purposes during debugging
    head :: [a] -> a
@@ -48,7 +47,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vprocesses   = allProcs
                  , vplugInfos   = definedplugs
                  , plugInfos    = allplugs
-                 , interfaceS   = ctxifcs context -- interfaces specified in the Ampersand script
+                 , interfaceS   = map enrichIfc (ctxifcs context) -- interfaces specified in the Ampersand script
                  , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
                                        , isIdent ctxrel && source ctxrel==ONE
                                          || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
@@ -64,7 +63,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , allRules     = allrules
                  , vconjs       = nub (concatMap qConjuncts allQuads)   -- note that equality on Conjunct a and b is defined as:  rc_conjunct a == rc_conjunct b
                  , vquads       = allQuads
-                 , vEcas        = ( {-preEmpt opts . -} fst . assembleECAs) fSpec   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+                 , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = relsUsedIn context
                  , allDecls     = relsDefdIn context
@@ -94,6 +93,10 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
         declsInThemesInScope = ctxds context `uni` concatMap prcDcls  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
         concsInThemesInScope = concs (ctxrs context)  `uni`  concs procsInThemesInScope  `uni`  concs pattsInThemesInScope
         gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
+
+        enrichIfc :: Interface -> Interface
+        enrichIfc ifc
+         = ifc{ ifcEcas = fst (assembleECAs fSpec ([d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc])) }
 
         allQuads = quads opts (\_->True) allrules
         initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
@@ -234,7 +237,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
         interfaceGen = step4a ++ step4b
         step4a
          | theme opts == StudentTheme
-         = [Ifc { ifcParams = directdeclsExprs
+         = [Ifc { ifcParams = map EDcD directdecls
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                   , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
@@ -245,20 +248,20 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                                                    , objctx  = EDcI c
                                                    , objmsub = Nothing
                                                    , objstrs = [] }
-                                              :[Obj { objnm   = case dcl of
-                                                                  EDcD d -> name d ++ "::"++name (source d)++"*"++name (target d)
-                                                                  _      -> fatal 246 "Invalid expression for a parameter."
+                                              :[Obj { objnm   = name dcl ++ "::"++name (source dcl)++"*"++name (target dcl)
                                                     , objpos  = Origin "generated object: step 4a - default theme"
-                                                    , objctx  = if source dcl==c then dcl else flp dcl
+                                                    , objctx  = if source dcl==c then EDcD dcl else flp (EDcD dcl)
                                                     , objmsub = Nothing
                                                     , objstrs = [] }
-                                               | dcl <- directdeclsExprs]
-                                  , objstrs = [] }
+                                               | dcl <- directdecls]
+                                  , objstrs = []
+                                  }
+                , ifcEcas   = fst (assembleECAs fSpec directdecls)
                 , ifcPos    = Origin "generated interface for each concept in TblSQL or ScalarSQL"
                 , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
-                , ifcRoles = []
+                , ifcRoles  = []
                 }
-           | c<-concs fSpec, let directdeclsExprs = [EDcD d | d<-relsDefdIn fSpec, c `elem` concs d]]
+           | c<-concs fSpec, let directdecls = [ d | d<-relsDefdIn fSpec, c `elem` concs d]]
          --end student theme
          --otherwise: default theme
          | otherwise --note: the uni of maxInj and maxTot may take significant time (e.g. -p while generating index.htm)
@@ -280,13 +283,14 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- Each interface gets all attributes that are required to create and delete the object.
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
-           [Ifc { ifcParams = [ p | p <- concatMap primitives (expressionsIn objattributes), not (isIdent p)]
+           [Ifc { ifcParams = map EDcD editables
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
                                   , objpos  = Origin "generated object: step 4a - default theme"
                                   , objctx  = EDcI c
                                   , objmsub = Just . Box c $ objattributes
                                   , objstrs = [] }
+                , ifcEcas   = fst (assembleECAs fSpec editables)
                 , ifcPos    = Origin "generated interface: step 4a - default theme"
                 , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
                 , ifcRoles  = []
@@ -298,6 +302,8 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
              not (length objattributes==1 && isIdent(objctx(head objattributes)))
            , let e0=head cl, if null e0 then fatal 284 "null e0" else True
            , let c=source (head e0)
+           , let editables = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
+                             [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
            ]
         --end otherwise: default theme
         --end stap4a
@@ -309,6 +315,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
                                   , objctx  = EDcI ONE
                                   , objmsub = Just . Box ONE $ [att]
                                   , objstrs = [] }
+                , ifcEcas   = ifcEcas ifcc
                 , ifcPos    = ifcPos  ifcc
                 , ifcPrp    = ifcPrp  ifcc
                 , ifcRoles  = []
@@ -328,12 +335,6 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
         ----------------------
         --END: making interfaces
         ----------------------
-
-   ifcQuads :: Interface -> [Quad]
-   ifcQuads ifc = []
-    where
-     fromDecls = relsMentionedIn ifc
-     toRels = ifcParams ifc
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
    editable (EDcD Sgn{}) = True
@@ -407,19 +408,27 @@ while maintaining all invariants.
    quads opts visible rs
     = [ Quad { qDcl     = d
              , qRule    = rule
-             , qConjuncts = makeCjcts opts rule
+             , qConjuncts = makeCjcts rule
              }
       | rule<-rs, d<-relsUsedIn rule, visible d
       ]
-
--- The function makeCjcts yields an expression which has constructor EUni in every case.
-   makeCjcts :: Options -> Rule -> [Conjunct]
-   makeCjcts opts rule = [Cjct { rc_int = i
-                               , rc_rulename = name rule
-                               , rc_conjunct = dnf2expr dnfClause
-                               , rc_dnfClauses = allShifts opts dnfClause
-                               }
-                         | (dnfClause,i)<-zip (conjuncts opts rule) [0..] ]
+      where
+      -- The function makeCjcts yields an expression which has constructor EUni in every case.
+         makeCjcts :: Rule -> [Conjunct]
+         makeCjcts rule = [Cjct { rc_int = i
+                                , rc_rulename = name rule
+                                , rc_conjunct = expr
+                                , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+                                }
+                          | (expr,i)<-zip (conjuncts opts rule) [0..]
+                          ]
+         expr2dnfClause :: Expression -> DnfClause
+         expr2dnfClause conj = (split (Dnf [] []).exprUni2list) conj
+          where
+            split :: DnfClause -> [Expression] -> DnfClause
+            split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
+            split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
+            split dc              []             = dc
 
    allShifts :: Options -> DnfClause -> [DnfClause]
    allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
@@ -609,7 +618,7 @@ while maintaining all invariants.
       where
         qs :: [Quad]
         qs        = quads (flags fSpec) visible (invariants fSpec)
-        (ecas, _) = assembleECAs fSpec
+        (ecas, _) = assembleECAs fSpec (allDecls fSpec)
         conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qConjuncts q]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
         eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]

@@ -168,10 +168,11 @@ pCtx2aCtx' opts
     patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
     patProcs  = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The relations declared in all processes within this context.
 
+-- In order to find declarations efficiently, a Map is constructed to search declarations by name.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
-    findDecls x = Map.findWithDefault Map.empty x declMap
-    findDecl o x = getOneExactly o . Map.elems $ findDecls x
+    findDecls x = Map.findWithDefault Map.empty x declMap  -- get all declarations with the same name as x
+    findDecl o x = (getOneExactly o . Map.elems . findDecls) x
     findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls x))
     findDeclTyped o x tp = getOneExactly o (findDeclsTyped x tp)
     -- accumDecl is the function that combines two relations into one
@@ -475,10 +476,12 @@ pCtx2aCtx' opts
                     , ifcArgs = args
                     , ifcRoles = rols
                     , ifcObj = obj'
+                    , ifcEcas = []
                     , ifcPos = orig
                     , ifcPrp = prp
                     }) <$> traverse termPrim2Expr tps
                        <*> pObjDef2aObjDef obj
+
     pProc2aProc :: P_Process -> Guarded Process
     pProc2aProc P_Prc { procNm = nm
                       , procPos = orig

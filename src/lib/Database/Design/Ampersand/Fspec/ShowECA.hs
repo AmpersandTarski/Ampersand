@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.ShowECA (showECA) where
-   import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Database.Design.Ampersand.Fspec.ShowADL            (showPAclause, showREL)
 
    class ECA a where
