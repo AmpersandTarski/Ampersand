@@ -229,14 +229,15 @@ executePHP phpStr =
     ; hClose temph
 
     ; let cp = CreateProcess
-                { cmdspec      = RawCommand "php" [tempfile]
-                , cwd          = Nothing -- path
-                , env          = Just [("TERM","dumb")] -- environment
-                , std_in       = Inherit
-                , std_out      = CreatePipe
-                , std_err      = CreatePipe
-                , close_fds    = False -- no need to close all other file descriptors
-                , create_group = False
+                { cmdspec       = RawCommand "php" [tempfile]
+                , cwd           = Nothing -- path
+                , env           = Just [("TERM","dumb")] -- environment
+                , std_in        = Inherit
+                , std_out       = CreatePipe
+                , std_err       = CreatePipe
+                , close_fds     = False -- no need to close all other file descriptors
+                , create_group  = False
+                , delegate_ctlc = False -- don't let php handle ctrl-c
                 }
 
     ; (_, mStdOut, mStdErr, _) <- createProcess cp
