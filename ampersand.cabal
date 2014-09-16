@@ -8,12 +8,12 @@ homepage:       ampersand.sourceforge.net
 category:       Database Design
 stability:      alpha
 cabal-version:  >= 1.10
+tested-with:    GHC == 7.8.3
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/report/12
-tested-with:    GHC == 7.6.3
 data-files:     
                 AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/FormalAmpersand/ADLTool.adl, 
