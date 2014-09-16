@@ -8,6 +8,7 @@ module Database.Design.Ampersand.Fspec.Switchboard
    import Database.Design.Ampersand.Basics        (fatalMsg,Identified(..), flp)
    import Database.Design.Ampersand.ADL1
    import Database.Design.Ampersand.Classes
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree
    import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
    import Data.String
@@ -58,9 +59,9 @@ data Activity = Act { actRule ::   Rule
                     , actPurp ::   [Purpose]
                     }
 data ECArule= ECA { ecaTriggr :: Event     -- The event on which this rule is activated
-                  , ecaDelta :: Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
+                  , ecaDelta ::  Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
                   , ecaAction :: PAclause  -- The action to be taken when triggered.
-                  , ecaNum :: Int       -- A unique number that identifies the ECArule within its scope.
+                  , ecaNum ::    Int       -- A unique number that identifies the ECArule within its scope.
                   }
 data Event = On { eSrt :: InsDel
                   , eRel :: Relation
@@ -176,8 +177,8 @@ data Event = On { eSrt :: InsDel
         fromRels     = nub (actTrig act)
         toRels :: [Declaration]
         toRels       = nub (actAffect act)
-        conjuncts    = nub [ (qRule q,c)
-                           | q<-actQuads act, c<-(map rc_conjunct . qConjuncts) q]
+        conjuncts    = nub [ (qRule q,expr)
+                           | q<-actQuads act, expr<-(map rc_conjunct . qConjuncts) q]
         --DESCR -> The relations from which changes can come
         inMorNodes    = [ DotNode { nodeID         = nameINode fromRels r
                                   , nodeAttributes = [Label (StrLabel (fromString (showADL r)))]

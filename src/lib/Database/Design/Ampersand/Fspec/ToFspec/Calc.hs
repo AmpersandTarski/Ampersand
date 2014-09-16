@@ -38,14 +38,8 @@ where
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
 
-   conjuncts :: Options -> Rule -> [DnfClause]
-   conjuncts opts = map disjuncts.exprIsc2list.conjNF opts.rrexp
-   disjuncts :: Expression -> DnfClause
-   disjuncts conj = (split (Dnf [] []).exprUni2list) conj
-    where split :: DnfClause -> [Expression] -> DnfClause
-          split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
-          split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
-          split dc             []             = dc
+   conjuncts :: Options -> Rule -> [Expression]
+   conjuncts opts = exprIsc2list.conjNF opts.rrexp
 
 -- testInterface :: Fspc -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
@@ -74,7 +68,7 @@ where
 --   --     visible r  = r `elem` vis
 --        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (relsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
---   --     (ecaRs, _) = assembleECAs fSpec
+--   --     (ecaRs, _) = assembleECAs fSpec (allDecls fSpec)
 ----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
 ----        editable _               = False
 ----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
@@ -204,7 +198,7 @@ where
        interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
        derivations :: [Blocks]
        ecaRs :: [ECArule]
-       (ecaRs, derivations) = assembleECAs fSpec
+       (ecaRs, derivations) = assembleECAs fSpec (allDecls fSpec)
 {-
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
@@ -489,8 +483,8 @@ Rewrite rules:
                             | otherwise           = conjNF opts (dcl ./\. notCpl delt)
 
    -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
-   assembleECAs :: Fspc -> ([ECArule],[Blocks])
-   assembleECAs fSpec
+   assembleECAs :: Fspc -> [Declaration] -> ([ECArule],[Blocks])
+   assembleECAs fSpec editables
     = unzip [eca i | (eca,i) <- zip ecas [(1::Int)..]]
       where
        ecas :: [Int->(ECArule,Blocks)]
@@ -507,61 +501,64 @@ Rewrite rules:
                          (codeBlock . ("\n     "++) . showECA "\n     ".ecaRule) ruleNr
                        )
              )
-           | rel <- allDecls fSpec ++ [ Isn c | c<-allConcepts fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
+           | rel <- editables -- allDecls fSpec ++ [ Isn c | c<-allConcepts fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
            , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
            , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
            , ev<-[Ins,Del]
            , let acts = [ -- go through all the events that affect that clause:
-                          (normPA options act, conjunct, map snd quadEqClass,
-                          para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>commaEngPandoc' "and" (map (singleQuoted.str.name.snd) quadEqClass)<>".")<>
-                          para ("event = "<>str (show ev)<>space<>str (showREL rel)<>" means doing the following substitution")<>
-                          para (str (showADL clause<>"["<>showREL rel<>":="<>showADL (actSem options ev (EDcD rel) (delta (sign rel)))<>"] = clause'"))<>
-                          para ("clause' = "<>str (showADL ex')<>
-                                if clause'==ex'
-                                then ", which is already in conjunctive normal form."<>linebreak
-                                else ", which has conjunctive normal form: "<>linebreak<>str (showADL clause')
-                               )<>
-                          para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
-                                "This means to negate the result (notClau = notCpl clause'): ")<>
-                          (showProof (para.str.showADL). cfProof options) notClau<>
-                          para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
-                                ( if viols==viols'
-                                  then "This expression is in disjunctive normal form as well."
-                                  else str ("In DNF, notClau is:  "<>showADL viols'<>".")))<>
-                          ( if isTrue clause'
-                            then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
-                                       <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
-                                 (showProof (para.str.showADL). cfProof options) (expr .|-. clause')
-                            else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
-                                       "We must compute a reaction to compensate for violations..."<>linebreak<>
-                                       "That would be to reinsert violations that originate from "<>
-                                       ( if ev==Ins
-                                         then str (showADL (conjNF options negs))<>" into "<> str (showADL (disjNF options poss))<>"."
-                                         else str (showADL (disjNF options poss))<>" into "<> str (showADL (conjNF options negs))<>"."
-                                       )<>linebreak<>"deltFr: ")<>
-                                 (showProof (para.str.showADL). dfProof options) deltFr<>
-                                 ( let pr=proofPA options act in
-                                   if length pr>1
-                                   then para "Now let us remove redundancy from the ECA action:\n     "<>
-                                        showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA options act)
-                                   else fromList []
-                                 )
-                          {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL rel)
-                                    <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
-                                    <>
-                                 ( if length (nub [sign viols, sign viols', sign toExpr])>1
-                                   then fatal 248 ("viols"<>showSign (sign viols) <>"   "<>showADL viols <>"\n"<>
-                                                   "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
-                                                   "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
-                                   else if ev==Ins
-                                   then (showProof (para.str.showADL). cfProof options) (viols'.\/.toExpr)<>linebreak
-                                   else (showProof (para.str.showADL). dfProof options) (notCpl viols./\.toExpr)<>linebreak
-                                 ) -}
-                          ))
-                        | quadEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
-                        , conjunct <- (fst.head) quadEqClass                  -- get conjuncts from the clauses
+                          ( normPA options act   -- a normalized action for this event-conjunct combination
+                          , conjunct             -- the conjunct
+                          , map snd conjEqClass  -- the rule-expression of which conjunct is a part
+                          , para ("Let us analyse clause "<>str (showADL expr)<>" from rule "<>commaEngPandoc' "and" (map (singleQuoted.str.name.snd) conjEqClass)<>".")<>
+                            para ("event = "<>str (show ev)<>space<>str (showREL rel)<>" means doing the following substitution")<>
+                            para (str (showADL clause<>"["<>showREL rel<>":="<>showADL (actSem options ev (EDcD rel) (delta (sign rel)))<>"] = clause'"))<>
+                            para ("clause' = "<>str (showADL ex')<>
+                                  if clause'==ex'
+                                  then ", which is already in conjunctive normal form."<>linebreak
+                                  else ", which has conjunctive normal form: "<>linebreak<>str (showADL clause')
+                                 )<>
+                            para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
+                                  "This means to negate the result (notClau = notCpl clause'): ")<>
+                            (showProof (para.str.showADL). cfProof options) notClau<>
+                            para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
+                                  ( if viols==viols'
+                                    then "This expression is in disjunctive normal form as well."
+                                    else str ("In DNF, notClau is:  "<>showADL viols'<>".")))<>
+                            ( if isTrue clause'
+                              then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
+                                         <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
+                                   (showProof (para.str.showADL). cfProof options) (expr .|-. clause')
+                              else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
+                                         "We must compute a reaction to compensate for violations..."<>linebreak<>
+                                         "That would be to reinsert violations that originate from "<>
+                                         ( if ev==Ins
+                                           then str (showADL (conjNF options negs))<>" into "<> str (showADL (disjNF options poss))<>"."
+                                           else str (showADL (disjNF options poss))<>" into "<> str (showADL (conjNF options negs))<>"."
+                                         )<>linebreak<>"deltFr: ")<>
+                                   (showProof (para.str.showADL). dfProof options) deltFr<>
+                                   ( let pr=proofPA options act in
+                                     if length pr>1
+                                     then para "Now let us remove redundancy from the ECA action:\n     "<>
+                                          showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA options act)
+                                     else fromList []
+                                   )
+                            {-     <> "To finish the analysis of case "<>str (show ev)<>space<>str (showADL rel)
+                                      <>", let us compute the contents of "<>str (showADL toExpr)<>" after insertion of viols."<>linebreak
+                                      <>
+                                   ( if length (nub [sign viols, sign viols', sign toExpr])>1
+                                     then fatal 248 ("viols"<>showSign (sign viols) <>"   "<>showADL viols <>"\n"<>
+                                                     "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
+                                                     "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
+                                     else if ev==Ins
+                                     then (showProof (para.str.showADL). cfProof options) (viols'.\/.toExpr)<>linebreak
+                                     else (showProof (para.str.showADL). dfProof options) (notCpl viols./\.toExpr)<>linebreak
+                                   ) -}
+                            )
+                          )
+                        | conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
+                        , conjunct <- (fst.head) conjEqClass                  -- get conjuncts from the clauses
                         , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
-                        , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct
+                        , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct, because the type may be different.
                         , let vee     = EDcV (sign expr)
                         , let ex'     = subst (rel, actSem options ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
                         , let clause' = conjNF options ex'                                                -- its CNF
@@ -588,11 +585,11 @@ Rewrite rules:
                         , let toExpr  = if ev==Ins
                                         then disjNF options poss
                                         else disjNF options (notCpl negs)
-                        , let visible _ = True
+                        , let visible r = r `elem` editables
                         , if length (nub (map sign [toExpr, deltFr', expr]))>1
                           then fatal 285 "type problem"
                           else True
-                        , let act = genPAclause visible Ins toExpr deltFr' [(expr, map snd quadEqClass)]
+                        , let act = genPAclause visible Ins toExpr deltFr' [(expr, map snd conjEqClass)]
                         ]
            , let ecaAct = ALL (map fst4 acts
            -- The following acts add the implicit rules, which allows the user to add and delete atoms from concepts in a safe way.

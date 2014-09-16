@@ -11,10 +11,10 @@ module Database.Design.Ampersand.Fspec.Fspec
           ( Fspc(..), concDefs, Atom(..)
           , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
-          , InsDel(..)
+--        , InsDel(..)
           , ECArule(..)
-          , Event(..)
-          , PAclause(..)
+--        , Event(..)
+--        , PAclause(..)
           , Activity(..)
           , PlugSQL(..),plugFields
           , lookupCpt
@@ -78,7 +78,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
-                 , vconjs ::       [Conjunct]             -- ^ All conjuncts generated (by ADL2Fspec)
+                 , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2Fspec)
                  , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
                  , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
                  , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -198,76 +198,16 @@ instance ConceptStructure Activity where
  concs         act = concs (actRule act) `uni` concs (actAffect act)
  expressionsIn act = expressionsIn (actRule act)
 
-data Quad
-     = Quad
-          { qDcl ::     Declaration   -- The relation that, when affected, triggers a restore action.
-          , qRule ::    Rule          -- The rule from which qConjuncts is derived.
-          , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
-          } deriving Show
+data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.
+                 , qRule ::      Rule          -- The rule from which qConjuncts is derived.
+                 , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
+                 } deriving Show
 
 instance Eq Quad where
   q == q'  = qDcl q == qDcl q' && qRule q == qRule q'
 
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
-
-data InsDel   = Ins | Del
-                 deriving (Show,Eq)
-data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is activated
-                  , ecaDelta ::  Declaration  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
-                  , ecaAction :: PAclause    -- The action to be taken when triggered.
-                  , ecaNum :: Int            -- A unique number that identifies the ECArule within its scope.
-                  }
-instance Eq (ECArule) where
-   e==e' = ecaNum e==ecaNum e'
-
-data Event = On { eSrt :: InsDel
-                , eDcl :: Declaration
-                } deriving (Show,Eq)
-
-data PAclause
-              = CHC { paCls :: [PAclause]                 -- precisely one clause is executed.
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
-                    }
-              | GCH { paGCls :: [(InsDel,Expression,PAclause)]    -- guarded choice; The rule is maintained if one of the clauses of which the expression is populated is executed.
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
-                    }
-              | ALL { paCls :: [PAclause]                 -- all clauses are executed.
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Declaration                 -- into toExpr    or from toExpr
-                    , paDelta :: Expression               -- delta
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | New { paCpt :: A_Concept                  -- make a new instance of type c
-                    , paCl :: String->PAclause            -- to be done after creating the concept
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
-                    , paCl :: String->PAclause            -- to be done afteremoving the concept
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
-                    }
-              | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
-                    }
-              | Let { paExpr :: PAclause                  -- the expression that represents a condition to be tested.
-                    , paBody :: PAclause -> PAclause
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Ref { paVar :: String
-                    }
-
-instance Eq PAclause where
-   CHC ds _ == CHC ds' _ = ds==ds'
-   GCH ds _ == GCH ds' _ = ds==ds'
-   ALL ds _ == ALL ds' _ = ds==ds'
-   p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && paTo p==paTo p' && paDelta p==paDelta p'
-   Nop _    ==     Nop _ = True
-   p@New{}  ==  p'@New{} = paCpt p==paCpt p'
-   p@Rmv{}  ==  p'@Rmv{} = paCpt p==paCpt p'
-   _ == _ = False
 
 data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
 

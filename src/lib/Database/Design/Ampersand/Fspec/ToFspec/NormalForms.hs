@@ -17,7 +17,6 @@ where
    import Database.Design.Ampersand.Misc.Options
    import Database.Design.Ampersand.Input.ADL1.Parser (pRule)
    import Database.Design.Ampersand.Input.Parsing
-   import Database.Design.Ampersand.Fspec.Fspec
    import Database.Design.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Prelude hiding (head)
 -- import Debug.Trace
@@ -699,8 +698,6 @@ Ideas for future work:
    weightNF :: Bool -> RTerm -> Integer
    weightNF dnf term = w term
     where
-     two :: Integer
-     two = 2
      w :: RTerm -> Integer
      w trm
       = case trm of
