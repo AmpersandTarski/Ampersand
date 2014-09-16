@@ -7,6 +7,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , Guarded(..)
+  , whenCheckedIO
   , (<?>)
   )
 -- SJC: I consider it ill practice to export CTXE
@@ -170,6 +171,18 @@ instance Applicative Guarded where
  -- Guarded is NOT a monad!
  -- Reason: (<*>) has to be equal to `ap' if it is, and this definition is different
  -- Use <?> if you wish to use the monad-like thing
+
+-- Shorthand for working with Guarded in IO
+whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
+whenCheckedIO ioGA fIOGB =
+ do { gA <- ioGA 
+    ; case gA of
+         Errors errs -> return $ Errors errs
+         Checked a   ->
+          do { gB <- fIOGB a
+             ; return gB
+             }
+    }
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
