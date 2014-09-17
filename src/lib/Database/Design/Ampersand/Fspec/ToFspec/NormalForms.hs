@@ -84,6 +84,8 @@ Ideas for future work:
               deriving (Eq,Ord,Show)
 
 -- The following condition must hold at all times for every RTerm, in order to make equality work
+-- It ensures that nested RIsc terms do not occur, and RIsc terms are at least 2 terms of length.
+-- The same holds for RUni, RRad, RCps, and RPrd.
    isValid :: RTerm -> Bool
    isValid (RIsc s)   = and [not (isRIsc e) && isValid e && length ls>1 | let ls=Set.toList s, e<-ls]
    isValid (RUni s)   = and [not (isRUni e) && isValid e && length ls>1 | let ls=Set.toList s, e<-ls]
@@ -100,6 +102,8 @@ Ideas for future work:
    isValid (RFlp e)   = isValid e
    isValid _          = True
 
+-- normRT exists to make an arbitrary term satisfy isValid.
+-- So isValid (normRT term) is True, whil term and (normRT term) have the same meaning.
    normRT :: RTerm -> RTerm
    normRT (RIsc s)   = (combSet RIsc . Set.fromList . flat isRIsc . map normRT . Set.toList) s
    normRT (RUni s)   = (combSet RUni . Set.fromList . flat isRUni . map normRT . Set.toList) s
@@ -325,30 +329,51 @@ Ideas for future work:
                 , rul = (term, unif, term')      -- only one rewrite is done in parallel in the top level.
                 , rhs = substitute rd unif term' -- so rest is left alone, if partition can be rewritten.
                 }
-        | (term, rewriteTerms)<-matchableRules, isrComb term       -- e.g. term = 'Piet' \/ r \/ p\q
+        | null [ () | e<-Set.toList s, not (isValid e), fatal 313 ("Invalid subexpr: "++showADL e) ]
+        -- s = { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
+        , (term, rewriteTerms)<-matchableRules, isrComb term       -- e.g. term = 'Piet' \/ r \/ p\q
         , let subTerms = rTermSet term                             -- e.g. subTerms = { 'Piet', r, p\q }
+        -- subTerms = { r, s }
         , let termVars = Set.filter isRVar subTerms                -- e.g. termVars = { r }
-        , null [ () | e<-Set.toList s, not (isValid e), fatal 313 ("Invalid subexpr: "++showADL e) ]
+        -- termVars = { r, s }
         , let sameTrms = subTerms `Set.intersection` s             -- e.g. sameTrms = { 'Piet' }
+        -- sameTrms = {}
         , let subExprs = s `Set.difference` sameTrms               -- { '1', aap, aap\noot, mies;vuur }
+        -- subExprs = { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
         , let toMatchs = (subTerms `Set.difference` sameTrms) `Set.difference` termVars -- e.g. toMatchs = { p\q }
+        -- toMatchs = {}
         , let n=Set.size toMatchs -- each element of toMatchs can be matched to one subTerm from subExprs.
+        -- n=0
         , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
+        -- separate 0 { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
+        -- =
+        -- [({}, { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}) ]
+        -- dus matchCandidates  = {}
+        -- en rest={ verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
         , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
+        -- m = 2
         , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
+        -- partsplus 2 { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
+        -- restSets = { verzonden;verzonden~ , I[Bericht] }
+        -- remainder = { -(afkomstigVan;afkomstigVan~) }
         , let restTerms = (Set.map (flatSet . Set.toList)) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+        -- restTerms = { verzonden;verzonden~ , I[Bericht] }
         , if Set.null restTerms then True else
           if (isValid . flatSet . Set.toList) restTerms then True else fatal 305 ("Invalid restTerms: "++showADL (rCombinator restTerms))
         , let remTerm   = let remT = combSet rCombinator remainder in
                           if Set.null remainder
                           then fatal 308 "empty remTerm"
                           else if isValid remT then remT else fatal 309 ("Invalid remTerm: "++showADL remT)            -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+        -- remTerm = { -(afkomstigVan;afkomstigVan~) }
         , unif0 <- if Set.null toMatchs then [Set.empty] else
                    if (not.isValid.combSet rCombinator) toMatchs        then fatal 311 ("Invalid toMatchs: "++showADL (rCombinator toMatchs)) else
                    if (not.isValid.combSet rCombinator) matchCandidates then fatal 312 ("Invalid matchCandidates: "++showADL (rCombinator matchCandidates)) else
                    matchSets rCombinator toMatchs matchCandidates  -- e.g. unif0={ p->aap, q->noot }
+        -- unif0 =  {}
         , unif1 <- if Set.null termVars then [Set.empty] else
                    matchSets rCombinator termVars restTerms        -- e.g. unif1={ r->RUni {'1', aap, mies;vuur} }
+        -- unif1 = matchSets RIsc  { r, s } { verzonden;verzonden~ , I[Bericht] }
+        -- unif1 = { r->verzonden;verzonden~, s->I[Bericht] }
         , let unif = unif0 `Set.union` unif1                       -- e.g. unif={ p->aap, q->noot, r->RUni {'1', aap, mies;vuur} }
         , noDoubles unif
         , term'<-rewriteTerms

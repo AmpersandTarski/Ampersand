@@ -8,7 +8,6 @@ module Database.Design.Ampersand.ADL1.ECArule ( isAll
                                              )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Basics     (fatalMsg)
 
   --   Ampersand derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
