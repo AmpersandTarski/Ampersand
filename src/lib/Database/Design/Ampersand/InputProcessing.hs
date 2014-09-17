@@ -82,7 +82,7 @@ parseADL opts filePath =
 
 parseADLs :: Options -> [FilePath] -> [FilePath] -> IO (Guarded [P_Context])
 parseADLs _    _               []        = return $ Checked []
-parseADLs opts parsedFilePaths filePaths = trace ("parsed: " ++ show parsedFilePaths ++ "  to parse: " ++show filePaths ++ "\n") $
+parseADLs opts parsedFilePaths filePaths =
  do { let filePathsToParse = nub filePaths \\ parsedFilePaths
     ; whenCheckedIO (fmap sequenceA $ mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
        do { let (ctxts, newFilessToParse) = unzip ctxtNewFilePathss
