@@ -6,8 +6,8 @@ module Database.Design.Ampersand.Input.Parsing ( parseContext
 where
 
 import Control.Monad
-import Data.List
 import Data.Char
+import Data.Maybe
 import System.Directory
 import System.FilePath
 import Database.Design.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
@@ -37,21 +37,27 @@ parseContext opts file
                                       when (not exists) (fatal 39 $ "RAP file isn't installed properly. RAP.adl expected at:"
                                                                   ++"\n  "++show rapFile
                                                                   ++"\n  (You might want to reinstall ampersand...)")
-                                      parseADL opts rapFile
-                              else return (Right emptyContext)
+                                      fmap addRightJust $ parseADL opts rapFile
+                              else return (Right Nothing)
                   ; (case rapRes of
                       Left err -> do verboseLn opts "Parsing of RAP failed"
-                                     return rapRes
-                      Right rapCtx
+                                     return $ Left err
+                      Right mRapCtx
                                -> do eRes   <- parseADL opts file
                                      case eRes of
-                                       Right ctx  -> verboseLn opts "Parsing successful"
-                                                  >> return (Right (mergeContexts ctx rapCtx))
+                                       Right ctx  -> let ctx' = case mRapCtx of
+                                                                  Nothing -> ctx
+                                                                  Just rapCtx ->mergeContexts ctx rapCtx
+                                                     in  verboseLn opts "Parsing successful"
+                                                         >> return (Right ctx')
                                        Left err -> verboseLn opts "Parsing failed"
                                                 >> return eRes
                     )
                   }
-
+ where addRightJust :: (Either a b) -> (Either a (Maybe b))
+       addRightJust (Left a)  = Left a
+       addRightJust (Right b) = Right (Just b)
+ 
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String -> String -> Either String (Term TermPrim)
 parseADL1pExpr pexprstr fn = parseExpr Current pexprstr fn
@@ -73,9 +79,11 @@ parseADL opts file =
  do { verboseLn opts $ "Files read:"
     ; (result, parsedFiles) <- readAndParseFile opts 0 [] Nothing "" file
     ; verboseLn opts $ "\n"
-    ; return result
-    }
-
+    ; case result of
+        (Left err)       -> return $ Left err
+        (Right mContext) -> return $ Right $ fromMaybe (fatal 87 "top-level parse yielded empty result") mContext
+    } -- top-level parse will always be Just context. We could factorize the code to ensure this at type level, but this module is probably obsolete anyway. 
+    
 -- parse the input file and read and parse the imported files
 -- The alreadyParsed parameter keeps track of filenames that have been parsed already, which are ignored when included again.
 -- Hence, include cycles do not cause an error.
@@ -83,36 +91,32 @@ parseADL opts file =
 -- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
 
 readAndParseFile :: Options -> Int -> [String] -> Maybe String -> String -> String ->
-                    IO (Either ParseError P_Context, [String])
+                    IO (Either ParseError (Maybe P_Context), [String])
 readAndParseFile opts depth alreadyParsed mIncluderFilepath fileDir relativeFilepath =
- catch myMonad myHandler
-   where
-     myMonad =
        do { canonicFilepath <- fmap (map toUpper) $ canonicalizePath filepath
             -- Legacy parser has no includes, so no need to print here
 
           ; if canonicFilepath `elem` alreadyParsed
             then do { verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
-                    ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
+                    ; return (Right Nothing, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
                     }
             else do { fileContents <- Database.Design.Ampersand.Basics.readFile filepath
                     ; verboseLn opts $ replicate (3*depth) ' ' ++ filepath
-                    ; parseFileContents opts (depth+1) (canonicFilepath:alreadyParsed)
-                                        fileContents newFileDir newFilename
+                    ; fmap addFstRightJust $ parseFileContents opts (depth+1) (canonicFilepath:alreadyParsed)
+                                                            fileContents newFileDir newFilename
+                    
                     }
-          }
-     myHandler :: IOException ->
-                  IO (Either ParseError P_Context, [String])
-     myHandler =
-             (\exc -> do { error $ case mIncluderFilepath of
-                                 Nothing ->
-                                   "\n\nError: cannot read ADL file " ++ show filepath
-                                 Just includerFilepath ->
-                                   "\n\nError: cannot read include file " ++ show filepath ++
-                                   ", included by " ++ show includerFilepath})
-     filepath = combine fileDir relativeFilepath
-     newFileDir = let dir = takeDirectory filepath in if dir == "." then "" else dir
-     newFilename = takeFileName filepath
+          } `catch` \(exc :: IOException) -> 
+        do { error $ case mIncluderFilepath of
+                       Nothing -> "\n\nError: cannot read ADL file " ++ show filepath
+                       Just includerFilepath -> "\n\nError: cannot read include file " ++ show filepath ++
+                                                ", included by " ++ show includerFilepath}
+ where filepath = combine fileDir relativeFilepath
+       newFileDir = let dir = takeDirectory filepath in if dir == "." then "" else dir
+       newFilename = takeFileName filepath
+       addFstRightJust :: (Either a b, c) -> (Either a (Maybe b), c)
+       addFstRightJust (Left a, c)  = (Left a,c)
+       addFstRightJust (Right b, c) = (Right (Just b),c)
 
 parseFileContents :: Options  -- ^ command-line options
                   -> Int      -- ^ The include depth
@@ -134,7 +138,6 @@ parseFileContents opts depth alreadyParsed fileContents fileDir filename =
                          , alreadyParsed' )
                 }
     }
-
 readAndParseIncludeFiles :: Options -> [String] -> Int -> Maybe String -> String -> [String] ->
                             IO (Either ParseError [P_Context], [String])
 readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir [] = return (Right [], alreadyParsed)
@@ -142,16 +145,17 @@ readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir (rel
  do { (result, alreadyParsed') <- readAndParseFile opts depth alreadyParsed mIncluderFilepath fileDir relativeFilepath
     ; case result of                               -- Include is only implemented in Current parser
         Left err -> return (Left err, alreadyParsed')
-        Right context ->
+        Right mContext ->
          do { (results, alreadyParsed'') <- readAndParseIncludeFiles opts alreadyParsed' depth mIncluderFilepath fileDir relativeFilepaths
             ; case results of
                 Left err -> return (Left err, alreadyParsed'')
-                Right contexts -> return (Right $ context : contexts, alreadyParsed'')
+                Right contexts -> let contexts' = case mContext of
+                                                    Nothing -> contexts
+                                                    Just c  -> c:contexts
+                                  in  return (Right contexts', alreadyParsed'')
             }
     }
 
-emptyContext :: P_Context
-emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)

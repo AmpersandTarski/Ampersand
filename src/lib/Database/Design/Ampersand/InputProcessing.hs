@@ -10,17 +10,16 @@ import qualified Database.Design.Ampersand.Basics as Basics
 import Database.Design.Ampersand.Fspec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
-import UU.Parsing (getMsgs,parse,evalSteps,Steps,Pair(..))
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner
+import UU.Parsing (getMsgs,parse,evalSteps,Pair(..))
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Input.ADL1.CtxError (CtxError(PE))
+import Database.Design.Ampersand.Input.ADL1.CtxError
 import Data.List
 import System.Directory
 import System.FilePath
 import Control.Monad
 import Data.Traversable (sequenceA)
-import Control.Applicative
 
 fatal :: Int -> String -> a
 fatal = Basics.fatalMsg "InputProcessing"
@@ -29,19 +28,20 @@ fatal = Basics.fatalMsg "InputProcessing"
 createFspec :: Options  -- ^The options derived from the command line
             -> IO(Guarded Fspc)
 createFspec opts =
-  do userCtx <- parseWithIncluded opts (fileName opts)
+  do userCtx <- parseADL opts (fileName opts)
      bothCtx <- if includeRap opts
                 then do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> "FormalAmpersand.adl"
                         exists <- doesFileExist rapFile
                         when (not exists) (fatal 39 $ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
                                                     ++"\n  "++show rapFile
                                                     ++"\n  (You might want to re-install ampersand...)")
-                        rapCtx <- parseWithIncluded opts rapFile
+                        rapCtx <- parseADL opts rapFile
                         popsCtx <- popsCtxOf userCtx
-                        case sequenceA [userCtx, rapCtx, popsCtx] of
-                           Errors err -> return (Errors err)
-                           Checked ps -> return (Checked
-                                               (foldr mergeContexts emptyContext ps))
+                        case userCtx of 
+                          Errors err   -> return (Errors err)
+                          Checked uCtx -> case sequenceA [rapCtx, popsCtx] of
+                                            Errors err -> return (Errors err)
+                                            Checked ctxs -> return (Checked $ foldr mergeContexts uCtx ctxs)
                 else return userCtx
      case bothCtx of
         Errors err -> return (Errors err)
@@ -60,84 +60,64 @@ createFspec opts =
               (Errors  err ) -> return (Errors err)
               (Checked aCtx)
                  -> do let fSpec = makeFspec opts aCtx
-                           popScript = meatGrinder fSpec
-                       when (genMeat opts)
-                          (do let (nm,content) = popScript
-                                  outputFile = combine (dirOutput opts) $ replaceExtension nm ".adl"
-                              writeFile outputFile content
-                              verboseLn opts $ "Meta population written into " ++ outputFile ++ "."
-                          )
-                       case parse1File2pContext popScript of
+                           (popFilePath,popContents) = meatGrinder fSpec
+                       when (genMeat opts) $
+                          do let outputFile = combine (dirOutput opts) $ replaceExtension popContents ".adl"
+                             writeFile outputFile popContents
+                             verboseLn opts $ "Meta population written into " ++ outputFile ++ "."
+                          
+                       case runParser pContext popFilePath popContents of
                          (Errors  err) -> fatal 64 ("MeatGrinder has errors!"
                                                  ++ intercalate "\n"(map showErr err))
                          (Checked (pctx,[])) -> return (Checked pctx)
                          (Checked _ )        -> fatal 67 "Meatgrinder returns included file????"
      )
 
--------------
-type FileContent = (FilePath, String) -- The name and its contents
-type ParseResult = (P_Context, [FilePath]) -- A positive parse of a single file deliverse a P_Context and a list of includedes
+-- Parse an ADL file and all transitive includes
+parseADL  :: Options -> FilePath -> IO (Guarded P_Context)
+parseADL opts filePath =
+  whenCheckedIO (parseSingleADL opts filePath) $ \(ctxt, filePaths) ->
+    whenCheckedIO (parseADLs opts [filePath] filePaths) $ \ctxts ->
+      return $ Checked $ foldl mergeContexts ctxt ctxts
 
-parseWithIncluded :: Options -> FilePath -> IO(Guarded P_Context)
-parseWithIncluded opts fp = tailRounds [] (emptyContext,[fp])
- where
-    tailRounds :: [FileContent] -- the files already processed
-               -> ParseResult   -- the result so far.
-               -> IO(Guarded P_Context)
-    tailRounds dones (pCtx, names) =
-     do let filesToProcessThisRound = [f | f<-names, f `notElem` map fst dones]
-        case filesToProcessThisRound of
-         []    -> do return (Checked pCtx)
-         newNs -> do fs <- readFiles newNs
-                     res <- oneRound fs dones pCtx
-                     case res of
-                             Errors err -> return (Errors err)
-                             Checked (pCtx',included)
-                                -> tailRounds (nub ( dones++fs)) (pCtx', included)
-    readFiles :: [FilePath] -> IO [FileContent]
-    readFiles fs = mapM readFile' fs
-     where
-       readFile' f =
-          do verboseLn opts ("reading "++f)
-             content <- Basics.readFile f
-             return (f,content)
-    oneRound :: [FileContent] -- Files that have not been parsed yet
-             -> [FileContent] -- Files that have been parsed already
-             -> P_Context     -- The result so far from previous parsed files
-             -> IO(Guarded ParseResult)
-    oneRound todos dones pCtx = pure parseNext
-     where
-       parseNext :: Guarded ParseResult
-       parseNext  =
-         case nub [f | f <- todos, f `notElem` dones] of
-           [] -> Checked (pCtx,[])
-           fs -> case sequenceA (map parse1File2pContext fs) of
-                   Checked prs -> Checked ( foldl mergeContexts pCtx (map fst prs)
-                                          , concatMap snd prs)
-                   Errors errs -> Errors errs
+parseADLs :: Options -> [FilePath] -> [FilePath] -> IO (Guarded [P_Context])
+parseADLs _    _               []        = return $ Checked []
+parseADLs opts parsedFilePaths filePaths = trace ("parsed: " ++ show parsedFilePaths ++ "  to parse: " ++show filePaths ++ "\n") $
+ do { let filePathsToParse = nub filePaths \\ parsedFilePaths
+    ; whenCheckedIO (fmap sequenceA $ mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
+       do { let (ctxts, newFilessToParse) = unzip ctxtNewFilePathss
+          ; whenCheckedIO (parseADLs opts (parsedFilePaths ++ filePaths) $ concat newFilessToParse) $ \ctxts' ->
+              return $ Checked $ ctxts ++ ctxts'
+          }
+    }
 
-parse1File2pContext :: FileContent -> Guarded ParseResult
-parse1File2pContext (fPath, fContent) =
-   let scanner = scan keywordstxt keywordsops specialchars opchars fPath initPos
-       steps :: Steps (Pair ParseResult (Pair [Token] ())) Token (Maybe Token)
-       steps = parse pContext (scanner fContent)
-   in  case  getMsgs steps of
-         []   -> let Pair (pCtx,includes) _ = evalSteps steps
-                 in  Checked (pCtx,map normalize includes)
+-- Parse an ADL file, but not its includes (which are simply returned as a list)
+parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
+parseSingleADL opts filePath =
+ do { verboseLn opts $ "Reading file " ++ filePath
+    ; fileContents <- Basics.readFile filePath
+    ; whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 
+       do { filePaths <- mapM normalizePath relativePaths
+          ; return $ Checked (ctxts, filePaths)
+          }
+    }
+ where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
+
+runParser :: AmpParser res -> String -> String -> Guarded res
+runParser parser filename input =
+  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
+      steps = parse parser (scanner input)
+  in  case  getMsgs steps of
+         []    -> let Pair res _ = evalSteps steps
+                  in  Checked res
          msg:_ -> Errors [PE msg]
-  where
-  normalize ::FilePath -> FilePath
-  normalize name = takeDirectory fPath </> name
-
-emptyContext :: P_Context
-emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
-              (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
+              (PCtx nm2 pos2 _     markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
   PCtx{ ctx_nm     = if null nm1 then nm2 else nm1
       , ctx_pos    = pos1 ++ pos2
-      , ctx_lang   = lang1   `orElse` lang2   `orElse` Nothing
+      , ctx_lang   = lang1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = markup1 `orElse` markup2 `orElse` Nothing
       , ctx_thms   = thms1 ++ thms2
       , ctx_pats   = pats1 ++ pats2
@@ -161,4 +141,3 @@ orElse :: Maybe a -> Maybe a -> Maybe a
 x `orElse` y = case x of
                  Just _  -> x
                  Nothing -> y
-
