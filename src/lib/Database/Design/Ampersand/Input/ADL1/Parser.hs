@@ -57,15 +57,15 @@ pPopulations = pList1 pPopulation
 
 pContext :: AmpParser (P_Context, [String]) -- the result is the parsed context and a list of include filenames
 pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
-                         <*> optional pLanguageRef
+                         <*> pLanguageRef
                          <*> optional pTextMarkup
                          <*> pList pContextElement <* pKey "ENDCONTEXT"
   where
-    rebuild :: Origin -> String -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+    rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
     rebuild    pos'      nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
             , ctx_pos    = [pos']
-            , ctx_lang   = fromMaybe English lang -- TODO: The parser does not yet enforce the language specification
+            , ctx_lang   = lang
             , ctx_markup = fmt
             , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
