@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC  -XScopedTypeVariables #-}
-module Database.Design.Ampersand.Input.Parsing ( parseContext
-                                        , parseADL1pExpr
-                                        , ParseError
+module Database.Design.Ampersand.Input.Parsing ( parseADL1pExpr
                                         , runParser)
 where
+
+-- TODO: This module is obsolete and should be consolidated with InputProcessing.hs (i.e. extend InputProcessing.hs and rename it to Parsing.hs)
 
 import Control.Monad
 import Data.Char
