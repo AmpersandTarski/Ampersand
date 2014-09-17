@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -fno-enable-rewrite-rules #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 module Database.Design.Ampersand.Input.ADL1.Parser
-(pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
+  (AmpParser, pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
 
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner
          ( Token(..),TokenType(..),noPos
@@ -65,7 +65,7 @@ pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
     rebuild    pos'      nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
             , ctx_pos    = [pos']
-            , ctx_lang   = lang
+            , ctx_lang   = fromMaybe English lang -- TODO: The parser does not yet enforce the language specification
             , ctx_markup = fmt
             , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context

@@ -153,11 +153,7 @@ pCtx2aCtx' opts
     soloConcs :: [String]
     soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
 
-    deflangCtxt = case lang of
-                    Just l -> l -- use language specified on context in adl source
-                    Nothing -> case language opts of
-                                 Just l -> l -- use language from command-line option
-                                 Nothing -> English -- use default language
+    deflangCtxt = lang -- take the default language from the top-level context
 
     deffrmtCtxt = fromMaybe ReST pandocf
 
