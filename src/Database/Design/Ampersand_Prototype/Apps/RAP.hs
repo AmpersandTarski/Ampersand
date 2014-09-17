@@ -197,7 +197,7 @@ makectx opts r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
     = PCtx {
          ctx_nm    = snd(theonly r_ctxnm "not one context in Atlas DB")
        , ctx_pos   = [DBLoc "Atlas(Context)"]
-       , ctx_lang  = Just lang
+       , ctx_lang  = lang
        , ctx_markup= Just LaTeX --ADLImportable writes LaTeX
        , ctx_thms  = []
        , ctx_pats  = [atlas2pattern p lang
