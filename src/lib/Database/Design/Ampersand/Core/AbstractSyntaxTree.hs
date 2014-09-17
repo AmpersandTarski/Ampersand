@@ -33,7 +33,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , GenR
  , Association(..)
- , PAclause(..), Event(..), ECArule(..), InsDel(..)
+ , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -304,13 +304,14 @@ rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts
                                 , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
                                 ]
 
-data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
-                     , ifcArgs ::   [[String]]
-                     , ifcRoles ::  [String]
-                     , ifcObj ::    ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcEcas ::   [ECArule]
-                     , ifcPos ::    Origin
-                     , ifcPrp ::    String
+data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions are allowed!
+                     , ifcArgs ::     [[String]]
+                     , ifcRoles ::    [String]
+                     , ifcObj ::      ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+                     , ifcEcas ::     [ECArule]
+                     , ifcControls :: [Conjunct]
+                     , ifcPos ::      Origin
+                     , ifcPrp ::      String
                      } deriving Show
 
 instance Eq Interface where
@@ -320,6 +321,17 @@ instance Identified Interface where
 instance Traced Interface where
   origin = ifcPos
 
+data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
+                     , rc_rulename   :: String -- the name of the rule
+                     , rc_conjunct   :: Expression
+                     , rc_dnfClauses :: [DnfClause]
+                     } deriving Show
+
+data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+
+instance Eq Conjunct where
+ rc==rc' = rc_conjunct rc==rc_conjunct rc'
+ 
 objAts :: ObjectDef -> [ObjectDef]
 objAts obj
   = case objmsub obj of

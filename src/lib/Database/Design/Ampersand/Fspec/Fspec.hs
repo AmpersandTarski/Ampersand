@@ -209,8 +209,6 @@ instance Eq Quad where
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
 
-data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
-
 --
 dnf2expr :: DnfClause -> Expression
 dnf2expr (Dnf antcs conss)
@@ -220,15 +218,6 @@ dnf2expr (Dnf antcs conss)
     (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
     (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
-data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
-                     , rc_rulename   :: String -- the name of the rule
-                     , rc_conjunct   :: Expression
-                     , rc_dnfClauses :: [DnfClause]
-                     } deriving Show
-
-instance Eq Conjunct where
- rc==rc' = rc_conjunct rc==rc_conjunct rc'
- 
 data FPA = FPA { fpType :: FPtype
                , complexity :: FPcompl
                } deriving (Show)

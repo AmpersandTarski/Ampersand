@@ -111,7 +111,7 @@ where
    instance ShowHS (ECArule) where
     showHS opts indent r
       =         "ECA { ecaTriggr = " ++ showHS opts "" (ecaTriggr r) ++
-        indent++"    , ecaDelta  = " ++ showHS opts (indent++"                  ")  (ecaDelta r)++
+        indent++"    , ecaDelta  = " ++ showHSName (ecaDelta r)++
         indent++"    , ecaAction = " ++ showHS opts (indent++"                  ")  (ecaAction r)++
         indent++"    , ecaNum    = " ++ show (ecaNum r)++
         indent++"    }"
@@ -135,7 +135,7 @@ where
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            ALL{} -> wrap "ALL " (indent ++"    ") (showHS opts) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-           Do{}  ->  "Do "++show (paSrt p)++ " ("++showHS opts (indent++"        ") (paTo p)++indent++"       )"++
+           Do{}  ->  "Do "++show (paSrt p)++" "++showHSName (paTo p)++
                             indent++"       ("++showHS opts (indent++"        ") (paDelta p)++indent++"       )"++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            New{} -> "New ("++showHS opts "" (paCpt p)++")"++
@@ -192,11 +192,11 @@ where
       = haskellIdentifier ("quad_"++(showHSName.qDcl) q++"_"++(name.qRule) q)
 
    instance ShowHS Quad where
-    showHS opts indent q
+    showHS _ indent q
       = intercalate indent
                [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
                , "    , qRule    = " ++ showHSName (qRule q)
-               , "    , qConjuncts = " ++ showHS opts newindent (qConjuncts q)
+               , wrap "    , qConjuncts = " newindent (\_->showHSName) (qConjuncts q)
                , "    }"
                ]
        where
@@ -673,7 +673,8 @@ where
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
            , "    , ifcRoles  = " ++ show(ifcRoles ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
-           , "    , ifcEcas   = " ++ showHS opts (indent++"           ") (ifcEcas ifc)
+           , "    , ifcEcas   = " ++ showHS opts (indent++"                 ") (ifcEcas ifc)
+           , wrap "    , ifcControls = " (indent++"                  ") (\_->showHSName) (ifcControls ifc)
            , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
            , "    , ifcPrp    = " ++ show(ifcPrp ifc)
            ]++indent++"    }"
@@ -699,11 +700,11 @@ where
     showHS opts indent (EFlp e    ) = "EFlp ("++showHS opts (indent++"      ") e++")"
     showHS opts indent (ECpl e    ) = "ECpl ("++showHS opts (indent++"      ") e++")"
     showHS opts indent (EBrk e    ) = "EBrk ("++showHS opts (indent++"      ") e++")"
-    showHS _     _      (EDcD dcl  ) = "EDcD "++showHSName dcl
-    showHS _     _      (EDcI c    ) = "EDcI "++showHSName c
+    showHS _    _      (EDcD dcl  ) = "EDcD "++showHSName dcl
+    showHS _    _      (EDcI c    ) = "EDcI "++showHSName c
     showHS opts _      (EEps i sgn) = "EEps ("++showHS opts "" i++") ("++showHS opts "" sgn++")"
     showHS opts _      (EDcV sgn  ) = "EDcV ("++showHS opts "" sgn++")"
-    showHS _     _      (EMp1 a c  ) = "EMp1 " ++show a++" "++showHSName c
+    showHS _    _      (EMp1 a c  ) = "EMp1 " ++show a++" "++showHSName c
 
    instance ShowHS Sign where
     showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
