@@ -6,7 +6,6 @@ where
 -- TODO: Als het Ampersand bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
    import Database.Design.Ampersand.ADL1
-   import Database.Design.Ampersand.Core.AbstractSyntaxTree (ECArule(..))
    import Database.Design.Ampersand.Classes
    import Database.Design.Ampersand.Fspec.ShowADL
    import Database.Design.Ampersand.Basics

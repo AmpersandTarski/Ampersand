@@ -472,7 +472,8 @@ pCtx2aCtx' opts
                     , ifcArgs = args
                     , ifcRoles = rols
                     , ifcObj = obj'
-                    , ifcEcas = []
+                    , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules
+                    , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp
                     }) <$> traverse termPrim2Expr tps
