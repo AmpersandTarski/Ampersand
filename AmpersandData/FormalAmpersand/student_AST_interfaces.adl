@@ -1,4 +1,4 @@
-CONTEXT RAP
+CONTEXT RAP IN ENGLISH
 INTERFACE "Atlas (Play)" FOR Student: I[ONE]
 BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"number of relations":countdecls,"number of concepts":countcpts] 
     ,"PATTERNs" : V[ONE*Context];ctxpats
