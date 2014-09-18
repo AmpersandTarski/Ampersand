@@ -1,4 +1,4 @@
-CONTEXT RAP
+CONTEXT RAP IN ENGLISH
 INCLUDE "ASTdocumentation.adl"
 CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn568"
