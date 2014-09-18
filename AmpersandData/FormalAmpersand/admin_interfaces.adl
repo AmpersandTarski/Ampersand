@@ -1,4 +1,4 @@
-CONTEXT Atlas
+CONTEXT Atlas IN ENGLISH
 INTERFACE "Files" FOR Admin: I[ONE]
 BOX ["loaded files": V[ONE*File];(sourcefile~;sourcefile \/ parseerror;parseerror~ \/ typeerror;typeerror~)
     BOX ["name":filename
