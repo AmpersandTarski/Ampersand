@@ -327,53 +327,33 @@ Ideas for future work:
      -- Example rCombinator s  = RUni { '1', aap, aap\noot, 'Piet', mies;vuur}
       = [ DStep { lhs = rCombinator s            -- derivs gives the top level rewrites.
                 , rul = (term, unif, term')      -- only one rewrite is done in parallel in the top level.
-                , rhs = substitute rd unif term' -- so rest is left alone, if partition can be rewritten.
+                , rhs = result                   -- so rest is left alone, if partition can be rewritten.
                 }
         | null [ () | e<-Set.toList s, not (isValid e), fatal 313 ("Invalid subexpr: "++showADL e) ]
-        -- s = { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
+        -- s = { foo;foo~ , -(bar;bar~) , I[C]}
         , (term, rewriteTerms)<-matchableRules, isrComb term       -- e.g. term = 'Piet' \/ r \/ p\q
         , let subTerms = rTermSet term                             -- e.g. subTerms = { 'Piet', r, p\q }
-        -- subTerms = { r, s }
         , let termVars = Set.filter isRVar subTerms                -- e.g. termVars = { r }
-        -- termVars = { r, s }
         , let sameTrms = subTerms `Set.intersection` s             -- e.g. sameTrms = { 'Piet' }
-        -- sameTrms = {}
         , let subExprs = s `Set.difference` sameTrms               -- { '1', aap, aap\noot, mies;vuur }
-        -- subExprs = { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
         , let toMatchs = (subTerms `Set.difference` sameTrms) `Set.difference` termVars -- e.g. toMatchs = { p\q }
-        -- toMatchs = {}
         , let n=Set.size toMatchs -- each element of toMatchs can be matched to one subTerm from subExprs.
-        -- n=0
         , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
-        -- separate 0 { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
-        -- =
-        -- [({}, { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}) ]
-        -- dus matchCandidates  = {}
-        -- en rest={ verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
         , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
-        -- m = 2
         , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
-        -- partsplus 2 { verzonden;verzonden~ , -(afkomstigVan;afkomstigVan~) , I[Bericht]}
-        -- restSets = { verzonden;verzonden~ , I[Bericht] }
-        -- remainder = { -(afkomstigVan;afkomstigVan~) }
         , let restTerms = (Set.map (flatSet . Set.toList)) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
-        -- restTerms = { verzonden;verzonden~ , I[Bericht] }
         , if Set.null restTerms then True else
           if (isValid . flatSet . Set.toList) restTerms then True else fatal 305 ("Invalid restTerms: "++showADL (rCombinator restTerms))
         , let remTerm   = let remT = combSet rCombinator remainder in
                           if Set.null remainder
                           then fatal 308 "empty remTerm"
                           else if isValid remT then remT else fatal 309 ("Invalid remTerm: "++showADL remT)            -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
-        -- remTerm = { -(afkomstigVan;afkomstigVan~) }
         , unif0 <- if Set.null toMatchs then [Set.empty] else
                    if (not.isValid.combSet rCombinator) toMatchs        then fatal 311 ("Invalid toMatchs: "++showADL (rCombinator toMatchs)) else
                    if (not.isValid.combSet rCombinator) matchCandidates then fatal 312 ("Invalid matchCandidates: "++showADL (rCombinator matchCandidates)) else
                    matchSets rCombinator toMatchs matchCandidates  -- e.g. unif0={ p->aap, q->noot }
-        -- unif0 =  {}
         , unif1 <- if Set.null termVars then [Set.empty] else
                    matchSets rCombinator termVars restTerms        -- e.g. unif1={ r->RUni {'1', aap, mies;vuur} }
-        -- unif1 = matchSets RIsc  { r, s } { verzonden;verzonden~ , I[Bericht] }
-        -- unif1 = { r->verzonden;verzonden~, s->I[Bericht] }
         , let unif = unif0 `Set.union` unif1                       -- e.g. unif={ p->aap, q->noot, r->RUni {'1', aap, mies;vuur} }
         , noDoubles unif
         , term'<-rewriteTerms
@@ -726,8 +706,8 @@ Ideas for future work:
      w :: RTerm -> Integer
      w trm
       = case trm of
-          RIsc ls  -> (sum (map w (Set.toList ls))+3) * if dnf then 1 else 2
-          RUni ls  -> (sum (map w (Set.toList ls))+3) * if dnf then 2 else 1
+          RIsc ls  -> (sum (map w (Set.toList ls))) * if dnf then 1 else 2
+          RUni ls  -> (sum (map w (Set.toList ls))) * if dnf then 2 else 1
           RDif l r -> (w l+w r+10) * 4
           RCpl e   -> (w e + 1) * 4
           RDia l r -> (w l+w r+10) * 4
