@@ -4,8 +4,10 @@ import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
 import Distribution.PackageDescription
 import System.Process
-import System.IO
+import System.Exit
+import Data.Either
 import Data.List
+import Data.Char
 import System.Directory
 import System.FilePath
 import qualified Data.ByteString as BS
@@ -27,16 +29,11 @@ generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> Bu
 generateBuildInfoHook pd  lbi uh bf = 
  do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
 
-    ; svnRevisionStr <- do { r <- catch getSVNRevisionStr myHandler
-                        ; if r == "" 
-                          then noSVNRevisionStr
-                          else return r
-                        }
-
+    ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile "src/Database/Design/Ampersand_Prototype/BuildInfo_Generated.hs" $
-        buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
+        buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
     ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
     ; writeFile (pathFromModule staticFileModuleName) staticFilesGeneratedContents 
@@ -44,14 +41,10 @@ generateBuildInfoHook pd  lbi uh bf =
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
  where pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
-       myHandler :: IOException -> IO String
-       myHandler err = do { print err
-                          ; noSVNRevisionStr
-                          }
 
 buildInfoModule :: String -> String -> String -> String
-buildInfoModule cabalVersion revision time = unlines
-  [ "module Database.Design.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where" 
+buildInfoModule cabalVersion gitInfo time = unlines
+  [ "module Database.Design.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, gitInfoStr, buildTimeStr) where" 
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
@@ -59,34 +52,51 @@ buildInfoModule cabalVersion revision time = unlines
   , "cabalVersionStr :: String"
   , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
   , ""
-  , "{-# NOINLINE svnRevisionStr #-}"
-  , "svnRevisionStr :: String"
-  , "svnRevisionStr = \"" ++ revision ++ "\""
+  , "{-# NOINLINE gitInfoStr #-}"
+  , "gitInfoStr :: String"
+  , "gitInfoStr = \"" ++ gitInfo ++ "\""
   , ""
   , "{-# NOINLINE buildTimeStr #-}"
   , "buildTimeStr :: String"
   , "buildTimeStr = \"" ++ time ++ "\""
   , ""
   ]
-  
-getSVNRevisionStr :: IO String
-getSVNRevisionStr = 
- do { (inh,outh,errh,proch) <- runInteractiveProcess "svnversion" ["."] Nothing Nothing
-    ; hClose inh
-    ; hClose errh
-    ; version <- hGetContents outh
-    ; _ <- seq version $ waitForProcess proch
-    ; return (unwords . lines $ version)
-    }
 
-noSVNRevisionStr :: IO String
-noSVNRevisionStr =
- do { putStrLn "\n\n\nWARNING: Execution of 'svnversion' command failed."
+getGitInfoStr :: IO String
+getGitInfoStr = 
+ do { eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
+    ; eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
+    ; (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
+    ; print exitCode
+    ; let isDirty = exitCode /= ExitSuccess -- for eDirty, exit status is used to signal dirtyness
+    ; case (eSHA, eBranch) of
+        (Right sha, Right branch) -> 
+         return $ strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")
+        _ ->
+         do { mapM_ print $ lefts [eSHA, eBranch] -- errors during git execution
+            ; warnNoCommitInfo
+            }
+    } `catch` \err ->  -- git failed to execute
+         do { print (err :: IOException)
+            ; warnNoCommitInfo
+            }
+ where strip str = reverse . dropWhile isSpace . reverse $ str
+
+       readProcessEither :: String -> [String] -> String -> IO (Either String String)
+       readProcessEither cmd args stdinStr = 
+        do { (exitCode,stdoutStr,stderrStr) <- readProcessWithExitCode cmd args stdinStr
+           ; case exitCode of
+               ExitSuccess   -> return $ Right stdoutStr
+               ExitFailure _ -> return $ Left stderrStr
+           }
+ 
+warnNoCommitInfo :: IO String
+warnNoCommitInfo =
+ do { putStrLn "\n\n\nWARNING: Execution of 'git' command failed."
     ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
-                 "Please install a subversion client that supports the command-line 'svnversion'\ncommand.\n"
-    ; return "??"
+                 "Please find check your installation\n"
+    ; return "no git info"
     }
-
 
 {- In order to handle static files, we generate a module StaticFiles_Generated.
 
@@ -136,4 +146,5 @@ readStaticFiles isBin base fileOrDir =
         utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
           
 getProperDirectoryContents :: FilePath -> IO [String]
-getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth 
+getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth
+ 
