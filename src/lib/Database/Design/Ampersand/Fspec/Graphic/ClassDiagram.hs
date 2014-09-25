@@ -377,8 +377,8 @@ where
           generalization2edges ooGen = sub2edges (genAgen ooGen)
            where
              sub2edges gen
-              = [DotEdge { toNode   = name spec
-                         , fromNode = name gener
+              = [DotEdge { toNode   = name gener
+                         , fromNode = name spec
                          , edgeAttributes
                                     = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
