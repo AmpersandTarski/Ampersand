@@ -92,7 +92,8 @@ selectExpr fSpec i src trg expr
                               , let src''=sqlExprSrc fSpec l
                               , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                               ]++
-                              [ "isect0."++src'++" = "++sqlAtomQuote atom -- source and target are equal because this is the case with EMp1{}
+                              [ "isect0."++src'++" = "++sqlAtomQuote atom -- note: isect0.src' and isect0.trg' need not be equal
+                                ++ " AND isect0."++trg'++" = "++sqlAtomQuote atom
                               | EMp1 atom _ <- mp1Tm
                               ]++
                               [ "isect0."++src'++" = "++sqlAtomQuote atom1 -- source and target are unequal
