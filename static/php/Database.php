@@ -177,8 +177,6 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   }
   
   // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
-  $childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
-  $parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
   $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
   emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
   addAtomToConcept($modifiedAtom, $modifiedConcept);
