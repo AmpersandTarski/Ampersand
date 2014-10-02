@@ -301,30 +301,26 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
            ++["      //"]
       else   []
      )
-  ++["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ] -- escape for the pathological case that one of the names in the relation contains a newline
+  ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
+             -- escape for the pathological case that one of the names in the relation contains a newline
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")"
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array)
        Nothing             -> []
-  ++ let (flipped, unflippedExpr) = case objctx object of
-                                       EFlp e -> (True,e)
-                                       e      -> (False,e)
-         d = case unflippedExpr of
-             EDcD d'  -> d'
-             EDcI c   -> Isn c
-             EDcV sgn -> Vs sgn
-             _        -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ showADL unflippedExpr
-     in (if isEditable unflippedExpr
-         then [ "      , 'relation' => "++showPhpStr (name d)
-              , "      , 'relationIsFlipped' => "++show flipped ]++
-              [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'" | flipped] ++
-              [ "      , 'max' => "++ if isInj d then "'One'" else "'Many'" | flipped] ++
-              [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" | not flipped] ++
-              [ "      , 'max' => "++ if isUni d then "'One'" else "'Many'" | not flipped]
-         else [ "      , 'relation' => ''"
-              , "      , 'relationIsFlipped' => ''"
-              ])
+  ++ case getEditableDeclaration False $ objctx object of 
+       Just (d, isFlipped) ->
+         [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
+         , "      , 'relationIsFlipped' => "++show isFlipped ] ++
+         if isFlipped 
+         then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
+              , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
+         else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
+              , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]
+       Nothing ->
+         [ "      , 'relation' => '' // this interface expression is not editable"
+         , "      , 'relationIsFlipped' => ''"
+         ]
   ++
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
@@ -333,7 +329,18 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable (EDcD d) = d `elem` [d' | EDcD d' <- editableRels]
+ where -- we allow editing on basic relations (Declarations) that may have been flipped, or narrowed by composing with I
+       getEditableDeclaration :: Bool -> Expression -> Maybe (Declaration, Bool)
+       getEditableDeclaration isFlipped (EDcD d)            = Just (d, isFlipped)                      -- basic relation
+       getEditableDeclaration isFlipped (EFlp e)            = getEditableDeclaration (not isFlipped) e -- flipped relation
+       getEditableDeclaration isFlipped (ECps (e,EDcI _))   = getEditableDeclaration isFlipped e       -- narrowed relation
+       getEditableDeclaration isFlipped (ECps (EDcI _,e))   = getEditableDeclaration isFlipped e       -- narrowed relation
+       getEditableDeclaration isFlipped (ECps (e,EEps _ _)) = getEditableDeclaration isFlipped e       -- ignore epsilon
+       getEditableDeclaration isFlipped (ECps (EEps _ _,e)) = getEditableDeclaration isFlipped e       -- ignore epsilon
+       getEditableDeclaration isFlipped (EBrk e)            = getEditableDeclaration isFlipped e       -- ignore brackets
+       getEditableDeclaration _         _                   = Nothing
+ 
+       isEditable (EDcD d) = d `elem` [d' | EDcD d' <- editableRels]
        isEditable (EFlp e) = isEditable e
        isEditable _                   = False
        normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
@@ -406,4 +413,3 @@ showPlug plug =
 showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++
                  showPhpStr (fldname fld) ++ ":"++showADL (target $ fldexpr fld)]
-
