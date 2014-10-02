@@ -342,18 +342,13 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
        getEditableDeclaration isFlipped (EBrk e)            = getEditableDeclaration isFlipped e       -- ignore brackets
        getEditableDeclaration _         _                   = Nothing
  
-       -- TODO: Editable concepts is not right yet, as it uses the old strict definition of editability
-       isEditable (EDcD d) = d `elem` [d' | EDcD d' <- editableRels]
-       isEditable (EFlp e) = isEditable e
-       isEditable _                   = False
        normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
-       getEditableConcepts obj = (let e = objctx obj in
-                                  case e of
-                                   EDcD d        | isEditable e       -> [target d]
-                                   EFlp (EDcD d) | isEditable (flp e) -> [source d]
-                                   _                                  -> []
-                                 )
-                                 ++ concatMap getEditableConcepts (attributes obj)
+       getEditableConcepts obj = -- TODO: Nasty, instead of calling getEditableDeclaration recursively here (and only using it when the interface is
+                                 --       top level), we should return the editable concepts together with genInterfaceObjects and collect at top level.
+         case getEditableDeclaration False $ conjNF (flags fSpec) $ objctx obj of
+           Just _ -> [target $ objctx obj]
+           Nothing             -> []
+         ++ concatMap getEditableConcepts (attributes obj)
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
