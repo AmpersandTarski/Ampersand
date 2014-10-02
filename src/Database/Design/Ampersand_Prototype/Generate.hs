@@ -15,8 +15,8 @@ import Database.Design.Ampersand_Prototype.RelBinGenBasics(showPhpStr,escapePhpS
 import Database.Design.Ampersand_Prototype.RelBinGenSQL
 import Control.Exception
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Generate"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Generate"
 
 customCssPath :: String
 customCssPath = "css/Custom.css"
@@ -308,7 +308,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array)
        Nothing             -> []
-  ++ case getEditableDeclaration False $ objctx object of 
+  ++ case getEditableDeclaration False normalizedInterfaceExp of 
        Just (d, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
@@ -329,17 +329,20 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where -- we allow editing on basic relations (Declarations) that may have been flipped, or narrowed by composing with I
+ where -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed by composing with I.
+       -- Subexpressions may be widened as well, but the entire expression won't be because of the type checker. 
+       -- (branched compositions ECps (ECps .., ECps ..) are not handled by this function, so we need to keep the interface expressions simple) 
        getEditableDeclaration :: Bool -> Expression -> Maybe (Declaration, Bool)
        getEditableDeclaration isFlipped (EDcD d)            = Just (d, isFlipped)                      -- basic relation
        getEditableDeclaration isFlipped (EFlp e)            = getEditableDeclaration (not isFlipped) e -- flipped relation
-       getEditableDeclaration isFlipped (ECps (e,EDcI _))   = getEditableDeclaration isFlipped e       -- narrowed relation
-       getEditableDeclaration isFlipped (ECps (EDcI _,e))   = getEditableDeclaration isFlipped e       -- narrowed relation
+       getEditableDeclaration isFlipped (ECps (e,EDcI _))   = getEditableDeclaration isFlipped e       -- narrowed/widened relation
+       getEditableDeclaration isFlipped (ECps (EDcI _,e))   = getEditableDeclaration isFlipped e       -- narrowed/widened relation
        getEditableDeclaration isFlipped (ECps (e,EEps _ _)) = getEditableDeclaration isFlipped e       -- ignore epsilon
        getEditableDeclaration isFlipped (ECps (EEps _ _,e)) = getEditableDeclaration isFlipped e       -- ignore epsilon
        getEditableDeclaration isFlipped (EBrk e)            = getEditableDeclaration isFlipped e       -- ignore brackets
        getEditableDeclaration _         _                   = Nothing
  
+       -- TODO: Editable concepts is not right yet, as it uses the old strict definition of editability
        isEditable (EDcD d) = d `elem` [d' | EDcD d' <- editableRels]
        isEditable (EFlp e) = isEditable e
        isEditable _                   = False
