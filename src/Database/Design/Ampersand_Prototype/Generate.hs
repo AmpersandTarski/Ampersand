@@ -333,7 +333,9 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
        -- Subexpressions may be widened as well, but the entire expression won't be because of the type checker. 
        -- (branched compositions ECps (ECps .., ECps ..) are not handled by this function, so we need to keep the interface expressions simple) 
        getEditableDeclaration :: Bool -> Expression -> Maybe (Declaration, Bool)
-       getEditableDeclaration isFlipped (EDcD d)            = Just (d, isFlipped)                      -- basic relation
+       getEditableDeclaration isFlipped e@(EDcD d)          = if e `elem` editableRels 
+                                                              then Just (d, isFlipped)                 -- basic editable relation
+                                                              else Nothing
        getEditableDeclaration isFlipped (EFlp e)            = getEditableDeclaration (not isFlipped) e -- flipped relation
        getEditableDeclaration isFlipped (ECps (e,EDcI _))   = getEditableDeclaration isFlipped e       -- narrowed/widened relation
        getEditableDeclaration isFlipped (ECps (EDcI _,e))   = getEditableDeclaration isFlipped e       -- narrowed/widened relation
