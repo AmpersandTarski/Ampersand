@@ -696,7 +696,7 @@ sqlPlugFields fSpec p e' =
 sqlExprSrc :: Fspc -> Expression -> String
 sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
-sqlExprSrc fSpec (EEps _ (Sign a _)) = sqlAttConcept fSpec a
+sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
 sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
 sqlExprSrc fSpec expr@EDcD{}         = case sqlRelPlugs fSpec expr of
                                         [(_,s,_)] -> quote $ fldname s
@@ -709,7 +709,7 @@ sqlExprSrc _     expr                = quote $ "Src"++name (source expr)
 sqlExprTgt :: Fspc -> Expression -> String
 sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
-sqlExprTgt fSpec (EEps _ (Sign _ b)) = sqlAttConcept fSpec b
+sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
 sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
 sqlExprTgt fSpec expr@EDcD{}         = quote $     --  quotes are added just in case the result happens to be an SQL reserved word.
                                        case sqlRelPlugs fSpec expr of
