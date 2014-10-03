@@ -308,54 +308,57 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array)
        Nothing             -> []
-  ++ case getEditableDeclaration False normalizedInterfaceExp of 
-       Just (Just (d, isFlipped)) ->
+  ++ case getEditableDeclaration normalizedInterfaceExp of 
+       Just (Just (srcConcept, d, tgtConcept, isFlipped)) ->
          [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
-         if isFlipped 
-         then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
-              , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
-         else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
-              , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]
+         (if isFlipped 
+          then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
+               , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
+          else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
+               , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]) ++
+         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept)
+         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept)
+         ]
        _ ->
          [ "      , 'relation' => '' // this interface expression is not editable"
          , "      , 'relationIsFlipped' => ''"
+         , "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
+         , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
          ]
   ++
-  [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
-  , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
+  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
   ]
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
  where -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
-       -- NOTE: This doesn't work correctly yet for widened interface expressions, as the widened type is used for creating new atoms.
-       --       It can be fixed by having the type checker return the narrowest possible type, or by computing the types in getEditableDeclaration.
        -- getEditableDeclaration returns Nothing if the expression contains unhandled nodes; Just Nothing if the expression is okay but
-       -- does not contain a declaration; and Just (Just dcl) if the expression contains an editable declaration
-       getEditableDeclaration :: Bool -> Expression -> Maybe (Maybe (Declaration, Bool))
-       getEditableDeclaration isFlipped e@(EDcD d)      = if e `elem` editableRels 
-                                                          then Just $ Just (d, isFlipped)          -- basic editable declaration
-                                                          else Nothing                             -- expression is not editable
-       getEditableDeclaration _         (EDcI _)        = Just Nothing                             -- narrowed/widened relation
-       getEditableDeclaration _         (EEps _ _)      = Just Nothing                             -- epsilon
-       getEditableDeclaration isFlipped (EFlp e)        = getEditableDeclaration (not isFlipped) e -- flipped relation
-       getEditableDeclaration isFlipped (EBrk e)        = getEditableDeclaration isFlipped e       -- brackets
-       getEditableDeclaration isFlipped (ECps (e1, e2)) =
-         case getEditableDeclaration isFlipped e1 of
+       -- does not contain a declaration; and Just (Just dclInfo) if the expression contains an editable declaration
+       getEditableDeclaration :: Expression -> Maybe (Maybe (A_Concept, Declaration, A_Concept, Bool))
+       getEditableDeclaration e@(EDcD d)      = if e `elem` editableRels 
+                                                then Just $ Just (source d, d, target d, False)  -- basic editable declaration
+                                                else Nothing                                     -- expression is not editable
+       getEditableDeclaration (EDcI _)        = Just Nothing                                     -- narrowed/widened relation
+       getEditableDeclaration (EEps _ _)      = Just Nothing                                     -- epsilon
+       getEditableDeclaration (EFlp e)        = case getEditableDeclaration e of                 -- flipped relation
+                                                  Just (Just (s,d,t,isFlipped)) -> Just (Just (t,d,s,not isFlipped))
+                                                  x                             -> x 
+       getEditableDeclaration (EBrk e)        = getEditableDeclaration e  -- brackets
+       getEditableDeclaration (ECps (e1, e2)) =
+         case getEditableDeclaration e1 of
            Nothing      -> Nothing                                        -- e1 is not editable
-           Just Nothing -> getEditableDeclaration isFlipped e2            -- e1 does not contain a declaration, so e2 should
-           Just (Just dcl) -> case getEditableDeclaration isFlipped e2 of -- e1 contains a declaration
+           Just Nothing -> getEditableDeclaration e2                      -- e1 does not contain a declaration, so e2 should
+           Just (Just dclInfo) -> case getEditableDeclaration e2 of       -- e1 contains a declaration
                                 Nothing -> Nothing                        -- e2 contains unhandled nodes
-                                Just (Nothing) -> Just (Just dcl)         -- e2 does not contain a relation, so we use the one from e1
+                                Just (Nothing) -> Just (Just dclInfo)     -- e2 does not contain a relation, so we use the one from e1
                                 Just (Just _)  -> Nothing                 -- both contain a declaration, so not editable
-       getEditableDeclaration _         _               = Nothing
+       getEditableDeclaration _               = Nothing
  
        normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
        getEditableConcepts obj = -- TODO: Nasty, instead of calling getEditableDeclaration recursively here (and only using it when the interface is
                                  --       top level), we should return the editable concepts together with genInterfaceObjects and collect at top level.
-         case getEditableDeclaration False $ conjNF (flags fSpec) $ objctx obj of
+         case getEditableDeclaration $ conjNF (flags fSpec) $ objctx obj of
            Just (Just _) -> [target $ objctx obj]
            _             -> []
          ++ concatMap getEditableConcepts (attributes obj)
