@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
    import Data.List (nub,elemIndex)
    import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
    import Data.Maybe (fromMaybe)
+   import Debug.Trace
 
    -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
    -- that each sublist in the result contains only equal elements, and all equal elements are in
@@ -65,3 +66,8 @@ module Database.Design.Ampersand.Basics.Auxiliaries
    class Flippable a where
      flp :: a -> a
    
+   showTrace :: Show a => a -> a
+   showTrace a = traceShowId a
+   
+   showTraceTag :: Show a => String -> a -> a
+   showTraceTag tag x = trace (tag ++ ": " ++ show x) x
