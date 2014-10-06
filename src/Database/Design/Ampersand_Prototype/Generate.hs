@@ -357,7 +357,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
            Just (Just _, _:_)        -> fatal 357 "Epsilon concept list should be empty"
            Just (Just (s,d,t,f), []) -> case getEditableRelation e2 of -- e1 contains a relation
                                 Nothing -> Nothing                     -- e2 contains unhandled nodes
-                                Just (Nothing, ecs2) -> Just (Just (s,d,head $ ecs2++[t],f),[]) -- e2 does not contain a relation, so we use the one from e1
+                                Just (Nothing, ecs2) -> Just (Just (s,d,head $ reverse ecs2++[t],f),[]) -- e2 does not contain a relation, so we use the one from e1
                                                                                                 -- TODO: maybe take minimum instead of head?
                                 Just (Just _, _)  -> Nothing             -- both contain a relation, so not editable
        getEditableRelation _               = Nothing
