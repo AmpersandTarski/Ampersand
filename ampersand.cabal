@@ -64,7 +64,7 @@ flag library
 library
   hs-source-dirs:    src/lib
   build-depends:    graphviz == 2999.17.*,
-                    base == 4.7.*,
+                    base >= 4.6,
                     containers == 0.5.*,
                     utf8-string == 0.3.*,
                     bytestring == 0.10.*,
