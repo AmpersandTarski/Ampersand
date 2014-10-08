@@ -346,38 +346,36 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
        -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
        getEditableRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
        getEditableRelation exp = case getRelation exp of
-          Just (Just res, [])  -> Just res
-          Just (Just _,   _:_) -> fatal 352 "Epsilon concept list should be empty"
-          _                    -> Nothing
-       
+          Just (Right res)  -> Just res
+          _                 -> Nothing
         where 
-          -- getRelation returns Nothing if the expression contains unhandled nodes; Just Nothing if the expression is okay but
-          -- does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
-          getRelation :: Expression -> Maybe (Maybe (A_Concept, Declaration, A_Concept, Bool), [A_Concept])
+          -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
+          -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
+          getRelation :: Expression -> Maybe (Either [A_Concept] (A_Concept, Declaration, A_Concept, Bool))
           getRelation e@(EDcD d)      = if e `elem` editableRels 
-                                                then Just (Just (source d, d, target d, False),[]) -- basic editable relation
-                                                else Nothing                                       -- expression is not editable
-          getRelation (EDcI _)        = Just (Nothing, [])    -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
-          getRelation (EEps c _)      = Just (Nothing, [c])   -- epsilon
-          getRelation (EBrk e)        = getRelation e        -- brackets
+                                                then Just $ Right (source d, d, target d, False) -- basic editable relation
+                                                else Nothing                                     -- expression is not editable
+          getRelation (EDcI _)        = Just $ Left []  -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
+          getRelation (EEps c _)      = Just $ Left [c] -- epsilon
+          getRelation (EBrk e)        = getRelation e   -- brackets
           getRelation (EFlp e)        = case getRelation e of -- flipped relation
-                                          Just ((Just (s,d,t,isFlipped)),cs) -> Just (Just (t,d,s,not isFlipped), reverse cs)
-                                          x                                  -> x 
+                                          Just (Left cs)                 -> Just $ Left (reverse cs)
+                                          Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
+                                          x                              -> x 
           getRelation (ECps (e1, e2)) =
             case getRelation e1 of
-              Nothing      -> Nothing                                 -- e1 is not editable
-              Just (Nothing,ecs1) -> case getRelation e2 of   -- e1 does not contain a relation, so e2 should
-                                       Just (Just _        , _:_) -> fatal 353 "Epsilon concept list should be empty"
-                                       Just (Just (s,d,t,f), [])  -> Just (Just (head $ ecs1++[s],d,t,f), []) -- e1 does not contain a relation, so we use the one from e2
-                                       Just (Nothing, ecs2)       -> Just (Nothing, ecs1++ecs2)               -- no relation, so we combine the epsilon concepts
-                                       Nothing                    -> Nothing                                  -- e1 contains unhandled nodes
-              Just (Just _, _:_)        -> fatal 357 "Epsilon concept list should be empty"
-              Just (Just (s,d,t,f), []) -> case getRelation e2 of -- e1 contains a relation
-                                   Nothing -> Nothing             -- e2 contains unhandled nodes
-                                   Just (Nothing, ecs2) -> Just (Just (s,d,head $ reverse ecs2++[t],f),[]) -- e2 does not contain a relation, so we use the one from e1
-                                   Just (Just _,  _)    -> Nothing                                         -- both contain a relation, so not editable
+              Nothing          -> Nothing                  -- e1 contains unhandled nodes or is not editable
+              Just (Left ecs1) -> 
+                case getRelation e2 of   -- e1 does not contain a relation, so e2 should
+                  Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
+                  Just (Right (s,d,t,f)) -> Just $ Right (head $ ecs1++[s],d,t,f) -- e1 does not contain a relation, so we use the one from e2
+                  Just (Left ecs2)       -> Just $ Left (ecs1++ecs2)              -- no relation, so we combine the epsilon concepts
+              Just (Right (s,d,t,f)) ->
+                case getRelation e2 of -- e1 contains a relation
+                  Nothing          -> Nothing                                       -- e2 contains unhandled nodes or is not editable
+                  Just (Left ecs2) -> Just $ Right (s,d,head $ reverse ecs2++[t],f) -- e2 does not contain a relation, so we use the one from e1
+                  Just (Right _)   -> Nothing                                       -- both contain a relation, so not editable
           getRelation _               = Nothing -- unhandled node
-   
        
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
