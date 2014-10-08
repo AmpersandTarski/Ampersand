@@ -4,13 +4,13 @@ CONTEXT RAP IN ENGLISH LATEX
 
 -- Context
 PATTERN Contexts
-PURPOSE PATTERN Contexts IN ENGLISH LATEX
+PURPOSE PATTERN Contexts
 {+The rules that govern contexts are brought together in one pattern,
 in order to formalize contexts and determine their meaning.
 -}
 CONCEPT Context "A context is a set of statements in a formal language that are true within that context."
      --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Context(ctxnm,ctxpats,ctxcs):svn1020"
-PURPOSE CONCEPT Context IN ENGLISH LATEX
+PURPOSE CONCEPT Context
 {+
 Contexts exist in Ampersand for the purpose of dealing with truth.
 Within one context there can be no contradictions.
@@ -39,13 +39,13 @@ ENDPATTERN
 
 -- Rule
 PATTERN Rules
-PURPOSE PATTERN Rules IN ENGLISH LATEX
+PURPOSE PATTERN Rules
 {+The rules that govern rules are brought together in one pattern,
 in order to formalize rules and determine their meaning.
 -}
 CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
   --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Rule(rrnm,rrexp):svn1020"
-PURPOSE CONCEPT Rule IN ENGLISH LATEX
+PURPOSE CONCEPT Rule
 {+
 Rules are used as a concrete reason for people to act, feel or believe.
 In philosophy, this is called a 'norm'.
@@ -70,13 +70,13 @@ ENDPATTERN
 
 -- Pattern
 PATTERN Patterns
-PURPOSE PATTERN Patterns IN ENGLISH LATEX
+PURPOSE PATTERN Patterns
 {+The rules that govern patterns are brought together in one pattern,
 in order to formalize patterns and determine their meaning.
 -}
 CONCEPT Pattern "A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem."
      --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Pattern(ptnm,ptdcs,ptgns,ptrls):svn1020"
-PURPOSE CONCEPT Pattern IN ENGLISH LATEX
+PURPOSE CONCEPT Pattern
 {+
 Patterns are used to isolate discussions about a specific theme to a particular group of stakeholders,
 who are competent to identify (define, select, invent, etc.) rules that define the theme.
@@ -97,14 +97,14 @@ ENDPATTERN
 
 -- Expression
 PATTERN Expressions
-PURPOSE PATTERN Expressions IN ENGLISH LATEX
+PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
 -}
 CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
 CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
         --    "DatabaseDesign.Ampersand.Input.ADL1.Parser.pExpr:svn1020"
-PURPOSE CONCEPT Expression IN ENGLISH LATEX
+PURPOSE CONCEPT Expression
 {+
 Ampersand uses relation algebra to formalize phrases.
 The formalized phrases are called expressions.
@@ -122,7 +122,7 @@ ENDPATTERN
 
 -- Concept
 PATTERN Concepts
-PURPOSE PATTERN Concepts IN ENGLISH LATEX
+PURPOSE PATTERN Concepts
 {+The rules that govern concepts are brought together in one pattern,
 in order to formalize concepts and determine their meaning.
 -}
@@ -130,7 +130,7 @@ CONCEPT A_Concept "A concept is a name for a category of similar objects."
  --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn1020"
 CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
 CONCEPT PlainConcept "A concept is a name for a category of similar objects."
-PURPOSE CONCEPT PlainConcept IN ENGLISH LATEX
+PURPOSE CONCEPT PlainConcept
 {+
 In order to reason about meaning,
 Ampersand has borrowed the idea of a "concept" from the field of semantics
@@ -148,7 +148,7 @@ has been studied for a long time [e.g.\ Frege, 1892] and is highly relevant for 
 ENDPATTERN
 
 PATTERN Populations
-PURPOSE PATTERN Populations IN ENGLISH LATEX
+PURPOSE PATTERN Populations
 {+The rules that govern atoms, pairs, and populations are brought together in one pattern,
 in order to formalize them and determine their meaning.
 -}
@@ -158,7 +158,7 @@ CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an inst
   --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn1020"
 CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
   --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn1020"
-PURPOSE CONCEPT Atom IN ENGLISH LATEX
+PURPOSE CONCEPT Atom
 {+
 Atoms are used to represent data. They are stored in relations that reside within a context.
 \subsubsection*{Example}
@@ -171,7 +171,7 @@ This means that pairs are inserted into and deleted from relations as time goes 
 -}
 
 CONCEPT Population "The contents of a Concept or Relation"
-PURPOSE CONCEPT Population IN ENGLISH LATEX
+PURPOSE CONCEPT Population
 {+
 Populations are a means to specify a number of true statements that are stored in a relation.
 If an information system is generated, the population specified in an Ampersand script
@@ -210,12 +210,12 @@ CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more 
 CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
   --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn1020"
 CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
-CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
-         --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn1020"
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
           --    "DatabaseDesign.Ampersand.ADL1.Rule.rulefromProp:svn1020"
 CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
       --    "DatabaseDesign.Ampersand.ADL1.Prop.Prop(..):svn1020"
-CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
+CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
+         --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn1020"
+CONCEPT Relation "A relation is a set of pairs."
 ENDPATTERN
 ENDCONTEXT
