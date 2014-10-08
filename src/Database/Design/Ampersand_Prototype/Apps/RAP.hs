@@ -91,7 +91,8 @@ atlas2populations fSpec =
 
 makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
 makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
- = return ("CONTEXT "++cxnm++"\n"++concatMap showADL pops++"\nENDCONTEXT")
+ = return ("CONTEXT "++cxnm++" IN DUTCH\n"++concatMap showADL pops++"\nENDCONTEXT")
+    -- SJ: The " IN DUTCH\n" part is wrong, surely. But how to fix this? In any case, it doesn't block the parser anymore.
    where
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
    pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue

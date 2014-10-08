@@ -111,7 +111,7 @@ dumpPopulationToADL fSpec = unlines $
       ,"  require \"Generics.php\";"
       ,"  require \"php/DatabaseUtils.php\";"
       ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
-      ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
+      ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++" IN DUTCH\\n\");"
       ]
       ++
       ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));"
