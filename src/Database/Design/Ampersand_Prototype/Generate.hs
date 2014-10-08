@@ -310,7 +310,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array)
        Nothing             -> []
   ++ case getEditableRelation normalizedInterfaceExp of 
-       Just (Just (srcConcept, d, tgtConcept, isFlipped),_) ->
+       Just (srcConcept, d, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
          (if isFlipped 
@@ -333,42 +333,52 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
-       -- getEditableRelation returns Nothing if the expression contains unhandled nodes; Just Nothing if the expression is okay but
-       -- does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
-       getEditableRelation :: Expression -> Maybe (Maybe (A_Concept, Declaration, A_Concept, Bool), [A_Concept])
-       getEditableRelation e@(EDcD d)      = if e `elem` editableRels 
-                                             then Just (Just (source d, d, target d, False),[]) -- basic editable relation
-                                             else Nothing                                       -- expression is not editable
-       getEditableRelation (EDcI _)        = Just (Nothing, [])                                 -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
-       getEditableRelation (EEps c _)      = Just (Nothing, [c])                                -- epsilon
-       getEditableRelation (EFlp e)        = case getEditableRelation e of                      -- flipped relation
-                                               Just ((Just (s,d,t,isFlipped)),cs) -> Just (Just (t,d,s,not isFlipped), reverse cs)
-                                               x                                  -> x 
-       getEditableRelation (EBrk e)        = getEditableRelation e -- brackets
-       getEditableRelation (ECps (e1, e2)) =
-         case getEditableRelation e1 of
-           Nothing      -> Nothing                                 -- e1 is not editable
-           Just (Nothing,ecs1) -> case getEditableRelation e2 of   -- e1 does not contain a relation, so e2 should
-                                    Just (Just _        , _:_) -> fatal 353 "Epsilon concept list should be empty"
-                                    Just (Just (s,d,t,f), [])  -> Just (Just (head $ ecs1++[s],d,t,f), []) -- TODO: maybe take minimum instead of head? 
-                                    Just (Nothing, ecs2)       -> Just (Nothing, ecs1++ecs2)
-                                    Nothing                    -> Nothing 
-           Just (Just _, _:_)        -> fatal 357 "Epsilon concept list should be empty"
-           Just (Just (s,d,t,f), []) -> case getEditableRelation e2 of -- e1 contains a relation
-                                Nothing -> Nothing                     -- e2 contains unhandled nodes
-                                Just (Nothing, ecs2) -> Just (Just (s,d,head $ reverse ecs2++[t],f),[]) -- e2 does not contain a relation, so we use the one from e1
-                                                                                                -- TODO: maybe take minimum instead of head?
-                                Just (Just _, _)  -> Nothing             -- both contain a relation, so not editable
-       getEditableRelation _               = Nothing
- 
-       normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
+ where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
        getEditableConcepts obj = -- TODO: Nasty, instead of calling getEditableDeclaration recursively here (and only using it when the interface is
                                  --       top level), we should return the editable concepts together with genInterfaceObjects and collect at top level.
          case getEditableRelation $ conjNF (flags fSpec) $ objctx obj of
-           Just (Just _, _) -> [target $ objctx obj]
-           _             -> []
+           Just _ -> [target $ objctx obj]
+           _      -> []
          ++ concatMap getEditableConcepts (attributes obj)
+       
+       -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
+       -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
+       -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+       getEditableRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+       getEditableRelation exp = case getRelation exp of
+          Just (Just res, [])  -> Just res
+          Just (Just _,   _:_) -> fatal 352 "Epsilon concept list should be empty"
+          _                    -> Nothing
+       
+        where 
+          -- getRelation returns Nothing if the expression contains unhandled nodes; Just Nothing if the expression is okay but
+          -- does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
+          getRelation :: Expression -> Maybe (Maybe (A_Concept, Declaration, A_Concept, Bool), [A_Concept])
+          getRelation e@(EDcD d)      = if e `elem` editableRels 
+                                                then Just (Just (source d, d, target d, False),[]) -- basic editable relation
+                                                else Nothing                                       -- expression is not editable
+          getRelation (EDcI _)        = Just (Nothing, [])    -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
+          getRelation (EEps c _)      = Just (Nothing, [c])   -- epsilon
+          getRelation (EBrk e)        = getRelation e        -- brackets
+          getRelation (EFlp e)        = case getRelation e of -- flipped relation
+                                          Just ((Just (s,d,t,isFlipped)),cs) -> Just (Just (t,d,s,not isFlipped), reverse cs)
+                                          x                                  -> x 
+          getRelation (ECps (e1, e2)) =
+            case getRelation e1 of
+              Nothing      -> Nothing                                 -- e1 is not editable
+              Just (Nothing,ecs1) -> case getRelation e2 of   -- e1 does not contain a relation, so e2 should
+                                       Just (Just _        , _:_) -> fatal 353 "Epsilon concept list should be empty"
+                                       Just (Just (s,d,t,f), [])  -> Just (Just (head $ ecs1++[s],d,t,f), []) -- e1 does not contain a relation, so we use the one from e2
+                                       Just (Nothing, ecs2)       -> Just (Nothing, ecs1++ecs2)               -- no relation, so we combine the epsilon concepts
+                                       Nothing                    -> Nothing                                  -- e1 contains unhandled nodes
+              Just (Just _, _:_)        -> fatal 357 "Epsilon concept list should be empty"
+              Just (Just (s,d,t,f), []) -> case getRelation e2 of -- e1 contains a relation
+                                   Nothing -> Nothing             -- e2 contains unhandled nodes
+                                   Just (Nothing, ecs2) -> Just (Just (s,d,head $ reverse ecs2++[t],f),[]) -- e2 does not contain a relation, so we use the one from e1
+                                   Just (Just _,  _)    -> Nothing                                         -- both contain a relation, so not editable
+          getRelation _               = Nothing -- unhandled node
+   
+       
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
