@@ -75,7 +75,7 @@ where
 
     where
        cpts       = concs (gensInScope fSpec)
-       attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  name (target (fldexpr fld))) (fldnull fld)
+       attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  (name.target.fldexpr) fld) (fldnull fld)
                     | plug<-lookup' c, fld<-tail (plugFields plug), not (inKernel fld), source (fldexpr fld)==c]
                     where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
        lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
@@ -114,9 +114,10 @@ where
     where
       ooAttr :: Expression -> CdAttribute
       ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
-                        , attTyp = (name.target) r
+                        , attTyp = if isPropty r then "Bool" else (name.target) r
                         , attOptional = (not.isTot) r
                         }
+      isPropty r = null([Sym,Asy]>-multiplicities r)
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isUni r then MaxOne else MaxMany
                 in  Mult minVal maxVal
@@ -175,7 +176,9 @@ where
       primKey _                    = Nothing
       ooAttr :: SqlField -> CdAttribute
       ooAttr f= OOAttr { attNm = fldname f
-                       , attTyp = (name.target.fldexpr) f
+                       , attTyp = if null([Sym,Asy]>-multiplicities (fldexpr f))
+                                  then "Bool"
+                                  else (name.target.fldexpr) f
                        , attOptional = fldnull f
                        }
       allAssocs = [a | a<-concatMap relsOf tables
