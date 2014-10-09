@@ -13,7 +13,8 @@ $DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass,$dbName);
 
 // Check connection
 	if (mysqli_connect_errno()) {
-	die("Failed to connect to MySQL (username/password are probably incorrect): " . mysqli_connect_error());
+	die("Failed to connect to MySQL.\n".
+	    "<br/><br/><span style=\"color: red\"><b>Error while connecting to MySQL:</b></span> ".mysqli_connect_error()."<br/>The database may not have been initialized yet. (<a href=\"Installer.php\">Initialize database</a>)<br/>");
 }
 
 // let PHP also report undefined variable references
