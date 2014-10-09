@@ -305,9 +305,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (flags fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
-       Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")"
-                              , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
-                                       -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array)
+       Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" ]
        Nothing             -> []
   ++ case getEditableRelation normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
@@ -334,12 +332,6 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   [ "      )"
   ]
  where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
-       getEditableConcepts obj = -- TODO: Nasty, instead of calling getEditableDeclaration recursively here (and only using it when the interface is
-                                 --       top level), we should return the editable concepts together with genInterfaceObjects and collect at top level.
-         case getEditableRelation $ conjNF (flags fSpec) $ objctx obj of
-           Just _ -> [target $ objctx obj]
-           _      -> []
-         ++ concatMap getEditableConcepts (attributes obj)
        
        -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
        -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
