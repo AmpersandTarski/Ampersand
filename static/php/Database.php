@@ -85,10 +85,11 @@ function processCommand($command)
       break;
     case 'update':
       if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
-          array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
+          array_key_exists('parentAtom', $command) && array_key_exists('parentConcept', $command) &&
+          array_key_exists('childAtom', $command) && array_key_exists('childConcept', $command) &&
           array_key_exists('parentOrChild', $command) && array_key_exists('originalAtom', $command))
-        editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom
-                  ,$command->parentOrChild, $command->originalAtom);
+        editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->parentConcept,
+                   $command->childAtom, $command->childConcept, $command->parentOrChild, $command->originalAtom);
       else 
         error("Command $command->dbCmd is missing parameters");
       break;
@@ -110,7 +111,7 @@ function editAddToConcept($atom, $concept)
 }
 
 // NOTE: if $originalAtom == '', editUpdate means insert
-function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom)
+function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept, $parentOrChild, $originalAtom)
 { global $relationTableInfo;
   global $tableColumnInfo;
   
@@ -176,8 +177,6 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   }
   
   // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
-  $childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
-  $parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
   $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
   emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
   addAtomToConcept($modifiedAtom, $modifiedConcept);

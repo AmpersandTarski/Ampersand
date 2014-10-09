@@ -72,7 +72,7 @@ generateAll fSpec =
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
-                      _ <- error ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
+                      _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
     writePrototypeFile fname content =
      do { verboseLn (flags fSpec) ("  Generating "++fname)
@@ -301,49 +301,82 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
            ++["      //"]
       else   []
      )
-  ++["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ] -- escape for the pathological case that one of the names in the relation contains a newline
+  ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
+  ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (flags fSpec) ]
+             -- escape for the pathological case that one of the names in the relation contains a newline
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")"
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array)
        Nothing             -> []
-  ++ let (flipped, unflippedExpr) = case objctx object of
-                                       EFlp e -> (True,e)
-                                       e      -> (False,e)
-         d = case unflippedExpr of
-             EDcD d'  -> d'
-             EDcI c   -> Isn c
-             EDcV sgn -> Vs sgn
-             _        -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ showADL unflippedExpr
-     in (if isEditable unflippedExpr
-         then [ "      , 'relation' => "++showPhpStr (name d)
-              , "      , 'relationIsFlipped' => "++show flipped ]++
-              [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'" | flipped] ++
-              [ "      , 'max' => "++ if isInj d then "'One'" else "'Many'" | flipped] ++
-              [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" | not flipped] ++
-              [ "      , 'max' => "++ if isUni d then "'One'" else "'Many'" | not flipped]
-         else [ "      , 'relation' => ''"
-              , "      , 'relationIsFlipped' => ''"
-              ])
+  ++ case getEditableRelation normalizedInterfaceExp of 
+       Just (srcConcept, d, tgtConcept, isFlipped) ->
+         [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
+         , "      , 'relationIsFlipped' => "++show isFlipped ] ++
+         (if isFlipped 
+          then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
+               , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
+          else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
+               , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]) ++
+         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept)
+         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept)
+         ]
+       _ ->
+         [ "      , 'relation' => '' // this interface expression is not editable"
+         , "      , 'relationIsFlipped' => ''"
+         , "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
+         , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
+         ]
   ++
-  [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
-  , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
+  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
   ]
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable (EDcD d) = d `elem` [d' | EDcD d' <- editableRels]
-       isEditable (EFlp e) = isEditable e
-       isEditable _                   = False
-       normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
-       getEditableConcepts obj = (let e = objctx obj in
-                                  case e of
-                                   EDcD d        | isEditable e       -> [target d]
-                                   EFlp (EDcD d) | isEditable (flp e) -> [source d]
-                                   _                                  -> []
-                                 )
-                                 ++ concatMap getEditableConcepts (attributes obj)
+ where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
+       getEditableConcepts obj = -- TODO: Nasty, instead of calling getEditableDeclaration recursively here (and only using it when the interface is
+                                 --       top level), we should return the editable concepts together with genInterfaceObjects and collect at top level.
+         case getEditableRelation $ conjNF (flags fSpec) $ objctx obj of
+           Just _ -> [target $ objctx obj]
+           _      -> []
+         ++ concatMap getEditableConcepts (attributes obj)
+       
+       -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
+       -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
+       -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+       getEditableRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+       getEditableRelation exp = case getRelation exp of
+          Just (Right res)  -> Just res
+          _                 -> Nothing
+        where 
+          -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
+          -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
+          getRelation :: Expression -> Maybe (Either [A_Concept] (A_Concept, Declaration, A_Concept, Bool))
+          getRelation e@(EDcD d)      = if e `elem` editableRels 
+                                                then Just $ Right (source d, d, target d, False) -- basic editable relation
+                                                else Nothing                                     -- expression is not editable
+          getRelation (EDcI _)        = Just $ Left []  -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
+          getRelation (EEps c _)      = Just $ Left [c] -- epsilon
+          getRelation (EBrk e)        = getRelation e   -- brackets
+          getRelation (EFlp e)        = case getRelation e of -- flipped relation
+                                          Just (Left cs)                 -> Just $ Left (reverse cs)
+                                          Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
+                                          x                              -> x 
+          getRelation (ECps (e1, e2)) =
+            case getRelation e1 of
+              Nothing          -> Nothing                  -- e1 contains unhandled nodes or is not editable
+              Just (Left ecs1) -> 
+                case getRelation e2 of   -- e1 does not contain a relation, so e2 should
+                  Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
+                  Just (Right (s,d,t,f)) -> Just $ Right (head $ ecs1++[s],d,t,f) -- e1 does not contain a relation, so we use the one from e2
+                  Just (Left ecs2)       -> Just $ Left (ecs1++ecs2)              -- no relation, so we combine the epsilon concepts
+              Just (Right (s,d,t,f)) ->
+                case getRelation e2 of -- e1 contains a relation
+                  Nothing          -> Nothing                                       -- e2 contains unhandled nodes or is not editable
+                  Just (Left ecs2) -> Just $ Right (s,d,head $ reverse ecs2++[t],f) -- e2 does not contain a relation, so we use the one from e1
+                  Just (Right _)   -> Nothing                                       -- both contain a relation, so not editable
+          getRelation _               = Nothing -- unhandled node
+       
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
@@ -406,4 +439,3 @@ showPlug plug =
 showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++
                  showPhpStr (fldname fld) ++ ":"++showADL (target $ fldexpr fld)]
-

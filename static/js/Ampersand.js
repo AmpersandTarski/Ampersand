@@ -203,12 +203,14 @@ function preventNameClashes(dbCommands) {
 	  	if (dbCommand.parentOrChild=='parent') {
 	  		var finalAtom = safeDbCommand.parentAtom; 
 	  		safeDbCommand.parentAtom = tempAtom;
-      	renameCommands.push(mkDbCommandUpdate(dbCommand.relation, dbCommand.isFlipped, finalAtom, dbCommand.childAtom, 'parent', tempAtom));
+      	renameCommands.push(mkDbCommandUpdate(dbCommand.relation, dbCommand.isFlipped, finalAtom, dbCommand.parentConcept,
+      	                                      dbCommand.childAtom, dbCommand.childConcept, 'parent', tempAtom));
 	  	}
       else {
 	  		var finalAtom = safeDbCommand.childAtom; 
       	safeDbCommand.childAtom = tempAtom;
-      	renameCommands.push(mkDbCommandUpdate(dbCommand.relation, dbCommand.isFlipped, dbCommand.parentAtom, finalAtom, 'child', tempAtom));
+      	renameCommands.push(mkDbCommandUpdate(dbCommand.relation, dbCommand.isFlipped, dbCommand.parentAtom, dbCommand.parentConcept,
+      	                                      finalAtom, dbCommand.childConcept, 'child', tempAtom));
       }
 	  }
 	  	
@@ -254,7 +256,8 @@ function showDbCommand(dbCommand) {
     case 'update':
       var originalPair = '('+(dbCommand.parentOrChild == 'parent' ? dbCommand.originalAtom + ',' + dbCommand.childAtom 
                                                                   : dbCommand.parentAtom + ',' + dbCommand.originalAtom) + ')';
-      var newPair = '('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
+      var newPair = '(' + showAtom(dbCommand.parentAtom) + ' : ' + dbCommand.parentConcept 
+                  + ',' + showAtom(dbCommand.childAtom) + ' : ' + dbCommand.childConcept + ')';
       return 'Update in   '+ showRelation(dbCommand.relation,dbCommand.isFlipped) +': '+
                            (dbCommand.originalAtom =='' ? 'add ' : originalPair+' ~> ')+newPair;
     case 'delete':
@@ -269,9 +272,9 @@ function mkDbCommandAddToConcept(atom, concept) {
 }
 
 // update with '' as originalAtom is insert
-function mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, parentOrChild, originalAtom) {
-  return {dbCmd: 'update', relation:relation, isFlipped:relationIsFlipped, parentAtom:parentAtom, childAtom:childAtom,
-                           parentOrChild:parentOrChild, originalAtom:originalAtom};
+function mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, parentConcept, childAtom, childConcept, parentOrChild, originalAtom) {
+  return {dbCmd: 'update', relation:relation, isFlipped:relationIsFlipped, parentAtom:parentAtom, parentConcept:parentConcept,
+                           childAtom:childAtom, childConcept:childConcept, parentOrChild:parentOrChild, originalAtom:originalAtom};
 }
 
 function mkDbCommandDelete(relation, relationIsFlipped, parentAtom, childAtom) {
@@ -292,7 +295,9 @@ function computeDbCommands() {
         var relationIsFlipped = $atomList.attr('relationIsFlipped') ? attrBoolValue($atomList.attr('relationIsFlipped')) : false;
         var $parentAtom = getEnclosingAtom($childAtom);
         var parentAtom = $parentAtom.attr('atom');
+        var parentConcept = getConcept($parentAtom);
         var childAtom = $childAtom.attr('atom');
+        var childConcept = getConcept($childAtom);
 
         // parent deleted does not affect child
         // if parent is new, then all updates will be handled at child
@@ -302,13 +307,15 @@ function computeDbCommands() {
               var originalAtom = $parentAtom.attr('originalAtom');
               var unmodifiedChildAtom = $childAtom.attr('originalatom') ?  $childAtom.attr('originalAtom') : childAtom;
               // we want to delete/update the original tuple with the original child, not a modified one
-              dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, unmodifiedChildAtom, 'parent', originalAtom));
+              dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, parentConcept, 
+                                                unmodifiedChildAtom, childConcept, 'parent', originalAtom));
             }
         }
 
         switch($childAtom.attr('status')) {
           case 'new':
-            dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', ''));
+            dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, parentConcept,
+                                              childAtom, childConcept, 'child', ''));
             break;
           case 'deleted':
             var unmodifiedParentAtom = $parentAtom.attr('originalAtom') ?  $parentAtom.attr('originalAtom') : parentAtom;
@@ -321,7 +328,8 @@ function computeDbCommands() {
             // so we can update the tuple with the modified parent. Hence no special case for parent with status=modified
             // - if parent is new, original atom will be empty, since the atom was automatically inserted because of multiplicities
             // - parent cannot be deleted, since then its children would also be deleted
-            dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', originalAtom));
+            dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, parentConcept,
+                                              childAtom, childConcept, 'child', originalAtom));
             break;
         }     
       }
@@ -499,8 +507,7 @@ function startAtomEditing($atom) {
 // contents with the new value from the text field. Then show $atom again and
 // remove the text field.
 function stopAtomEditing($atom) {
-  var $atomList = getEnclosingAtomList($atom); // todo, make function
-  var concept = $atomList.length ? $atomList.attr('concept') : $('#AmpersandRoot').attr('concept'); 
+  var concept = getConcept($atom); 
 
   var $atomName = $atom.find('>.AtomName');
   var atom = $atom.attr('atom');
@@ -906,6 +913,11 @@ function getAllConceptAtoms(concept) {
     atoms.push( atomViewMap[i]['view'] ); // if the concept has no view, "view" contains the atom name.
   }
   return atoms;
+}
+
+function getConcept($atom) {
+  var $atomList = getEnclosingAtomList($atom);
+  return $atomList.length ? $atomList.attr('concept') : $('#AmpersandRoot').attr('concept'); 
 }
 
 function getEnclosingAtom($elt) {
