@@ -164,7 +164,7 @@ if ($err)
   genSignalLogWindow($selectedRoleNr);
   echo '</div>';
 
-  if  (!empty($allInterfaceObjects[$interface]['editableConcepts'])){
+  if (count(getEditableConceptsForInterfaceName($interface)) > 0) {
        echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
        echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
        echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
@@ -391,7 +391,7 @@ function genEditableConceptInfo($interface) {
   global $allInterfaceObjects;
   global $relationTableInfo;
   
-  $editableConcepts = $allInterfaceObjects[$interface]['editableConcepts'];
+  $editableConcepts = getEditableConceptsForInterfaceName($interface);
   
   $atomViewMap = array ();
   foreach ($editableConcepts as $editableConcept) {
@@ -405,7 +405,41 @@ function genEditableConceptInfo($interface) {
   $atomViewMapJson = json_encode( $atomViewMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";
   echo "  return $atomViewMapJson;\n";
-  echo "}\n";
+  echo "}\n";  
+}
+
+// getEditableConceptsForInterfaceName called twice for each page, which is fine due to the limited size
+// of the interface tree (caching the value is more prone to errors).
+function getEditableConceptsForInterfaceName($interfaceName) {
+  global  $allInterfaceObjects;
+  if (!isset($interfaceName))
+    return array ();
+  else {
+    return getEditableConceptsForInterfaceObject($allInterfaceObjects[$interfaceName]);    
+  }
+}
+
+function getEditableConceptsForInterfaceObject($interfaceObj) {
+  global  $allInterfaceObjects;
   
+  if (isset($interfaceObj['boxSubInterfaces'])) // determine subinterfaces (following interface refs)
+  	  $subInterfaces = $interfaceObj['boxSubInterfaces'];
+  	else 
+      if (isset($interfaceObj['refSubInterface']))
+        $subInterfaces = array ($allInterfaceObjects[$interfaceObj['refSubInterface']]);
+      else
+        $subInterfaces = array ();
+  
+  $editableConcepts = Array ();
+
+  foreach($subInterfaces as $subInterfaceObj) { // gather editable concepts from subinterfaces
+    $editableConcepts = array_merge($editableConcepts, getEditableConceptsForInterfaceObject($subInterfaceObj));
+  }
+  
+  if ($interfaceObj['relation']) { // put this interface's target concept in front, if it's editable
+    array_unshift($editableConcepts, $interfaceObj['tgtConcept']);
+  }
+  
+  return array_unique($editableConcepts);
 }
 ?>
