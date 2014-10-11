@@ -61,7 +61,9 @@ generateAll fSpec =
         , generateRules fSpec
         , generateRoles fSpec
         , generateViews fSpec
-        , generateInterfaces fSpec]
+        , generateInterfaces fSpec
+        , generateConjuncts fSpec
+        , generateInterfaceConjunctTable fSpec]
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
@@ -340,6 +342,70 @@ generateMSubInterface fSpec editableRels depth subIntf =
                               indent 12
                                 (blockParenthesize "(" ")" ","
                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
+
+generateConjuncts :: Fspc -> [String]
+generateConjuncts fSpec =
+  [ "$allConjunctsSql ="
+  , "  array"
+  ] ++
+  addToLastLine ";"
+     (indent 4
+       (blockParenthesize  "(" ")" ","
+         [ [ generateConjunctName conj ++ " =>"
+           , "  array ( 'rulename'   => "++(showPhpStr.rc_rulename)   conj
+           , "//      , 'conjunct'   =>  ++(showPhpStr.rc_conjunct)   conj"
+           , "//      , 'dnfClauses' =>  ++(showPhpStr.rc_dnfClauses) conj"
+           ] ++
+           ( if verboseP (flags fSpec)
+             then   ["        // Normalization steps:"]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "]
+             else   []
+           ) ++
+           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
+           , "        )"
+           ]
+         | conj<-vconjs fSpec
+         , let rExpr=rc_conjunct conj
+         , rc_rulename conj `notElem` uniRuleNames fSpec
+         , let violExpr = notCpl rExpr
+         , let violationsExpr = conjNF (flags fSpec) violExpr
+         ]
+     ) )
+
+generateInterfaceConjunctTable :: Fspc -> [String]
+generateInterfaceConjunctTable fSpec =
+  [ "$interfaceConjunctTable ="
+  , "  array"
+  ] ++
+  addToLastLine  ";"
+     (indent 4
+       (blockParenthesize  "(" ")" ","
+         (map genConjsPerIfc (interfaceS fSpec ++ interfaceG fSpec))
+     ) )
+  where
+    genConjsPerIfc :: Interface ->  [String]
+    genConjsPerIfc interface
+     = case ifcControls interface of
+        [] -> [ (showPhpStr.name) interface++" => array ()   // Output interface needs no checking." ]
+        [conj] -> [ (showPhpStr.name) interface++" => array ( "++generateConjunctName conj++" )" ]
+        cs -> [ (showPhpStr.name) interface++" =>"
+              , "  array"
+              ] ++ indent 10
+                   (blockParenthesize  "(" ")" ","
+                     [ [generateConjunctName conj]
+                     | conj<-cs
+                     , rc_rulename conj `notElem` uniRuleNames fSpec
+                     ]
+                   )
+
+uniRuleNames :: Fspc -> [String]
+uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
+
+
+-- note the similarity with showHSName :: Conjunct -> String
+generateConjunctName :: Conjunct -> String
+generateConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
 
 -- utils
 
