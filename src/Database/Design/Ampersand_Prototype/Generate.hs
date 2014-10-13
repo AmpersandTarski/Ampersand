@@ -332,7 +332,10 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   [ "      )"
   ]
  where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
-       
+
+
+type Epsilon = (A_Concept, A_Concept, A_Concept)
+      
 -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
 -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
@@ -343,32 +346,55 @@ getEditableRelation editableRels exp = case getRelation exp of
  where 
    -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
    -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
-   getRelation :: Expression -> Maybe (Either [A_Concept] (A_Concept, Declaration, A_Concept, Bool))
-   getRelation e@(EDcD d)      = if e `elem` editableRels 
-                                         then Just $ Right (source d, d, target d, False) -- basic editable relation
-                                         else Nothing                                     -- expression is not editable
-   getRelation (EDcI _)        = Just $ Left []  -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
-   getRelation (EEps c _)      = Just $ Left [c] -- epsilon
-   getRelation (EBrk e)        = getRelation e   -- brackets
-   getRelation (EFlp e)        = case getRelation e of -- flipped relation
-                                   Just (Left cs)                 -> Just $ Left (reverse cs)
-                                   Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
-                                   x                              -> x 
-   getRelation (ECps (e1, e2)) =
+   getRelation :: Expression -> Maybe (Either [Epsilon] (A_Concept, Declaration, A_Concept, Bool))
+   getRelation e@(EDcD d)           = if e `elem` editableRels 
+                                      then Just $ Right (source d, d, target d, False) -- basic editable relation
+                                      else Nothing                                     -- expression is not editable
+   getRelation (EDcI _)             = Just $ Left []  -- Ignore identity, as we handle narrowing/widening using the epsilon concepts
+   getRelation (EEps c (Sign l r))  = Just $ Left [(l,c,r)] -- epsilon
+   getRelation (EBrk e)             = getRelation e         -- brackets
+   getRelation (EFlp e)             = case getRelation e of -- flipped relation
+                                        Just (Left epss)               -> Just $ Left $ flipEpsilons epss
+                                        Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
+                                        Nothing                        -> Nothing 
+   getRelation (ECps (e1, e2)) = -- composition
      case getRelation e1 of
-       Nothing          -> Nothing                  -- e1 contains unhandled nodes or is not editable
-       Just (Left ecs1) -> 
-         case getRelation e2 of   -- e1 does not contain a relation, so e2 should
+       Nothing          -> Nothing -- e1 contains unhandled nodes or is not editable
+       Just (Left epss1) ->        -- e1 does not contain a relation
+         case getRelation e2 of 
            Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
-           Just (Right (s,d,t,f)) -> Just $ Right (head $ ecs1++[s],d,t,f) -- e1 does not contain a relation, so we use the one from e2
-           Just (Left ecs2)       -> Just $ Left (ecs1++ecs2)              -- no relation, so we combine the epsilon concepts
-       Just (Right (s,d,t,f)) ->
-         case getRelation e2 of -- e1 contains a relation
-           Nothing          -> Nothing                                       -- e2 contains unhandled nodes or is not editable
-           Just (Left ecs2) -> Just $ Right (s,d,head $ reverse ecs2++[t],f) -- e2 does not contain a relation, so we use the one from e1
-           Just (Right _)   -> Nothing                                       -- both contain a relation, so not editable
-   getRelation _               = Nothing -- unhandled node
-       
+           Just (Left epss2)      -> Just $ Left (epss1++epss2)            -- e1 and e2 don't contain a relation, so we combine the epsilon concepts
+           Just (Right (s,d,t,f)) -> case getNarrowestConcept s $ flipEpsilons epss1 of -- e1 does not contain a relation, so we use the one from e2
+                                       Nothing -> Nothing                    -- no narrowest concept
+                                       Just s' -> Just $ Right (s',d,t,f)    -- use narrowest concept as source
+       Just (Right (s,d,t,f)) ->   -- e1 contains a relation
+         case getRelation e2 of
+           Nothing          -> Nothing                              -- e2 contains unhandled nodes or is not editable
+           Just (Left epss2) -> case getNarrowestConcept t epss2 of -- e2 does not contain a relation, so we use the one from e1
+                                       Nothing -> Nothing                    -- no narrowest concept
+                                       Just t'  -> Just $ Right (s,d,t',f)   -- use narrowest concept as target
+           Just (Right _)   -> Nothing                              -- both contain a relation, so not editable
+   getRelation _               = Nothing -- unhandled node, so not editable
+
+   -- If the epsilon concepts are a squence of narrowing concepts followed by a sequence of 
+   -- widening concepts, return Just the narrowest concept, otherwise return Nothing. 
+   getNarrowestConcept :: A_Concept -> [Epsilon] -> Maybe A_Concept
+   getNarrowestConcept narrowestC []             = Just narrowestC
+   getNarrowestConcept _          (e@(_,i,_):epss) | isNarrow e = getNarrowestConcept i epss
+                                                   | otherwise  = -- e either widens or narrows and widens (intersect                                                  
+     if all isWiden epss then Just i else Nothing                 -- is different from both left and right)
+   
+   -- If the intersection concept is equal to the right concept, this is epsilon narrows.
+   isNarrow :: Epsilon -> Bool
+   isNarrow (_, intersectC, rightC) = intersectC == rightC
+
+   -- If the intersection concept is equal to the left concept, this is epsilon widens.
+   isWiden :: Epsilon -> Bool
+   isWiden (leftC, intersectC, _) = intersectC == leftC
+  
+   flipEpsilons :: [Epsilon] -> [Epsilon]
+   flipEpsilons es = reverse $ map (\(l,i,r)->(r,i,l)) es
+
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
