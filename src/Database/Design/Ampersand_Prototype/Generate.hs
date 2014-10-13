@@ -307,7 +307,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" ]
        Nothing             -> []
-  ++ case getEditableRelation normalizedInterfaceExp of 
+  ++ case getEditableRelation editableRels normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
@@ -333,41 +333,41 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ]
  where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
        
-       -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
-       -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
-       -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
-       getEditableRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
-       getEditableRelation exp = case getRelation exp of
-          Just (Right res)  -> Just res
-          _                 -> Nothing
-        where 
-          -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
-          -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
-          getRelation :: Expression -> Maybe (Either [A_Concept] (A_Concept, Declaration, A_Concept, Bool))
-          getRelation e@(EDcD d)      = if e `elem` editableRels 
-                                                then Just $ Right (source d, d, target d, False) -- basic editable relation
-                                                else Nothing                                     -- expression is not editable
-          getRelation (EDcI _)        = Just $ Left []  -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
-          getRelation (EEps c _)      = Just $ Left [c] -- epsilon
-          getRelation (EBrk e)        = getRelation e   -- brackets
-          getRelation (EFlp e)        = case getRelation e of -- flipped relation
-                                          Just (Left cs)                 -> Just $ Left (reverse cs)
-                                          Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
-                                          x                              -> x 
-          getRelation (ECps (e1, e2)) =
-            case getRelation e1 of
-              Nothing          -> Nothing                  -- e1 contains unhandled nodes or is not editable
-              Just (Left ecs1) -> 
-                case getRelation e2 of   -- e1 does not contain a relation, so e2 should
-                  Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
-                  Just (Right (s,d,t,f)) -> Just $ Right (head $ ecs1++[s],d,t,f) -- e1 does not contain a relation, so we use the one from e2
-                  Just (Left ecs2)       -> Just $ Left (ecs1++ecs2)              -- no relation, so we combine the epsilon concepts
-              Just (Right (s,d,t,f)) ->
-                case getRelation e2 of -- e1 contains a relation
-                  Nothing          -> Nothing                                       -- e2 contains unhandled nodes or is not editable
-                  Just (Left ecs2) -> Just $ Right (s,d,head $ reverse ecs2++[t],f) -- e2 does not contain a relation, so we use the one from e1
-                  Just (Right _)   -> Nothing                                       -- both contain a relation, so not editable
-          getRelation _               = Nothing -- unhandled node
+-- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
+-- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
+-- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getEditableRelation editableRels exp = case getRelation exp of
+   Just (Right res)  -> Just res
+   _                 -> Nothing
+ where 
+   -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
+   -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
+   getRelation :: Expression -> Maybe (Either [A_Concept] (A_Concept, Declaration, A_Concept, Bool))
+   getRelation e@(EDcD d)      = if e `elem` editableRels 
+                                         then Just $ Right (source d, d, target d, False) -- basic editable relation
+                                         else Nothing                                     -- expression is not editable
+   getRelation (EDcI _)        = Just $ Left []  -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
+   getRelation (EEps c _)      = Just $ Left [c] -- epsilon
+   getRelation (EBrk e)        = getRelation e   -- brackets
+   getRelation (EFlp e)        = case getRelation e of -- flipped relation
+                                   Just (Left cs)                 -> Just $ Left (reverse cs)
+                                   Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
+                                   x                              -> x 
+   getRelation (ECps (e1, e2)) =
+     case getRelation e1 of
+       Nothing          -> Nothing                  -- e1 contains unhandled nodes or is not editable
+       Just (Left ecs1) -> 
+         case getRelation e2 of   -- e1 does not contain a relation, so e2 should
+           Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
+           Just (Right (s,d,t,f)) -> Just $ Right (head $ ecs1++[s],d,t,f) -- e1 does not contain a relation, so we use the one from e2
+           Just (Left ecs2)       -> Just $ Left (ecs1++ecs2)              -- no relation, so we combine the epsilon concepts
+       Just (Right (s,d,t,f)) ->
+         case getRelation e2 of -- e1 contains a relation
+           Nothing          -> Nothing                                       -- e2 contains unhandled nodes or is not editable
+           Just (Left ecs2) -> Just $ Right (s,d,head $ reverse ecs2++[t],f) -- e2 does not contain a relation, so we use the one from e1
+           Just (Right _)   -> Nothing                                       -- both contain a relation, so not editable
+   getRelation _               = Nothing -- unhandled node
        
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
