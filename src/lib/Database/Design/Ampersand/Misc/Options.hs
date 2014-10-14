@@ -2,7 +2,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
-        ,ParserVersion(..)
         ,verboseLn,verbose,FspecFormat(..),FileFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
@@ -23,12 +22,6 @@ import Data.List
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Misc.Options"
-
-data ParserVersion = Current | Legacy deriving Eq
-
-instance Show ParserVersion where
-  show Current = "syntax since Ampersand 2.1.1."
-  show Legacy = "syntax664"
 
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
@@ -89,7 +82,6 @@ data Options = Options { showVersion :: Bool
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
-                       , parserVersion :: ParserVersion
                        , oldNormalizer :: Bool
                        }
 
@@ -183,7 +175,6 @@ getOptions =
                       , sqlHost       = "localhost"
                       , sqlLogin      = "ampersand"
                       , sqlPwd        = "ampersand"
-                      , parserVersion = Current
                       , oldNormalizer = False
                       }
       -- Here we thread startOptions through all supplied option actions
