@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand_Prototype.Generate (generateAll,otherQuerys) where
+module Database.Design.Ampersand_Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand_Prototype.CoreImporter
 -- import Database.Design.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
@@ -20,9 +20,6 @@ fatal = fatalMsg "Generate"
 
 customCssPath :: String
 customCssPath = "css/Custom.css"
-
-otherQuerys :: Fspc -> [String]
-otherQuerys _ = []
 
 generateAll :: Fspc -> IO ()
 generateAll fSpec =
