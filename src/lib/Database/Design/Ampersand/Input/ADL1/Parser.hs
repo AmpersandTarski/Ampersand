@@ -28,7 +28,7 @@ keywordstxt       = [ "INCLUDE"
                     , "META"
                     , "PATTERN", "ENDPATTERN"
                     , "PROCESS", "ENDPROCESS"
-                    , "INTERFACE", "FOR", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
+                    , "INTERFACE", "CLASS", "FOR", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
                     , "POPULATION", "CONTAINS"
                     , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
@@ -58,7 +58,7 @@ pPopulations = pList1 pPopulation
 pContext :: AmpParser (P_Context, [String]) -- the result is the parsed context and a list of include filenames
 pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
                          <*> pLanguageRef
-                         <*> optional pTextMarkup
+                         <*> pMaybe pTextMarkup
                          <*> pList pContextElement <* pKey "ENDCONTEXT"
   where
     rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
@@ -252,11 +252,11 @@ pClassify = rebuild <$> pKey_pos "CLASSIFY"
 
 pRuleDef :: AmpParser (P_Rule TermPrim)
 pRuleDef =  rebuild <$> pKey_pos "RULE"
-                    <*> optional (pADLid <* pKey ":" )
+                    <*> pMaybe (pADLid <* pKey ":" )
                     <*> pRule
                     <*> pList pMeaning
                     <*> pList pMessage
-                    <*> optional pViolation
+                    <*> pMaybe pViolation
                where
                  rebuild po mn rexp mean msg mViolation
                    = P_Ru { rr_nm   = fromMaybe (rulid po) mn
@@ -413,7 +413,7 @@ pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRe
                          P_ViewText <$ pKey "TXT" <*> pString <|>
                          P_ViewHtml <$ pKey "PRIMHTML" <*> pString
           pViewAtt :: AmpParser P_ObjectDef
-          pViewAtt = rebuild <$> optional pLabelProps <*> pTerm
+          pViewAtt = rebuild <$> pMaybe pLabelProps <*> pTerm
               where
                 rebuild mLbl attexpr =
                   case mLbl of
@@ -434,6 +434,7 @@ pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRe
 
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
+                     (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
                      (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                     -- either  Prel _ nm
                                                                     --       or  PTrel _ nm sgn
@@ -441,9 +442,10 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pRoles  `opt` [])                   <*>
                      (pKey ":" *> pTerm)                  <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> [TermPrim] -> [[String]] -> [String] -> (Term TermPrim) -> P_SubInterface -> P_Interface
-          lbl (nm,p) params args roles expr sub
+    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [String] -> (Term TermPrim) -> P_SubInterface -> P_Interface
+          lbl (nm,p) iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
+                     , ifc_Class  = iclass
                      , ifc_Params = params
                      , ifc_Args   = args
                      , ifc_Roles  = roles
@@ -469,7 +471,7 @@ pSubInterface = P_Box <$> pKey_pos "BOX" <*> pBox
 pObjDef :: AmpParser P_ObjectDef
 pObjDef            = obj <$> pLabelProps
                          <*> pTerm            -- the context expression (for example: I[c])
-                         <*> optional pSubInterface  -- the optional subinterface
+                         <*> pMaybe pSubInterface  -- the optional subinterface
                      where obj (Lbl nm pos' strs) expr msub  =
                              P_Obj { obj_nm   = nm
                                    , obj_pos  = pos'
@@ -489,8 +491,8 @@ pPhpplug          = pKey_pos "PHPPLUG" *> pObjDef
 pPurpose :: AmpParser PPurpose
 pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obsolete
                             <*> pRef2Obj
-                            <*> optional pLanguageRef
-                            <*> optional pTextMarkup
+                            <*> pMaybe pLanguageRef
+                            <*> pMaybe pTextMarkup
                             <*> ((pKey "REF" *> (pList1Sep pSemi pString)) `opt` [])
                             <*> pExpl
      where
@@ -557,16 +559,16 @@ pPrintThemes = pKey "THEMES"
             *> pList1Sep (pSpec ',') pConceptName  -- Patterns, processes and concepts share the same name space, so these names must be checked whether the processes and patterns exist.
 pMeaning :: AmpParser PMeaning
 pMeaning = rebuild <$  pKey "MEANING"
-                   <*> optional pLanguageRef
-                   <*> optional pTextMarkup
+                   <*> pMaybe pLanguageRef
+                   <*> pMaybe pTextMarkup
                    <*> (pString <|> pExpl)
    where rebuild :: Maybe Lang -> Maybe PandocFormat -> String -> PMeaning
          rebuild    lang          fmt                   mkup   =
             PMeaning (P_Markup lang fmt mkup)
 pMessage :: AmpParser PMessage
 pMessage = rebuild <$ pKey "MESSAGE"
-                   <*> optional pLanguageRef
-                   <*> optional pTextMarkup
+                   <*> pMaybe pLanguageRef
+                   <*> pMaybe pTextMarkup
                    <*> (pString <|> pExpl)
    where rebuild :: Maybe Lang -> Maybe PandocFormat -> String -> PMessage
          rebuild    lang          fmt                   mkup   =
@@ -628,7 +630,7 @@ The functions pars and f have arguments 'combinator' and 'operator' only to avoi
 pTerm :: AmpParser (Term TermPrim)
 pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
           where pars combinator operator
-                 = g <$> pKey_pos operator <*> pTrm2 <*> optional (pars combinator operator)
+                 = g <$> pKey_pos operator <*> pTrm2 <*> pMaybe (pars combinator operator)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
                 f combinator (orig, y) x = combinator orig x y
@@ -657,7 +659,7 @@ pTrm3  =  pTrm4 <??> (f <$>  (pKey_val_pos "/" <|> pKey_val_pos "\\" <|> pKey_va
 pTrm4 :: AmpParser (Term TermPrim)
 pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "#")
           where pars combinator operator
-                 = g <$> pKey_pos operator <*> pTrm5 <*> optional (pars combinator operator)
+                 = g <$> pKey_pos operator <*> pTrm5 <*> pMaybe (pars combinator operator)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
                 f combinator (orig, y) x = combinator orig x y
@@ -677,9 +679,9 @@ pTrm6  =  (Prim <$> pRelationRef)  <|>
 
 pRelationRef :: AmpParser TermPrim
 pRelationRef      = pRelSign                                                                         <|>
-                    pid   <$> pKey_pos "I"  <*> optional (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
-                    pfull <$> pKey_pos "V"  <*> optional pSign                                       <|>
-                    singl <$> pAtom_val_pos <*> optional (pSpec '[' *> pConceptOneRef <* pSpec ']')
+                    pid   <$> pKey_pos "I"  <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
+                    pfull <$> pKey_pos "V"  <*> pMaybe pSign                                       <|>
+                    singl <$> pAtom_val_pos <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
@@ -687,12 +689,12 @@ pRelationRef      = pRelSign                                                    
                           singl (nm,orig) x  = Patm orig nm x
 
 pRelSign :: AmpParser TermPrim
-pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
+pRelSign          = prel  <$> pVarid_val_pos <*> pMaybe pSign
                     where prel (nm,orig) Nothing = Prel orig nm
                           prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
 
 pSign :: AmpParser (P_Sign,Origin)
-pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> optional (pKey "*" *> pConceptOneRef) <* pSpec ']'
+pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'
    where
      rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
      rebuild orig a mb
@@ -752,8 +754,8 @@ pADLid            = pVarid <|> pConid <|> pString
 pADLid_val_pos :: AmpParser (String, Origin)
 pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
 
-optional :: IsParser p s => p a -> p (Maybe a)
-optional p        = Just <$> p <|> pSucceed Nothing
+pMaybe :: IsParser p s => p a -> p (Maybe a)
+pMaybe p = Just <$> p <|> pSucceed Nothing
 
 
 get_tok_pos :: Token -> Origin
