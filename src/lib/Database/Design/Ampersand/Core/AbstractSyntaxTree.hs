@@ -305,6 +305,7 @@ rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts
                                 ]
 
 data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions are allowed!
+                     , ifcClass ::    Maybe String
                      , ifcArgs ::     [[String]]
                      , ifcRoles ::    [String]
                      , ifcObj ::      ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
