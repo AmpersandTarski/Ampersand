@@ -460,6 +460,7 @@ pCtx2aCtx' opts
 
     pIfc2aIfc :: P_Interface -> Guarded Interface
     pIfc2aIfc P_Ifc { ifc_Params = tps
+                    , ifc_Class = iclass
                     , ifc_Args = args
                     , ifc_Roles = rols
                     , ifc_Obj = obj
@@ -469,6 +470,7 @@ pCtx2aCtx' opts
                     }
         = (\ tps' obj'
              -> Ifc { ifcParams = tps'
+                    , ifcClass = iclass
                     , ifcArgs = args
                     , ifcRoles = rols
                     , ifcObj = obj'

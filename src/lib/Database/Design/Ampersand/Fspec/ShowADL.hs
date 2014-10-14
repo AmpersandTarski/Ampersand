@@ -159,6 +159,7 @@ instance ShowADL Process where
       showRR pr = intercalate "\n  " [ "ROLE "++role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
                                      | cl<-eqCl fst (mayEdit pr), let role = fst (head cl)]
 
+-- TODO: making these tuples instance of ShowADL is very hacky
 instance ShowADL (String,Rule) where
  showADL (role,rul) = "ROLE "++role++" MAINTAINS "++show (name rul)
 
@@ -211,6 +212,7 @@ instance ShowADL RoleRule where
 instance ShowADL Interface where
  showADL ifc
   = "INTERFACE "++showstr(name ifc)
+          ++ maybe "" ((" CLASS "++) . showstr) (ifcClass ifc)
           ++(if null (ifcParams ifc) then "" else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
           ++(if null (ifcArgs ifc) then "" else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
           ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " [ r | r<-ifcRoles ifc])
