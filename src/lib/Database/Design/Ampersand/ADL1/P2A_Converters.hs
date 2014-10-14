@@ -83,7 +83,7 @@ isDanglingPurpose ctx purp =
     ExplContext nm -> ctxnm ctx /= nm
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx' opts
+pCtx2aCtx' _
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
