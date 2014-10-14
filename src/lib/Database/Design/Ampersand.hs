@@ -88,7 +88,8 @@ module Database.Design.Ampersand
    , Database.Design.Ampersand.Basics.hPutStrLn
    , Database.Design.Ampersand.Basics.readFile
    , Database.Design.Ampersand.Basics.writeFile
-   , showTrace, showTraceTag
+   , fst3, snd3, thd3
+   , trace, showTrace, showTraceTag
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
