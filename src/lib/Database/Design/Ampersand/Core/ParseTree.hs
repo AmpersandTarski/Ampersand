@@ -15,7 +15,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , P_Population(..)
 
-   , P_ObjectDef, P_SubInterface, P_Interface(..), P_ObjDef(..), P_SubIfc(..)
+   , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef(..) , P_IdentSegment(..)
    , P_ViewDef , P_ViewSegment
@@ -405,7 +405,8 @@ instance Traced P_Population where
 
 data P_Interface =
      P_Ifc { ifc_Name :: String           -- ^ the name of the interface
-           , ifc_Params :: [TermPrim]         -- ^ a list of relations, which are editable within this interface.
+           , ifc_Class :: Maybe String    -- ^ the class of the interface
+           , ifc_Params :: [TermPrim]     -- ^ a list of relations that are editable within this interface.
                                           --   either   Prel o nm
                                           --       or   PTrel o nm sgn
            , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
@@ -420,6 +421,8 @@ instance Identified P_Interface where
 
 instance Traced P_Interface where
  origin = ifc_Pos
+
+data P_IClass = P_IClass { iclass_name :: String } deriving (Eq, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
