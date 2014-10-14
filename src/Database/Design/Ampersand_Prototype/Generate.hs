@@ -333,67 +333,40 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ]
  where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
 
-
-type Epsilon = (A_Concept, A_Concept, A_Concept)
-      
 -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
 -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+-- This is used to predict the type of the atoms provided by the outside world through interfaces.
+-- The result is Maybe, because the result might be predictably empty.
 getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
 getEditableRelation editableRels exp = case getRelation exp of
-   Just (Right res)  -> Just res
-   _                 -> Nothing
+   Just (s,d,t,isFlipped)  -> if EDcD d `elem` editableRels then Just (s,d,t,isFlipped) else Nothing
+   _                       -> Nothing
  where 
-   -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
-   -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
-   getRelation :: Expression -> Maybe (Either [Epsilon] (A_Concept, Declaration, A_Concept, Bool))
-   getRelation e@(EDcD d)           = if e `elem` editableRels 
-                                      then Just $ Right (source d, d, target d, False) -- basic editable relation
-                                      else Nothing                                     -- expression is not editable
-   getRelation (EDcI _)             = Just $ Left []  -- Ignore identity, as we handle narrowing/widening using the epsilon concepts
-   getRelation (EEps c (Sign l r))  = Just $ Left [(l,c,r)] -- epsilon
-   getRelation (EBrk e)             = getRelation e         -- brackets
-   getRelation (EFlp e)             = case getRelation e of -- flipped relation
-                                        Just (Left epss)               -> Just $ Left $ flipEpsilons epss
-                                        Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
-                                        Nothing                        -> Nothing 
-   getRelation (ECps (e1, e2)) = -- composition
-     case getRelation e1 of
-       Nothing          -> Nothing -- e1 contains unhandled nodes or is not editable
-       Just (Left epss1) ->        -- e1 does not contain a relation
-         case getRelation e2 of 
-           Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
-           Just (Left epss2)      -> Just $ Left (epss1++epss2)            -- e1 and e2 don't contain a relation, so we combine the epsilon concepts
-           Just (Right (s,d,t,f)) -> case getNarrowestConcept s $ flipEpsilons epss1 of -- e1 does not contain a relation, so we use the one from e2
-                                       Nothing -> Nothing                    -- no narrowest concept
-                                       Just s' -> Just $ Right (s',d,t,f)    -- use narrowest concept as source
-       Just (Right (s,d,t,f)) ->   -- e1 contains a relation
-         case getRelation e2 of
-           Nothing          -> Nothing                              -- e2 contains unhandled nodes or is not editable
-           Just (Left epss2) -> case getNarrowestConcept t epss2 of -- e2 does not contain a relation, so we use the one from e1
-                                       Nothing -> Nothing                    -- no narrowest concept
-                                       Just t'  -> Just $ Right (s,d,t',f)   -- use narrowest concept as target
-           Just (Right _)   -> Nothing                              -- both contain a relation, so not editable
-   getRelation _               = Nothing -- unhandled node, so not editable
-
-   -- If the epsilon concepts are a squence of narrowing concepts followed by a sequence of 
-   -- widening concepts, return Just the narrowest concept, otherwise return Nothing. 
-   getNarrowestConcept :: A_Concept -> [Epsilon] -> Maybe A_Concept
-   getNarrowestConcept narrowestC []             = Just narrowestC
-   getNarrowestConcept _          (e@(_,i,_):epss) | isNarrow e = getNarrowestConcept i epss
-                                                   | otherwise  = -- e either widens or narrows and widens (intersect                                                  
-     if all isWiden epss then Just i else Nothing                 -- is different from both left and right)
-   
-   -- If the intersection concept is equal to the right concept, this is epsilon narrows.
-   isNarrow :: Epsilon -> Bool
-   isNarrow (_, intersectC, rightC) = intersectC == rightC
-
-   -- If the intersection concept is equal to the left concept, this is epsilon widens.
-   isWiden :: Epsilon -> Bool
-   isWiden (leftC, intersectC, _) = intersectC == leftC
-  
-   flipEpsilons :: [Epsilon] -> [Epsilon]
-   flipEpsilons es = reverse $ map (\(l,i,r)->(r,i,l)) es
+   -- getRelation produces a declaration and the narrowest possible concepts
+   -- at the left- and right hand sides of an expression.
+   -- Additionally, a boolean is produced to state whether the relation is flipped.
+   getRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+   getRelation (ECps (e1, e2@(EEps i _)))
+     = case getRelation e1 of --note: target e1==source e2
+        Just (s,d,t,isFlipped) -> if t==target e1 && i/=source e2 then Just (s,d,i,isFlipped) else
+                                  if t/=target e1 && i==source e2 then Just (s,d,t,isFlipped) else
+                                  Nothing
+        Nothing                -> Nothing
+   getRelation (ECps (e1@(EEps i _), e2))
+     = case getRelation e2 of --note: target e1==source e2
+        Just (s,d,t,isFlipped) -> if i==target e1 && s/=source e2 then Just (s,d,t,isFlipped) else
+                                  if i/=target e1 && s==source e2 then Just (i,d,t,isFlipped) else
+                                  Nothing
+        Nothing                -> Nothing
+   getRelation (ECps (e, EDcI{})) = getRelation e
+   getRelation (ECps (EDcI{}, e)) = getRelation e
+   getRelation (EFlp e)
+    = case getRelation e of
+        Just (s,d,t,isFlipped) -> Just (s,d,t,not isFlipped)
+        Nothing                -> Nothing
+   getRelation (EDcD d) = Just (source d, d, target d, False)
+   getRelation _ = Nothing
 
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
