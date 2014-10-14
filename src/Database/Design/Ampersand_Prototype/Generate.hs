@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand_Prototype.Generate (generateAll,otherQuerys) where
+module Database.Design.Ampersand_Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand_Prototype.CoreImporter
 -- import Database.Design.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
@@ -20,9 +20,6 @@ fatal = fatalMsg "Generate"
 
 customCssPath :: String
 customCssPath = "css/Custom.css"
-
-otherQuerys :: Fspc -> [String]
-otherQuerys _ = []
 
 generateAll :: Fspc -> IO ()
 generateAll fSpec =
@@ -106,7 +103,7 @@ generateTableInfos fSpec =
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [showPhpStr (name decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
+         [ [showPhpStr (showHSName decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
                                             ++", 'tgtConcept' => "++showPhpStr (name (target decl))
                                             ++", 'table'      => "++showPhpStr (name table)
                                             ++", 'srcCol'     => "++showPhpStr (fldname srcCol)
@@ -309,7 +306,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
        Nothing             -> []
   ++ case getEditableRelation normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
-         [ "      , 'relation' => "++showPhpStr (name d) ++ " // this interface expression is editable"
+         [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
          (if isFlipped 
           then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
