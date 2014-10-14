@@ -717,10 +717,10 @@ instance ShowHS A_Gen where
 
 instance ShowHSName Declaration where
  showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
- showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++name (target d)) -- full relation
- showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++name (target d)) -- user defined relations
-              | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++name (target d)) -- relations generated for signalling
-              | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++name (target d)) -- relations generated per rule
+ showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- full relation
+ showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++"_"++name (target d)) -- user defined relations
+              | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++"_"++name (target d)) -- relations generated for signalling
+              | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++"_"++name (target d)) -- relations generated per rule
 
 instance ShowHS Declaration where
  showHS opts indent d
