@@ -684,7 +684,7 @@ Ideas for future work:
 
    parseRule :: String -> Term TermPrim
    parseRule str
-      = case  runParser Current pRule "inside Haskell code" str of
+      = case  runParser pRule "inside Haskell code" str of
           Right result -> result
           Left  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
 

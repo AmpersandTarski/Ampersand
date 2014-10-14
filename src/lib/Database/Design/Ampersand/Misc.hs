@@ -7,7 +7,7 @@ module Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Misc.Languages
        (Lang(..), plural)
 import Database.Design.Ampersand.Misc.Options
-       (getOptions, Options(..), ParserVersion(..),
+       (getOptions, Options(..),
         verboseLn, verbose, DocTheme(..), FspecFormat(..),
         FileFormat(..), helpNVersionTexts)
 import Database.Design.Ampersand.Misc.Explain

@@ -30,8 +30,7 @@ parseContext :: Options                          -- ^ options to be taken into a
              -> FilePath                         -- ^ the full path to the file to parse
              -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree.
 parseContext opts file
-             = do { verboseLn opts $ "Parsing with "++show (parserVersion opts)++"..."
-                  ; rapRes <- if includeRap opts
+             = do { rapRes <- if includeRap opts
                               then do let rapFile = ampersandDataDir opts </> "RepoRap" </> "RAP.adl"
                                       exists <- doesFileExist rapFile
                                       when (not exists) (fatal 39 $ "RAP file isn't installed properly. RAP.adl expected at:"
@@ -60,17 +59,16 @@ parseContext opts file
  
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String -> String -> Either String (Term TermPrim)
-parseADL1pExpr pexprstr fn = parseExpr Current pexprstr fn
+parseADL1pExpr pexprstr fn = parseExpr pexprstr fn
 
 -- | Parse isolated ADL1 expression strings
-parseExpr :: ParserVersion     -- ^ The specific version of the parser to be used
-          -> String            -- ^ The string to be parsed
+parseExpr :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the file (used for error messages)
           -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result
-parseExpr pv str fn =
-    case runParser pv pTerm fn str of
+parseExpr str fn =
+    case runParser pTerm fn str of
       Right result -> Right result
-      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
+      Left  msg    -> Left $ "Parse errors:\n"++show msg
 
 parseADL :: Options
          -> FilePath      -- ^ The name of the .adl file
@@ -127,7 +125,7 @@ parseFileContents :: Options  -- ^ command-line options
                   -> IO (Either ParseError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
 parseFileContents opts depth alreadyParsed fileContents fileDir filename =
   do { let filepath = combine fileDir filename
-     ; case parseSingleADL (parserVersion opts) fileContents filepath of
+     ; case parseSingleADL fileContents filepath of
            Left err -> return (Left err, alreadyParsed)
            Right (parsedContext, includeFilenames) ->
              do { (includeParseResults, alreadyParsed') <-
@@ -181,28 +179,23 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs
       , ctx_metas = metas1 ++ metas2
       }
 
-parseSingleADL :: ParserVersion -- ^ The specific version of the parser to be used
-         -> String        -- ^ The string to be parsed
-         -> String        -- ^ The name of the .adl file (used for error messages)
-         -> Either ParseError (P_Context, [String]) -- ^ The result: Either some errors, or the parsetree.
+parseSingleADL :: String        -- ^ The string to be parsed
+               -> String        -- ^ The name of the .adl file (used for error messages)
+               -> Either ParseError (P_Context, [String]) -- ^ The result: Either some errors, or the parsetree.
 
-parseSingleADL pv str fn =
-  case pv of
-      Current  -> runParser pv pContext                              fn str
- where addEmptyIncludes parsedContext = (parsedContext, []) -- the old parsed does not support include filenames, so we add an empty list
+parseSingleADL str fn = runParser pContext                              fn str
 
 -- | Same as parseCtx_ , however this one is for a list of populations
 parsePops :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
-          -> ParserVersion     -- ^ The specific version of the parser to be used
           -> Either String [P_Population] -- ^ The result: Either a list of populations, or some errors.
-parsePops str fn pv =
-    case  runParser pv pPopulations fn str of
+parsePops str fn =
+    case  runParser pPopulations fn str of
       Right result -> Right result
-      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
+      Left  msg    -> Left $ "Parse errors:\n"++show msg
 
-runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either ParseError res
-runParser parserVersion parser filename input =
+runParser :: forall res . Parser Token res -> String -> String -> Either ParseError res
+runParser parser filename input =
   let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
       steps = parse parser (scanner input)
   in  case  getMsgs steps of
