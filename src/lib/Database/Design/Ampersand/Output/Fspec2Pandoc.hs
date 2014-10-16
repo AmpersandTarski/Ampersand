@@ -3,16 +3,17 @@
 module Database.Design.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces         (chpInterfacesBlocks, chpInterfacesPics)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction       (chpIntroduction)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs        (chpNatLangReqs)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis          (chpDiagnosis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis (chpConceptualAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis    (chpProcessAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterECArules           (chpECArules)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis       (chpDataAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks, chpInterfacesPics)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis       (chpProcessAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterECArules              (chpECArules)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       (fpAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
 --import Debug.Trace
@@ -89,14 +90,15 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
     (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (flags fSpec)]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
-    fspec2Blocks Intro              = (chpIntroduction        fSpec, [])
-    fspec2Blocks SharedLang         = (chpNatLangReqs       0 fSpec, [])
-    fspec2Blocks Diagnosis          = chpDiagnosis            fSpec
-    fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis 0 fSpec
-    fspec2Blocks ProcessAnalysis    = chpProcessAnalysis    0 fSpec
-    fspec2Blocks DataAnalysis       = chpDataAnalysis         fSpec
-    fspec2Blocks SoftwareMetrics    = (fpAnalysis             fSpec, [])
-    fspec2Blocks EcaRules           = (chpECArules            fSpec, [])
-    fspec2Blocks Interfaces         = (chpInterfacesBlocks  0 fSpec, chpInterfacesPics fSpec)
-    fspec2Blocks Glossary           = (chpGlossary          0 fSpec, [])
+    fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])
+    fspec2Blocks SharedLang            = (chpNatLangReqs          0 fSpec, [])
+    fspec2Blocks Diagnosis             = chpDiagnosis               fSpec
+    fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis    0 fSpec
+    fspec2Blocks ProcessAnalysis       = chpProcessAnalysis       0 fSpec
+    fspec2Blocks DataAnalysis          = chpDataAnalysis            fSpec
+    fspec2Blocks SoftwareMetrics       = (fpAnalysis                fSpec, [])
+    fspec2Blocks EcaRules              = (chpECArules               fSpec, [])
+    fspec2Blocks Interfaces            = (chpInterfacesBlocks     0 fSpec, chpInterfacesPics fSpec)
+    fspec2Blocks FunctionPointAnalysis = chpFunctionPointAnalysis   fSpec
+    fspec2Blocks Glossary              = (chpGlossary             0 fSpec, [])
 
