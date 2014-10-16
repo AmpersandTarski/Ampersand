@@ -355,16 +355,16 @@ getEditableRelation editableRels exp = case getRelation exp of
                                                           if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
                                                           if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
                                                           Nothing
-        (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                                            then Just (s,d,t,isFlipped) else                       
-                                                          if i/=target e1 && (if isFlipped then t else s)==target e1 then Just (i,d,t,isFlipped) else                       
-                                                          Nothing                                                                                
-        (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                                            then Just (s,d,t,isFlipped) else
-                                                          if i/=source e2 && (if isFlipped then s else t)==source e2 then Just (s,d,i,isFlipped) else        
+        (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else                       
+                                                          if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else                       
+                                                          Nothing                                                     
+        (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
+                                                          if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else        
                                                           Nothing                                                                 
         _                                              -> Nothing
    getRelation (EFlp e)
     = case getRelation e of
-        Just (s,d,t,isFlipped) -> Just (s,d,t,not isFlipped)
+        Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
         Nothing                -> Nothing
    getRelation (EDcD d)   = Just (source d, Just d, target d, False)
    getRelation (EEps i _) = Just (i, Nothing, i, False)
