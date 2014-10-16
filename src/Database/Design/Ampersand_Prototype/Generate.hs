@@ -304,7 +304,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" ]
        Nothing             -> []
-  ++ case getEditableRelation normalizedInterfaceExp of 
+  ++ case getEditableRelation editableRels normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
@@ -329,43 +329,113 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   [ "      )"
   ]
  where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
-       
-       -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
-       -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
-       -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
-       getEditableRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
-       getEditableRelation exp = case getRelation exp of
-          Just (Right res)  -> Just res
-          _                 -> Nothing
-        where 
-          -- getRelation returns Nothing if the expression contains unhandled nodes or is not editable; Just Nothing if the expression
-          -- is okay but does not contain a relation; and Just (Just dclInfo) if the expression contains an editable relation
-          getRelation :: Expression -> Maybe (Either [A_Concept] (A_Concept, Declaration, A_Concept, Bool))
-          getRelation e@(EDcD d)      = if e `elem` editableRels 
-                                                then Just $ Right (source d, d, target d, False) -- basic editable relation
-                                                else Nothing                                     -- expression is not editable
-          getRelation (EDcI _)        = Just $ Left []  -- narrowed/widened relation (ignored, as we only use the concepts from epsilons)
-          getRelation (EEps c _)      = Just $ Left [c] -- epsilon
-          getRelation (EBrk e)        = getRelation e   -- brackets
-          getRelation (EFlp e)        = case getRelation e of -- flipped relation
-                                          Just (Left cs)                 -> Just $ Left (reverse cs)
-                                          Just (Right (s,d,t,isFlipped)) -> Just $ Right (t,d,s,not isFlipped)                                          
-                                          x                              -> x 
-          getRelation (ECps (e1, e2)) =
-            case getRelation e1 of
-              Nothing          -> Nothing                  -- e1 contains unhandled nodes or is not editable
-              Just (Left ecs1) -> 
-                case getRelation e2 of   -- e1 does not contain a relation, so e2 should
-                  Nothing                -> Nothing                               -- e2 contains unhandled nodes or is not editable
-                  Just (Right (s,d,t,f)) -> Just $ Right (head $ ecs1++[s],d,t,f) -- e1 does not contain a relation, so we use the one from e2
-                  Just (Left ecs2)       -> Just $ Left (ecs1++ecs2)              -- no relation, so we combine the epsilon concepts
-              Just (Right (s,d,t,f)) ->
-                case getRelation e2 of -- e1 contains a relation
-                  Nothing          -> Nothing                                       -- e2 contains unhandled nodes or is not editable
-                  Just (Left ecs2) -> Just $ Right (s,d,head $ reverse ecs2++[t],f) -- e2 does not contain a relation, so we use the one from e1
-                  Just (Right _)   -> Nothing                                       -- both contain a relation, so not editable
-          getRelation _               = Nothing -- unhandled node
-       
+
+-- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
+-- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
+-- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+-- This is used to predict the type of the atoms provided by the outside world through interfaces.
+-- The result is Maybe, because the result might be predictably empty.
+getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getEditableRelation editableRels exp = case getRelation exp of
+   Just (s,Just d,t,isFlipped)  -> if EDcD d `elem` editableRels then Just (s,d,t,isFlipped) else Nothing
+   _                            -> Nothing
+ where
+   -- getRelation produces a declaration and the narrowest possible concepts
+   -- at the left- and right hand sides of an expression.
+   -- Additionally, a boolean is produced to state whether the relation is flipped.
+   getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
+   getRelation (ECps (e, EDcI{})) = getRelation e
+   getRelation (ECps (EDcI{}, e)) = getRelation e
+   getRelation (ECps (e1, e2))
+     = case (getRelation e1, getRelation e2) of --note: target e1==source e2
+        (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
+                                                          if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
+                                                          if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
+                                                          Nothing
+        (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else                       
+                                                          if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else                       
+                                                          Nothing                                                     
+        (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
+                                                          if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else        
+                                                          Nothing                                                                 
+        _                                              -> Nothing
+   getRelation (EFlp e)
+    = case getRelation e of
+        Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
+        Nothing                -> Nothing
+   getRelation (EDcD d)   = Just (source d, Just d, target d, False)
+   getRelation (EEps i _) = Just (i, Nothing, i, False)
+   getRelation _ = Nothing
+
+{- Some test results:  assume Orange ISA Citrus, Lime ISA Citrus, Limorange IS Lime /\ Orange
+  getRelation (EEps Orange [Citrus*Orange];EEps Limorange [Orange*Lime])
+=  { getRelation (EEps Orange [Citrus*Orange]) ==Just (Orange,Nothing,Orange,False)
+   ; getRelation (EEps Limorange [Orange*Lime])==Just (Limorange,Nothing,Limorange,False)
+   }
+  Just (Limorange,Nothing,Limorange,False)
+
+  getRelation (ownsCitrus;(EEps Orange [Citrus*Orange];EEps Limorange [Orange*Lime]))
+=  { getRelation (ownsCitrus) == Just (Person,Just ownsCitrus,Citrus,False)
+   ; getRelation (EEps Orange [Citrus*Orange];EEps Limorange [Orange*Lime])==Just (Limorange,Nothing,Limorange,False)
+   }
+  Just (Person,ownsCitrus,Limorange,False)
+
+  getRelation (ownsCitrus;EEps Orange [Citrus*Orange])
+=  { getRelation (ownsCitrus) == Just (Person,Just ownsCitrus,Citrus,False)
+   ; getRelation (EEps Orange [Citrus*Orange])==Just (Orange,Nothing,Orange,False)
+   }
+  Just (Person,ownsCitrus,Orange,False)
+
+  getRelation ((ownsCitrus;EEps Orange [Citrus*Orange]);EEps Limorange [Orange*Lime])
+=  { getRelation (ownsCitrus;EEps Orange [Citrus*Orange]) == Just (Person,ownsCitrus,Orange,False)
+   ; getRelation (EEps Limorange [Orange*Lime])==Just (Limorange,Nothing,Limorange,False)
+   }
+  Just (Person,ownsCitrus,Limorange,False)
+
+
+getRelation (I[ONE]) =
+   Nothing
+
+getRelation (V[ONE*Nectarine]) =
+   Nothing
+
+getRelation (I[Person]) =
+   Nothing
+
+getRelation (ownsCitrus) =
+   Just (Person,Just ownsCitrus[Person*Citrus],Citrus,False)
+
+getRelation (ownsCitrus;I[Lime]) =
+   Just (Person,Just ownsCitrus[Person*Citrus],Lime,False)
+
+getRelation (ownsCitrus;I[Orange]) =
+   Just (Person,Just ownsCitrus[Person*Citrus],Orange,False)
+
+getRelation (ownsCitrus;I[Orange];I[Limorange];I[Limorange]) =
+   Just (Person,Just ownsCitrus[Person*Citrus],Limorange,False)
+
+getRelation (ownsCitrus;I[Orange];I[Limorange];I[Limorange];I[Lime]) =
+   Just (Person,Just ownsCitrus[Person*Citrus],Limorange,False)
+
+getRelation (ownsCitrus;I[Orange];(I[Limorange];I[Limorange])~;I[Lime]) =
+   Just (Person,Just ownsCitrus[Person*Citrus],Limorange,False)
+
+getRelation (ownsCitrus;I[Orange];I[Limorange];I[Limorange];I[Lime];I[Lemon]) =
+   Nothing
+
+getRelation ((I[Orange];I[Orange];citrusOwnedBy)~) =
+   Just (Orange,Just citrusOwnedBy[Citrus*Person],Person,True)
+
+getRelation ((I[Orange];citrusOwnedBy)~) =
+   Just (Orange,Just citrusOwnedBy[Citrus*Person],Person,True)
+
+getRelation (citrusOwnedBy~;I[Orange]) =
+   Just (Citrus,Just citrusOwnedBy[Citrus*Person],Orange,True)
+
+getRelation (ownsLimes;I[Limorange];I[Limorange]) =
+   Just (Person,Just ownsLimes[Person*Lime],Limorange,False)
+
+-}
 
 generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
