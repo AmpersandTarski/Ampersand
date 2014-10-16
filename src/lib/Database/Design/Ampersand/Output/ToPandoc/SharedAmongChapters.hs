@@ -56,6 +56,7 @@ data Chapter = Intro
              | SoftwareMetrics
              | EcaRules
              | Interfaces
+             | FunctionPointAnalysis
              | Glossary
              deriving (Eq, Show)
 
@@ -66,7 +67,7 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
    -- temporarily switch off chapters that need too much refactoring, but keep this Haskell code compilable.
     disabled = [Interfaces]
     chapters
-     | test opts                  = [SharedLang]
+     | test opts                  = [FunctionPointAnalysis]
      | diagnosisOnly opts         = [Diagnosis]
      | theme opts == StudentTheme = [Intro,SharedLang,Diagnosis,ConceptualAnalysis,DataAnalysis]
      | otherwise                   = [ Intro
@@ -78,7 +79,9 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
                                      , SoftwareMetrics
                                      , EcaRules
                                      , Interfaces
-                                     , Glossary
+                                     ] ++
+                                     [ FunctionPointAnalysis | genFPAChap opts ] ++
+                                     [ Glossary
                                      ]
 
 -- | This function returns a header of a chapter
@@ -89,26 +92,28 @@ chptHeader lang chap
 chptTitle :: Lang -> Chapter -> Inlines
 chptTitle lang cpt =
      (case (cpt,lang) of
-        (Intro             , Dutch  ) -> text "Inleiding"
-        (Intro             , English) -> text "Introduction"
-        (SharedLang        , Dutch  ) -> text "Gemeenschappelijke taal"
-        (SharedLang        , English) -> text "Shared Language"
-        (Diagnosis         , Dutch  ) -> text "Diagnose"
-        (Diagnosis         , English) -> text "Diagnosis"
-        (ConceptualAnalysis, Dutch  ) -> text "Conceptuele Analyse"
-        (ConceptualAnalysis, English) -> text "Conceptual Analysis"
-        (ProcessAnalysis   , Dutch  ) -> text "Procesanalyse"
-        (ProcessAnalysis   , English) -> text "Process Analysis"
-        (DataAnalysis      , Dutch  ) -> text "Gegevensstructuur"
-        (DataAnalysis      , English) -> text "Data structure"
-        (SoftwareMetrics   , Dutch  ) -> text "Functiepunt Analyse"
-        (SoftwareMetrics   , English) -> text "Function Point Analysis"
-        (EcaRules          , Dutch  ) -> text "ECA regels"
-        (EcaRules          , English) -> text "ECA rules (Flash points)"
-        (Interfaces        , Dutch  ) -> text "Koppelvlakken"
-        (Interfaces        , English) -> text "Interfaces"
-        (Glossary          , Dutch  ) -> text "Begrippen"
-        (Glossary          , English) -> text "Glossary"
+        (Intro                 , Dutch  ) -> text "Inleiding"
+        (Intro                 , English) -> text "Introduction"
+        (SharedLang            , Dutch  ) -> text "Gemeenschappelijke taal"
+        (SharedLang            , English) -> text "Shared Language"
+        (Diagnosis             , Dutch  ) -> text "Diagnose"
+        (Diagnosis             , English) -> text "Diagnosis"
+        (ConceptualAnalysis    , Dutch  ) -> text "Conceptuele Analyse"
+        (ConceptualAnalysis    , English) -> text "Conceptual Analysis"
+        (ProcessAnalysis       , Dutch  ) -> text "Procesanalyse"
+        (ProcessAnalysis       , English) -> text "Process Analysis"
+        (DataAnalysis          , Dutch  ) -> text "Gegevensstructuur"
+        (DataAnalysis          , English) -> text "Data structure"
+        (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
+        (SoftwareMetrics       , English) -> text "Function Point Analysis"
+        (EcaRules              , Dutch  ) -> text "ECA regels"
+        (EcaRules              , English) -> text "ECA rules (Flash points)"
+        (Interfaces            , Dutch  ) -> text "Koppelvlakken"
+        (Interfaces            , English) -> text "Interfaces"
+        (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
+        (FunctionPointAnalysis , English) -> text "Function point analysis"
+        (Glossary              , Dutch  ) -> text "Begrippen"
+        (Glossary              , English) -> text "Glossary"
      )
 
 class Xreferencable a where

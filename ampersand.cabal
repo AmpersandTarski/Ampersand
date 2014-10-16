@@ -158,7 +158,8 @@ library
                     Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    Paths_ampersand
+                    Paths_ampersand,
+                    Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis
                     
   default-language:  Haskell2010
 
