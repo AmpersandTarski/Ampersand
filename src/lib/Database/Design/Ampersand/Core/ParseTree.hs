@@ -385,7 +385,7 @@ data P_Population
               , p_popps :: Pairs   -- the contents
               }
   | P_TRelPop { p_rnme ::  String  -- the name of a relation
-              , p_type ::  P_Sign  -- the sign of the relation
+              , p_type ::  P_Sign  -- the signature of the relation
               , p_orig ::  Origin  -- the origin
               , p_popps :: Pairs   -- the contents
               }

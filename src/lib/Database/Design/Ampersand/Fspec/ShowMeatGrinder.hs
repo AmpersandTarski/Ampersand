@@ -248,7 +248,7 @@ instance MetaPopulations Declaration where
 --      , Pop "cptos" "PlainConcept" "AtomID"
 --      , Pop "rels" "ExpressionID" "Declaration"
 --relnm : Relation × Varid The name of a relation used as a relation token.
---relsgn : Relation × Sign The sign of a relation.
+--relsgn : Relation × Sign The signature of a relation.
 --reldcl : Relation × Declaration A relation token refers to a relation.
 --rrnm : Rule × ADLid The name of a rule.
 --rrexp : Rule × ExpressionID The rule expressed in relation algebra.
