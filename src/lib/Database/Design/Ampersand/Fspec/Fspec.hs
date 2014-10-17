@@ -21,9 +21,6 @@ module Database.Design.Ampersand.Fspec.Fspec
           , metaValues
           , SqlField(..)
           , Object(..)
-          , FPA(..)
-          , FPtype(..)
-          , FPcompl(..)
           , PlugInfo(..)
           , SqlType(..)
           , SqlFieldUsage(..)

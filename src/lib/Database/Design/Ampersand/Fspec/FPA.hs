@@ -1,96 +1,106 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Fspec.FPA
-    (FPAble(..)
-    )
-where
+module Database.Design.Ampersand.Fspec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
+                                           -- fpaPlugInfo and fpaInterface are exported for legacy modules Statistics and Fspec2Excel
 
 import Database.Design.Ampersand.Misc (Lang(..))
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Basics
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ToFspec.Calc"
+fatal = fatalMsg "Fspec.ToFspec.FPA"
 
-class FPAble a where
-  fpa :: a->FPA
-  fPoints :: a ->Int
-  fPoints x = fPoints'(fpa x)
-  showFPA :: Lang -> a -> String
-  showFPA l x = showLang l (fpa x)
+data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 
-instance FPAble PlugSQL where
-  fpa x = FPA
-    ILGV -- It is assumed that all persistent storage of information is done withing the scope of the system.
-    $
-    case x of
-      TblSQL{}    | (length.fields) x < 2 -> Eenvoudig
-                  | (length.fields) x < 6 -> Gemiddeld
-                  | otherwise             -> Moeilijk
-      BinSQL{}    -> Gemiddeld
-      ScalarSQL{} -> Eenvoudig
+-- NOTE: FPA constructors are in Dutch (so 'output function' is not OF, but UF)   
 
-instance FPAble Interface where
-  fpa x
-     | (not.null.ifcParams) x  = FPA IF complxy  -- In case there are editeble relations, this must be an import function.
-     | (isUni.objctx.ifcObj) x = FPA OF complxy  -- If there is max one atom, this is a simple function.
-     | otherwise               = FPA UF complxy  -- Otherwise, it is a UF
+data Complexity = Eenvoudig | Gemiddeld | Moeilijk deriving (Show, Eq, Ord)
 
-    where
-      complxy = case depth (ifcObj x) of
-                   0 -> Eenvoudig
-                   1 -> Eenvoudig
-                   2 -> Gemiddeld
-                   _ -> Moeilijk
-      depth :: ObjectDef -> Int
-      depth Obj{objmsub=Nothing} = 0
-      depth Obj{objmsub=Just si}
-         = case si of
-             Box _ os       -> 1 + maximum (map depth os)
-             InterfaceRef{} -> 1
+data FPType = ILGV | KGV | IF | UF | OF deriving Show
 
-instance FPAble PlugInfo where
-  fpa (InternalPlug _) = fatal 55 "FPA analysis of internal plugs is currently not supported"
-  fpa (ExternalPlug _)  = fatal 56 "FPA analysis of external plugs is currently not supported"
+data FP = FP { fpType :: FPType, fpName :: String, fpComplexity :: Complexity } deriving Show
+
+
+-- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL), see http://www.nesma.nl/sectie/fpa/hoefpa.asp
+fpVal :: FP -> Int
+fpVal FP{fpType=ILGV, fpComplexity=Eenvoudig} = 7
+fpVal FP{fpType=ILGV, fpComplexity=Gemiddeld} = 10
+fpVal FP{fpType=ILGV, fpComplexity=Moeilijk}  = 15
+fpVal FP{fpType=KGV,  fpComplexity=Eenvoudig} = 5
+fpVal FP{fpType=KGV,  fpComplexity=Gemiddeld} = 7
+fpVal FP{fpType=KGV,  fpComplexity=Moeilijk}  = 10
+fpVal FP{fpType=IF,   fpComplexity=Eenvoudig} = 3
+fpVal FP{fpType=IF,   fpComplexity=Gemiddeld} = 4
+fpVal FP{fpType=IF,   fpComplexity=Moeilijk}  = 6
+fpVal FP{fpType=UF,   fpComplexity=Eenvoudig} = 4
+fpVal FP{fpType=UF,   fpComplexity=Gemiddeld} = 5
+fpVal FP{fpType=UF,   fpComplexity=Moeilijk}  = 7
+fpVal FP{fpType=OF,   fpComplexity=Eenvoudig} = 3
+fpVal FP{fpType=OF,   fpComplexity=Gemiddeld} = 4
+fpVal FP{fpType=OF,   fpComplexity=Moeilijk}  = 6
+
+fpAnalyze :: Fspc -> FPA
+fpAnalyze fSpec = FPA (countFPs $ fpaDataModel fSpec) (countFPs $ fpaUserTransactions fSpec)
+  where countFPs :: [FP] -> ([FP], Int)
+        countFPs fps = (fps, sum $ map fpVal fps)
+
+fpaDataModel :: Fspc -> [FP]
+fpaDataModel fSpec = map fpaPlugInfo $ plugInfos fSpec 
+
+fpaPlugInfo (ExternalPlug _)      = fatal 50 "fpaPlugInfo: Unhandled ExternalPlug."
+fpaPlugInfo p@(InternalPlug plug) = FP ILGV (name p) (ilgvComplexity $ length $ plugFields plug)
+ where ilgvComplexity n | n <= 1    = Eenvoudig
+                        | n <= 5    = Gemiddeld
+                        | otherwise = Moeilijk
+
+fpaUserTransactions :: Fspc -> [FP]
+fpaUserTransactions fSpec = map fpaInterface $ interfaceS fSpec
+
+fpaInterface ifc = 
+   let nm = name ifc
+       cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
+       tp = case ifc of
+              Ifc{ifcClass=Just "IF"} -> IF
+              Ifc{ifcClass=Just "UF"} -> UF
+              Ifc{ifcClass=Just "OF"} -> OF
+              
+              -- code for interfaces without CLASS comes from old FPA.hs
+              _ | (not.null.ifcParams)  ifc -> IF  -- In case there are editable relations, this must be an import function.
+                | (isUni.objctx.ifcObj) ifc -> OF  -- If there is max one atom, this is a simple function.
+                | otherwise                 -> UF  -- Otherwise, it is a UF
+    in FP tp nm cmplxty
+  where depth2Cmplxty d | d <= 1    = Eenvoudig
+                        | d == 2    = Gemiddeld
+                        | otherwise = Moeilijk 
+
+        getDepth :: ObjectDef -> Int
+        getDepth Obj{objmsub=Nothing}             = 0
+        getDepth Obj{objmsub=Just InterfaceRef{}} = 1 -- TODO: shouldn't we follow the ref? (this def. is from old FPA.hs)
+        getDepth Obj{objmsub=Just (Box _ objs)}   = 1 + maximum (map getDepth objs)
 
 class ShowLang a where
   showLang :: Lang -> a -> String
 
-instance ShowLang FPcompl where
- showLang Dutch Eenvoudig   = "Eenvoudig"
- showLang Dutch Gemiddeld   = "Gemiddeld"
- showLang Dutch Moeilijk    = "Moeilijk"
- showLang English Eenvoudig = "Low"
- showLang English Gemiddeld = "Average"
- showLang English Moeilijk  = "High"
+instance ShowLang FP where
+  showLang lang fp = showLang lang (fpType fp) ++ " " ++ showLang lang (fpComplexity fp)
 
-instance ShowLang FPtype where
- showLang Dutch t = show t
- showLang English ILGV = "ILF" -- Internal Logical File
- showLang English KGV  = "ELF" -- External Logical File
- showLang English IF   = "EI"  -- External Input
- showLang English UF   = "EO"  -- External Output
- showLang English OF   = "EQ"  -- External inQuiry
 
-instance ShowLang FPA where
- showLang lang x = showLang lang (fpType x)++" "++showLang lang (complexity x)
+instance ShowLang FPType where
+  showLang Dutch   ILGV = "ILGV" 
+  showLang Dutch   KGV  = "KGV" 
+  showLang Dutch   IF   = "IF"
+  showLang Dutch   UF   = "UF"
+  showLang Dutch   OF   = "OF"
+  showLang English ILGV = "ILF" -- Internal Logical File 
+  showLang English KGV  = "ELF" -- External Logical File 
+  showLang English IF   = "EI"  -- External Input
+  showLang English UF   = "EO"  -- External Output
+  showLang English OF   = "EQ"  -- External inQuiry
 
--- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL)
-fPoints' :: FPA -> Int
-fPoints' (FPA ILGV Eenvoudig) = 7
-fPoints' (FPA ILGV Gemiddeld) = 10
-fPoints' (FPA ILGV Moeilijk ) = 15
-fPoints' (FPA KGV  Eenvoudig) = 5
-fPoints' (FPA KGV  Gemiddeld) = 7
-fPoints' (FPA KGV  Moeilijk ) = 10
-fPoints' (FPA IF   Eenvoudig) = 3
-fPoints' (FPA IF   Gemiddeld) = 4
-fPoints' (FPA IF   Moeilijk ) = 6
-fPoints' (FPA UF   Eenvoudig) = 4
-fPoints' (FPA UF   Gemiddeld) = 5
-fPoints' (FPA UF   Moeilijk ) = 7
-fPoints' (FPA OF   Eenvoudig) = 3
-fPoints' (FPA OF   Gemiddeld) = 4
-fPoints' (FPA OF   Moeilijk ) = 6
-
+instance ShowLang Complexity where
+  showLang Dutch   Eenvoudig = "Eenvoudig" 
+  showLang Dutch   Gemiddeld = "Gemiddeld"
+  showLang Dutch   Moeilijk  = "Moeilijk"
+  showLang English Eenvoudig = "Low" 
+  showLang English Gemiddeld = "Average"
+  showLang English Moeilijk  = "High"
