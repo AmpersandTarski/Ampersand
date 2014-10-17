@@ -30,7 +30,6 @@ module Database.Design.Ampersand
    , Options(..), DocTheme(..)
    , Picture(..), writePicture , PictureReq(..), makePicture
    , FilePos(..), Origin(..), Pos(Pos)
-   , FPA(..), FPcompl(..)
    , mkPair
    -- * Classes:
    , Association(..), flp
@@ -46,7 +45,6 @@ module Database.Design.Ampersand
    , Motivated(..)
    , Traced(..)
    , Language(..)
-   , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
    , (<==>),meet,join,sortWith,atomsOf
@@ -99,7 +97,6 @@ module Database.Design.Ampersand
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.FPA
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics

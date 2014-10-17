@@ -10,6 +10,8 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Fspec.FPA
 import Database.Design.Ampersand.Basics
 
+-- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
+
 fspec2Workbook :: Fspc -> Workbook
 fspec2Workbook fSpec =
    Workbook
@@ -25,6 +27,9 @@ fspec2Workbook fSpec =
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
   where
+    fpa = fpAnalyze fSpec -- TODO: Also count the PHP plugs
+    (_,totaalFPgegevensverzamelingen) = dataModelFPA fpa
+    (_,totaalFPgebruikerstransacties) = userTransactionFPA fpa
     lang = fsLang fSpec
     wsResume =
       Worksheet { worksheetName =
@@ -69,9 +74,6 @@ fspec2Workbook fSpec =
                        ++ map mkRow [replicate 3 emptyCell ++ [string totaal, (number.fromIntegral) totaalFPgegevensverzamelingen]]
                     }
                 }
-    -- TODO: Also count the PHP plugs
-    totaalFPgegevensverzamelingen :: Int
-    totaalFPgegevensverzamelingen = (sum.(map fPoints)) [pSql | InternalPlug pSql <- plugInfos fSpec]
     wsFunctions =
       Worksheet { worksheetName  = Name $ gebruikerstransacties
                 , worksheetTable = Just $ emptyTable
@@ -79,15 +81,13 @@ fspec2Workbook fSpec =
                           [ mkRow [string $ gebruikerstransacties, (number.fromIntegral.length.interfaceS) fSpec]
                           ]
                           ++ map (mkRow.showDetailsOfFunction) (interfaceS fSpec)
-                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map fPoints)) (interfaceS fSpec)]]
+                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map $ fpVal . fpaInterface)) (interfaceS fSpec)]]
                           ++ map mkRow [[string "Gegenereerde interfaces" , (number.fromIntegral.length.interfaceG) fSpec]]
                           ++ map (mkRow.showDetailsOfFunction) (interfaceG fSpec)
-                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map fPoints)) (interfaceG fSpec)]]
+                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map $ fpVal . fpaInterface)) (interfaceG fSpec)]]
                           ++ map mkRow [replicate 5 emptyCell ++ [string grandTotaal, (number.fromIntegral) totaalFPgebruikerstransacties ]]
                     }
                 }
-    totaalFPgebruikerstransacties :: Int
-    totaalFPgebruikerstransacties = (sum.(map fPoints)) (interfaceS fSpec++interfaceG fSpec)
     gegevensverzamelingen :: String
     gegevensverzamelingen = case lang of
        Dutch   -> "Gegevensverzamelingen"
@@ -115,13 +115,10 @@ fspec2Workbook fSpec =
        [ emptyCell
        , (string.name) plug
        , string (case plug of
-                  InternalPlug p -> showFPA lang p
+                  InternalPlug p -> showLang lang $ fpaPlugInfo plug
                   ExternalPlug _ -> "???"
                 )
-       , (number.fromIntegral) (case plug of
-                                 InternalPlug p -> fPoints p
-                                 ExternalPlug _ -> 0
-                               )
+       , number . fromIntegral . fpVal $ fpaPlugInfo plug 
        , string ( case (lang,plug) of
                    (English, ExternalPlug _)             -> "PHP plugs are not (yet) taken into account!"
                    (Dutch  , ExternalPlug _)             -> "PHP plugs worden (nog) niet meegerekend!"
@@ -137,8 +134,8 @@ fspec2Workbook fSpec =
     showDetailsOfFunction ifc =
        [ emptyCell
        , (string.name.ifcObj) ifc
-       , string (showFPA lang ifc)
-       , (number.fromIntegral.fPoints) ifc
+       , string $ showLang lang $ fpaInterface ifc
+       , (number . fromIntegral . fpVal . fpaInterface) ifc
        ]
 
 pimpWs :: Worksheet -> Worksheet
