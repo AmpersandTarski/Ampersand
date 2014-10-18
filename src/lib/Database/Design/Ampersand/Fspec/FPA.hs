@@ -8,7 +8,7 @@ import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Basics
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ToFspec.FPA"
+fatal = fatalMsg "Fspec.FPA"
 
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 
@@ -16,7 +16,13 @@ data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) }
 
 data Complexity = Eenvoudig | Gemiddeld | Moeilijk deriving (Show, Eq, Ord)
 
-data FPType = ILGV | KGV | IF | UF | OF deriving Show
+data FPtype
+ = ILGV -- ^ bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
+ | KGV  -- ^ bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
+ | IF   -- ^ verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
+ | UF   -- ^ presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
+ | OF   -- ^ is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
+  deriving Show
 
 data FP = FP { fpType :: FPType, fpName :: String, fpComplexity :: Complexity } deriving Show
 
@@ -44,13 +50,14 @@ fpAnalyze fSpec = FPA (countFPs $ fpaDataModel fSpec) (countFPs $ fpaUserTransac
   where countFPs :: [FP] -> ([FP], Int)
         countFPs fps = (fps, sum $ map fpVal fps)
 
+-- Na overleg met Frank Vogelenzang zijn de volgende criteria voor functiepuntentelling toegepast
 fpaDataModel :: Fspc -> [FP]
-fpaDataModel fSpec = map fpaPlugInfo $ plugInfos fSpec 
+fpaDataModel fSpec = map fpaPlugInfo [ plug | plug@(InternalPlug tbl@TblSQL{})<-plugInfos fSpec, (length.fields) tbl>2 ]
 
 fpaPlugInfo (ExternalPlug _)      = fatal 50 "fpaPlugInfo: Unhandled ExternalPlug."
 fpaPlugInfo p@(InternalPlug plug) = FP ILGV (name p) (ilgvComplexity $ length $ plugFields plug)
- where ilgvComplexity n | n <= 1    = Eenvoudig
-                        | n <= 5    = Gemiddeld
+ where ilgvComplexity n | n <= 15   = Eenvoudig
+                        | n <= 40   = Gemiddeld
                         | otherwise = Moeilijk
 
 fpaUserTransactions :: Fspc -> [FP]

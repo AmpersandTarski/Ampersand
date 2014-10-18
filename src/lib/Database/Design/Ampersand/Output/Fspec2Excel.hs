@@ -115,7 +115,7 @@ fspec2Workbook fSpec =
        [ emptyCell
        , (string.name) plug
        , string (case plug of
-                  InternalPlug p -> showLang lang $ fpaPlugInfo plug
+                  InternalPlug _ -> showLang lang $ fpaPlugInfo plug
                   ExternalPlug _ -> "???"
                 )
        , number . fromIntegral . fpVal $ fpaPlugInfo plug 

@@ -215,21 +215,6 @@ dnf2expr (Dnf antcs conss)
     (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
     (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
-data FPA = FPA { fpType :: FPtype
-               , complexity :: FPcompl
-               } deriving (Show)
-
--- | These types are defined bij Nesma. See http://www.nesma.nl/sectie/fpa/hoefpa.asp
-data FPtype
- = ILGV -- ^ bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
- | KGV  -- ^ bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
- | IF   -- ^ verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
- | UF   -- ^ presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
- | OF   -- ^ is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
-          deriving (Eq, Show)
-
-data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
-
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
                 deriving (Show, Eq)
