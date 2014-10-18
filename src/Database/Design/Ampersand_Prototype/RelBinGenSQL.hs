@@ -471,10 +471,10 @@ selectExprInFROM fSpec i src trg expr
                                          else fatal 390 ("Multiple plugs found for expression "++showADL expr)
                          _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
-        EDcI c -> if cptAlias==""
+        EDcI c -> if cpt == cptAlias
                   then cpt
-                  else "( /* Case EDcI "++name c++" */" ++ phpIndent (i+5) ++
-                       "  SELECT "++selectSelItem (sqlAttConcept fSpec c, cptAlias)++ phpIndent (i+5) ++
+                  else "( /* case: EDcI " ++ name c ++ " */" ++ phpIndent (i+5) ++
+                       "  SELECT "++cptAlias++","++cpt++ phpIndent (i+5) ++
                        "  FROM "++quote cpt++" )"
                   where
                    cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
