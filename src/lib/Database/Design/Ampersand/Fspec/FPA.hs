@@ -16,7 +16,7 @@ data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) }
 
 data Complexity = Eenvoudig | Gemiddeld | Moeilijk deriving (Show, Eq, Ord)
 
-data FPtype
+data FPType
  = ILGV -- ^ bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
  | KGV  -- ^ bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
  | IF   -- ^ verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
