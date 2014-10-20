@@ -67,6 +67,7 @@ fpaPlugInfo _ = Nothing
 fpaUserTransactions :: Fspc -> [FP]
 fpaUserTransactions fSpec = map fpaInterface $ interfaceS fSpec
 
+fpaInterface :: Interface -> FP
 fpaInterface ifc = 
    let nm = name ifc
        cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
@@ -84,7 +85,6 @@ fpaInterface ifc =
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 
-        getDepth :: ObjectDef -> Int
         getDepth Obj{objmsub=Nothing}             = 0
         getDepth Obj{objmsub=Just InterfaceRef{}} = 1 -- TODO: shouldn't we follow the ref? (this def. is from old FPA.hs)
         getDepth Obj{objmsub=Just (Box _ objs)}   = 1 + maximum (map getDepth objs)
