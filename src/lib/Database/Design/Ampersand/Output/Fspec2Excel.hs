@@ -9,6 +9,7 @@ import Database.Design.Ampersand.Fspec
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Fspec.FPA
 import Database.Design.Ampersand.Basics
+import Data.Maybe
 
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
 
@@ -70,7 +71,7 @@ fspec2Workbook fSpec =
                     { tableRows =
                           [ mkRow [string gegevensverzamelingen, (number.fromIntegral.length.plugInfos) fSpec]
                           ] ++
-                          map (mkRow.showDetailsOfPlug)(plugInfos fSpec)
+                          (map mkRow $ mapMaybe showDetailsOfPlug $ plugInfos fSpec)
                        ++ map mkRow [replicate 3 emptyCell ++ [string totaal, (number.fromIntegral) totaalFPgegevensverzamelingen]]
                     }
                 }
@@ -110,15 +111,15 @@ fspec2Workbook fSpec =
        Dutch   -> "Grandtotaal:"
        English -> "Grand total:"
 
-    showDetailsOfPlug :: PlugInfo -> [Cell]
-    showDetailsOfPlug plug =
+    showDetailsOfPlug :: PlugInfo -> Maybe [Cell]
+    showDetailsOfPlug plug | Just fpaplgInfo <- fpaPlugInfo plug = Just
        [ emptyCell
        , (string.name) plug
        , string (case plug of
-                  InternalPlug _ -> showLang lang $ fpaPlugInfo plug
+                  InternalPlug _ -> showLang lang fpaplgInfo 
                   ExternalPlug _ -> "???"
                 )
-       , number . fromIntegral . fpVal $ fpaPlugInfo plug 
+       , number . fromIntegral $ fpVal fpaplgInfo 
        , string ( case (lang,plug) of
                    (English, ExternalPlug _)             -> "PHP plugs are not (yet) taken into account!"
                    (Dutch  , ExternalPlug _)             -> "PHP plugs worden (nog) niet meegerekend!"
@@ -130,6 +131,7 @@ fspec2Workbook fSpec =
                    (Dutch  , InternalPlug   ScalarSQL{}) -> "Toegestane waarden tabel"
                 )
        ]
+    showDetailsOfPlug _ = Nothing
     showDetailsOfFunction :: Interface -> [Cell]
     showDetailsOfFunction ifc =
        [ emptyCell

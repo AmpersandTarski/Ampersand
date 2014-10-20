@@ -6,6 +6,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Basics
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.FPA"
@@ -52,13 +53,16 @@ fpAnalyze fSpec = FPA (countFPs $ fpaDataModel fSpec) (countFPs $ fpaUserTransac
 
 -- Na overleg met Frank Vogelenzang zijn de volgende criteria voor functiepuntentelling toegepast
 fpaDataModel :: Fspc -> [FP]
-fpaDataModel fSpec = map fpaPlugInfo [ plug | plug@(InternalPlug tbl@TblSQL{})<-plugInfos fSpec, (length.fields) tbl>2 ]
+fpaDataModel fSpec = mapMaybe fpaPlugInfo $ plugInfos fSpec
 
-fpaPlugInfo (ExternalPlug _)      = fatal 50 "fpaPlugInfo: Unhandled ExternalPlug."
-fpaPlugInfo p@(InternalPlug plug) = FP ILGV (name p) (ilgvComplexity $ length $ plugFields plug)
- where ilgvComplexity n | n <= 15   = Eenvoudig
-                        | n <= 40   = Gemiddeld
-                        | otherwise = Moeilijk
+fpaPlugInfo :: PlugInfo -> Maybe FP
+fpaPlugInfo p@(InternalPlug (TblSQL{fields=flds})) | Just cmplxty <- ilgvComplexity $ length flds =
+  Just $ FP ILGV (name p) cmplxty
+  where ilgvComplexity n | n <= 2    = Nothing 
+                         | n <= 15   = Just Eenvoudig
+                         | n <= 40   = Just Gemiddeld
+                         | otherwise = Just Moeilijk
+fpaPlugInfo _ = Nothing
 
 fpaUserTransactions :: Fspc -> [FP]
 fpaUserTransactions fSpec = map fpaInterface $ interfaceS fSpec
