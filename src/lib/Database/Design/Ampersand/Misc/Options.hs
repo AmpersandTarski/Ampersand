@@ -403,7 +403,7 @@ options = map pp
             , Hidden)
           , (Option []        ["excel"]
                (NoArg (\opts -> return opts{genFPAExcel = True}))
-               "Generate an Excel workbook (.xls)."
+               "Generate an Excel workbook (FPA_<filename>.xml)."
             , Hidden)
           , (Option []        ["bericht"]
                (NoArg (\opts -> return opts{genBericht = True}))
