@@ -258,10 +258,15 @@ function showDbCommand(dbCommand) {
                                                                   : dbCommand.parentAtom + ',' + dbCommand.originalAtom) + ')';
       var newPair = '(' + showAtom(dbCommand.parentAtom) + ' : ' + dbCommand.parentConcept 
                   + ',' + showAtom(dbCommand.childAtom) + ' : ' + dbCommand.childConcept + ')';
-      return 'Update in   '+ showRelation(dbCommand.relation,dbCommand.isFlipped) +': '+
-                           (dbCommand.originalAtom =='' ? 'add ' : originalPair+' ~> ')+newPair;
+      if (dbCommand.originalAtom =='')
+        return 'Add ' + showRelation(dbCommand.relation,dbCommand.isFlipped) + ': ' +
+                        newPair;
+      else
+        return 'Update ' + showRelation(dbCommand.relation,dbCommand.isFlipped) + ': ' +
+                           originalPair+' ~> '+newPair;
     case 'delete':
-      return 'Delete from '+showRelation(dbCommand.relation,dbCommand.isFlipped)+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
+      return 'Delete ' + showRelation(dbCommand.relation,dbCommand.isFlipped)+': ' +
+                         '('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
   }
   return 'Undefined command: '+dbCommand;
 }
