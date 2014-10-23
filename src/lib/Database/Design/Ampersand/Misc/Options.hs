@@ -121,7 +121,7 @@ getOptions =
                       , outputfile    = fatal 83 "No monadic options available."
                       , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
                                                   (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
-                      , dbName        = fromMaybe (takeBaseName fName) (lookup envdbName env)
+                      , dbName        = fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
                       , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
                       , dirExec       = takeDirectory exePath
                       , ampersandDataDir = dataDir
