@@ -85,7 +85,7 @@ generateConstants opts =
 
 generateSpecializations :: Fspc -> [String]
 generateSpecializations fSpec =
-  [ "$allSpecializations ="
+  [ "$allSpecializations = // transitive, so including specializations of specializations"
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
