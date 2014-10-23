@@ -14,4 +14,24 @@
 	<natures>
 		<nature>net.sf.eclipsefp.haskell.core.project.HaskellNature</nature>
 	</natures>
+	<filteredResources>
+		<filter>
+			<id>1414061011292</id>
+			<name></name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-dist</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1414061011355</id>
+			<name></name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-.cabal-sandbox</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>
