@@ -107,8 +107,9 @@ if (isset($conceptTableInfo['SESSION'])) // only show login/logout buttons when 
 if ($isDev) // with --dev on, we show the reset-database link in the menu bar
 { echo '<div class="MenuItem" id="MenuBarReset"><a href="javascript:resetDatabase()"><span class=TextContent>Reset</span></a></div>';
 }
-
+echo '<div id="MenuBarTerminator"></div>';
 echo '</div>'; // .MenuBar
+echo '<div id="MenuBarGradient"></div>';
 echo "</div>\n\n"; // #TopLevelInterfaces
 genNewAtomDropDownMenu();
 echo "\n\n";

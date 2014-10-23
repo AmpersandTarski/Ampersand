@@ -43,7 +43,7 @@ button.Button:hover {
 /* General */
 
 #ScrollPane {
-    top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more diffs */
+    top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more divs */
     padding-top: 30px;
     padding-left: 10px;    
 }
