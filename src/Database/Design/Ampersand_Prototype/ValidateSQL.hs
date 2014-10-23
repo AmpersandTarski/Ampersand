@@ -28,7 +28,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "ValidateSQL"
 
 tempDbName :: String
-tempDbName = "TemporaryValidationDatabase"
+tempDbName = "ampersand_TemporaryValidationDatabase"
 
 validateRulesSQL :: Fspc -> IO Bool
 validateRulesSQL fSpec =
