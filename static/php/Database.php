@@ -138,10 +138,16 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   $parentCol = $isFlipped ? $tgtCol : $srcCol;
   $childCol =  $isFlipped ? $srcCol : $tgtCol;
   
-  $modifiedCol = $parentOrChild == 'parent' ? $parentCol : $childCol;
-  $modifiedAtom= $parentOrChild == 'parent' ? $parentAtom : $childAtom;
-  $stableCol   = $parentOrChild == 'parent' ? $childCol : $parentCol;
-  $stableAtom  = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
+  $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
+  $modifiedCol     = $parentOrChild == 'parent' ? $parentCol : $childCol;
+  $modifiedAtom    = $parentOrChild == 'parent' ? $parentAtom : $childAtom;
+  $stableCol       = $parentOrChild == 'parent' ? $childCol : $parentCol;
+  $stableAtom      = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
+
+  // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
+  emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
+  addAtomToConcept($modifiedAtom, $modifiedConcept);
+  // TODO: errors here are not reported correctly
   
   $tableEsc = escapeSQL($table);
   $modifiedColEsc = escapeSQL($modifiedCol);
@@ -175,12 +181,6 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
     emitLog($query);
     queryDb($query);
   }
-  
-  // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
-  $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
-  emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
-  addAtomToConcept($modifiedAtom, $modifiedConcept);
-  // TODO: errors here are not reported correctly
 }
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom)
