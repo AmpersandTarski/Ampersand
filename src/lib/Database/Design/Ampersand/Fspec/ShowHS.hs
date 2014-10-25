@@ -763,12 +763,6 @@ instance ShowHS A_Concept where
                     PlainConcept{} -> "PlainConcept "++show (name c)
                     ONE -> "ONE"
 
-instance ShowHS FPcompl where
- showHS _ _   = show
-
-instance ShowHS FPA where
- showHS _ _ (FPA t c) = "FPA "++show t++" "++show c
-
 instance ShowHSName Prop where
  showHSName Uni = "Uni"
  showHSName Inj = "Inj"

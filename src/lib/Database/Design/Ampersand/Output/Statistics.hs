@@ -46,7 +46,7 @@ module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
    instance Statistics Interface where
     nInterfaces _ = 1
     nPatterns   _ = 0
-    nFpoints ifc  = fPoints ifc
+    nFpoints ifc  = fpVal $ fpaInterface ifc
 
 --   instance Statistics ObjectDef where
 --    nInterfaces (Obj{objmsub=Nothing}) = 2 -- this is an association, i.e. a binary relation --TODO -> check correctness

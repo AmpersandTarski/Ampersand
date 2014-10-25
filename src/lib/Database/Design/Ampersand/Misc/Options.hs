@@ -63,7 +63,8 @@ data Options = Options { showVersion :: Bool
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
-                       , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analisys
+                       , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
+                       , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genStaticFiles :: Bool-- Generate the static files into the prototype
                        , genBericht :: Bool
                        , genMeat :: Bool  -- Generate the meta-population and output it to an .adl file
@@ -158,6 +159,7 @@ getOptions =
                       , diagnosisOnly = False
                       , genLegalRefs  = False
                       , genUML        = False
+                      , genFPAChap    = False
                       , genFPAExcel   = False
                       , genStaticFiles= True
                       , genBericht    = False
@@ -395,9 +397,13 @@ options = map pp
                (NoArg (\opts -> return opts{genUML = True}))
                "Generate a UML 2.0 data model."
             , Hidden)
-          , (Option []        ["FPA"]
+          , (Option []        ["fpa"]
+               (NoArg (\opts -> return opts{genFPAChap = True}))
+               "Generate Function Point Analysis chapter."
+            , Hidden)
+          , (Option []        ["excel"]
                (NoArg (\opts -> return opts{genFPAExcel = True}))
-               "Generate a Excel workbook (.xls)."
+               "Generate an Excel workbook (FPA_<filename>.xml)."
             , Hidden)
           , (Option []        ["bericht"]
                (NoArg (\opts -> return opts{genBericht = True}))
