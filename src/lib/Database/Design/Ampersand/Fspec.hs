@@ -11,7 +11,6 @@ module Database.Design.Ampersand.Fspec
    , module Database.Design.Ampersand.Fspec.ToFspec.Calc
    , module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
    , module Database.Design.Ampersand.Fspec.ToFspec.NormalForms
-   , module Database.Design.Ampersand.Fspec.FPA
    , module Database.Design.Ampersand.Fspec.Motivations
    )
 where
@@ -36,8 +35,6 @@ import Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
        (makeFspec)
 import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
        (conjNF, disjNF, cfProof, simplify)
-import Database.Design.Ampersand.Fspec.FPA
-       ( fPoints)
 import Database.Design.Ampersand.Fspec.Motivations
        (Meaning(..),Motivated(..))
        

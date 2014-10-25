@@ -83,11 +83,6 @@ where
           ++ [ Elem (simpleTag "Explanations")       (map mkXmlTree (actPurp   act)) |not (null (actPurp   act))]
            )
 
-   instance XML FPA where
-     mkTag _ = Tag "FPA" []
-     mkXmlTree fpa'
-        = Elem (mkTag fpa') []  -- TODO make content for this XML field
-
    instance XML Pattern where
      mkTag pat = Tag "Pattern" [ nameToAttr pat]
      mkXmlTree pat
