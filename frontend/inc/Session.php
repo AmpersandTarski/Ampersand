@@ -164,26 +164,6 @@ class Session {
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
 	
 	}
-		
-	/******* Rules *******/
-	
-	public static function getInvariantRules(){
-		$rules = array();
-		global $invariantRuleNames; // from Generics.php
-		
-		foreach((array)$invariantRuleNames as $ruleName){
-			$rules[$ruleName] = Session::getRule($ruleName);		
-		}
-		
-		return $rules;
-		
-	}
-	
-	public static function getRule($ruleName){
-		global $allRulesSql; // from Generics.php
-		
-		return $allRulesSql[$ruleName];
-	}
 	
 }
 

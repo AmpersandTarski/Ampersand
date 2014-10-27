@@ -47,7 +47,7 @@ class Role {
 		$rules = array();
 		
 		foreach($this->maintains as $ruleName){
-			$rules[$ruleName] = Session::getRule($ruleName);
+			$rules[$ruleName] = RuleEngine::getRule($ruleName);
 		}
 		
 		return $rules;

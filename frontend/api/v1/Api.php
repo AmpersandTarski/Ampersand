@@ -126,7 +126,7 @@ class Api
     {
 		if(isset($ruleName)){
 			
-			return Session::getRule($ruleName); // "Return rule with name $ruleName";
+			return RuleEngine::getRule($ruleName); // "Return rule with name $ruleName";
 		}else{
 			return "Return list of all rules";
 		}
@@ -137,7 +137,7 @@ class Api
      */
     public function getViolations($ruleName)
     {
-		$rule = Session::getRule($ruleName);
+		$rule = RuleEngine::getRule($ruleName);
         return RuleEngine::checkProcessRule($rule); // "Return list of violations (tuples of src, tgt atom) for rule $rule"
     }
 	
