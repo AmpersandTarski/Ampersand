@@ -2,6 +2,11 @@
 
 // define ('IP', 'http://localhost/[APP]');
 
+/************ CONFIG ********************/
+define ('DEFAULT_VIEWER', 'AmpersandViewer');
+define ('DEFAULT_ROLEID', '0');
+
+
 /************ EXTENSIONS ****************/
 
 // Enable ExecEngine

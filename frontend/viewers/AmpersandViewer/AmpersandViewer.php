@@ -7,7 +7,7 @@ class AmpersandViewer extends Viewer {
 	private $interface;
 	private $atomId;
 	
-	public function __construct($interface, $atomId = null){
+	public function __construct($interface = null, $atomId = null){
 				
 		$this->interface = $interface;
 		$this->atomId = $atomId;
@@ -33,7 +33,7 @@ class AmpersandViewer extends Viewer {
 		// add some javascript functions needed by Ampersand.js
 		$this->addHtmlBodyLine('<script type="text/javascript">');
 		$this->addHtmlBodyLine($this->generateInterfaceMap());
-		$this->addHtmlBodyLine($this->genEditableConceptInfo($this->interface->name));
+		if(!empty($this->interface)) $this->addHtmlBodyLine($this->genEditableConceptInfo($this->interface->name));
 		$this->addHtmlBodyLine('function getSelectedRole(){ return '.$session->role->id.';}');
 		$this->addHtmlBodyLine('initialize();'); // function initialize in Ampersand.js 
 		$this->addHtmlBodyLine('</script>');
@@ -232,6 +232,7 @@ class AmpersandViewer extends Viewer {
 	
 	private function genEditableConceptInfo($interfaceName) {
 		$atomViewMap = array ();
+		
 		$interface = new ObjectInterface($interfaceName);
 		
 		foreach ($interface->editableConcepts as $editableConcept) {

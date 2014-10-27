@@ -11,9 +11,8 @@ class Role {
 		global $allRoles; // from Generics.php
 		global $allInterfaceObjects; // from Generics.php
 		
-		// TODO: config for default Role
 		if(is_null($id)){ 
-			$id = 0;//key($allRoles); 
+			$id = DEFAULT_ROLEID; // localSettings.php
 			ErrorHandling::addLog("Default role selected");
 		}
 		

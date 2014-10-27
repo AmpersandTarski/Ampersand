@@ -17,7 +17,7 @@ if(isset($_REQUEST['resetSession'])){ // TODO: reset working not working properl
 // ROLE
 if(isset($_REQUEST['role'])){	// new role selected
 	 $roleId = $_REQUEST['role'];
-}else{ // no change, or default
+}else{ // no change, or default role
 	$roleId = null;
 }		
 $session->setRole($roleId);
@@ -25,9 +25,7 @@ $session->setRole($roleId);
 // INTERFACE
 if(isset($_REQUEST['interface'])){ // new interface selected
 	$interfaceName = $_REQUEST['interface'];
-}elseif(isset($_SESSION['interface'])){ // interface already selected
-	$interfaceName = $_SESSION['interface'];
-}else{ // default interface
+}else{ // no change, or default interface
 	$interfaceName = null;
 }
 $session->setInterface($interfaceName);
@@ -36,9 +34,7 @@ $session->setInterface($interfaceName);
 if(isset($_REQUEST['atom'])){ // new atom selected
 	$atomId = $_REQUEST['atom'];
 	if(empty($atomId)) $atomId = null;
-}elseif(isset($_SESSION['atom'])){ // atom already selected
-	$atomId = $_SESSION['atom'];
-}else{ // default atom
+}else{ // no change, or default atom
 	$atomId = null;
 }	
 $session->setAtom($atomId);	
@@ -46,9 +42,7 @@ $session->setAtom($atomId);
 // VIEWER
 if(isset($_REQUEST['viewer'])){ // new viewer selected
 	$viewerName = $_REQUEST['viewer'];
-}elseif(isset($_SESSION['viewer'])){ // viewer already selected
-	$viewerName = $_SESSION['viewer'];
-}else{
+}else{ // no change, or default viewer
 	$viewerName = null; 
 }
 $session->setViewer($viewerName);

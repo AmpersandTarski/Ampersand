@@ -103,6 +103,10 @@ class Session {
 			if(isset($interfaceName)) {
 				$this->interface = new ObjectInterface($interfaceName);
 				ErrorHandling::addLog("Interface $interfaceName selected");
+			}elseif(isset($_SESSION['interface'])){ // interface already selected
+				$this->interface = new ObjectInterface($_SESSION['interface']);
+				$interfaceName = $_SESSION['interface'];
+				ErrorHandling::addLog("Interface $interfaceName selected");
 			}else{
 				$this->interface = null;
 				ErrorHandling::addNotification("No interface selected");
@@ -120,6 +124,10 @@ class Session {
 		if(isset($atomId)){
 			$this->atom = $atomId;
 			ErrorHandling::addLog("Atom $atomId selected");
+		}elseif(isset($_SESSION['atom'])){ // atom already selected
+			$this->atom = $_SESSION['atom'];
+			$atomId = $_SESSION['atom'];
+			ErrorHandling::addLog("Atom $atomId selected");
 		}else{
 			$this->atom = session_id();
 		}
@@ -129,8 +137,14 @@ class Session {
 	}
 	
 	public function setViewer($viewerName = null){ 
-		if(!isset($viewerName)) $viewerName = 'AmpersandViewer'; // TODO: config voor default viewer maken
 		
+		if(isset($viewerName)){		
+			
+		}elseif(isset($_SESSION['viewer'])){ // viewer already selected
+			$viewerName = $_SESSION['viewer'];
+		}else{
+			$viewerName = DEFAULT_VIEWER; // localSettings.php
+		}
 		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
 		
 		try{
