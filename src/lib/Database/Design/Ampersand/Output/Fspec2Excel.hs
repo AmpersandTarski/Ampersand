@@ -111,6 +111,7 @@ fspec2Workbook fSpec =
        Dutch   -> "Grandtotaal:"
        English -> "Grand total:"
 
+-- TODO: rewrite: either remove external, BinSQL and ScalarSQL cases or don't filter based on fpaPlugInfo (which only yields TblSql plugs)
     showDetailsOfPlug :: PlugInfo -> Maybe [Cell]
     showDetailsOfPlug plug | Just fpaplgInfo <- fpaPlugInfo plug = Just
        [ emptyCell
