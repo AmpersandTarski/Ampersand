@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces
   ( chpInterfacesPics
   , chpInterfacesBlocks
@@ -13,16 +10,32 @@ import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Output.PandocAux
 
 chpInterfacesPics :: Fspc -> [Picture]
-chpInterfacesPics fSpec =
-   concat [picKnowledgeGraph fSpec act : [picSwitchboard fSpec act | graphic (flags fSpec)] | act <- fActivities fSpec ]
+chpInterfacesPics fSpec = []
+   --concat [picKnowledgeGraph fSpec act : [picSwitchboard fSpec act | graphic (flags fSpec)] | act <- fActivities fSpec ]
+
 chpInterfacesBlocks :: Int -> Fspc -> Blocks
 chpInterfacesBlocks lev fSpec =
-   foldr (<>) mempty (map interfaceChap (fActivities fSpec))
+  chptHeader (fsLang fSpec) Interfaces <>
+    mconcat (   [ fromList introBlocks ] 
+             ++ map interfaceChap (fActivities fSpec)
+            )
  where
+   lang = Dutch -- TODO: add English labels and use (fsLang fSpec) here
+ 
+   introBlocks :: [Block]
+   introBlocks =
+     case lang of
+       Dutch   -> [Para
+                   [ Str "<introductietekst voor interface documentatie hoofdstuk>"
+                   ]]
+       English -> [Para
+                   [ Str "<introduction text for interface documentation chapter>"
+                   ]]
+ 
    interfaceChap :: Activity -> Blocks
    interfaceChap act
    -- TODO: This should be one chapter for all interfaces.
-    =  (labeledThing (flags fSpec) lev ("chpIfc"++name act) (name act)) <>
+    =  (labeledThing (flags fSpec) lev ("chpIfc"++name act) (name act)) {- <>
        ifcIntro act <>
        (if genGraphics (flags fSpec) then txtKnowledgeGraph act else mempty) <>
        (if graphic     (flags fSpec) then txtSwitchboard act else mempty)
@@ -32,7 +45,7 @@ chpInterfacesBlocks lev fSpec =
       <> fromList (ifcAutoRules act)
       <> fromList (if genEcaDoc (flags fSpec) then ifcEcaRules act else [])
       where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
-
+-}
 {-
   ifcInsDelConcepts :: [Block]
   ifcInsDelConcepts
@@ -63,7 +76,7 @@ chpInterfacesBlocks lev fSpec =
           where f [x] = [Space, Str (name x)]
                 f xs  = [Str "s "]++commaEngPandoc (Str "and") (map (Str . name) xs)
 -}
-
+{-
    ifcAutoRules :: Activity -> [Block]
    ifcAutoRules act
     = case fsLang fSpec of
@@ -125,6 +138,8 @@ chpInterfacesBlocks lev fSpec =
        | isNop (ecaAction eca)
             = [ Str "no op"]
        | otherwise = [ Str "ECA rule ", Str ((show . ecaNum ) eca) ]
+
+-}
 {-
   ifcFieldTables
    = if null (fsv_fields act) then [] else
@@ -162,7 +177,7 @@ chpInterfacesBlocks lev fSpec =
                     '_':cs -> "\\_" ++ dealWithUnderscores cs
                     c:cs   -> c : dealWithUnderscores cs
 -}
-
+{-
    txtKnowledgeGraph :: Activity -> Blocks
    txtKnowledgeGraph act
     = (case fsLang fSpec of                                     -- announce the knowledge graph
@@ -224,7 +239,7 @@ chpInterfacesBlocks lev fSpec =
                    , Str "This yields an accurate perspective on the way in which invariants are maintained. "
                    ]
      ]
-
+-}
 picKnowledgeGraph :: Fspc -> Activity -> Picture
 picKnowledgeGraph fSpec act = makePicture fSpec (PTFinterface act)
 
