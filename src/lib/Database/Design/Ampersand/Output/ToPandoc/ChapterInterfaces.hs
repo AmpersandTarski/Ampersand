@@ -8,44 +8,116 @@ import Database.Design.Ampersand.ADL1
 import Data.List
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.Classes.Relational
+
+-- TODO: use term 'veld'
+-- TODO: use views?
+-- TODO: show interface purposes?
+-- TODO: use our own hierachy? (Pandoc doesn't number beyond subsubsections)
+-- TODO: refactor shared code with prototype
 
 chpInterfacesPics :: Fspc -> [Picture]
-chpInterfacesPics fSpec = []
+chpInterfacesPics fSpec = [] -- TODO: create pictures for interfaces instead of activities? Currently fails on partiality bug in Switchboard.hs:255
    --concat [picKnowledgeGraph fSpec act : [picSwitchboard fSpec act | graphic (flags fSpec)] | act <- fActivities fSpec ]
 
 chpInterfacesBlocks :: Int -> Fspc -> Blocks
-chpInterfacesBlocks lev fSpec =
-  chptHeader (fsLang fSpec) Interfaces <>
-    mconcat (   [ fromList introBlocks ] 
-             ++ map interfaceChap (fActivities fSpec)
-            )
+chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
+  mconcat (map interfaceChap (interfaceS fSpec))
+  where
+    lang = Dutch -- TODO: add English labels and use (fsLang fSpec) here
+  
+    interfaceChap :: Interface -> Blocks
+    interfaceChap ifc
+     =  (labeledThing (flags fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ name ifc))  <>
+        ifcIntro ifc <>
+        docInterface ifc
+       -- (if genGraphics (flags fSpec) then txtKnowledgeGraph act else mempty) <>
+       -- (if graphic     (flags fSpec) then txtSwitchboard act else mempty)
+      
+    ifcIntro :: Interface -> Blocks
+    ifcIntro ifc
+     =  introBlocks <>
+        purposes2Blocks (flags fSpec) purps
+     --  <> fromList (ifcAutoRules act)
+     --  <> fromList (if genEcaDoc (flags fSpec) then ifcEcaRules act else [])
+       where purps = purposesDefinedIn fSpec lang ifc
+ 
+             introBlocks :: Blocks
+             introBlocks = fromList $
+               case lang of
+                 Dutch   -> [Para
+                             [ Str $ "<introductietekst documentatiehoofdstuk voor interface "++name ifc++">"
+                             ]]
+                 English -> [Para
+                             [ Str $ "<introduction text documentation chapter on interface "++name ifc++">"
+                             ]]
+
+    docInterface :: Interface -> Blocks
+    docInterface ifc =
+       --singleton (Plain $ [Str $ name ifc]) <> -- TODO: what should we do here? (interface root object is also in InterfaceObject tree)
+       docInterfaceObjects (ifcParams ifc) 0 (ifcObj ifc)
+
+    docInterfaceObjects :: [Expression] -> Int -> ObjectDef -> Blocks
+    docInterfaceObjects editableRels depth object =
+      header (lev+depth+2) (text $ name object) <> -- +2 because level starts at 0 and pandox at 1, and we add 1 more to be below current level
+      interfaceObjDoc <>
+      docMSubInterface editableRels depth (objmsub object)
+      where interfaceObjDoc :: Blocks
+            interfaceObjDoc =
+              case getEditableRelation editableRels normalizedInterfaceExp of 
+                Nothing -> singleton . Plain . map Str $ 
+                  [ "Veld van type: `" ++ name (target normalizedInterfaceExp) ++ "' (niet-editable)"
+                  ] -- TODO: maybe we do want to show the expression? (or maybe only if it is a declaration? (that is not in editableRels))
+ 
+                Just (srcConcept, d, tgtConcept, isFlipped) -> fromList . map (\str -> Plain [Str str]) $
+                  [ "Veld van type: `" ++ name (target normalizedInterfaceExp) ++ "' " ++ cardinalityStr ++ " (editable)"
+                  , "Relatie is "++ name d ++ (if isFlipped then "~" else "")
+                  , "(showADL: " ++ showADL d ++ ")" ]
+                  where cardinalityStr = if isFlipped then (if isSur d then "1" else "0") ++ ".." ++ (if isInj d then "1" else "*")
+                                                      else (if isTot d then "1" else "0") ++ ".." ++ (if isUni d then "1" else "*") 
+            normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
+
+    docMSubInterface :: [Expression] -> Int -> Maybe SubInterface -> Blocks
+    docMSubInterface editableRels depth subIfc =
+      case subIfc of
+        Nothing                -> mempty
+        Just (InterfaceRef nm) -> singleton $ Plain $ [Str $ "REF "++nm]
+        Just (Box _ objects)   -> (singleton $ Plain $ [Str $ "Dit veld heeft " ++ show (length objects) ++ " subinterfaces:"]) <>
+                                    mconcat (map (docInterfaceObjects editableRels $ depth + 1) objects)
+
+-- TODO: copied from ampersand-prototype Generate.hs for now. We need this in ampersand itself
+getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getEditableRelation editableRels exp = case getRelation exp of
+   Just (s,Just d,t,isFlipped)  -> if EDcD d `elem` editableRels then Just (s,d,t,isFlipped) else Nothing
+   _                            -> Nothing
  where
-   lang = Dutch -- TODO: add English labels and use (fsLang fSpec) here
- 
-   introBlocks :: [Block]
-   introBlocks =
-     case lang of
-       Dutch   -> [Para
-                   [ Str "<introductietekst voor interface documentatie hoofdstuk>"
-                   ]]
-       English -> [Para
-                   [ Str "<introduction text for interface documentation chapter>"
-                   ]]
- 
-   interfaceChap :: Activity -> Blocks
-   interfaceChap act
-   -- TODO: This should be one chapter for all interfaces.
-    =  (labeledThing (flags fSpec) lev ("chpIfc"++name act) (name act)) {- <>
-       ifcIntro act <>
-       (if genGraphics (flags fSpec) then txtKnowledgeGraph act else mempty) <>
-       (if graphic     (flags fSpec) then txtSwitchboard act else mempty)
-   ifcIntro :: Activity -> Blocks
-   ifcIntro act
-    =   purposes2Blocks (flags fSpec) purps
-      <> fromList (ifcAutoRules act)
-      <> fromList (if genEcaDoc (flags fSpec) then ifcEcaRules act else [])
-      where purps = purposesDefinedIn fSpec (fsLang fSpec) fSpec
--}
+   -- getRelation produces a declaration and the narrowest possible concepts
+   -- at the left- and right hand sides of an expression.
+   -- Additionally, a boolean is produced to state whether the relation is flipped.
+   getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
+   getRelation (ECps (e, EDcI{})) = getRelation e
+   getRelation (ECps (EDcI{}, e)) = getRelation e
+   getRelation (ECps (e1, e2))
+     = case (getRelation e1, getRelation e2) of --note: target e1==source e2
+        (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
+                                                          if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
+                                                          if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
+                                                          Nothing
+        (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else                       
+                                                          if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else                       
+                                                          Nothing                                                     
+        (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
+                                                          if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else        
+                                                          Nothing                                                                 
+        _                                              -> Nothing
+   getRelation (EFlp e)
+    = case getRelation e of
+        Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
+        Nothing                -> Nothing
+   getRelation (EDcD d)   = Just (source d, Just d, target d, False)
+   getRelation (EEps i _) = Just (i, Nothing, i, False)
+   getRelation _ = Nothing
+
 {-
   ifcInsDelConcepts :: [Block]
   ifcInsDelConcepts
