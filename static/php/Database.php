@@ -107,7 +107,7 @@ function processCommand($command)
 
 function editAddToConcept($atom, $concept)
 { emitLog("editAddToConcept($atom, $concept)");
-  addAtomToConcept($atom, $concept);  
+  addAtomToConcept($atom, $concept, true);  
 }
 
 // NOTE: if $originalAtom == '', editUpdate means insert
@@ -145,8 +145,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   $stableAtom      = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
 
   // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
-  emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
-  addAtomToConcept($modifiedAtom, $modifiedConcept);
+  addAtomToConcept($modifiedAtom, $modifiedConcept, true);
   // TODO: errors here are not reported correctly
   
   $tableEsc = escapeSQL($table);
