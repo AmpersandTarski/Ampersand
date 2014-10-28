@@ -138,15 +138,13 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   $parentCol = $isFlipped ? $tgtCol : $srcCol;
   $childCol =  $isFlipped ? $srcCol : $tgtCol;
   
+  $stableConcept   = $parentOrChild == 'parent' ? $childConcept : $parentConcept;
   $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
   $modifiedCol     = $parentOrChild == 'parent' ? $parentCol : $childCol;
   $modifiedAtom    = $parentOrChild == 'parent' ? $parentAtom : $childAtom;
   $stableCol       = $parentOrChild == 'parent' ? $childCol : $parentCol;
   $stableAtom      = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
 
-  // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
-  addAtomToConcept($modifiedAtom, $modifiedConcept, true);
-  // TODO: errors here are not reported correctly
   
   $tableEsc = escapeSQL($table);
   $modifiedColEsc = escapeSQL($modifiedCol);
@@ -155,23 +153,55 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   $stableAtomEsc = escapeSQL($stableAtom);
   $originalAtomEsc = escapeSQL($originalAtom);
   
+  // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
+  addAtomToConcept($modifiedAtom, $modifiedConcept, true);
+  // TODO: errors here are not reported correctly
+  
+  
   // only if the stable column is unique, we do an update
   // TODO: maybe we can do updates also in non-unique columns
+  emitLog('table '.$table.' col '.$stableCol.' '.$tableColumnInfo[$table][$stableCol]['unique']);
   if ($tableColumnInfo[$table][$stableCol]['unique']) // note: this uniqueness is not set as an SQL table attribute
   { $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog($query);
     queryDb($query);
-  }
-  else
+  } elseif ($tableColumnInfo[$table][$modifiedCol]['unique'])
+       { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
+         $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
+         emitLog ($query);
+         queryDb($query);
+  } else
   { if ($originalAtom!='') // delete only if there was an $originalAtom 
     { $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
       emitLog($query);
       queryDb($query);
     }
-    $query = "INSERT IGNORE INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
+    
+    //$stableSuperColsEsc   = array_map(escapeSQL, getSuperColumns($table, $stableConcept  ));
+    //$modifiedSuperColsEsc = array_map(escapeSQL, getSuperColumns($table, $modifiedConcept));
+    //emitLog('$stableSuperColsEsc: '.var_export($stableSuperColsEsc, true));
+    //emitLog('$modifiedSuperColsEsc: '.var_export($modifiedSuperColsEsc, true));
+    
+    $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
     emitLog($query);
     queryDb($query);
+        
   }
+}
+
+function getSuperColumns($table, $concept)
+{ global $tableColumnInfo;
+
+  // won't work. there is not enough info in generics.php to determine the appropriate super columns
+  // (if the concept of a column is a superconcept of $concept, it may also be in one of the relation target fields instead of the kernel,
+  // in which case we should not touch it)
+	emitLog('Get super columns in table '.$table.' for concept '.$concept);
+	$tableInfo = $tableColumnInfo[$table];
+	foreach ($tableInfo as $column => $fieldInfo) {
+		emitLog('column: '.$column.' ');
+	}
+
+	return array();	
 }
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom)
