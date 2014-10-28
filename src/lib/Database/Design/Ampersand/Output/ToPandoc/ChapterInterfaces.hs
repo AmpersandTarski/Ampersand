@@ -10,7 +10,7 @@ import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Classes.Relational
 
--- TODO: use term 'veld'
+-- TODO: use term 'veld'?
 -- TODO: use views?
 -- TODO: show interface purposes?
 -- TODO: use our own hierachy? (Pandoc doesn't number beyond subsubsections)
@@ -37,7 +37,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
     ifcIntro :: Interface -> Blocks
     ifcIntro ifc
      =  introBlocks <>
-        purposes2Blocks (flags fSpec) purps
+        purposes2Blocks (flags fSpec) purps        
      --  <> fromList (ifcAutoRules act)
      --  <> fromList (if genEcaDoc (flags fSpec) then ifcEcaRules act else [])
        where purps = purposesDefinedIn fSpec lang ifc
@@ -54,9 +54,17 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 
     docInterface :: Interface -> Blocks
     docInterface ifc =
-       --singleton (Plain $ [Str $ name ifc]) <> -- TODO: what should we do here? (interface root object is also in InterfaceObject tree)
-       docInterfaceObjects (ifcParams ifc) 0 (ifcObj ifc)
-
+      singleton (Plain $ [Str $ "Deze interface is beschikbaar voor " ++
+                                case ifcRoles ifc of
+                                  [] -> "geen enkele rol."
+                                  [role] -> "de rol " ++ show role ++ "."
+                                  [role1,role2] -> "de rollen " ++ showRole role1 ++ " en " ++ showRole role2 ++ "."
+                                  (role1:roles) -> "de rollen " ++ showRole role1 ++ 
+                                                   (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map showRole roles) ++ "." 
+                         ]) <>
+      docInterfaceObjects (ifcParams ifc) 0 (ifcObj ifc)
+      where showRole role = "``"++role++"''"
+       
     docInterfaceObjects :: [Expression] -> Int -> ObjectDef -> Blocks
     docInterfaceObjects editableRels depth object =
       header (lev+depth+2) (text $ name object) <> -- +2 because level starts at 0 and pandox at 1, and we add 1 more to be below current level
