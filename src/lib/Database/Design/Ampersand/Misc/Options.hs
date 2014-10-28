@@ -177,7 +177,7 @@ getOptions =
                       , sqlHost       = "localhost"
                       , sqlLogin      = "ampersand"
                       , sqlPwd        = "ampersand"
-                      , oldNormalizer = False
+                      , oldNormalizer = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -458,6 +458,10 @@ options = map pp
           , (Option []        ["oldNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = True}))
                "use the old normalizer at your own risk."
+            , Hidden)
+          , (Option []        ["newNormalizer"]
+               (NoArg (\opts -> return opts{oldNormalizer = False}))
+               "use the new normalizer at your own risk." -- :-)
             , Hidden)
           ]
      where pp :: (OptionDef, DisplayMode) -> (OptionDef, DisplayMode)
