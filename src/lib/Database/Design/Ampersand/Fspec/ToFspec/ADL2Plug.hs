@@ -172,26 +172,28 @@ rel2fld context
      where
        table :: [(Expression, String)]
        table   = [ entry
-                 | cl<-eqCl (map toLower.niceidname) (kernel++plugAtts)
-                 , entry<-if length cl==1 then [(rel,niceidname rel) |rel<-cl] else tbl cl]
+                 | cl<-eqCl (map toLower.mkColumnName) (kernel++plugAtts)
+                 , entry<-if length cl==1 then [(rel,mkColumnName rel) |rel<-cl] else tbl cl]
        tbl rs  = [ entry
                  | cl<-eqCl (map toLower.name.source) rs
                  , entry<-if length cl==1
-                          then [(rel,niceidname rel++name (source rel)) |rel<-cl]
-                          else [(rel,niceidname rel++show i)|(rel,i)<-zip cl [(0::Int)..]]]
-       niceidname (EFlp x) = niceidname x
-       niceidname (EDcD d) = name d
-       niceidname (EDcI c) = name c
-       niceidname rel      = fatal 162 ( "Unexpected relation found:\n"++
-                                        intercalate "\n  "
-                                        [ "***rel:"
-                                        , show rel
-                                        , "***kernel:"
-                                        , show kernel
-                                        , "***plugAtts:"
-                                        , show plugAtts
-                                        ]
-                                    )
+                          then [(rel,mkColumnName rel++"_"++name (source rel)) |rel<-cl]
+                          else [(rel,mkColumnName rel++"_"++show i)|(rel,i)<-zip cl [(0::Int)..]]]
+       
+       mkColumnName expr = mkColumnName' False expr
+         where  mkColumnName' isFlipped (EFlp x) = mkColumnName' (not isFlipped) x
+                mkColumnName' isFlipped (EDcD d) = (if isFlipped then "src" else "tgt")++"_"++name d
+                mkColumnName' _         (EDcI c) = name c
+                mkColumnName' _ rel = fatal 162 ( "Unexpected relation found:\n"++
+                                                  intercalate "\n  "
+                                                    [ "***rel:"
+                                                    , show rel
+                                                    , "***kernel:"
+                                                    , show kernel
+                                                    , "***plugAtts:"
+                                                    , show plugAtts
+                                                    ]
+                                                )
    --in a wide table, m can be total, but the field for its target may contain NULL values,
    --because (why? ...)
    --A kernel field may contain NULL values if
