@@ -163,15 +163,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
     queryDb($query);
   }
   else
-  { /* if ($tableColumnInfo[$table][$modifiedCol]['unique'])
-       { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
-         $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
-         emitLog ($query);
-         queryDb($query);
-       }
-       else { */
-    // delete only if there was an $originalAtom
-    if ($originalAtom!='') 
+  { if ($originalAtom!='') // delete only if there was an $originalAtom 
     { $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
       emitLog($query);
       queryDb($query);
