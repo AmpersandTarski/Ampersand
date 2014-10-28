@@ -1,0 +1,79 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="../css/style.css" media="screen"/>
+        <link rel="stylesheet" type="text/css" href="../css/style-print.css" media="print"/>
+    </head>
+<body>
+<h1>EBV Document Header</h1>
+<p>
+    Deze gegevenselementen komen aan het begin van elke xsd te staan. Door de manier van 
+    implementeren is er echter geen sprake van een echte gegevensgroep Bedrijfsdocument. Het wordt 
+    ook niet apart gespecificeerd bij elk bedrijfsdocument, maar staat impliciet altijd aan het 
+    begin van een xsd.
+</p>
+
+<div id="main-abie">
+    <div class="gegevenselement">
+        <table class="properties">
+            <tr>
+                <td class="head">Property term</td>
+
+                <td class="head">Cardinality</td>
+                <td class="head">Definition</td>
+            </tr>
+            <tr>
+                <td>ID</td>
+                <td>1..1</td>
+                <td>Unieke identificatie van een bedrijfsdocument.</td>
+            </tr>
+            <tr>
+                <td class="strong">VerzendendeInstantie</td>
+                <td>1..1</td>
+                <td>De instantie die het bedrijfsdocument heeft verzonden.</td>
+            </tr>
+            <tr>
+                <td style="padding-left:25px">Instantiecode</td>
+                <td>1..1</td>
+                <td>Code die een instantie of een onderdeel daarvan identificeert.</td>
+            </tr>
+            <tr>
+                <td class="strong">OntvangendeInstantie</td>
+                <td>1..1</td>
+                <td>De instantie voor wie het bedrijfsdocument is bestemd.</td>
+            </tr>
+            <tr>
+                <td style="padding-left:25px">Instantiecode</td>
+                <td>1..1</td>
+                <td>Code die een instantie of een onderdeel daarvan identificeert.</td>
+            </tr>
+            <tr>
+                <td>Datum</td>
+                <td>1..1</td>
+                <td>De datum waarop het bedrijfsdocument is aangemaakt.</td>
+            </tr>
+            <tr>
+                <td>Tijdstip</td>
+                <td>1..1</td>
+                <td>Het tijdstip waarop het bedrijfsdocument is aangemaakt.</td>
+            </tr>
+            <tr>
+                <td>TestIndicator</td>
+                <td>1..1</td>
+                <td>Aanduiding of het bedrijfsdocument voor testdoeleinden is bedoeld.</td>
+            </tr> 
+            <tr>
+                <td>SchemaVersieID</td>
+                <td>0..1</td>
+                <td>Identificatie van de versie (major/minor) van het XML Schema waaraan het document voldoet.</td>
+            </tr> 
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
+
+
+
+
+
