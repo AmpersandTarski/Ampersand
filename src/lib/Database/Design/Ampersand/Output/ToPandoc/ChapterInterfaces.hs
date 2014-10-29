@@ -54,46 +54,65 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 
     docInterface :: Interface -> Blocks
     docInterface ifc =
-      singleton (Plain $ [Str $ "De interface is beschikbaar voor " ++
-                                case ifcRoles ifc of
-                                  [] -> "geen enkele rol."
-                                  [role] -> "de rol " ++ showRole role ++ "."
-                                  [role1,role2] -> "de rollen " ++ showRole role1 ++ " en " ++ showRole role2 ++ "."
-                                  (role1:roles) -> "de rollen " ++ showRole role1 ++ 
-                                                   (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map showRole roles) ++ "." 
-                         ]) <>
-      singleton (Plain $ [ Str $ "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:"]) <>  
-      bulletList ([singleton $ Plain [Str $ rc_rulename rule] | rule <- ifcControls ifc]) <>
-      docInterfaceObjects (ifcParams ifc) 0 (ifcObj ifc)
+      (plain . text $ "De interface is beschikbaar voor " ++
+                    case ifcRoles ifc of
+                      [] -> "geen enkele rol."
+                      [role] -> "de rol " ++ showRole role ++ "."
+                      [role1,role2] -> "de rollen " ++ showRole role1 ++ " en " ++ showRole role2 ++ "."
+                      (role1:roles) -> "de rollen " ++ showRole role1 ++ 
+                                       (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map showRole roles) ++ ".") <>
+      (if null $ ifcControls ifc
+       then plain . text $ "Voor deze interface hoeven geen regels gecontroleerd te worden."
+       else (plain . text $ "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:") <>  
+             bulletList [singleton $ Plain [Str $ rc_rulename rule] | rule <- ifcControls ifc]) <>
+      (plain . strong . text $ "Interfacestructuur:") <>
+      docInterfaceObjects (ifcParams ifc) [] (ifcObj ifc)
         where showRole role = "``"++role++"''"
        
-    docInterfaceObjects :: [Expression] -> Int -> ObjectDef -> Blocks
-    docInterfaceObjects editableRels depth object =
-      header (lev+depth+2) (text $ name object) <> -- +2 because level starts at 0 and pandox at 1, and we add 1 more to be below current level
-      interfaceObjDoc <>
-      docMSubInterface editableRels depth (objmsub object)
-      where interfaceObjDoc :: Blocks
+    docInterfaceObjects :: [Expression] -> [Int] -> ObjectDef -> Blocks
+    docInterfaceObjects editableRels hierarchy object =
+      case hierarchy of
+        [] -> plain . text $ "Interface voor een waarde van type ``" ++ name (target iExp) ++ "''" 
+              -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
+        _  -> (plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName])
+      <> interfaceObjDoc <>
+      mconcat subInterfaceDocs
+      where objectName = let nm = name object in if null nm then "<Naamloos>" else nm
+      
+            interfaceObjDoc :: Blocks
             interfaceObjDoc =
-              case getEditableRelation editableRels normalizedInterfaceExp of 
-                Nothing -> singleton . Plain . map Str $ 
-                  [ "Veld van type: `" ++ name (target normalizedInterfaceExp) ++ "' (niet-editable)"
-                  ] -- TODO: maybe we do want to show the expression? (or maybe only if it is a declaration? (that is not in editableRels))
- 
-                Just (srcConcept, d, tgtConcept, isFlipped) -> fromList . map (\str -> Plain [Str str]) $
-                  [ "Veld van type: `" ++ name (target normalizedInterfaceExp) ++ "' " ++ cardinalityStr ++ " (editable)"
-                  , "Relatie is "++ name d ++ (if isFlipped then "~" else "")
-                  , "(showADL: " ++ showADL d ++ ")" ]
-                  where cardinalityStr = if isFlipped then (if isSur d then "1" else "0") ++ ".." ++ (if isInj d then "1" else "*")
-                                                      else (if isTot d then "1" else "0") ++ ".." ++ (if isUni d then "1" else "*") 
-            normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
+              fromList . map (\str -> Plain [Str str]) $
+                [ fieldDescr ++ "``" ++ name (target iExp) ++ "''. (niet-editable)"
+                ] ++
+                [ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len >1 then "en" else "") ++":"
+                | let len = length subInterfaceDocs, len > 0 ] ++
+                --, "DEBUG: Props: ["++props++"]"
+                case getEditableRelation editableRels iExp of 
+                  Nothing -> 
+                    [
+                    ] -- TODO: maybe we do want to show the expression? (or maybe only if it is a declaration? (that is not in editableRels))
+   
+                  Just (srcConcept, d, tgtConcept, isFlipped) ->
+                    [ --"DEBUG: Relatie "++ name d ++ (if isFlipped then "~" else "")
+                    --, "DEBUG(showADL: " ++ showADL d ++ ")" ]
+                    ]
+              where (fieldDescr,fieldRef) = 
+                      if isSur iExp then if isUni iExp then ("Een verplicht veld met type ", "Dit veld")
+                                                       else ("Een lijst vab 1 of meer velden met type ", "Elk veld")
+                                    else if isUni iExp then ("Een optioneel veld met type ", "Dit veld")
+                                                       else ("Een lijst van 0 of meer velden met type ", "Elk veld")
+                    props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
+            iExp = conjNF (flags fSpec) $ objctx object
+                    
+            fieldType = name (target iExp)
+            subInterfaceDocs = docMSubInterface editableRels hierarchy (objmsub object)
 
-    docMSubInterface :: [Expression] -> Int -> Maybe SubInterface -> Blocks
-    docMSubInterface editableRels depth subIfc =
+    docMSubInterface :: [Expression] -> [Int] -> Maybe SubInterface -> [Blocks]
+    docMSubInterface editableRels hierarchy subIfc =
       case subIfc of
-        Nothing                -> mempty
-        Just (InterfaceRef nm) -> singleton $ Plain $ [Str $ "REF "++nm]
-        Just (Box _ objects)   -> (singleton $ Plain $ [Str $ "Dit veld heeft " ++ show (length objects) ++ " subinterfaces:"]) <>
-                                    mconcat (map (docInterfaceObjects editableRels $ depth + 1) objects)
+        Nothing                -> []
+        Just (InterfaceRef nm) -> [singleton $ Plain $ [Str $ "REF "++nm]] -- TODO: handle InterfaceRef
+        Just (Box _ objects)   -> [docInterfaceObjects editableRels (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..]]
 
 -- TODO: copied from ampersand-prototype Generate.hs for now. We need this in ampersand itself
 getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
