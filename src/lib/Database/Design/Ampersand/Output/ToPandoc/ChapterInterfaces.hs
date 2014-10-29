@@ -46,24 +46,26 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
              introBlocks = fromList $
                case lang of
                  Dutch   -> [Para
-                             [ Str $ "<introductietekst documentatiehoofdstuk voor interface "++name ifc++">"
+                             [ Str $ "Dit hoofdstuk bevat de documentatie voor interface ``"++name ifc++"''."
                              ]]
                  English -> [Para
-                             [ Str $ "<introduction text documentation chapter on interface "++name ifc++">"
+                             [ Str $ "This chapter contains the documentation for interface "++name ifc++"."
                              ]]
 
     docInterface :: Interface -> Blocks
     docInterface ifc =
-      singleton (Plain $ [Str $ "Deze interface is beschikbaar voor " ++
+      singleton (Plain $ [Str $ "De interface is beschikbaar voor " ++
                                 case ifcRoles ifc of
                                   [] -> "geen enkele rol."
-                                  [role] -> "de rol " ++ show role ++ "."
+                                  [role] -> "de rol " ++ showRole role ++ "."
                                   [role1,role2] -> "de rollen " ++ showRole role1 ++ " en " ++ showRole role2 ++ "."
                                   (role1:roles) -> "de rollen " ++ showRole role1 ++ 
                                                    (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map showRole roles) ++ "." 
                          ]) <>
+      singleton (Plain $ [ Str $ "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:"]) <>  
+      bulletList ([singleton $ Plain [Str $ rc_rulename rule] | rule <- ifcControls ifc]) <>
       docInterfaceObjects (ifcParams ifc) 0 (ifcObj ifc)
-      where showRole role = "``"++role++"''"
+        where showRole role = "``"++role++"''"
        
     docInterfaceObjects :: [Expression] -> Int -> ObjectDef -> Blocks
     docInterfaceObjects editableRels depth object =
