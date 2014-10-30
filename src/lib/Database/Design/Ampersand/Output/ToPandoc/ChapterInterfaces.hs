@@ -11,7 +11,8 @@ import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Classes.Relational
 
 -- TODO: use views?
--- TODO: refactor shared code with prototype
+-- TODO: refactor shared code with prototype (editability of fields and navigation is quite fragile now)
+-- TODO: prototype/Generate.hs also generates for interfaceG fSpec, but this seems to be empty most of the time. Include them in the docs?
 
 chpInterfacesPics :: Fspc -> [Picture]
 chpInterfacesPics fSpec = []
@@ -66,7 +67,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       case hierarchy of
         [] -> plain . text $ "Interface voor een waarde van type ``" ++ name (target iExp) ++ "''" 
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
-        _  -> (plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName])
+        _  -> plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName]
       <> interfaceObjDoc <>
       mconcat subInterfaceDocs
       where objectName = let nm = name object in if null nm then "<Naamloos>" else nm
@@ -76,17 +77,17 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
               fromList . map (\str -> Plain [Str str]) $
                 [ fieldDescr ++ "``" ++ name (target iExp) ++ "''. (" ++ maybe "niet-" (const "") editableRelM ++ "editable)"
                 ] ++
-                [ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len >1 then "en" else "") ++":"
+                navigationDoc ++
+                [ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
-                --, "DEBUG: Props: ["++props++"]"
+                 -- TODO: Maybe we want to show the expression? Maybe only when it is a declaration, but in that case we might want to show
+                 --       it even when it is not in editableRels (requires refactoring of getEditableRelation).
+                [ "DEBUG: Props: ["++props++"]" | development (flags fSpec) ] ++
                 case editableRelM of 
-                  Nothing -> 
-                    [
-                    ] -- TODO: maybe we do want to show the expression? (or maybe only if it is a declaration? (that is not in editableRels))
-   
-                  Just (srcConcept, d, tgtConcept, isFlipped) ->
-                    [ --"DEBUG: Relatie "++ name d ++ (if isFlipped then "~" else "")
-                    --, "DEBUG(showADL: " ++ showADL d ++ ")" ]
+                  Nothing -> []
+                  Just (srcConcept, d, tgtConcept, isFlipped) -> if not $ development (flags fSpec) then [] else
+                    [ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
+                    , "DEBUG: showADL: " ++ showADL d ++ ")"
                     ]
               where (fieldDescr,fieldRef) = 
                       if isSur iExp then if isUni iExp then ("Een verplicht veld van type ", "Dit veld")
@@ -96,6 +97,8 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
                     
                     editableRelM = getEditableRelation editableRels iExp
+                    
+                    navigationDoc = []
             iExp = conjNF (flags fSpec) $ objctx object
                     
             fieldType = name (target iExp)
