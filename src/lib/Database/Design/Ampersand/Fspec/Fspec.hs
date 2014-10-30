@@ -184,7 +184,8 @@ data Activity = Act { actRule ::   Rule
                     , actQuads ::  [Quad]
                     , actEcas ::   [ECArule]
                     , actPurp ::   [Purpose]
-                    }
+                    } deriving Show
+
 instance Identified Activity where
   name act = name (actRule act)
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
