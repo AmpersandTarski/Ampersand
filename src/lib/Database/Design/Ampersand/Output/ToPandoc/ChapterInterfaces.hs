@@ -19,13 +19,16 @@ chpInterfacesPics fSpec = []
 
 chpInterfacesBlocks :: Int -> Fspc -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
-  mconcat (map interfaceChap (interfaceS fSpec))
+  mconcat $ map interfaceChap allInterfaces
   where
+    allInterfaces :: [Interface]
+    allInterfaces = interfaceS fSpec
+    
     lang = Dutch -- TODO: add English labels and use (fsLang fSpec) here
   
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
-     =  (labeledThing (flags fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ name ifc))  <>
+     =  (labeledThing (flags fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ quoteName (name ifc)))  <>
         ifcIntro ifc <>
         docInterface ifc
       
@@ -39,33 +42,27 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
              introBlocks = fromList $
                case lang of
                  Dutch   -> [Para
-                             [ Str $ "Dit hoofdstuk bevat de documentatie voor interface ``"++name ifc++"''."
+                             [ Str $ "Dit hoofdstuk bevat de documentatie voor interface "++ quoteName (name ifc)++"."
                              ]]
                  English -> [Para
-                             [ Str $ "This chapter contains the documentation for interface "++name ifc++"."
+                             [ Str $ "This chapter contains the documentation for interface "++ quoteName (name ifc)++"."
                              ]]
 
     docInterface :: Interface -> Blocks
     docInterface ifc =
-      (plain . text $ "De interface is beschikbaar voor " ++
-                    case ifcRoles ifc of
-                      [] -> "geen enkele rol."
-                      [role] -> "de rol " ++ showRole role ++ "."
-                      [role1,role2] -> "de rollen " ++ showRole role1 ++ " en " ++ showRole role2 ++ "."
-                      (role1:roles) -> "de rollen " ++ showRole role1 ++ 
-                                       (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map showRole roles) ++ ".") <>
+      (plainText $ "De interface is beschikbaar voor " ++ showRoles (ifcRoles ifc) ++ ".") <>
       (if null $ ifcControls ifc
-       then plain . text $ "Voor deze interface hoeven geen regels gecontroleerd te worden."
-       else (plain . text $ "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:") <>  
-             bulletList [singleton $ Plain [Str $ rc_rulename rule] | rule <- ifcControls ifc]) <>
+       then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
+       else plainText "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:" <>  
+             bulletList [ plainText $ rc_rulename rule | rule <- ifcControls ifc]) <>
       (plain . strong . text $ "Interfacestructuur:") <>
       docInterfaceObjects (ifcParams ifc) [] (ifcObj ifc)
-        where showRole role = "``"++role++"''"
+      
        
     docInterfaceObjects :: [Expression] -> [Int] -> ObjectDef -> Blocks
     docInterfaceObjects editableRels hierarchy object =
       case hierarchy of
-        [] -> plain . text $ "Interface voor een waarde van type ``" ++ name (target iExp) ++ "''" 
+        [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (name (target iExp)) 
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
         _  -> plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName]
       <> interfaceObjDoc <>
@@ -74,21 +71,27 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
             interfaceObjDoc :: Blocks
             interfaceObjDoc =
-              fromList . map (\str -> Plain [Str str]) $
-                [ fieldDescr ++ "``" ++ name (target iExp) ++ "''. (" ++ maybe "niet-" (const "") editableRelM ++ "editable)"
+              mconcat $
+                [ plainText  $ fieldDescr ++ quoteName (name (target iExp)) ++ ". (" ++ maybe "niet-" (const "") editableRelM ++ "editable)"              
                 ] ++
-                navigationDoc ++
-                [ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
+                
+                case navigationDocs of
+                  []               -> [ plainText $ "Hiervandaan kan niet genavigeerd worden." ]
+                  navDocs@(_:rest) -> 
+                    [ plainText $ "Hiervandaan kan genavigeerd worden naar interface"++(if null rest then "" else "s")++":"] ++
+                    [ bulletList navDocs ]                     
+                ++
+                [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
                  -- TODO: Maybe we want to show the expression? Maybe only when it is a declaration, but in that case we might want to show
                  --       it even when it is not in editableRels (requires refactoring of getEditableRelation).
-                [ "DEBUG: Props: ["++props++"]" | development (flags fSpec) ] ++
+                [ plainText $ "DEBUG: Props: ["++props++"]" | development (flags fSpec) ] ++
                 case editableRelM of 
                   Nothing -> []
                   Just (srcConcept, d, tgtConcept, isFlipped) -> if not $ development (flags fSpec) then [] else
-                    [ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
-                    , "DEBUG: showADL: " ++ showADL d ++ ")"
-                    ]
+                    [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
+                    , plainText $ "DEBUG: showADL: " ++ showADL d ++ ")"
+                    ] 
               where (fieldDescr,fieldRef) = 
                       if isSur iExp then if isUni iExp then ("Een verplicht veld van type ", "Dit veld")
                                                        else ("Een lijst van 1 of meer velden van type ", "Elk veld")
@@ -98,7 +101,10 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     
                     editableRelM = getEditableRelation editableRels iExp
                     
-                    navigationDoc = []
+                    navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles (ifcRoles navIfc) ++ ")" 
+                                     | navIfc <- allInterfaces, source (objctx . ifcObj $ navIfc) == target iExp 
+                                     ]
+                                    -- TODO: fragile: copying computation from Generate.hs
             iExp = conjNF (flags fSpec) $ objctx object
                     
             fieldType = name (target iExp)
@@ -108,8 +114,24 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
     docMSubInterface editableRels hierarchy subIfc =
       case subIfc of
         Nothing                -> []
-        Just (InterfaceRef nm) -> [singleton $ Plain $ [Str $ "REF "++nm]] -- TODO: handle InterfaceRef
-        Just (Box _ objects)   -> [docInterfaceObjects editableRels (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..]]
+        Just (InterfaceRef nm) -> [ plainText $ "REF "++nm ] -- TODO: handle InterfaceRef
+        Just (Box _ objects)   -> [ docInterfaceObjects editableRels (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
+
+
+-- TODO: Maybe we should create a more general version of this function (might already exist, but I couldn't find it)
+showRoles :: [String] -> String
+showRoles roles = case roles of
+                    [] -> "alle rollen"
+                    [role] -> "de rol " ++ quoteName role
+                    [role1,role2] -> "de rollen " ++ quoteName role1 ++ " en " ++ quoteName role2
+                    (role1:roles) -> "de rollen " ++ quoteName role1 ++ 
+                                         (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map quoteName roles)
+
+quoteName :: String -> String
+quoteName role = "``"++role++"''"
+
+plainText :: String -> Blocks 
+plainText str = plain . text $ str
 
 -- TODO: copied from ampersand-prototype Generate.hs for now. We need this in ampersand itself
 getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
