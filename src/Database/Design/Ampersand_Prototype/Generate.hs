@@ -104,10 +104,10 @@ generateTableInfos fSpec =
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
          [ [showPhpStr (showHSName decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
-                                            ++", 'tgtConcept' => "++showPhpStr (name (target decl))
-                                            ++", 'table'      => "++showPhpStr (name table)
-                                            ++", 'srcCol'     => "++showPhpStr (fldname srcCol)
-                                            ++", 'tgtCol'     => "++showPhpStr (fldname tgtCol)++")"]
+                                                 ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
+                                                 ++ ", 'table'      => "++showPhpStr (name table)
+                                                 ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
+                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)++")"]
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
          , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
          ])) ++
