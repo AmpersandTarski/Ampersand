@@ -2,11 +2,19 @@
 
 class Viewer {
 	
-	protected $htmlTag = '<html>';
-	protected $htmlHeader;
-	protected $htmlBody;
+	private $interface;
+	private $atomId;
 	
-	public function __construct(){
+	private $htmlTag = '<html>';
+	private $htmlHeader;
+	private $htmlBody;
+	
+	public function __construct($interface, $atomId = null){		
+		
+		$this->htmlTag = '<html ng-app="AmpersandApp">'; // denotates that it is a angular app
+		
+		$this->interface = $interface;
+		$this->atomId = $atomId;
 		
 		$this->buildHtmlHeader();
 		$this->buildHtmlBody();
@@ -28,13 +36,10 @@ class Viewer {
 				
 		return $return;
 	}
-		
-	protected function buildHtmlHeader(){
+	
+	private function buildHtmlHeader(){
 		global $dbName;
-		
-		$reflection = new ReflectionClass($this);
-		$dir = dirname($reflection->getFileName());	// $dir is set to the directory of the specific viewer (subclass of this class)
-		
+				
 		$this->addHtmlHeaderLine('<title>'.$dbName.'</title>');
 		
 		// Meta tags
@@ -45,48 +50,66 @@ class Viewer {
 		$this->addHtmlHeaderLine('<meta http-equiv="Expires" content="-1">');
 		$this->addHtmlHeaderLine('<meta http-equiv="cache-Control" content="no-cache">');
 		
-		// Bootstrap (boostrap.css before Viewer specific css files that overwrite bootstrap.css)
-		$this->addHtmlHeaderLine('<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // TODO: move to /css folder of Viewer
+		// JQuery
+		$this->addHtmlHeaderLine('<script src="lib/jquery/jquery-1.11.0.min.js"></script>');
+		$this->addHtmlHeaderLine('<script src="lib/jquery/jquery-migrate-1.2.1.js"></script>');
+		$this->addHtmlHeaderLine('<script src="lib/jquery/jquery-ui-1.10.4.custom.js"></script>');
 		
+		// Bootstrap
+		$this->addHtmlHeaderLine('<link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before Viewer specific css files that overwrite bootstrap.css
+		$this->addHtmlHeaderLine('<script src="lib/bootstrap/js/bootstrap.min.js"></script>'); // bootstrap.js requires Jquery (loaded above)
+		
+		// Angular
+		$this->addHtmlHeaderLine('<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.13/angular.min.js"></script>');
+		$this->addHtmlHeaderLine('<script src="lib/angular/angular-resource.min.js"></script>');
+		$this->addHtmlHeaderLine('<script src="lib/angular/angular-route.min.js"></script>');
+		
+		$this->addHtmlHeaderLine('<script type="text/javascript">var interface = "'.$this->interface->name.'"; var atom = "'.$this->atomId.'";</script>'); // TODO: beter oplossen, wordt nu gebruikt in Factories en Controllers
+				
 		// CSS files
-		$files = getDirectoryList($dir . DIRECTORY_SEPARATOR . 'css');
+		$files = getDirectoryList('views/css');
 		foreach ((array)$files as $file){ 
 			if (substr($file,-3) !== 'css') continue;
-			$this->addHtmlHeaderLine('<link href="viewers/'.$reflection->getName().'/css/'.$file.'" rel="stylesheet" media="screen" type="text/css">');
+			$this->addHtmlHeaderLine('<link href="views/css/'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 		}
 		
 		// Javascript files
-		$files = getDirectoryList($dir . DIRECTORY_SEPARATOR . 'js');
+		$files = getDirectoryList('views/js');
 		foreach ((array)$files as $file){ 
 			if (substr($file,-2) !== 'js') continue;
-			$this->addHtmlHeaderLine('<script src="viewers/'.$reflection->getName().'/js/'.$file.'"></script>');
+			$this->addHtmlHeaderLine('<script src="views/js/'.$file.'"></script>');
 		}
 		
-		// Bootstrap (bootstrap.js requires Jquery (loaded above)
-		$this->addHtmlHeaderLine('<script src="bootstrap/js/bootstrap.min.js"></script>'); // TODO: move to /js folder of Viewer
+		// AngularApp controler files
+		$files = getDirectoryList('controllers');
+		foreach ((array)$files as $file){ 
+			if (substr($file,-2) !== 'js') continue;
+			$this->addHtmlHeaderLine('<script src="controllers/'.$file.'"></script>');
+		}
+		
+		
 	
 	}
 	
-	protected function buildHtmlBody(){
-		
+	private function buildHtmlBody(){		
 		$this->addHtmlBodyLine($this->getNavigationBar());
 		
 		$this->addHtmlBodyLine('<div class="container mainview">');
 		$this->addHtmlBodyLine($this->getNotifications());
-		$this->addHtmlBodyLine($this->getMain());
+		if(isset($this->interface)) $this->addHtmlBodyLine($this->getView());
 		$this->addHtmlBodyLine('</div>');
 		
 	}
 	
-	protected function addHtmlHeaderLine($headerLine){
-		$this->htmlHeader .= $headerLine;
+	private function getView(){
+		
+		$html = file_get_contents(__DIR__ . '/../views/AmpersandApp.html');
+			
+		return $html;
+		
 	}
 	
-	protected function addHtmlBodyLine($bodyLine){
-		$this->htmlBody .= $bodyLine;
-	}
-	
-	protected function getNavigationBar(){
+	private function getNavigationBar(){
 		$session = Session::singleton();
 		
 		$return .= '<div class="navbar navbar-default navbar-fixed-top">';
@@ -152,12 +175,7 @@ class Viewer {
 		return $return;
 	}
 	
-	protected function getMain(){
-		
-	
-	}
-	
-	protected function getNotifications(){
+	private function getNotifications(){
 		// errors
 		$return = '<div id="errors">';
 		foreach (ErrorHandling::getErrors() as $error){
@@ -218,10 +236,6 @@ class Viewer {
 		return $return;	
 	}
 	
-	public static function escapeHtmlAttrStr($str) {
-		return str_replace(array('"', '&'), array('&quot;', '%26'), $str); // we do escapeSQL and replace \" by &quot; and \' by '
-	}
-	
 	// TODO: make non static or private function
 	public static function viewAtom($atom, $srcConcept){
 		global $allViews; // from Generics.php
@@ -247,6 +261,18 @@ class Viewer {
 		return $atom; // in case no view exists for this $srcConcept
 	}
 	
+	public static function escapeHtmlAttrStr($str) {
+		return str_replace(array('"', '&'), array('&quot;', '%26'), $str); // we do escapeSQL and replace \" by &quot; and \' by '
+	}
+	
+	private function addHtmlHeaderLine($headerLine){
+		$this->htmlHeader .= $headerLine;
+	}
+	
+	private function addHtmlBodyLine($bodyLine){
+		$this->htmlBody .= $bodyLine;
+	}
+
 }
 
 ?>

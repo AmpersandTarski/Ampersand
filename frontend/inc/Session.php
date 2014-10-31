@@ -123,41 +123,28 @@ class Session {
 		
 		if(isset($atomId)){
 			$this->atom = $atomId;
-			ErrorHandling::addLog("Atom $atomId selected");
+		}elseif(is_null($atomId)){
+			$this->atom = session_id();
+			$atomId = session_id();
 		}elseif(isset($_SESSION['atom'])){ // atom already selected
 			$this->atom = $_SESSION['atom'];
 			$atomId = $_SESSION['atom'];
-			ErrorHandling::addLog("Atom $atomId selected");
 		}else{
 			$this->atom = session_id();
+			$atomId = session_id();
 		}
+		ErrorHandling::addLog("Atom $atomId selected");
 		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
 		
 		return $atomId;
 	}
 	
-	public function setViewer($viewerName = null){ 
+	public function setViewer(){ 
 		
-		if(isset($viewerName)){		
-			
-		}elseif(isset($_SESSION['viewer'])){ // viewer already selected
-			$viewerName = $_SESSION['viewer'];
-		}else{
-			$viewerName = DEFAULT_VIEWER; // localSettings.php
-		}
-		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
+		$this->viewer = new Viewer($this->interface, $this->atom);
 		
-		try{
-			$viewerClass = $GLOBALS['viewers'][$viewerName]['class'];
-			if(!class_exists($viewerClass)) throw new Exception("Specified viewer: $viewerName does not exists");
-			$this->viewer = new $viewerClass($this->interface, $this->atom);
-		}catch (Exception $e){
-			ErrorHandling::addError($e->getMessage);
-			throw $e;
-		}
-		return $viewerName;
+		return true;
 	}
-	
 	
 	private function deleteAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
