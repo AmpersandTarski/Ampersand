@@ -9,6 +9,7 @@ import Data.List
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Classes.Relational
+import Database.Design.Ampersand.Fspec.FPA
 
 -- TODO: use views?
 -- TODO: refactor shared code with prototype (editability of fields and navigation is quite fragile now)
@@ -55,10 +56,14 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:" <>  
              bulletList [ plainText $ rc_rulename rule | rule <- ifcControls ifc]) <>
-      (plain . strong . text $ "Interfacestructuur:") <>
+      (plain . strong . text) "Functiepunten:" <>
+      plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
+                 " " ++ showLang lang (fpComplexity interfaceFP) ++ 
+                 ", en is daarmee " ++ show (fpVal interfaceFP) ++ " functiepunten waard.") <>
+      (plain . strong . text) "Interfacestructuur:" <>
       docInterfaceObjects (ifcParams ifc) [] (ifcObj ifc)
-      
-       
+      where interfaceFP = fpaInterface ifc
+
     docInterfaceObjects :: [Expression] -> [Int] -> ObjectDef -> Blocks
     docInterfaceObjects editableRels hierarchy object =
       case hierarchy of
