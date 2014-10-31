@@ -63,7 +63,7 @@ generateAll fSpec =
         , generateViews fSpec
         , generateInterfaces fSpec
         , generateConjuncts fSpec
-        , generateInterfaceConjunctTable fSpec]
+        ]
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
@@ -284,11 +284,16 @@ generateInterface fSpec interface =
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
   , showPhpStr (name interface) ++ " => " ] ++
-  genInterfaceObjects fSpec(ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface)
-
+  indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
+  where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
+          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
+          , "      , 'interfaceConjunctNames' => array ("++intercalate ", " (map generateConjunctName conjs)++")" ++
+                        if null conjs then " // Output interface needs no checking." else ""
+          ]
+          where conjs = filter (\conj -> rc_rulename conj `notElem` uniRuleNames fSpec) $ ifcControls interface
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
+genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if verboseP (flags fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
@@ -299,9 +304,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (flags fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
-  ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
-       Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" ]
-       Nothing             -> []
+  ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
   ++ case getEditableRelation editableRels normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
@@ -321,7 +324,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
          ]
   ++
-  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
+  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (22+14*depth) "src" "tgt" normalizedInterfaceExp)
   ]
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
@@ -343,6 +346,7 @@ generateMSubInterface fSpec editableRels depth subIntf =
                                 (blockParenthesize "(" ")" ","
                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
 
+-- TODO: Redundant? These already seem to be present in $allRules.
 generateConjuncts :: Fspc -> [String]
 generateConjuncts fSpec =
   [ "$allConjunctsSql ="
@@ -372,33 +376,7 @@ generateConjuncts fSpec =
          , let violationsExpr = conjNF (flags fSpec) violExpr
          ]
      ) )
-
-generateInterfaceConjunctTable :: Fspc -> [String]
-generateInterfaceConjunctTable fSpec =
-  [ "$interfaceConjunctTable ="
-  , "  array"
-  ] ++
-  addToLastLine  ";"
-     (indent 4
-       (blockParenthesize  "(" ")" ","
-         (map genConjsPerIfc (interfaceS fSpec ++ interfaceG fSpec))
-     ) )
-  where
-    genConjsPerIfc :: Interface ->  [String]
-    genConjsPerIfc interface
-     = case ifcControls interface of
-        [] -> [ (showPhpStr.name) interface++" => array ()   // Output interface needs no checking." ]
-        [conj] -> [ (showPhpStr.name) interface++" => array ( "++generateConjunctName conj++" )" ]
-        cs -> [ (showPhpStr.name) interface++" =>"
-              , "  array"
-              ] ++ indent 10
-                   (blockParenthesize  "(" ")" ","
-                     [ [generateConjunctName conj]
-                     | conj<-cs
-                     , rc_rulename conj `notElem` uniRuleNames fSpec
-                     ]
-                   )
-
+     
 uniRuleNames :: Fspc -> [String]
 uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
 
