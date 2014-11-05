@@ -43,10 +43,10 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
              introBlocks = fromList $
                case lang of
                  Dutch   -> [Para
-                             [ Str $ "Dit hoofdstuk bevat de documentatie voor interface "++ quoteName (name ifc)++"."
+                             [ Str $ "Dit hoofdstuk bevat de documentatie voor de interface "++ quoteName (name ifc)++"."
                              ]]
                  English -> [Para
-                             [ Str $ "This chapter contains the documentation for interface "++ quoteName (name ifc)++"."
+                             [ Str $ "This chapter contains the documentation for the interface "++ quoteName (name ifc)++"."
                              ]]
 
     docInterface :: Interface -> Blocks
@@ -54,12 +54,15 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       (plainText $ "De interface is beschikbaar voor " ++ showRoles (ifcRoles ifc) ++ ".") <>
       (if null $ ifcControls ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
-       else plainText "Om een transactie af te mogen sluiten, moeten de volgende regels gecontroleerd worden:" <>  
+       else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
              bulletList [ plainText $ rc_rulename rule | rule <- ifcControls ifc]) <>
-      (plain . strong . text) "Functiepunten:" <>
-      plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
-                 " " ++ showLang lang (fpComplexity interfaceFP) ++ 
-                 ", en is daarmee " ++ show (fpVal interfaceFP) ++ " functiepunten waard.") <>
+      (if genFPAChap (flags fSpec)
+       then (plain . strong . text) "Functiepunten:" <>
+            plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
+                       " " ++ showLang lang (fpComplexity interfaceFP) ++ 
+                       ", en is daarmee " ++ show (fpVal interfaceFP) ++ " functiepunten waard.")
+       else plainText "" -- TODO: vervangen door de Pandoc-aanduiding voor "niks"
+      ) <>
       (plain . strong . text) "Interfacestructuur:" <>
       docInterfaceObjects (ifcParams ifc) [] (ifcObj ifc)
       where interfaceFP = fpaInterface ifc
