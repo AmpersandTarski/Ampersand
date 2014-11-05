@@ -29,7 +29,7 @@ BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- TH
     , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I) -- -(V[ONE*Blob];rrmean~)
     , "populated relations": V[ONE*PairID];decpopu~
     , "unpopulated relations": V[ONE*Declaration];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*PairID];decpopu~)
---INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;rels;reldcl)
+--INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;relsMentionedIn;reldcl)
     ]
 
 INTERFACE "Syntax error" FOR Student: I[ParseError]
@@ -170,7 +170,7 @@ BOX ["PURPOSEs" :cptpurpose
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
     ,"used in relations": (decsgn;(src \/ trg))~
-    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;relsMentionedIn)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
 INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
@@ -184,14 +184,14 @@ BOX ["PURPOSEs" :decpurpose
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
-    ,"used in RULEs": (rrexp;rels;reldcl)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": (rrexp;relsMentionedIn;reldcl)~;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :rrpurpose
     ,"MEANING" :rrmean
     ,"name" :rrnm
     ,"assertion" :rrexp
-    ,"uses":rrexp;rels BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
+    ,"uses":rrexp;relsMentionedIn BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]
