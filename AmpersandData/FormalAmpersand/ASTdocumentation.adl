@@ -3,13 +3,11 @@ CONTEXT RAP IN ENGLISH LATEX
    Each concept of the RAP metamodel has its own section, where sections are separated by comments -}
 
 -- Context
-PATTERN Contexts
-PURPOSE PATTERN Contexts
+PURPOSE PATTERN Context
 {+The rules that govern contexts are brought together in one pattern,
 in order to formalize contexts and determine their meaning.
 -}
 CONCEPT Context "A context is a set of statements in a formal language that are true within that context."
-     --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Context(ctxnm,ctxpats,ctxcs):svn1020"
 PURPOSE CONCEPT Context
 {+
 Contexts exist in Ampersand for the purpose of dealing with truth.
@@ -35,16 +33,12 @@ Within one context, there is a single truth and there are no contradictions.
 For this reason, a context defines a language by means of concepts and relations, in which utterances can be made.
 We say that these utterances {\emph make sense} in that context.
 -}
-ENDPATTERN
 
--- Rule
-PATTERN Rules
 PURPOSE PATTERN Rules
 {+The rules that govern rules are brought together in one pattern,
 in order to formalize rules and determine their meaning.
 -}
 CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
-  --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Rule(rrnm,rrexp):svn1020"
 PURPOSE CONCEPT Rule
 {+
 Rules are used as a concrete reason for people to act, feel or believe.
@@ -66,16 +60,12 @@ All contexts in which this rule is valid are called the scope of this rule.
 Outside its scope, a rule has no meaning.
 For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
 -}
-ENDPATTERN
 
--- Pattern
-PATTERN Patterns
 PURPOSE PATTERN Patterns
 {+The rules that govern patterns are brought together in one pattern,
 in order to formalize patterns and determine their meaning.
 -}
 CONCEPT Pattern "A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem."
-     --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Pattern(ptnm,ptdcs,ptgns,ptrls):svn1020"
 PURPOSE CONCEPT Pattern
 {+
 Patterns are used to isolate discussions about a specific theme to a particular group of stakeholders,
@@ -93,7 +83,6 @@ Therefore, they are independent from a particular context.
 The problem of identifying which persons have been using an information system can be solved by making rules
 about log-in, users and sessions.
 -}
-ENDPATTERN
 
 -- Expression
 PATTERN Expressions
@@ -103,7 +92,6 @@ in order to formalize expressions and determine their meaning.
 -}
 CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
 CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
-        --    "DatabaseDesign.Ampersand.Input.ADL1.Parser.pExpr:svn1020"
 PURPOSE CONCEPT Expression
 {+
 Ampersand uses relation algebra to formalize phrases.
@@ -120,6 +108,22 @@ about log-in, users and sessions.
 -}
 ENDPATTERN
 
+PURPOSE PATTERN Specialization
+{+Let us briefly recall, by example, what specialization is all about.
+Citrus fruit comes in many colors: oranges are orange, lemons are yellow, limes are green, and grapefruits are red, yellow or a mixture of both.
+Based on such an observation, we might have a concept $\id{Citrus}$, with a property $\id{color}$.
+Since all limes are citrus fruits, we might have a concept $\id{Lime}$.
+Every instance of $\id{Lime}$ is a small green and very sour fruit. It is not just a $\id{Lime}$, but it is a $\id{Citrus}$ as well.
+This is called {\em specialization}.
+The reason we call \id{Lime} a specialization of \id{Citrus} is that every lime (i.e.\ each instance of \id{Lime}) has all the properties of a citrus
+and on top of that it has properties specific to limes.
+
+Specialization should be used on intrinsic properties only.
+Ask yourself: once a lime, always a lime? If the answer is yes (which sounds right to me), you can use specialization.
+Now ask yourself: once an employee, always an employee? The answer to this question is more likely to be no.
+Therefore, don't use specialization to say that an employee is a person.
+-}
+
 -- Concept
 PATTERN Concepts
 PURPOSE PATTERN Concepts
@@ -127,7 +131,6 @@ PURPOSE PATTERN Concepts
 in order to formalize concepts and determine their meaning.
 -}
 CONCEPT A_Concept "A concept is a name for a category of similar objects."
- --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn1020"
 CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
 CONCEPT PlainConcept "A concept is a name for a category of similar objects."
 PURPOSE CONCEPT PlainConcept
@@ -155,9 +158,7 @@ in order to formalize them and determine their meaning.
 -- Atom
 CONCEPT AtomID "An atomID is the identity of an atomic term."
 CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept." TYPE "Blob"
-  --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn1020"
 CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
-  --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn1020"
 PURPOSE CONCEPT Atom
 {+
 Atoms are used to represent data. They are stored in relations that reside within a context.
@@ -194,28 +195,43 @@ It refers the the total of all populations in relations and concepts inside that
 
 CONCEPT RelPopu "The content of a relation"
 CONCEPT CptPopu "The content of a concept"
-CONCEPT Pair "A pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
-CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
-  --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn1020"
-CONCEPT String "A string is a pString expected to be less than 256 characters."
-    --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn1020"
-CONCEPT Conid "A conid is an identifier starting with an uppercase"
-   --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pConid:svn1020"
-CONCEPT Varid "A varid is an identifier starting with a lowercase"
-   --    "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pVarid:svn1020"
-CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
-   --    "DatabaseDesign.Ampersand.Input.ADL1.Parser.pADLid:svn1020"
-CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
- --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Gen(genspc,gengen):svn1020"
-CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
-  --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn1020"
 CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
+CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
+CONCEPT String "A string is a pString expected to be less than 256 characters."
+CONCEPT Conid "A conid is an identifier starting with an uppercase"
+CONCEPT Varid "A varid is an identifier starting with a lowercase"
+CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
+CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
+CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
-          --    "DatabaseDesign.Ampersand.ADL1.Rule.rulefromProp:svn1020"
 CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
-      --    "DatabaseDesign.Ampersand.ADL1.Prop.Prop(..):svn1020"
-CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
-         --    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn1020"
+CONCEPT Declaration "A declaration is a statement saying there exists a relation."
 CONCEPT Relation "A relation is a set of pairs."
 ENDPATTERN
+
+PURPOSE PATTERN Plugs
+{+Atoms are stored in pairs, pairs are stored in relations, relations are stored in plugs, and plugs are stored in databases.
+To understand how (binary) relations are stored,
+you may perceive a plug as a database table, in which a number of rules are being maintained.
+
+Plugs are defined merely for reasons of efficient storage.
+Theoretically, each relation can be stored in a binary plug.
+In that situation, the system will work. Such a system is likely to contain more joins to be executed, so a performance problem lures.
+Ampersand tries to store multiple relations and concepts in one plug, in order to create tables with multiple columns, but with little data duplication.
+The way it works is easily visualized by perceiving each plug as a single worksheet in a spreadsheet.
+The first few colums are used as concept tables, in which concepts are stored that are related through generalization and specializations.
+The other columns are used to store relations.
+-}
+
+PURPOSE RULE "rule allocation"
+{+In order to maintain a rule, a plug must have access to the data necessary for detecting violations.
+Consequently, the information contents of a plug limits the number of rules it can maintain on its own.
+-}
+
+PURPOSE RULE "All isas in one plug"
+{+If every atom that is Lime is also Citrus, then creating a new limes must ensure that the newly made atom is a citrus too.
+Similarly, deleting the lime must ensure that the atom does not remain existent as a citrus.
+For this purpose, all concepts that are related through specialization or generalization are stored in the same plug.
+-}
+
 ENDCONTEXT

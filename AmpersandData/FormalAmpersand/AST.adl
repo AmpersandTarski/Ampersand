@@ -1,19 +1,8 @@
 CONTEXT RAP IN ENGLISH
 INCLUDE "ASTdocumentation.adl"
-CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
-             "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn568"
-CONCEPT String "A string is a pString expected to be less than 256 characters."
-               "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pString:svn568"
-CONCEPT Conid "A conid is an identifier starting with an uppercase"
-              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pConid:svn568"
-CONCEPT Varid "A varid is an identifier starting with a lowercase"
-              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pVarid:svn568"
-CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
-              "DatabaseDesign.Ampersand.Input.ADL1.Parser.pADLid:svn568"
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-                "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Context(ctxnm,ctxpats,ctxcs):svn568"
 IDENT Context: Context(ctxnm)
 
 RELATION ctxnm[Context*Conid] [UNI,TOT,INJ]
@@ -24,9 +13,8 @@ RELATION ctxcs[Context*PlainConcept]
 MEANING "A concept, mentioned anywhere in a context, is declared."
 ENDPATTERN
 
-PATTERN Pattern
+PATTERN Patterns
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-                "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Pattern(ptnm,ptdcs,ptgns,ptrls):svn568"
 IDENT Pattern: Pattern(ptnm)
 
 RELATION ptnm[Pattern*Conid] [UNI,TOT,INJ]
@@ -41,9 +29,7 @@ RELATION ptxps[Pattern*Blob]
 MEANING "The purposes of a pattern."
 ENDPATTERN
 
-PATTERN Gen
-CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
-            "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Gen(genspc,gengen):svn568"
+PATTERN Specialization
 VIEW Gen: Gen( TXT "CLASSIFY ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
@@ -53,11 +39,17 @@ MEANING "A generalization rule refers to a more generic concept."
 RELATION genspc[Gen*PlainConcept] [UNI,TOT]
 MEANING "A generalization rule refers to a more specific concept."
 
+PURPOSE RULE specialization
+{+Specialization has the consequence that an atom does not necessarily have one concept only.
+If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+-}
+RULE specialization : gengen~;genspc;cptos |- cptos
+MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+
 ENDPATTERN
 
 PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
-                "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn568"
 IDENT Concept: Concept(cptnm)
 CLASSIFY PlainConcept ISA Concept
 
@@ -92,11 +84,6 @@ MEANING "The (technical) type of a concept"
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
 
 
-CONCEPT AtomID "An atomID is the identity of an atomic term."
-CONCEPT Atom "An atom is the value of an atomic term." TYPE "Blob"
-             "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn568"
---VIEW AtomID: AtomID( atomvalue , TXT "::", cptos~;order;ordername)
-
 RELATION atomvalue[AtomID*Atom] [UNI,TOT]
 MEANING "The value of an atom."
 --RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
@@ -107,16 +94,17 @@ MEANING "The value of an atom."
 ENDPATTERN
 
 PATTERN Sign
-CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
-             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn568"
 VIEW Sign: Sign( TXT "[" , src;cptnm , TXT "*" , trg;cptnm , TXT "]" )
+
+RELATION sign[Relation*Sign] [UNI,TOT]
+RELATION sign[PairID*Sign] [UNI,TOT]
+RELATION in[PairID*Relation] [UNI,TOT]
 
 RELATION src[Sign*Concept] [UNI,TOT]
 MEANING "The source of a sign."
 RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
-CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
 VIEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
 RELATION left[PairID*AtomID] [UNI,TOT]
 MEANING "The source of a relationship."
@@ -124,12 +112,24 @@ RELATION right[PairID*AtomID] [UNI,TOT]
 MEANING "The target of a relationship."
 
 RELATION subsgn[Sign*Sign]
-MEANING "The relation sugsgn represents a partial order on signatures."
+MEANING "The relation subsgn represents a partial order on signatures."
+
+PURPOSE RULE "type consistency"
+{+In Ampersand, every pair has a signature.
+For example, the pair $\langle\id{Pete},5\rangle$ may have the signature $[\id{Person},\id{Rank}]$.
+Ampersand is called a type consistent language, because every pair in a relation has the same signature as the relation itself.
+For instance, as long as $\id{Person}$ and $\id{Rank}$ are different concepts,
+the pairs $\langle\id{Pete},5\rangle$ and $\langle5,\id{Pete}\rangle$ cannot be in the same relation.
+
+In a compiler, type consistency is ensured by a type system.
+In a repository, the type of any expression does not depend on the contents of the relations in it.
+As a consequence, the type of an expression can be computed based on the types of its constituent relations only.
+-}
+RULE "type consistency" : sign=in[PairID*Relation];sign
+MEANING "Type consistency means that all pairs in a relation have the same signature."
 ENDPATTERN
 
 PATTERN Declaration
-CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
-                    "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn568"
 VIEW Declaration: Declaration( decnm , TXT "::", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
 --IDENT Declaration: Declaration( decnm, decsgn;src;cptnm, decsgn;trg;cptnm )
 RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
@@ -143,10 +143,8 @@ RELATION decprps[Declaration*PropertyRule] [INJ]
 MEANING "The properties of a relation."
 
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
-                     "DatabaseDesign.Ampersand.ADL1.Rule.rulefromProp:svn568"
 SPEC PropertyRule ISA Rule
 CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
-                 "DatabaseDesign.Ampersand.ADL1.Prop.Prop(..):svn568"
 RULE "property enum": I[Property] |- '->' \/ 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
 MEANING "There are eleven tokens, that can be used to define properties on a relation. -> means univalent and total; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
 RELATION declaredthrough[PropertyRule*Property] [TOT]
@@ -182,14 +180,11 @@ VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " al
 ENDPATTERN
 
 PATTERN Expression
-CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
-CONCEPT Expression "An expression is a relation algebraic expression in Ampersand ASCII syntax"
-                   "DatabaseDesign.Ampersand.Input.ADL1.Parser.pExpr:svn568"
 IDENT ExpressionID : ExpressionID(exprvalue)
 
 RELATION exprvalue[ExpressionID*Expression] [UNI,TOT]
 MEANING "The value of an expression."
-RELATION rels[ExpressionID*Relation]
+RELATION relsMentionedIn[ExpressionID*Relation]
 MEANING "The user-declared relations in an expression."
 
 CLASSIFY RelationRef ISA Expression
@@ -209,9 +204,7 @@ RULE "rel sign sub of decl sign": reldcl = relnm;decnm~ /\ relsgn;subsgn;decsgn~
 MEANING "A relation reference refers to the relation with the same name, the signature of which is larger or equal to the signature of the relation reference."
 ENDPATTERN
 
-PATTERN Rule
-CONCEPT Rule "A rule is the definition of an expression with the meaning of an assertion"
-             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Rule(rrnm,rrexp):svn568"
+PATTERN Rules
 IDENT Rule: Rule(rrnm)
 
 RELATION rrnm[Rule*ADLid] [UNI,TOT,INJ]
@@ -223,6 +216,21 @@ MEANING "The meanings of a rule."
 RELATION rrpurpose[Rule * Blob]
 MEANING "The purposes of a rule."
 ENDPATTERN
+
+PATTERN Plugs -- This pattern documents the semantics of plugs as of november 2014.
+RELATION sign[Rule*Sign] [UNI,TOT]
+RELATION maintains[Plug*Rule]
+RELATION in[PlainConcept*Plug] [UNI,TOT]
+RELATION in[Relation*Plug] [UNI,TOT]
+
+-- Rules
+RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
+MEANING "A plug, which maintains a rule, must contain every relation that is mentioned explicitly in that rule."
+
+RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;in) \/ in)
+MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
+ENDPATTERN
+
 ENDCONTEXT
 
 
