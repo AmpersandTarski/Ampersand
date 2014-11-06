@@ -141,18 +141,19 @@ where
                        [ OOClass{ clName = sqlname table
                                 , clcpt  = primKey table
                                 , clAtts = case table of
-                                              TblSQL{fields=attribs
-                                                    ,mLkpTbl=t} -> map (ooAttr.lookInFor t.fldexpr) attribs
+                                              TblSQL{fields=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
+                                                let kernelFlds = map snd $ kernelLookupTbl -- extract kernel fields from kernel lookup table
+                                                in  map (ooAttr kernelFlds . lookInFor t . fldexpr) attribs
                                               BinSQL{columns=(a,b)}      ->
-                                                 [OOAttr { attNm       = fldname a
-                                                         , attTyp      = (name.target.fldexpr) a
-                                                         , attOptional = False
-                                                         }
-                                                 ,OOAttr { attNm       = fldname b
-                                                         , attTyp      = (name.target.fldexpr) b
-                                                         , attOptional = False
-                                                         }
-                                                 ]
+                                                [OOAttr { attNm       = fldname a
+                                                        , attTyp      = (name.target.fldexpr) a
+                                                        , attOptional = False
+                                                        }
+                                                ,OOAttr { attNm       = fldname b
+                                                        , attTyp      = (name.target.fldexpr) b
+                                                        , attOptional = False
+                                                        }
+                                                ]
                                               _     -> fatal 166 "Unexpeced type of table!"
                                 , clMths = []
                                 }
@@ -174,13 +175,14 @@ where
       roots = catMaybes (map primKey tables)
       primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f))
       primKey _                    = Nothing
-      ooAttr :: SqlField -> CdAttribute
-      ooAttr f= OOAttr { attNm = fldname f
-                       , attTyp = if null([Sym,Asy]>-multiplicities (fldexpr f))
-                                  then "Bool"
-                                  else (name.target.fldexpr) f
-                       , attOptional = fldnull f
-                       }
+      ooAttr :: [SqlField] -> SqlField -> CdAttribute
+      ooAttr kernelFlds f =
+        OOAttr { attNm = fldname f
+               , attTyp = if null([Sym,Asy]>-multiplicities (fldexpr f)) && (f `notElem` kernelFlds)
+                          then "Bool"
+                          else (name.target.fldexpr) f
+               , attOptional = fldnull f
+               }
       allAssocs = [a | a<-concatMap relsOf tables
                      , hasKernelTarget a
                   ]
