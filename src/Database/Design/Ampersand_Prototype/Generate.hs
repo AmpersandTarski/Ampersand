@@ -490,11 +490,13 @@ indent n liness = [ replicate n ' ' ++ line | line <- liness ]
 
 showPlug :: PlugSQL -> [String]
 showPlug plug =
- ("Table: "++showPhpStr (sqlname plug))
- :
- indent 4
-   (blockParenthesize "[" "]" "," (map showField (plugFields plug)))
-
+  [ "Table: " ++ showPhpStr (sqlname plug) ++ " (" ++ showPlugType plug ++ ")" ] ++
+  indent 4
+    (blockParenthesize "[" "]" "," $ map showField $ plugFields plug)
+  where showPlugType TblSQL{}    = "wide"
+        showPlugType BinSQL{}    = "binary"
+        showPlugType ScalarSQL{} = "scalar"
+  
 showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++
                  showPhpStr (fldname fld) ++ ":"++showADL (target $ fldexpr fld)]
