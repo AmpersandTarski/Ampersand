@@ -15,6 +15,7 @@ import UU.Parsing (getMsgs,parse,evalSteps,Pair(..))
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Input.ADL1.CtxError
+import Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug (showPlug)
 import Data.List
 import System.Directory
 import System.FilePath
@@ -49,7 +50,15 @@ createFspec opts =
            -> do let (gaCtx) = pCtx2aCtx opts pCtx
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
-                   (Checked aCtx) -> return (Checked (makeFspec opts aCtx ))
+                   (Checked aCtx) -> 
+                    do { let fSpec = makeFspec opts aCtx
+                       ; when (development (flags fSpec)) $
+                          do { verboseLn (flags fSpec) "Table structure for internal plugs:\n"
+                             ; verboseLn (flags fSpec) $ (unlines . concat) [showPlug plug | InternalPlug plug <- plugInfos fSpec]
+                             }
+                                      
+                       ; return $ Checked fSpec
+                       }
   where
     popsCtxOf :: Guarded P_Context ->IO(Guarded P_Context)
     popsCtxOf gp =

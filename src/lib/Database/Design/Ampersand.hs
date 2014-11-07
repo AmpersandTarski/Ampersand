@@ -61,7 +61,7 @@ module Database.Design.Ampersand
    , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
    , exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list
    -- * Functions with plugs:
-   , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
+   , showPlug, plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
    , createFspec
@@ -106,6 +106,7 @@ import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Components
 import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
+import Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug (showPlug)
 import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
 import Database.Design.Ampersand.InputProcessing
 import Database.Design.Ampersand.ADL1.P2A_Converters
