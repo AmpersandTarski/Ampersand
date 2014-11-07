@@ -68,8 +68,36 @@ thd3 (_,_,c) = c
 class Flippable a where
   flp :: a -> a
 
+
+-- Trace shorthands
+
 showTrace :: Show a => a -> a
 showTrace a = traceShowId a
 
 showTraceTag :: Show a => String -> a -> a
 showTraceTag tag x = trace (tag ++ ": " ++ show x) x
+
+
+-- Code formatting utils
+
+blockParenthesize :: String -> String -> String -> [[String]] -> [String]
+blockParenthesize open close sep liness =
+  case liness of
+    [] -> [open ++ close]
+    _  -> concat [ zipWith (++) (pre:repeat "  ") linez
+                 | (pre, linez) <- zip ((open++" "): repeat (sep++" ")) liness ] ++ [close]
+-- [["line"], ["line1", "line2", "line3"],["linea", "lineb"] ->
+-- ( line
+-- , line1
+--   line2
+--   line3
+-- , linea
+--   lineb
+-- )
+
+addToLastLine :: String -> [String] -> [String]
+addToLastLine str [] = [str]
+addToLastLine str liness = init liness ++ [last liness ++ str]
+
+indent :: Int -> [String] -> [String]
+indent n liness = [ replicate n ' ' ++ line | line <- liness ]

@@ -87,6 +87,7 @@ module Database.Design.Ampersand
    , Database.Design.Ampersand.Basics.readFile
    , Database.Design.Ampersand.Basics.writeFile
    , fst3, snd3, thd3
+   , blockParenthesize, addToLastLine, indent 
    , trace, showTrace, showTraceTag
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
