@@ -50,10 +50,6 @@ generateAll fSpec =
                   }
             }
       )
-    ; when (development (flags fSpec)) $
-       do { verboseLn (flags fSpec) "Generated tables\n"
-          ; verboseLn (flags fSpec) ( unlines ( concatMap showPlug [ plug | InternalPlug plug <- plugInfos fSpec]))
-          }
     }
   where
     genericsPhpContent :: [String]
@@ -463,46 +459,3 @@ genPhp generatorModule moduleName contentLines = unlines $
   ] ++ replicate 2 "" ++ contentLines ++
   [ "?>"
   ]
-
-blockParenthesize :: String -> String -> String -> [[String]] -> [String]
-blockParenthesize open close sep liness =
-  case liness of
-    [] -> [open ++ close]
-    _  -> concat [ zipWith (++) (pre:repeat "  ") linez
-                 | (pre, linez) <- zip ((open++" "): repeat (sep++" ")) liness ] ++ [close]
--- [["line"], ["line1", "line2", "line3"],["linea", "lineb"] ->
--- ( line
--- , line1
---   line2
---   line3
--- , linea
---   lineb
--- )
-
-addToLastLine :: String -> [String] -> [String]
-addToLastLine str [] = [str]
-addToLastLine str liness = init liness ++ [last liness ++ str]
-
-indent :: Int -> [String] -> [String]
-indent n liness = [ replicate n ' ' ++ line | line <- liness ]
-
--- FSpec utils
-
-showPlug :: PlugSQL -> [String]
-showPlug plug =
-  [ "Table: " ++ showPhpStr (sqlname plug) ++ " (" ++ plugType ++ ")" ] ++
-  indent 4
-    (blockParenthesize "[" "]" "," $ map showField $ plugFields plug)
-  where plugType = case plug of
-          TblSQL{}    -> "wide"
-          BinSQL{}    -> "binary"
-          ScalarSQL{} -> "scalar"
-  
-        showField :: SqlField -> [String]
-        showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ" ++
-                         (if fld `elem` kernelFields then ", K} " else "}    ") ++
-                         showPhpStr (fldname fld) ++ ":"++showADL (target $ fldexpr fld)]
-
-        kernelFields = case plug of 
-                         TblSQL{} -> map snd $ cLkpTbl plug
-                         _        -> [] -- binaries and scalars do not have kernel fields
