@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug
-  (makeGeneratedSqlPlugs
+  (showPlug
+  ,makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
   )
 where
@@ -10,6 +11,7 @@ import Prelude hiding (Ord(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Fspec.ShowADL
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Fspec.ShowHS --for debugging
@@ -21,6 +23,26 @@ import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
+
+-- Not the most ideal place for showPlug, but putting it in Database.Design.Ampersand.Fspec.Fspec creates an import cycle, which will require quite some effort to resolve.
+showPlug :: PlugSQL -> [String]
+showPlug plug =
+  [ "Table: " ++ (show $ sqlname plug) ++ " (" ++ plugType ++ ")" ] ++
+  indent 4
+    (blockParenthesize "[" "]" "," $ map showField $ plugFields plug)
+  where plugType = case plug of
+          TblSQL{}    -> "wide"
+          BinSQL{}    -> "binary"
+          ScalarSQL{} -> "scalar"
+  
+        showField :: SqlField -> [String]
+        showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ" ++
+                         (if fld `elem` kernelFields then ", K} " else "}    ") ++
+                         (show $ fldname fld) ++ ": "++showADL (target $ fldexpr fld)]
+
+        kernelFields = case plug of 
+                         TblSQL{} -> map snd $ cLkpTbl plug
+                         _        -> [] -- binaries and scalars do not have kernel fields
 
 makeGeneratedSqlPlugs :: Options
               -> A_Context
