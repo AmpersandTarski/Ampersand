@@ -59,7 +59,7 @@ function initSession()
     if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION'))
     { $sessionAtom = mkUniqueAtomByTime('SESSION');
       $_SESSION['sessionAtom']  = $sessionAtom;
-      addAtomToConcept($sessionAtom, 'SESSION');
+      addAtomToConcept($sessionAtom, 'SESSION', false);
     }
 // echo "sessionAtom = [$sessionAtom]<br>";
     
@@ -225,7 +225,7 @@ function mkUniqueAtom($existingAtoms, $concept) {
   sort($generatedAtomNrs);
   foreach ($generatedAtomNrs as $i=>&$nr) {
     if ($nr != $i+1) // as soon as $generatedAtomNrs[i] != i+1, we arrived at a gap in the sorted number sequence and we can use i+1
-    return $concept.'_'.($i+1);
+      return $concept.'_'.($i+1);
   }
   return $concept.'_'.(count($generatedAtomNrs)+1);
 }
@@ -235,9 +235,11 @@ function mkUniqueAtomByTime($concept) {
   return $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
 }
 
-function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it does not yet exist...
+function addAtomToConcept($newAtom, $concept, $shouldLog) // Insert 'newAtom' only if it does not yet exist...
 { global $conceptTableInfo;
-
+  
+  if ($shouldLog)
+  	emitLog ("adding to concept tables: $newAtom : $concept (".count($conceptTableInfo[$concept])." columns)");
   foreach ($conceptTableInfo[$concept] as $conceptTableCol) 
   { // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
     // (we have an array rather than a single column because of generalizations)
@@ -257,7 +259,10 @@ function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it doe
       $newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
       $allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
             
-      DB_doquer("INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
+      $query = "INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)";
+      if ($shouldLog)
+        emitLog($query);
+      DB_doquer($query);
     }
   }
 }
@@ -292,7 +297,7 @@ function deleteAtom($atom, $concept) {
 function createNewAtom($concept) {
   $newAtom = mkUniqueAtomByTime($concept);
   
-  addAtomToConcept($newAtom, $concept);
+  addAtomToConcept($newAtom, $concept, false);
   return $newAtom;
 }
 
