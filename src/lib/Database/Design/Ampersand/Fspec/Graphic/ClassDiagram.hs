@@ -182,10 +182,10 @@ where
                        , attOptional = fldnull f
                        }
       allAssocs = [a | a<-concatMap relsOf tables
-                     , hasRootTarget a
+                     , hasKernelTarget a
                   ]
         where
-          hasRootTarget a = case assTgt a of
+          hasKernelTarget a = case assTgt a of
                                Left c ->  c `elem`  kernelConcepts
                                Right _ -> False
           kernelConcepts = map fst (concatMap cLkpTbl tables)
@@ -198,7 +198,7 @@ where
                                   , assSrcPort = fldname a
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTgt = (Left .target.fldexpr) a
+                                  , assTgt = (Left . target . fldexpr) a
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
