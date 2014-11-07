@@ -238,52 +238,44 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
 
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
-                                   do exitCode <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                                  then system ( pdfLatexCommand++
-                                                                if verboseP (flags fSpec) then "" else "> "++combine (dirOutput (flags fSpec)) "pdflog" ) >>
-                                                       system  makeIndexCommand
-                                                  --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                                  else do { let cmd ="pdflatex"
-                                                                cProcess = (proc cmd $ words (commonFlags ++ texFilename))
-                                                          ; (_, Just hOut, _, pHandle) <- createProcess $ cProcess{ cwd = Just $ dirOutput (flags fSpec)
-                                                                                                                  , std_out = CreatePipe }
-                                                          ; putStrLn $ "WINDOWS COMMAND "++pdfLatexCommand
-                                                          ; putStrLn $ "MAC COMMAND     "++cmd++commonFlags ++ texFilename
-                                                          
-                                                          ; exitCode <- waitForProcess pHandle
-                                                          ; latexOutput <- hGetContents hOut
-                                                          ; writeFile latexLogPath latexOutput
-                                                          ; case exitCode of
-                                                              ExitSuccess   -> do { putStrLn $ "Latex executed successfully, pdf file created."
-                                                                                  ; putStrLn $ makeIndexCommand
-                                                                                  ; exitCode' <- system makeIndexCommand
-                                                                                  ; case exitCode' of -- TODO: makeindex always returns exit code 1 on Mac
-                                                                                      ExitSuccess -> return ()
-                                                                                      ExitFailure  _->
-                                                                                       do { hPutStrLn stderr $ "ERROR: Execution of makeindex failed"
-                                                                                          }
-                                                                                  ; return exitCode'
-                                                                                  } 
-                                                              ExitFailure _ -> do { let nrOfErrLines = 20
-                                                                                  ; putStrLn "----------- LaTeX error-----------"
-                                                                                  ; putStrLn $ unlines . reverse . take nrOfErrLines . reverse . lines $ latexOutput 
-                                                                                  ; putStrLn "----------------------------------\n"
-                                                                                  ; putStrLn $ "ERROR: Latex execution failed. For more information, run pdflatex on "++texFilename++
-                                                                                               " or check the log:\n" ++ latexLogPath
-                                                                                  ; return exitCode
-                                                                                  } 
-                                                          }                                                     
+                                   do exitCode <- do { let cmd ="pdflatex"
+                                                           commonFlags = ["-halt-on-error"]
+                                                           texFilename = addExtension (baseName (flags fSpec)) ".tex"
+                                                           args = commonFlags ++ [texFilename] 
+                                                           cProcess = (proc cmd args)
+                                                     ; (_, Just hOut, _, pHandle) <- createProcess $ cProcess{ cwd = Just $ dirOutput (flags fSpec)
+                                                                                                             , std_out = CreatePipe }
+                                                     
+                                                     ; exitCode <- waitForProcess pHandle
+                                                     ; latexOutput <- hGetContents hOut
+                                                     ; writeFile latexLogPath latexOutput
+                                                     ; case exitCode of
+                                                         ExitSuccess   -> do { putStrLn $ "Latex executed successfully, pdf file created."
+                                                                             ; putStrLn $ makeIndexCommand
+                                                                             ; exitCode' <- system makeIndexCommand
+                                                                             ; case exitCode' of -- TODO: makeindex always returns exit code 1 on Mac
+                                                                                 ExitSuccess -> return ()
+                                                                                 ExitFailure  _->
+                                                                                  do { hPutStrLn stderr $ "ERROR: Execution of makeindex failed"
+                                                                                     }
+                                                                             ; return exitCode'
+                                                                             } 
+                                                         ExitFailure _ -> do { let nrOfErrLines = 20
+                                                                             ; putStrLn "----------- LaTeX error-----------"
+                                                                             ; putStrLn $ unlines . reverse . take nrOfErrLines . reverse . lines $ latexOutput 
+                                                                             ; putStrLn "----------------------------------\n"
+                                                                             ; putStrLn $ "ERROR: Latex execution failed. For more information, run pdflatex on "++texFilename++
+                                                                                          " or check the log:\n" ++ latexLogPath
+                                                                             ; return exitCode
+                                                                             } 
+                                                      }                                                     
                                       return exitCode
                                       where
                                       latexLogPath = dirOutput (flags fSpec) </> "pdflatex.log"
-                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
                                       --makeindex uses the error stream for verbose stuff...
                                       makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (flags fSpec)) "glossaries.log"
-                                      pdfflags = (if verboseP (flags fSpec) then "" else " --disable-installer") ++
-                                                 " -include-directory="++dirOutput (flags fSpec)++ " -output-directory="++dirOutput (flags fSpec)++" "
-                                      texFilename = addExtension (baseName (flags fSpec)) ".tex"
-                                      commonFlags = "-halt-on-error "
+
                _  -> return()
 
 -----Linguistic goodies--------------------------------------
