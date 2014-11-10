@@ -137,33 +137,36 @@ where
    tdAnalysis :: Fspc -> ClassDiag
    tdAnalysis fSpec =
      OOclassdiagram {cdName  = "technical_"++name fSpec
-                    ,classes =
-                       [ OOClass{ clName = sqlname table
-                                , clcpt  = primKey table
-                                , clAtts = case table of
-                                              TblSQL{fields=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
-                                                let kernelFlds = map snd $ kernelLookupTbl -- extract kernel fields from kernel lookup table
-                                                in  map (ooAttr kernelFlds . lookInFor t . fldexpr) attribs
-                                              BinSQL{columns=(a,b)}      ->
-                                                [OOAttr { attNm       = fldname a
-                                                        , attTyp      = (name.target.fldexpr) a
-                                                        , attOptional = False
-                                                        }
-                                                ,OOAttr { attNm       = fldname b
-                                                        , attTyp      = (name.target.fldexpr) b
-                                                        , attOptional = False
-                                                        }
-                                                ]
-                                              _     -> fatal 166 "Unexpeced type of table!"
-                                , clMths = []
-                                }
-                       | table <- tables]
+                    ,classes = allClasses
                     ,assocs  = allAssocs
                     ,aggrs   = []
                     ,geners  = []
                     ,ooCpts  = roots
                     }
      where
+      allClasses =
+         [ OOClass{ clName = sqlname table
+                  , clcpt  = primKey table
+                  , clAtts = case table of
+                               TblSQL{fields=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
+                                 let kernelFlds = map snd $ kernelLookupTbl -- extract kernel fields from kernel lookup table
+                                 in  map (ooAttr kernelFlds . lookInFor t . fldexpr) attribs
+                               BinSQL{columns=(a,b)}      ->
+                                 [ OOAttr { attNm       = fldname a
+                                          , attTyp      = (name.target.fldexpr) a
+                                          , attOptional = False
+                                          }
+                                 , OOAttr { attNm       = fldname b
+                                          , attTyp      = (name.target.fldexpr) b
+                                          , attOptional = False
+                                          }
+                                 ]
+                               _     -> fatal 166 "Unexpeced type of table!"
+                  , clMths = []
+                  }
+         | table <- tables
+         ]
+
       lookInFor [] _ = fatal 191 "Expression not found!"
       lookInFor ((expr,_,t):xs) a
                  | expr == a = t
