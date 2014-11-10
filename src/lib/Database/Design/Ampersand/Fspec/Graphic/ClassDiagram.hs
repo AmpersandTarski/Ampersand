@@ -203,7 +203,7 @@ where
                                   , assSrcPort = fldname a
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTgt = (Left . target . fldexpr) a
+                                  , assTgt = Left . rootOf . target . fldexpr $ a
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
@@ -211,7 +211,7 @@ where
                                   , assSrcPort = fldname b
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTgt = (Left .target.fldexpr) b
+                                  , assTgt = Left . rootOf . target . fldexpr $ b
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
