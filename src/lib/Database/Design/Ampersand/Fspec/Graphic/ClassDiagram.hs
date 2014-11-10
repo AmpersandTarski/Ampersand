@@ -216,7 +216,7 @@ where
                                   , assrhr = ""
                                   }
                         ]
-              _  -> fatal 195 "Unexpeced type of table!"
+              _  -> fatal 195 "Unexpected type of table"
           relOf f =
             let expr = fldexpr f in
             case expr of
@@ -226,11 +226,11 @@ where
               _ -> fatal 200 ("Unexpected expression: "++show expr)
           mkRel :: (Expression,SqlField) -> Association
           mkRel (expr,f) =
-               OOAssoc { assSrc = Left (source expr)
+               OOAssoc { assSrc = Left $ rootOf (source expr)
                        , assSrcPort = fldname f
                        , asslhm = (mults.flp) expr
                        , asslhr = fldname f
-                       , assTgt = Left (rootOf (target expr))
+                       , assTgt = Left $ rootOf (target expr)
                        , assrhm = mults expr
                        , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
                        }
@@ -339,9 +339,9 @@ where
   -------------------------------
           association2edge :: Association -> DotEdge String
           association2edge ass =
-             DotEdge { fromNode       = (case assSrc ass of
+             DotEdge { fromNode       = case assSrc ass of
                                           Left c  -> name c
-                                          Right s -> s)
+                                          Right s -> s
                      , toNode         = case assTgt ass of
                                           Left c  -> name c
                                           Right s -> s
