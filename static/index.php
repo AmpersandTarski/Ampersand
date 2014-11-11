@@ -109,20 +109,20 @@ if ($isDev) // with --dev on, we show the reset-database link in the menu bar
 }
 
 echo '</div>'; // .MenuBar
-echo '</div>'; // #TopLevelInterfaces
+echo "</div>\n\n"; // #TopLevelInterfaces
 genNewAtomDropDownMenu();
-
+echo "\n\n";
 $timeStamp = getTimestamp($err); // access database to see if it is there
 if ($err)
 { echo '<br/>Cannot access database. Make sure the MySQL server is running, or <a href="javascript:resetDatabase()">create a new database</span></a>.';  
 } else if (isset ($_REQUEST['Login'])) 
 {      echo '<div id=AmpersandRoot>';
        Login();
-       echo '</dev>';
+       echo '</div>';
 } else if (isset ($_REQUEST['CheckLogin'])) 
 {      echo '<div id=AmpersandRoot>';
        CheckLogin();
-       echo '</dev>';
+       echo '</div>';
 } else if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) 
 {
   // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
@@ -238,14 +238,14 @@ function genNewAtomDropDownMenu() {
 
   // unlike the menu bar, we don't use <a>'s here for navigation, but real click events. This is because the vertical layout may cause a lot of whitespace
   // which would not be clickable, since <a>'s don't easily stretch. The click events are initialized in initCreateNewMenu (in Ampersand.js).
-  echo '<div id=CreateMenu>';
+  echo "<div id=CreateMenu>\n";
   foreach($allInterfaceObjects as $interface) {
     if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
-      echo "\n<div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
+      echo "  <div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
       .'<div><span class=TextContent>'.htmlSpecialChars($interface['srcConcept'])
-      .' ('.htmlSpecialChars($interface['name']).')</span></div></div>'; // extra div is for renaming menu entries
+      .' ('.htmlSpecialChars($interface['name']).")</span></div></div>\n"; // extra div is for renaming menu entries
     }
   }
   echo '</div>';
