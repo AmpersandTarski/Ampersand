@@ -39,8 +39,8 @@ where
                          [ fromListWith uni [ (srcPaire p,[trgPaire p]) | p<-popps pop]
                          | pop@PRelPopu{} <- pt
                          , name dcl==name (popdcl pop)
-                         , let s=source (popdcl pop) in s `elem` s:smallerConcepts gens (source dcl)
-                         , let t=target (popdcl pop) in t `elem` t:smallerConcepts gens (target dcl)
+                         , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts gens (source dcl)
+                         , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts gens (target dcl)
                          ]
 
    fullContents :: [A_Gen] -> [Population] -> Expression -> Pairs
