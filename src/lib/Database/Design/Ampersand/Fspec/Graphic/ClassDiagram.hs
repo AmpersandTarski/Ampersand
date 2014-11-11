@@ -104,7 +104,7 @@ where
                         | r@(EDcD d) <- allrels, target r `elem` roots
                         ]
                     , aggrs   = []
-                    , geners  = []
+                    , geners  = map OOGener (gensInScope fSpec)
                     , ooCpts  = roots
                     }
 
