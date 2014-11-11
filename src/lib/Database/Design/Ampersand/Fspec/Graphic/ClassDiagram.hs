@@ -162,6 +162,7 @@ where
                   , clMths = []
                   }
          | table <- tables
+         , length (plugFields table) > 1
          ]
 
       lookInFor [] _ = fatal 191 "Expression not found!"
@@ -183,9 +184,10 @@ where
                           else (name.target.fldexpr) f
                , attOptional = fldnull f
                }
-      allAssocs = [a | a<-concatMap relsOf tables
-                  ]
+      allAssocs = filter isAssocBetweenClasses $ concatMap relsOf tables
         where
+          isAssocBetweenClasses a = let allClassNames = map clName allClasses in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
+          
           kernelConcepts = map fst (concatMap cLkpTbl tables)
 
           relsOf t =
