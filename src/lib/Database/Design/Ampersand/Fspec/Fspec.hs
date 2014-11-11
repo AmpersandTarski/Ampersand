@@ -17,7 +17,7 @@ module Database.Design.Ampersand.Fspec.Fspec
 --        , PAclause(..)
           , Activity(..)
           , PlugSQL(..),plugFields
-          , lookupCpt
+          , lookupCpt, getConceptTableFor
           , metaValues
           , SqlField(..)
           , Object(..)
@@ -290,6 +290,12 @@ lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
 lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
+
+-- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
+getConceptTableFor :: Fspc -> A_Concept -> String
+getConceptTableFor fSpec c = case lookupCpt fSpec c of
+                               []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
+                               (t,_):_ -> name t -- in case there are more, we use the first one
 
 data SqlFieldUsage = TableKey Bool A_Concept  -- The field is the (primary) key of the table. (The boolean tells whether or not it is primary)
                    | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL

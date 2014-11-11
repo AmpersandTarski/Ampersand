@@ -46,10 +46,7 @@ where
     nodes _ = []
 
    instance CdNode Association where
-    nodes a = map nm [assSrc a,assTgt a]
-      where
-       nm (Left  c  ) = name c
-       nm (Right str) = str
+    nodes a = [assSrc a,assTgt a]
 
    instance CdNode Aggregation where
     nodes (OOAggr _ s t) = map name [s,t]
@@ -96,11 +93,11 @@ where
                                  }
                         | ooClass <- ooClasses, let root=source (head ooClass)]
                     , assocs  =
-                        [ OOAssoc { assSrc = Left (source r)
+                        [ OOAssoc { assSrc = getConceptTableFor fSpec (source r)
                                   , assSrcPort = name d
                                   , asslhm = (mults.flp) r
                                   , asslhr = ""
-                                  , assTgt = Left (target r)
+                                  , assTgt = getConceptTableFor fSpec (target r)
                                   , assrhm = mults r
                                   , assrhr = name d
                                   }
@@ -187,31 +184,27 @@ where
                , attOptional = fldnull f
                }
       allAssocs = [a | a<-concatMap relsOf tables
-                     , hasKernelTarget a
                   ]
         where
-          hasKernelTarget a = case assTgt a of
-                               Left c ->  c `elem`  kernelConcepts
-                               Right _ -> False
           kernelConcepts = map fst (concatMap cLkpTbl tables)
-          rootOf c = head [(source.fldexpr.snd.head.cLkpTbl) t | t<-tables, c `elem` map fst ( cLkpTbl t)]
+
           relsOf t =
             case t of
-              TblSQL{} -> map mkRel (catMaybes [relOf fld | fld <- fields t])
+              TblSQL{} -> map (mkRel t) (catMaybes [relOf fld | fld <- fields t])
               BinSQL{columns=(a,b)} ->
-                        [ OOAssoc { assSrc = Right (sqlname t)
+                        [ OOAssoc { assSrc = sqlname t
                                   , assSrcPort = fldname a
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTgt = Left . rootOf . target . fldexpr $ a
+                                  , assTgt = getConceptTableFor fSpec . target . fldexpr $ a
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
-                        , OOAssoc { assSrc = Right (sqlname t)
+                        , OOAssoc { assSrc = sqlname t
                                   , assSrcPort = fldname b
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
-                                  , assTgt = Left . rootOf . target . fldexpr $ b
+                                  , assTgt = getConceptTableFor fSpec . target . fldexpr $ b
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
                                   }
@@ -224,13 +217,13 @@ where
               EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
               EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
               _ -> fatal 200 ("Unexpected expression: "++show expr)
-          mkRel :: (Expression,SqlField) -> Association
-          mkRel (expr,f) =
-               OOAssoc { assSrc = Left $ rootOf (source expr)
+          mkRel :: PlugSQL -> (Expression,SqlField) -> Association
+          mkRel t (expr,f) =
+               OOAssoc { assSrc = sqlname t
                        , assSrcPort = fldname f
                        , asslhm = (mults.flp) expr
                        , asslhr = fldname f
-                       , assTgt = Left $ rootOf (target expr)
+                       , assTgt = getConceptTableFor fSpec (target expr)
                        , assrhm = mults expr
                        , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
                        }
@@ -339,12 +332,8 @@ where
   -------------------------------
           association2edge :: Association -> DotEdge String
           association2edge ass =
-             DotEdge { fromNode       = case assSrc ass of
-                                          Left c  -> name c
-                                          Right s -> s
-                     , toNode         = case assTgt ass of
-                                          Left c  -> name c
-                                          Right s -> s
+             DotEdge { fromNode       = assSrc ass
+                     , toNode         = assTgt ass
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
                                         , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
@@ -432,11 +421,11 @@ where
 
    data Multiplicities = Mult MinValue MaxValue deriving Show
 
-   data Association    = OOAssoc  { assSrc :: Either A_Concept String -- ^ source: the left hand side class. In case of a link table, the name of that table.
-                                  , assSrcPort :: String       -- ^ the name of the field in the source table
+   data Association    = OOAssoc  { assSrc :: String           -- ^ source: the name of the source class
+                                  , assSrcPort :: String       -- ^ the name of the attribute in the source class
                                   , asslhm :: Multiplicities   -- ^ left hand side multiplicities
                                   , asslhr :: String           -- ^ left hand side role
-                                  , assTgt :: Either A_Concept String -- ^ target: the right hand side class. In case of a link table, the name of that table.
+                                  , assTgt :: String           -- ^ target: the name of the target class
                                   , assrhm :: Multiplicities   -- ^ right hand side multiplicities
                                   , assrhr :: String           -- ^ right hand side role
                                   }  deriving Show

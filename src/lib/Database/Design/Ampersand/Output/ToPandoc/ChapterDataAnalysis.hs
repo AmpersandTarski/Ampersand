@@ -183,12 +183,9 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
              Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
              English -> para ( text (name cl) <> text " has the following associations: ")
         <> orderedList [assocToRow assoc | assoc <- assocs oocd
-                         , assSrc assoc == root || assTgt assoc == root]
+                         , assSrc assoc == clName cl || assTgt assoc == clName cl]
 
     where
-     root = case clcpt cl of
-       Nothing -> fatal 193 "A class in the logical data model should have a root concept."
-       Just c  -> Left c
      assocToRow :: Database.Design.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
         -- showDummy assoc <>
@@ -196,7 +193,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
         else case fsLang fSpec of
            Dutch   -> para (   text "Ieder(e) "
-                            <> (emph.text.nm.assSrc) assoc
+                            <> (emph.text.assSrc) assoc
                             <> " " <> (singleQuoted.text.assrhr) assoc 
                             <> (case assrhm assoc of
                                      Mult MinZero MaxOne  -> " maximaal één "
@@ -204,21 +201,21 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                      Mult MinOne  MaxOne  -> " precies één "
                                      Mult MinOne  MaxMany -> " ten minste één "
                                )
-                            <> (emph.text.nm.assTgt) assoc
+                            <> (emph.text.assTgt) assoc
                             <>  ". Over deze relatie geldt omgekeerd dat "
                             <>  "ieder(e) "
-                            <> (emph.text.nm.assTgt) assoc
+                            <> (emph.text.assTgt) assoc
                             <> (case asslhm assoc of
                                      Mult MinZero MaxOne  -> " maximaal één "
                                      Mult MinZero MaxMany -> " geen tot meerdere "
                                      Mult MinOne  MaxOne  -> " precies één "
                                      Mult MinOne  MaxMany -> " ten minste één "
                                   )
-                            <> (emph.text.nm.assSrc) assoc
+                            <> (emph.text.assSrc) assoc
                             <> " kan hebben."
                            )
            English -> para (   "Every "
-                            <> (emph.text.nm.assSrc) assoc
+                            <> (emph.text.assSrc) assoc
                             <> " " <> (singleQuoted.text.assrhr) assoc 
                             <> (case assrhm assoc of
                                      Mult MinZero MaxOne  -> " at most one "
@@ -226,24 +223,19 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                      Mult MinOne  MaxOne  -> " exactly one "
                                      Mult MinOne  MaxMany -> " at least one "
                                )
-                            <> (emph.text.nm.assTgt) assoc
+                            <> (emph.text.assTgt) assoc
                             <> ". For the other way round, for this relation holds that "
                             <> "each "
-                            <> (emph.text.nm.assTgt) assoc
+                            <> (emph.text.assTgt) assoc
                             <> (case asslhm assoc of
                                      Mult MinZero MaxOne  -> " at most one "
                                      Mult MinZero MaxMany -> " zero or more "
                                      Mult MinOne  MaxOne  -> " exactly one "
                                      Mult MinOne  MaxMany -> " at least one "
                                   )
-                            <> (emph.text.nm.assSrc) assoc
+                            <> (emph.text.assSrc) assoc
                             <> "."
                            )
-
-     nm :: Identified a => Either a String -> String
-     nm x = case x of
-              Left c  -> name c
-              Right s -> s
 
 technicalDataModelSection :: Int -> Fspc -> (Blocks,[Picture])
 technicalDataModelSection lev fSpec = (theBlocks,[pict])
