@@ -142,10 +142,7 @@ genUMLAssociation ass =
     }
  where genMemberAndOwnedEnd (Mult minVal maxVal) assocId type' =
         do { endId <- mkUnlabeledId "MemberEnd"
-           ; typeId <- refLabeledId (case type' of
-                                       Left c -> name c
-                                       Right s -> s
-                                    )
+           ; typeId <- refLabeledId type'
            ; lIntId <- mkUnlabeledId "Int"
            ; uIntId <- mkUnlabeledId "Int"
            ; return
