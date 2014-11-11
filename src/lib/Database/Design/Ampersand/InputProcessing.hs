@@ -53,8 +53,8 @@ createFspec opts =
                    (Checked aCtx) -> 
                     do { let fSpec = makeFspec opts aCtx
                        ; when (development (flags fSpec)) $
-                          do { verboseLn (flags fSpec) "Table structure for internal plugs:\n"
-                             ; verboseLn (flags fSpec) $ (unlines . concat) [showPlug plug | InternalPlug plug <- plugInfos fSpec]
+                          do { putStrLn "Table structure for internal plugs:\n"
+                             ; putStrLn $ (unlines . concat) [showPlug plug | InternalPlug plug <- plugInfos fSpec]
                              }
                                       
                        ; return $ Checked fSpec
