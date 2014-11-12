@@ -104,11 +104,16 @@ parseADLs opts parsedFilePaths filePaths =
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts filePath =
  do { verboseLn opts $ "Reading file " ++ filePath
-    ; fileContents <- Basics.readFile filePath
-    ; whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 
-       do { filePaths <- mapM normalizePath relativePaths
-          ; return $ Checked (ctxts, filePaths)
-          }
+    ; mFileContents <- Basics.readUTF8File filePath
+    ; case mFileContents of
+        Left err -> error $ "ERROR in file " ++ filePath ++ ":\n" ++ err 
+                    -- TODO: would like to return an Errors value here, but this datatype currently only accommodates UUParsing Messages 
+        Right fileContents ->
+         do { whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 
+               do { filePaths <- mapM normalizePath relativePaths
+                  ; return $ Checked (ctxts, filePaths)
+                  }
+             }
     }
  where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
 
