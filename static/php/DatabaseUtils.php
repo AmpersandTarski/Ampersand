@@ -235,7 +235,7 @@ function mkUniqueAtomByTime($concept) {
   return $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
 }
 
-function addAtomToConcept($newAtom, $concept, $shouldLog) // Insert 'newAtom' only if it does not yet exist...
+function addAtomToConcept($newAtom, $concept, $shouldLog = false) // Insert 'newAtom' only if it does not yet exist...
 { global $conceptTableInfo;
   
   if ($shouldLog)
