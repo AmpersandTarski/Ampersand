@@ -80,7 +80,8 @@ library
                     split == 0.2.*,
                     old-locale == 1.0.*,
                     ConfigFile == 1.1.*,
-                    uulib == 0.9.*
+                    uulib == 0.9.*,
+                    text == 1.1.*
                     
   exposed-modules:  Database.Design.Ampersand
   other-modules:    

@@ -28,15 +28,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 UTF-8 aware string IO functions that will work with GHC 6.10, 6.12, or 7.
 -}
 module Database.Design.Ampersand.Basics.UTF8
-           ( readFile
-            , writeFile
-            , getContents
-            , putStr
-            , putStrLn
-            , hGetContents
-            , hPutStr
-            , hPutStrLn
-            )
+           ( readUTF8File
+           , readFile
+           , writeFile
+           , getContents
+           , putStr
+           , putStrLn
+           , hGetContents
+           , hPutStr
+           , hPutStrLn
+           )
 
 where
 import Codec.Binary.UTF8.String (encodeString)
@@ -46,6 +47,8 @@ import Data.ByteString.UTF8 (toString, fromString)
 import Prelude hiding (readFile, writeFile, getContents, putStr, putStrLn)
 import System.IO (Handle)
 import Control.Monad (liftM)
+import Data.Text (unpack)
+import Data.Text.Encoding (decodeUtf8')
 
 bom :: B.ByteString
 bom = B.pack [0xEF, 0xBB, 0xBF]
@@ -53,6 +56,17 @@ bom = B.pack [0xEF, 0xBB, 0xBF]
 stripBOM :: B.ByteString -> B.ByteString
 stripBOM s | bom `B.isPrefixOf` s = B.drop 3 s
 stripBOM s = s
+
+-- Try to read file pth as UTF-8 and return (Left err) in case of failure, or (Right contents) on success.
+readUTF8File :: FilePath -> IO (Either String String)
+readUTF8File pth =
+ do { contents <- B.readFile pth
+    ; case decodeUtf8' contents of
+                  Right txt -> return $ Right (unpack txt)
+                  Left _    -> return $ Left $ "Not a valid UTF-8 file."
+    }                          -- Don't show exception, as it is usually about the byte following the offending byte, which is confusing.
+                               -- TODO: we would like to show a position or the text preceding the error, but there does not seem to be an way
+                               --       to do that. (even stream decoders simply fail with an exception without returning a decoded prefix)
 
 readFile :: FilePath -> IO String
 readFile = liftM (toString . stripBOM) . B.readFile . encodeString
