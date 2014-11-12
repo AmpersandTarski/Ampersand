@@ -154,7 +154,7 @@ chpDiagnosis fSpec
   unusedConceptDefs
    = case (fsLang fSpec, unused) of
       (Dutch,[])  -> [Para
-                       [Str "Alle conceptdefinities in dit document worden gebruikt in relaties."]
+                       [Str "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties."]
                      | (not.null.cDefsInScope) fSpec]
       (Dutch,[c]) -> [Para
                        [Str "Het concept ", Quoted SingleQuote [Str (name c)], Str " is gedefinieerd, maar wordt niet gebruikt."]
@@ -163,7 +163,7 @@ chpDiagnosis fSpec
                        [Str "De concepten: "]++commaNLPandoc (Str "en") (map (Str . name) xs)++[Str " zijn gedefinieerd, maar worden niet gebruikt."]
                      ]
       (English,[])  -> [Para
-                        [Str "All concept definitions in this document are used in relations."]
+                        [Str "All concepts defined in this document are used in relations."]
                      | (not.null.cDefsInScope) fSpec]
       (English,[c]) -> [Para
                          [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " is defined, but isn't used."]
