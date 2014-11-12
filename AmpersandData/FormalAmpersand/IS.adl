@@ -5,7 +5,7 @@ INCLUDE "IS.pop"
 
 
 PATTERN "Information Systems"
-RELATION characteristic[Rule*Expression] [UNI,TOT]
+RELATION characteristic[Rule*Expression] [UNI,TOT] PRAGMA "The characteristic expression of rule ``" "'' is "
 MEANING "Every rule has a {\\em characteristic expression}, which is meant to remain true across changing states. We say that a rule is true whenever its characteristic expression can be evaluated to true."
 RELATION exp[Query*Expression] [UNI,TOT]
 MEANING "Each query evaluates a given expression in a given state, and produces a number of facts as a result."
@@ -41,7 +41,7 @@ IDENT state : State(pred)
 
 ENDPATTERN
 
-PROCESS "Documentation"
+PATTERN "Documentation"
 RELATION meaning[Concept*NatLang]
 MEANING "It makes sense to talk about the meaning of a concept. The meaning is a written statement in natural language."
 RULE conceptHasMeaning : I[Concept] |- meaning;meaning~
@@ -86,9 +86,9 @@ RELATION reference[Rule*Reference]
 MEANING "A rule that originates from a written source can be referenced. The link between rule and reference makes it traceable."
 RULE ruleHasReference : I[Rule] |- reference;reference~
 MEANING "Every rule must be traceable to its origin(s)."
-ENDPROCESS
+ENDPATTERN
 
-PROCESS "Enforcement"
+PATTERN "Enforcement"
 CONCEPT EnforcementType "Rules can be enforced either by humans or by computers. An enforcement type is used to distinguish between the two."
 CONCEPT RuleEnforcement "A rule can be enforced within a context, which means it is being kept without violations."
 RULE enforcementType : I[EnforcementType] = 'Human' \/ 'Computer'
@@ -98,5 +98,7 @@ RELATION rule[RuleEnforcement*Rule] [TOT]
 MEANING "The rule(s) being enforced are linked to the rule enforcement."
 RELATION valid[RuleEnforcement*Context] [TOT]
 MEANING "We can say that a rule is valid in a context, which means that the rule should not have any violations in that context."
-ENDPROCESS
+ENDPATTERN
+
+
 ENDCONTEXT
