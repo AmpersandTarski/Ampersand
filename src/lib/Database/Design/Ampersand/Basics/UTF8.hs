@@ -61,8 +61,8 @@ stripBOM s = s
 readUTF8File :: FilePath -> IO (Either String String)
 readUTF8File pth =
  do { contents <- B.readFile pth
-    ; case decodeUtf8' contents of
-                  Right txt -> return $ Right (unpack txt)
+    ; case decodeUtf8' . stripBOM $ contents of
+                  Right txt -> return $ Right $ unpack txt
                   Left _    -> return $ Left $ "Not a valid UTF-8 file."
     }                          -- Don't show exception, as it is usually about the byte following the offending byte, which is confusing.
                                -- TODO: we would like to show a position or the text preceding the error, but there does not seem to be an way
