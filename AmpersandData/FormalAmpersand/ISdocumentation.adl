@@ -4,11 +4,11 @@ CONTEXT RAP IN ENGLISH LATEX
 
 PURPOSE PATTERN "Information Systems"
 {+The purpose of an information system is to support people (called {\em users})
-in a specific domain (called the {\em context})
+in a specific domain (called a {\em context})
 by disclosing and maintaining factual information (represented by {\em data}).
-For example, a customer relationship management (CRM) system of ECME Inc.\ should contain facts about ECME's customers.
+For example, a customer relationship management (CRM) system for ECME Inc.\ should contain factual information, in order to be a reliable tool for people working for ECME.
 Its context is ECME Inc., in particular its customer base.
-Those users are undoubtedly employees of ECME Inc., but each customer with access to this information is considered a user just as well.
+Users are undoubtedly employees of ECME Inc., but each customer with access to this information is considered a user just as well.
 
 People use language in order to ask, to command, to state facts and in general to communicate things verbally.
 Since an information system is supposed to contain facts, we take a special interest in affirmative sentences.
@@ -17,38 +17,61 @@ We call this a {\em statement}, and we call a true statement a {\em fact}.
 Thus, we can think of an information system as a device that contains and maintains facts about a particular domain.
 The set of facts that is contained in an information system is called the {\em contents} or {\em population} of that system.
 
-The following definitions are needed for explaining how users can trust the system.
+In designing an information system, 
+some definitions are needed to explain how and why users can trust the system.
 For we must keep in mind at all times that ECME Inc.\ (for example) wishes to rely on its CRM-system.
 So to what extent can we be sure that the system tells the truth about ECME's customers?
 -}
 
 PURPOSE CONCEPT Context
-{+The word context is used to delimit scope.
-This involves both the scope of use (the business scope) and the scope of definitions (the technical scope).
-The purpose of having a context is to allow a sound definition of truth within that context.
-If users are to rely on an information system to be truthful, we must be able to establish the truth or falsehood of statements unequivocally.
-This can be done if the notion of truth is confined to a context.
+{+The word context is used to delimit scope and provide a single truth within that scope.
+The truth consists of a (possibly infinite) number of true statements about the real world.
+To be precise: in order to provide a single truth, a context must contain only statements, which are true in the ``world out there''.
+If a context contains a mechanism to construct new facts from available facts, it is possible that it actually contains an infinite number of them.
+Consistency is required throughout the context, because an inconsistent system cannot hold any true facts.
+
+So what does it mean to a user, to have a system that contains true statements only?
+Most likely, users will learn to rely on information from that system, because it never lies to them.
+For example, bank customers will rarely doubt the balance shown by their electronic banking system,
+because they experience it to be correct all the time and they know that their bank goes to great lengths to keep it correct.
+Just for the record: there are enough unreliable information systems today.
+Information systems that users have leart to distrust, because it sometimes gives information that is not true in the real world.
+
+Just like in the real world, truth is confined to a context.
 That allows us, for example, to say ``Peter has scored ten hits'', and know that it is true in the context of his sports club, but that it is false in the context of his work as a professional musician.
-Every information has a scope, e.g. the customer base of ECME Inc.
+Every fact has a scope, e.g. the customer base of ECME Inc.
+
+In practice, a context can be associated with a single application, a group of applications, a company, or anything in which a single truth is required.
 -}
 CONCEPT Context "A context is a scope in which a single truth is defined."
 
+PURPOSE CONCEPT Statement
+{+An information system is limited to uttering affirmative sentences.
+For that purpose we define the word statement:
+-}
 CONCEPT Statement "A statement is an affirmative sentence."
+
+PURPOSE CONCEPT Concept
+{+In a world full of things, we use the word ``concept'' to name and characterize a set of things that are similar.
+We use the concept ``Table'' to denote the set of tables in a context. When asked: which tables are there, we can point at all available tables and conclude that each one is an instance of ``Table''.
+Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 101.
+Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things. (Ask: Which joys are there? Which peaces are there?).
+-}
+CONCEPT Concept "A concept is a name to characterize a set of similar things."
 
 PURPOSE CONCEPT Rule
 {+Agreements made by people can be represented by a statement, which must be kept true.
 For example, if we agree to keep the desks in our office clean,
 the statement ``All desks are clean'' should be true all the time.
 Such agreements are known under many different names, such as ``rule'', ``commitment'', ``contract'', etcetera.
-
 -}
 CONCEPT Rule "A rule is a statement that must be kept true."
 
 PURPOSE CONCEPT State
 {+If an information system is to tell the truth, it must cope with truth that changes over time.
-For example, suppose that ECME's customer John Brown moves houses.
-The system has to be told that John Brown gets a new address, in order to remain a reliable truth-teller.
-So the set of facts contained by an information system changes over time, because they represent
+For example, suppose that ECME's customer John Brown moves to another home.
+The system has to be told that John Brown has a new address, in order to remain a reliable truth-teller.
+So the set of facts contained by an information system must change over time, to keep up with the continuously changing
 truth\footnote{There is much more to be said about truth, for which we refer to the literature on language philosophy.
 For our purposes, we work with the idea that truth requires a context.} in the real world.
 -}
@@ -116,10 +139,10 @@ PURPOSE RULE "def true"
 As the signature of an expression defines the truth, we call that expression true if its evaluation produces the identical result as the evaluation of its signature\footnote{This rule is explained further in the literature (add citation)}.
 -}
 
-PURPOSE PATTERN "Documentation"
-{+Documentation is required for human understanding of rules.
-It explains why things exist and how things are expressed in natural language.
--}
+--PURPOSE PATTERN "Documentation"
+--{+Documentation is required for human understanding of rules.
+--It explains why things exist and how things are expressed in natural language.
+---}
 PURPOSE RELATION meaning[Concept*NatLang]
 {+The meaning of a concept is described in natural language, because it must be discussed with business stakeholders.
 In the end, they must vouch for the correct wording of that concept.
