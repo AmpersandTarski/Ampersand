@@ -65,7 +65,7 @@ module Database.Design.Ampersand
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
    , createFspec
-   , getGeneralizations, getSpecializations
+   , getGeneralizations, getSpecializations, getEditableRelation
     -- * Type checking and calculus
    , Guarded(..), pCtx2aCtx
    , makeFspec
