@@ -618,10 +618,10 @@ pCtx2aCtx' _
     typeCheckPairViewSeg _ _ (PairViewText x) = pure (PairViewText x)
     typeCheckPairViewSeg o t (PairViewExp s x)
      = (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
-                        [] -> mustBeOrdered o (Src,e) (s,t)
+                        [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
                         lst -> if b || and (map (name (source e) `elem`) lst)
                                then pure (PairViewExp s e)
-                               else mustBeBound o [(Src, e)]
+                               else mustBeBound (origin (fmap fst x)) [(Src, e)]
                         ) <?> typecheckTerm x
 
     pPurp2aPurp :: PPurpose -> Guarded Purpose

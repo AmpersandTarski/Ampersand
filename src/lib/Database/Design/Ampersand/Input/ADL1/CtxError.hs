@@ -97,24 +97,37 @@ mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " +
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String
-
+  
 instance ErrorConcept (P_ViewD a) where
   showEC x = showADL (vd_cpt x) ++" given in VIEW "++vd_lbl x
   showMini x = showADL (vd_cpt x)
 
 instance (ShowADL a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
-  showEC (p1,c1,e1) = showADL c1++" ("++show p1++" of "++showADL e1++")"
+  showEC (p1,c1,e1) = showEC' (p1,c1,showADL e1)
   showMini (_,c1,_) = showADL c1
-
+  
+showEC' :: (SrcOrTgt, A_Concept, String) -> String
+showEC' (p1,c1,e1) = showADL c1++" ("++show p1++" of "++e1++")"
+  
 instance (ShowADL a2, Association a2) => ErrorConcept (SrcOrTgt, a2) where
   showEC (p1,e1)
    = case p1 of
-      Src -> showEC (p1,source e1,e1)
-      Tgt -> showEC (p1,target e1,e1)
+      Src -> showEC' (p1,source e1,showADL e1)
+      Tgt -> showEC' (p1,target e1,showADL e1)
   showMini (p1,e1)
    = case p1 of
-      Src -> showMini (p1,source e1,e1)
-      Tgt -> showMini (p1,target e1,e1)
+      Src -> showADL (source e1)
+      Tgt -> showADL (target e1)
+      
+instance (ShowADL a2, Association a2) => ErrorConcept (SrcOrTgt, Origin, a2) where
+  showEC (p1,o,e1)
+   = case p1 of
+      Src -> showEC' (p1,source e1,showADL e1 ++ ", "++showMinorOrigin o)
+      Tgt -> showEC' (p1,target e1,showADL e1 ++ ", "++showMinorOrigin o)
+  showMini (p1,_,e1)
+   = case p1 of
+      Src -> showADL (source e1)
+      Tgt -> showADL (target e1)
 
 mustBeOrdered :: (Traced a1, ErrorConcept a2, ErrorConcept a3) => a1 -> a2 -> a3 -> Guarded a
 mustBeOrdered o a b
@@ -203,3 +216,6 @@ showFullOrig :: Origin -> String
 showFullOrig (FileLoc (FilePos (filename,Database.Design.Ampersand.ADL1.Pos l c,t)))
               = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show l++" : "++show c
 showFullOrig x = show x
+showMinorOrigin :: Origin -> String
+showMinorOrigin (FileLoc (FilePos (_,Database.Design.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++" : "++show c
+showMinorOrigin v = show v
