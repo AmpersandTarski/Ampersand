@@ -93,11 +93,11 @@ where
                                  }
                         | ooClass <- ooClasses, let root=source (head ooClass)]
                     , assocs  =
-                        [ OOAssoc { assSrc = getConceptTableFor fSpec (source r)
+                        [ OOAssoc { assSrc = name (source r)
                                   , assSrcPort = name d
                                   , asslhm = (mults.flp) r
                                   , asslhr = ""
-                                  , assTgt = getConceptTableFor fSpec (target r)
+                                  , assTgt = name (target r)
                                   , assrhm = mults r
                                   , assrhr = name d
                                   }
