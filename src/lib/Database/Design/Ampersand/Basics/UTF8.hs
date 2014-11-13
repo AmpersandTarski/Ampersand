@@ -48,7 +48,10 @@ import Prelude hiding (readFile, writeFile, getContents, putStr, putStrLn)
 import System.IO (Handle)
 import Control.Monad (liftM)
 import Data.Text (unpack)
-import Data.Text.Encoding (decodeUtf8')
+import Data.Text.Encoding (decodeUtf8)
+import Data.Word
+import Data.Bits
+import Control.Exception
 
 bom :: B.ByteString
 bom = B.pack [0xEF, 0xBB, 0xBF]
@@ -60,13 +63,21 @@ stripBOM s = s
 -- Try to read file pth as UTF-8 and return (Left err) in case of failure, or (Right contents) on success.
 readUTF8File :: FilePath -> IO (Either String String)
 readUTF8File pth =
- do { contents <- B.readFile pth
-    ; case decodeUtf8' . stripBOM $ contents of
-                  Right txt -> return $ Right $ unpack txt
-                  Left _    -> return $ Left $ "Not a valid UTF-8 file."
-    }                          -- Don't show exception, as it is usually about the byte following the offending byte, which is confusing.
-                               -- TODO: we would like to show a position or the text preceding the error, but there does not seem to be an way
-                               --       to do that. (even stream decoders simply fail with an exception without returning a decoded prefix)
+ do { contents <- fmap stripBOM $ B.readFile pth
+    -- Exceptions from decodeUtf8 only show the offending byte, which is not helpful, so we validate the file ourselves to get a good error message.
+    ; let res = case validateUTF8 $ contents of
+                 Just utf8PrefixRev -> let utf8Lines = lines . unpack . decodeUtf8 $ utf8PrefixRev
+                                       in  Left $ "Invalid UTF-8 character at line "++ show (length utf8Lines) ++
+                                           case reverse utf8Lines of 
+                                             []   -> "" -- won't happen
+                                             ln:_ -> " : " ++ show (length ln + 1) ++ " (column nr when viewed as UTF-8)\n" ++ 
+                                                     "Text preceding invalid character:\n" ++ show (reverse . take 50 . reverse $ ln) 
+                 Nothing -> let txt = decodeUtf8 $ contents
+                            in  Right $ unpack txt
+    ; seq (either length length res) $ return res -- force decodeUtf8 exceptions
+    } `catch` \exc ->
+ do { return $ Left $ show (exc :: SomeException) --  should not occur if validateUTF8 works correctly
+    }
 
 readFile :: FilePath -> IO String
 readFile = liftM (toString . stripBOM) . B.readFile . encodeString
@@ -91,3 +102,26 @@ hPutStr h = B.hPutStr h . fromString
 
 hPutStrLn :: Handle -> String -> IO ()
 hPutStrLn h s = hPutStr h (s ++ "\n")
+
+-- Return Nothing if bs is valid UTF-8, or Just the maximum valid prefix if it contains an invalid character
+validateUTF8 :: B.ByteString -> Maybe B.ByteString
+validateUTF8 bs = fmap (B.pack . reverse) $ validate [] $ B.unpack bs
+  where validate :: [Word8] -> [Word8] -> Maybe [Word8]
+        validate validated []                                     = Nothing
+        validate validated (w:ws)            | bitMask0xxxxxxx w  = validate (w : validated) ws
+        validate validated (w1:w2:ws)        | bitMask110xxxxx w1 
+                                            && bitMask10xxxxxx w2 = validate (w2:w1 : validated) ws
+        validate validated (w1:w2:w3:ws)     | bitMask110xxxxx w1
+                                            && bitMask10xxxxxx w2
+                                            && bitMask10xxxxxx w3 = validate (w3:w2:w1 : validated) ws
+        validate validated (w1:w2:w3:w4:ws)  | bitMask110xxxxx w1
+                                            && bitMask10xxxxxx w2
+                                            && bitMask10xxxxxx w3
+                                            && bitMask10xxxxxx w4 = validate (w4:w3:w2:w1 : validated) ws
+        validate validated _                                      = Just validated
+        
+        bitMask0xxxxxxx w = w .&. (bit 7)                                 == 0
+        bitMask10xxxxxx w = w .&. (bit 7 + bit 6)                         == bit 7
+        bitMask110xxxxx w = w .&. (bit 7 + bit 6 + bit 5)                 == bit 7 + bit 6
+        bitMask1110xxxx w = w .&. (bit 7 + bit 6 + bit 5 + bit 4)         == bit 7 + bit 6 + bit 5
+        bitMask11110xxx w = w .&. (bit 7 + bit 6 + bit 5 + bit 4 + bit 3) == bit 7 + bit 6 + bit 5 + bit 4
