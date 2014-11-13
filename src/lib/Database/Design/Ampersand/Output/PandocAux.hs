@@ -220,11 +220,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 doRestOfPdfLatex (ready, roundsSoFar)
                                   = if ready || roundsSoFar > 4    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
                                     then return (ready, roundsSoFar)
-                                    else do exitCode <- callPdfLatexOnce
-                                            case exitCode of
-                                              ExitFailure _ -> return (True,roundsSoFar+1) 
-                                              ExitSuccess   ->
-                                               do let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed.
+                                    else       do let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed.
                                                   {- The log file should be renamed before reading, because readFile opens the file
                                                      for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
                                                      was read using readFile, it will fail because the file is still open. 8-((
@@ -239,7 +235,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
                                    do exitCode <- do { let cmd ="pdflatex"
-                                                           commonFlags = ["-halt-on-error"]
+                                                           commonFlags = ["-interaction=batchmode"]
                                                            texFilename = addExtension (baseName (flags fSpec)) ".tex"
                                                            args = commonFlags ++ [texFilename] 
                                                            cProcess = (proc cmd args)
@@ -248,7 +244,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                      
                                                      ; exitCode <- waitForProcess pHandle
                                                      ; latexOutput <- hGetContents hOut
-                                                     ; writeFile latexLogPath latexOutput
+                                                    -- ; writeFile latexLogPath latexOutput
                                                      ; case exitCode of
                                                          ExitSuccess   -> do { putStrLn $ "Latex executed successfully, pdf file created."
                                                                              ; putStrLn $ makeIndexCommand
