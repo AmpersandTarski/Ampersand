@@ -47,7 +47,7 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // check if $relation appears in $relationTableInfo
   $found = false;
   foreach($relationTableInfo as $key => $arr)
-    {   if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+    {   if($key == "rel_" . $relation . "_" . $srcConcept . "_" . $tgtConcept)
         { $found = true;
           $table = $arr['table'];
             $srcCol = $arr['srcCol'];
@@ -157,7 +157,7 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
     // check if $relation appears in $relationTableInfo
   $found = false;
   foreach($relationTableInfo as $key => $arr)
-    {   if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+    {   if($key == "rel_" . $relation . "_" . $srcConcept . "_" . $tgtConcept)
         { $found = true;
           $table = $arr['table'];
             $srcCol = $arr['srcCol'];
