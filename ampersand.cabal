@@ -46,12 +46,11 @@ data-files:
                 outputTemplates/default.slidy, 
                 outputTemplates/default.texinfo, 
                 outputTemplates/default.textile, 
-                LICENSE, 
-                README.txt
+                LICENSE
 
 source-repository head
-  type:      svn
-  location:  https://svn.code.sf.net/p/ampersand/code/trunk
+  type:      git
+  location:  https://github.com/AmpersandTarski/ampersand.git
 
 flag executable
   description:  Build the ampersand executable.
