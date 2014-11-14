@@ -47,12 +47,12 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // check if $relation appears in $relationTableInfo
   $found = false;
   foreach($relationTableInfo as $key => $arr)
-    {   if($key == "rel_" . $relation . "_" . $srcConcept . "_" . $tgtConcept)
-        { $found = true;
-          $table = $arr['table'];
-            $srcCol = $arr['srcCol'];
-            $tgtCol = $arr['tgtCol'];
-        }
+    {  if($key == "rel_" . $relation . "_" . $srcConcept . "_" . $tgtConcept)
+       { $found = true;
+         $table = $arr['table'];
+           $srcCol = $arr['srcCol'];
+           $tgtCol = $arr['tgtCol'];
+       }
     }
     if (!$found)
     { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
