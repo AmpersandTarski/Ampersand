@@ -3,7 +3,8 @@
 class Role {
 
 	public $id;
-	public $name;
+	public $name; // TODO: kan weg?
+	public $label;
 	public $maintains = array();
 	public $interfaces = array();
 
@@ -22,6 +23,7 @@ class Role {
 		// Name of role
 		$this->id = $id;
 		$this->name = $allRoles[$id]['name'];
+		$this->label = $allRoles[$id]['name'];
 		
 		// Rules that are maintained by this role
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];

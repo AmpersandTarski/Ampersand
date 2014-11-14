@@ -40,7 +40,7 @@ class RuleEngine {
 		try{
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
-				ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
+				ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
 			}else{				
 				foreach($result as $violation) {
 					$violations[] = array('src' => $violation['src'], 'tgt' => $violation['tgt']);
@@ -56,7 +56,7 @@ class RuleEngine {
 		try{
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
-				// ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
+				// ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
 				return true;
 			}else{
 				ErrorHandling::addInvariant("Violation of rule '".$rule['name']."'");

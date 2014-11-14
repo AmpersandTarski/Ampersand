@@ -2,6 +2,26 @@
 
 class Api
 {
+/**************************** NOTIFICATIONS ****************************/	
+	/**
+	 * @url GET notificationcenter/all
+	 */
+	public function getAllNotifications()
+	{
+		$test = ErrorHandling::getAll(); // "Return all notifications
+		$test['errors'][]['message'] = "Test error";
+		
+		return $test;
+	}
+	
+	/**
+	 * @url GET extensions/all
+	 */
+	public function getAllExtensions()
+	{
+		return (array) $GLOBALS['apps'];
+	}
+		
 
 /**************************** CONCEPTS AND ATOMS ****************************/
     /**
@@ -87,7 +107,7 @@ class Api
 			$database->addAtomToConcept($tgtAtom, $tgtConcept);
 		}
 		
-		$database->editUpdate($relation, false, $srcAtom, $tgtAtom, 'child', '');
+		$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
 		
 		ErrorHandling::addLog('Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relation.'['.$srcConcept.'*'.$tgtConcept.']');
 		
@@ -111,7 +131,7 @@ class Api
 			throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
 		}
 		
-		$database->editDelete($relation, false, $srcAtom, $tgtAtom);
+		$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 		
 		ErrorHandling::addLog('Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relation.'['.$srcConcept.'*'.$tgtConcept.']');
 	}
@@ -144,7 +164,7 @@ class Api
 /**************************** ROLES ****************************/
 	
 	/**
-     * @url GET role/
+     * @url GET roles/all
 	 * @url GET role/{roleNr}/
      */
     public function getRoles($roleNr = NULL)
@@ -159,9 +179,25 @@ class Api
 	
 	
 /**************************** INTERFACES ****************************/
-	
+    
+    /**
+     * @url GET interfaces/top
+     * @param int $roleId
+     */
+    public function getTopLevelInterfaces($roleId = null)
+    {
+    	$session = Session::singleton();
+    	try{
+    		$session->setRole($roleId);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	 
+    	return $session->role->getInterfaces(true);  // "Return list of all interfaces"
+    }
+    
 	/**
-     * @url GET interface/
+     * @url GET interfaces/
 	 * @url GET interface/{interfaceName}/
 	 * @param string $interfaceName
 	 * @param int $roleId
@@ -189,8 +225,7 @@ class Api
     }
     
     /**
-     * @url GET interface/{interfaceName}/atoms
-	 * @url GET interface/{interfaceName}/atoms/{atom}/
+	 * @url GET interface/{interfaceName}/atom/{atom}/
 	 * @param string $interfaceName
 	 * @param string $atom
 	 * @param int $roleId

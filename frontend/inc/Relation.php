@@ -11,14 +11,8 @@ class Relation {
 		*/
 		global $relationTableInfo;
 		
-		// check if $relation appears in $relationTableInfo
-		foreach($relationTableInfo as $key => $arr){   
-			if($key == $relation and $arr['srcConcept'] == $srcConcept and $arr['tgtConcept'] == $tgtConcept){ 
-				return true;
-			}
-		}
+		return array_key_exists("rel_" . $relation . "_" . $srcConcept . "_" . $tgtConcept, $relationTableInfo);
 		
-		return false;
 	}
 }
 

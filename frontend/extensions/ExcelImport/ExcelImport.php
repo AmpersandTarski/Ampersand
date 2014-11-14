@@ -2,7 +2,7 @@
 date_default_timezone_set('Europe/London');
 require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
-$apps['ExcelImport'] = array('name' => 'Excel import', 'link' => 'extensions/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
+$apps[] = array('name' => 'Excel import', 'link' => 'extensions/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
 
 class ImportExcel
 {
@@ -128,7 +128,7 @@ class ImportExcel
 					}
 					
 					$this->addAtomToConcept($atom[$col], $concept[$col]); // Try if this fixes the bug....
-					$this->insertRel($relation[$col], $atom[0], $atom[$col]);
+					$this->insertRel($relation[$col], $atom[0], $atom[$col], $concept[0], $concept[$col]);
 					
 				}
 				$atom = array();
@@ -141,12 +141,14 @@ class ImportExcel
 		$this->commandArray[] = json_decode(json_encode(array('dbCmd' => 'addToConcept', 'atom' => $atom, 'concept' => $concept)), false); // commands need to be objects. TODO: create command class for this.
 	}
 	
-	private function insertRel($relation, $srcAtom, $tgtAtom){
+	private function insertRel($relation, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
 		$this->commandArray[] = json_decode(json_encode(array('dbCmd' => 'update'
 									, 'relation' => $relation
 									, 'isFlipped' => false
 									, 'parentAtom' => $srcAtom
+									, 'parentConcept' => $srcConcept
 									, 'childAtom' => $tgtAtom
+									, 'childConcept' => $tgtConcept
 									, 'parentOrChild' => 'child'
 									, 'originalAtom' => ''
 									)), false);

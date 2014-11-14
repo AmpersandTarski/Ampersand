@@ -70,13 +70,16 @@ class Database
 				case 'update':
 					if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
 						array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
-						array_key_exists('parentOrChild', $command) && array_key_exists('originalAtom', $command))
-						$this->editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom,$command->parentOrChild, $command->originalAtom);
+						array_key_exists('parentOrChild', $command) && array_key_exists('originalAtom', $command) &&
+						array_key_exists('parentConcept', $command) && array_key_exists('childConcept', $command))
+						$this->editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->parentConcept, $command->childAtom, $command->childConcept, $command->parentOrChild, $command->originalAtom);
 					else 
 						throw new Exception("Command '" .$command->dbCmd . "' is missing parameters");
 					break;
 				case 'delete':
-					if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) && array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command))
+					if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) && 
+						array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
+						array_key_exists('parentConcept', $command) && array_key_exists('childConcept', $command))
 						$this->editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
 					else 
 						throw new Exception("Command " .$command->dbCmd . " is missing parameters");
@@ -147,11 +150,11 @@ class Database
 	
 	// NOTE: if $originalAtom == '', editUpdate means insert for n-ary relations
 	// TODO: make private function
-	public function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom)
+	public function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept, $parentOrChild, $originalAtom)
 	{ 
 		global $relationTableInfo;
-		global $tableColumnInfo;
-
+		global $tableColumnInfo;		
+		
 		/* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
 		
 		// check if $relation appears in $relationTableInfo
@@ -170,6 +173,10 @@ class Database
 			echo "ERROR: Relation $relation does not exist (in table info)";
 		}
 		*/
+		
+		// Change $rel because $relationTableInfo is changed
+		$rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept; 
+		
 		$table = $relationTableInfo[$rel]['table'];
 		$srcCol = $relationTableInfo[$rel]['srcCol'];
 		$tgtCol = $relationTableInfo[$rel]['tgtCol'];
@@ -224,13 +231,16 @@ class Database
 	}
 	
 	// TODO: make private function
-	public function editDelete($rel, $isFlipped, $parentAtom, $childAtom)
+	public function editDelete($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept)
 	{ 
 		global $relationTableInfo;
 		global $tableColumnInfo;
 
 		$srcAtom = $isFlipped ? $childAtom : $parentAtom;
 		$tgtAtom = $isFlipped ? $parentAtom : $childAtom;
+		
+		// Change $rel because $relationTableInfo is changed
+		$rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept;
 
 		$table = $relationTableInfo[$rel]['table'];
 		$srcCol = $relationTableInfo[$rel]['srcCol'];

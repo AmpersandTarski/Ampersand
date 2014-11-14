@@ -109,7 +109,7 @@ class Session {
 				ErrorHandling::addLog("Interface $interfaceName selected");
 			}else{
 				$this->interface = null;
-				ErrorHandling::addNotification("No interface selected");
+				ErrorHandling::addInfo("No interface selected");
 			}
 			$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
 		}catch (Exception $e){

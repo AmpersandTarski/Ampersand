@@ -49,7 +49,7 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		$database->addAtomToConcept($tgtAtom, $tgtConcept);
 	}
 	
-	$database->editUpdate($relation, false, $srcAtom, $tgtAtom, 'child', '');
+	$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
 	
 	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relation.'['.$srcConcept.'*'.$tgtConcept.']';
 }
@@ -71,7 +71,7 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
 	}
 	
-	$database->editDelete($relation, false, $srcAtom, $tgtAtom);
+	$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 	
 	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relation.'['.$srcConcept.'*'.$tgtConcept.']';
 }

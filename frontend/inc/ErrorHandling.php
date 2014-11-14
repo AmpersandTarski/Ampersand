@@ -5,12 +5,12 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	static $errors = array();
 	static $invariants = array();
 	static $violations = array();
-	static $notifications = array();	
+	static $infos = array();	
 	static $successes = array();
 	static $logs = array();
 	
 	public static function addError($message){
-		self::$errors[] = $message;
+		self::$errors[]['message'] = $message;
 		self::$logs[] = $message;
 	}
 	public static function addInvariant($message){
@@ -27,8 +27,8 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		self::$violations[$violationMessage][] = $rowMessage;
 		self::$logs[] = $rowMessage;
 	}
-	public static function addNotification($message){
-		self::$notifications[] = $message;
+	public static function addInfo($message){
+		self::$infos[] = $message;
 		self::$logs[] = $message;
 	}
 	public static function addSuccess($message, $id = null){
@@ -55,8 +55,8 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	public static function getViolations(){
 		return self::$violations;
 	}
-	public static function getNotifications(){
-		return self::$notifications;
+	public static function getInfos(){
+		return self::$infos;
 	}
 	public static function getSuccesses(){
 		return self::$successes;
@@ -70,7 +70,7 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		$all['errors'] = self::$errors;
 		$all['invariants'] = self::$invariants;
 		$all['violations'] = self::$violations;
-		$all['notifications'] = self::$notifications;
+		$all['infos'] = self::$infos;
 		$all['successes'] = self::$successes;
 		$all['logs'] = self::$logs;
 		

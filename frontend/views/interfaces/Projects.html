@@ -1,10 +1,11 @@
+<!-- Interface voor lijsten -->
 <div class="container-fluid" id="Interface">
 	<div style="width:auto; float:left; margin:5px;">
-		<h4>Projects (atom: {{atom.id}})</h4>
+		<h4>SESSION: {{SESSION.label}}</h4> <!-- Anker atoom hier -->
 		<table class="table table-striped table-hover table-condensed" style="width:auto;">
 			<thead>
 				<tr>
-					<th>Project</th>
+					<th>Projects</th> 
 					<th>Name</th>
 					<th>Description</th>
 					<th>Projectleider</th>
@@ -14,12 +15,12 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr ng-repeat="row in atom.Projects | filter:searchText">
+				<tr ng-repeat="row in SESSION.Projects | filter:searchText">
 					<td>
 						<div class="container-fluid" style="padding:5px;">
 							<div class="row">
 								<div class="col-md-12">
-									<a ng-href="?atom={{row.id}}">{{row.id}}</a>
+									<a ng-href="#/Project/atom/{{row.id}}">{{row.label}}</a>
 								</div>
 							</div>
 						</div>
@@ -66,7 +67,7 @@
 							<div class="col-md-10"><input ng-model="value.label" type="checkbox"></div>
 						</div>
 					</td>
-					<td><span class="glyphicon glyphicon-remove" ng-click="atom.Projects.splice( atom.Projects.indexOf(row), 1 );"></span></td>
+					<td><span class="glyphicon glyphicon-remove" ng-click="SESSION.Projects.splice( SESSION.Projects.indexOf(row), 1 );"></span></td>
 				</tr>
 	        </tbody>
 		</table>
