@@ -14,6 +14,7 @@ where
    import Database.Design.Ampersand.Fspec.Plug
    import Database.Design.Ampersand.Misc
    import Database.Design.Ampersand.Fspec.Fspec
+   import Database.Design.Ampersand.Fspec.Motivations
    import Data.String
    import Data.Maybe
    import Data.GraphViz.Types.Canonical hiding (attrs)
@@ -60,7 +61,7 @@ where
    clAnalysis fSpec =
        OOclassdiagram { cdName  = "classification_"++name fSpec
                       , classes = [ OOClass { clName = name c
-                                            , clcpt  = Just c
+                                            , clcpt  = Just ( c , [p | p<-purposesDefinedIn fSpec (fsLang fSpec) c] )
                                             , clAtts = attrs c
                                             , clMths = []
                                             } | c<-cpts]
@@ -87,7 +88,7 @@ where
      OOclassdiagram { cdName  = "logical_"++name fSpec
                     , classes =
                         [ OOClass{ clName = name root
-                                 , clcpt  = Just root
+                                 , clcpt  = Just ( root , [p | p<-purposesDefinedIn fSpec (fsLang fSpec) root] )
                                  , clAtts = map ooAttr ooClass
                                  , clMths = []
                                  }
@@ -100,8 +101,10 @@ where
                                   , assTgt = name (target r)
                                   , assrhm = mults r
                                   , assrhr = name d
+                                  , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
+                                  , assmean = meaning (fsLang fSpec) d
                                   }
-                        | r@(EDcD d) <- allrels, target r `elem` roots
+                        | r@(EDcD d) <- allrels, (not.isPropty) r, target r `elem` roots
                         ]
                     , aggrs   = []
                     , geners  = map OOGener (gensInScope fSpec)
@@ -173,8 +176,9 @@ where
          where isScalar ScalarSQL{} = True
                isScalar _           = False
       roots :: [A_Concept]
-      roots = catMaybes (map primKey tables)
-      primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f))
+      roots = (map fst.catMaybes.map primKey) tables
+      primKey :: PlugSQL -> Maybe (A_Concept, [Purpose])
+      primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f), [])  -- purposes are no longer available in the technical data model.
       primKey _                    = Nothing
       ooAttr :: [SqlField] -> SqlField -> CdAttribute
       ooAttr kernelFlds f =
@@ -201,6 +205,8 @@ where
                                   , assTgt = getConceptTableFor fSpec . target . fldexpr $ a
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
+                                  , asspurp = []      -- in the technical data model, the purpose is not documented.
+                                  , assmean = Nothing -- in the technical data model, the meaning is not documented.
                                   }
                         , OOAssoc { assSrc = sqlname t
                                   , assSrcPort = fldname b
@@ -209,6 +215,9 @@ where
                                   , assTgt = getConceptTableFor fSpec . target . fldexpr $ b
                                   , assrhm = Mult MinOne MaxOne
                                   , assrhr = ""
+                                  , asspurp = []      -- in the technical data model, the purpose is not documented.
+                                  , assmean = Nothing -- in the technical data model, the meaning is not documented.
+                                  
                                   }
                         ]
               _  -> fatal 195 "Unexpected type of table"
@@ -228,6 +237,8 @@ where
                        , assTgt = getConceptTableFor fSpec (target expr)
                        , assrhm = mults expr
                        , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
+                       , asspurp = [] -- in the technical data model, the purpose is not documented.
+                       , assmean = Nothing -- in the technical data model, the meaning is not documented.
                        }
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isUni r then MaxOne else MaxMany
@@ -405,7 +416,7 @@ where
       name = cdName
 
    data Class          = OOClass  { clName :: String          -- ^ name of the class
-                                  , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
+                                  , clcpt ::  Maybe (A_Concept, [Purpose]) -- ^ Main concept of the class. (link tables do not have a main concept)
                                   , clAtts :: [CdAttribute]   -- ^ Attributes of the class
                                   , clMths :: [Method]        -- ^ Methods of the class
                                   } deriving Show
@@ -423,14 +434,16 @@ where
 
    data Multiplicities = Mult MinValue MaxValue deriving Show
 
-   data Association    = OOAssoc  { assSrc :: String           -- ^ source: the name of the source class
-                                  , assSrcPort :: String       -- ^ the name of the attribute in the source class
-                                  , asslhm :: Multiplicities   -- ^ left hand side multiplicities
-                                  , asslhr :: String           -- ^ left hand side role
-                                  , assTgt :: String           -- ^ target: the name of the target class
-                                  , assrhm :: Multiplicities   -- ^ right hand side multiplicities
-                                  , assrhr :: String           -- ^ right hand side role
-                                  }  deriving Show
+   data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the name of the source class
+                                  , assSrcPort :: String           -- ^ the name of the attribute in the source class
+                                  , asslhm ::     Multiplicities   -- ^ left hand side multiplicities
+                                  , asslhr ::     String           -- ^ left hand side role
+                                  , assTgt ::     String           -- ^ target: the name of the target class
+                                  , assrhm ::     Multiplicities   -- ^ right hand side multiplicities
+                                  , assrhr ::     String           -- ^ right hand side role
+                                  , asspurp ::    [Purpose]        -- ^ purposes of this association
+                                  , assmean ::    Maybe A_Markup   -- ^ meaning, if available.
+                                  } deriving Show
    data Aggregation    = OOAggr   { aggDel :: Deleting         --
                                   , aggSrc :: A_Concept           --
                                   , aggTgt :: A_Concept           --

@@ -144,11 +144,14 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
-           header (lev+1) ((case fsLang fSpec of
+       (   header (lev+1) ((case fsLang fSpec of
                        Dutch   -> text "Gegevensverzameling: "
                        English -> text "Entity type: "
                      )
                      <> (emph.strong.text.name) cl)
+        <> case clcpt cl of
+             Nothing -> mempty
+             Just (c, purposes)  -> purposes2Blocks (flags fSpec) purposes
         <> case fsLang fSpec of
              Dutch   -> para $ text "Deze gegevensverzameling bevat de volgende attributen: "
              English -> para $ text "This entity type has the following attributes: "
@@ -184,58 +187,37 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
              English -> para ( text (name cl) <> text " has the following associations: ")
         <> orderedList [assocToRow assoc | assoc <- assocs oocd
                          , assSrc assoc == clName cl || assTgt assoc == clName cl]
-
+       )
     where
      assocToRow :: Database.Design.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
-        -- showDummy assoc <>
+        (para.text.assrhr) assoc <>
+        purposes2Blocks (flags fSpec) (asspurp assoc) <>
+        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty ) <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
-        else case fsLang fSpec of
-           Dutch   -> para (   text "Ieder(e) "
-                            <> (emph.text.assSrc) assoc
-                            <> " " <> (singleQuoted.text.assrhr) assoc 
-                            <> (case assrhm assoc of
-                                     Mult MinZero MaxOne  -> " maximaal één "
-                                     Mult MinZero MaxMany -> " geen tot meerdere "
-                                     Mult MinOne  MaxOne  -> " precies één "
-                                     Mult MinOne  MaxMany -> " ten minste één "
-                               )
-                            <> (emph.text.assTgt) assoc
-                            <>  ". Over deze relatie geldt omgekeerd dat "
-                            <>  "ieder(e) "
-                            <> (emph.text.assTgt) assoc
-                            <> (case asslhm assoc of
-                                     Mult MinZero MaxOne  -> " maximaal één "
-                                     Mult MinZero MaxMany -> " geen tot meerdere "
-                                     Mult MinOne  MaxOne  -> " precies één "
-                                     Mult MinOne  MaxMany -> " ten minste één "
-                                  )
-                            <> (emph.text.assSrc) assoc
-                            <> " kan hebben."
-                           )
-           English -> para (   "Every "
-                            <> (emph.text.assSrc) assoc
-                            <> " " <> (singleQuoted.text.assrhr) assoc 
-                            <> (case assrhm assoc of
-                                     Mult MinZero MaxOne  -> " at most one "
-                                     Mult MinZero MaxMany -> " zero or more "
-                                     Mult MinOne  MaxOne  -> " exactly one "
-                                     Mult MinOne  MaxMany -> " at least one "
-                               )
-                            <> (emph.text.assTgt) assoc
-                            <> ". For the other way round, for this relation holds that "
-                            <> "each "
-                            <> (emph.text.assTgt) assoc
-                            <> (case asslhm assoc of
-                                     Mult MinZero MaxOne  -> " at most one "
-                                     Mult MinZero MaxMany -> " zero or more "
-                                     Mult MinOne  MaxOne  -> " exactly one "
-                                     Mult MinOne  MaxMany -> " at least one "
-                                  )
-                            <> (emph.text.assSrc) assoc
-                            <> "."
-                           )
+        else para $ case fsLang fSpec of
+           Dutch   ->   case assrhm assoc of
+                              Mult MinZero MaxOne  -> "Ieder(e) " <> (emph.text.assSrc) assoc <> " heeft hooguit één "   <> (emph.text.assTgt) assoc <> "."
+                              Mult MinZero MaxMany -> mempty
+                              Mult MinOne  MaxOne  -> "Ieder(e) " <> (emph.text.assSrc) assoc <> " heeft precies één "    <> (emph.text.assTgt) assoc <> "."
+                              Mult MinOne  MaxMany -> "Ieder(e) " <> (emph.text.assSrc) assoc <> " heeft ten minste één " <> (emph.text.assTgt) assoc <> "."
+                      <> case asslhm assoc of
+                              Mult MinZero MaxOne  -> " Ieder(e) " <> (emph.text.assTgt) assoc <> " kan hooguit één "      <> (emph.text.assSrc) assoc <> " hebben."
+                              Mult MinZero MaxMany -> mempty
+                              Mult MinOne  MaxOne  -> " Ieder(e) " <> (emph.text.assTgt) assoc <> " kan precies één " <> (emph.text.assSrc) assoc <>       " hebben."
+                              Mult MinOne  MaxMany -> " Ieder(e) " <> (emph.text.assTgt) assoc <> " kan ten minste één "    <> (emph.text.assSrc) assoc <> " hebben."
+                      
+           English ->    case assrhm assoc of
+                              Mult MinZero MaxOne  -> "Every " <> (emph.text.assSrc) assoc <>" has at most one "  <> (emph.text.assTgt) assoc <>  "."
+                              Mult MinZero MaxMany -> mempty
+                              Mult MinOne  MaxOne  -> "Every " <> (emph.text.assSrc) assoc <>" has exactly one "  <> (emph.text.assTgt) assoc <>  "."
+                              Mult MinOne  MaxMany -> "Every " <> (emph.text.assSrc) assoc <>" has at least one " <> (emph.text.assTgt) assoc <>  "."
+                      <> case asslhm assoc of
+                              Mult MinZero MaxOne  -> " For this association each " <> (emph.text.assTgt) assoc <> " has at most one "  <> (emph.text.assSrc) assoc <> "."
+                              Mult MinZero MaxMany -> mempty
+                              Mult MinOne  MaxOne  -> " For this association each " <> (emph.text.assTgt) assoc <> " has exactly one "  <> (emph.text.assSrc) assoc <> "."
+                              Mult MinOne  MaxMany -> " For this association each " <> (emph.text.assTgt) assoc <> " has at least one " <> (emph.text.assSrc) assoc <> "."
 
 technicalDataModelSection :: Int -> Fspc -> (Blocks,[Picture])
 technicalDataModelSection lev fSpec = (theBlocks,[pict])
