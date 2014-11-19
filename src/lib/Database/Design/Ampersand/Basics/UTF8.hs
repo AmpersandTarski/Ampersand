@@ -71,7 +71,7 @@ readUTF8File pth =
                                            case reverse utf8Lines of 
                                              []   -> "" -- won't happen
                                              ln:_ -> " : " ++ show (length ln + 1) ++ " (column nr when viewed as UTF-8)\n" ++ 
-                                                     "Text preceding invalid character:\n" ++ show (reverse . take 50 . reverse $ ln) 
+                                                     "Text preceding invalid character:\n" ++ "..." ++ (reverse . take 50 . reverse $ ln)++"<INVALID CHARACTER>" 
                  Nothing -> let txt = decodeUtf8 $ contents
                             in  Right $ unpack txt
     ; seq (either length length res) $ return res -- force decodeUtf8 exceptions
@@ -111,10 +111,10 @@ validateUTF8 bs = fmap (B.pack . reverse) $ validate [] $ B.unpack bs
         validate validated (w:ws)            | bitMask0xxxxxxx w  = validate (w : validated) ws
         validate validated (w1:w2:ws)        | bitMask110xxxxx w1 
                                             && bitMask10xxxxxx w2 = validate (w2:w1 : validated) ws
-        validate validated (w1:w2:w3:ws)     | bitMask110xxxxx w1
+        validate validated (w1:w2:w3:ws)     | bitMask1110xxxx w1
                                             && bitMask10xxxxxx w2
                                             && bitMask10xxxxxx w3 = validate (w3:w2:w1 : validated) ws
-        validate validated (w1:w2:w3:w4:ws)  | bitMask110xxxxx w1
+        validate validated (w1:w2:w3:w4:ws)  | bitMask11110xxx w1
                                             && bitMask10xxxxxx w2
                                             && bitMask10xxxxxx w3
                                             && bitMask10xxxxxx w4 = validate (w4:w3:w2:w1 : validated) ws
