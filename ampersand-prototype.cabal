@@ -19,19 +19,19 @@ copyright:     Stef Joosten
 Executable prototype
   Main-Is:          Main.hs
   Hs-Source-Dirs:   src
-  build-depends:    ampersand  == 3.0.3,
-                    graphviz == 2999.17.*,
+  build-depends:    HDBC == 2.4.*,
+                    HDBC-odbc == 2.3.*,
+                    ampersand  == 3.0.3,
                     base >= 4.6,
                     bytestring == 0.10.*,
-                    filepath == 1.3.*,
+                    csv == 0.1.*,
                     directory == 1.2.*,
-                    time == 1.4.*,
+                    filepath == 1.3.*,
+                    graphviz == 2999.17.*,
+                    old-time == 1.1.*,
                     process == 1.2.*,
                     split == 0.2.*,
-                    csv == 0.1.*,
-                    old-time == 1.1.*,
-                    HDBC-odbc == 2.3.*,
-                    HDBC == 2.4.*
+                    time == 1.4.*
 
   default-language: Haskell2010
   ghc-options:      -rtsopts +RTS -K4000000000 -RTS 
@@ -40,9 +40,9 @@ Executable prototype
   -- Unfortunately, unix and MissingH are not available on windows
   if !os(windows)
     build-depends: 
-      unix == 2.7.*,
       MissingH == 1.3.*,
-      old-locale == 1.0.*
+      old-locale == 1.0.*,
+      unix == 2.7.*
 
   other-modules: 
                  Database.Design.Ampersand_Prototype.Apps,
