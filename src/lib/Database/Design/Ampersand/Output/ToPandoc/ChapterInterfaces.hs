@@ -70,7 +70,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
     docInterfaceObjects :: [Expression] -> [Int] -> ObjectDef -> Blocks
     docInterfaceObjects editableRels hierarchy object =
       case hierarchy of
-        [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (name (target iExp)) 
+        [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (name (target iExp)) ++ "."
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
         _  -> plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName]
       <> interfaceObjDoc <>
@@ -87,19 +87,20 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                   []               -> [ plainText $ "Hiervandaan kan niet genavigeerd worden." ]
                   navDocs@(_:rest) -> 
                     [ plainText $ "Hiervandaan kan genavigeerd worden naar interface"++(if null rest then "" else "s")++":"] ++
-                    [ bulletList navDocs ]                     
+                    [ bulletList navDocs ]
                 ++
+                [ plainText $ "De bijbehorende ADL expressie is: ", plain . code $ showADL iExp ] ++
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
-                 -- TODO: Maybe we want to show the expression? Maybe only when it is a declaration, but in that case we might want to show
-                 --       it even when it is not in editableRels (requires refactoring of getEditableRelation).
-                [ plainText $ "DEBUG: Props: ["++props++"]" | development (flags fSpec) ] ++
-                case editableRelM of 
-                  Nothing -> []
-                  Just (srcConcept, d, tgtConcept, isFlipped) -> if not $ development (flags fSpec) then [] else
-                    [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
-                    , plainText $ "DEBUG: showADL: " ++ showADL d ++ ")"
-                    ] 
+                
+                if not $ development (flags fSpec) then [] else -- some debug info shown on --dev
+                  [ plainText $ "DEBUG: Props: ["++props++"]" | development (flags fSpec) ] ++
+                  case editableRelM of
+                    Nothing -> []
+                    Just (srcConcept, d, tgtConcept, isFlipped) -> 
+                      [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
+                      , plainText $ "DEBUG: showADL: " ++ showADL d
+                      ] 
               where (fieldDescr,fieldRef) = 
                       if isSur iExp then if isUni iExp then ("Een verplicht veld van type ", "Dit veld")
                                                        else ("Een lijst van 1 of meer velden van type ", "Elk veld")
