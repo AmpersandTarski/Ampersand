@@ -71,6 +71,7 @@ defaultWriterVariables fSpec
          , "\\makeglossaries"
          , "\\usepackage{breqn}"
          , "\\usepackage{colonequals}"
+         , "\\usepackage{textcomp}"
          , "% == [all]{hypcap} after {hyperref} shows the ref'd picture i.o. the caption @ click =="
          , "\\usepackage[all]{hypcap}"
          , "\\def\\id#1{\\mbox{\\em #1\\/}}"
