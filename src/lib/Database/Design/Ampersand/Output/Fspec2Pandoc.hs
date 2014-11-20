@@ -76,11 +76,14 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
                 titles -> (text.concat.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )
         )
-      . (setAuthors (case metaValues "authors" fSpec of
-                [] -> case fsLang fSpec of
-                        Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
-                        English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
-                xs -> map text (nub xs))  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
+      . (setAuthors $ 
+           case metaValues "authors" fSpec of
+             [] -> case fsLang fSpec of
+                     Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
+                     English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
+             xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
+           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (flags fSpec) ]
+
         )
       . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (flags fSpec)))))
       )
