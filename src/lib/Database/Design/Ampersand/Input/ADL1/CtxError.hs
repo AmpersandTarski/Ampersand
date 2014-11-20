@@ -26,7 +26,7 @@ import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
 import UU.Parsing (Message(..),Action(..))
-import Database.Design.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
+import Database.Design.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,P_IdentDef(ix_cpt,ix_lbl),Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
 
 fatal,_notUsed :: Int -> String -> a
@@ -101,6 +101,9 @@ class ErrorConcept a where
 instance ErrorConcept (P_ViewD a) where
   showEC x = showADL (vd_cpt x) ++" given in VIEW "++vd_lbl x
   showMini x = showADL (vd_cpt x)
+instance ErrorConcept (P_IdentDef) where
+  showEC x = showADL (ix_cpt x) ++" given in Identity "++ix_lbl x
+  showMini x = showADL (ix_cpt x)
 
 instance (ShowADL a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1,c1,e1) = showEC' (p1,c1,showADL e1)

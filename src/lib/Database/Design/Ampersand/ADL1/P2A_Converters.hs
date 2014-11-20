@@ -596,20 +596,24 @@ pCtx2aCtx' _
           ) <?> typecheckTerm expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity
-            P_Id { ix_pos = orig
+          pidt@(P_Id { ix_pos = orig
                  , ix_lbl = lbl
                  , ix_cpt = pconc
                  , ix_ats = isegs
-                 }
+                 })
      = (\isegs' ->
        Id { idPos = orig
           , idLbl = lbl
-          , idCpt = pCpt2aCpt pconc
+          , idCpt = conc
           , identityAts = isegs'
           }) <$> traverse pIdentSegment2IdentSegment isegs
-    pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
-    pIdentSegment2IdentSegment (P_IdentExp ojd)
-     = IdentityExp <$> pObjDef2aObjDef ojd
+     where conc = pCpt2aCpt pconc
+           pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
+           pIdentSegment2IdentSegment (P_IdentExp ojd)
+            = (\o -> case (findExact genLattice (mjoin (name (source (objctx o))) (name conc))) of
+                       [] -> mustBeOrdered orig (Src, (origin ojd), (objctx o)) pidt
+                       _ -> pure (IdentityExp o)
+              ) <?> pObjDef2aObjDef ojd
 
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
