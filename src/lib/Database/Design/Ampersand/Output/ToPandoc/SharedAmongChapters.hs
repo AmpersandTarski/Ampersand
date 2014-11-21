@@ -28,6 +28,10 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , inlineIntercalate
     , orderingByTheme
     , plainText
+    , NLString(..)
+    , ENString(..)
+    , LocalizedStr
+    , localize
     )
 where
 import Database.Design.Ampersand.Basics
@@ -373,6 +377,10 @@ inlineIntercalate _  [] = mempty
 inlineIntercalate _ [x] = x
 inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 
+plainText :: String -> Blocks 
+plainText s = plain . text $ s
+
+
 -- Temporary fixes of Pandoc builder. ---
 bulletList :: [Blocks] -> Blocks
 bulletList [] = mempty
@@ -381,6 +389,20 @@ bulletList xs = BuggyBuilder.bulletList xs
 math :: String -> Inlines
 math s = BuggyBuilder.math ("{"++s++"}")
 
-plainText :: String -> Blocks 
-plainText str = plain . text $ str
+
+-- Utility types and functions for handling multiple-language strings
+
+-- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
+-- you can use:  l (NL "Nederlandse tekst", EN "English text") 
+-- to specify strings in multiple languages. 
+
+newtype NLString = NL String
+newtype ENString = EN String
+
+type LocalizedStr = (NLString, ENString)
+
+localize :: Lang -> LocalizedStr -> String
+localize Dutch   (NL s, _) = s
+localize English (_, EN s) = s
+
 
