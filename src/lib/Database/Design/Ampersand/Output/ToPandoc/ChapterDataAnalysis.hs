@@ -32,13 +32,13 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             <>  "een overzicht van alle relaties, die samen de basis vormen van de rest van deze analyse. "
                             <>  "tenslotte volgen achtereenvolgend het logische- en technische gegevensmodel."
                              )
-             English -> para (  "This chapter contains the result of the data analisys. "
+             English -> para (  "This chapter contains the result of the data analysis. "
                             <>  "It is structured as follows:"
                              )
                      <> para ( if summaryOnly
                                then  "We start with "
                                else  "We start with the classification model, followed by "
-                            <>  "a list of all relations, that are the foundation of the rest of the analisys. "
+                            <>  "a list of all relations, that are the foundation of the rest of the analysis. "
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
