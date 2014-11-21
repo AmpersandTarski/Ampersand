@@ -5,8 +5,11 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Database.Design.Ampersand.Fspec.Motivations
 import Data.List (sortBy)
 import Data.Function (on)
+import qualified Text.Pandoc.Builder
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
@@ -41,14 +44,16 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                              )
        )
     <> if summaryOnly then mempty else classificationBlocks
-    <> daBasicBlocks
+    <> daBasicsBlocks
+    <> daRulesBlocks
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
   thePictures
     =  [classificationPicture | not summaryOnly]
     ++ logicalDataModelPictures ++ technicalDataModelPictures
 
-  daBasicBlocks                                          = daBasicsSection           sectionLevel fSpec
+  daBasicsBlocks                                         = daBasicsSection           sectionLevel fSpec
+  daRulesBlocks                                          = daRulesSection            sectionLevel fSpec
   (classificationBlocks    , classificationPicture     ) = classificationSection     sectionLevel fSpec
   (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec
   (technicalDataModelBlocks, technicalDataModelPictures) = technicalDataModelSection sectionLevel fSpec
@@ -100,7 +105,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
   theBlocks =
        header lev (case fsLang fSpec of
                     Dutch   -> text "Logisch gegevensmodel"
-                    English -> text "Logical datamodel"
+                    English -> text "Logical data model"
                 )
     <> para (case fsLang fSpec of
                Dutch   -> (text "De afspraken zijn vertaald naar een gegevensmodel. "
@@ -376,7 +381,52 @@ daBasicsSection lev fSpec = theBlocks
 
           )
 
--- The properties of various relations are documented in different tables.
+daRulesSection :: Int -> Fspc -> Blocks
+daRulesSection lev fSpec = theBlocks
+ where
+  theBlocks = mconcat 
+    [ header lev . text $ l (NL "Regels", EN "Rules")
+    , para . text $ l (NL "TODO: uitleg paragraaf", EN "TODO: explain section")
+    , docRules (NL "Procesregels", EN "Process rules")
+               ( NL "TODO: uitleg procesregels"
+               , EN "TODO: explain process rules")
+               ( NL "Deze specificatie bevat geen procesregels."
+               , EN "This specification does not contain any process rules.")
+               (NL "Procesregel", EN "Process rule") $
+               vrules fSpec -- TODO:  what do we do here? vrules, grules, or rulesInScope? filter invars?
+    , docRules (NL "Invarianten", EN "Invariants")
+               ( NL "TODO: uitleg invarianten"
+               , EN "TODO: explain invariants")
+               ( NL "Deze specificatie bevat geen invarianten."
+               , EN "This specification does not contain any invariants.")
+               (NL "Invariant", EN "Invariant") $
+               invars fSpec
+    ]
+  
+  docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
+  docRules _ _ noRules _       [] = para . text $ l noRules
+  docRules title intro noRules heading rules = mconcat $
+    [ header (lev+1) . text $ l title 
+    , para . text $ l intro
+    ] ++
+    map (docRule heading) rules
+  
+  docRule :: LocalizedStr -> Rule -> Blocks
+  docRule heading rule = mconcat $
+     [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
+     , fromList $ meaning2Blocks (fsLang fSpec) rule
+     , if showPredExpr (flags fSpec)
+       then fromList $ pandocEqnArray ((showLatex.toPredLogic) rule)
+       else (plain . text $ l (NL "ADL expressie:", EN "ADL expression:")) <>
+            (plain . code $ showADL (rrexp rule))
+     , plain $ fromList [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] -- also causes a skip in rtf
+     ]
+
+  -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l lstr = localize (fsLang fSpec) lstr
+     
+     -- The properties of various relations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally
 -- the signals are documented.
