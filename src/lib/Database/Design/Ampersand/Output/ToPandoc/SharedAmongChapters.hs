@@ -27,6 +27,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , Counter(..),newCounter,incEis
     , inlineIntercalate
     , orderingByTheme
+    , plainText
     )
 where
 import Database.Design.Ampersand.Basics
@@ -379,3 +380,7 @@ bulletList xs = BuggyBuilder.bulletList xs
 
 math :: String -> Inlines
 math s = BuggyBuilder.math ("{"++s++"}")
+
+plainText :: String -> Blocks 
+plainText str = plain . text $ str
+
