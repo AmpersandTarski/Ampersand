@@ -4,10 +4,7 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Data.List (sortBy)
@@ -151,7 +148,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                      <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
-             Just (c, purposes)  -> purposes2Blocks (flags fSpec) purposes
+             Just (_, purposes)  -> purposes2Blocks (flags fSpec) purposes
         <> case fsLang fSpec of
              Dutch   -> para $ text "Deze gegevensverzameling bevat de volgende attributen: "
              English -> para $ text "This entity type has the following attributes: "
@@ -500,7 +497,6 @@ daBasicsSection lev fSpec = theBlocks
         (viewds, Dutch) -> [ Para $ Str "De volgende views bestaan: ": commaNLPandoc (Str "en") [Str (name v) | v<-viewds]]
         (viewds, English)->[ Para $ Str "The following views exist: ": commaEngPandoc (Str "and") [Str (name v) | v<-viewds]]
 
--}
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally
@@ -668,6 +664,7 @@ daBasicsSection lev fSpec = theBlocks
                 pcpts = case p of
                   ScalarSQL{} -> [cLkp p]
                   _           -> map fst (cLkpTbl p)
+-}
 
 primExpr2pandocMath :: Lang -> Expression -> Inlines
 primExpr2pandocMath lang e =
