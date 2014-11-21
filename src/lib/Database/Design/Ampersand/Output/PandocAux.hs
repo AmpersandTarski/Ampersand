@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.PandocAux
       ( writepandoc
       , labeledThing
@@ -28,7 +26,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (hPutStrLn)
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import Database.Design.Ampersand.Misc
-import System.Process      (system)
+import System.Process
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.IO           (hPutStrLn, stderr)
 import System.FilePath  -- (combine,addExtension,replaceExtension)
@@ -222,48 +220,58 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 doRestOfPdfLatex (ready, roundsSoFar)
                                   = if ready || roundsSoFar > 4    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
                                     then return (ready, roundsSoFar)
-                                    else do callPdfLatexOnce
-                                            let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed.
-                                            {- The log file should be renamed before reading, because readFile opens the file
-                                               for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
-                                               was read using readFile, it will fail because the file is still open. 8-((
-                                            -}
-                                            renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
-                                            haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))
-                                            let notReady =  needle `isInfixOf` haystack
-                                            when notReady (verboseLn (flags fSpec) "Another round of pdfLatex is required. Hang on...")
-                                          --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
-                                            doRestOfPdfLatex (not notReady, roundsSoFar +1)
+                                    else       do let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed.
+                                                  {- The log file should be renamed before reading, because readFile opens the file
+                                                     for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
+                                                     was read using readFile, it will fail because the file is still open. 8-((
+                                                  -}
+                                                  renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
+                                                  haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))
+                                                  let notReady =  needle `isInfixOf` haystack
+                                                  when notReady (verboseLn (flags fSpec) "Another round of pdfLatex is required. Hang on...")
+                                                --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
+                                                  doRestOfPdfLatex (not notReady, roundsSoFar +1)
 
-                                callPdfLatexOnce :: IO ()
+                                callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
-                                   do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                                then system ( pdfLatexCommand++
-                                                              if verboseP (flags fSpec) then "" else "> "++combine (dirOutput (flags fSpec)) "pdflog" ) >>
-                                                     system  makeIndexCommand
-                                                --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                                else system ( "cd "++dirOutput (flags fSpec)++
-                                                              " && pdflatex "++commonFlags++
-                                                              texFilename ++ if verboseP (flags fSpec) then "" else "> "++addExtension(baseName (flags fSpec)) ".pdflog" ) >>
-                                                     system makeIndexCommand
-                                      case result of
-                                         ExitSuccess   -> verboseLn (flags fSpec) "PDF file created."
-                                         ExitFailure _ -> hPutStrLn stderr $  if verboseP (flags fSpec)
-                                                                              then "" -- in verbose mode, Latex already gave plenty of information
-                                                                              else "\nLatex error.\nFor more information, run pdflatex on "++texFilename++
-                                                                                    " or rerun ampersand with the --verbose option"
+                                   do exitCode <- do { let cmd ="pdflatex"
+                                                           commonFlags = ["-interaction=batchmode"]
+                                                           texFilename = addExtension (baseName (flags fSpec)) ".tex"
+                                                           args = commonFlags ++ [texFilename] 
+                                                           cProcess = (proc cmd args)
+                                                     ; (_, Just hOut, _, pHandle) <- createProcess $ cProcess{ cwd = Just $ dirOutput (flags fSpec)
+                                                                                                             , std_out = CreatePipe }
+                                                     
+                                                     ; exitCode <- waitForProcess pHandle
+                                                     ; latexOutput <- hGetContents hOut
+                                                    -- ; writeFile latexLogPath latexOutput
+                                                     ; case exitCode of
+                                                         ExitSuccess   -> do { putStrLn $ "Latex executed successfully, pdf file created."
+                                                                             ; putStrLn $ makeIndexCommand
+                                                                             ; exitCode' <- system makeIndexCommand
+                                                                             ; case exitCode' of -- TODO: makeindex always returns exit code 1 on Mac
+                                                                                 ExitSuccess -> return ()
+                                                                                 ExitFailure  _->
+                                                                                  do { hPutStrLn stderr $ "ERROR: Execution of makeindex failed"
+                                                                                     }
+                                                                             ; return exitCode'
+                                                                             } 
+                                                         ExitFailure _ -> do { let nrOfErrLines = 20
+                                                                             ; putStrLn "----------- LaTeX error-----------"
+                                                                             ; putStrLn $ unlines . reverse . take nrOfErrLines . reverse . lines $ latexOutput 
+                                                                             ; putStrLn "----------------------------------\n"
+                                                                             ; putStrLn $ "ERROR: Latex execution failed. For more information, run pdflatex on "++texFilename++
+                                                                                          " or check the log:\n" ++ latexLogPath
+                                                                             ; return exitCode
+                                                                             } 
+                                                      }                                                     
+                                      return exitCode
                                       where
-                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
+                                      latexLogPath = dirOutput (flags fSpec) </> "pdflatex.log"
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
                                       --makeindex uses the error stream for verbose stuff...
                                       makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (flags fSpec)) "glossaries.log"
-                                      pdfflags = (if verboseP (flags fSpec) then "" else " --disable-installer") ++
-                                                 " -include-directory="++dirOutput (flags fSpec)++ " -output-directory="++dirOutput (flags fSpec)++" "
-                                      texFilename = addExtension (baseName (flags fSpec)) ".tex"
-                                      commonFlags = if verboseP (flags fSpec) then "" else "--interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
-                                      -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it
-                                      -- on windows, we also do --disable-installer, since otherwise a missing package may cause interaction,
-                                      -- even with --interaction=nonstopmode.
+
                _  -> return()
 
 -----Linguistic goodies--------------------------------------
