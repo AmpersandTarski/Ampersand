@@ -100,6 +100,7 @@ module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
               , ifcControls = [ conj
                               | conj<-allConjs
                               , (not.null) (ifcParams ifc `isc` primsMentionedIn (rc_conjunct conj))
+                              , take 3 (rc_rulename conj) `notElem` ["UNI", "INJ"]
                               ]
               }
            where editables = [d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc]
