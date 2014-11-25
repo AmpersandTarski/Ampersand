@@ -7,7 +7,7 @@ import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Database.Design.Ampersand.Fspec.Motivations
-import Data.List (sortBy)
+import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
 
@@ -392,17 +392,24 @@ daRulesSection lev fSpec = theBlocks
                , EN "TODO: explain process rules")
                ( NL "Deze specificatie bevat geen procesregels."
                , EN "This specification does not contain any process rules.")
-               (NL "Procesregel", EN "Process rule") $
-               vrules fSpec -- TODO:  what do we do here? vrules, grules, or rulesInScope? filter invars?
+               (NL "Procesregel", EN "Process rule")
+               processRules
     , docRules (NL "Invarianten", EN "Invariants")
                ( NL "TODO: uitleg invarianten"
                , EN "TODO: explain invariants")
                ( NL "Deze specificatie bevat geen invarianten."
                , EN "This specification does not contain any invariants.")
-               (NL "Invariant", EN "Invariant") $
-               invars fSpec
+               (NL "Invariant", EN "Invariant")
+               userInvariants
+    , docRules (NL "Afgeleide regels", EN "Derived rules") -- TODO: maybe call these "derived invariants" instead?
+               ( NL "TODO: uitleg afgeleide regels"
+               , EN "TODO: explain derived rules")
+               ( NL "Deze specificatie bevat geen afgeleide regels."
+               , EN "This specification does not contain any derived rules.")
+               (NL "Afgeleide regel", EN "Derived rule") $
+               grules fSpec
     ]
-  
+  (processRules, userInvariants) = partition isSignal $ vrules fSpec
   docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
   docRules _ _ noRules _       [] = para . text $ l noRules
   docRules title intro noRules heading rules = mconcat $
