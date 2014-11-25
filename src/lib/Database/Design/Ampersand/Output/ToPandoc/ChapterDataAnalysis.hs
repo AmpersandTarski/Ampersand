@@ -423,7 +423,7 @@ daRulesSection lev fSpec = theBlocks
      [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
      , fromList $ meaning2Blocks (fsLang fSpec) rule
      , if showPredExpr (flags fSpec)
-       then fromList $ pandocEqnArray ((showLatex.toPredLogic) rule)
+       then fromList $ pandocEqnArrayOnelabel (symDefLabel rule) ((showLatex.toPredLogic) rule)
        else (plain . text $ l (NL "ADL expressie:", EN "ADL expression:")) <>
             (plain . code $ showADL (rrexp rule))
      , plain $ fromList [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] -- also causes a skip in rtf
