@@ -506,8 +506,8 @@ instance ShowHS Activity where
      , wrap ", actPurp   = " indentB (\_->(showHS opts indentB)) (actPurp act)
      , "      }"
      ]
-    where indentA = indent ++replicate (length "Act "          ) ' '
-          indentB = indentA++replicate (length ", actAffect = ") ' '
+    where indentA = indent ++replicate (length ("Act "::String)) ' '
+          indentB = indentA++replicate (length (", actAffect = " :: String)) ' '
 
 instance ShowHS PPurpose where
  showHS opts _ expl =

@@ -138,6 +138,3 @@ showRoles roles = case roles of
 
 quoteName :: String -> String
 quoteName role = "``"++role++"''"
-
-plainText :: String -> Blocks 
-plainText str = plain . text $ str
