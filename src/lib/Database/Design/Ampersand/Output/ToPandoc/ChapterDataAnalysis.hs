@@ -5,7 +5,7 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
-import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Database.Design.Ampersand.Output.PredLogic
 import Database.Design.Ampersand.Fspec.Motivations
 import Data.List
 import Data.Function (on)
@@ -423,12 +423,16 @@ daRulesSection lev fSpec = theBlocks
      [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
      , fromList $ meaning2Blocks (fsLang fSpec) rule
      , if showPredExpr (flags fSpec)
-       then fromList $ pandocEqnArrayOnelabel (symDefLabel rule) ((showLatex.toPredLogic) rule)
+       then let pred = toPredLogic rule
+            in  if fspecFormat (flags fSpec) == Frtf then -- todo: bit hacky to check format here, but otherwise we need a major refactoring
+                  plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf pred)) 
+                else
+                  fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex pred)
        else (plain . text $ l (NL "ADL expressie:", EN "ADL expression:")) <>
             (plain . code $ showADL (rrexp rule))
-     , plain $ fromList [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] -- also causes a skip in rtf
+     , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
      ]
-
+  
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
   l lstr = localize (fsLang fSpec) lstr
