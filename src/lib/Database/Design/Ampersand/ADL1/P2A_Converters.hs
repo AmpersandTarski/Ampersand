@@ -39,7 +39,8 @@ pCpt2aCpt pc
         P_Singleton -> ONE
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkPurposes          -- Check whether all purpose refer to existing objects
+pCtx2aCtx opts = checkPurposes          -- Check whether all purposes refer to existing objects
+               . checkInterfaceRefs     -- Check whether all referenced interfaces exist
                . checkUnique udefrules  -- Rules must have a unique name within the context
                . checkUnique patterns   -- Patterns as well
                . checkUnique ctxprocs   -- and so should Processes
@@ -56,7 +57,7 @@ pCtx2aCtx opts = checkPurposes          -- Check whether all purpose refer to ex
 -- sense to do type checking when there are static errors. However, in Ampersand all collect functions (e.g. in ViewPoint)
 -- only exist on the A-Structure, so we do it afterwards. Static purpose errors won't affect types, so in this case it is no problem. 
 
--- Check whether all purpose refer to existing objects.
+-- Check whether all purposes refer to existing objects.
 checkPurposes :: Guarded A_Context -> Guarded A_Context
 checkPurposes gCtx =
   case gCtx of
@@ -82,6 +83,23 @@ isDanglingPurpose ctx purp =
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplContext nm -> ctxnm ctx /= nm
 
+-- Check whether all referenced interfaces exist
+checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
+checkInterfaceRefs gCtx =
+  case gCtx of
+    Errors err -> Errors err
+    Checked ctx -> let allInterfaceNames = map name $ ctxifcs ctx
+                       undefinedInterfaceRefErrs = [ mkUndeclaredInterfaceError objDef (name ifc) ref 
+                                                   | ifc <- ctxifcs ctx, (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
+                                                   , ref `notElem` allInterfaceNames
+                                                   ]
+                   in  if null undefinedInterfaceRefErrs then gCtx else Errors undefinedInterfaceRefErrs
+                   
+  where getInterfaceRefs :: ObjectDef -> [(ObjectDef, String)]
+        getInterfaceRefs Obj{objmsub=Nothing}                        = []
+        getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
+        getInterfaceRefs Obj{objmsub=Just (Box _ objs)}              = concatMap getInterfaceRefs objs
+        
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1

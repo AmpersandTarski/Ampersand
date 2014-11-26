@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
+  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError, mkUndeclaredInterfaceError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
@@ -18,7 +18,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
-import Database.Design.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV,ECpl),A_Concept,SubInterface, Purpose(..))
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Fspec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
@@ -26,8 +26,7 @@ import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
 import UU.Parsing (Message(..),Action(..))
-import Database.Design.Ampersand.Core.ParseTree (TermPrim(..),P_ViewD(..),P_SubIfc,P_IdentDef(ix_cpt,ix_lbl),Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
-import Database.Design.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
+import Database.Design.Ampersand.Core.ParseTree
 
 fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
@@ -93,6 +92,11 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
+
+mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
+mkUndeclaredInterfaceError objDef containingIfcName ref = 
+  CTXE (origin objDef) $ "Undeclared interface " ++ show ref ++ " referenced at field " ++ 
+                         show (name objDef) ++ " of interface " ++ show containingIfcName ++ "."
 
 class ErrorConcept a where
   showEC :: a -> String
