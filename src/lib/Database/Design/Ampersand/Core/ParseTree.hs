@@ -65,8 +65,8 @@ data P_Context
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
-         , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context, outside the scope of patterns
-         , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns
+         , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
+         , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns and processes
          , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script

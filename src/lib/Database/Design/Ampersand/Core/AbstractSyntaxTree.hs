@@ -71,8 +71,8 @@ data A_Context
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
-         , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context, outside the scope of patterns
-         , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns
+         , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context
+         , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns and processes
          , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
