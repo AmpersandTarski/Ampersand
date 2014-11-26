@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
 module Database.Design.Ampersand.Output.PredLogic
-           ( PredLogicShow(..), showLatex, mkVar
+           ( PredLogicShow(..), showLatex, showRtf, mkVar
            )
    where
 
@@ -10,7 +10,7 @@ module Database.Design.Ampersand.Output.PredLogic
    import Database.Design.Ampersand.Classes
    import Database.Design.Ampersand.Misc
    import Database.Design.Ampersand.Fspec.ShowADL
-   import Data.Char (toLower)
+   import Data.Char
    import Database.Design.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
    fatal :: Int -> String -> a
@@ -94,6 +94,48 @@ module Database.Design.Ampersand.Output.PredLogic
                tabs ('\t':cs) = "": tabs cs
                tabs (c:cs) = (c:r):rs where r:rs = tabs cs
 
+   showRtf :: PredLogic -> String
+   showRtf  p = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
+                  p
+     where unicodeSym :: Int -> Char -> Char -> String
+           unicodeSym fs sym altChar = "{\\fs"++show fs++" \\u"++show (ord sym)++[altChar]++"}"
+           forallP = unicodeSym 32 '∀' 'A' --"{\\fs36 \\u8704A}"
+           existsP = unicodeSym 32 '∃' 'E'
+           impliesP antc cons = antc++" "++unicodeSym 26 '⇒' '?'++" "++cons
+           equivP = unicodeSym 26 '⇔' '='
+           orP = unicodeSym 30 '∨' 'v'
+           andP = unicodeSym 30 '∧' '^'
+           k0P = "{\\super "++unicodeSym 30 '∗' '*'++"}"
+           k1P = "{\\super +}"
+           notP = unicodeSym 26 '¬' '!'
+           el = unicodeSym 30 '∈' '?' 
+           relP r lhs rhs  -- TODO: sloppy code, copied from showLatex
+            = if isIdent r then lhs++"\\ =\\ "++rhs else
+              case name r of
+               "lt"     -> lhs++" < "++rhs
+               "gt"     -> lhs++" > "++rhs
+               "le"     -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
+               "leq"    -> lhs++" "++unicodeSym 28 '≤' '?'++" "++rhs
+               "ge"     -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
+               "geq"    -> lhs++" "++unicodeSym 28 '≥' '?'++" "++rhs
+               _        -> lhs++" "++name r++" "++rhs
+           funP r e = name r++"("++e++")"
+           
+           apply :: Declaration -> String -> String -> String
+           apply decl d c =
+              case decl of
+                Sgn{}     -> d++" "++name decl++" "++c
+                Isn{}     -> d++" = "++c
+                Vs{}      -> "V"
+           showVarsP :: String -> [Var] -> String
+           showVarsP q vs
+            = if null vs then "" else
+              q++intercalate "; " [intercalate ", " var++" "++unicodeSym 28 '∷' '?'++" "++dType | (var,dType)<-vss]++":\\par\n"
+              where
+               vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+           breakP = ""
+           spaceP = " "
+  
 -- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
 -- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
    natLangOps :: Identified a => Lang -> (String,
