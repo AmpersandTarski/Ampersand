@@ -41,9 +41,10 @@ pCpt2aCpt pc
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes          -- Check whether all purposes refer to existing objects
                . checkInterfaceRefs     -- Check whether all referenced interfaces exist
-               . checkUnique udefrules  -- Rules must have a unique name within the context
-               . checkUnique patterns   -- Patterns as well
-               . checkUnique ctxprocs   -- and so should Processes
+               . checkUnique ctxifcs    -- Check uniquene names of: interfaces,
+               . checkUnique udefrules  --                          rules,
+               . checkUnique patterns   --                          patterns,
+               . checkUnique ctxprocs   --                          and processes.
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
