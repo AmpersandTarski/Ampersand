@@ -95,20 +95,20 @@ where
                                  }
                         | ooClass <- ooClasses, let root=source (head ooClass)]
                     , assocs  =
-                        [ OOAssoc { assSrc = name (source r)
+                        [ OOAssoc { assSrc = name $ source d
                                   , assSrcPort = name d
-                                  , asslhm = (mults.flp) r
+                                  , asslhm = mults . flp $ EDcD d
                                   , asslhr = ""
-                                  , assTgt = name (target r)
-                                  , assrhm = mults r
+                                  , assTgt = name $ target d
+                                  , assrhm = mults d
                                   , assrhr = name d
                                   , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
                                   , assmean = meaning (fsLang fSpec) d
                                   }
-                        | r@(EDcD d) <- allrels
-                        , (not.isPropty) r
-                        , target r `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
-                                                 ++ concatMap (largerConcepts (gens fSpec))  roots) 
+                        | d <- allDcls
+                        , (not.isPropty) d
+                        , target d `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
+                                                 ++ concatMap (largerConcepts  (gens fSpec)) roots) 
                         ]
                     , aggrs   = []
                     , geners  = map OOGener (gensInScope fSpec)
@@ -125,14 +125,14 @@ where
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isUni r then MaxOne else MaxMany
                 in  Mult minVal maxVal
-      allrels = [ EDcD r -- restricted to those themes that must be printed.
-                | r@Sgn{} <- (nub.concat)
-                             ([relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ]++
-                              [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ])
-               , decusr r]
-      attribs = map flipWhenInj (filter isAttribRel allrels)
-          where isAttribRel r = isUni r || isInj r
-                flipWhenInj r = if isInj r then flp r else r
+      allDcls = [ d -- restricted to those themes that must be printed.
+                | d@Sgn{} <- nub . concat $
+                               [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] ++
+                               [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ]
+                , decusr d]
+      attribs = map flipWhenInj (filter isAttribRel allDcls)
+          where isAttribRel d = isUni d || isInj d
+                flipWhenInj d = if isInj d then flp (EDcD d) else EDcD d
       ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
       roots = map (source.head) ooClasses
 
@@ -348,11 +348,11 @@ where
   --        ASSOCIATIONS:      --
   -------------------------------
           association2edge :: Association -> DotEdge String
-          association2edge ass =
+          association2edge ass = trace ("Assoc: "++assSrc ass++" ---"++assrhr ass++"---> "++assTgt ass ++"    src port"++assSrcPort ass) $
              DotEdge { fromNode       = assSrc ass
                      , toNode         = assTgt ass
-                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
+                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])  -- No arrowHead
+                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, Normal)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
                                         , TailLabel (mult2Lable (asslhm ass))
                                         , Label     (StrLabel (fromString (assrhr ass)))
