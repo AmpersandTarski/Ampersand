@@ -39,6 +39,7 @@ module Database.Design.Ampersand
    , ObjectDef(..)
    , Relational(..)
    , Interface(..)
+   , getInterfaceByName
    , SubInterface(..)
    , Object(..)
    , Plugable(..)

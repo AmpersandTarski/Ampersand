@@ -18,6 +18,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , ViewSegment(..)
  , A_Gen(..)
  , Interface(..)
+ , getInterfaceByName
  , SubInterface(..)
  , ObjectDef(..)
  , Object(..)
@@ -321,6 +322,13 @@ instance Identified Interface where
   name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
+
+-- Utility function for looking up interface refs
+getInterfaceByName :: [Interface] -> String -> Interface
+getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
+                                []    -> fatal 327 $ "getInterface by name: no interfaces named "++show nm
+                                [ifc] -> ifc
+                                _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
 
 data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
                      , rc_rulename   :: String -- the name of the rule
