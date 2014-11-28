@@ -8,6 +8,7 @@ import Database.Design.Ampersand.Classes.Relational  (Relational(multiplicities)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
 import Data.List
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ViewPoint"
@@ -29,7 +30,7 @@ class Language a where
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
   invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ identityRules x
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
+  multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = concatMap rulesFromIdentity (identities x)
   identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a

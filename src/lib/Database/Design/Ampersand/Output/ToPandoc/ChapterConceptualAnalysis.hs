@@ -129,6 +129,7 @@ chpConceptualAnalysis lev fSpec = (
     ukadj Trn = "transitive"
     ukadj Rfx = "reflexive"
     ukadj Irf = "irreflexive"
+    ukadj Aut = "automatically computed"    
   nladjs d = case [Uni,Tot]>-multiplicities d of
                [] -> commaNL "en" (map nladj (multiplicities d>-[Uni,Tot]))++" functie"
                _  -> commaNL "en" (map nladj (multiplicities d))++" relatie"
@@ -142,6 +143,7 @@ chpConceptualAnalysis lev fSpec = (
     nladj Trn = "transitieve"
     nladj Rfx = "reflexieve"
     nladj Irf = "irreflexieve"
+    nladj Aut = "automatisch berekende"  
   caRule :: Rule -> ([Inline], [[Block]])
   caRule r
         = let purp = toList (purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))

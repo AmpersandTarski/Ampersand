@@ -41,9 +41,11 @@ where
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
-   rulefromProp :: Prop -> Declaration -> Rule
-   rulefromProp prp d@Sgn{}
-      = Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
+   rulefromProp :: Prop -> Declaration -> Maybe Rule
+   rulefromProp Aut _ = Nothing
+   rulefromProp prp d@Sgn{} =
+     Just $ 
+        Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
            , rrexp = rExpr
            , rrfps = origin d
            , rrmean = AMeaning $ explain True prp
@@ -73,6 +75,7 @@ where
                         Trn-> r .:. r .|-. r
                         Rfx-> EDcI (source r) .|-. r
                         Irf-> r .|-. ECpl (EDcI (source r))
+                        Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
            explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                                  case prop of
                                    Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
@@ -84,6 +87,7 @@ where
                                    Sur-> state isPositive English (name d++"["++s++"*"++t++"]") "surjective"
                                    Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
                                    Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
+                                   Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                                    ))
                           ,   A_Markup Dutch ReST (string2Blocks ReST (
                                  case prop of
@@ -96,6 +100,7 @@ where
                                    Sur-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "surjectief"
                                    Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
                                    Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
+                                   Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                                    ))
                          ]
 
