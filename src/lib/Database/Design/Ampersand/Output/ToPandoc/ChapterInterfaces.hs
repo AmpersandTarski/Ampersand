@@ -145,7 +145,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
     mkTableRows :: Entity -> [[Blocks]]
     mkTableRows (Entity nm dpth expr card def refTp props) = 
-      [plain $ (fromList $ replicate (dpth*3) nbsp) <> text nm , plainText card, plainText expr, plainText def]
+      [plain $ (fromList $ replicate (dpth*3) nbsp) <> (if dpth == 0 then strong else id) (text nm) , plainText card, plainText expr, plainText def]
       : concatMap mkTableRows props
       where nbsp :: Inline
             nbsp = RawInline (Format "latex") "~"
