@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError, mkUndeclaredInterfaceError
+  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError, mkUndeclaredInterfaceError, mkMultipleInterfaceError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
@@ -97,6 +97,11 @@ mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
 mkUndeclaredInterfaceError objDef containingIfcName ref = 
   CTXE (origin objDef) $ "Undeclared interface " ++ show ref ++ " referenced at field " ++ 
                          show (name objDef) ++ " of interface " ++ show containingIfcName ++ "."
+
+mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
+mkMultipleInterfaceError role ifc duplicateIfcs = 
+  CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++ 
+                      concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)       
 
 class ErrorConcept a where
   showEC :: a -> String

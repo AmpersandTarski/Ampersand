@@ -9,7 +9,7 @@ import Database.Design.Ampersand.ADL1.Lattices
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Classes.ViewPoint hiding (interfaces,gens)
 import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Basics (Identified(name), fatalMsg)
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
@@ -39,12 +39,12 @@ pCpt2aCpt pc
         P_Singleton -> ONE
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkPurposes          -- Check whether all purposes refer to existing objects
-               . checkInterfaceRefs     -- Check whether all referenced interfaces exist
-               . checkUnique ctxifcs    -- Check uniquene names of: interfaces,
-               . checkUnique udefrules  --                          rules,
-               . checkUnique patterns   --                          patterns,
-               . checkUnique ctxprocs   --                          and processes.
+pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
+               . checkInterfaceRefs       -- Check whether all referenced interfaces exist
+               . checkUniqueInterfaceRole -- Check whether all interface/role pairs are unique
+               . checkUnique udefrules    -- Check uniquene names of: rules,
+               . checkUnique patterns     --                          patterns,
+               . checkUnique ctxprocs     --                          and processes.
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -100,7 +100,17 @@ checkInterfaceRefs gCtx =
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
         getInterfaceRefs Obj{objmsub=Just (Box _ objs)}              = concatMap getInterfaceRefs objs
-        
+
+checkUniqueInterfaceRole :: Guarded A_Context -> Guarded A_Context
+checkUniqueInterfaceRole gCtx = 
+  case gCtx of
+    Errors err -> Errors err
+    Checked ctx -> let interfaceRolePairs = [ (role, ifc) | ifc <- ctxifcs ctx, role <- ifcRoles ifc  ]
+                       errs = [ mkMultipleInterfaceError role ifc $ map snd dups
+                              | (role,ifc):dups@(_:_) <- eqCl (\(r,i)->(r,name i)) interfaceRolePairs
+                              ]
+                   in  if null errs then gCtx else Errors errs 
+
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1
