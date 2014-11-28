@@ -12,3 +12,5 @@ dist
 *.o
 *.so
 *.hi
+/..ampersand.cabal-sandbox/
+/..ampersand.cabal.sandbox/
