@@ -11,6 +11,7 @@ where
    import Database.Design.Ampersand.Basics
    import Database.Design.Ampersand.Classes
    import Database.Design.Ampersand.ADL1  hiding (Association,Box)
+   import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Association)
    import Database.Design.Ampersand.Fspec.Plug
    import Database.Design.Ampersand.Misc
    import Database.Design.Ampersand.Fspec.Fspec
@@ -104,7 +105,10 @@ where
                                   , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
                                   , assmean = meaning (fsLang fSpec) d
                                   }
-                        | r@(EDcD d) <- allrels, (not.isPropty) r, target r `elem` roots
+                        | r@(EDcD d) <- allrels
+                        , (not.isPropty) r
+                        , target r `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
+                                                 ++ concatMap (largerConcepts (gens fSpec))  roots) 
                         ]
                     , aggrs   = []
                     , geners  = map OOGener (gensInScope fSpec)
