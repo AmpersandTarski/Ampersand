@@ -349,11 +349,11 @@ where
   --        ASSOCIATIONS:      --
   -------------------------------
           association2edge :: Association -> DotEdge String
-          association2edge ass = trace ("Assoc: "++assSrc ass++" ---"++assrhr ass++"---> "++assTgt ass ++"    src port"++assSrcPort ass) $
+          association2edge ass =
              DotEdge { fromNode       = assSrc ass
                      , toNode         = assTgt ass
-                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, Normal)])  -- No arrowTail
+                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
+                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
                                         , TailLabel (mult2Lable (asslhm ass))
                                         , Label     (StrLabel (fromString (assrhr ass)))
