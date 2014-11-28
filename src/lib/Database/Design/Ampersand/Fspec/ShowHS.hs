@@ -4,7 +4,7 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Text.Pandoc hiding (Meta)
 import Data.Char                  (isAlphaNum)
-import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Basics hiding (indent)
 import Database.Design.Ampersand.Fspec.Plug
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
