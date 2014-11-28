@@ -82,10 +82,6 @@ entityToCSV (Entity nm dpth card def refTp props) =
 
 -- Utils
 
-getInterfaceByName :: [Interface] -> String -> Interface
-getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
-                                [ifc] -> ifc
-                                _     -> fatal 63 $ "getInterface by name: multiple or no interfaces named "++show nm
 layout :: [[String]] -> String
 layout linez =
   let columns = transpose linez

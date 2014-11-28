@@ -14,3 +14,5 @@ dist
 *.hi
 /..ampersand.cabal-sandbox/
 /..ampersand.cabal.sandbox/
+miscellaneous/AmpersandBackup.jgcscs
+miscellaneous/AmpersandBackup.jgfns
