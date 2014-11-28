@@ -129,8 +129,9 @@ where
                 | d@Sgn{} <- nub . concat $
                                [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] ++
                                [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ]
-                , decusr d]
-      attribs = map flipWhenInj (filter isAttribRel allDcls)
+                ]
+      nonAutoDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d ]
+      attribs = map flipWhenInj (filter isAttribRel nonAutoDcls)
           where isAttribRel d = isUni d || isInj d
                 flipWhenInj d = if isInj d then flp (EDcD d) else EDcD d
       ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.

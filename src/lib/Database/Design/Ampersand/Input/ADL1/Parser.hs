@@ -30,7 +30,7 @@ keywordstxt       = [ "INCLUDE"
                     , "PROCESS", "ENDPROCESS"
                     , "INTERFACE", "CLASS", "FOR", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
                     , "POPULATION", "CONTAINS"
-                    , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
+                    , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                     , "RELATION", "MEANING", "CONCEPT", "IDENT"
                     , "VIEW", "TXT", "PRIMHTML"
@@ -315,7 +315,7 @@ pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*
                           pProp :: AmpParser [Prop]
                           pProp   = k [Uni] "UNI" <|> k [Inj] "INJ" <|> k [Sur] "SUR" <|> k [Tot] "TOT" <|>
                                     k [Sym] "SYM" <|> k [Asy] "ASY" <|> k [Trn] "TRN" <|>
-                                    k [Rfx] "RFX" <|> k [Irf] "IRF" <|> k [Sym, Asy] "PROP"
+                                    k [Rfx] "RFX" <|> k [Irf] "IRF" <|> k [Aut] "AUT" <|> k [Sym, Asy] "PROP"
                               where k obj str = f <$> pKey str where f _ = obj
                           pPragma :: AmpParser [String]
                           pPragma = pKey "PRAGMA" *> pList1 pString

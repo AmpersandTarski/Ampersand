@@ -773,6 +773,7 @@ instance ShowHSName Prop where
  showHSName Trn = "Trn"
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
+ showHSName Aut = "Aut"
 
 instance ShowHS Prop where
  showHS _ _ = showHSName
