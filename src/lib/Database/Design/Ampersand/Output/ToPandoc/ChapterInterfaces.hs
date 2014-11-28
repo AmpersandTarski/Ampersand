@@ -19,7 +19,7 @@ chpInterfacesPics fSpec = []
 
 chpInterfacesBlocks :: Int -> Fspc -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
-  mconcat $ map interfaceChap regularInterfaces ++ [messagesChap messageInterfaces]
+  mconcat $ map interfaceChap regularInterfaces ++ [ messagesChap messageInterfaces | not (null messageInterfaces) ]
   where
     messageInterfaces :: [Interface]
     regularInterfaces :: [Interface]
