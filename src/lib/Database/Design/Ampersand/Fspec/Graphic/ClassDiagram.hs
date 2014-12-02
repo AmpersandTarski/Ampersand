@@ -18,6 +18,7 @@ where
    import Database.Design.Ampersand.Fspec.Motivations
    import Data.String
    import Data.Maybe
+   import Data.Either
    import Data.GraphViz.Types.Canonical hiding (attrs)
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
@@ -94,23 +95,8 @@ where
                                  , clMths = []
                                  }
                         | ooClass <- ooClasses, let root=source (head ooClass)]
-                    , assocs  =
-                        [ OOAssoc { assSrc = name $ source d
-                                  , assSrcPort = name d
-                                  , asslhm = mults . flp $ EDcD d
-                                  , asslhr = ""
-                                  , assTgt = name $ target d
-                                  , assrhm = mults d
-                                  , assrhr = name d
-                                  , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
-                                  , assmean = meaning (fsLang fSpec) d
-                                  }
-                        | d <- allDcls
-                        , (not.isPropty) d
-                        , target d `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
-                                                 ++ concatMap (largerConcepts  (gens fSpec)) roots) 
-                        ]
-                    , aggrs   = []
+                    , assocs  = lefts assocsAndAggrs
+                    , aggrs   = rights assocsAndAggrs
                     , geners  = map OOGener (gensInScope fSpec)
                     , ooCpts  = roots
                     }
@@ -130,6 +116,28 @@ where
                                [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] ++
                                [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ]
                 ]
+      assocsAndAggrs = [ decl2assocOrAggr d
+                       | d <- allDcls
+                       , not.isPropty $ d 
+                       , target d `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
+                                                ++ concatMap (largerConcepts  (gens fSpec)) roots)
+                       ] 
+
+      decl2assocOrAggr :: Declaration -> Either Association Aggregation
+      decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggSrc = target d, aggTgt = source d}
+      decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggSrc = source d, aggTgt = target d}
+      decl2assocOrAggr d | otherwise          = Left $
+        OOAssoc { assSrc = name $ source d
+                , assSrcPort = name d
+                , asslhm = mults . flp $ EDcD d
+                , asslhr = ""
+                , assTgt = name $ target d
+                , assrhm = mults d
+                , assrhr = name d
+                , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
+                , assmean = meaning (fsLang fSpec) d
+                }
+
       nonAutoDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d ]
       attribs = map flipWhenInj (filter isAttribRel nonAutoDcls)
           where isAttribRel d = isUni d || isInj d
