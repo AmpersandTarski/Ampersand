@@ -353,7 +353,6 @@ where
              DotEdge { fromNode       = assSrc ass
                      , toNode         = assTgt ass
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
                                         , TailLabel (mult2Lable (asslhm ass))
                                         , Label     (StrLabel (fromString (assrhr ass)))
@@ -381,6 +380,7 @@ where
                                                                       Close -> FilledArrow
                                                                     ) BothSides , Diamond)
                                                            ])
+                                        , Dir Both
                                         ]
                      }
 
@@ -395,8 +395,7 @@ where
               = [DotEdge { fromNode = name spec
                          , toNode   = name gener
                          , edgeAttributes
-                                    = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
-                                      , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
+                                    = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
                                       , ArrowSize  2.0
                                       ] ++
                                       ( if blackWhite opts
