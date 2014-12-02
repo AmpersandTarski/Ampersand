@@ -166,7 +166,7 @@ where
                                           , attOptional = False
                                           }
                                  ]
-                               _     -> fatal 166 "Unexpeced type of table!"
+                               _     -> fatal 166 "Unexpected type of table!"
                   , clMths = []
                   }
          | table <- tables
