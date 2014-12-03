@@ -123,9 +123,10 @@ where
                                                 ++ concatMap (largerConcepts  (gens fSpec)) roots)
                        ] 
 
+      -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
       decl2assocOrAggr :: Declaration -> Either Association Aggregation
-      decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
-      decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
+      --decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
+      --decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
       decl2assocOrAggr d | otherwise          = Left $
         OOAssoc { assSrc = name $ source d
                 , assSrcPort = name d
