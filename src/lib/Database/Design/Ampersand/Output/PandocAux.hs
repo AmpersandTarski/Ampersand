@@ -265,7 +265,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                    do if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
                                       then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (flags fSpec)) "pdflog" )
                                               ; if res /= ExitSuccess then return res else 
-                                                  system  makeIndexCommand
+                                                  system  makeIndexCommand -- TODO: failure of makeindex is not reported correctly (requires refactoring command execution)
                                               }
                                       --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                       else system ( "cd "++dirOutput (flags fSpec)++
