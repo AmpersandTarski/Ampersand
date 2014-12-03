@@ -124,8 +124,8 @@ where
                        ] 
 
       decl2assocOrAggr :: Declaration -> Either Association Aggregation
-      decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggSrc = target d, aggTgt = source d}
-      decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggSrc = source d, aggTgt = target d}
+      decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
+      decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
       decl2assocOrAggr d | otherwise          = Left $
         OOAssoc { assSrc = name $ source d
                 , assSrcPort = name d
@@ -380,15 +380,13 @@ where
   -------------------------------
           aggregation2edge :: Aggregation -> DotEdge String
           aggregation2edge agg =
-             DotEdge { fromNode       = (name.aggSrc) agg
-                     , toNode         = (name.aggTgt) agg
-                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod (case aggDel agg of
+             DotEdge { fromNode       = name . aggChild  $ agg
+                     , toNode         = name . aggParent $ agg
+                     , edgeAttributes = [ ArrowHead (AType [(ArrMod (case aggDel agg of
                                                                       Open -> OpenArrow
                                                                       Close -> FilledArrow
                                                                     ) BothSides , Diamond)
                                                            ])
-                                        , Dir Both
                                         ]
                      }
 
@@ -456,11 +454,11 @@ where
                                   , asspurp ::    [Purpose]        -- ^ purposes of this association
                                   , assmean ::    Maybe A_Markup   -- ^ meaning, if available.
                                   } deriving Show
-   data Aggregation    = OOAggr   { aggDel :: Deleting         --
-                                  , aggSrc :: A_Concept           --
-                                  , aggTgt :: A_Concept           --
+   data Aggregation    = OOAggr   { aggDel :: Deleting             --
+                                  , aggChild  :: A_Concept         --
+                                  , aggParent :: A_Concept         --
                                   } deriving (Show, Eq)
-   data Generalization = OOGener  { genAgen :: A_Gen             --
+   data Generalization = OOGener  { genAgen :: A_Gen               --
                                   } deriving (Show)
 
    data Deleting       = Open | Close                      --
