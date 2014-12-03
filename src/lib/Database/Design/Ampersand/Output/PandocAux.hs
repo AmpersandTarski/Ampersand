@@ -30,12 +30,11 @@ import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import Database.Design.Ampersand.Misc
 import System.Process      (system)
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
-import System.IO           (hPutStrLn, stderr)
 import System.FilePath  -- (combine,addExtension,replaceExtension)
 import System.Directory
 import System.Info         (os)
 import Data.Monoid
-import Data.List           (isInfixOf,intercalate)
+import Data.List
 import Control.Monad
 import Data.Maybe
 
@@ -234,8 +233,9 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                   ; putStrLn "----------- LaTeX error-----------"
                                                   
                                                   -- get rid of latex memory info and take required nr of lines
-                                                  ; let reverseErrLines =  take nrOfErrLines $ drop 1 . dropWhile (/= "Here is how much of TeX's memory you used:") . reverse . lines $
-                                                           haystack
+                                                  ; let reverseErrLines = take nrOfErrLines . drop 1 
+                                                                        . dropWhile (not . ("Here is how much of TeX's memory you used:" `isPrefixOf`)) 
+                                                                        . reverse . lines $ haystack
                                                   ; putStrLn $ unlines . reverse $ reverseErrLines   
                                                   ; putStrLn "----------------------------------\n"
                                                   ; putStrLn $ "ERROR: Latex execution failed."
