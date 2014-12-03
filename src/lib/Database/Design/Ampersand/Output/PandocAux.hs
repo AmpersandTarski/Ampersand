@@ -28,7 +28,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (hPutStrLn)
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import Database.Design.Ampersand.Misc
-import System.Process      (system)
+import System.Process
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath  -- (combine,addExtension,replaceExtension)
 import System.Directory
@@ -263,19 +263,23 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
                                    do if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                      then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (flags fSpec)) "pdflog" )
+                                      then do { res <- system ( pdfLatexCommandWin++"> "++combine (dirOutput (flags fSpec)) "pdflog" )
                                               ; if res /= ExitSuccess then return res else 
                                                   system  makeIndexCommand
                                               }
                                       --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                      else system ( "cd "++dirOutput (flags fSpec)++
-                                                    " && pdflatex "++commonFlags++
-                                                    texFilename ++ "> "++addExtension(baseName (flags fSpec)) ".pdflog" )
-                                           -- >> system makeIndexCommand
-                                           -- disabled makeIndexCommand on non-windows, since it will always fail when absolute paths are used
-                                           -- For some weird Latex reason this can only be avoided by setting an environment variable.
+                                      else do { let cmd ="pdflatex"
+                                                    cProcess = (proc cmd $ words (commonFlags ++ texFilename))
+                                              ; (_, Just hOut, _, pHandle) <- createProcess $ cProcess{ cwd = Just $ dirOutput (flags fSpec)
+                                                                                                      , std_out = CreatePipe }
+                                              ; exitCode <- waitForProcess pHandle
+                                              ; latexOutput <- hGetContents hOut
+                                              ; writeFile latexLogPath latexOutput
+                                              ; return exitCode
+                                              }
                                       where
-                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
+                                      latexLogPath = dirOutput (flags fSpec) </> "pdflatex.log"
+                                      pdfLatexCommandWin = "pdflatex "++commonFlags++pdfflags++ outputFile
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
                                       --makeindex uses the error stream for verbose stuff...
                                       makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (flags fSpec)) "glossaries.log"
