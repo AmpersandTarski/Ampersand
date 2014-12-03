@@ -18,6 +18,7 @@ where
    import Database.Design.Ampersand.Fspec.Motivations
    import Data.String
    import Data.Maybe
+   import Data.Either
    import Data.GraphViz.Types.Canonical hiding (attrs)
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
@@ -94,23 +95,8 @@ where
                                  , clMths = []
                                  }
                         | ooClass <- ooClasses, let root=source (head ooClass)]
-                    , assocs  =
-                        [ OOAssoc { assSrc = name $ source d
-                                  , assSrcPort = name d
-                                  , asslhm = mults . flp $ EDcD d
-                                  , asslhr = ""
-                                  , assTgt = name $ target d
-                                  , assrhm = mults d
-                                  , assrhr = name d
-                                  , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
-                                  , assmean = meaning (fsLang fSpec) d
-                                  }
-                        | d <- allDcls
-                        , (not.isPropty) d
-                        , target d `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
-                                                 ++ concatMap (largerConcepts  (gens fSpec)) roots) 
-                        ]
-                    , aggrs   = []
+                    , assocs  = lefts assocsAndAggrs
+                    , aggrs   = rights assocsAndAggrs
                     , geners  = map OOGener (gensInScope fSpec)
                     , ooCpts  = roots
                     }
@@ -130,6 +116,29 @@ where
                                [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] ++
                                [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ]
                 ]
+      assocsAndAggrs = [ decl2assocOrAggr d
+                       | d <- allDcls
+                       , not.isPropty $ d 
+                       , target d `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
+                                                ++ concatMap (largerConcepts  (gens fSpec)) roots)
+                       ] 
+
+      -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
+      decl2assocOrAggr :: Declaration -> Either Association Aggregation
+      --decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
+      --decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
+      decl2assocOrAggr d | otherwise          = Left $
+        OOAssoc { assSrc = name $ source d
+                , assSrcPort = name d
+                , asslhm = mults . flp $ EDcD d
+                , asslhr = ""
+                , assTgt = name $ target d
+                , assrhm = mults d
+                , assrhr = name d
+                , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
+                , assmean = meaning (fsLang fSpec) d
+                }
+
       nonAutoDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d ]
       attribs = map flipWhenInj (filter isAttribRel nonAutoDcls)
           where isAttribRel d = isUni d || isInj d
@@ -353,7 +362,6 @@ where
              DotEdge { fromNode       = assSrc ass
                      , toNode         = assTgt ass
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
                                         , TailLabel (mult2Lable (asslhm ass))
                                         , Label     (StrLabel (fromString (assrhr ass)))
@@ -373,10 +381,9 @@ where
   -------------------------------
           aggregation2edge :: Aggregation -> DotEdge String
           aggregation2edge agg =
-             DotEdge { fromNode       = (name.aggSrc) agg
-                     , toNode         = (name.aggTgt) agg
-                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
-                                        , ArrowTail (AType [(ArrMod (case aggDel agg of
+             DotEdge { fromNode       = name . aggChild  $ agg
+                     , toNode         = name . aggParent $ agg
+                     , edgeAttributes = [ ArrowHead (AType [(ArrMod (case aggDel agg of
                                                                       Open -> OpenArrow
                                                                       Close -> FilledArrow
                                                                     ) BothSides , Diamond)
@@ -395,8 +402,7 @@ where
               = [DotEdge { fromNode = name spec
                          , toNode   = name gener
                          , edgeAttributes
-                                    = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
-                                      , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
+                                    = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
                                       , ArrowSize  2.0
                                       ] ++
                                       ( if blackWhite opts
@@ -449,11 +455,11 @@ where
                                   , asspurp ::    [Purpose]        -- ^ purposes of this association
                                   , assmean ::    Maybe A_Markup   -- ^ meaning, if available.
                                   } deriving Show
-   data Aggregation    = OOAggr   { aggDel :: Deleting         --
-                                  , aggSrc :: A_Concept           --
-                                  , aggTgt :: A_Concept           --
+   data Aggregation    = OOAggr   { aggDel :: Deleting             --
+                                  , aggChild  :: A_Concept         --
+                                  , aggParent :: A_Concept         --
                                   } deriving (Show, Eq)
-   data Generalization = OOGener  { genAgen :: A_Gen             --
+   data Generalization = OOGener  { genAgen :: A_Gen               --
                                   } deriving (Show)
 
    data Deleting       = Open | Close                      --
