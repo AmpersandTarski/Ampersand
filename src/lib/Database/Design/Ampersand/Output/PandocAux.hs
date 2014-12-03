@@ -248,7 +248,8 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                   }
 
                                             -- We need to rerun latex if any of the log lines start with a rerunPrefix
-                                            let notReady = or [ rerunPrefix `isPrefixOf` line
+                                            let notReady = result == ExitSuccess &&
+                                                           or [ rerunPrefix `isPrefixOf` line
                                                               | line <- logFileLines
                                                               , rerunPrefix <- [ "LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right."
                                                                                , "Package longtable Warning: Table widths have changed. Rerun LaTeX."
