@@ -224,7 +224,11 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                     else do result <- callPdfLatexOnce
                                             let logFileName = replaceExtension outputFile ("log"++show roundsSoFar)
                                             renameFile (replaceExtension outputFile "log") logFileName
-                                            haystack <- readFile logFileName
+                                            logFileLines <- fmap lines $ readFile logFileName
+                                            {- Old comment: The log file should be renamed before reading, because readFile opens the file
+                                               for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
+                                               was read using readFile, it will fail because the file is still open. 8-((
+                                            -}
                                             
                                             case result of
                                               ExitSuccess   -> verboseLn (flags fSpec) "PDF file created."
@@ -233,21 +237,23 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                   ; putStrLn "----------- LaTeX error-----------"
                                                   
                                                   -- get rid of latex memory info and take required nr of lines
-                                                  ; let reverseErrLines = take nrOfErrLines . drop 1 
+                                                  ; let reverseErrLines = take nrOfErrLines . drop 2 
                                                                         . dropWhile (not . ("Here is how much of TeX's memory you used:" `isPrefixOf`)) 
-                                                                        . reverse . lines $ haystack
+                                                                        . reverse $ logFileLines
                                                   ; putStrLn $ unlines . reverse $ reverseErrLines   
                                                   ; putStrLn "----------------------------------\n"
                                                   ; putStrLn $ "ERROR: Latex execution failed."
-                                                  ; putStrLn $ "For more information, run pdflatex on the text file:\n"++texFilename
+                                                  ; putStrLn $ "For more information, run pdflatex on: "++texFilename
                                                   ; putStrLn $ "Or consult the log file:\n"++logFileName
                                                   }
-                                            let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed.
-                                            {- The log file should be renamed before reading, because readFile opens the file
-                                               for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
-                                               was read using readFile, it will fail because the file is still open. 8-((
-                                            -}
-                                            let notReady =  needle `isInfixOf` haystack
+
+                                            -- We need to rerun latex if any of the log lines start with a rerunPrefix
+                                            let notReady = or [ rerunPrefix `isPrefixOf` line
+                                                              | line <- logFileLines
+                                                              , rerunPrefix <- [ "LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right."
+                                                                               , "Package longtable Warning: Table widths have changed. Rerun LaTeX."
+                                                                               ]
+                                                              ]
                                             when notReady (verboseLn (flags fSpec) "Another round of pdfLatex is required. Hang on...")
                                           --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
                                             doRestOfPdfLatex (not notReady, roundsSoFar +1)
