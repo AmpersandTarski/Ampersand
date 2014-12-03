@@ -106,10 +106,11 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     
                     editableRelM = getEditableRelation editableRels iExp
                     
-                    navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles (ifcRoles navIfc) ++ ")" 
+                    navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- allInterfaces
                                      , source (objctx . ifcObj $ navIfc) == target iExp
-                                     , not . null $ ifcRoles navIfc `intersect` roles 
+                                     , let sharedRoles = ifcRoles navIfc `intersect` roles
+                                     , not . null $ sharedRoles
                                      ]
 
             iExp = conjNF (flags fSpec) $ objctx object
