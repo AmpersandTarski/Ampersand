@@ -263,15 +263,14 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
                                    do if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                      then do { res <- system ( pdfLatexCommand++
-                                                         if verboseP (flags fSpec) then "" else "> "++combine (dirOutput (flags fSpec)) "pdflog" )
+                                      then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (flags fSpec)) "pdflog" )
                                               ; if res /= ExitSuccess then return res else 
                                                   system  makeIndexCommand
                                               }
                                       --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                       else system ( "cd "++dirOutput (flags fSpec)++
                                                     " && pdflatex "++commonFlags++
-                                                    texFilename ++ if verboseP (flags fSpec) then "" else "> "++addExtension(baseName (flags fSpec)) ".pdflog" )
+                                                    texFilename ++ "> "++addExtension(baseName (flags fSpec)) ".pdflog" )
                                            -- >> system makeIndexCommand
                                            -- disabled makeIndexCommand on non-windows, since it will always fail when absolute paths are used
                                            -- For some weird Latex reason this can only be avoided by setting an environment variable.
@@ -280,12 +279,9 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
                                       --makeindex uses the error stream for verbose stuff...
                                       makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (flags fSpec)) "glossaries.log"
-                                      pdfflags = (if verboseP (flags fSpec) then "" else " --disable-installer") ++
-                                                 " -include-directory="++dirOutput (flags fSpec)++ " -output-directory="++dirOutput (flags fSpec)++" "
-                                      commonFlags = if verboseP (flags fSpec) then "" else "--halt-on-error --interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
-                                      -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it
-                                      -- on windows, we also do --disable-installer, since otherwise a missing package may cause interaction,
-                                      -- even with --interaction=nonstopmode.
+                                      pdfflags = " -include-directory="++dirOutput (flags fSpec)++ " -output-directory="++dirOutput (flags fSpec)++" "
+                                      commonFlags = "--halt-on-error --interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
+                                      -- we don't do --disable-installer on Windows, so the install dialog will pop up, even when we are in nonstopmode 
                _  -> return()
 
 -----Linguistic goodies--------------------------------------
