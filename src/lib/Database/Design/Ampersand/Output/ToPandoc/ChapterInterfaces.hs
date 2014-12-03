@@ -11,10 +11,6 @@ import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Fspec.FPA
 
--- TODO: use views?
--- TODO: refactor shared code with prototype (editability of fields and navigation is quite fragile now)
--- TODO: prototype/Generate.hs also generates for interfaceG fSpec, but this seems to be empty most of the time. Include them in the docs?
-
 chpInterfacesPics :: Fspc -> [Picture]
 chpInterfacesPics fSpec = []
 
@@ -64,11 +60,11 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
        else plainText "" -- TODO: vervangen door de Pandoc-aanduiding voor "niks"
       ) <>
       (plain . strong . text) "Interfacestructuur:" <>
-      docInterfaceObjects (ifcParams ifc) [] (ifcObj ifc)
+      docInterfaceObjects (ifcParams ifc) (ifcRoles ifc) [] (ifcObj ifc)
       where interfaceFP = fpaInterface ifc
 
-    docInterfaceObjects :: [Expression] -> [Int] -> ObjectDef -> Blocks
-    docInterfaceObjects editableRels hierarchy object =
+    docInterfaceObjects :: [Expression] -> [String] -> [Int] -> ObjectDef -> Blocks
+    docInterfaceObjects editableRels roles hierarchy object =
       case hierarchy of
         [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (name (target iExp)) ++ "."
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
@@ -111,20 +107,22 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     editableRelM = getEditableRelation editableRels iExp
                     
                     navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles (ifcRoles navIfc) ++ ")" 
-                                     | navIfc <- allInterfaces, source (objctx . ifcObj $ navIfc) == target iExp 
+                                     | navIfc <- allInterfaces
+                                     , source (objctx . ifcObj $ navIfc) == target iExp
+                                     , not . null $ ifcRoles navIfc `intersect` roles 
                                      ]
-                                    -- TODO: fragile: copying computation from Generate.hs
+
             iExp = conjNF (flags fSpec) $ objctx object
                     
             fieldType = name (target iExp)
-            subInterfaceDocs = docMSubInterface editableRels hierarchy (objmsub object)
+            subInterfaceDocs = docMSubInterface editableRels roles hierarchy (objmsub object)
 
-    docMSubInterface :: [Expression] -> [Int] -> Maybe SubInterface -> [Blocks]
-    docMSubInterface editableRels hierarchy subIfc =
+    docMSubInterface :: [Expression] -> [String] -> [Int] -> Maybe SubInterface -> [Blocks]
+    docMSubInterface editableRels roles hierarchy subIfc =
       case subIfc of
         Nothing                -> []
         Just (InterfaceRef nm) -> [ plainText $ "REF "++nm ] -- TODO: handle InterfaceRef
-        Just (Box _ objects)   -> [ docInterfaceObjects editableRels (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
+        Just (Box _ objects)   -> [ docInterfaceObjects editableRels roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
 
 
 -- TODO: Maybe we should create a more general version of this function (might already exist, but I couldn't find it)
