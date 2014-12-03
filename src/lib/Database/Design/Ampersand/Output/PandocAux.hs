@@ -131,9 +131,9 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          makeOutput
             =  do template <- readDefaultTemplate fSpecFormatString
                   verboseLn (flags fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+                  --verboseLn (flags fSpec) "Variables to set in the template:"
+                  --verboseLn (flags fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
                   writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
-                  verboseLn (flags fSpec) "Variables to set in the template:"
-                  verboseLn (flags fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
                   verboseLn (flags fSpec) "... done."
            where
               pandocWriter :: WriterOptions -> Pandoc -> String
