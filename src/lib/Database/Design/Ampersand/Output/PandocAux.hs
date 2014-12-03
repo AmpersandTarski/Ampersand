@@ -265,8 +265,10 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                       else system ( "cd "++dirOutput (flags fSpec)++
                                                     " && pdflatex "++commonFlags++
-                                                    texFilename ++ if verboseP (flags fSpec) then "" else "> "++addExtension(baseName (flags fSpec)) ".pdflog" ) >>
-                                           system makeIndexCommand
+                                                    texFilename ++ if verboseP (flags fSpec) then "" else "> "++addExtension(baseName (flags fSpec)) ".pdflog" )
+                                           -- >> system makeIndexCommand
+                                           -- disabled makeIndexCommand on non-windows, since it will always fail when absolute paths are used
+                                           -- For some weird Latex reason this can only be avoided by setting an environment variable.
                                       where
                                       pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
