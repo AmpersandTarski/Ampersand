@@ -301,20 +301,20 @@ function checkRules($ruleNames)
   $error = '';
 
   foreach ($ruleNames as $ruleName)
-  { $ruleSql = $allRules[$ruleName];
+  { $rule = $allRules[$ruleName];
    
-    $rows = DB_doquerErr($ruleSql['violationsSQL'], $error); // execute violationsSQL to check for violations
+    $rows = DB_doquerErr($rule['violationsSQL'], $error); // execute violationsSQL to check for violations
       if ($error) error("While evaluating rule '$ruleName': ".$error);
     
       // if there are rows (i.e. violations)
     if (count($rows) == 0)
-    { // emitLog('Rule '.$ruleSql['name'].' holds');
+    { // emitLog('Rule '.$rule['name'].' holds');
     } else
     { $allRulesHold = false;
-      emitLog('Rule '.$ruleSql['name'].' is broken');
+      emitLog('Rule '.$rule['name'].' is broken');
       
       // if the rule has an associated message, we show that instead of the name and the meaning
-      $message = $ruleSql['message'] ? $ruleSql['message'] : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
+      $message = $rule['message'] ? $rule['message'] : "Rule '$rule[name]' is broken: $rule[meaning]";
        // however, for ExecEngine output we have the possibility to suppress some stuff
       if (isset($ExecEngineRules)) // Er is geen garantie dat de rol 'ExecEngine' altijd bestaat.
       { if(in_array($ruleName, $ExecEngineRules))
@@ -327,10 +327,10 @@ function checkRules($ruleNames)
       { emitAmpersandLog($message);
       }
      
-      $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $selectedRoleNr);
-      $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $selectedRoleNr);
+      $srcNrOfIfcs = getNrOfInterfaces($rule['srcConcept'], $selectedRoleNr);
+      $tgtNrOfIfcs = getNrOfInterfaces($rule['tgtConcept'], $selectedRoleNr);
       
-      $pairView = $ruleSql['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
+      $pairView = $rule['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
      
 // For optimization purposes, e.g. for computing transitive closures (see plugin_Warshall.php), we allow plugins to be run only for the first violation, and skip all the others.
       global $violationID;
@@ -342,7 +342,7 @@ function checkRules($ruleNames)
       foreach($rows as $violation)
       { $violationID++; 
         if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
-        { $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
+        { $theMessage = execPair($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $pairView);
           // emitAmpersandLog($theMessage);
           $theCleanMessage = strip_tags($theMessage);
           $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
@@ -366,7 +366,7 @@ function checkRules($ruleNames)
           }
           if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[DONE]]");
         } else
-        { $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
+        { $theMessage = showPair($violation['src'], $rule['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $rule['tgtConcept'], $tgtNrOfIfcs, $pairView);
           emitAmpersandLog('- ' . $theMessage);
           }
       }
@@ -449,15 +449,15 @@ function testRule($ruleName)
   
   echo "<a href=\"../Installer.php\" style=\"float:right\">Reset database</a>";
   echo "<h2>Testing rule $ruleName</h2>";
-  $ruleSql = $allRules[$ruleName];
-  $ruleAdl = escapeHtmlAttrStr($ruleSql['ruleAdl']);
-  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[contentsSQL]</pre><h4>results</h4>";
+  $rule = $allRules[$ruleName];
+  $ruleAdl = escapeHtmlAttrStr($rule['ruleAdl']);
+  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$rule[contentsSQL]</pre><h4>results</h4>";
   $error = '';
-  $rows = queryDb($ruleSql['contentsSQL'], $error);
+  $rows = queryDb($rule['contentsSQL'], $error);
   printBinaryTable( $rows );
 
-  echo "<h4>Rule violations SQL</h4><pre>$ruleSql[violationsSQL]</pre><h4>results</h4>";
-  $rows = queryDb($ruleSql['violationsSQL'], $error);
+  echo "<h4>Rule violations SQL</h4><pre>$rule[violationsSQL]</pre><h4>results</h4>";
+  $rows = queryDb($rule['violationsSQL'], $error);
   printBinaryTable( $rows );
 }
 
