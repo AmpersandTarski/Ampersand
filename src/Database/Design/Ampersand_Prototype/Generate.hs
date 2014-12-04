@@ -158,7 +158,7 @@ generateTableInfos fSpec =
 
 generateRules :: Fspc -> [String]
 generateRules fSpec =
-  [ "$allRulesSql ="
+  [ "$allRules ="
   , "  array"
   ] ++
   addToLastLine ";"

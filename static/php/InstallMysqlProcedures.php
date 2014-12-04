@@ -13,7 +13,7 @@ require_once 'DatabaseUtils.php';
 require_once 'loadplugins.php';
 
 global $allRoles;
-global $allRulesSql;
+global $allRules;
 global $dbName;
 global $storedProcedureCreated;
 
@@ -32,23 +32,23 @@ for ($r = 0; $r < count($allRoles); $r++)
       {
          $storedProcedureCreated = false; // if stored procedure remains uncreated, we MUST warn the developer/user!!
          procDBGecho("RuleName: $ruleName");
-         procDBGecho("--Rule: ".$allRulesSql[$ruleName]['ruleAdl']);
+         procDBGecho("--Rule: ".$allRules[$ruleName]['ruleAdl']);
          
          // if "|-" exists in ADL expression
-         if(strpos($allRulesSql[$ruleName]['ruleAdl'], "|-") !== false)
+         if(strpos($allRules[$ruleName]['ruleAdl'], "|-") !== false)
          {
             $symbol = "|-";
             procDBGecho("--Rule contains '|-'");
             // Break up rule into expressions
-            $expressions = explode("|-", $allRulesSql[$ruleName]['ruleAdl']);
+            $expressions = explode("|-", $allRules[$ruleName]['ruleAdl']);
             
          // elseif "-|" exists in ADL expression
-         }elseif(strpos($allRulesSql[$ruleName]['ruleAdl'], "-|") !== false)
+         }elseif(strpos($allRules[$ruleName]['ruleAdl'], "-|") !== false)
          {
             $symbol = "-|";
             procDBGecho("--Rule contains '-|'");
             // Break up rule into expressions
-            $expressions = explode("-|", $allRulesSql[$ruleName]['ruleAdl']);
+            $expressions = explode("-|", $allRules[$ruleName]['ruleAdl']);
             
          }else
          {
@@ -178,7 +178,7 @@ for ($r = 0; $r < count($allRoles); $r++)
                }
                               
                // query uitvoeren
-               mysqli_query($link, "DROP PROCEDURE IF EXISTS ".escapeSQL(makeDBFunctionName($allRulesSql[$ruleName]['name'])));
+               mysqli_query($link, "DROP PROCEDURE IF EXISTS ".escapeSQL(makeDBFunctionName($allRules[$ruleName]['name'])));
                mysqli_query($link, $query); 
                echo(mysqli_error($link));
                
@@ -211,7 +211,7 @@ procDBGecho($query . "");
 procDBGecho("AllProcedures PROCEDURE aangemaakt</br/>");
 
 function makeInspairSqlProcedure($ruleName, $relation){
-   global $allRulesSql;
+   global $allRules;
    global $relationTableInfo;
    global $tableColumnInfo;
    global $procedures;
@@ -246,12 +246,12 @@ function makeInspairSqlProcedure($ruleName, $relation){
    }
    
    // build procedure
-   $query = "CREATE PROCEDURE ".escapeSQL(makeDBFunctionName($allRulesSql[$ruleName]['name']))."() 
+   $query = "CREATE PROCEDURE ".escapeSQL(makeDBFunctionName($allRules[$ruleName]['name']))."() 
          BEGIN 
          DECLARE done INT DEFAULT 0; 
          DECLARE srcAtom varchar(4000); 
          DECLARE tgtAtom varchar(4000); 
-         DECLARE cur_1 CURSOR FOR ".$allRulesSql[$ruleName]['violationsSQL']."; 
+         DECLARE cur_1 CURSOR FOR ".$allRules[$ruleName]['violationsSQL']."; 
          DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1; 
          OPEN cur_1; 
          REPEAT 
@@ -264,14 +264,14 @@ function makeInspairSqlProcedure($ruleName, $relation){
          END "; 
    
    procDBGecho(" --Inspair PROCEDURE aanmaken");
-   addProcedureToAllProcedures(makeDBFunctionName($allRulesSql[$ruleName]['name'])); // add this procedure to AllProcedures in order to call all procedures at once
+   addProcedureToAllProcedures(makeDBFunctionName($allRules[$ruleName]['name'])); // add this procedure to AllProcedures in order to call all procedures at once
    $storedProcedureCreated = TRUE;
 
    return $query;
 }
 
 function makeDelpairSqlProcedure($ruleName, $relation){
-   global $allRulesSql;
+   global $allRules;
    global $relationTableInfo;
    global $tableColumnInfo;
    global $procedures;
@@ -306,12 +306,12 @@ function makeDelpairSqlProcedure($ruleName, $relation){
       $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`= srcAtom AND `$tgtColEsc`= tgtAtom";
    }
    // build procedure
-   $sql = "CREATE PROCEDURE ".escapeSQL(makeDBFunctionName($allRulesSql[$ruleName]['name']))."() 
+   $sql = "CREATE PROCEDURE ".escapeSQL(makeDBFunctionName($allRules[$ruleName]['name']))."() 
          BEGIN 
          DECLARE done INT DEFAULT 0; 
          DECLARE srcAtom varchar(4000); 
          DECLARE tgtAtom varchar(4000); 
-         DECLARE cur_1 CURSOR FOR ".$allRulesSql[$ruleName]['violationsSQL']."; 
+         DECLARE cur_1 CURSOR FOR ".$allRules[$ruleName]['violationsSQL']."; 
          DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1; 
          OPEN cur_1; 
          REPEAT 
@@ -324,7 +324,7 @@ function makeDelpairSqlProcedure($ruleName, $relation){
          END";
          
    procDBGecho(" --Delpair PROCEDURE aanmaken");
-   addProcedureToAllProcedures(makeDBFunctionName($allRulesSql[$ruleName]['name'])); // add this procedure to AllProcedures in order to call all procedures at once
+   addProcedureToAllProcedures(makeDBFunctionName($allRules[$ruleName]['name'])); // add this procedure to AllProcedures in order to call all procedures at once
    $storedProcedureCreated = TRUE;
    
    return $sql;                  

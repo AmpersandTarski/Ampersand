@@ -285,7 +285,7 @@ function checkInvariantRules($interface)
 
 function checkRules($ruleNames)
 { global $allRoles;
-  global $allRulesSql;
+  global $allRules;
   global $selectedRoleNr;
   global $execEngineWhispers; // set in 'pluginsettings.php'
   global $execEngineSays; // set in 'pluginsettings.php'
@@ -301,7 +301,7 @@ function checkRules($ruleNames)
   $error = '';
 
   foreach ($ruleNames as $ruleName)
-  { $ruleSql = $allRulesSql[$ruleName];
+  { $ruleSql = $allRules[$ruleName];
    
     $rows = DB_doquerErr($ruleSql['violationsSQL'], $error); // execute violationsSQL to check for violations
       if ($error) error("While evaluating rule '$ruleName': ".$error);
@@ -436,20 +436,20 @@ function error($err)
 
 function testRule($ruleName)
 { global $isDev;
-  global $allRulesSql;
+  global $allRules;
   
   if (!$isDev) {
     echo "<span style=\"color: red\">Rule test unavailable: prototype was not generated with <tt>--dev</tt> option.</span>";
     return;
   }
-  if (!$allRulesSql[$ruleName]) {
+  if (!$allRules[$ruleName]) {
     echo "<span style=\"color: red\">Error: rule \"$ruleName\" does not exist.</span>";
     return;
   }
   
   echo "<a href=\"../Installer.php\" style=\"float:right\">Reset database</a>";
   echo "<h2>Testing rule $ruleName</h2>";
-  $ruleSql = $allRulesSql[$ruleName];
+  $ruleSql = $allRules[$ruleName];
   $ruleAdl = escapeHtmlAttrStr($ruleSql['ruleAdl']);
   echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[contentsSQL]</pre><h4>results</h4>";
   $error = '';
