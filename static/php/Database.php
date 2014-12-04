@@ -35,6 +35,12 @@ if (isset($_REQUEST['resetSession']) ) {
 } else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
+  if ($_REQUEST['interface']) {
+    $interface = urldecode($_REQUEST['interface']);
+  } else {
+  	error("Parameter 'interface' not present in POST request");
+  }
+  			
   dbStartTransaction();
   emitLog("BEGIN");
 
@@ -52,7 +58,7 @@ if (isset($_REQUEST['resetSession']) ) {
   runAllProcedures();
   
   echo '<div id="InvariantRuleResults">';
-  $invariantRulesHold = checkInvariantRules();
+  $invariantRulesHold = checkInvariantRules($interface);
   echo '</div>';
   
   if ($invariantRulesHold) {
@@ -266,9 +272,14 @@ function checkRoleRulesPerRole($roleNr)
   checkRules($role['ruleNames']);
 }
 
-function checkInvariantRules()
-{ global $invariantRuleNames;
-  emitLog("Checking invariant rules");
+function checkInvariantRules($interface)
+{ global $allInterfaceObjects;
+  global $invariantRuleNames;
+  $interfaceConjunctNames = $allInterfaceObjects[$interface]['interfaceConjunctNames'];
+  emitLog("Checking invariant rules for interface ".$interface);
+  emitLog("Corresponding conjuncts: ".print_r($interfaceConjunctNames, true));
+  // TODO: check interfaceConjuncts and report error as error of containing invariant rule
+  // TODO: $invariantRuleNames may be obsolete when conjuncts have been implemented
   return checkRules($invariantRuleNames);
 }
 
