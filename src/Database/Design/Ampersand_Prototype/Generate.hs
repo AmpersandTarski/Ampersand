@@ -346,7 +346,6 @@ generateMSubInterface fSpec editableRels depth subIntf =
                                 (blockParenthesize "(" ")" ","
                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
 
--- TODO: Redundant? These already seem to be present in $allRules.
 generateConjuncts :: Fspc -> [String]
 generateConjuncts fSpec =
   [ "$allConjunctsSql ="
