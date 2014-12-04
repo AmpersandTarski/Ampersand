@@ -251,7 +251,7 @@ function checkRoleRules($roleNr)
       }
     }
    $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
-   checkRules($allRoleRules); // check every rule
+   checkRules($allRoleRules, false); // check every rule
   }else
     checkRoleRulesPerRole($roleNr);
 }
@@ -269,23 +269,23 @@ function checkRoleRulesPerRole($roleNr)
   
   $role = $allRoles[$roleNr];
   emitLog("Checking rules for role $role[name]");
-  checkRules($role['ruleNames']);
+  checkRules($role['ruleNames'], false);
 }
 
 function checkInvariantRules($interface)
 { global $allInterfaceObjects;
   global $invariantRuleNames;
-  $interfaceConjunctNames = $allInterfaceObjects[$interface]['interfaceConjunctNames'];
-  emitLog("Checking invariant rules for interface ".$interface);
-  emitLog("Corresponding conjuncts: ".print_r($interfaceConjunctNames, true));
-  // TODO: check interfaceConjuncts and report error as error of containing invariant rule
-  // TODO: $invariantRuleNames may be obsolete when conjuncts have been implemented
-  return checkRules($invariantRuleNames);
+  $interfaceConjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
+  //emitLog("Checking invariant rules for interface ".$interface);
+  //emitLog("Corresponding conjuncts: ".print_r($interfaceConjunctNames, true));
+  return checkRules($interfaceConjunctNames, true);
 }
 
-function checkRules($ruleNames)
+// $rulesAreConjuncts == true means the names are conjunct names
+function checkRules($ruleOrConjunctNames, $rulesAreConjuncts)
 { global $allRoles;
   global $allRules;
+  global $allConjuncts;
   global $selectedRoleNr;
   global $execEngineWhispers; // set in 'pluginsettings.php'
   global $execEngineSays; // set in 'pluginsettings.php'
@@ -300,10 +300,22 @@ function checkRules($ruleNames)
   $allRulesHold = true; // by default $allRulesHold = true
   $error = '';
 
-  foreach ($ruleNames as $ruleName)
-  { $rule = $allRules[$ruleName];
-   
-    $rows = DB_doquerErr($rule['violationsSQL'], $error); // execute violationsSQL to check for violations
+  foreach ($ruleOrConjunctNames as $ruleOrConjunctName)
+  { if ($rulesAreConjuncts)
+    { $conjunct = $allConjuncts[$ruleOrConjunctName];
+      $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
+      $ruleName = $conjunct['ruleName'];
+      $rule = $allRules[ $ruleName ];              // and use the rule that gave rise to this conjunct for everything else
+      emitLog('Checking conjunct: '.$ruleOrConjunctName);
+      emitLog('Coming from  rule: '.$ruleName);
+    } else {
+      $ruleName = $ruleOrConjunctName;
+      $rule = $allRules[$ruleName];
+      $violationsSQL = $rule['violationsSQL'];
+      emitLog('Checking rule: '.$rule['name']);
+    }
+      
+    $rows = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
       if ($error) error("While evaluating rule '$ruleName': ".$error);
     
       // if there are rows (i.e. violations)
