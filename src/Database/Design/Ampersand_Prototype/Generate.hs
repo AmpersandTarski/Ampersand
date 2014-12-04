@@ -179,8 +179,11 @@ generateRules fSpec =
                   ++["        // "]
              else   []
            ) ++
-           [ "        // Normalized complement (== violationsSQL): " ] ++
-           (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))++
+           ( if development (flags fSpec)
+             then [ "        // Rule ADL: "++escapePhpStr (showADL rExpr) ] ++
+                  [ "        // Normalized complement (== violationsSQL): " ] ++
+                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+             else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
            ] ++
            [ "        , 'contentsSQL'   => " ++
@@ -232,16 +235,18 @@ generateConjuncts fSpec =
      (indent 4
        (blockParenthesize  "(" ")" ","
          [ [ generateConjunctName conj ++ " =>"
-           , "  array ( 'rulename'   => "++(showPhpStr.rc_rulename)   conj
-           , "//      , 'conjunct'   =>  ++(showPhpStr.rc_conjunct)   conj"
-           , "//      , 'dnfClauses' =>  ++(showPhpStr.rc_dnfClauses) conj"
+           , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
            ( if verboseP (flags fSpec)
              then   ["        // Normalization steps:"]
                   ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
                   ++["        // "]
-             else   []
-           ) ++
+             else   [] ) ++
+           ( if development (flags fSpec)
+             then [ "        // Conjunct ADL: "++escapePhpStr (showADL rExpr) ] ++
+                  [ "        // Normalized complement (== violationsSQL): " ] ++
+                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+             else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
            , "        )"
            ]
