@@ -274,7 +274,6 @@ function checkRoleRulesPerRole($roleNr)
 
 function checkInvariantRules($interface)
 { global $allInterfaceObjects;
-  global $invariantRuleNames;
   $interfaceConjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
   //emitLog("Checking invariant rules for interface ".$interface);
   //emitLog("Corresponding conjuncts: ".print_r($interfaceConjunctNames, true));

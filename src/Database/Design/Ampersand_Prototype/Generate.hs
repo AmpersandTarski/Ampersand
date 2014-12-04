@@ -205,9 +205,7 @@ generateRules fSpec =
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (flags fSpec) violExpr
          ]
-    ) ) ++
-  [ ""
-  , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) (invars fSpec)) ++");" ]
+    ) )
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
        showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                             []    -> ""
