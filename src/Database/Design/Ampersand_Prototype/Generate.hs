@@ -59,10 +59,10 @@ generateAll fSpec =
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
+        , generateConjuncts fSpec
         , generateRoles fSpec
         , generateViews fSpec
         , generateInterfaces fSpec
-        , generateConjuncts fSpec
         ]
     readCustomCssFile f =
       catch (readFile f)
@@ -223,6 +223,43 @@ generateRules fSpec =
          , "      )"
          ]
 
+generateConjuncts :: Fspc -> [String]
+generateConjuncts fSpec =
+  [ "$allConjuncts ="
+  , "  array"
+  ] ++
+  addToLastLine ";"
+     (indent 4
+       (blockParenthesize  "(" ")" ","
+         [ [ generateConjunctName conj ++ " =>"
+           , "  array ( 'rulename'   => "++(showPhpStr.rc_rulename)   conj
+           , "//      , 'conjunct'   =>  ++(showPhpStr.rc_conjunct)   conj"
+           , "//      , 'dnfClauses' =>  ++(showPhpStr.rc_dnfClauses) conj"
+           ] ++
+           ( if verboseP (flags fSpec)
+             then   ["        // Normalization steps:"]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "]
+             else   []
+           ) ++
+           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
+           , "        )"
+           ]
+         | conj<-vconjs fSpec
+         , let rExpr=rc_conjunct conj
+         , rc_rulename conj `notElem` uniRuleNames fSpec
+         , let violExpr = notCpl rExpr
+         , let violationsExpr = conjNF (flags fSpec) violExpr
+         ]
+     ) )
+     
+uniRuleNames :: Fspc -> [String]
+uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
+
+-- note the similarity with showHSName :: Conjunct -> String
+generateConjunctName :: Conjunct -> String
+generateConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
+
 generateRoles :: Fspc -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
@@ -345,44 +382,6 @@ generateMSubInterface fSpec editableRels depth subIntf =
                               indent 12
                                 (blockParenthesize "(" ")" ","
                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
-
-generateConjuncts :: Fspc -> [String]
-generateConjuncts fSpec =
-  [ "$allConjunctsSql ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-     (indent 4
-       (blockParenthesize  "(" ")" ","
-         [ [ generateConjunctName conj ++ " =>"
-           , "  array ( 'rulename'   => "++(showPhpStr.rc_rulename)   conj
-           , "//      , 'conjunct'   =>  ++(showPhpStr.rc_conjunct)   conj"
-           , "//      , 'dnfClauses' =>  ++(showPhpStr.rc_dnfClauses) conj"
-           ] ++
-           ( if verboseP (flags fSpec)
-             then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
-                  ++["        // "]
-             else   []
-           ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
-           , "        )"
-           ]
-         | conj<-vconjs fSpec
-         , let rExpr=rc_conjunct conj
-         , rc_rulename conj `notElem` uniRuleNames fSpec
-         , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (flags fSpec) violExpr
-         ]
-     ) )
-     
-uniRuleNames :: Fspc -> [String]
-uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
-
-
--- note the similarity with showHSName :: Conjunct -> String
-generateConjunctName :: Conjunct -> String
-generateConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
 
 -- utils
 
