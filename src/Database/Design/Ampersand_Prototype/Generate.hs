@@ -329,10 +329,11 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceConjunctNames' => array ("++intercalate ", " (map generateConjunctName conjs)++")" ++
-                        if null conjs then " // Output interface needs no checking." else ""
+          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map generateConjunctName invConjs)++")"
           ]
-          where conjs = filter (\conj -> rc_rulename conj `notElem` uniRuleNames fSpec) $ ifcControls interface
+          where invConjs = [ invConj | invConj <- ifcControls interface
+                                     , rc_rulename invConj `notElem` uniRuleNames fSpec
+                                     , rc_rulename invConj `elem` map name (invars fSpec) ] 
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
