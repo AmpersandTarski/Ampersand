@@ -232,7 +232,7 @@ generateConjuncts fSpec =
   addToLastLine ";"
      (indent 4
        (blockParenthesize  "(" ")" ","
-         [ [ generateConjunctName conj ++ " =>"
+         [ [ mkConjunctName conj ++ " =>"
            , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
            ( if verboseP (flags fSpec)
@@ -251,17 +251,18 @@ generateConjuncts fSpec =
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
          , rc_rulename conj `notElem` uniRuleNames fSpec
+         , rc_rulename conj `elem` map name (invars fSpec)
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (flags fSpec) violExpr
          ]
      ) )
-     
+    
 uniRuleNames :: Fspc -> [String]
 uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
 
 -- note the similarity with showHSName :: Conjunct -> String
-generateConjunctName :: Conjunct -> String
-generateConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
+mkConjunctName :: Conjunct -> String
+mkConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
 
 generateRoles :: Fspc -> [String]
 generateRoles fSpec =
@@ -327,11 +328,11 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map generateConjunctName invConjs)++")"
+          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map mkConjunctName invConjs)++")"
           ]
-          where invConjs = [ invConj | invConj <- ifcControls interface
-                                     , rc_rulename invConj `notElem` uniRuleNames fSpec
-                                     , rc_rulename invConj `elem` map name (invars fSpec) ] 
+          where invConjs = [ conj | conj <- ifcControls interface
+                                  , rc_rulename conj `notElem` uniRuleNames fSpec
+                                  , rc_rulename conj `elem` map name (invars fSpec) ] 
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
