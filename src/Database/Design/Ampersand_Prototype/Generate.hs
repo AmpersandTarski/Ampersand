@@ -59,9 +59,11 @@ generateAll fSpec =
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
+        , generateConjuncts fSpec
         , generateRoles fSpec
         , generateViews fSpec
-        , generateInterfaces fSpec]
+        , generateInterfaces fSpec
+        ]
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
@@ -156,7 +158,7 @@ generateTableInfos fSpec =
 
 generateRules :: Fspc -> [String]
 generateRules fSpec =
-  [ "$allRulesSql ="
+  [ "$allRules ="
   , "  array"
   ] ++
   addToLastLine ";"
@@ -177,8 +179,11 @@ generateRules fSpec =
                   ++["        // "]
              else   []
            ) ++
-           [ "        // Normalized complement (== violationsSQL): " ] ++
-           (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))++
+           ( if development (flags fSpec)
+             then [ "        // Rule ADL: "++escapePhpStr (showADL rExpr) ] ++
+                  [ "        // Normalized complement (== violationsSQL): " ] ++
+                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+             else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
            ] ++
            [ "        , 'contentsSQL'   => " ++
@@ -200,9 +205,7 @@ generateRules fSpec =
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (flags fSpec) violExpr
          ]
-    ) ) ++
-  [ ""
-  , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) (invars fSpec)) ++");" ]
+    ) )
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
        showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                             []    -> ""
@@ -220,6 +223,46 @@ generateRules fSpec =
          , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" exp)
          , "      )"
          ]
+
+generateConjuncts :: Fspc -> [String]
+generateConjuncts fSpec =
+  [ "$allConjuncts ="
+  , "  array"
+  ] ++
+  addToLastLine ";"
+     (indent 4
+       (blockParenthesize  "(" ")" ","
+         [ [ mkConjunctName conj ++ " =>"
+           , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
+           ] ++
+           ( if verboseP (flags fSpec)
+             then   ["        // Normalization steps:"]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "]
+             else   [] ) ++
+           ( if development (flags fSpec)
+             then [ "        // Conjunct ADL: "++escapePhpStr (showADL rExpr) ] ++
+                  [ "        // Normalized complement (== violationsSQL): " ] ++
+                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+             else [] ) ++
+           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
+           , "        )"
+           ]
+         | conj<-vconjs fSpec
+         , let rExpr=rc_conjunct conj
+         , rc_rulename conj `notElem` uniRuleNames fSpec
+         , rc_rulename conj `elem` map name (invars fSpec)
+         , let violExpr = notCpl rExpr
+         , let violationsExpr = conjNF (flags fSpec) violExpr
+         ]
+     ) )
+    
+uniRuleNames :: Fspc -> [String]
+uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
+
+-- note the similarity with showHSName :: Conjunct -> String
+mkConjunctName :: Conjunct -> String
+mkConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
 
 generateRoles :: Fspc -> [String]
 generateRoles fSpec =
@@ -282,11 +325,17 @@ generateInterface fSpec interface =
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
   , showPhpStr (name interface) ++ " => " ] ++
-  genInterfaceObjects fSpec(ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface)
-
+  indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
+  where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
+          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
+          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map mkConjunctName invConjs)++")"
+          ]
+          where invConjs = [ conj | conj <- ifcControls interface
+                                  , rc_rulename conj `notElem` uniRuleNames fSpec
+                                  , rc_rulename conj `elem` map name (invars fSpec) ] 
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
+genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if verboseP (flags fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
@@ -297,9 +346,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
   ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (flags fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
-  ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
-       Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" ]
-       Nothing             -> []
+  ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
   ++ case getEditableRelation editableRels normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
@@ -319,7 +366,7 @@ genInterfaceObjects fSpec editableRels mInterfaceRoles depth object =
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
          ]
   ++
-  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp)
+  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (22+14*depth) "src" "tgt" normalizedInterfaceExp)
   ]
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"

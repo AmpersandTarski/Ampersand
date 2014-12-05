@@ -123,8 +123,9 @@ function commitEditing() {
 }
 
 function sendCommands(dbCommands) {
+  var interface = $('#AmpersandRoot').attr('interface');
   $.post('php/Database.php',  
-  { commands: JSON.stringify(dbCommands), role: getSelectedRole() },
+  { commands: JSON.stringify(dbCommands), interface: encodeURIComponent(interface), role: getSelectedRole() },
   function(data) {
     $results = $(data);
     $errors = $(data).find('.Error');

@@ -69,7 +69,7 @@ $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 
 
 generateInterfaceMap();
 if (isset($_REQUEST['interface'])) 
-  genEditableConceptInfo($_REQUEST['interface']);
+  genEditableConceptInfo(urldecode($_REQUEST['interface']));
 ?>
 
 </script>
@@ -143,8 +143,8 @@ if ($err)
   genNewAtomLinks();
 } else
 {
-  $interface= $_REQUEST['interface'];
-  $atom = $_REQUEST['atom'];
+  $interface= urldecode($_REQUEST['interface']);
+  $atom = urldecode($_REQUEST['atom']);
 	
   $concept = $allInterfaceObjects[$interface]['srcConcept'];
   
