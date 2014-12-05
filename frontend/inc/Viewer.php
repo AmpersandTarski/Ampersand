@@ -35,7 +35,7 @@ class Viewer {
 		$this->addHtmlLine('<script src="lib/bootstrap/js/bootstrap.min.js"></script>'); // bootstrap.js requires Jquery (loaded above)
 		
 		// Angular
-		$this->addHtmlLine('<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.13/angular.min.js"></script>');
+		$this->addHtmlLine('<script src="lib/angular/angular.min.js"></script>');
 		$this->addHtmlLine('<script src="lib/angular/angular-resource.min.js"></script>');
 		$this->addHtmlLine('<script src="lib/angular/angular-route.min.js"></script>');
 				

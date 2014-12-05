@@ -5,8 +5,9 @@
 		
 	<div class="container">
 		<ul class="nav nav-pills">
+			
 			<li id="{{interface.label}}" ng-repeat="interface in Interfaces"> <!-- the interface attribute is there so we can style specific menu items with css -->
-				<a href="#/{{interface.id}}/atom/{{session_id}}">
+				<a href="#/{{interface.id}}/{{session_id}}">
 					<span class="glyphicon glyphicon-list-alt"></span> {{interface.label}}</a>
 			</li>
 		<!-- 			
@@ -19,7 +20,10 @@
 				</ul>
 			</li>
 
-		--> 		
+		--> 	
+			<li class="pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Filter on page">
+				<input type="text" class="form-control pull-right input-sm" placeholder="Filter" ng-model="searchText" style="width:200px;">
+			</li>	
 			<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Switch between different roles">
 				<a class="dropdown-toggle" data-toggle="dropdown" href=""><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">

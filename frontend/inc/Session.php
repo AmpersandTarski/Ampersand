@@ -139,13 +139,6 @@ class Session {
 		return $atomId;
 	}
 	
-	public function setViewer(){ 
-		
-		$this->viewer = new Viewer($this->interface, $this->atom);
-		
-		return true;
-	}
-	
 	private function deleteAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom($sessionAtom, 'SESSION');

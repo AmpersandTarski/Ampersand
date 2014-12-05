@@ -39,7 +39,7 @@ if(isset($_REQUEST['atom'])){ // new atom selected
 $session->setAtom($atomId);
 */	
 
-$session->setViewer();
-print $session->viewer;
+$viewer = new Viewer();
+print $viewer;
 
 ?>

@@ -9,7 +9,10 @@ input.ng-invalid.ng-dirty {
   }
 
 .mainview {
-	padding: 100px 15px 0px 15px;
+	display: block;
+ 	margin-left: auto;
+  	margin-right: auto;
+  	padding: 100px 15px 0px 15px;
 }
 
 .fullview {

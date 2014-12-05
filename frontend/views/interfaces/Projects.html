@@ -7,10 +7,10 @@
 				<tr>
 					<th>Projects</th> 
 					<th>Name</th>
-					<th>Description</th>
-					<th>Projectleider</th>
-					<th>Start</th>
-					<th>Started</th>
+					<!-- <th>Description</th>
+					<!-- <th>Projectleider</th> -->
+					<!-- <th>Start</th> -->
+					<!-- <th>Started</th> -->
 					<th></th>
 				</tr>
 			</thead>
@@ -20,20 +20,17 @@
 						<div class="container-fluid" style="padding:5px;">
 							<div class="row">
 								<div class="col-md-12">
-									<a ng-href="#/Project/atom/{{row.id}}">{{row.label}}</a>
+									<a ng-href="#/Project/{{row.id}}">{{row.label}}</a>
 								</div>
 							</div>
 						</div>
 					</td>
-					<td style="padding:5px;">
+					<td>
 						<!-- Other -->
-						<div ng-repeat="value in row.Name" class="row">
-							<div class="col-md-10"><input ng-model="value.label" ng-required="true" type="text"></div>
-							<div class="col-md-2"><span class="glyphicon glyphicon-remove" ng-click="row.Name.splice( row.Name.indexOf(option), 1 );"></span></div>
-						</div>
+						<div class="col-md-10"><input ng-model="row.Name" ng-required="true" type="text"></div>
 					</td>
+					<!-- Textarea
 					<td style="padding:5px;">
-						<!-- Textarea -->
 						<div ng-repeat="value in row.Description" class="row">
 							<div class="col-md-10"><textarea>{{value.label}}</textarea></div>
 							<div class="col-md-2"><span class="glyphicon glyphicon-remove" ng-click="row.Description.splice( row.Description.indexOf(option), 1 );"></span></div>
@@ -42,8 +39,9 @@
 							<div class="col-md-2 col-md-offset-10"><span class="glyphicon glyphicon-plus" ng-click="row.Description.push({label:'new item'})"></span></div>
 						</div>
 					</td>
+					 -->
+					 <!-- Relation to other concept
 					<td style="padding:5px;">
-						<!-- Relation to other concept  -->
 						<div ng-repeat="option in row.Projectleider" class="row">
 							<div class="col-md-10"><a ng-href="?atom={{option.id}}#/Atom">{{option.label}}</a></div>
 							<div class="col-md-2"><span class="glyphicon glyphicon-remove" ng-click="row.Projectleider.splice( row.Projectleider.indexOf(option), 1 );"></span></div>
@@ -52,8 +50,9 @@
 							<div class="col-md-2 col-md-offset-10"><span class="glyphicon glyphicon-plus" ng-click="row.Projectleider.push({label:'new item'})"></span></div>
 						</div>
 					</td>
+					 -->
+					 <!-- Date
 					<td style="padding:5px;">
-						<!-- Date -->
 						<div ng-repeat="value in row.Start" class="row">
 							<div class="col-md-10"><input ng-required="true" type="date" value="{{value.label}}"></div>
 						</div>
@@ -61,12 +60,14 @@
 							<div class="col-md-2 col-md-offset-10"><span class="glyphicon glyphicon-plus" ng-click="row.Start.push({label:'new item'})"></span></div>
 						</div>
 					</td>
+					 -->
+					 <!-- Checkbox
 					<td style="text-align: center;">
-						<!-- Checkbox -->
 						<div ng-repeat="value in row.Started" class="row">
 							<div class="col-md-10"><input ng-model="value.label" type="checkbox"></div>
 						</div>
 					</td>
+					 -->
 					<td><span class="glyphicon glyphicon-remove" ng-click="SESSION.Projects.splice( SESSION.Projects.indexOf(row), 1 );"></span></td>
 				</tr>
 	        </tbody>

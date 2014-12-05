@@ -7,15 +7,20 @@ AmpersandApp.config(function($routeProvider) {
 				controller: '',
 				templateUrl: 'views/Home.html'
 			})
-		.when('/Projects/atom/:atom',
+		.when('/Projects/:atom1',
 			{
 				controller: 'ProjectsController',
 				templateUrl: 'views/interfaces/Projects.html'
 			})
-		.when('/Project/atom/:atom',
+		.when('/Project/:atom1',
 			{
 				controller: 'ProjectController',
 				templateUrl: 'views/interfaces/Project.html'
+			})
+		.when('/Project/:atom1/Person/:atom2',
+			{
+				controller: 'ProjectController',
+				templateUrl: 'views/interfaces/Person.html'
 			})
 		.otherwise({redirectTo: '/'});
 });

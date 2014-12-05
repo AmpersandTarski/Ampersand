@@ -1,5 +1,5 @@
-AmpersandApp.controller('NotificationCenterController', ['$scope', '$routeParams', 'NotificationCenterFactory', function ($scope, $routeParams, NotificationCenterFactory) {
-	$scope.notifications = NotificationCenterFactory.get({}, function(){
+AmpersandApp.controller('NotificationCenterController', ['$scope', '$rootScope', '$routeParams', 'NotificationCenterFactory', function ($scope, $rootScope, $routeParams, NotificationCenterFactory) {
+	$rootScope.notifications = NotificationCenterFactory.get({}, function(){
 		
 	});
 	

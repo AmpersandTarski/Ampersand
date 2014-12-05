@@ -11,11 +11,11 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	
 	public static function addError($message){
 		self::$errors[]['message'] = $message;
-		self::$logs[] = $message;
+		self::$logs[]['message'] = $message;
 	}
 	public static function addInvariant($message){
-		self::$invariants[] = $message;
-		self::$logs[] = $message;
+		self::$invariants[]['message'] = $message;
+		self::$logs[]['message'] = $message;
 	}
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
@@ -25,19 +25,19 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
 		
 		self::$violations[$violationMessage][] = $rowMessage;
-		self::$logs[] = $rowMessage;
+		self::$logs[]['message'] = $rowMessage;
 	}
 	public static function addInfo($message){
-		self::$infos[] = $message;
-		self::$logs[] = $message;
+		self::$infos[]['message'] = $message;
+		self::$logs[]['message'] = $message;
 	}
 	public static function addSuccess($message, $id = null){
 		if(isset($id)){ // ID can be integer, but also string
-			self::$successes[$id][] = $message;
+			self::$successes[$id]['rows'][] = $message;
 		}else{
-			self::$successes[] = array($message);
+			self::$successes[]['message'] = $message;
 		}
-		self::$logs[] = $message;
+		self::$logs[]['message'] = $message;
 		end(self::$successes);
 		return key(self::$successes);
 	}

@@ -1,11 +1,11 @@
 AmpersandApp.controller('ProjectsController', ['$scope', '$routeParams', 'ProjectsFactory', function ($scope, $routeParams, ProjectsFactory) {
-	$scope.atom = $routeParams.atom;
-	$scope.SESSION = ProjectsFactory.get({atom : $scope.atom}, function(){
+	$scope.atom1 = $routeParams.atom1;
+	$scope.SESSION = ProjectsFactory.get({atom : $scope.atom1}, function(){
 		// function when GET request is succeeded.
 	});
 	
 	$scope.save = function(){
-		$scope.Projects.$save({atom : $scope.atom});	// .... save data to server
+		$scope.SESSION.$save({atom : $scope.atom1});	// .... save data to server
 	}
 	
 }]);
