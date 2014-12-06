@@ -169,9 +169,11 @@ if ($err)
   echo '</div>';
 
   if (count(getEditableConceptsForInterfaceName($interface)) > 0) {
-       echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
-       echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
-       echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
+       echo "\n<div id=\"button-panel\">\n";
+       echo "  <button class=\"Button EditButton\" onclick=\"startEditing()\">Edit</button>\n";
+       echo "  <button class=\"Button SaveButton\" onclick=\"commitEditing()\">Save</button>\n";
+       echo "  <button class=\"Button CancelButton\" onclick=\"cancelEditing()\">Cancel</button>\n";
+       echo "</div>\n";
   }
 
   // If the atom is not in the concept, this means that a new atom was be created (and $atom is a time-based unique name).

@@ -145,6 +145,11 @@ body {
 
 /* Buttons */
 
+#button-panel {
+    position: absolute;
+    left: 0px;
+}
+
 .Button {
     position: relative;
     float: left;
