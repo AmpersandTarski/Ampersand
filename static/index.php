@@ -75,6 +75,7 @@ if (isset($_REQUEST['interface']))
 </script>
 </head>
 <body onload="init()">
+<div id="all-headers">
 <div id="Header"><div id="Logo"></div><div id="Decoration"></div></div>
 
 <?php
@@ -107,9 +108,12 @@ if (isset($conceptTableInfo['SESSION'])) // only show login/logout buttons when 
 if ($isDev) // with --dev on, we show the reset-database link in the menu bar
 { echo '<div class="MenuItem" id="MenuBarReset"><a href="javascript:resetDatabase()"><span class=TextContent>Reset</span></a></div>';
 }
-
+echo '<div id="MenuBarTerminator"></div>';
 echo '</div>'; // .MenuBar
-echo "</div>\n\n"; // #TopLevelInterfaces
+echo '<div id="MenuBarGradient"></div>';
+echo "</div>\n"; // #TopLevelInterfaces
+echo "</div>\n\n"; // #all-headers
+
 genNewAtomDropDownMenu();
 echo "\n\n";
 $timeStamp = getTimestamp($err); // access database to see if it is there
@@ -165,9 +169,11 @@ if ($err)
   echo '</div>';
 
   if (count(getEditableConceptsForInterfaceName($interface)) > 0) {
-       echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
-       echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
-       echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
+       echo "\n<div id=\"button-panel\">\n";
+       echo "  <button class=\"Button EditButton\" onclick=\"startEditing()\">Edit</button>\n";
+       echo "  <button class=\"Button SaveButton\" onclick=\"commitEditing()\">Save</button>\n";
+       echo "  <button class=\"Button CancelButton\" onclick=\"cancelEditing()\">Cancel</button>\n";
+       echo "</div>\n";
   }
 
   // If the atom is not in the concept, this means that a new atom was be created (and $atom is a time-based unique name).

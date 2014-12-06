@@ -1,12 +1,29 @@
 var navigationWarningEnabled = true;
 
 function initialize() {
+  $( window ).resize(function() {
+    setScrollPaneHeight();
+  });
+  setScrollPaneHeight();
   tweakLayout();
   initCreateNewMenu();
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
                      // initialize and initializeAtoms (the latter also being called from sendCommands).
   startRefreshTimer();
+}
+
+function setScrollPaneHeight() {
+  /* Surprisingly, a CSS-only solution to get a variable size top header with a scrollable content pane below does
+     seem to exist. Table and div solutions all have problems, and the CSS 'display: flex' property is buggy and not
+     very portable at the moment. 
+
+     Therefore, we actively set the ScrollPane height on init and resize and make it scrollable (with 'overflow: auto'
+     in the stylesheet.)
+  */
+  var desiredAmpersandRootHeight = $(window).height() - $('#all-headers').outerHeight();
+  var scrollPaneVertPadding = $('#ScrollPane').outerHeight() - $('#ScrollPane').height();
+  $('#ScrollPane').height( desiredAmpersandRootHeight - scrollPaneVertPadding);
 }
 
 function tweakLayout() {

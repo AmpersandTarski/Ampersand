@@ -6,14 +6,13 @@ body {
     width: 100%;
     position: relative;
     z-index: 20;
-    height: 33px; /* 24 (menu) + 6 (gradient) */
-    background: transparent url(../images/menu_bg.png) repeat-x bottom center;
+    height: 100%;
 }
 #TopLevelInterfaces .MenuBar {
     background-color: #333333;
     padding-left: 10px;
     padding-right: 3px;
-    height: 27px;
+    height: 100%;
 }
 #TopLevelInterfaces .MenuItem {
     padding-top: 3px;
@@ -46,6 +45,13 @@ body {
     float: right;
     margin-right: 10px;
 }
+#TopLevelInterfaces #MenuBarTerminator {
+    clear: both;
+}
+#TopLevelInterfaces #MenuBarGradient {
+    height: 6px; /* height of menu_bg.png */
+    background: transparent url(../images/menu_bg.png) repeat-x top center;
+}
 
 /* Due to a bug in Chrome, 'before' pseudo elements are not part of the element, which makes it impossible to rename links
    in the interface with a Custom.css. A workaround is to display these links as inline-block. */
@@ -60,15 +66,14 @@ body {
 }
 
 
+/* Not ideal yet: ScrollPane is positioned absolutely at 141, so now it will get obscured by the dark menu bar. Instead, the
+   menu bar should get its required height, and ScrollPane should get the remaining page height. NOTE: also check #ScrollPane rules 
+   in Oblomilan.css, and maybe move to here */
 #ScrollPane {
-    overflow:auto; 
-    position:absolute;
-    background-color: inherit; /* otherwise position: absolute causes background to be white */
-    top: 50px;
+    overflow:auto; /* Height is set on init and resize by Ampersand.js */
     left:0px;
     right:0px;
     bottom:0px;
-    padding-top: 26px;
 }
 
 [editing=false] .Atom[hasInterface]>.AtomName {
@@ -138,6 +143,11 @@ body {
 
 
 /* Buttons */
+
+#button-panel {
+    position: absolute;
+    left: 0px;
+}
 
 .Button {
     position: relative;
