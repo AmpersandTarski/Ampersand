@@ -1,6 +1,10 @@
 var navigationWarningEnabled = true;
 
 function initialize() {
+  $( window ).resize(function() {
+    tweakLayout();
+  });
+
   tweakLayout();
   initCreateNewMenu();
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
