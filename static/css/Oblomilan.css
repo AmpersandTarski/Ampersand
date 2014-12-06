@@ -43,6 +43,7 @@ button.Button:hover {
 /* General */
 
 #ScrollPane {
+    padding-top: 22px;
     padding-left: 10px;    
 }
 
