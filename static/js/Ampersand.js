@@ -10,6 +10,8 @@ function initialize() {
 }
 
 function tweakLayout() {
+    $('#ScrollPane').height( $( window ).height() -$('#all-headers').height() );
+
   // on an iPad, the roleSelector is positioned too far down, so we move it up 
   if (navigator.userAgent.match(/iPad/i) != null) {
     var offset = $('#RoleSelector').offset();

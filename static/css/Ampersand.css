@@ -71,13 +71,10 @@ body {
    in Oblomilan.css, and maybe move to here */
 #ScrollPane {
     overflow:auto; 
-    position:absolute;
     background-color: inherit; /* otherwise position: absolute causes background to be white */
-    top: 50px;
     left:0px;
     right:0px;
     bottom:0px;
-    padding-top: 26px;
 }
 
 [editing=false] .Atom[hasInterface]>.AtomName {
