@@ -70,8 +70,7 @@ body {
    menu bar should get its required height, and ScrollPane should get the remaining page height. NOTE: also check #ScrollPane rules 
    in Oblomilan.css, and maybe move to here */
 #ScrollPane {
-    overflow:auto; 
-    background-color: inherit; /* otherwise position: absolute causes background to be white */
+    overflow:auto; /* Height is set on init and resize by Ampersand.js */
     left:0px;
     right:0px;
     bottom:0px;
