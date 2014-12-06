@@ -75,6 +75,7 @@ if (isset($_REQUEST['interface']))
 </script>
 </head>
 <body onload="init()">
+<div id="all-headers">
 <div id="Header"><div id="Logo"></div><div id="Decoration"></div></div>
 
 <?php
@@ -110,7 +111,9 @@ if ($isDev) // with --dev on, we show the reset-database link in the menu bar
 echo '<div id="MenuBarTerminator"></div>';
 echo '</div>'; // .MenuBar
 echo '<div id="MenuBarGradient"></div>';
-echo "</div>\n\n"; // #TopLevelInterfaces
+echo "</div>\n"; // #TopLevelInterfaces
+echo "</div>\n\n"; // #all-headers
+
 genNewAtomDropDownMenu();
 echo "\n\n";
 $timeStamp = getTimestamp($err); // access database to see if it is there
