@@ -2,9 +2,9 @@ var navigationWarningEnabled = true;
 
 function initialize() {
   $( window ).resize(function() {
-    tweakLayout();
+    setScrollPaneHeight();
   });
-
+  setScrollPaneHeight();
   tweakLayout();
   initCreateNewMenu();
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
@@ -13,11 +13,20 @@ function initialize() {
   startRefreshTimer();
 }
 
-function tweakLayout() {
+function setScrollPaneHeight() {
+  /* Surprisingly, a CSS-only solution to get a variable size top header with a scrollable content pane below does
+     seem to exist. Table and div solutions all have problems, and the CSS 'display: flex' property is buggy and not
+     very portable at the moment. 
+
+     Therefore, we actively set the ScrollPane height on init and resize and make it scrollable (with 'overflow: auto'
+     in the stylesheet.)
+  */
   var desiredAmpersandRootHeight = $(window).height() - $('#all-headers').outerHeight();
   var scrollPaneVertPadding = $('#ScrollPane').outerHeight() - $('#ScrollPane').height();
   $('#ScrollPane').height( desiredAmpersandRootHeight - scrollPaneVertPadding);
+}
 
+function tweakLayout() {
   // on an iPad, the roleSelector is positioned too far down, so we move it up 
   if (navigator.userAgent.match(/iPad/i) != null) {
     var offset = $('#RoleSelector').offset();
