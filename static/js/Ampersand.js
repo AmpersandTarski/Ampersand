@@ -10,7 +10,9 @@ function initialize() {
 }
 
 function tweakLayout() {
-    $('#ScrollPane').height( $( window ).height() -$('#all-headers').height() );
+  var desiredAmpersandRootHeight = $(window).height() - $('#all-headers').outerHeight();
+  var scrollPaneVertPadding = $('#ScrollPane').outerHeight() - $('#ScrollPane').height();
+  $('#ScrollPane').height( desiredAmpersandRootHeight - scrollPaneVertPadding);
 
   // on an iPad, the roleSelector is positioned too far down, so we move it up 
   if (navigator.userAgent.match(/iPad/i) != null) {
