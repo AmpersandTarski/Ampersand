@@ -41,10 +41,10 @@ pCpt2aCpt pc
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
                . checkInterfaceRefs       -- Check whether all referenced interfaces exist
-               . checkUniqueInterfaceRole -- Check whether all interface/role pairs are unique
                . checkUnique udefrules    -- Check uniquene names of: rules,
                . checkUnique patterns     --                          patterns,
-               . checkUnique ctxprocs     --                          and processes.
+               . checkUnique ctxprocs     --                          processes.
+               . checkUnique ctxifcs     --                          and interfaces.
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -100,16 +100,6 @@ checkInterfaceRefs gCtx =
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
         getInterfaceRefs Obj{objmsub=Just (Box _ objs)}              = concatMap getInterfaceRefs objs
-
-checkUniqueInterfaceRole :: Guarded A_Context -> Guarded A_Context
-checkUniqueInterfaceRole gCtx = 
-  case gCtx of
-    Errors err -> Errors err
-    Checked ctx -> let interfaceRolePairs = [ (role, ifc) | ifc <- ctxifcs ctx, role <- ifcRoles ifc  ]
-                       errs = [ mkMultipleInterfaceError role ifc $ map snd dups
-                              | (role,ifc):dups@(_:_) <- eqCl (\(r,i)->(r,name i)) interfaceRolePairs
-                              ]
-                   in  if null errs then gCtx else Errors errs 
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
