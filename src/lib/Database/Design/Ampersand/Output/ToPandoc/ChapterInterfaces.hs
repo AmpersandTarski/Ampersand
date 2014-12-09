@@ -11,18 +11,22 @@ import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Fspec.FPA
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Output.ToPandoc.ChapterInterfaces"
+
 chpInterfacesPics :: Fspc -> [Picture]
 chpInterfacesPics fSpec = []
 
 chpInterfacesBlocks :: Int -> Fspc -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
-  mconcat $ map interfaceChap allInterfaces
+  mconcat $ map interfaceChap regularInterfaces ++ [ messagesChap messageInterfaces | not (null messageInterfaces) ]
   where
-    allInterfaces :: [Interface]
-    allInterfaces = interfaceS fSpec
+    messageInterfaces :: [Interface]
+    regularInterfaces :: [Interface]
+    (messageInterfaces, regularInterfaces) = partition (\i -> ifcClass i == Just "Message") $ interfaceS fSpec
     
     lang = Dutch -- TODO: add English labels and use (fsLang fSpec) here
-  
+      
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
      =  (labeledThing (flags fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ quoteName (name ifc)))  <>
@@ -107,7 +111,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     editableRelM = getEditableRelation editableRels iExp
                     
                     navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles sharedRoles ++ ")" 
-                                     | navIfc <- allInterfaces
+                                     | navIfc <- regularInterfaces
                                      , source (objctx . ifcObj $ navIfc) == target iExp
                                      , let sharedRoles = ifcRoles navIfc `intersect` roles
                                      , not . null $ sharedRoles
@@ -125,6 +129,68 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
         Just (InterfaceRef nm) -> [ plainText $ "REF "++nm ] -- TODO: handle InterfaceRef
         Just (Box _ objects)   -> [ docInterfaceObjects editableRels roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
 
+    -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l lstr = localize (fsLang fSpec) lstr
+
+    messagesChap :: [Interface] -> Blocks
+    messagesChap ifcs = mconcat
+      [ labeledThing (flags fSpec) (lev) "chapMessages" $ l (NL "Berichten", EN "Messages")
+      , para . text $ l ( NL "Dit hoofdstuk geeft een overzicht van alle berichten."
+                        , EN "This chapter lists all messages." )
+      , simpleTable [ plainText $ l (NL "Eigenschap term (TODO: naam ok?)", EN "Property term"), plainText $ l (NL "Card.", EN "Card.")
+                    , plainText $ l (NL "Expressie", EN "Expression"), plainText $ l (NL "Definitie", EN "Definition") ] $
+          intercalate [[]] . map mkTableRows $ genEntity_Interfaces fSpec ifcs
+      ]
+      
+    mkTableRows :: Entity -> [[Blocks]]
+    mkTableRows (Entity nm dpth expr card def refTp props) = 
+      [plain $ (fromList $ replicate (dpth*3) nbsp) <> (if dpth == 0 then strong else id) (text nm) , plainText card, plainText expr, plainText def]
+      : concatMap mkTableRows props
+      where nbsp :: Inline
+            nbsp = RawInline (Format "latex") "~"
+
+-- TODO: copied from prototype GenBericht.hs, if that module is kept, we should move this to a shared module.  
+data Entity = Entity { entName ::     String
+                     , depth ::       Int
+                     , expr ::         String
+                     , cardinality :: String
+                     , definition ::  String
+                     , refType ::     String
+                     , properties ::  [Entity]
+                     } deriving Show
+
+genEntity_Interfaces :: Fspc -> [Interface] -> [Entity]
+genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
+  where 
+    genEntity_Interface ::Interface -> Entity
+    genEntity_Interface interface = genEntity_ObjDef 0 (ifcObj interface)
+     where
+       genEntity_ObjDef :: Int -> ObjectDef -> Entity
+       genEntity_ObjDef dpth objDef =
+           Entity { entName = name objDef
+                  , depth = dpth
+                  , expr = showADL $ objctx objDef
+                  , cardinality = card $ objctx objDef
+                  , definition  = def $ objctx objDef
+                  , refType     = name (target $ objctx objDef)
+                  , properties  =
+                      case objmsub objDef of
+                        Nothing -> []
+                        Just (Box _ objs)      -> map (genEntity_ObjDef (dpth+1)) objs
+                        Just (InterfaceRef nm) -> map (genEntity_ObjDef (dpth+1)) $ objsForInterfaceNamed nm
+                  }
+        where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
+  
+              def rel = case concDefs fSpec (target rel) of
+                            Cd {cddef=def'} : _ | def' /= "" -> def'
+                            _                                -> "** NO DEFINITION **"
+
+              objsForInterfaceNamed :: String -> [ObjectDef]
+              objsForInterfaceNamed nm =
+                case objmsub $ ifcObj $ getInterfaceByName (interfaceS fSpec) nm of
+                  Just (Box _ objs) -> objs
+                  _               -> fatal 81 "Bericht interfaces have wrong format"
 
 -- TODO: Maybe we should create a more general version of this function (might already exist, but I couldn't find it)
 showRoles :: [String] -> String
