@@ -3,7 +3,8 @@
 class ObjectInterface {
 	
 	public $id;
-	public $name;
+	public $name; // TODO: kan vervallen?
+	public $label;
 	public $link;
 	public $interfaceRoles = array();
 	// public $editableConcepts = array();
@@ -16,7 +17,7 @@ class ObjectInterface {
 	public $tgtDataType;
 	public $refInterface;
 	private $boxSubInterfaces;
-	private $expressionSQL;
+	public $expressionSQL;
 	public $subInterfaces = array();
 
 	public function __construct($name, $interface = array()){
@@ -30,6 +31,7 @@ class ObjectInterface {
 		// Set attributes of interface
 		$this->id = $interface['name'];
 		$this->name = $interface['name'];
+		$this->label = $interface['name'];
 		$this->link = 'http://localhost/CB/api/v1/interface/'.urlencode($this->name); // TODO: make config for first part of link or do without.
 		$this->interfaceRoles = $interface['interfaceRoles'];
 		
@@ -39,7 +41,7 @@ class ObjectInterface {
 		$this->relation = $interface['relation'];
 		$this->editable = (!empty($interface['relation'])) ? true : false; $this->notEditable = !$this->editable;
 		$this->totaal = ($interface['min'] == "One") ? true : false;
-		$this->univalent = ($interface['max'] == "One") ? true : false;
+		$this->univalent = ($interface['max'] == "One") ? true : false; 
 		$this->srcConcept = $interface['srcConcept'];
 		$this->tgtConcept = $interface['tgtConcept'];
 		
@@ -97,42 +99,6 @@ class ObjectInterface {
 				
 	}
 	
-	public function getContent($srcAtom = null){
-		$database = Database::singleton();
-		$session = Session::singleton();
-		
-		$content = array();
-		
-		if(is_null($srcAtom)) $srcAtom = session_id();
-		
-		$tgtAtoms = array_column($database->Exe("SELECT DISTINCT `tgt` FROM (".$this->expressionSQL.") AS results WHERE src='".addslashes($srcAtom)."' AND `tgt` IS NOT NULL"), 'tgt');
-		foreach ($tgtAtoms as $tgtAtom){
-			
-			if(count($this->subInterfaces) > 0){
-				$atom = new Atom($tgtAtom);
-				$content[$atom->id] = $atom->getContent($this);
-			}else{
-				if(strtolower($tgtAtom) === "true") $tgtAtom = true;
-				if(strtolower($tgtAtom) === "false") $tgtAtom = false;
-				
-				$links = array();
-				$interfaces = array();
-				foreach($session->role->getInterfaces(null, $this->tgtConcept) as $interfaceForTgtConcept){
-					$links[] = $interfaceForTgtConcept->link . '/atom/' . urlencode($tgtAtom);
-					$interfaces[] = $interfaceForTgtConcept->name;
-				}
-				
-				$content[] = array('id' => $tgtAtom, 
-								   'label' => $tgtAtom,	// TODO: enable ampersand VIEWS here
-								   'links' => $links,
-								   'interfaces' => $interfaces);
-			}
-		}
-		
-		return $content;
-		
-	}
-	
 	
 	public static function isInterfaceForRole($roleName, $interfaceName = null){
 		if(isset($interfaceName)){
@@ -141,10 +107,6 @@ class ObjectInterface {
 		}		
 		
 		return (in_array($roleName, $this->interfaceRoles) or empty($this->interfaceRoles));
-	}
-	
-	private function isEditable($tgtConcept){
-		return in_array($tgtConcept, (array)$this->editableConcepts);
 	}
 }
 

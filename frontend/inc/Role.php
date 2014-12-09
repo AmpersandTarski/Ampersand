@@ -3,7 +3,8 @@
 class Role {
 
 	public $id;
-	public $name;
+	public $name; // TODO: kan weg?
+	public $label;
 	public $maintains = array();
 	public $interfaces = array();
 
@@ -11,9 +12,8 @@ class Role {
 		global $allRoles; // from Generics.php
 		global $allInterfaceObjects; // from Generics.php
 		
-		// TODO: config for default Role
 		if(is_null($id)){ 
-			$id = 0;//key($allRoles); 
+			$id = DEFAULT_ROLEID; // localSettings.php
 			ErrorHandling::addLog("Default role selected");
 		}
 		
@@ -23,6 +23,7 @@ class Role {
 		// Name of role
 		$this->id = $id;
 		$this->name = $allRoles[$id]['name'];
+		$this->label = $allRoles[$id]['name'];
 		
 		// Rules that are maintained by this role
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];
@@ -48,7 +49,7 @@ class Role {
 		$rules = array();
 		
 		foreach($this->maintains as $ruleName){
-			$rules[$ruleName] = Session::getRule($ruleName);
+			$rules[$ruleName] = RuleEngine::getRule($ruleName);
 		}
 		
 		return $rules;

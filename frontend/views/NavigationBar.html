@@ -1,0 +1,49 @@
+<div class="navbar navbar-default navbar-fixed-top" ng-controller="NavigationBarController">
+	<div id="tno-header">
+		<div id="tno-timeline" class="container"></div>
+	</div>
+		
+	<div class="container">
+		<ul class="nav nav-pills">
+			
+			<li id="{{interface.label}}" ng-repeat="interface in Interfaces"> <!-- the interface attribute is there so we can style specific menu items with css -->
+				<a href="#/{{interface.id}}/{{session_id}}">
+					<span class="glyphicon glyphicon-list-alt"></span> {{interface.label}}</a>
+			</li>
+		<!-- 			
+			<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="right" title="Create new instances">'
+				<a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-plus"></span></a>
+				<ul class="dropdown-menu" role="menu">';
+					foreach($session->role->getInterfaces(false) as $interface) 
+						<li><a href="?interface='.$interface->name.'&atom='.$interface->srcConcept.'_'.time().'">'
+						htmlSpecialChars($interface->srcConcept . ' (' .$interface->name . ')').'</a></li>';
+				</ul>
+			</li>
+
+		--> 	
+			<li class="pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Filter on page">
+				<input type="text" class="form-control pull-right input-sm" placeholder="Filter" ng-model="searchText" style="width:200px;">
+			</li>	
+			<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Switch between different roles">
+				<a class="dropdown-toggle" data-toggle="dropdown" href=""><span class="glyphicon glyphicon-user"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a href="?role={{role.id}}" ng-repeat="role in Roles">{{role.label}}</a></li>
+				</ul>
+			</li>
+		
+			<li class="dropdown pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="top" title="Select application extensions">
+				<a class="dropdown-toggle" data-toggle="dropdown" href=""><span class="glyphicon glyphicon-th"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li ng-repeat="extension in Extensions"><a href="{{extension.link}}"><span class="{{extension.icon}}"></span> {{extension.name}}</a></li>
+					<li><a href="installer/"><span class="glyphicon glyphicon-trash"></span> Reset database</a></li>
+					<li><a href="?resetSession"><span class="glyphicon glyphicon-refresh"></span> Reset session</a></li>
+				</ul>
+			</li>
+	
+			<li class="pull-right tooltip-to-be-initialized" data-toggle="tooltip" data-placement="left" title="Hide or show violations messages">
+				<a href="javascript:void(0)" onclick='$( "#NotificationCenter" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-bell messageIndicator"></span></a>
+			</li>
+		 
+		</ul>
+	</div>
+</div>

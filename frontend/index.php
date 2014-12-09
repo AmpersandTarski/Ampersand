@@ -2,14 +2,12 @@
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
-$debug = false; // TODO: waar wordt dit nog gebruikt. Verplaatsen naar config
-
 require_once (__DIR__ . '/inc/includes.php');
 
 
 // SESSION handling
 $session = Session::singleton(); // initialize both a PHP session and an Ampersand session as soon as we can.
-if(isset($_REQUEST['resetSession'])){ // TODO: reset working not working properly. Refresh of page needed before reset has effect.
+if(isset($_REQUEST['resetSession'])){
 	$session->destroySession();	// unset $_SESSION variables and Ampersand SESSION atom
 	$session = Session::singleton(); // initialize new session
 }
@@ -17,42 +15,31 @@ if(isset($_REQUEST['resetSession'])){ // TODO: reset working not working properl
 // ROLE
 if(isset($_REQUEST['role'])){	// new role selected
 	 $roleId = $_REQUEST['role'];
-}else{ // no change, or default
+}else{ // no change, or default role
 	$roleId = null;
 }		
 $session->setRole($roleId);
 
-// INTERFACE
+/* INTERFACE
 if(isset($_REQUEST['interface'])){ // new interface selected
 	$interfaceName = $_REQUEST['interface'];
-}elseif(isset($_SESSION['interface'])){ // interface already selected
-	$interfaceName = $_SESSION['interface'];
-}else{ // default interface
+}else{ // no change, or default interface
 	$interfaceName = null;
 }
 $session->setInterface($interfaceName);
+*/
 
-// ATOM
+/* ATOM
 if(isset($_REQUEST['atom'])){ // new atom selected
 	$atomId = $_REQUEST['atom'];
 	if(empty($atomId)) $atomId = null;
-}elseif(isset($_SESSION['atom'])){ // atom already selected
-	$atomId = $_SESSION['atom'];
-}else{ // default atom
+}else{ // no change, or default atom
 	$atomId = null;
 }	
-$session->setAtom($atomId);	
+$session->setAtom($atomId);
+*/	
 
-// VIEWER
-if(isset($_REQUEST['viewer'])){ // new viewer selected
-	$viewerName = $_REQUEST['viewer'];
-}elseif(isset($_SESSION['viewer'])){ // viewer already selected
-	$viewerName = $_SESSION['viewer'];
-}else{
-	$viewerName = null; 
-}
-$session->setViewer($viewerName);
-
-print $session->viewer;
+$viewer = new Viewer();
+print $viewer;
 
 ?>

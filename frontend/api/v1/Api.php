@@ -2,6 +2,25 @@
 
 class Api
 {
+/**************************** NOTIFICATIONS ****************************/	
+	/**
+	 * @url GET notificationcenter/all
+	 */
+	public function getAllNotifications()
+	{
+		$test = ErrorHandling::getAll(); // "Return all notifications
+		
+		return $test;
+	}
+	
+	/**
+	 * @url GET extensions/all
+	 */
+	public function getAllExtensions()
+	{
+		return (array) $GLOBALS['apps'];
+	}
+		
 
 /**************************** CONCEPTS AND ATOMS ****************************/
     /**
@@ -28,14 +47,62 @@ class Api
     {
         return Concept::getAllAtoms($concept); // "Return list of all atoms for $concept"
     }
-	
-	/**
-     * @url GET concept/{concept}/atom/{atom}/
-	 * @param sting $depth the number of levels of linked atoms to return
+    
+    /**
+     * @url GET interface/{interfaceName}/atoms
+     * @url GET interface/{interfaceName}/atom/{atomid}/
+     * @param string $interfaceName
+     * @param string $atomid
+     * @param int $roleId
      */
-    public function getAtom($concept, $atom, $depth = "1")
+    public function getAtom($interfaceName, $atomid = null, $roleId = null)
     {
-        return "Return all attributes and links (depth: $depth) of atom $atom of concept $concept";
+    	$session = Session::singleton();
+    	 
+    	if(is_null($atomid)) $atomid = session_id();
+    	 
+    	try{
+    		$session->setRole($roleId);
+    		$session->setInterface($interfaceName);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	 
+    	if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+    	 
+    	$atom = new Atom($atomid);
+    	$interface = new ObjectInterface($interfaceName);
+    	return $atom->getContent($interface);
+    	//return current($session->interface->getContent($atom));
+    }
+    
+    /**
+     * @url PUT interface/{interfaceName}/atom/{atomid}
+     * @param string $interfaceName
+     * @param string $atomid
+     * @param int $roleId
+     */
+    public function putAtom($interfaceName, $atomid, $roleId = null, $request_data = null)
+    {
+    	// $request_data is a reserved name in Restler2. It will pass all the parameters passed as an associative array
+    	unset($request_data['$promise']); // request_data that is part of the request parameters, not the atom itself
+    	unset($request_data['$resolved']); // request_data that is part of the request parameters, not the atom itself
+    	
+    	$session = Session::singleton();
+    	try{
+    		$session->setRole($roleId);
+    		$session->setInterface($interfaceName);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	 
+    	if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+    	 
+    	$atom = new Atom($atomid);
+    	$interface = new ObjectInterface($interfaceName);
+    	
+    	return $atom->setContent($interface, $request_data);
+    
     }
 	
 	/**
@@ -87,7 +154,7 @@ class Api
 			$database->addAtomToConcept($tgtAtom, $tgtConcept);
 		}
 		
-		$database->editUpdate($relation, false, $srcAtom, $tgtAtom, 'child', '');
+		$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
 		
 		ErrorHandling::addLog('Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relation.'['.$srcConcept.'*'.$tgtConcept.']');
 		
@@ -111,7 +178,7 @@ class Api
 			throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
 		}
 		
-		$database->editDelete($relation, false, $srcAtom, $tgtAtom);
+		$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 		
 		ErrorHandling::addLog('Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relation.'['.$srcConcept.'*'.$tgtConcept.']');
 	}
@@ -126,7 +193,7 @@ class Api
     {
 		if(isset($ruleName)){
 			
-			return Session::getRule($ruleName); // "Return rule with name $ruleName";
+			return RuleEngine::getRule($ruleName); // "Return rule with name $ruleName";
 		}else{
 			return "Return list of all rules";
 		}
@@ -137,14 +204,14 @@ class Api
      */
     public function getViolations($ruleName)
     {
-		$rule = Session::getRule($ruleName);
+		$rule = RuleEngine::getRule($ruleName);
         return RuleEngine::checkProcessRule($rule); // "Return list of violations (tuples of src, tgt atom) for rule $rule"
     }
 	
 /**************************** ROLES ****************************/
 	
 	/**
-     * @url GET role/
+     * @url GET roles/all
 	 * @url GET role/{roleNr}/
      */
     public function getRoles($roleNr = NULL)
@@ -159,9 +226,25 @@ class Api
 	
 	
 /**************************** INTERFACES ****************************/
-	
+    
+    /**
+     * @url GET interfaces/top
+     * @param int $roleId
+     */
+    public function getTopLevelInterfaces($roleId = null)
+    {
+    	$session = Session::singleton();
+    	try{
+    		$session->setRole($roleId);
+    	}catch(Exception $e){
+    		throw new RestException(404, $e->getMessage());
+    	}
+    	 
+    	return $session->role->getInterfaces(true);  // "Return list of all interfaces"
+    }
+    
 	/**
-     * @url GET interface/
+     * @url GET interfaces/
 	 * @url GET interface/{interfaceName}/
 	 * @param string $interfaceName
 	 * @param int $roleId
@@ -186,52 +269,7 @@ class Api
         }else{
         	return $session->role->getInterfaces();  // "Return list of all interfaces"
 		}
-    }
-    
-    /**
-     * @url GET interface/{interfaceName}/atoms
-	 * @url GET interface/{interfaceName}/atoms/{atom}/
-	 * @param string $interfaceName
-	 * @param string $atom
-	 * @param int $roleId
-     */
-    public function getInterfaceContent($interfaceName, $atom = null, $roleId = null)
-    {
-    	$session = Session::singleton();
-   		try{
-    		$session->setRole($roleId);
-    		$session->setInterface($interfaceName);
-    	}catch(Exception $e){
-    		throw new RestException(404, $e->getMessage());
-    	}
-    	
-    	if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
-    	
-        return current($session->interface->getContent($atom));
-    }
-    
-	/**
-     * @url POST interface/{interfaceName}/atoms/{atom}/
-	 * @param string $interfaceName
-	 * @param string $atom
-	 * @param int $roleId
-     */
-    public function putAtom($interfaceName, $atom = null, $roleId = null)
-    {
-    	$session = Session::singleton();
-   		try{
-    		$session->setRole($roleId);
-    		$session->setInterface($interfaceName);
-    	}catch(Exception $e){
-    		throw new RestException(404, $e->getMessage());
-    	}
-    	
-    	if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
-    	
-        return current($session->interface->getContent($atom));
-    }
-    
-    
+    }    
 
 
 /**************************** OLD TRANSACTION ****************************/

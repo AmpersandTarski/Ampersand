@@ -27,7 +27,7 @@ class RuleEngine {
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions
 		$invariantRulesHold = true;
 		
-		foreach (Session::getInvariantRules() as $rule) if(!RuleEngine::checkInvariantRule($rule)) $invariantRulesHold = false;
+		foreach (RuleEngine::getInvariantRules() as $rule) if(!RuleEngine::checkInvariantRule($rule)) $invariantRulesHold = false;
 		
 		return $invariantRulesHold;
 		
@@ -40,7 +40,7 @@ class RuleEngine {
 		try{
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
-				ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
+				ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
 			}else{				
 				foreach($result as $violation) {
 					$violations[] = array('src' => $violation['src'], 'tgt' => $violation['tgt']);
@@ -56,7 +56,7 @@ class RuleEngine {
 		try{
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
-				// ErrorHandling::addNotification("Rule '".$rule['name']."' holds");
+				// ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
 				return true;
 			}else{
 				ErrorHandling::addInvariant("Violation of rule '".$rule['name']."'");
@@ -65,6 +65,23 @@ class RuleEngine {
 		}catch (Exception $e){
 			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage);
 		}
+	}
+	
+	public static function getInvariantRules(){
+		$rules = array();
+		global $invariantRuleNames; // from Generics.php
+		
+		foreach((array)$invariantRuleNames as $ruleName){
+			$rules[$ruleName] = RuleEngine::getRule($ruleName);		
+		}
+		
+		return $rules;
+	}
+	
+	public static function getRule($ruleName){
+		global $allRulesSql; // from Generics.php
+		
+		return $allRulesSql[$ruleName];
 	}
 
 }

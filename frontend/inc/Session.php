@@ -103,9 +103,13 @@ class Session {
 			if(isset($interfaceName)) {
 				$this->interface = new ObjectInterface($interfaceName);
 				ErrorHandling::addLog("Interface $interfaceName selected");
+			}elseif(isset($_SESSION['interface'])){ // interface already selected
+				$this->interface = new ObjectInterface($_SESSION['interface']);
+				$interfaceName = $_SESSION['interface'];
+				ErrorHandling::addLog("Interface $interfaceName selected");
 			}else{
 				$this->interface = null;
-				ErrorHandling::addNotification("No interface selected");
+				ErrorHandling::addInfo("No interface selected");
 			}
 			$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
 		}catch (Exception $e){
@@ -119,58 +123,30 @@ class Session {
 		
 		if(isset($atomId)){
 			$this->atom = $atomId;
-			ErrorHandling::addLog("Atom $atomId selected");
+		}elseif(is_null($atomId)){
+			$this->atom = session_id();
+			$atomId = session_id();
+		}elseif(isset($_SESSION['atom'])){ // atom already selected
+			$this->atom = $_SESSION['atom'];
+			$atomId = $_SESSION['atom'];
 		}else{
 			$this->atom = session_id();
+			$atomId = session_id();
 		}
+		ErrorHandling::addLog("Atom $atomId selected");
 		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
 		
 		return $atomId;
 	}
-	
-	public function setViewer($viewerName = null){ 
-		if(!isset($viewerName)) $viewerName = 'AmpersandViewer'; // TODO: config voor default viewer maken
-		
-		$_SESSION['viewer'] = $viewerName; // store viewerName in $_SESSION['viewer']
-		
-		try{
-			$viewerClass = $GLOBALS['viewers'][$viewerName]['class'];
-			if(!class_exists($viewerClass)) throw new Exception("Specified viewer: $viewerName does not exists");
-			$this->viewer = new $viewerClass($this->interface, $this->atom);
-		}catch (Exception $e){
-			ErrorHandling::addError($e->getMessage);
-			throw $e;
-		}
-		return $viewerName;
-	}
-	
 	
 	private function deleteAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
 	
 	}
-		
-	/******* Rules *******/
 	
-	public static function getInvariantRules(){
-		$rules = array();
-		global $invariantRuleNames; // from Generics.php
-		
-		foreach((array)$invariantRuleNames as $ruleName){
-			$rules[$ruleName] = Session::getRule($ruleName);		
-		}
-		
-		return $rules;
-		
-	}
-	
-	public static function getRule($ruleName){
 		global $allRules; // from Generics.php
-		
 		return $allRules[$ruleName];
-	}
-	
 }
 
 ?>

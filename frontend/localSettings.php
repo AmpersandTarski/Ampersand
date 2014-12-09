@@ -2,6 +2,10 @@
 
 // define ('IP', 'http://localhost/[APP]');
 
+/************ CONFIG ********************/
+define ('DEFAULT_ROLEID', '0');
+
+
 /************ EXTENSIONS ****************/
 
 // Enable ExecEngine
@@ -11,11 +15,6 @@ $ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
 // Enable ExecImport
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');
 
-// Enable AmpersandViewer
-require_once(__DIR__ . '/viewers/AmpersandViewer/AmpersandViewer.php');
-
-// Enable AngularJSViewer
-require_once(__DIR__ . '/viewers/AngularJSViewer/AngularJSViewer.php');
 
 
 ?>
