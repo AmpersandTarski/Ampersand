@@ -79,9 +79,9 @@ class RuleEngine {
 	}
 	
 	public static function getRule($ruleName){
-		global $allRulesSql; // from Generics.php
+		global $allRules; // from Generics.php
 		
-		return $allRulesSql[$ruleName];
+		return $allRules[$ruleName];
 	}
 
 }

@@ -144,9 +144,6 @@ class Session {
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
 	
 	}
-	
-		global $allRules; // from Generics.php
-		return $allRules[$ruleName];
 }
 
 ?>
