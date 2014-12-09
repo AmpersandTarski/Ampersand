@@ -12,3 +12,5 @@ dist
 *.o
 *.so
 *.hi
+miscellaneous/AmpersandBackup.jgcscs
+miscellaneous/AmpersandBackup.jgfns
