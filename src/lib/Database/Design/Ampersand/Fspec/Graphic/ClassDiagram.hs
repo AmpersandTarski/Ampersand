@@ -111,7 +111,7 @@ where
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isUni r then MaxOne else MaxMany
                 in  Mult minVal maxVal
-      topLevelDcls = (relsDefdIn fSpec ++ relsMentionedIn fSpec) \\
+      topLevelDcls = relsDefdIn fSpec \\
                      (concatMap relsDefdIn (vpatterns fSpec) ++ concatMap relsDefdIn (map fpProc $ vprocesses fSpec))
       allDcls = topLevelDcls ++
                 [ d -- restricted to those themes that must be printed.
