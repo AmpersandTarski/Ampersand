@@ -32,7 +32,7 @@ generateBuildInfoHook pd  lbi uh bf =
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
-    ; writeFile "src/lib/Database/Design/Ampersand/Basics/BuildInfo_Generated.hs" $
+    ; writeFile "src/Database/Design/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
     ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
