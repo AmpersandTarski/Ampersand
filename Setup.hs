@@ -9,6 +9,9 @@ import Control.Exception
 import Data.List
 import Data.Either
 import Data.Char
+import System.FilePath
+import System.Directory
+import qualified Data.ByteString as BS
 import Data.Time.Clock
 import Data.Time.Format
 import Data.Time.LocalTime
@@ -32,12 +35,40 @@ generateBuildInfoHook pd  lbi uh bf =
     ; writeFile "src/lib/Database/Design/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
+    ; writeFile "src/Database/Design/Ampersand_Prototype/BuildInfo_Generated.hs" $
+        buildInfoModuleProto cabalVersionStr gitInfoStr buildTimeStr
+
+    ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
+    ; writeFile (pathFromModule staticFileModuleName) staticFilesGeneratedContents 
+
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
+ where pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
   [ "module Database.Design.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, gitInfoStr, buildTimeStr) where" 
+  , ""
+  , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
+  , ""
+  , "{-# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
+  , "cabalVersionStr :: String"
+  , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
+  , ""
+  , "{-# NOINLINE gitInfoStr #-}"
+  , "gitInfoStr :: String"
+  , "gitInfoStr = \"" ++ gitInfo ++ "\""
+  , ""
+  , "{-# NOINLINE buildTimeStr #-}"
+  , "buildTimeStr :: String"
+  , "buildTimeStr = \"" ++ time ++ "\""
+  , ""
+  ]
+
+-- TODO: only temporary, since this version info is obsolete now
+buildInfoModuleProto :: String -> String -> String -> String
+buildInfoModuleProto cabalVersion gitInfo time = unlines
+  [ "module Database.Design.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, gitInfoStr, buildTimeStr) where" 
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
@@ -90,3 +121,55 @@ warnNoCommitInfo =
                  "Please find check your installation\n"
     ; return "no git info"
     }
+
+
+{- In order to handle static files, we generate a module StaticFiles_Generated.
+
+   For each file in the directory trees static and staticBinary, we generate a StaticFile value,
+   which contains the information needed to have Ampersand create the file at run-time.  
+   
+-}
+
+staticFileModuleName :: String
+staticFileModuleName = "Database.Design.Ampersand_Prototype.StaticFiles_Generated"
+
+getStaticFilesModuleContents :: IO String
+getStaticFilesModuleContents =
+ do { staticFiles       <- readStaticFiles False "static" ""
+    ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
+    ; return $ "module "++staticFileModuleName++" where\n"++
+               "\n"++
+               "data StaticFile = SF { filePath      :: FilePath -- relative path, including extension\n"++
+               "                     , timeStamp     :: Integer -- unix epoch time\n"++
+               "                     , isBinary      :: Bool\n"++
+               "                     , contentString :: String\n"++
+               "                     }\n"++
+               "\n"++
+               "{-# NOINLINE allStaticFiles #-}\n" ++
+               "allStaticFiles =\n  [ "++ 
+               intercalate "\n  , " (staticFiles ++ staticFilesBinary) ++
+               "\n  ]\n"
+    }
+    
+readStaticFiles :: Bool -> FilePath -> FilePath -> IO [String]
+readStaticFiles isBin base fileOrDir = 
+  do { let path = combine base fileOrDir
+     ; isDir <- doesDirectoryExist path
+     ; if isDir then 
+        do { fOrDs <- getProperDirectoryContents path
+           ; fmap concat $ mapM (\fOrD -> readStaticFiles isBin base (combine fileOrDir fOrD)) fOrDs
+           }
+       else
+        do { timeStamp <- getModificationTime path
+           ; fileContents <- if isBin then fmap show $ BS.readFile path 
+                                      else readFile path
+           ; return ["SF "++show fileOrDir++" "++utcToEpochTime timeStamp++" {- "++show timeStamp++" -} "++
+                            show isBin++" "++show fileContents]
+           }
+     }
+  where utcToEpochTime :: UTCTime -> String
+        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
+          
+getProperDirectoryContents :: FilePath -> IO [String]
+getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth
+ 
