@@ -17,8 +17,7 @@ import Database.Design.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
 
 main :: IO ()
 main =
- do opts' <- getOptions
-    let opts = opts'{genPrototype=True}
+ do opts <- getOptions
     if showVersion opts || showHelp opts
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do gFspec <- createFspec opts
