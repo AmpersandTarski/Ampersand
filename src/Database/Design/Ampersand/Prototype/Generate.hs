@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand_Prototype.Generate (generateAll) where
+module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
 -- import Database.Design.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
@@ -10,8 +10,8 @@ import Data.Maybe
 import Control.Monad
 import System.FilePath
 import System.Directory
-import Database.Design.Ampersand_Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
-import Database.Design.Ampersand_Prototype.RelBinGenSQL
+import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
+import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import Control.Exception
 
 fatal :: Int -> String -> a

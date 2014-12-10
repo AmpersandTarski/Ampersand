@@ -14,8 +14,7 @@ license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/report/12
-data-files:     
-                AmpersandData/Examples/Delivery/Delivery.adl, 
+data-files:     AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/FormalAmpersand/ADLTool.adl, 
                 AmpersandData/FormalAmpersand/admin_interfaces.adl, 
                 AmpersandData/FormalAmpersand/AST.adl, 
@@ -52,184 +51,127 @@ source-repository head
   type:      git
   location:  https://github.com/AmpersandTarski/ampersand.git
 
-flag executable
-  description:  Build the ampersand executable.
-  default:      True
-
-flag library
-  description:  Build the ampersand library.
-  default:      True
-
-flag prototype
-  description:  Build the ampersand prototype generator.
-  default:      True
-
-library
-  hs-source-dirs:   src/lib
-  build-depends:    ConfigFile == 1.1.*,
-                    SpreadsheetML == 0.1.*,
-                    base >= 4.6,
-                    bytestring == 0.10.*,
-                    containers == 0.5.*,
-                    directory == 1.2.*,
-                    filepath == 1.3.*,
-                    graphviz == 2999.17.*,
-                    hashable == 1.2.*,
-                    mtl == 2.1.*,
-                    old-locale == 1.0.*,
-                    pandoc == 1.13.*,
-                    pandoc-types == 1.12.*,
-                    process == 1.2.*,
-                    split == 0.2.*,
-                    text == 1.1.*,
-                    time == 1.4.*,
-                    utf8-string == 0.3.*,
-                    uulib == 0.9.*
-                    
-  exposed-modules:  Database.Design.Ampersand
-  other-modules:    
-                    Database.Design.Ampersand.ADL1,
-                    Database.Design.Ampersand.ADL1.Disambiguate,
-                    Database.Design.Ampersand.ADL1.ECArule,
-                    Database.Design.Ampersand.ADL1.Expression,
-                    Database.Design.Ampersand.ADL1.Lattices,
-                    Database.Design.Ampersand.ADL1.P2A_Converters,
-                    Database.Design.Ampersand.ADL1.Pair,
-                    Database.Design.Ampersand.ADL1.Rule,
-                    Database.Design.Ampersand.Basics,
-                    Database.Design.Ampersand.Basics.Auxiliaries,
-                    Database.Design.Ampersand.Basics.BuildInfo_Generated,
-                    Database.Design.Ampersand.Basics.Collection,
-                    Database.Design.Ampersand.Basics.String,
-                    Database.Design.Ampersand.Basics.UTF8,
-                    Database.Design.Ampersand.Basics.Version,
-                    Database.Design.Ampersand.Classes,
-                    Database.Design.Ampersand.Classes.ConceptStructure,
-                    Database.Design.Ampersand.Classes.Populated,
-                    Database.Design.Ampersand.Classes.Relational,
-                    Database.Design.Ampersand.Classes.ViewPoint,
-                    Database.Design.Ampersand.Components,
-                    Database.Design.Ampersand.Core.AbstractSyntaxTree,
-                    Database.Design.Ampersand.Core.ParseTree,
-                    Database.Design.Ampersand.Core.Poset,
-                    Database.Design.Ampersand.Core.Poset.Instances,
-                    Database.Design.Ampersand.Core.Poset.Internal,
-                    Database.Design.Ampersand.Fspec,
-                    Database.Design.Ampersand.Fspec.FPA,
-                    Database.Design.Ampersand.Fspec.Fspec,
-                    Database.Design.Ampersand.Fspec.GenerateUML,
-                    Database.Design.Ampersand.Fspec.Graphic.ClassDiagram,
-                    Database.Design.Ampersand.Fspec.Graphic.Graphics,
-                    Database.Design.Ampersand.Fspec.Motivations,
-                    Database.Design.Ampersand.Fspec.Plug,
-                    Database.Design.Ampersand.Fspec.ShowADL,
-                    Database.Design.Ampersand.Fspec.ShowECA,
-                    Database.Design.Ampersand.Fspec.ShowHS,
-                    Database.Design.Ampersand.Fspec.ShowMeatGrinder,
-                    Database.Design.Ampersand.Fspec.ShowXMLtiny,
-                    Database.Design.Ampersand.Fspec.Switchboard,
-                    Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec,
-                    Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug,
-                    Database.Design.Ampersand.Fspec.ToFspec.Calc,
-                    Database.Design.Ampersand.Fspec.ToFspec.NormalForms,
-                    Database.Design.Ampersand.Input,
-                    Database.Design.Ampersand.Input.ADL1.CtxError,
-                    Database.Design.Ampersand.Input.ADL1.FilePos,
-                    Database.Design.Ampersand.Input.ADL1.Parser,
-                    Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
-                    Database.Design.Ampersand.Input.ADL1.UU_Scanner,
-                    Database.Design.Ampersand.Input.Parsing,
-                    Database.Design.Ampersand.InputProcessing,
-                    Database.Design.Ampersand.Misc,
-                    Database.Design.Ampersand.Misc.Explain,
-                    Database.Design.Ampersand.Misc.Languages,
-                    Database.Design.Ampersand.Misc.Options,
-                    Database.Design.Ampersand.Misc.TinyXML,
-                    Database.Design.Ampersand.Output,
-                    Database.Design.Ampersand.Output.Fspec2Excel,
-                    Database.Design.Ampersand.Output.Fspec2Pandoc,
-                    Database.Design.Ampersand.Output.PandocAux,
-                    Database.Design.Ampersand.Output.PredLogic,
-                    Database.Design.Ampersand.Output.Statistics,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterECArules,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
-                    Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    Paths_ampersand,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis
-                    
-  default-language:  Haskell2010
-
-  if flag(library)
-    buildable:  True
-  else
-    buildable:  False
 
 executable ampersand
   main-is:           Main.hs
-  hs-source-dirs:    src/exec
-  build-depends:     ampersand == 3.0.3,
-                     base == 4.7.*,
-                     filepath == 1.3.*,
-                     graphviz == 2999.17.*
+  hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall -O2
-  
-  if flag(executable)
-    buildable:  True
-  else
-    buildable:  False
-
-Executable prototype
-  Main-Is:          Main.hs
-  Hs-Source-Dirs:   src
-  build-depends:    HDBC == 2.4.*,
-                    HDBC-odbc == 2.3.*,
-                    ampersand  == 3.0.3,
-                    base >= 4.6,
-                    bytestring == 0.10.*,
-                    csv == 0.1.*,
-                    directory == 1.2.*,
-                    filepath == 1.3.*,
-                    graphviz == 2999.17.*,
-                    old-time == 1.1.*,
-                    process == 1.2.*,
-                    split == 0.2.*,
-                    time == 1.4.*
-
-  default-language: Haskell2010
-  ghc-options:      -rtsopts -Wall
+  build-depends:     ConfigFile == 1.1.*,
+                     HDBC == 2.4.*,
+                     HDBC-odbc == 2.3.*,
+                     SpreadsheetML == 0.1.*,
+                     base >= 4.6,
+                     bytestring == 0.10.*,
+                     containers == 0.5.*,
+                     csv == 0.1.*,
+                     directory == 1.2.*,
+                     filepath == 1.3.*,
+                     graphviz == 2999.17.*,
+                     hashable == 1.2.*,
+                     mtl == 2.1.*,
+                     old-locale == 1.0.*,
+                     old-time == 1.1.*,
+                     pandoc == 1.13.*,
+                     pandoc-types == 1.12.*,
+                     process == 1.2.*,
+                     split == 0.2.*,
+                     text == 1.1.*,
+                     time == 1.4.*,
+                     utf8-string == 0.3.*,
+                     uulib == 0.9.*
 
   -- Unfortunately, unix and MissingH are not available on windows
   if !os(windows)
-    build-depends: 
-      MissingH == 1.3.*,
-      old-locale == 1.0.*,
-      unix == 2.7.*
-
-  if flag(prototype)
-    buildable:  True
-
-  else
-    buildable:  False
-
-  other-modules: 
-                 Database.Design.Ampersand_Prototype.Apps,
-                 Database.Design.Ampersand_Prototype.Apps.RAP,
-                 Database.Design.Ampersand_Prototype.Apps.RAPImport,
-                 Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers,
-                 Database.Design.Ampersand_Prototype.CoreImporter,
-                 Database.Design.Ampersand_Prototype.GenBericht,
-                 Database.Design.Ampersand_Prototype.Generate,
-                 Database.Design.Ampersand_Prototype.Installer,
-                 Database.Design.Ampersand_Prototype.ObjBinGen,
-                 Database.Design.Ampersand_Prototype.RelBinGenBasics,
-                 Database.Design.Ampersand_Prototype.RelBinGenSQL,
-                 Database.Design.Ampersand_Prototype.ValidateSQL
+    build-depends:   MissingH == 1.3.*,
+                     unix == 2.7.*
+        
+  other-modules:     Database.Design.Ampersand,
+                     Database.Design.Ampersand.ADL1,
+                     Database.Design.Ampersand.ADL1.Disambiguate,
+                     Database.Design.Ampersand.ADL1.ECArule,
+                     Database.Design.Ampersand.ADL1.Expression,
+                     Database.Design.Ampersand.ADL1.Lattices,
+                     Database.Design.Ampersand.ADL1.P2A_Converters,
+                     Database.Design.Ampersand.ADL1.Pair,
+                     Database.Design.Ampersand.ADL1.Rule,
+                     Database.Design.Ampersand.Basics,
+                     Database.Design.Ampersand.Basics.Auxiliaries,
+                     Database.Design.Ampersand.Basics.BuildInfo_Generated,
+                     Database.Design.Ampersand.Basics.Collection,
+                     Database.Design.Ampersand.Basics.String,
+                     Database.Design.Ampersand.Basics.UTF8,
+                     Database.Design.Ampersand.Basics.Version,
+                     Database.Design.Ampersand.Classes,
+                     Database.Design.Ampersand.Classes.ConceptStructure,
+                     Database.Design.Ampersand.Classes.Populated,
+                     Database.Design.Ampersand.Classes.Relational,
+                     Database.Design.Ampersand.Classes.ViewPoint,
+                     Database.Design.Ampersand.Components,
+                     Database.Design.Ampersand.Core.AbstractSyntaxTree,
+                     Database.Design.Ampersand.Core.ParseTree,
+                     Database.Design.Ampersand.Core.Poset,
+                     Database.Design.Ampersand.Core.Poset.Instances,
+                     Database.Design.Ampersand.Core.Poset.Internal,
+                     Database.Design.Ampersand.Fspec,
+                     Database.Design.Ampersand.Fspec.FPA,
+                     Database.Design.Ampersand.Fspec.Fspec,
+                     Database.Design.Ampersand.Fspec.GenerateUML,
+                     Database.Design.Ampersand.Fspec.Graphic.ClassDiagram,
+                     Database.Design.Ampersand.Fspec.Graphic.Graphics,
+                     Database.Design.Ampersand.Fspec.Motivations,
+                     Database.Design.Ampersand.Fspec.Plug,
+                     Database.Design.Ampersand.Fspec.ShowADL,
+                     Database.Design.Ampersand.Fspec.ShowECA,
+                     Database.Design.Ampersand.Fspec.ShowHS,
+                     Database.Design.Ampersand.Fspec.ShowMeatGrinder,
+                     Database.Design.Ampersand.Fspec.ShowXMLtiny,
+                     Database.Design.Ampersand.Fspec.Switchboard,
+                     Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec,
+                     Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug,
+                     Database.Design.Ampersand.Fspec.ToFspec.Calc,
+                     Database.Design.Ampersand.Fspec.ToFspec.NormalForms,
+                     Database.Design.Ampersand.Input,
+                     Database.Design.Ampersand.Input.ADL1.CtxError,
+                     Database.Design.Ampersand.Input.ADL1.FilePos,
+                     Database.Design.Ampersand.Input.ADL1.Parser,
+                     Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
+                     Database.Design.Ampersand.Input.ADL1.UU_Scanner,
+                     Database.Design.Ampersand.Input.Parsing,
+                     Database.Design.Ampersand.InputProcessing,
+                     Database.Design.Ampersand.Misc,
+                     Database.Design.Ampersand.Misc.Explain,
+                     Database.Design.Ampersand.Misc.Languages,
+                     Database.Design.Ampersand.Misc.Options,
+                     Database.Design.Ampersand.Misc.TinyXML,
+                     Database.Design.Ampersand.Output,
+                     Database.Design.Ampersand.Output.Fspec2Excel,
+                     Database.Design.Ampersand.Output.Fspec2Pandoc,
+                     Database.Design.Ampersand.Output.PandocAux,
+                     Database.Design.Ampersand.Output.PredLogic,
+                     Database.Design.Ampersand.Output.Statistics,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterECArules,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
+                     Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
+                     Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
+                     Database.Design.Ampersand.Prototype.Apps,
+                     Database.Design.Ampersand.Prototype.Apps.RAP,
+                     Database.Design.Ampersand.Prototype.AutoInstaller,
+                     Database.Design.Ampersand.Prototype.CoreImporter,
+                     Database.Design.Ampersand.Prototype.GenBericht,
+                     Database.Design.Ampersand.Prototype.Generate,
+                     Database.Design.Ampersand.Prototype.Installer,
+                     Database.Design.Ampersand.Prototype.ObjBinGen,
+                     Database.Design.Ampersand.Prototype.RelBinGenBasics,
+                     Database.Design.Ampersand.Prototype.RelBinGenSQL,
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
+                     Database.Design.Ampersand.Prototype.ValidateSQL,
+                     Paths_ampersand
