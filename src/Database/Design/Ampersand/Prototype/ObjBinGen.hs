@@ -1,19 +1,19 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces) where
+module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
 
-import Database.Design.Ampersand_Prototype.Installer           (installerDBstruct,installerDefPop,dumpPopulationToADL)
-import Database.Design.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
-import Database.Design.Ampersand_Prototype.Apps
-import Database.Design.Ampersand_Prototype.Generate            (generateAll)
+import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop,dumpPopulationToADL)
+import Database.Design.Ampersand.Prototype.RelBinGenBasics     (addSlashes)
+import Database.Design.Ampersand.Prototype.Apps
+import Database.Design.Ampersand.Prototype.Generate            (generateAll)
 import Control.Monad
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString as Bin
-import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
 
-import Database.Design.Ampersand_Prototype.StaticFiles_Generated
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 #ifdef MIN_VERSION_MissingH
 import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file
 import Data.Time.Format

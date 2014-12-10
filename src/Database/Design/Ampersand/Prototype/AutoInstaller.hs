@@ -5,11 +5,11 @@
 --Difference with Installer.php rev:1770:
 -- + odbcinstall expects the database to exist (no CREATE DATABASE)
 -- + no row inserted into __History__ at odbcinstall
-module Database.Design.Ampersand_Prototype.AutoInstaller (odbcinstall)
+module Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 where
-import Database.Design.Ampersand_Prototype.CoreImporter
-import Database.Design.Ampersand_Prototype.Installer (plug2tbl,dropplug,CreateTable,sessiontbl,historytbl)
-import Database.Design.Ampersand_Prototype.RelBinGenBasics(quote)
+import Database.Design.Ampersand.Prototype.CoreImporter
+import Database.Design.Ampersand.Prototype.Installer (plug2tbl,dropplug,CreateTable,sessiontbl,historytbl)
+import Database.Design.Ampersand.Prototype.RelBinGenBasics(quote)
 import Database.HDBC.ODBC
 import Database.HDBC
 import Data.List  (intercalate)

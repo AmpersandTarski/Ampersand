@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers
+module Database.Design.Ampersand.Prototype.Apps.RAPIdentifiers
         --abstract data type ConceptIdentifier with one getter and constructor functions for atom identifiers of RAP concepts
        (ConceptIdentifier, getid
                          , nonsid, fsid, cptid, patid, prcid, ruleid, genid, sgnid, decid, relid, expridid, atomidid, pairid, pairidid, imageid, fileid, usrid, gid, errid
@@ -10,7 +10,7 @@ module Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers
         --the entire RAP as the default namespace would require all concept identifiers to be qualified with a namespace like the identifier of a CONTEXT
 where
 import Data.HashTable (hashString)
-import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand.Prototype.CoreImporter
 
 data ConceptIdentifier = CID String
 getid :: ConceptIdentifier -> String

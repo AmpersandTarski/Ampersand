@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Database.Design.Ampersand_Prototype.GenBericht (doGenBericht) where
+module Database.Design.Ampersand.Prototype.GenBericht (doGenBericht) where
 
 import Prelude hiding (writeFile)
 import Data.List

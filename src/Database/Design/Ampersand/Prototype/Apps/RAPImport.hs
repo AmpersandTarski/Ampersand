@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
 --import an fSpec into the RAP specification
 -- USE -> cmd: ampersand --importfile=some.adl --importformat=adl RAP.adl
-module Database.Design.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
+module Database.Design.Ampersand.Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
-import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand.Prototype.CoreImporter
 --import Database.Design.Ampersand.Core.Poset (Poset(..),maxima)
 import Prelude hiding (Ord(..))
 --import Database.Design.Ampersand.Input.ADL1.UU_Parsing (Message(..))
-import Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers
-import Database.Design.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
+import Database.Design.Ampersand.Prototype.Apps.RAPIdentifiers
+import Database.Design.Ampersand.Prototype.Apps.RAP         (picturesForAtlas)
 import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
 import System.Directory       (getDirectoryContents,doesDirectoryExist,getModificationTime)
 import System.Time

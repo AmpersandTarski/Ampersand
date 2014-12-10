@@ -1,17 +1,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 --hdbc and hdbc-odbc must be installed (from hackage)
-module Database.Design.Ampersand_Prototype.Apps.RAP
+module Database.Design.Ampersand.Prototype.Apps.RAP
    (fillAtlas,picturesForAtlas,atlas2context,atlas2populations)
 where
-import Database.Design.Ampersand_Prototype.CoreImporter
-import Database.Design.Ampersand_Prototype.AutoInstaller (odbcinstall)
+import Database.Design.Ampersand.Prototype.CoreImporter
+import Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 import Database.HDBC.ODBC
 import Database.HDBC
-import Database.Design.Ampersand_Prototype.RelBinGenSQL
+import Database.Design.Ampersand.Prototype.RelBinGenSQL
 
 -- fatal :: Int -> String -> a
--- fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"
+-- fatal = fatalMsg "Ampersand.Prototype.Apps.RAP"
 ------
 dsnatlas::String
 dsnatlas = "DSN=RAPv1"

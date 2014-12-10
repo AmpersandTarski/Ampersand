@@ -107,7 +107,7 @@ warnNoCommitInfo =
 -}
 
 staticFileModuleName :: String
-staticFileModuleName = "Database.Design.Ampersand_Prototype.StaticFiles_Generated"
+staticFileModuleName = "Database.Design.Ampersand.Prototype.StaticFiles_Generated"
 
 getStaticFilesModuleContents :: IO String
 getStaticFilesModuleContents =
