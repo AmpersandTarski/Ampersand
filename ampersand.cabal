@@ -60,6 +60,10 @@ flag library
   description:  Build the ampersand library.
   default:      True
 
+flag prototype
+  description:  Build the ampersand prototype generator.
+  default:      True
+
 library
   hs-source-dirs:   src/lib
   build-depends:    ConfigFile == 1.1.*,
@@ -165,7 +169,6 @@ library
 
   if flag(library)
     buildable:  True
-
   else
     buildable:  False
 
@@ -177,11 +180,57 @@ executable ampersand
                      filepath == 1.3.*,
                      graphviz == 2999.17.*
   default-language:  Haskell2010
-  ghc-options:       -rtsopts -Wall
-  --inspired by http://stackoverflow.com/questions/7140732/haskell-space-overflow :
-                     -O2
+  ghc-options:       -rtsopts -Wall -O2
+  
   if flag(executable)
     buildable:  True
   else
     buildable:  False
 
+Executable prototype
+  Main-Is:          Main.hs
+  Hs-Source-Dirs:   src
+  build-depends:    HDBC == 2.4.*,
+                    HDBC-odbc == 2.3.*,
+                    ampersand  == 3.0.3,
+                    base >= 4.6,
+                    bytestring == 0.10.*,
+                    csv == 0.1.*,
+                    directory == 1.2.*,
+                    filepath == 1.3.*,
+                    graphviz == 2999.17.*,
+                    old-time == 1.1.*,
+                    process == 1.2.*,
+                    split == 0.2.*,
+                    time == 1.4.*
+
+  default-language: Haskell2010
+  ghc-options:      -rtsopts -Wall
+
+  -- Unfortunately, unix and MissingH are not available on windows
+  if !os(windows)
+    build-depends: 
+      MissingH == 1.3.*,
+      old-locale == 1.0.*,
+      unix == 2.7.*
+
+  if flag(prototype)
+    buildable:  True
+
+  else
+    buildable:  False
+
+  other-modules: 
+                 Database.Design.Ampersand_Prototype.Apps,
+                 Database.Design.Ampersand_Prototype.Apps.RAP,
+                 Database.Design.Ampersand_Prototype.Apps.RAPImport,
+                 Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers,
+                 Database.Design.Ampersand_Prototype.CoreImporter,
+                 Database.Design.Ampersand_Prototype.GenBericht,
+                 Database.Design.Ampersand_Prototype.Generate,
+                 Database.Design.Ampersand_Prototype.Installer,
+                 Database.Design.Ampersand_Prototype.ObjBinGen,
+                 Database.Design.Ampersand_Prototype.RelBinGenBasics,
+                 Database.Design.Ampersand_Prototype.RelBinGenSQL,
+                 Database.Design.Ampersand_Prototype.Version,
+                 Database.Design.Ampersand_Prototype.ValidateSQL
