@@ -3,6 +3,9 @@ cabal.sandbox.config
 .dist-buildwrapper
 dist
 
+StaticFiles_Generated.hs
+BuildInfo_Generated.hs
+
 # Compiled source #
 ###################
 *.com
