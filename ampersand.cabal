@@ -65,7 +65,7 @@ flag prototype
   default:      True
 
 library
-  hs-source-dirs:   src/lib
+  hs-source-dirs:   src/lib, src
   build-depends:    ConfigFile == 1.1.*,
                     SpreadsheetML == 0.1.*,
                     base >= 4.6,
@@ -84,9 +84,35 @@ library
                     text == 1.1.*,
                     time == 1.4.*,
                     utf8-string == 0.3.*,
-                    uulib == 0.9.*
+                    uulib == 0.9.*,
+                    HDBC == 2.4.*,
+                    HDBC-odbc == 2.3.*,
+                    bytestring == 0.10.*,
+                    csv == 0.1.*,
+                    directory == 1.2.*,
+                    filepath == 1.3.*,
+                    graphviz == 2999.17.*,
+                    old-time == 1.1.*,
+                    process == 1.2.*,
+                    split == 0.2.*,
+                    time == 1.4.*
+
                     
+  -- Unfortunately, unix and MissingH are not available on windows
+  if !os(windows)
+    build-depends: 
+      MissingH == 1.3.*,
+      old-locale == 1.0.*,
+      unix == 2.7.*
+
+
   exposed-modules:  Database.Design.Ampersand
+                    Database.Design.Ampersand_Prototype.ObjBinGen,
+                    Database.Design.Ampersand_Prototype.Apps.RAP,
+                    Database.Design.Ampersand_Prototype.CoreImporter,
+                    Database.Design.Ampersand_Prototype.GenBericht,
+                    Database.Design.Ampersand_Prototype.ValidateSQL
+  
   other-modules:    
                     Database.Design.Ampersand.ADL1,
                     Database.Design.Ampersand.ADL1.Disambiguate,
@@ -163,7 +189,15 @@ library
                     Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     Paths_ampersand,
-                    Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis
+                    Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis,
+                    Database.Design.Ampersand_Prototype.AutoInstaller,
+                    Database.Design.Ampersand_Prototype.Apps,
+                    Database.Design.Ampersand_Prototype.Generate,
+                    Database.Design.Ampersand_Prototype.Installer,
+                    Database.Design.Ampersand_Prototype.RelBinGenBasics,
+                    Database.Design.Ampersand_Prototype.RelBinGenSQL,
+                    Database.Design.Ampersand_Prototype.StaticFiles_Generated
+                    
                     
   default-language:  Haskell2010
 
@@ -190,46 +224,14 @@ executable ampersand
 Executable prototype
   Main-Is:          Main.hs
   Hs-Source-Dirs:   src
-  build-depends:    HDBC == 2.4.*,
-                    HDBC-odbc == 2.3.*,
-                    ampersand  == 3.0.3,
+  build-depends:    ampersand  == 3.0.3,
                     base >= 4.6,
-                    bytestring == 0.10.*,
-                    csv == 0.1.*,
-                    directory == 1.2.*,
-                    filepath == 1.3.*,
-                    graphviz == 2999.17.*,
-                    old-time == 1.1.*,
-                    process == 1.2.*,
-                    split == 0.2.*,
-                    time == 1.4.*
+                    filepath == 1.3.*
 
   default-language: Haskell2010
   ghc-options:      -rtsopts -Wall
 
-  -- Unfortunately, unix and MissingH are not available on windows
-  if !os(windows)
-    build-depends: 
-      MissingH == 1.3.*,
-      old-locale == 1.0.*,
-      unix == 2.7.*
-
   if flag(prototype)
     buildable:  True
-
   else
     buildable:  False
-
-  other-modules: 
-                 Database.Design.Ampersand_Prototype.Apps,
-                 Database.Design.Ampersand_Prototype.Apps.RAP,
-                 Database.Design.Ampersand_Prototype.Apps.RAPImport,
-                 Database.Design.Ampersand_Prototype.Apps.RAPIdentifiers,
-                 Database.Design.Ampersand_Prototype.CoreImporter,
-                 Database.Design.Ampersand_Prototype.GenBericht,
-                 Database.Design.Ampersand_Prototype.Generate,
-                 Database.Design.Ampersand_Prototype.Installer,
-                 Database.Design.Ampersand_Prototype.ObjBinGen,
-                 Database.Design.Ampersand_Prototype.RelBinGenBasics,
-                 Database.Design.Ampersand_Prototype.RelBinGenSQL,
-                 Database.Design.Ampersand_Prototype.ValidateSQL
