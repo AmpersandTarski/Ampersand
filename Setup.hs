@@ -35,9 +35,6 @@ generateBuildInfoHook pd  lbi uh bf =
     ; writeFile "src/lib/Database/Design/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
-    ; writeFile "src/Database/Design/Ampersand_Prototype/BuildInfo_Generated.hs" $
-        buildInfoModuleProto cabalVersionStr gitInfoStr buildTimeStr
-
     ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
     ; writeFile (pathFromModule staticFileModuleName) staticFilesGeneratedContents 
 
@@ -48,27 +45,6 @@ generateBuildInfoHook pd  lbi uh bf =
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
   [ "module Database.Design.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, gitInfoStr, buildTimeStr) where" 
-  , ""
-  , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
-  , ""
-  , "{-# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
-  , "cabalVersionStr :: String"
-  , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
-  , ""
-  , "{-# NOINLINE gitInfoStr #-}"
-  , "gitInfoStr :: String"
-  , "gitInfoStr = \"" ++ gitInfo ++ "\""
-  , ""
-  , "{-# NOINLINE buildTimeStr #-}"
-  , "buildTimeStr :: String"
-  , "buildTimeStr = \"" ++ time ++ "\""
-  , ""
-  ]
-
--- TODO: only temporary, since this version info is obsolete now
-buildInfoModuleProto :: String -> String -> String -> String
-buildInfoModuleProto cabalVersion gitInfo time = unlines
-  [ "module Database.Design.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, gitInfoStr, buildTimeStr) where" 
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""

@@ -9,7 +9,6 @@ import Database.Design.Ampersand_Prototype.AutoInstaller (odbcinstall)
 import Database.HDBC.ODBC
 import Database.HDBC
 import Database.Design.Ampersand_Prototype.RelBinGenSQL
--- import Database.Design.Ampersand_Prototype.Version
 
 -- fatal :: Int -> String -> a
 -- fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"

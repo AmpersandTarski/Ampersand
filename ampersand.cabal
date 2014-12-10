@@ -232,5 +232,4 @@ Executable prototype
                  Database.Design.Ampersand_Prototype.ObjBinGen,
                  Database.Design.Ampersand_Prototype.RelBinGenBasics,
                  Database.Design.Ampersand_Prototype.RelBinGenSQL,
-                 Database.Design.Ampersand_Prototype.Version,
                  Database.Design.Ampersand_Prototype.ValidateSQL

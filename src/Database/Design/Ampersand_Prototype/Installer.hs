@@ -4,10 +4,9 @@ module Database.Design.Ampersand_Prototype.Installer
    createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
-import Database.Design.Ampersand_Prototype.CoreImporter
+import Database.Design.Ampersand
 import Database.Design.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr, quote, sqlAtomQuote)
 import Database.Design.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
-import Database.Design.Ampersand_Prototype.Version
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"

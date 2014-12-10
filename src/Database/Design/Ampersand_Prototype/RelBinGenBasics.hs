@@ -9,8 +9,8 @@ module Database.Design.Ampersand_Prototype.RelBinGenBasics
  ) where
    import Data.Char(isAlphaNum,isDigit)
    import Data.List
-   import Database.Design.Ampersand_Prototype.Version
-
+   import Database.Design.Ampersand
+   
    fatal :: Int -> String -> a
    fatal = fatalMsg "RelBinGenBasics"
 

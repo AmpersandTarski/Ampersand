@@ -4,12 +4,10 @@ module Database.Design.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTgt,sqlExprSrc,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where
 import Database.Design.Ampersand_Prototype.CoreImporter
-
+import Database.Design.Ampersand
 import Database.Design.Ampersand_Prototype.RelBinGenBasics (quote,sqlAtomQuote,addSlashes,phpIndent)
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
-import Database.Design.Ampersand_Prototype.Version
--- import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"

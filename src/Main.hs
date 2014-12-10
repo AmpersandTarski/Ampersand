@@ -10,7 +10,6 @@ import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import Database.Design.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import Database.Design.Ampersand_Prototype.CoreImporter
-import Database.Design.Ampersand_Prototype.Version (prototypeVersionStr)
 import Database.Design.Ampersand_Prototype.GenBericht (doGenBericht)
 import Database.Design.Ampersand_Prototype.ValidateSQL (validateRulesSQL)
 -- import Database.Design.Ampersand.Input.ADL1.CtxError (showErr)
@@ -21,7 +20,7 @@ main =
  do opts' <- getOptions
     let opts = opts'{genPrototype=True}
     if showVersion opts || showHelp opts
-    then mapM_ putStr (helpNVersionTexts prototypeVersionStr opts)
+    then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do gFspec <- createFspec opts
             case gFspec of
               Errors err -> do putStrLn "Error(s) found:"

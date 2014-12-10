@@ -4,7 +4,6 @@
 module Database.Design.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
 import Database.Design.Ampersand_Prototype.CoreImporter
-import Database.Design.Ampersand_Prototype.Version (prototypeVersionStr)
 --import Database.Design.Ampersand.Core.Poset (Poset(..),maxima)
 import Prelude hiding (Ord(..))
 --import Database.Design.Ampersand.Input.ADL1.UU_Parsing (Message(..))
