@@ -106,7 +106,7 @@ readAndParseFile opts depth alreadyParsed mIncluderFilepath fileDir relativeFile
                     }
           } `catch` \(exc :: IOException) -> 
         do { error $ case mIncluderFilepath of
-                       Nothing -> "\n\nError: cannot read ADL file " ++ show filepath
+                       Nothing -> "\n\nError: cannot read Ampersand file " ++ show filepath
                        Just includerFilepath -> "\n\nError: cannot read include file " ++ show filepath ++
                                                 ", included by " ++ show includerFilepath}
  where filepath = combine fileDir relativeFilepath

@@ -193,7 +193,8 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
      assocToRow assoc  =
         (para.text.assrhr) assoc <>
         purposes2Blocks (getOpts fSpec) (asspurp assoc) <>
-        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty ) <>
+        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty )
+     {- <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
         else para $ case fsLang fSpec of
@@ -218,6 +219,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                               Mult MinZero MaxMany -> mempty
                               Mult MinOne  MaxOne  -> " For this association each " <> (emph.text.assTgt) assoc <> " has exactly one "  <> (emph.text.assSrc) assoc <> "."
                               Mult MinOne  MaxMany -> " For this association each " <> (emph.text.assTgt) assoc <> " has at least one " <> (emph.text.assSrc) assoc <> "."
+     -}
 
 technicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
 technicalDataModelSection lev fSpec = (theBlocks,[pict])
@@ -428,7 +430,7 @@ daRulesSection lev fSpec = theBlocks
                   plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf pred)) 
                 else
                   fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex pred)
-       else (plain . text $ l (NL "ADL expressie:", EN "ADL expression:")) <>
+       else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
             (plain . code $ showADL (rrexp rule))
      , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
      ]

@@ -178,7 +178,7 @@ generateRules fSpec =
              else   []
            ) ++
            ( if development (getOpts fSpec)
-             then [ "        // Rule ADL: "++escapePhpStr (showADL rExpr) ] ++
+             then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) ] ++
                   [ "        // Normalized complement (== violationsSQL): " ] ++
                   (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
@@ -239,7 +239,7 @@ generateConjuncts fSpec =
                   ++["        // "]
              else   [] ) ++
            ( if development (getOpts fSpec)
-             then [ "        // Conjunct ADL: "++escapePhpStr (showADL rExpr) ] ++
+             then [ "        // Conjunct Ampersand: "++escapePhpStr (showADL rExpr) ] ++
                   [ "        // Normalized complement (== violationsSQL): " ] ++
                   (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++

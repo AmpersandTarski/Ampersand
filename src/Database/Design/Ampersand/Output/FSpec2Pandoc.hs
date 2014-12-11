@@ -78,8 +78,8 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
       . (setAuthors $ 
            case metaValues "authors" fSpec of
              [] -> case fsLang fSpec of
-                     Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
-                     English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
+                     Dutch   -> [text "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""]
+                     English -> [text "Specify authors in Ampersand with: META \"authors\" \"<author names>\""]
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
            ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (getOpts fSpec) ]
 

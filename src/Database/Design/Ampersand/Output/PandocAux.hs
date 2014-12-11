@@ -600,7 +600,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
--- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
+-- To set the graphicspath, we want something like: \graphicspath{{"c:/data/Ampersand/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
 uniquecds :: FSpec -> A_Concept -> [(String,ConceptDef)]

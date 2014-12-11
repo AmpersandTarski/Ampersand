@@ -84,12 +84,12 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                 ] ++
                 
                 case navigationDocs of
-                  []               -> [ plainText $ "Hiervandaan kan niet genavigeerd worden." ]
+                  []               -> []
                   navDocs@(_:rest) -> 
                     [ plainText $ "Hiervandaan kan genavigeerd worden naar interface"++(if null rest then "" else "s")++":"] ++
                     [ bulletList navDocs ]
                 ++
-                [ plainText $ "De bijbehorende ADL expressie is: ", plain . code $ showADL iExp ] ++
+                [ plainText $ "De bijbehorende Ampersand expressie is: ", plain . code $ showADL iExp ] ++
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
                 

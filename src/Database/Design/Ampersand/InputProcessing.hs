@@ -81,7 +81,7 @@ createFSpec opts =
                          (Checked _ )        -> fatal 67 "Meatgrinder returns included file????"
      )
 
--- Parse an ADL file and all transitive includes
+-- Parse an Ampersand file and all transitive includes
 parseADL  :: Options -> FilePath -> IO (Guarded P_Context)
 parseADL opts filePath =
   whenCheckedIO (parseSingleADL opts filePath) $ \(ctxt, filePaths) ->
@@ -99,7 +99,7 @@ parseADLs opts parsedFilePaths filePaths =
           }
     }
 
--- Parse an ADL file, but not its includes (which are simply returned as a list)
+-- Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts filePath =
  do { verboseLn opts $ "Reading file " ++ filePath
