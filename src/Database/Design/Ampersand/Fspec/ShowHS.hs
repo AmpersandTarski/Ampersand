@@ -24,16 +24,16 @@ fSpec2Haskell :: Fspc -> String
 fSpec2Haskell fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
           ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (flags fSpec))++"-}"
-          ++"\nmodule Main where"
-          ++"\n  import Database.Design.Ampersand"
-          ++"\n  import Text.Pandoc hiding (Meta)"
-          ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
+          ++"\nmodule Main where\n"
+          ++"\nimport Database.Design.Ampersand"
+          ++"\nimport Text.Pandoc hiding (Meta)"
+          ++"\nimport Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
           ++"\n"
-          ++"\n  main :: IO ()"
-          ++"\n  main = do (flags fSpec) <- getOptions"
-          ++"\n            putStr (showHS (flags fSpec) \"\\n  \" fSpec_"++baseName (flags fSpec)++")"
-          ++"\n  fSpec_"++baseName (flags fSpec)++" :: Fspc"
-          ++"\n  fSpec_"++baseName (flags fSpec)++"\n   = "++showHS (flags fSpec) "\n     " fSpec
+          ++"\nmain :: IO ()"
+          ++"\nmain = do (flags fSpec) <- getOptions"
+          ++"\n          putStr (showHS (flags fSpec) \"\\n  \" fSpec_"++baseName (flags fSpec)++")\n"
+          ++"\nfSpec_"++baseName (flags fSpec)++" :: Fspc"
+          ++"\nfSpec_"++baseName (flags fSpec)++" =\n  "++showHS (flags fSpec) "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs
