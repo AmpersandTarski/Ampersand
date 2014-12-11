@@ -1,23 +1,23 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Fspec.ShowMeatGrinder
+module Database.Design.Ampersand.FSpec.ShowMeatGrinder
   (meatGrinder)
 where
 
 import Data.List
 import Data.Ord
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.Motivations
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1.Pair
 import Data.Hashable
 import Data.Maybe
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ShowMeatGrinder"
+fatal = fatalMsg "FSpec.ShowMeatGrinder"
 
 meatGrinder :: FSpec -> (FilePath, String)
 meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)

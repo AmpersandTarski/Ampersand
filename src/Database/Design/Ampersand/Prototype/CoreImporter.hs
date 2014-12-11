@@ -64,7 +64,7 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   -- * Prettyprinters
 --   , showADL, showADLcode, showSQL
 --   -- * Generators
---   , makeFspec
+--   , makeFSpec
 --   , generate
 --   -- * Functions with Options
 --   , getOptions

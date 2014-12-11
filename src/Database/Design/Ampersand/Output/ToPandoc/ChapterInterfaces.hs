@@ -6,10 +6,10 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Data.List
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Classes.Relational
-import Database.Design.Ampersand.Fspec.FPA
+import Database.Design.Ampersand.FSpec.FPA
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterInterfaces"

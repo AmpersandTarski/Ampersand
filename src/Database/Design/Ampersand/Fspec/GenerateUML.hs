@@ -1,16 +1,16 @@
-module Database.Design.Ampersand.Fspec.GenerateUML (generateUML) where
+module Database.Design.Ampersand.FSpec.GenerateUML (generateUML) where
 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
-import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
+import Database.Design.Ampersand.FSpec
 import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map
 import Control.Monad.State.Lazy  (State, gets, evalState, modify)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.GenerateUML"
+fatal = fatalMsg "FSpec.GenerateUML"
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.

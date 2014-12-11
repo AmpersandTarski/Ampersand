@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
-module Database.Design.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
+module Database.Design.Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Text.Pandoc hiding (Meta)
 import Data.Char                  (isAlphaNum)
 import Database.Design.Ampersand.Basics hiding (indent)
-import Database.Design.Ampersand.Fspec.Plug
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
---import Database.Design.Ampersand.Fspec.FPA   (fpa)
+import Database.Design.Ampersand.FSpec.Plug
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
+--import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
 import Database.Design.Ampersand.Classes
 import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner
@@ -18,7 +18,7 @@ import Data.Ord
 import Data.Function
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ShowHS"
+fatal = fatalMsg "FSpec.ShowHS"
 
 fSpec2Haskell :: FSpec -> String
 fSpec2Haskell fSpec

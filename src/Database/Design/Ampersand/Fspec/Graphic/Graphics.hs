@@ -1,15 +1,15 @@
-module Database.Design.Ampersand.Fspec.Graphic.Graphics
+module Database.Design.Ampersand.FSpec.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
 import Data.GraphViz
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec.Switchboard
+import Database.Design.Ampersand.FSpec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
 import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String
@@ -18,7 +18,7 @@ import System.FilePath hiding (addExtension)
 import System.Directory
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.Graphic.Graphics"
+fatal = fatalMsg "FSpec.Graphic.Graphics"
 
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
@@ -270,9 +270,9 @@ writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) | genAtlas opts ]++
-      [writeDot Canon  | {- genFspec opts || -} genAtlas opts ]++
---      [writeDot XDot   | genFspec opts || genAtlas opts ]++
-      [writeDot Png    | genFspec opts || genAtlas opts ]++
+      [writeDot Canon  | {- genFSpec opts || -} genAtlas opts ]++
+--      [writeDot XDot   | genFSpec opts || genAtlas opts ]++
+      [writeDot Png    | genFSpec opts || genAtlas opts ]++
       [writeDot Cmapx  |                   genAtlas opts ]
           )
    where

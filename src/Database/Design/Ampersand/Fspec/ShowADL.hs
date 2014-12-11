@@ -7,7 +7,7 @@
   --                Note that 'parse' and 'semantics' do not exist in this shape, so the actual expression is slightly more complicated.
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
-module Database.Design.Ampersand.Fspec.ShowADL
+module Database.Design.Ampersand.FSpec.ShowADL
     ( ShowADL(..), LanguageDependent(..), showPAclause, showREL)
 where
 import Database.Design.Ampersand.Core.ParseTree
@@ -15,7 +15,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Data.List hiding (head)
 import Prelude hiding (head)
 --import Debug.Trace
@@ -25,7 +25,7 @@ head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ShowADL"
+fatal = fatalMsg "FSpec.ShowADL"
 
 class ShowADL a where
  showADL :: a -> String

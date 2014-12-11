@@ -19,8 +19,8 @@ main =
  do opts <- getOptions
     if showVersion opts || showHelp opts
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
-    else do gFspec <- createFspec opts
-            case gFspec of
+    else do gFSpec <- createFSpec opts
+            case gFSpec of
               Errors err -> do putStrLn "Error(s) found:"
                                mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                exitWith $ ExitFailure 10

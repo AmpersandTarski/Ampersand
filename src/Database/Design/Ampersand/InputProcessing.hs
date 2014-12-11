@@ -1,12 +1,12 @@
 -- This module provides an interface to be able to parse a script and to
--- return an Fspec, as tuned by the command line options.
--- This might include that RAP is included in the returned Fspec.
+-- return an FSpec, as tuned by the command line options.
+-- This might include that RAP is included in the returned FSpec.
 module Database.Design.Ampersand.InputProcessing (
-   createFspec
+   createFSpec
 )
 where
 import qualified Database.Design.Ampersand.Basics as Basics
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner
@@ -14,7 +14,7 @@ import UU.Parsing (getMsgs,parse,evalSteps,Pair(..))
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Input.ADL1.CtxError
-import Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug (showPlug)
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug (showPlug)
 import Data.List
 import System.Directory
 import System.FilePath
@@ -24,10 +24,10 @@ import Data.Traversable (sequenceA)
 fatal :: Int -> String -> a
 fatal = Basics.fatalMsg "InputProcessing"
 
--- | create an Fspec, based on the user defined flags.
-createFspec :: Options  -- ^The options derived from the command line
+-- | create an FSpec, based on the user defined flags.
+createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
-createFspec opts =
+createFSpec opts =
   do userCtx <- parseADL opts (fileName opts)
      bothCtx <- if includeRap opts
                 then do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> "FormalAmpersand.adl"
@@ -50,7 +50,7 @@ createFspec opts =
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
                    (Checked aCtx) -> 
-                    do { let fSpec = makeFspec opts aCtx
+                    do { let fSpec = makeFSpec opts aCtx
                        ; when (development (flags fSpec)) $
                           do { putStrLn "Table structure for internal plugs:\n"
                              ; putStrLn $ (unlines . concat) [showPlug plug | InternalPlug plug <- plugInfos fSpec]
@@ -67,7 +67,7 @@ createFspec opts =
          -> case pCtx2aCtx opts pCtx of
               (Errors  err ) -> return (Errors err)
               (Checked aCtx)
-                 -> do let fSpec = makeFspec opts aCtx
+                 -> do let fSpec = makeFSpec opts aCtx
                            (popFilePath,popContents) = meatGrinder fSpec
                        when (genMeat opts) $
                           do let outputFile = combine (dirOutput opts) $ replaceExtension popContents ".adl"

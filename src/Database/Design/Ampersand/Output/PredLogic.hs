@@ -7,7 +7,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.FSpec.ShowADL
 import Data.Char
 import Database.Design.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 

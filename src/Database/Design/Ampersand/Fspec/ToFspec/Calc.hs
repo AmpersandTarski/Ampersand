@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
-module Database.Design.Ampersand.Fspec.ToFspec.Calc
+module Database.Design.Ampersand.FSpec.ToFSpec.Calc
             ( deriveProofs
             , lambda
             , checkMono
@@ -19,16 +19,16 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.ShowADL (ShowADL(..), showREL)
-import Database.Design.Ampersand.Fspec.ShowECA (showECA)
-import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), showREL)
+import Database.Design.Ampersand.FSpec.ShowECA (showECA)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.Misc (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
 import Text.Pandoc.Builder
 import Prelude hiding (head)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ToFspec.Calc"
+fatal = fatalMsg "FSpec.ToFSpec.Calc"
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -57,7 +57,7 @@ conjuncts opts = exprIsc2list.conjNF opts.rrexp
 --    where
 ----        showQ i (rel, shs,conj,r)
 ----         = "\nQuad "++show i++":\nrelation: "++showADL rel++":\nshifts: "++concat ["\n"++showADLe s |s<-shs]++"\nconjunct: "++showADL conj++"\nrule: "++showADL r++""
-----TODO: Deze code komt ook voor in ADL2Fspec.hs. Dat lijkt dubbelop, en derhalve niet goed.
+----TODO: Deze code komt ook voor in ADL2FSpec.hs. Dat lijkt dubbelop, en derhalve niet goed.
 --        rels = nub (recur (ifcObj ifc))
 --         where recur obj = [editMph (objctx o) | o<-attributes obj, editable (objctx o)]++[r | o<-attributes obj, r<-recur o]
 --        vis        = nub (rels++map (I . target) rels)
@@ -65,9 +65,9 @@ conjuncts opts = exprIsc2list.conjNF opts.rrexp
 --        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (relsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
 --   --     (ecaRs, _) = assembleECAs fSpec (allDecls fSpec)
-----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2FSpec.hs, maar is daar ANDERS(!)...
 ----        editable _               = False
-----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2FSpec.hs, maar is daar ANDERS(!)...
 ----        editMph e                = fatal 64 $ "cannot determine an editable declaration in a composite expression: "++show e
 --        -- De functie spread verspreidt strings over kolommen met een breedte van n.
 --        -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.

@@ -7,7 +7,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , math --
     , module Data.Monoid
     , module Database.Design.Ampersand.Basics
-    , module Database.Design.Ampersand.Fspec
+    , module Database.Design.Ampersand.FSpec
     , module Database.Design.Ampersand.Misc
     , module Database.Design.Ampersand.Core.AbstractSyntaxTree
     , Chapter(..)
@@ -37,7 +37,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Text.Pandoc
 import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder

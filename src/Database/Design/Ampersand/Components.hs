@@ -2,7 +2,7 @@
 --
 module Database.Design.Ampersand.Components
   ( -- * Type checking and calculus
-     makeFspec
+     makeFSpec
     -- * Generators of output
    , generateAmpersandOutput
 --   , doGenADL
@@ -22,9 +22,9 @@ import Database.Design.Ampersand.ADL1.P2A_Converters
 import Text.Pandoc
 import Text.Pandoc.Builder
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Fspec
-import Database.Design.Ampersand.Fspec.GenerateUML
-import Database.Design.Ampersand.Fspec.ShowXMLtiny (showXML)
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.FSpec.GenerateUML
+import Database.Design.Ampersand.FSpec.ShowXMLtiny (showXML)
 import Database.Design.Ampersand.Output
 import Control.Monad
 import System.FilePath
@@ -41,7 +41,7 @@ generateAmpersandOutput fSpec =
     ; when (genUML (flags fSpec))      $ doGenUML      fSpec
     ; when (haskell (flags fSpec))     $ doGenHaskell  fSpec
     ; when (export2adl (flags fSpec))  $ doGenADL      fSpec
-    ; when (genFspec (flags fSpec))    $ doGenDocument fSpec
+    ; when (genFSpec (flags fSpec))    $ doGenDocument fSpec
     ; when (genFPAExcel (flags fSpec)) $ doGenFPAExcel fSpec
     ; when (proofs (flags fSpec))      $ doGenProofs   fSpec
     ; when (genMeat (flags fSpec) && (not . includeRap) (flags fSpec))  -- When rap is included, the file is created there.

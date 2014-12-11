@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
--- import Database.Design.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+-- import Database.Design.Ampersand.FSpec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List

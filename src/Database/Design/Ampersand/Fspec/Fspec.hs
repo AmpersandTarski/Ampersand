@@ -6,7 +6,7 @@ In the future, other ways of 'filling' FSpec are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show FSpec.
 -}
-module Database.Design.Ampersand.Fspec.Fspec
+module Database.Design.Ampersand.FSpec.FSpec
           ( FSpec(..), concDefs, Atom(..)
           , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
@@ -36,7 +36,7 @@ import Database.Design.Ampersand.ADL1.Expression (notCpl)
 --import Debug.Trace
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.Fspec"
+fatal = fatalMsg "FSpec.FSpec"
 
 data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
                  , flags ::        Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
@@ -74,9 +74,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
-                 , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2Fspec)
-                 , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
-                 , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
+                 , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
+                 , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
+                 , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                  , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                  , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
                  , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes

@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
+module Database.Design.Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks, chpInterfacesPics)

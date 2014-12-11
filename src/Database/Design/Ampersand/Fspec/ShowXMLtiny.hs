@@ -1,20 +1,20 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
-module Database.Design.Ampersand.Fspec.ShowXMLtiny (showXML) where
+module Database.Design.Ampersand.FSpec.ShowXMLtiny (showXML) where
 
 -- TODO: Als het Ampersand bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Data.Time.LocalTime
-import Database.Design.Ampersand.Fspec.Plug
+import Database.Design.Ampersand.FSpec.Plug
 import Database.Design.Ampersand.Misc.TinyXML
 import Data.List
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ShowXMLtiny"
+fatal = fatalMsg "FSpec.ShowXMLtiny"
 
 showXML :: FSpec -> LocalTime -> String
 showXML fSpec now
@@ -44,7 +44,7 @@ still2bdone :: String -> XTree
 still2bdone worktxt = Node (Tag "NotImplementedYet" [mkAttr "work2do_in_ShowXML.hs"  worktxt])
 
 instance XML FSpec where
-  mkTag f = Tag "Fspec" [nameToAttr f]
+  mkTag f = Tag "FSpec" [nameToAttr f]
   mkXmlTree f@FSpec{}
      = Elem (mkTag f) (
           []

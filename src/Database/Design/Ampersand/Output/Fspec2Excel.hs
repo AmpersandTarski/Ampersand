@@ -1,12 +1,12 @@
-module Database.Design.Ampersand.Output.Fspec2Excel (fspec2Workbook,showSpreadsheet)
+module Database.Design.Ampersand.Output.FSpec2Excel (fspec2Workbook,showSpreadsheet)
 where
 import Text.XML.SpreadsheetML.Builder
 import Text.XML.SpreadsheetML.Types
 import Text.XML.SpreadsheetML.Writer (showSpreadsheet)
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Fspec.FPA
+import Database.Design.Ampersand.FSpec.FPA
 import Database.Design.Ampersand.Basics
 import Data.Maybe
 

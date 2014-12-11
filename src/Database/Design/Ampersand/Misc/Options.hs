@@ -1,8 +1,8 @@
 {-# LANGUAGE PatternGuards #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
-        ,verboseLn,verbose,FspecFormat(..),FileFormat(..)
-        ,DocTheme(..),allFspecFormats,helpNVersionTexts)
+        ,verboseLn,verbose,FSpecFormat(..),FileFormat(..)
+        ,DocTheme(..),allFSpecFormats,helpNVersionTexts)
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import Database.Design.Ampersand.Misc.Languages (Lang(..))
@@ -45,9 +45,9 @@ data Options = Options { showVersion :: Bool
                        , fileformat :: Maybe FileFormat --file format e.g. of importfile or export2adl
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML :: Bool
-                       , genFspec :: Bool   -- if True, generate a functional specification
+                       , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
-                       , fspecFormat :: FspecFormat
+                       , fspecFormat :: FSpecFormat
                        , genGraphics :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
@@ -143,9 +143,9 @@ getOptions =
                       , importfile    = []
                       , fileformat    = Nothing
                       , genXML        = False
-                      , genFspec      = False
+                      , genFSpec      = False
                       , diag          = False
-                      , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFspecFormats++"."
+                      , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
                       , genGraphics   = True
                       , genEcaDoc     = False
                       , proofs        = False
@@ -191,9 +191,9 @@ getOptions =
 
 data DisplayMode = Public | Hidden
 
-data FspecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
-allFspecFormats :: String
-allFspecFormats = show (map (tail . show) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument, Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile])
+data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
+allFSpecFormats :: String
+allFSpecFormats = show (map (tail . show) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument, Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile])
 
 data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
@@ -304,7 +304,7 @@ options = map pp
             , Public)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> return opts
-                                { genFspec=True
+                                { genFSpec=True
                                 , fspecFormat= case map toUpper w of
                                     ('A': _ )             -> Fasciidoc
                                     ('C': _ )             -> Fcontext
@@ -324,7 +324,7 @@ options = map pp
                                     ('T':'E':'X':'T': _ ) -> Ftextile
                                     _                     -> fspecFormat opts}
                        ) "FORMAT")
-               ("generate a functional specification document in specified format (format="++allFspecFormats++").")
+               ("generate a functional specification document in specified format (format="++allFSpecFormats++").")
             , Public)
           , (Option []        ["refresh"]
                (OptArg (\r opts -> return

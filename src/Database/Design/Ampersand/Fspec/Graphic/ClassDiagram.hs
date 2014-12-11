@@ -1,7 +1,7 @@
 --TODO -> clean and stuff. Among which moving classdiagram2dot to Graphviz library implementation (see Classes/Graphics.hs).
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
-module Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
+module Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..),
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..), MinValue(..), MaxValue(..),
@@ -12,10 +12,10 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1  hiding (Association,Box)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Association)
-import Database.Design.Ampersand.Fspec.Plug
+import Database.Design.Ampersand.FSpec.Plug
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.Motivations
 import Data.String
 import Data.Maybe
 import Data.Either
@@ -25,7 +25,7 @@ import Data.GraphViz.Attributes as GVatt
 import Data.GraphViz.Attributes.HTML as Html
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
+fatal = fatalMsg "FSpec.Graphic.ClassDiagram"
 
 class CdNode a where
  nodes :: a->[String]

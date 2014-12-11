@@ -129,7 +129,7 @@ makeFailedPops imperr script opts usrfiles
                       :makepopu ("te_origtype","TypeError","String")      [(eid,nonsid (orig cxetype x))]
                       :makepopu ("te_origname","TypeError","String")      [(eid,nonsid getline)]
                       :(if nocxe es
-                        then makeRAPPops (makeFspec opts cx) opts usrfiles []
+                        then makeRAPPops (makeFSpec opts cx) opts usrfiles []
                         else [])
                        where getline = let xs = drop ((origline x)-1) (lines script) in if null xs then "" else head xs
                              eid = terrid i fid
@@ -154,7 +154,7 @@ te_origname :: TypeError * String [UNI]
 --makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> [P_Population]
 --makeCtxErrorPops opts usrfiles eid pctx
 -- = case cx of
---      Checked c -> makepopu ("te_message","TypeError","ErrorMessage") [] : makeRAPPops (makeFspec opts c) opts usrfiles []
+--      Checked c -> makepopu ("te_message","TypeError","ErrorMessage") [] : makeRAPPops (makeFSpec opts c) opts usrfiles []
 --      Errors x ->  [makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))]]
 --   where (cx,_,_) = typeCheck nc []
 --         nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) []

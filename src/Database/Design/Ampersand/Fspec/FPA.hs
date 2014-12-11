@@ -1,15 +1,15 @@
-module Database.Design.Ampersand.Fspec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
-                                           -- fpaPlugInfo and fpaInterface are exported for legacy modules Statistics and Fspec2Excel
+module Database.Design.Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
+                                           -- fpaPlugInfo and fpaInterface are exported for legacy modules Statistics and FSpec2Excel
 
 import Database.Design.Ampersand.Misc (Lang(..))
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Basics
 import Data.Maybe
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.FPA"
+fatal = fatalMsg "FSpec.FPA"
 
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 

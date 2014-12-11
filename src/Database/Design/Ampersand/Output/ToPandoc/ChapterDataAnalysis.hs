@@ -4,9 +4,9 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
-import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
-import Database.Design.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.FSpec.Motivations
 import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
@@ -189,7 +189,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                          , assSrc assoc == clName cl || assTgt assoc == clName cl]
        )
     where
-     assocToRow :: Database.Design.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
         (para.text.assrhr) assoc <>
         purposes2Blocks (flags fSpec) (asspurp assoc) <>

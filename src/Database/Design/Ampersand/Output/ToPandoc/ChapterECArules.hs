@@ -3,7 +3,7 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterECArules
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Fspec.ToFspec.NormalForms (proofPA)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (proofPA)
 import Database.Design.Ampersand.ADL1
 
 chpECArules :: FSpec -> Blocks

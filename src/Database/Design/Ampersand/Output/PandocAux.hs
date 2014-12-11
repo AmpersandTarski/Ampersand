@@ -19,7 +19,7 @@ module Database.Design.Ampersand.Output.PandocAux
       )
 where
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Data.Char hiding    (Space)
 import Text.Pandoc
 import Text.Pandoc.Builder

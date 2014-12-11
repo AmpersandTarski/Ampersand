@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
-module Database.Design.Ampersand.Fspec.ToFspec.NormalForms
+module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
   (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
   ) where
@@ -17,11 +17,11 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Misc.Options
 import Database.Design.Ampersand.Input.ADL1.Parser (pRule)
 import Database.Design.Ampersand.Input.Parsing
-import Database.Design.Ampersand.Fspec.ShowADL  -- for debug purposes only
+import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
 import Prelude hiding (head)
 -- import Debug.Trace
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ToFspec.NormalForms"
+fatal = fatalMsg "FSpec.ToFSpec.NormalForms"
 
 {- SJC:
 Ideas for future work:

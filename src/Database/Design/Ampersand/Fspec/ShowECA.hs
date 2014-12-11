@@ -1,7 +1,7 @@
-module Database.Design.Ampersand.Fspec.ShowECA (showECA) where
+module Database.Design.Ampersand.FSpec.ShowECA (showECA) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Fspec.ShowADL (showPAclause, showREL)
+import Database.Design.Ampersand.FSpec.ShowADL (showPAclause, showREL)
 
 class ECA a where
   showECA :: String -> a -> String

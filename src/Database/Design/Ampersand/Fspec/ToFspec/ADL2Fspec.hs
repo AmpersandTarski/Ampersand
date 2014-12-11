@@ -1,5 +1,5 @@
-module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
-         (makeFspec, quads, preEmpt, editable) where
+module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
+         (makeFSpec, quads, preEmpt, editable) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.Poset
@@ -8,13 +8,13 @@ import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec.ToFspec.NormalForms  --  (delta,conjNF,disjNF,normPA)
-import Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug
-import Database.Design.Ampersand.Fspec.ToFspec.Calc
---import Database.Design.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
-import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms  --  (delta,conjNF,disjNF,normPA)
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
+import Database.Design.Ampersand.FSpec.ToFSpec.Calc
+--import Database.Design.Ampersand.FSpec.ShowHS -- only for diagnostic purposes during debugging
+import Database.Design.Ampersand.FSpec.ShowADL
 import Text.Pandoc
 import Data.Maybe
 import Data.List (nub,intersect,partition,group,delete)
@@ -26,10 +26,10 @@ head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
+fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
 
-makeFspec :: Options -> A_Context -> FSpec
-makeFspec opts context = fSpec
+makeFSpec :: Options -> A_Context -> FSpec
+makeFSpec opts context = fSpec
  where
      fSpec =
          FSpec { fsName       = name context
