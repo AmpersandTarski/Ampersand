@@ -62,11 +62,11 @@ chpNatLangReqs lev fSpec =
    fromList dpRequirementsOld
 --   dpRequirementesNew
    <> --  *** Legal Refs ***
-     if genLegalRefs (flags fSpec) then legalRefs else mempty
+     if genLegalRefs (getOpts fSpec) then legalRefs else mempty
 
   where
   legalRefs :: Blocks
-  legalRefs = (labeledThing (flags fSpec) (lev+1) "LegalRefs" sectionTitle)
+  legalRefs = (labeledThing (getOpts fSpec) (lev+1) "LegalRefs" sectionTitle)
             <> table caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
@@ -159,7 +159,7 @@ chpNatLangReqs lev fSpec =
        (Nothing, _:_)
           -> ( mempty, counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
        _  -> ( (  --  *** Header of the theme: ***
-                 labeledThing (flags fSpec) (lev+1)
+                 labeledThing (getOpts fSpec) (lev+1)
                               (xLabel DataAnalysis++case mTheme of
                                                           Nothing ->  "_LooseEnds"
                                                           _       -> themeName
@@ -179,7 +179,7 @@ chpNatLangReqs lev fSpec =
                                      English -> para $
                                                     "This paragraph shows remaining fact types and concepts "
                                                  <> "that have not been described in previous paragraphs."
-                      Just pat -> purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
+                      Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
                 <> --  *** Introduction text of the theme: ***
                    printIntro (filter isDefined concs2print)
                 <> fromList reqdefs
@@ -289,7 +289,7 @@ chpNatLangReqs lev fSpec =
                                                                  English -> "Definition ")
                                            , Str (show (getEisnr cnt)++xcnt)
                                            , Str ":"]
-                                         , [ makeDefinition (flags fSpec) (getEisnr cnt)  nm lbl def' ref ])]
+                                         , [ makeDefinition (getOpts fSpec) (getEisnr cnt)  nm lbl def' ref ])]
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               printRels :: [Declaration] -> [(Origin, Counter -> [Block])]
@@ -297,13 +297,13 @@ chpNatLangReqs lev fSpec =
               printRel :: Declaration -> Counter -> [Block]
               printRel dcl cnt
                = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
-                 toList (purposes2Blocks (flags fSpec) purps)
+                 toList (purposes2Blocks (getOpts fSpec) purps)
                  ++
                  [ DefinitionList [ ( [ Str (case fsLang fSpec of
                                                       Dutch   -> "Afspraak "
                                                       English -> "Agreement ")
                                      , Str (show(getEisnr cnt))
-                                     ,if development (flags fSpec) && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
+                                     ,if development (getOpts fSpec) && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
                                    , [ Plain [RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel dcl]:
                                        meaning2Blocks (fsLang fSpec) dcl
                                      ]
@@ -319,7 +319,7 @@ chpNatLangReqs lev fSpec =
                  where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
                        samplePop = (take 3 . fullContents (gens fSpec) (initialPops fSpec) . EDcD) dcl
                        sampleSentences =
-                         [ Para $ mkSentence (development (flags fSpec)) dcl srcViewAtom tgtViewAtom
+                         [ Para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
                          | p <-samplePop
                          , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (srcPaire p)
                          , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (trgPaire p)
@@ -332,13 +332,13 @@ chpNatLangReqs lev fSpec =
   printRule :: Rule -> Counter -> [Block]
   printRule rul cnt
    =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
-      toList (purposes2Blocks (flags fSpec) purps)
+      toList (purposes2Blocks (getOpts fSpec) purps)
       ++
       [ DefinitionList [ ( [ Str (case fsLang fSpec of
                                     Dutch   -> "Afspraak "
                                     English -> "Agreement ")
                            , Str (show(getEisnr cnt))
-                           , if development (flags fSpec) && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
+                           , if development (getOpts fSpec) && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
                          , [ Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel rul] :
                                        meaning2Blocks (fsLang fSpec) rul
                            ]
@@ -363,7 +363,7 @@ chpNatLangReqs lev fSpec =
 
        Isn{}     -> devShow (source decl) ++ [str' (upCap srcAtom),Space,Str "equals",Space,str' tgtAtom,Str "."]
        Vs{}      -> [Str "True"]
-   where str' = if fspecFormat (flags fSpec)==FLatex then RawInline (Text.Pandoc.Builder.Format "latex") . latexEscShw else Str
+   where str' = if fspecFormat (getOpts fSpec)==FLatex then RawInline (Text.Pandoc.Builder.Format "latex") . latexEscShw else Str
          devShow c | isDev     = [Str "(", str' $ name c, Str ") "] -- only show the concept when --dev option is given
                    | otherwise = []
 

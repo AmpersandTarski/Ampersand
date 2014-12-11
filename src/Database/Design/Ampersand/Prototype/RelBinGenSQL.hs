@@ -624,7 +624,7 @@ getDeclarationTableInfo fSpec decl =
 --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
 sqlPlugFields :: FSpec -> PlugSQL -> Expression  -> [(SqlField, SqlField)]
 sqlPlugFields fSpec p e' =
-    let e = disjNF (flags fSpec) e' -- SJ20140207 Why is this normalization necessary?
+    let e = disjNF (getOpts fSpec) e' -- SJ20140207 Why is this normalization necessary?
     in nub
         [(fld0,fld1)
         | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
@@ -632,8 +632,8 @@ sqlPlugFields fSpec p e' =
         , Just plugexpr <- [plugpath p fld0 fld1] --the smallest expression from fld0 to fld1 (both in same plug)
         , let se = fldexpr fld0
               te = fldexpr fld1
-              bs = (isTrue.disjNF (flags fSpec)) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
-              bt = (isTrue.disjNF (flags fSpec)) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
+              bs = (isTrue.disjNF (getOpts fSpec)) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
+              bt = (isTrue.disjNF (getOpts fSpec)) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
         , --reasons why e is equivalent to plugexpr:
            --because e and plugexpr are equal
            e==plugexpr
@@ -650,9 +650,9 @@ sqlPlugFields fSpec p e' =
            The code below fixes exactly these ommissions
       --
         || (isProp (se) && (te == e)
-           && (isTrue$disjNF (flags fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl se))
+           && (isTrue$disjNF (getOpts fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl se))
         || (isProp (te) && se==flp e
-           && (isTrue$disjNF (flags fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl te))
+           && (isTrue$disjNF (getOpts fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl te))
         -- found another exception:
         --     isFalse (I;I /\ -I)
         --   and

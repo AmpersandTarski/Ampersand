@@ -23,17 +23,17 @@ fatal = fatalMsg "FSpec.ShowHS"
 fSpec2Haskell :: FSpec -> String
 fSpec2Haskell fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (flags fSpec))++"-}"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (getOpts fSpec))++"-}"
           ++"\nmodule Main where\n"
           ++"\nimport Database.Design.Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
           ++"\nimport Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
           ++"\n"
           ++"\nmain :: IO ()"
-          ++"\nmain = do (flags fSpec) <- getOptions"
-          ++"\n          putStr (showHS (flags fSpec) \"\\n  \" fSpec_"++baseName (flags fSpec)++")\n"
-          ++"\nfSpec_"++baseName (flags fSpec)++" :: FSpec"
-          ++"\nfSpec_"++baseName (flags fSpec)++" =\n  "++showHS (flags fSpec) "\n  " fSpec
+          ++"\nmain = do (getOpts fSpec) <- getOptions"
+          ++"\n          putStr (showHS (getOpts fSpec) \"\\n  \" fSpec_"++baseName (getOpts fSpec)++")\n"
+          ++"\nfSpec_"++baseName (getOpts fSpec)++" :: FSpec"
+          ++"\nfSpec_"++baseName (getOpts fSpec)++" =\n  "++showHS (getOpts fSpec) "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs

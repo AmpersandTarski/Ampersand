@@ -24,7 +24,7 @@ import Data.Traversable (sequenceA)
 fatal :: Int -> String -> a
 fatal = Basics.fatalMsg "InputProcessing"
 
--- | create an FSpec, based on the user defined flags.
+-- | create an FSpec, based on the provided command-line options.
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
@@ -51,7 +51,7 @@ createFSpec opts =
                    (Errors  err ) -> return (Errors err)
                    (Checked aCtx) -> 
                     do { let fSpec = makeFSpec opts aCtx
-                       ; when (development (flags fSpec)) $
+                       ; when (development (getOpts fSpec)) $
                           do { putStrLn "Table structure for internal plugs:\n"
                              ; putStrLn $ (unlines . concat) [showPlug plug | InternalPlug plug <- plugInfos fSpec]
                              }

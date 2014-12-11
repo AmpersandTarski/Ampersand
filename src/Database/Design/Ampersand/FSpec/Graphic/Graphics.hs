@@ -44,7 +44,7 @@ makePicture fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (flags fSpec) (clAnalysis fSpec)
+                               , dotSource = classdiagram2dot (getOpts fSpec) (clAnalysis fSpec)
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -53,7 +53,7 @@ makePicture fSpec pr =
                                }
    PTLogicalDM         -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (flags fSpec) (cdAnalysis fSpec)
+                               , dotSource = classdiagram2dot (getOpts fSpec) (cdAnalysis fSpec)
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -62,7 +62,7 @@ makePicture fSpec pr =
                                }
    PTTechnicalDM       -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (flags fSpec) (tdAnalysis fSpec)
+                               , dotSource = classdiagram2dot (getOpts fSpec) (tdAnalysis fSpec)
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -173,7 +173,7 @@ pictureID pr =
       PTSingleRule r      -> "SingleRule"++name r
 
 conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
-conceptualGraph' fSpec pr = conceptual2Dot (flags fSpec) cstruct
+conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
   where
     cstruct =
       case pr of

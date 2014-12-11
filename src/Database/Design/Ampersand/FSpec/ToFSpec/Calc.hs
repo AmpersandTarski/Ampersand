@@ -47,10 +47,10 @@ conjuncts opts = exprIsc2list.conjNF opts.rrexp
 --      showADL ifc++"\n"++
 --      " - Invariants:\n   "++intercalate "\n   " [showADL rule    | rule<-invs]++"\n"++
 --      " - Derivation of clauses for ECA-rules:"   ++
---      concat [showClause fSpec (makeCjcts (flags fSpec) rule) | rule<-invs]++"\n"++
+--      concat [showClause fSpec (makeCjcts (getOpts fSpec) rule) | rule<-invs]++"\n"++
 --{-
---      " - ECA rules:"++concat  [ "\n\n     "++showECA "\n     "  (eca{ecaAction=normPA (flags fSpec) (ecaAction eca)})
---                                 ++"\n------ Derivation ----->"++showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (flags fSpec) (ecaAction eca))++"\n<------End Derivation --"
+--      " - ECA rules:"++concat  [ "\n\n     "++showECA "\n     "  (eca{ecaAction=normPA (getOpts fSpec) (ecaAction eca)})
+--                                 ++"\n------ Derivation ----->"++showProof (codeBlock . ("\n     "++) . showECA "\n     ") (proofPA (getOpts fSpec) (ecaAction eca))++"\n<------End Derivation --"
 --                               | eca<-ecaRs]++"\n\n"++
 ---}
 --      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADL r  | r<-vis])++"\n"
@@ -102,8 +102,8 @@ deriveProofs fSpec
    para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
    bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
                       "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
-                      "conjNF:   "<>str (showADL (conjNF (flags fSpec) (rrexp r)))<>linebreak<>
-                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts (flags fSpec) r ]
+                      "conjNF:   "<>str (showADL (conjNF (getOpts fSpec) (rrexp r)))<>linebreak<>
+                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts (getOpts fSpec) r ]
                      )
               | r<-grules fSpec++vrules fSpec]<>
    para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
@@ -132,19 +132,19 @@ deriveProofs fSpec
                     ]
               ]<>
    para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) fSpec<>" ECA rules"<>
-         if verboseP (flags fSpec)
+         if verboseP (getOpts fSpec)
           then " (Turn --verbose off if you want to see ECA rules only)"
           else " (Turn on --verbose if you want to see more detail)"
         )<>
-   ( if verboseP (flags fSpec) then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
+   ( if verboseP (getOpts fSpec) then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
    bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
-                codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (flags fSpec) (ecaAction ecarule)})<>
+                codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (getOpts fSpec) (ecaAction ecarule)})<>
                 bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                    <>linebreak<>"derivation:"
                                   )<>
-                             (showProof (para.str.showADL).dfProof (flags fSpec)) d<>  -- Produces its result in disjunctive normal form
-                             para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF (flags fSpec)) d)
-                           | verboseP (flags fSpec), e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
+                             (showProof (para.str.showADL).dfProof (getOpts fSpec)) d<>  -- Produces its result in disjunctive normal form
+                             para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF (getOpts fSpec)) d)
+                           | verboseP (getOpts fSpec), e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
               | ecarule <- ecaRs]
 {-
       ++
@@ -161,7 +161,7 @@ deriveProofs fSpec
 {- TODO: readdress preEmpt. It is wrong
       interText []
         [ [linebreak<>"-- Preempted ECA rule "<>(str.show.ecaNum) er<>"------------"<>linebreak<>str (showECA "\n  " er)]
-        | er<- preEmpt (flags fSpec) ecaRs]
+        | er<- preEmpt (getOpts fSpec) ecaRs]
       ++ -}
 {-
       [ linebreak<>"--------------", linebreak]
@@ -199,24 +199,24 @@ deriveProofs fSpec
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
                                    [ ["event = ", str (show ev), space, str (showADL rel), linebreak ] <>
-                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
+                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
                                      ["r'    = "] <> conjProof r' <> [linebreak ] <>
                                      ["viols = r'-"] <> disjProof (ECpl r') <> [ linebreak ] <>
-                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem (flags fSpec) ev (EDcD rel) (delta (sign rel)))<>
+                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel)))<>
                                      "            "<>conjProof (ECpl r) <>"\n"<>
-                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF (flags fSpec)) (notCpl r .\/. r')<>")"<>
+                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF (getOpts fSpec)) (notCpl r .\/. r')<>")"<>
                                         conjProof (notCpl r .\/. r')<>"\n"<>
                                      "delta: r-/\\r' = "<>conjProof (EIsc[notCpl r,r'])<>
-                                     "\nNow compute a reaction\n(isTrue.conjNF (flags fSpec)) (notCpl r .\/. r') = "<>show ((isTrue.conjNF (flags fSpec)) (notCpl r .\/. r'))<>"\n"<>
+                                     "\nNow compute a reaction\n(isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r') = "<>show ((isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r'))<>"\n"<>
                                      (if null (lambda ev (ERel rel ) r)
                                       then "lambda "<>showADL rel<>" ("<>showADL r<>") = empty\n"
                                       else -- for debug purposes:
                                            -- "lambda "<>show ev<>" "<>showADL rel<>" ("<>showADL r<>") = \n"<>(interText "\n\n".map showPr.lambda ev (ERel rel)) r<>"\n"<>
                                            -- "derivMono ("<>showADL r<>") "<>show ev<>" "<>showADL rel<>"\n = "<>({-interText "\n". map -}showPr.derivMono r ev) rel<>"\n"<>
-                                           -- "\nNow compute checkMono (flags fSpec) r ev rel = \n"<>show (checkMono (flags fSpec) r ev rel)<>"\n"<>
-                                           if (isTrue.conjNF (flags fSpec)) (notCpl r .\/. r')
+                                           -- "\nNow compute checkMono (getOpts fSpec) r ev rel = \n"<>show (checkMono (getOpts fSpec) r ev rel)<>"\n"<>
+                                           if (isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r')
                                            then "A reaction is not required, because  r |- r'. Proof:"<>conjProof (notCpl r .\/. r')<>"\n"
-                                           else if checkMono (flags fSpec) r ev rel
+                                           else if checkMono (getOpts fSpec) r ev rel
                                            then "A reaction is not required, because  r |- r'. Proof:"{-<>(str.showPr.derivMono r ev) rel-}<>"NIET TYPECORRECT: (showPr.derivMono r ev) rel"<>"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ _ = delta (sign rel) in
                                                 "An appropriate reaction on this event is required."
@@ -224,16 +224,16 @@ deriveProofs fSpec
                                      )
                                    | rel<-relsUsedIn r   -- nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
-                                   , r'<-[subst (rel, actSem (flags fSpec) ev (EDcD rel) (delta (sign rel))) r]
-                        --        , viols<-[conjNF (flags fSpec) (ECpl r')]
-                                   , True ]  -- (isTrue.conjNF (flags fSpec)) (notCpl r .\/. r')
-                                  | r<-[dc | cs<-[makeCjcts (flags fSpec) rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
+                                   , r'<-[subst (rel, actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel))) r]
+                        --        , viols<-[conjNF (getOpts fSpec) (ECpl r')]
+                                   , True ]  -- (isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r')
+                                  | r<-[dc | cs<-[makeCjcts (getOpts fSpec) rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
-                 prf = cfProof (flags fSpec) e
+                 prf = cfProof (getOpts fSpec) e
                  (exx',_,_) = last prf
-            --     conjProof = showProof (para.str.showADL) . cfProof (flags fSpec)
-                 disjProof = showProof (para.str.showADL) . dfProof (flags fSpec)
+            --     conjProof = showProof (para.str.showADL) . cfProof (getOpts fSpec)
+                 disjProof = showProof (para.str.showADL) . dfProof (getOpts fSpec)
 --                 showPr    = showProof (para.str.showADL)  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
 -}
@@ -642,7 +642,7 @@ assembleECAs fSpec editables
         | let dlt = delta (sign rel), (s,g) <- fsisa fSpec
         ]
     fst4 (x,_,_,_) = x
-    options = flags fSpec
+    options = getOpts fSpec
 
 -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.

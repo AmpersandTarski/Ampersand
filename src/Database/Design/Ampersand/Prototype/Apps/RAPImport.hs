@@ -26,10 +26,10 @@ fatal = fatalMsg "RAPImport"
 importfspec ::  FSpec -> IO [P_Population]
 importfspec fSpec
  = let pics = picturesForAtlas fSpec
-   in  do verbose (flags fSpec) "Writing pictures for RAP... "
-          sequence_ [writePicture (flags fSpec) pict | pict <- pics]
-          verbose (flags fSpec) "Getting all uploaded adl-files of RAP user... "
-          usrfiles <- getUsrFiles (flags fSpec)
+   in  do verbose (getOpts fSpec) "Writing pictures for RAP... "
+          sequence_ [writePicture (getOpts fSpec) pict | pict <- pics]
+          verbose (getOpts fSpec) "Getting all uploaded adl-files of RAP user... "
+          usrfiles <- getUsrFiles (getOpts fSpec)
           return (makeRAPPops fSpecusrfiles pics)
 
 importfailed :: Either ParseError P_Context -> String -> Options -> IO [P_Population]
@@ -202,7 +202,7 @@ makeRAPPops fSpec usrfiles pics
        -- savectxfile is a SaveAdlFile in uploads/temp/ which should be renamed, moved, and loaded immediately to become an uploaded adl-file
        savectxfile = (tempdir, addExtension nextversion ".adl")
        --files will be saved in a temp dir first and moved next to check at the last moment that the file name does not exist yet
-       tempdir =  combine (fst (srcfile (flags fSpec))) "temp/"
+       tempdir =  combine (fst (srcfile (getOpts fSpec))) "temp/"
        --mkversion drops extension
        mkversion i fnext
          = let fn = dropExtension fnext
@@ -215,18 +215,18 @@ makeRAPPops fSpec usrfiles pics
            in if null revchunks then error "RAPImport.hs: no file name?"
               else intercalate "."$reverse(mkvchunk (head revchunks) : tail revchunks) --the last (head of reverse) should be a v(ersion)chunk
        --nextversion drops extension because mkversion does
-       nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) (flags fSpec))
+       nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) (getOpts fSpec))
                                             , mkversion i fn `notElem` map (dropExtension . fst) usrfiles]
                      in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
-       inclfiles = [(fst (srcfile (flags fSpec)),fn) | pos'<-fspos fSpec, let fn=takeFileName(filenm pos'), fn /= snd (srcfile (flags fSpec))]
-       cns = ctxns (srcfile (flags fSpec))
+       inclfiles = [(fst (srcfile (getOpts fSpec)),fn) | pos'<-fspos fSpec, let fn=takeFileName(filenm pos'), fn /= snd (srcfile (getOpts fSpec))]
+       cns = ctxns (srcfile (getOpts fSpec))
    in
      --see trunk/apps/Atlas/FSpec.adl
-     makeFilePops (flags fSpec) usrfiles [savepopfile,savectxfile]
+     makeFilePops (getOpts fSpec) usrfiles [savepopfile,savectxfile]
      ++
-    [makepopu ("sourcefile","Context","AdlFile")         [(fsid (cns,fSpec), fileid (srcfile (flags fSpec)))]
+    [makepopu ("sourcefile","Context","AdlFile")         [(fsid (cns,fSpec), fileid (srcfile (getOpts fSpec)))]
     ,makepopu ("includes","Context","File")              [(fsid (cns,fSpec), fileid f)  | f<-inclfiles]
-    ,makepopu ("firstloadedwith","AdlFile","AdlVersion") [(fileid (srcfile (flags fSpec)), nonsid prototypeVersionStr)]
+    ,makepopu ("firstloadedwith","AdlFile","AdlVersion") [(fileid (srcfile (getOpts fSpec)), nonsid prototypeVersionStr)]
     ,makepopu ("savepopulation","Context","SavePopFile") [(fsid (cns,fSpec), fileid savepopfile)]
     ,makepopu ("savecontext","Context","SaveAdlFile")    [(fsid (cns,fSpec), fileid savectxfile)]
     ,makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])

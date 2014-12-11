@@ -49,7 +49,7 @@ validateRulesSQL fSpec =
     ; results <- mapM (validateExp fSpec) allExps
 
 --    ; putStrLn "\nRemoving temporary database"
---    ; removeTempDatabase (flags fSpec)
+--    ; removeTempDatabase (getOpts fSpec)
 
     ; case [ ve | (ve, False) <- results] of
         [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
@@ -126,8 +126,8 @@ validateExp fSpec vExp@(exp, origin) =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec exp =
-  fmap sort (performQuery (flags fSpec) violationsQuery)
- where violationsExpr = conjNF (flags fSpec) exp
+  fmap sort (performQuery (getOpts fSpec) violationsQuery)
+ where violationsExpr = conjNF (getOpts fSpec) exp
        violationsQuery = selectExpr fSpec 26 "src" "tgt" violationsExpr
 
 performQuery :: Options -> String -> IO [(String,String)]
@@ -181,9 +181,9 @@ createTempDatabase fSpec =
      ([ "// Try to connect to the database"
       , "$DB_name='"++addSlashes tempDbName++"';"
       , "global $DB_host,$DB_user,$DB_pass;"
-      , "$DB_host='"++addSlashes (sqlHost (flags fSpec))++"';"
-      , "$DB_user='"++addSlashes (sqlLogin (flags fSpec))++"';"
-      , "$DB_pass='"++addSlashes (sqlPwd (flags fSpec))++"';"
+      , "$DB_host='"++addSlashes (sqlHost (getOpts fSpec))++"';"
+      , "$DB_user='"++addSlashes (sqlLogin (getOpts fSpec))++"';"
+      , "$DB_pass='"++addSlashes (sqlPwd (getOpts fSpec))++"';"
 
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
       , "// Check connection"

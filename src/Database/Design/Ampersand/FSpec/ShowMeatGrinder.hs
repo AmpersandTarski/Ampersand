@@ -25,7 +25,7 @@ meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
   content = unlines
      ([ "{- Do not edit manually. This code has been generated!!!"
       , "    Generated with "++ampersandVersionStr
-      , "    Generated at "++show (genTime (flags fSpec))
+      , "    Generated at "++show (genTime (getOpts fSpec))
       , "-}"
       , ""
       , "CONTEXT RapPopulations"]

@@ -66,7 +66,7 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
     myDoc =
       ( (setTitle
            (case metaValues "title" fSpec of
-                [] -> text (case (fsLang fSpec, diagnosisOnly (flags fSpec)) of
+                [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                                  (Dutch  , False) -> "Functionele Specificatie van "
                                  (English, False) -> "Functional Specification of "
                                  (Dutch  ,  True) -> "Diagnose van "
@@ -81,15 +81,15 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
                      Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
                      English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
-           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (flags fSpec) ]
+           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (getOpts fSpec) ]
 
         )
-      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (flags fSpec)))))
+      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec)))))
       )
       (doc (foldr (<>) mempty docContents))
     docContents :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (flags fSpec)]
+    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])

@@ -33,7 +33,7 @@ makeFSpec opts context = fSpec
  where
      fSpec =
          FSpec { fsName       = name context
-              , flags        = opts
+              , getOpts        = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
@@ -634,7 +634,7 @@ switchboard fSpec
     }
    where
      qs :: [Quad]
-     qs        = quads (flags fSpec) (invariants fSpec)
+     qs        = quads (getOpts fSpec) (invariants fSpec)
      (ecas, _) = assembleECAs fSpec (allDecls fSpec)
      conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qConjuncts q]
      eventsIn  = nub [ecaTriggr eca | eca<-ecas ]

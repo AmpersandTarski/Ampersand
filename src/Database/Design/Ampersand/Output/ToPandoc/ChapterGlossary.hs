@@ -9,7 +9,7 @@ import Database.Design.Ampersand.Classes
 chpGlossary :: Int -> FSpec ->  Blocks
 chpGlossary _ fSpec
  = fromList $
-   if fspecFormat (flags fSpec)==FLatex
+   if fspecFormat (getOpts fSpec)==FLatex
    then [ Para [RawInline (Format "latex") "\\printglossaries"] ]
    else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
           ( case fsLang fSpec of

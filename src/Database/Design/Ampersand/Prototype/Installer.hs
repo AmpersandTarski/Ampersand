@@ -17,7 +17,7 @@ installerDBstruct fSpec = unlines $
       , ""
       , "include \"dbSettings.php\";"
       , ""
-      , "$DB_name='"++addSlashes (dbName (flags fSpec))++"';"
+      , "$DB_name='"++addSlashes (dbName (getOpts fSpec))++"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"

@@ -40,7 +40,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> "This chapter allows an independent professional with sufficient background to check whether the agreements made "
                     <> "correspond to the formal rules and definitions. "
                     )
-     )<> purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
+     )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
   caBlocks = mconcat (map caSection (patterns fSpec))
   pictures = concatMap patPicts (patterns fSpec)
@@ -56,41 +56,41 @@ chpConceptualAnalysis lev fSpec = (
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
-        ( labeledThing (flags fSpec) (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
+        ( labeledThing (getOpts fSpec) (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
         -- The section starts with the reason why this pattern exists
-     <> (purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
+     <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
         -- followed by a conceptual model for this pattern
-     <> ( case (genGraphics (flags fSpec), fsLang fSpec) of
+     <> ( case (genGraphics (getOpts fSpec), fsLang fSpec) of
                (True,Dutch  ) -> -- announce the conceptual diagram
-                                 para ("Figuur " <> xRefReference (flags fSpec) (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                                 para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                                  -- draw the conceptual diagram
-                               <>((plain . showImage (flags fSpec) . pictOfPat) pat)
-               (True,English) -> para ("Figure " <> xRefReference (flags fSpec) (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                               <>((plain . showImage (flags fSpec) . pictOfPat) pat)
+                               <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
+               (True,English) -> para ("Figure " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+                               <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
                _              -> mempty
         ) <>
     (
         -- now provide the text of this pattern.
         (case fsLang fSpec of
            Dutch   -> para "De definities van concepten zijn te vinden in de index."
-                   <> (labeledThing (flags fSpec) (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
+                   <> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
                    <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
            English -> para "The definitions of concepts can be found in the glossary."
-                   <> (labeledThing (flags fSpec) (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
+                   <> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
      <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
      <> (case fsLang fSpec of
-           Dutch   -> (labeledThing (flags fSpec) (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
+           Dutch   -> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
                    <> plain "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
-           English -> (labeledThing (flags fSpec) (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
+           English -> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
                    <> plain "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."
         )
      <> fromList [DefinitionList blocks | let blocks = map caRule (invariants pat `isc` udefrules pat), not(null blocks)]
     )
   caRelation :: Declaration -> (Inlines, [Blocks])
   caRelation d
-        = let purp = toList (purposes2Blocks (flags fSpec) [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
+        = let purp = toList (purposes2Blocks (getOpts fSpec) [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
           in (mempty
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( case ( null purp, fsLang fSpec) of
@@ -145,7 +145,7 @@ chpConceptualAnalysis lev fSpec = (
     nladj Aut = "automatisch berekende"  
   caRule :: Rule -> ([Inline], [[Block]])
   caRule r
-        = let purp = toList (purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
+        = let purp = toList (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
 
           in ( []
              , [  -- First the reason why the rule exists, if any..
@@ -156,31 +156,31 @@ chpConceptualAnalysis lev fSpec = (
                       ++ [if null purp then Str "The following requirement has been defined in section "
                                        else Str "Therefore the following requirement has been defined in section " | fsLang fSpec==English]
                       ++ [RawInline (Format "latex") "~"]
-                      ++ toList ( symReqRef (flags fSpec) r)
+                      ++ toList ( symReqRef (getOpts fSpec) r)
                       ++ [Str " p."
                          ,RawInline (Format "latex") "~"]
-                      ++ toList (symReqPageRef (flags fSpec) r)
+                      ++ toList (symReqPageRef (getOpts fSpec) r)
                       ++ [Str ": "]]
                ++ meaning2Blocks (fsLang fSpec) r
                   -- then the formal rule
                ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | fsLang fSpec==Dutch]
                       ++ [Str "This is formalized - using relations "     | fsLang fSpec==English]
-                      ++ toList (mconcat (intersperse  (str ", ") [ symDefRef (flags fSpec) d | d@Sgn{}<-relsMentionedIn r]))
+                      ++ toList (mconcat (intersperse  (str ", ") [ symDefRef (getOpts fSpec) d | d@Sgn{}<-relsMentionedIn r]))
                       ++ [Str " - als " | fsLang fSpec==Dutch]
                       ++ [Str " - as "     | fsLang fSpec==English]]
-               ++ (if showPredExpr (flags fSpec)
+               ++ (if showPredExpr (getOpts fSpec)
                    then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
                    else pandocEquation (showMath r++symDefLabel r)
                   )
                -- followed by a conceptual model for this rule
                ++ toList
-               ( case (genGraphics (flags fSpec), fsLang fSpec) of
+               ( case (genGraphics (getOpts fSpec), fsLang fSpec) of
                   (True,Dutch  ) ->
-                        para ("Figuur " <> xRefReference (flags fSpec) (pictOfRule r) <> " geeft een conceptueel diagram van deze regel.")
-                     <> plain (showImage (flags fSpec) (pictOfRule r))
+                        para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfRule r) <> " geeft een conceptueel diagram van deze regel.")
+                     <> plain (showImage (getOpts fSpec) (pictOfRule r))
                   (True,English) ->
-                        para ("Figure " <> xRefReference (flags fSpec) (pictOfRule r) <> " shows a conceptual diagram of this rule.")
-                     <> plain (showImage (flags fSpec) (pictOfRule r))
+                        para ("Figure " <> xRefReference (getOpts fSpec) (pictOfRule r) <> " shows a conceptual diagram of this rule.")
+                     <> plain (showImage (getOpts fSpec) (pictOfRule r))
                   _              -> mempty)
 
                ])

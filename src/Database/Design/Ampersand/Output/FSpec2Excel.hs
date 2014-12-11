@@ -16,13 +16,13 @@ fspec2Workbook :: FSpec -> Workbook
 fspec2Workbook fSpec =
    Workbook
       { workbookDocumentProperties = Just
-          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName (flags fSpec)
+          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName (getOpts fSpec)
                              , documentPropertiesSubject = Nothing
                              , documentPropertiesKeywords  = Nothing
                              , documentPropertiesDescription = Just $ "Dit document is gegenereerd dmv. "++ampersandVersionStr++"."
                              , documentPropertiesRevision = Nothing
                              , documentPropertiesAppName = Just "Ampersand"
-                             , documentPropertiesCreated = Just $ show (genTime (flags fSpec))
+                             , documentPropertiesCreated = Just $ show (genTime (getOpts fSpec))
                              }
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
@@ -41,7 +41,7 @@ fspec2Workbook fSpec =
                           [ mkRow [string $ case lang of
                                                English -> "Detailed function point count (according to NESMA 2.1) of the application "
                                                Dutch   -> "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
-                                             ++ baseName (flags fSpec)
+                                             ++ baseName (getOpts fSpec)
                                   ]
                           , emptyRow
                           , mkRow [string totalen]

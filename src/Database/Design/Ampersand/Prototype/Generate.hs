@@ -22,16 +22,16 @@ customCssPath = "css/Custom.css"
 generateAll :: FSpec -> IO ()
 generateAll fSpec =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
---  ; verboseLn (flags fSpec) filecontent
+--  ; verboseLn (getOpts fSpec) filecontent
     ; writePrototypeFile "Generics.php" filecontent
-    ; when (genStaticFiles (flags fSpec))(
-       case customCssFile (flags fSpec) of
+    ; when (genStaticFiles (getOpts fSpec))(
+       case customCssFile (getOpts fSpec) of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
             ; writePrototypeFile customCssPath customCssContents
             }
         Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-         do { let dedicatedCSSPath = replaceExtension (fileName (flags fSpec)) "css"
+         do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
             ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
             ; if dedicatedCSSExists then
                do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
@@ -39,10 +39,10 @@ generateAll fSpec =
                   ; writePrototypeFile customCssPath customCssContents
                   }
               else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-               do { customExists <- doesFileExist (combine (dirPrototype (flags fSpec)) customCssPath)
+               do { customExists <- doesFileExist (combine (dirPrototype (getOpts fSpec)) customCssPath)
                   ; if customExists
-                    then verboseLn (flags fSpec) $ "  File " ++ customCssPath ++ " already exists."
-                    else do { verboseLn (flags fSpec) $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
+                    then verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " already exists."
+                    else do { verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
                             ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
                             }
                   }
@@ -53,7 +53,7 @@ generateAll fSpec =
     genericsPhpContent :: [String]
     genericsPhpContent =
       intercalate [""]
-        [ generateConstants (flags fSpec)
+        [ generateConstants (getOpts fSpec)
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -68,8 +68,8 @@ generateAll fSpec =
                       _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
     writePrototypeFile fname content =
-     do { verboseLn (flags fSpec) ("  Generating "++fname)
-        ; writeFile (combine (dirPrototype (flags fSpec)) fname) content
+     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
+        ; writeFile (combine (dirPrototype (getOpts fSpec)) fname) content
         }
 
 generateConstants :: Options -> [String]
@@ -171,23 +171,23 @@ generateRules fSpec =
            , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
            ] ++
-           ( if verboseP (flags fSpec)
+           ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
                   ++["        // "]
              else   []
            ) ++
-           ( if development (flags fSpec)
+           ( if development (getOpts fSpec)
              then [ "        // Rule ADL: "++escapePhpStr (showADL rExpr) ] ++
                   [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
            ] ++
            [ "        , 'contentsSQL'   => " ++
-             let contentsExpr = conjNF (flags fSpec) rExpr in
+             let contentsExpr = conjNF (getOpts fSpec) rExpr in
               showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
-           | development (flags fSpec) -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+           | development (getOpts fSpec) -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
            ] ++
            [ "        , 'pairView'      =>" -- a list of sql queries for the pair-view segments
@@ -201,7 +201,7 @@ generateRules fSpec =
          | rule <- vrules fSpec ++ grules fSpec
          , let rExpr=rrexp rule
          , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (flags fSpec) violExpr
+         , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
     ) )
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
@@ -233,15 +233,15 @@ generateConjuncts fSpec =
          [ [ mkConjunctName conj ++ " =>"
            , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
-           ( if verboseP (flags fSpec)
+           ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
                   ++["        // "]
              else   [] ) ++
-           ( if development (flags fSpec)
+           ( if development (getOpts fSpec)
              then [ "        // Conjunct ADL: "++escapePhpStr (showADL rExpr) ] ++
                   [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
            , "        )"
@@ -251,7 +251,7 @@ generateConjuncts fSpec =
          , rc_rulename conj `notElem` uniRuleNames fSpec
          , rc_rulename conj `elem` map name (invars fSpec)
          , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (flags fSpec) violExpr
+         , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
      ) )
     
@@ -335,14 +335,14 @@ generateInterface fSpec interface =
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
-  ++ (if verboseP (flags fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
+  ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
-           ++["      // "++ls | ls<-(showPrf showADL.cfProof (flags fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
+           ++["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
            ++["      //"]
       else   []
      )
   ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
-  ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (flags fSpec) ]
+  ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
   ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
   ++ case getEditableRelation editableRels normalizedInterfaceExp of 
@@ -369,7 +369,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
+ where normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
 
 generateMSubInterface :: FSpec -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =

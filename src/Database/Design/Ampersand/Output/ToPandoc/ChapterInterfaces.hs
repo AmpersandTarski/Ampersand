@@ -29,14 +29,14 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
-     =  (labeledThing (flags fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ quoteName (name ifc)))  <>
+     =  (labeledThing (getOpts fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ quoteName (name ifc)))  <>
         ifcIntro ifc <>
         docInterface ifc
       
     ifcIntro :: Interface -> Blocks
     ifcIntro ifc
      =  introBlocks <>
-        purposes2Blocks (flags fSpec) purps        
+        purposes2Blocks (getOpts fSpec) purps        
        where purps = purposesDefinedIn fSpec lang ifc
  
              introBlocks :: Blocks
@@ -56,7 +56,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
              bulletList [ plainText $ rc_rulename rule | rule <- ifcControls ifc]) <>
-      (if genFPAChap (flags fSpec)
+      (if genFPAChap (getOpts fSpec)
        then (plain . strong . text) "Functiepunten:" <>
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
                        " " ++ showLang lang (fpComplexity interfaceFP) ++ 
@@ -93,8 +93,8 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
                 
-                if not $ development (flags fSpec) then [] else -- some debug info shown on --dev
-                  [ plainText $ "DEBUG: Props: ["++props++"]" | development (flags fSpec) ] ++
+                if not $ development (getOpts fSpec) then [] else -- some debug info shown on --dev
+                  [ plainText $ "DEBUG: Props: ["++props++"]" | development (getOpts fSpec) ] ++
                   case editableRelM of
                     Nothing -> []
                     Just (srcConcept, d, tgtConcept, isFlipped) -> 
@@ -117,7 +117,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                                      , not . null $ sharedRoles
                                      ]
 
-            iExp = conjNF (flags fSpec) $ objctx object
+            iExp = conjNF (getOpts fSpec) $ objctx object
                     
             fieldType = name (target iExp)
             subInterfaceDocs = docMSubInterface editableRels roles hierarchy (objmsub object)
@@ -135,7 +135,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 
     messagesChap :: [Interface] -> Blocks
     messagesChap ifcs = mconcat
-      [ labeledThing (flags fSpec) (lev) "chapMessages" $ l (NL "Berichten", EN "Messages")
+      [ labeledThing (getOpts fSpec) (lev) "chapMessages" $ l (NL "Berichten", EN "Messages")
       , para . text $ l ( NL "Dit hoofdstuk geeft een overzicht van alle berichten."
                         , EN "This chapter lists all messages." )
       , simpleTable [ plainText $ l (NL "Eigenschap term (TODO: naam ok?)", EN "Property term"), plainText $ l (NL "Card.", EN "Card.")

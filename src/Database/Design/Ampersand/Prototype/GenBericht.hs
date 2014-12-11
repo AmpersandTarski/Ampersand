@@ -25,19 +25,19 @@ data Entity = Entity { entName ::     String
 
 doGenBericht :: FSpec -> IO ()
 doGenBericht fSpec =
- do { verboseLn (flags fSpec) "Generating 'Berichtendefinities'..."
-    ; createDirectoryIfMissing True $ combine (dirPrototype (flags fSpec)) "Berichten"
+ do { verboseLn (getOpts fSpec) "Generating 'Berichtendefinities'..."
+    ; createDirectoryIfMissing True $ combine (dirPrototype (getOpts fSpec)) "Berichten"
     ; let entities = genEntity_Interfaces $ interfaceS fSpec
     ; let berichtenCSV = allEntitiesToCSV entities
-    ; when (development (flags fSpec)) $ verboseLn (flags fSpec) $ layout berichtenCSV
+    ; when (development (getOpts fSpec)) $ verboseLn (getOpts fSpec) $ layout berichtenCSV
     ; genFile "Berichten/Berichten.csv" $ printSemicolonSeparated berichtenCSV
     ; genFile "Berichten/Gegevenswoordenboek.html" $ genGegevensWB entities
     ; genFile "Berichten/Berichtdefinitie.html" $ genBerichtDef entities
     }
  where
    genFile filename contents =
-        do { writeFile (combine (dirPrototype (flags fSpec)) filename) contents
-           ; verboseLn (flags fSpec) $ "\nGenerated file "++filename
+        do { writeFile (combine (dirPrototype (getOpts fSpec)) filename) contents
+           ; verboseLn (getOpts fSpec) $ "\nGenerated file "++filename
            }
    genEntity_Interfaces :: [Interface] -> [Entity]
    genEntity_Interfaces interfaces' = map genEntity_Interface interfaces'

@@ -31,7 +31,7 @@ chpProcessAnalysis lev fSpec
   headerBlocks :: Blocks
   headerBlocks
    = (chptHeader (fsLang fSpec) ProcessAnalysis) <>
-     purposes2Blocks (flags fSpec) purps <> -- This explains the purpose of this context.
+     purposes2Blocks (getOpts fSpec) purps <> -- This explains the purpose of this context.
      fromList(
      [ case fsLang fSpec of
          Dutch   ->
@@ -129,8 +129,8 @@ chpProcessAnalysis lev fSpec
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
-     = (  (labeledThing (flags fSpec) (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
-       <> (purposes2Blocks (flags fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
+     = (  (labeledThing (getOpts fSpec) (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
+       <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
    --    <> (txtProcessModel fproc)
        <> (if null sctRules then mempty else definitionList sctRules)
        ):  iterat fps i' seenCrs seenDrs
@@ -140,14 +140,14 @@ chpProcessAnalysis lev fSpec
 
   txtProcessModel :: FProcess->Blocks
   txtProcessModel p
-   = if not (genGraphics (flags fSpec)) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
+   = if not (genGraphics (getOpts fSpec)) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
      then mempty
      else
         (case fsLang fSpec of                                     -- announce the processModel diagram
-             Dutch   -> para ( "Figuur " <> xRefReference (flags fSpec) pict <> " geeft het procesmodel weer.")
-             English -> para ( "Figure " <> xRefReference (flags fSpec) pict <> " shows the process model.")
+             Dutch   -> para ( "Figuur " <> xRefReference (getOpts fSpec) pict <> " geeft het procesmodel weer.")
+             English -> para ( "Figure " <> xRefReference (getOpts fSpec) pict <> " shows the process model.")
         ) <>
-        plain (showImage (flags fSpec) pict)
+        plain (showImage (getOpts fSpec) pict)
      where pict = picProcessModel p
 
   -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).

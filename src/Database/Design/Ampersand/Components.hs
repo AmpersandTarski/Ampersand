@@ -36,20 +36,20 @@ fatal = fatalMsg "Components"
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: FSpec -> IO ()
 generateAmpersandOutput fSpec =
- do { verboseLn (flags fSpec) "Generating common Ampersand artifacts..."
-    ; when (genXML (flags fSpec))      $ doGenXML      fSpec
-    ; when (genUML (flags fSpec))      $ doGenUML      fSpec
-    ; when (haskell (flags fSpec))     $ doGenHaskell  fSpec
-    ; when (export2adl (flags fSpec))  $ doGenADL      fSpec
-    ; when (genFSpec (flags fSpec))    $ doGenDocument fSpec
-    ; when (genFPAExcel (flags fSpec)) $ doGenFPAExcel fSpec
-    ; when (proofs (flags fSpec))      $ doGenProofs   fSpec
-    ; when (genMeat (flags fSpec) && (not . includeRap) (flags fSpec))  -- When rap is included, the file is created there.
+ do { verboseLn (getOpts fSpec) "Generating common Ampersand artifacts..."
+    ; when (genXML (getOpts fSpec))      $ doGenXML      fSpec
+    ; when (genUML (getOpts fSpec))      $ doGenUML      fSpec
+    ; when (haskell (getOpts fSpec))     $ doGenHaskell  fSpec
+    ; when (export2adl (getOpts fSpec))  $ doGenADL      fSpec
+    ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
+    ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
+    ; when (proofs (getOpts fSpec))      $ doGenProofs   fSpec
+    ; when (genMeat (getOpts fSpec) && (not . includeRap) (getOpts fSpec))  -- When rap is included, the file is created there.
         $ doGenMeatGrinder fSpec
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
-    ; verboseLn (flags fSpec) "Done."
+    ; verboseLn (getOpts fSpec) "Done."
     }
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.
@@ -60,18 +60,18 @@ generateAmpersandOutput fSpec =
 doGenADL :: FSpec -> IO()
 doGenADL fSpec =
  do { writeFile outputFile (showADL fSpec)
-    ; verboseLn (flags fSpec) $ ".adl-file written to " ++ outputFile ++ "."
+    ; verboseLn (getOpts fSpec) $ ".adl-file written to " ++ outputFile ++ "."
     }
- where outputFile = combine (dirOutput (flags fSpec)) (outputfile (flags fSpec))
+ where outputFile = combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))
 
 doGenProofs :: FSpec -> IO()
 doGenProofs fSpec =
- do { verboseLn (flags fSpec) $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
---  ; verboseLn (flags fSpec) $ writeTextile def thePandoc
+ do { verboseLn (getOpts fSpec) $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
+--  ; verboseLn (getOpts fSpec) $ writeTextile def thePandoc
     ; writeFile outputFile $ writeHtmlString def thePandoc
-    ; verboseLn (flags fSpec) "Proof written."
+    ; verboseLn (getOpts fSpec) "Proof written."
     }
- where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension ("proofs_of_"++baseName (flags fSpec)) ".html"
+ where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension ("proofs_of_"++baseName (getOpts fSpec)) ".html"
        thePandoc = setTitle title (doc theDoc)
        title  = text $ "Proofs for "++name fSpec
        theDoc = deriveProofs fSpec
@@ -79,36 +79,36 @@ doGenProofs fSpec =
 
 doGenHaskell :: FSpec -> IO()
 doGenHaskell fSpec =
- do { verboseLn (flags fSpec) $ "Generating Haskell source code for "++name fSpec
---  ; verboseLn (flags fSpec) $ fSpec2Haskell fSpec -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
+ do { verboseLn (getOpts fSpec) $ "Generating Haskell source code for "++name fSpec
+--  ; verboseLn (getOpts fSpec) $ fSpec2Haskell fSpec -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
     ; writeFile outputFile (fSpec2Haskell fSpec)
-    ; verboseLn (flags fSpec) $ "Haskell written into " ++ outputFile ++ "."
+    ; verboseLn (getOpts fSpec) $ "Haskell written into " ++ outputFile ++ "."
     }
- where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension (baseName (flags fSpec)) ".hs"
+ where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".hs"
 
 doGenMeatGrinder :: FSpec -> IO()
 doGenMeatGrinder fSpec =
- do verboseLn (flags fSpec) $ "Generating meta-population for "++name fSpec
+ do verboseLn (getOpts fSpec) $ "Generating meta-population for "++name fSpec
     let (nm,content) = meatGrinder fSpec
-        outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension nm ".adl"
+        outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension nm ".adl"
     writeFile outputFile content
-    verboseLn (flags fSpec) $ "Meta population written into " ++ outputFile ++ "."
+    verboseLn (getOpts fSpec) $ "Meta population written into " ++ outputFile ++ "."
 
 doGenXML :: FSpec -> IO()
 doGenXML fSpec =
- do { verboseLn (flags fSpec) "Generating XML..."
-    ; writeFile outputFile $ showXML fSpec (genTime (flags fSpec))
-    ; verboseLn (flags fSpec) $ "XML written into " ++ outputFile ++ "."
+ do { verboseLn (getOpts fSpec) "Generating XML..."
+    ; writeFile outputFile $ showXML fSpec (genTime (getOpts fSpec))
+    ; verboseLn (getOpts fSpec) $ "XML written into " ++ outputFile ++ "."
     }
-   where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension (baseName (flags fSpec)) ".xml"
+   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".xml"
 
 doGenUML :: FSpec -> IO()
 doGenUML fSpec =
- do { verboseLn (flags fSpec) "Generating UML..."
+ do { verboseLn (getOpts fSpec) "Generating UML..."
     ; writeFile outputFile $ generateUML fSpec
     ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
     }
-   where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension (baseName (flags fSpec)) ".xmi"
+   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".xmi"
 
 -- This function will generate all Pictures for a given FSpec.
 -- the returned FSpec contains the details about the Pictures, so they
@@ -116,16 +116,16 @@ doGenUML fSpec =
 -- This function generates a pandoc document, possibly with pictures from an fSpec.
 doGenDocument :: FSpec -> IO()
 doGenDocument fSpec =
- do { verboseLn (flags fSpec) ("Processing "++name fSpec)
+ do { verboseLn (getOpts fSpec) ("Processing "++name fSpec)
     ; makeOutput
-    ; verboseLn (flags fSpec) $ "Document has been written to " ++ outputFile ++ "."
-    ; when (genGraphics (flags fSpec) && not(null thePictures) && fspecFormat (flags fSpec)/=FPandoc) $
-        mapM_ (writePicture (flags fSpec)) thePictures
+    ; verboseLn (getOpts fSpec) $ "Document has been written to " ++ outputFile ++ "."
+    ; when (genGraphics (getOpts fSpec) && not(null thePictures) && fspecFormat (getOpts fSpec)/=FPandoc) $
+        mapM_ (writePicture (getOpts fSpec)) thePictures
      -- postProcessing of the generated output file depends on the format:
     ; postProcessor
     }
   where (thePandoc,thePictures) =
-          case (theme (flags fSpec), fspecFormat (flags fSpec)) of
+          case (theme (getOpts fSpec), fspecFormat (getOpts fSpec)) of
  -- TODO Ticket #104: Could not find texOnly_proofdoc in any module? Where has in gone?
  --                (ProofTheme, FLatex ) -> (texOnly_proofdoc fSpec,[])     --generate a proof document
                  (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
@@ -135,7 +135,7 @@ doGenDocument fSpec =
 -- | This function will generate an Excel workbook file, containing an extract from the FSpec
 doGenFPAExcel :: FSpec -> IO()
 doGenFPAExcel fSpec =
- do { verboseLn (flags fSpec) "Generating Excel..."
+ do { verboseLn (getOpts fSpec) "Generating Excel..."
     ; writeFile outputFile (showSpreadsheet (fspec2Workbook fSpec))
     }
-   where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension ("FPA_"++baseName (flags fSpec)) ".xml"  -- Do not use .xls here, because that generated document contains xml.
+   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension ("FPA_"++baseName (getOpts fSpec)) ".xml"  -- Do not use .xls here, because that generated document contains xml.

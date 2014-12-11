@@ -228,8 +228,8 @@ dpRule fSpec = dpR
         theBlocks :: Blocks
         theBlocks =
            let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
-             (  (purposes2Blocks (flags fSpec) purps)
-             <> (purposes2Blocks (flags fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
+             (  (purposes2Blocks (getOpts fSpec) purps)
+             <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
              <> (if null nds then mempty else plain text1)
              <> (fromList $
                   pandocEqnArray [ ( texOnly_Id(name d)
@@ -239,7 +239,7 @@ dpRule fSpec = dpR
                                  |d<-nds])
              <> (if null rds then mempty else plain text2)
              <> (plain text3)
-             <> (if showPredExpr (flags fSpec)
+             <> (if showPredExpr (getOpts fSpec)
                  then fromList $ pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
                  else fromList $ pandocEquation (showMath r++symDefLabel r)
                 )
@@ -248,24 +248,24 @@ dpRule fSpec = dpR
         text1, text2, text3  :: Inlines
         text1
          = case (nds,fsLang fSpec) of
-             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> (symDefRef (flags fSpec) d) <> "):")
-             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> (symDefRef (flags fSpec) d) <> "):")
-             (_  ,Dutch)   -> ("Om te komen tot de formalisatie in vergelijking" <> (rawInline "latex" "~")<>(symDefRef (flags fSpec) r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
-             (_  ,English) -> ("To arrive at the formalization in equation"      <> (rawInline "latex" "~")<>(symDefRef (flags fSpec) r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
+             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> (symDefRef (getOpts fSpec) d) <> "):")
+             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> (symDefRef (getOpts fSpec) d) <> "):")
+             (_  ,Dutch)   -> ("Om te komen tot de formalisatie in vergelijking" <> (rawInline "latex" "~")<>(symDefRef (getOpts fSpec) r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
+             (_  ,English) -> ("To arrive at the formalization in equation"      <> (rawInline "latex" "~")<>(symDefRef (getOpts fSpec) r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
         text2
          = (case ( nds, rds,fsLang fSpec) of
-             ([],[rd],Dutch)   -> ("Definitie " <>         (symDefRef (flags fSpec) rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
-             ([],[rd],English) -> ("We use definition " <> (symDefRef (flags fSpec) rd) <> "(" <> str (name rd) <> ")")
-             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> (symDefRef (flags fSpec) rd) <> "(" <> (str.name) rd <> ")" )
-             (_ ,[rd],English) -> ("Beside that, we use definition "   <> (symDefRef (flags fSpec) rd) <> "(" <> (str.name) rd <> ")" )
-             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [symDefRef (flags fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([],[rd],Dutch)   -> ("Definitie " <>         (symDefRef (getOpts fSpec) rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
+             ([],[rd],English) -> ("We use definition " <> (symDefRef (getOpts fSpec) rd) <> "(" <> str (name rd) <> ")")
+             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> (symDefRef (getOpts fSpec) rd) <> "(" <> (str.name) rd <> ")" )
+             (_ ,[rd],English) -> ("Beside that, we use definition "   <> (symDefRef (getOpts fSpec) rd) <> "(" <> (str.name) rd <> ")" )
+             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
            )<>
            (case (nds,fsLang fSpec) of
-             ([_],Dutch)   -> (" om eis" <> (symReqRef (flags fSpec) r) <> " te formaliseren: ")
-             ([_],English) -> (" to formalize requirement" <> (symReqRef (flags fSpec) r) <> ": ")
+             ([_],Dutch)   -> (" om eis" <> (symReqRef (getOpts fSpec) r) <> " te formaliseren: ")
+             ([_],English) -> (" to formalize requirement" <> (symReqRef (getOpts fSpec) r) <> ": ")
              ( _, _)        -> ". "
            )
         text3
@@ -281,14 +281,14 @@ dpRule fSpec = dpR
         text5 :: Blocks
         text5
          = case (fsLang fSpec,isSignal r) of
-             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <>":"
+             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <>":"
                                       ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <>":"
+             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <>":"
                                       ) <> fromList (meaning2Blocks (fsLang fSpec) r)
              (Dutch  ,True)  -> plain ( "Dit komt overeen met " <> (singleQuoted.str.name) r <>
-                                        " (" <> symReqRef (flags fSpec) r <> " op pg."  <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <> ").")
+                                        " (" <> symReqRef (getOpts fSpec) r <> " op pg."  <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <> ").")
              (English,True)  -> plain ( "This corresponds to " <> (singleQuoted.str.name) r <>
-                                        " (" <> symReqRef (flags fSpec) r <> " on page" <> (rawInline "latex" "~") <> (symReqPageRef (flags fSpec) r) <> ").")
+                                        " (" <> symReqRef (getOpts fSpec) r <> " on page" <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <> ").")
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
