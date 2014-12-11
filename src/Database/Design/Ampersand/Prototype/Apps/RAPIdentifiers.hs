@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.Apps.RAPIdentifiers
         --abstract data type ConceptIdentifier with one getter and constructor functions for atom identifiers of RAP concepts
        (ConceptIdentifier, getid

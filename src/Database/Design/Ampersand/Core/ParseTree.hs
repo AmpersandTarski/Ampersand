@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..)
    , Meta(..)

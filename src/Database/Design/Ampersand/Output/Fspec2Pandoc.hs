@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Database.Design.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
 where

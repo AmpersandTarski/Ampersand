@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Basics
   ( module Database.Design.Ampersand.Basics.Auxiliaries
   , module Database.Design.Ampersand.Basics.Collection

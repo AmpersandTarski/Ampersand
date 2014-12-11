@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Misc.Explain
     ( string2Blocks
     , blocks2String

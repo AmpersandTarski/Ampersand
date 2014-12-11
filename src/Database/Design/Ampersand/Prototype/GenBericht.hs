@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Database.Design.Ampersand.Prototype.GenBericht (doGenBericht) where
 

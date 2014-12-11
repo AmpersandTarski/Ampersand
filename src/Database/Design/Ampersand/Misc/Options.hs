@@ -1,5 +1,4 @@
 {-# LANGUAGE PatternGuards #-}
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FspecFormat(..),FileFormat(..)

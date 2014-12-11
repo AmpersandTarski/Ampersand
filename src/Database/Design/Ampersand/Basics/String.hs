@@ -1,5 +1,4 @@
-  {-# OPTIONS_GHC -Wall #-}
-  -- | This module contains some common String funcions
+    -- | This module contains some common String funcions
   module Database.Design.Ampersand.Basics.String
    (unCap,upCap,escapeNonAlphaNum)
   where

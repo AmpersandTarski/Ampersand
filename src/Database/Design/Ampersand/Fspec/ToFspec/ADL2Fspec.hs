@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.ToFspec.ADL2Fspec
     (makeFspec, quads, preEmpt, editable)
   where

@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Classes
    ( module Database.Design.Ampersand.Classes.Populated
    , module Database.Design.Ampersand.Classes.ConceptStructure

@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 --
 module Database.Design.Ampersand.Components

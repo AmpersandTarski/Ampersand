@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.CoreImporter
     ( module Database.Design.Ampersand
     )

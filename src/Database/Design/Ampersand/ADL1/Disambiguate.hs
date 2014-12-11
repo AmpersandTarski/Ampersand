@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
-{-# LANGUAGE RelaxedPolyRec #-}
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..)) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)

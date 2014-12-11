@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.Apps
       ( module Database.Design.Ampersand.Prototype.Apps.RAP
       )

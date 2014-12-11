@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Misc
    ( module Database.Design.Ampersand.Misc.Languages
    , module Database.Design.Ampersand.Misc.Options

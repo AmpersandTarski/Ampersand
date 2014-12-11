@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -Wall #-}
 --hdbc and hdbc-odbc must be installed (from hackage)
 module Database.Design.Ampersand.Prototype.Apps.RAP
    (fillAtlas,picturesForAtlas,atlas2context,atlas2populations)

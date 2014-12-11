@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTgt,sqlExprSrc,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where

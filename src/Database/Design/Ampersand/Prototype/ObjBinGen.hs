@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
 
 import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop,dumpPopulationToADL)

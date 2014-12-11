@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr

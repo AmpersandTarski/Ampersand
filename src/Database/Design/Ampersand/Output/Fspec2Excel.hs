@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Output.Fspec2Excel (fspec2Workbook,showSpreadsheet)
 where
 import Text.XML.SpreadsheetML.Builder

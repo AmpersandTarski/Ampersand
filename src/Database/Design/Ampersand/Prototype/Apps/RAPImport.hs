@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 --import an fSpec into the RAP specification
 -- USE -> cmd: ampersand --importfile=some.adl --importformat=adl RAP.adl
 module Database.Design.Ampersand.Prototype.Apps.RAPImport   (importfspec,importfailed)

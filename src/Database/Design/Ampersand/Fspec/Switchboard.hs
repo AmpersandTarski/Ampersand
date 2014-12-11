@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.Switchboard
     (SwitchBdDiagram(..),switchboardAct,sbDiagram,processModel) where
 

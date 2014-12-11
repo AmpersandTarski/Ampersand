@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 -- | This module does some string manipulation based on natural languages
 module Database.Design.Ampersand.Misc.Languages
               (  Lang(English,Dutch)

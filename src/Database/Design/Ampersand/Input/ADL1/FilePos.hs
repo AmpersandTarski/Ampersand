@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Input.ADL1.FilePos
        ( FilePos(..), Origin(..), Pos(Pos) , Traced(..))
 where

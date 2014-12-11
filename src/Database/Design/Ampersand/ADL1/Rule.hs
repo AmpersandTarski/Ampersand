@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.ADL1.Rule    (
                 consequent, antecedent, rulefromProp, ruleviolations, hasantecedent)
 where

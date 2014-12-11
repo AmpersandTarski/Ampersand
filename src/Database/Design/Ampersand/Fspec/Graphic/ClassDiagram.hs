@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 --TODO -> clean and stuff. Among which moving classdiagram2dot to Graphviz library implementation (see Classes/Graphics.hs).
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 

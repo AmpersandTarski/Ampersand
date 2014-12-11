@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
 module Database.Design.Ampersand.Output.PredLogic
            ( PredLogicShow(..), showLatex, showRtf, mkVar
            )

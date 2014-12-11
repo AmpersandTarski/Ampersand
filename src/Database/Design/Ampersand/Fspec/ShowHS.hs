@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 module Database.Design.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree

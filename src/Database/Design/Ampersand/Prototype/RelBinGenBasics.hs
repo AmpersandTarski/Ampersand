@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
  ,addSlashes

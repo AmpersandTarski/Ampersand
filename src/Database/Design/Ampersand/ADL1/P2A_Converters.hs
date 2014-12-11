@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances -XDataKinds #-}
-{-# LANGUAGE RelaxedPolyRec #-}
 module Database.Design.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..), pCpt2aCpt )
 where
 import Database.Design.Ampersand.ADL1.Disambiguate

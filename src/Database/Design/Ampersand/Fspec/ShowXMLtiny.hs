@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Database.Design.Ampersand.Fspec.ShowXMLtiny (showXML)
 where

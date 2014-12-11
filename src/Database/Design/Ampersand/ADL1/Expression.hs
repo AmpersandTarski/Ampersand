@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances , OverlappingInstances #-}
 module Database.Design.Ampersand.ADL1.Expression (
                        subst

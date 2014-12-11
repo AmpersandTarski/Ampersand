@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec.GenerateUML (generateUML) where
 
 import Database.Design.Ampersand.Basics

@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Output
     ( module Database.Design.Ampersand.Output.Fspec2Pandoc
     , module Database.Design.Ampersand.Output.PandocAux

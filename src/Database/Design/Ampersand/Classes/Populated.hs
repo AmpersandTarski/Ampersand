@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Classes.Populated                 (fullContents,atomsOf)
 {- This file contains all functions to compute populations.
    The implementation is done through Haskell's Map mechanism, as defined in Data.Map, for reasons of efficiency.

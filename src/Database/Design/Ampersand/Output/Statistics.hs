@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
 
    import Database.Design.Ampersand.Core.AbstractSyntaxTree

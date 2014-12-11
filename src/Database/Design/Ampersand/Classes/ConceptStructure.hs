@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Classes.ConceptStructure          (ConceptStructure(..), prim2rel)
 where

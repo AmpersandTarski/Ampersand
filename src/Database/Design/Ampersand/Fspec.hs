@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Fspec
    ( module Database.Design.Ampersand.Fspec.Fspec
    , module Database.Design.Ampersand.Fspec.Plug

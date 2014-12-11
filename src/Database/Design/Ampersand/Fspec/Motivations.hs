@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
 module Database.Design.Ampersand.Fspec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))

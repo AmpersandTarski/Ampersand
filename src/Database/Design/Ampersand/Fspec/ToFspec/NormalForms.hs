@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 module Database.Design.Ampersand.Fspec.ToFspec.NormalForms
   (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.

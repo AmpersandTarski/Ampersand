@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 --hdbc and hdbc-odbc must be installed (from hackage)
 --Strongly resembles running Installer.php rev:1770 only at compile time through an ODBC connection with DSN=dsn
 --the connection via ODBC should be the same as the connection via dbSettings.php
