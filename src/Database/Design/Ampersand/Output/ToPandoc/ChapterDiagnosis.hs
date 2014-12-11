@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis
@@ -12,7 +11,7 @@ import Database.Design.Ampersand.Output.PandocAux
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
-chpDiagnosis :: Fspc -> (Blocks,[Picture])
+chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
  = ( (chptHeader (fsLang fSpec) Diagnosis) <>
      fromList
@@ -231,23 +230,23 @@ chpDiagnosis fSpec
                            ] ] ) ++
        toList
        ( case (fsLang fSpec, pictsWithUnusedRels) of
-          (Dutch,[pict])   -> para ("Figuur " <> xRefReference (flags fSpec) pict <> " geeft een conceptueel diagram met alle relaties.") <>
-                              plain((showImage (flags fSpec)) pict)
-          (English,[pict]) -> para ("Figure " <> xRefReference (flags fSpec) pict <> " shows a conceptual diagram with all relations.") <>
-                              plain((showImage (flags fSpec)) pict)
+          (Dutch,[pict])   -> para ("Figuur " <> xRefReference (getOpts fSpec) pict <> " geeft een conceptueel diagram met alle relaties.") <>
+                              plain((showImage (getOpts fSpec)) pict)
+          (English,[pict]) -> para ("Figure " <> xRefReference (getOpts fSpec) pict <> " shows a conceptual diagram with all relations.") <>
+                              plain((showImage (getOpts fSpec)) pict)
           (Dutch,picts)    -> mconcat
-                                  [ para (  "Figuur " <> xRefReference (flags fSpec) pict
+                                  [ para (  "Figuur " <> xRefReference (getOpts fSpec) pict
                                          <> " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                          <> (singleQuoted.str.name) pat <> "."
                                          ) <>
-                                    (plain . showImage (flags fSpec)) pict
+                                    (plain . showImage (getOpts fSpec)) pict
                                   | (pict,pat)<-zip picts pats ]
           (English,picts) -> mconcat
-                                  [ para (  "Figure " <> xRefReference (flags fSpec) pict
+                                  [ para (  "Figure " <> xRefReference (getOpts fSpec) pict
                                          <> " shows a conceptual diagram with all relations declared in "
                                          <> (singleQuoted.str.name) pat <> "."
                                          )<>
-                                    (plain . showImage (flags fSpec)) pict
+                                    (plain . showImage (getOpts fSpec)) pict
                                   | (pict,pat)<-zip picts pats ]
        )
        , pictsWithUnusedRels           -- draw the conceptual diagram
@@ -577,7 +576,7 @@ chpDiagnosis fSpec
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                toList(if xrefSupported (flags fSpec) then "(" <> symReqRef (flags fSpec) r <> ") " else mempty )++
+                toList(if xrefSupported (getOpts fSpec) then "(" <> symReqRef (getOpts fSpec) r <> ") " else mempty )++
                 (case fsLang fSpec of
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]
@@ -707,7 +706,7 @@ chpDiagnosis fSpec
 --                   Dutch   -> Str "Regel"
 --                   English -> Str "Rule"):
 --                [Space,quoterule r,Space]++
---                if fspecFormat (flags fSpec)==FLatex then [ Str "(", RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str ") "] else []++
+--                if fspecFormat (getOpts fSpec)==FLatex then [ Str "(", RawInline (Text.Pandoc.Builder.Format "latex") $ symReqRef r, Str ") "] else []++
 --                (case fsLang fSpec of
 --                    Dutch   -> [ Str "luidt: " ]
 --                    English -> [ Str "says: "])

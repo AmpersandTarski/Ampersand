@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 --hdbc and hdbc-odbc must be installed (from hackage)
 --Strongly resembles running Installer.php rev:1770 only at compile time through an ODBC connection with DSN=dsn
 --the connection via ODBC should be the same as the connection via dbSettings.php
@@ -18,19 +17,19 @@ import Data.List  (intercalate)
 --fatal :: Int -> String -> a
 --fatal = fatalMsg "AutoInstaller"
 
-odbcinstall :: Fspc -> String -> IO()
+odbcinstall :: FSpec -> String -> IO()
 odbcinstall fSpec dsn =
-   do verboseLn (flags fSpec) ("Connecting to ODBC connection "++ dsn ++"...")
+   do verboseLn (getOpts fSpec) ("Connecting to ODBC connection "++ dsn ++"...")
       conn<-connectODBC dsn
-      verboseLn (flags fSpec) "Connected."
-      verboseLn (flags fSpec) "Dropping tables..."
+      verboseLn (getOpts fSpec) "Connected."
+      verboseLn (getOpts fSpec) "Dropping tables..."
       _ <- drops conn ("DROP TABLE `__History__`":"DROP TABLE `__SessionTimeout__`":[dropplug p | InternalPlug p<-plugInfos fSpec])
-      verboseLn (flags fSpec) "Creating tables..."
+      verboseLn (getOpts fSpec) "Creating tables..."
       _ <- creates conn (historytbl : sessiontbl : [plug2tbl p |InternalPlug p<-plugInfos fSpec])
-      verboseLn (flags fSpec) "Populating tables..."
+      verboseLn (getOpts fSpec) "Populating tables..."
       _ <- inserts conn (gens fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
       commit conn
-      verboseLn (flags fSpec) "Committed."
+      verboseLn (getOpts fSpec) "Committed."
       disconnect conn
 
 --drop tables

@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
 
 import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop,dumpPopulationToADL)
@@ -20,12 +19,12 @@ import Data.Time.Format
 import System.Locale
 #endif
 
-phpObjInterfaces :: Fspc -> IO()
+phpObjInterfaces :: FSpec -> IO()
 phpObjInterfaces fSpec =
- do { writeStaticFiles (flags fSpec)
-    ; verboseLn (flags fSpec) "---------------------------"
-    ; verboseLn (flags fSpec) "Generating php Object files with Ampersand"
-    ; verboseLn (flags fSpec) "---------------------------"
+ do { writeStaticFiles (getOpts fSpec)
+    ; verboseLn (getOpts fSpec) "---------------------------"
+    ; verboseLn (getOpts fSpec) "Generating php Object files with Ampersand"
+    ; verboseLn (getOpts fSpec) "---------------------------"
     ; write "InstallerDBstruct.php"     (installerDBstruct fSpec)
 --    ; write "InstallerTriggers.php"     (installerTriggers fSpec)
     ; write "InstallerDefPop.php"       (installerDefPop fSpec)
@@ -35,40 +34,40 @@ phpObjInterfaces fSpec =
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php only if it does not exist already.
     ; if dbSettingsExists
-      then verboseLn (flags fSpec) "  Using existing dbSettings.php."
-      else do { verboseLn (flags fSpec) "  Writing dbSettings.php."
+      then verboseLn (getOpts fSpec) "  Using existing dbSettings.php."
+      else do { verboseLn (getOpts fSpec) "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
 
     ; generateAll fSpec
-    ; when (genAtlas (flags fSpec)) $ doGenAtlas fSpec
-    ; verboseLn (flags fSpec) "\n"
+    ; when (genAtlas (getOpts fSpec)) $ doGenAtlas fSpec
+    ; verboseLn (getOpts fSpec) "\n"
     }
    where
     write fname content =
-     do { verboseLn (flags fSpec) ("  Generating "++fname)
+     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = unlines
        [ "<?php"
        , ""
        , "global $DB_host,$DB_user,$DB_pass;"
-       , "$DB_host='"++addSlashes (sqlHost (flags fSpec))++"';"
-       , "$DB_user='"++addSlashes (sqlLogin (flags fSpec))++"';"
-       , "$DB_pass='"++addSlashes (sqlPwd (flags fSpec))++"';"
+       , "$DB_host='"++addSlashes (sqlHost (getOpts fSpec))++"';"
+       , "$DB_user='"++addSlashes (sqlLogin (getOpts fSpec))++"';"
+       , "$DB_pass='"++addSlashes (sqlPwd (getOpts fSpec))++"';"
        , ""
        , "$DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass)"
        , "      or exit(\"Error connecting to the database: username / password are probably incorrect.\");"
        , ""
        , "?>"
        ]
-    targetDir = dirPrototype (flags fSpec)
+    targetDir = dirPrototype (getOpts fSpec)
 
-doGenAtlas :: Fspc -> IO()
+doGenAtlas :: FSpec -> IO()
 doGenAtlas fSpec =
- do { verboseLn (flags fSpec) "Installing the Atlas application:"
-    ; verboseLn (flags fSpec) ("Importing "++show (importfile (flags fSpec))++" into namespace "++ show (namespace (flags fSpec)) ++" of the Atlas ...")
-    ; verboseLn (flags fSpec) ("The atlas application should have been installed in " ++ show (dirPrototype (flags fSpec)) ++ ".")
+ do { verboseLn (getOpts fSpec) "Installing the Atlas application:"
+    ; verboseLn (getOpts fSpec) ("Importing "++show (importfile (getOpts fSpec))++" into namespace "++ show (namespace (getOpts fSpec)) ++" of the Atlas ...")
+    ; verboseLn (getOpts fSpec) ("The atlas application should have been installed in " ++ show (dirPrototype (getOpts fSpec)) ++ ".")
     ; fillAtlas fSpec
     }
 

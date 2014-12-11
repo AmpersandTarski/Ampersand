@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Misc.Explain
     ( string2Blocks
     , blocks2String
@@ -11,7 +10,7 @@ import Data.List (isPrefixOf)
 import Database.Design.Ampersand.Core.ParseTree      (PandocFormat(..))
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
--- | defaultPandocReader flags should be used on user-defined strings.
+-- | defaultPandocReader getOpts should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]
 string2Blocks defaultformat str
  = case blocks of             -- WHY (SJ, dec 7th, 2011): What is the point of changing Para into Plain?

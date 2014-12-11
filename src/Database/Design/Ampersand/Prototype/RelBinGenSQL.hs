@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTgt,sqlExprSrc,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where
@@ -48,7 +47,7 @@ sqlcomment i cmt sql = "/* "++addSlashes cmt++" */"++phpIndent i++sql
 
 {- selectExpr translates an Expression (which is in Ampersand's A-structure) into an SQL expression in textual form.
 -}
-selectExpr ::    Fspc       -- current context
+selectExpr ::    FSpec       -- current context
               -> Int        -- indentation
               -> String     -- SQL name of the source of this expression, as assigned by the environment
               -> String     -- SQL name of the target of this expression, as assigned by the environment
@@ -433,7 +432,7 @@ Based on this derivation:
 --   It generates a simple table reference for primitive expressions (EDcD, EDcI, and EDcV) and a bracketed SQL expression in more complicated situations.
 --   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
 --   Note that the resulting pairs do not contain any NULL values.
-selectExprInFROM :: Fspc
+selectExprInFROM :: FSpec
                  -> Int         -- ^ indentation
                  -> String      -- ^ source name (preferably quoted)
                  -> String      -- ^ target name (preferably quoted)
@@ -525,7 +524,7 @@ noCollide' nms nm = quote$noCollide (map unquote nms) (unquote nm)
       int2string 0 = "0"
       int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10) |n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
 
-selectExprRelation :: Fspc
+selectExprRelation :: FSpec
                    -> Int    -- ^ Indentation
                    -> String -- ^ Alias of source
                    -> String -- ^ Alias of target
@@ -589,7 +588,7 @@ selectSelItem (att,alias)
 -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
 -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
 -- | Opletten dus, met de nieuwe ISA-structuur van 2013, omdat daarin tabellen bestaan met disjuncte verzamelingen...
-sqlRelPlugs :: Fspc -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
+sqlRelPlugs :: FSpec -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
 sqlRelPlugs fSpec e
    = [ (plug,fld0,fld1)
      | InternalPlug plug<-plugInfos fSpec
@@ -597,7 +596,7 @@ sqlRelPlugs fSpec e
      ]
 
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
-getDeclarationTableInfo :: Fspc -> Declaration -> (PlugSQL,SqlField,SqlField)
+getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlField,SqlField)
 getDeclarationTableInfo fSpec decl =
  case decl of
    Sgn{} ->
@@ -623,9 +622,9 @@ getDeclarationTableInfo fSpec decl =
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
 --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
-sqlPlugFields :: Fspc -> PlugSQL -> Expression  -> [(SqlField, SqlField)]
+sqlPlugFields :: FSpec -> PlugSQL -> Expression  -> [(SqlField, SqlField)]
 sqlPlugFields fSpec p e' =
-    let e = disjNF (flags fSpec) e' -- SJ20140207 Why is this normalization necessary?
+    let e = disjNF (getOpts fSpec) e' -- SJ20140207 Why is this normalization necessary?
     in nub
         [(fld0,fld1)
         | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
@@ -633,8 +632,8 @@ sqlPlugFields fSpec p e' =
         , Just plugexpr <- [plugpath p fld0 fld1] --the smallest expression from fld0 to fld1 (both in same plug)
         , let se = fldexpr fld0
               te = fldexpr fld1
-              bs = (isTrue.disjNF (flags fSpec)) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
-              bt = (isTrue.disjNF (flags fSpec)) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
+              bs = (isTrue.disjNF (getOpts fSpec)) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
+              bt = (isTrue.disjNF (getOpts fSpec)) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
         , --reasons why e is equivalent to plugexpr:
            --because e and plugexpr are equal
            e==plugexpr
@@ -651,9 +650,9 @@ sqlPlugFields fSpec p e' =
            The code below fixes exactly these ommissions
       --
         || (isProp (se) && (te == e)
-           && (isTrue$disjNF (flags fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl se))
+           && (isTrue$disjNF (getOpts fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl se))
         || (isProp (te) && se==flp e
-           && (isTrue$disjNF (flags fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl te))
+           && (isTrue$disjNF (getOpts fSpec)$ let c = source e in (EDcI c ./\. simplF [e,flp e] ) .\/. notCpl te))
         -- found another exception:
         --     isFalse (I;I /\ -I)
         --   and
@@ -691,7 +690,7 @@ sqlPlugFields fSpec p e' =
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
 --   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TGT" would suffice)
-sqlExprSrc :: Fspc -> Expression -> String
+sqlExprSrc :: FSpec -> Expression -> String
 sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
@@ -704,7 +703,7 @@ sqlExprSrc fSpec expr@EDcD{}         = case sqlRelPlugs fSpec expr of
 sqlExprSrc _     expr                = quote $ "Src"++name (source expr)
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
-sqlExprTgt :: Fspc -> Expression -> String
+sqlExprTgt :: FSpec -> Expression -> String
 sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
@@ -719,11 +718,11 @@ sqlExprTgt _     expr                = quote $ "Tgt"++name (target expr)
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
-sqlConcept :: Fspc -> A_Concept -> String
+sqlConcept :: FSpec -> A_Concept -> String
 sqlConcept fSpec = quote.name.sqlConceptPlug fSpec
 
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
-sqlConceptPlug :: Fspc -> A_Concept -> PlugSQL
+sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
 sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
                        | otherwise
              = if null ps then fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module Database.Design.Ampersand.Prototype.RelBinGenSQL)" else
@@ -731,7 +730,7 @@ sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represente
                where ps = [plug |InternalPlug plug<-plugInfos fSpec
                                 , not (null (case plug of ScalarSQL{} -> [c |c==cLkp plug]; _ -> [c' |(c',_)<-cLkpTbl plug, c'==c]))]
 
-sqlAttConcept :: Fspc -> A_Concept -> String
+sqlAttConcept :: FSpec -> A_Concept -> String
 sqlAttConcept fSpec c | c==ONE = "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\" (sqlAttConcept in module Database.Design.Ampersand.Prototype.RelBinGenSQL)" else

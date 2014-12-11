@@ -1,29 +1,28 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Output.Fspec2Excel (fspec2Workbook,showSpreadsheet)
+module Database.Design.Ampersand.Output.FSpec2Excel (fspec2Workbook,showSpreadsheet)
 where
 import Text.XML.SpreadsheetML.Builder
 import Text.XML.SpreadsheetML.Types
 import Text.XML.SpreadsheetML.Writer (showSpreadsheet)
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Fspec.FPA
+import Database.Design.Ampersand.FSpec.FPA
 import Database.Design.Ampersand.Basics
 import Data.Maybe
 
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
 
-fspec2Workbook :: Fspc -> Workbook
+fspec2Workbook :: FSpec -> Workbook
 fspec2Workbook fSpec =
    Workbook
       { workbookDocumentProperties = Just
-          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName (flags fSpec)
+          DocumentProperties { documentPropertiesTitle = Just $ "FunctiePuntAnalyse van "++baseName (getOpts fSpec)
                              , documentPropertiesSubject = Nothing
                              , documentPropertiesKeywords  = Nothing
                              , documentPropertiesDescription = Just $ "Dit document is gegenereerd dmv. "++ampersandVersionStr++"."
                              , documentPropertiesRevision = Nothing
                              , documentPropertiesAppName = Just "Ampersand"
-                             , documentPropertiesCreated = Just $ show (genTime (flags fSpec))
+                             , documentPropertiesCreated = Just $ show (genTime (getOpts fSpec))
                              }
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
@@ -42,7 +41,7 @@ fspec2Workbook fSpec =
                           [ mkRow [string $ case lang of
                                                English -> "Detailed function point count (according to NESMA 2.1) of the application "
                                                Dutch   -> "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
-                                             ++ baseName (flags fSpec)
+                                             ++ baseName (getOpts fSpec)
                                   ]
                           , emptyRow
                           , mkRow [string totalen]

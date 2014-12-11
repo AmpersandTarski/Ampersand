@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.PandocAux
       ( writepandoc
@@ -20,7 +19,7 @@ module Database.Design.Ampersand.Output.PandocAux
       )
 where
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Data.Char hiding    (Space)
 import Text.Pandoc
 import Text.Pandoc.Builder
@@ -42,9 +41,9 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.PandocAux"
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: Fspc -> [(String , String)]
+defaultWriterVariables :: FSpec -> [(String , String)]
 defaultWriterVariables fSpec
-  = [ ("title", (case (fsLang fSpec, diagnosisOnly (flags fSpec)) of
+  = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                         (Dutch  , False) -> "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
                         (Dutch  ,  True) -> "Diagnose van "
@@ -63,7 +62,7 @@ defaultWriterVariables fSpec
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly (flags fSpec))]++
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly (getOpts fSpec))]++
     [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
          , "\\usepackage[toc]{glossaries}    % package used to define terms"
@@ -106,11 +105,11 @@ defaultWriterVariables fSpec
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
-writepandoc :: Fspc -> Pandoc -> (String,IO(),IO())
+writepandoc :: FSpec -> Pandoc -> (String,IO(),IO())
 writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
-         outputFile = addExtension (combine (dirOutput (flags fSpec)) (baseName (flags fSpec)))
-                                       (case fspecFormat (flags fSpec) of
+         outputFile = addExtension (combine (dirOutput (getOpts fSpec)) (baseName (getOpts fSpec)))
+                                       (case fspecFormat (getOpts fSpec) of
                                                  Fasciidoc     -> ".txt"
                                                  Fcontext      -> ".context"
                                                  Fdocbook      -> ".docbook"
@@ -130,15 +129,15 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                        )
          makeOutput
             =  do template <- readDefaultTemplate fSpecFormatString
-                  verboseLn (flags fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-                  --verboseLn (flags fSpec) "Variables to set in the template:"
-                  --verboseLn (flags fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
+                  verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+                  --verboseLn (getOpts fSpec) "Variables to set in the template:"
+                  --verboseLn (getOpts fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
                   writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
-                  verboseLn (flags fSpec) "... done."
+                  verboseLn (getOpts fSpec) "... done."
            where
               pandocWriter :: WriterOptions -> Pandoc -> String
               pandocWriter =
-                case fspecFormat (flags fSpec) of
+                case fspecFormat (getOpts fSpec) of
                   Fasciidoc -> fatal 145 "No current support for asciidoc"
                   FPandoc   -> writeNative
                   Fcontext  -> writeConTeXt
@@ -157,7 +156,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Ftextile -> writeTextile
               fSpecFormatString :: String
               fSpecFormatString =
-                case fspecFormat (flags fSpec) of
+                case fspecFormat (getOpts fSpec) of
                   FPandoc   -> "pandoc"
                   Fasciidoc -> "asciidoc"
                   Fcontext  -> "context"
@@ -176,10 +175,10 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Ftextile -> "textile"
               readDefaultTemplate :: String -> IO(Maybe String)
               readDefaultTemplate  s =
-                do { let fp = ampersandDataDir (flags fSpec) </> ".." </> "outputTemplates" </> "default."++s
+                do { let fp = ampersandDataDir (getOpts fSpec) </> ".." </> "outputTemplates" </> "default."++s
                    ; exists <- doesFileExist fp
                    ; (if exists
-                      then do verboseLn (flags fSpec) $ "Using Template: "++fp
+                      then do verboseLn (getOpts fSpec) $ "Using Template: "++fp
                               contents <- readFile fp
                               return $ Just contents
                       else do putStrLn ""
@@ -193,7 +192,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                      )
                    }
               writerOptions :: Maybe String -> WriterOptions
-              writerOptions template = case theme (flags fSpec) of
+              writerOptions template = case theme (getOpts fSpec) of
                           ProofTheme -> ampersandDefaultWriterOptions
                                            { writerTableOfContents=False
                                            , writerNumberSections=False
@@ -209,10 +208,10 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                             , writerVariables=defaultWriterVariables fSpec}
          postProcessMonad :: IO()
          postProcessMonad =
-           case fspecFormat (flags fSpec) of
+           case fspecFormat (getOpts fSpec) of
                FLatex  -> do
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
-                          verboseLn (flags fSpec) ("PdfLatex was called "++
+                          verboseLn (getOpts fSpec) ("PdfLatex was called "++
                                           (if nrOfRounds>1 then show nrOfRounds++" times" else "once")++
                                           if ready then "."
                                                    else ", but did not solve all references!")
@@ -231,7 +230,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                             -}
                                             
                                             case result of
-                                              ExitSuccess   -> verboseLn (flags fSpec) "PDF file created."
+                                              ExitSuccess   -> verboseLn (getOpts fSpec) "PDF file created."
                                               ExitFailure _ ->
                                                do { let nrOfErrLines = 15
                                                   ; putStrLn "----------- LaTeX error-----------"
@@ -255,32 +254,32 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                                                , "Package longtable Warning: Table widths have changed. Rerun LaTeX."
                                                                                ]
                                                               ]
-                                            when notReady (verboseLn (flags fSpec) "Another round of pdfLatex is required. Hang on...")
+                                            when notReady (verboseLn (getOpts fSpec) "Another round of pdfLatex is required. Hang on...")
                                           --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
                                             doRestOfPdfLatex (not notReady, roundsSoFar +1)
 
-                                texFilename = addExtension (baseName (flags fSpec)) ".tex"
+                                texFilename = addExtension (baseName (getOpts fSpec)) ".tex"
 
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
                                    do if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                      then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (flags fSpec)) "pdflog" )
+                                      then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (getOpts fSpec)) "pdflog" )
                                               ; if res /= ExitSuccess then return res else 
                                                   system  makeIndexCommand -- TODO: failure of makeindex is not reported correctly (requires refactoring command execution)
                                               }
                                       --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                      else system ( "cd "++dirOutput (flags fSpec)++
+                                      else system ( "cd "++dirOutput (getOpts fSpec)++
                                                     " && pdflatex "++commonFlags++
-                                                    texFilename ++ "> "++addExtension(baseName (flags fSpec)) ".pdflog" )
+                                                    texFilename ++ "> "++addExtension(baseName (getOpts fSpec)) ".pdflog" )
                                            -- >> system makeIndexCommand
                                            -- disabled makeIndexCommand on non-windows, since it will always fail when absolute paths are used
                                            -- For some weird Latex reason this can only be avoided by setting an environment variable.
                                       where
-                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
+                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfgetOpts++ outputFile
                                       --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
                                       --makeindex uses the error stream for verbose stuff...
-                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (flags fSpec)) "glossaries.log"
-                                      pdfflags = " -include-directory="++dirOutput (flags fSpec)++ " -output-directory="++dirOutput (flags fSpec)++" "
+                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (getOpts fSpec)) "glossaries.log"
+                                      pdfgetOpts = " -include-directory="++dirOutput (getOpts fSpec)++ " -output-directory="++dirOutput (getOpts fSpec)++" "
                                       commonFlags = "--halt-on-error --interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
                                       -- we don't do --disable-installer on Windows, so the install dialog will pop up, even when we are in nonstopmode 
                _  -> return()
@@ -604,7 +603,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-uniquecds :: Fspc -> A_Concept -> [(String,ConceptDef)]
+uniquecds :: FSpec -> A_Concept -> [(String,ConceptDef)]
 uniquecds fSpec c
  = [ (if length cDefs==1 then cdcpt cd else cdcpt cd++show i , cd)
    | let cDefs=concDefs fSpec c

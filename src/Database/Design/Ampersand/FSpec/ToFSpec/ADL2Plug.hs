@@ -1,5 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug
+module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (showPlug
   ,makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
@@ -11,10 +10,10 @@ import Prelude hiding (Ord(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec.ShowADL
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.ShowADL
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec.ShowHS --for debugging
+import Database.Design.Ampersand.FSpec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
@@ -22,9 +21,9 @@ import GHC.Exts (sortWith)
 --import Debug.Trace
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
+fatal = fatalMsg "FSpec.ToFSpec.ADL2Plug"
 
--- Not the most ideal place for showPlug, but putting it in Database.Design.Ampersand.Fspec.Fspec creates an import cycle, which will require quite some effort to resolve.
+-- Not the most ideal place for showPlug, but putting it in Database.Design.Ampersand.FSpec.FSpec creates an import cycle, which will require quite some effort to resolve.
 showPlug :: PlugSQL -> [String]
 showPlug plug =
   [ "Table: " ++ (show $ sqlname plug) ++ " (" ++ plugType ++ ")" ] ++

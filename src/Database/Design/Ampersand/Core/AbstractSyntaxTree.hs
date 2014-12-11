@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)

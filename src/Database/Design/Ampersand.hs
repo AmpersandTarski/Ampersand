@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand
    ( -- Data Constructors:
      A_Context
@@ -18,7 +17,7 @@ module Database.Design.Ampersand
    , ViewSegment(..)
    , Expression(..)
    , Population(..)
-   , Fspc(..), concDefs
+   , FSpec(..), concDefs
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)
@@ -65,11 +64,11 @@ module Database.Design.Ampersand
    , showPlug, plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
-   , createFspec
+   , createFSpec
    , getGeneralizations, getSpecializations, getEditableRelation
     -- * Type checking and calculus
    , Guarded(..), pCtx2aCtx
-   , makeFspec
+   , makeFSpec
     -- * Generators of output
    , generateAmpersandOutput
    -- * Prettyprinters
@@ -98,16 +97,16 @@ module Database.Design.Ampersand
    )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Components
 import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
-import Database.Design.Ampersand.Fspec.ToFspec.ADL2Plug (showPlug)
-import Database.Design.Ampersand.Fspec.ToFspec.NormalForms
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug (showPlug)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.InputProcessing
 import Database.Design.Ampersand.ADL1.P2A_Converters

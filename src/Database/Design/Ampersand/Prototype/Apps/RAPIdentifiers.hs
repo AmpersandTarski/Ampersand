@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.Apps.RAPIdentifiers
         --abstract data type ConceptIdentifier with one getter and constructor functions for atom identifiers of RAP concepts
        (ConceptIdentifier, getid
@@ -23,7 +22,7 @@ data IdentifierNamespace = CNS String
 --use nonsid :: String -> ConceptIdentifier for those concepts
 nonsid :: String -> ConceptIdentifier
 nonsid = CID
-fsid :: (IdentifierNamespace,Fspc) -> ConceptIdentifier
+fsid :: (IdentifierNamespace,FSpec) -> ConceptIdentifier
 fsid (CNS ns,fs) = CID $ ns ++ "#" ++ name fs
 cptid :: A_Concept -> ConceptIdentifier
 cptid c = CID $ name c

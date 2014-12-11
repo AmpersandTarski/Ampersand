@@ -1,14 +1,14 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module Database.Design.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
+{-# OPTIONS_GHC -XFlexibleInstances #-}
+module Database.Design.Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Text.Pandoc hiding (Meta)
 import Data.Char                  (isAlphaNum)
 import Database.Design.Ampersand.Basics hiding (indent)
-import Database.Design.Ampersand.Fspec.Plug
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
---   import Database.Design.Ampersand.Fspec.FPA   (fpa)
+import Database.Design.Ampersand.FSpec.Plug
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
+--import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
 import Database.Design.Ampersand.Classes
 import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner
@@ -18,22 +18,22 @@ import Data.Ord
 import Data.Function
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ShowHS"
+fatal = fatalMsg "FSpec.ShowHS"
 
-fSpec2Haskell :: Fspc -> String
+fSpec2Haskell :: FSpec -> String
 fSpec2Haskell fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
-          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (flags fSpec))++"-}"
-          ++"\nmodule Main where"
-          ++"\n  import Database.Design.Ampersand"
-          ++"\n  import Text.Pandoc hiding (Meta)"
-          ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
+          ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (getOpts fSpec))++"-}"
+          ++"\nmodule Main where\n"
+          ++"\nimport Database.Design.Ampersand"
+          ++"\nimport Text.Pandoc hiding (Meta)"
+          ++"\nimport Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
           ++"\n"
-          ++"\n  main :: IO ()"
-          ++"\n  main = do (flags fSpec) <- getOptions"
-          ++"\n            putStr (showHS (flags fSpec) \"\\n  \" fSpec_"++baseName (flags fSpec)++")"
-          ++"\n  fSpec_"++baseName (flags fSpec)++" :: Fspc"
-          ++"\n  fSpec_"++baseName (flags fSpec)++"\n   = "++showHS (flags fSpec) "\n     " fSpec
+          ++"\nmain :: IO ()"
+          ++"\nmain = do (getOpts fSpec) <- getOptions"
+          ++"\n          putStr (showHS (getOpts fSpec) \"\\n  \" fSpec_"++baseName (getOpts fSpec)++")\n"
+          ++"\nfSpec_"++baseName (getOpts fSpec)++" :: FSpec"
+          ++"\nfSpec_"++baseName (getOpts fSpec)++" =\n  "++showHS (getOpts fSpec) "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
 wrap initStr indent f xs
@@ -239,13 +239,13 @@ instance ShowHS Conjunct where
        ]
      where indentA = indent ++"                    "
 
-instance ShowHSName Fspc where
+instance ShowHSName FSpec where
  showHSName fSpec = haskellIdentifier ("fSpc_"++name fSpec)
 
-instance ShowHS Fspc where
+instance ShowHS FSpec where
  showHS opts indent fSpec
   = intercalate (indent ++"    ")
-        [ "Fspc{ fsName        = " ++ show (name fSpec)
+        [ "FSpec{ fsName        = " ++ show (name fSpec)
         ,wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,     ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
         ,     ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."

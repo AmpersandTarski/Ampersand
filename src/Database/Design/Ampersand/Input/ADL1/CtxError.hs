@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr
@@ -19,7 +19,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 where
 import Control.Applicative
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)

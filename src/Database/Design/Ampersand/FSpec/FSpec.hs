@@ -1,14 +1,13 @@
-{-# OPTIONS_GHC -Wall #-}
-{- | The intentions behind Fspc (SJ 30 dec 2008):
+{- | The intentions behind FSpec (SJ 30 dec 2008):
 Generation of functional specifications is the core functionality of Ampersand.
-All items in a specification are generated into the following data structure, Fspc.
-It is built by compiling an Ampersand script and translating that to Fspc.
-In the future, other ways of 'filling' Fspc are foreseen.
+All items in a specification are generated into the following data structure, FSpec.
+It is built by compiling an Ampersand script and translating that to FSpec.
+In the future, other ways of 'filling' FSpec are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
-are merely different ways to show Fspc.
+are merely different ways to show FSpec.
 -}
-module Database.Design.Ampersand.Fspec.Fspec
-          ( Fspc(..), concDefs, Atom(..)
+module Database.Design.Ampersand.FSpec.FSpec
+          ( FSpec(..), concDefs, Atom(..)
           , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
 --        , InsDel(..)
@@ -37,78 +36,78 @@ import Database.Design.Ampersand.ADL1.Expression (notCpl)
 --import Debug.Trace
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.Fspec"
+fatal = fatalMsg "FSpec.FSpec"
 
-data Fspc = Fspc { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
-                 , flags ::        Options                  -- ^ The command line options that were used when this Fspc was compiled  by Ampersand.
-                 , fspos ::        [Origin]                 -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
-                 , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                   , pattsInScope :: [Pattern]
-                   , procsInScope :: [Process]
-                   , rulesInScope :: [Rule]
-                   , declsInScope :: [Declaration]
-                   , concsInScope :: [A_Concept]
-                   , cDefsInScope :: [ConceptDef]
-                   , gensInScope  :: [A_Gen]
-                 , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
-                 , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
-                 , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
-                 , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
-                 , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
-                 , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
-                 , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
-                 , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
-                 , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
-                 , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
-                 , fRoles ::       [String]                 -- ^ All roles mentioned in this context.
-                 , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
-                 , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
-                 , invars ::       [Rule]                   -- ^ All invariant rules
-                 , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
-                 , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
-                 , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
-                 , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
-                                                            --   The generated relations are all generalizations and
-                                                            --   one declaration for each signal.
-                 , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
-                 , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
-                 , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
-                 , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
-                 , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
-                 , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2Fspec)
-                 , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
-                 , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
-                 , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
-                 , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
-                 , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
-                 , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
-                 , metas ::        [Meta]                   -- ^ All meta relations from the entire context
-                 , initialPops ::  [Population]             -- all user defined populations of relations and concepts
-                 , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
-                 }
-metaValues :: String -> Fspc -> [String]
+data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+                   , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
+                   , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
+                   , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                     , pattsInScope :: [Pattern]
+                     , procsInScope :: [Process]
+                     , rulesInScope :: [Rule]
+                     , declsInScope :: [Declaration]
+                     , concsInScope :: [A_Concept]
+                     , cDefsInScope :: [ConceptDef]
+                     , gensInScope  :: [A_Gen]
+                   , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
+                   , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
+                   , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
+                   , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
+                   , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
+                   , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
+                   , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
+                   , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
+                   , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
+                   , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
+                   , fRoles ::       [String]                 -- ^ All roles mentioned in this context.
+                   , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
+                   , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
+                   , invars ::       [Rule]                   -- ^ All invariant rules
+                   , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
+                   , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
+                   , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
+                   , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
+                                                              --   The generated relations are all generalizations and
+                                                              --   one declaration for each signal.
+                   , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
+                   , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
+                   , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
+                   , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
+                   , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
+                   , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
+                   , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
+                   , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
+                   , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
+                   , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
+                   , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
+                   , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
+                   , metas ::        [Meta]                   -- ^ All meta relations from the entire context
+                   , initialPops ::  [Population]             -- all user defined populations of relations and concepts
+                   , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
+                   }
+metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
                  , atmVal :: String
                  } deriving Eq
 
-concDefs :: Fspc -> A_Concept -> [ConceptDef]
+concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
-instance ConceptStructure Fspc where
-  concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this Fspc
+instance ConceptStructure FSpec where
+  concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
   expressionsIn fSpec = foldr (uni) []
                         [ (expressionsIn.interfaceS) fSpec
                         , (expressionsIn.vrules) fSpec
                         , (expressionsIn.vviews) fSpec
                         , (expressionsIn.vIndices) fSpec
                         ]
-  mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an Fspc"
+  mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an FSpec"
 
-instance Language Fspc where
+instance Language FSpec where
   objectdef    fSpec = Obj { objnm   = name fSpec
-                           , objpos  = Origin "generated object by objectdef (Language Fspc)"
+                           , objpos  = Origin "generated object by objectdef (Language FSpec)"
                            , objctx  = EDcI ONE
                            , objmsub = Just . Box ONE $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
@@ -172,7 +171,7 @@ data Fswitchboard
 
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
-instance Identified Fspc where
+instance Identified FSpec where
   name = fsName
 
 instance Identified FSid where
@@ -286,13 +285,13 @@ plugFields plug = case plug of
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
-lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
+lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlField)]
 lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
-getConceptTableFor :: Fspc -> A_Concept -> String
+getConceptTableFor :: FSpec -> A_Concept -> String
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
                                (t,_):_ -> name t -- in case there are more, we use the first one
@@ -330,10 +329,10 @@ data SqlType = SQLChar    Int
              | SQLBool              -- exists y/n
              deriving (Eq,Show)
 
-getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
+getGeneralizations :: FSpec -> A_Concept -> [A_Concept]
 getGeneralizations fSpec = largerConcepts (gens fSpec)
 
-getSpecializations :: Fspc -> A_Concept -> [A_Concept]
+getSpecializations :: FSpec -> A_Concept -> [A_Concept]
 getSpecializations fSpec = smallerConcepts (gens fSpec)
 
 -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.

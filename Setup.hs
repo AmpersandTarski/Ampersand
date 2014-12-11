@@ -32,7 +32,7 @@ generateBuildInfoHook pd  lbi uh bf =
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
-    ; writeFile "src/Database/Design/Ampersand/Basics/BuildInfo_Generated.hs" $
+    ; writeFile (pathFromModule buildInfoModuleName) $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
 
     ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
@@ -42,9 +42,12 @@ generateBuildInfoHook pd  lbi uh bf =
     }
  where pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
 
+buildInfoModuleName :: String
+buildInfoModuleName = "Database.Design.Ampersand.Basics.BuildInfo_Generated"
+
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
-  [ "module Database.Design.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, gitInfoStr, buildTimeStr) where" 
+  [ "module "++buildInfoModuleName++"(cabalVersionStr, gitInfoStr, buildTimeStr) where" 
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
@@ -122,7 +125,8 @@ getStaticFilesModuleContents =
                "                     }\n"++
                "\n"++
                "{-# NOINLINE allStaticFiles #-}\n" ++
-               "allStaticFiles =\n  [ "++ 
+               "allStaticFiles :: [StaticFile]\n" ++
+               "allStaticFiles =\n  [ " ++ 
                intercalate "\n  , " (staticFiles ++ staticFilesBinary) ++
                "\n  ]\n"
     }

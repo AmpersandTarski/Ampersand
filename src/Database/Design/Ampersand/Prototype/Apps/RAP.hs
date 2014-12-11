@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -Wall #-}
 --hdbc and hdbc-odbc must be installed (from hackage)
 module Database.Design.Ampersand.Prototype.Apps.RAP
    (fillAtlas,picturesForAtlas,atlas2context,atlas2populations)
@@ -18,10 +17,10 @@ dsnatlas = "DSN=RAPv1"
 
 ----------------------------------------------------
 
-fillAtlas :: Fspc -> IO()
+fillAtlas :: FSpec -> IO()
 fillAtlas fSpec = odbcinstall fSpec dsnatlas
 
-picturesForAtlas :: Fspc -> [Picture]
+picturesForAtlas :: FSpec -> [Picture]
 picturesForAtlas fSpec
    = map (makePicture fSpec)
          ( [PTRelsUsedInPat pat   | pat <- patterns fSpec] ++
@@ -36,7 +35,7 @@ picturesForAtlas fSpec
 type AtomVal = String
 type RelTbl = [(AtomVal,AtomVal)]
 selectdecl :: (IConnection conn) => conn
-      -> Fspc
+      -> FSpec
       -> String   -- ^The name of the declaration
       -> IO RelTbl
 selectdecl conn fSpec dclName
@@ -61,11 +60,11 @@ theonly xs err
 geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
 
-atlas2populations :: Fspc -> IO String
+atlas2populations :: FSpec -> IO String
 atlas2populations fSpec =
-   do verboseLn (flags fSpec) "Connecting to atlas..."
+   do verboseLn (getOpts fSpec) "Connecting to atlas..."
       conn<-connectODBC dsnatlas
-      verboseLn (flags fSpec) "Connected."
+      verboseLn (getOpts fSpec) "Connected."
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context with populations only
       --Context--
@@ -85,7 +84,7 @@ atlas2populations fSpec =
       r_right           <- selectdecl conn fSpec "right" --right::Pair->AtomID
       -----------
       disconnect conn
-      verboseLn (flags fSpec) "Disconnected."
+      verboseLn (getOpts fSpec) "Disconnected."
       makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
 
 makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
@@ -96,12 +95,12 @@ makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
    pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
 
-atlas2context :: Options -> Fspc -> IO A_Context
+atlas2context :: Options -> FSpec -> IO A_Context
 atlas2context opts fSpec =
    do --tbls <- readAtlas fSpec
-      verboseLn (flags fSpec) "Connecting to atlas..."
+      verboseLn (getOpts fSpec) "Connecting to atlas..."
       conn<-connectODBC dsnatlas
-      verboseLn (flags fSpec) "Connected."
+      verboseLn (getOpts fSpec) "Connected."
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
       --Context--
@@ -154,9 +153,9 @@ atlas2context opts fSpec =
       --reldcl :: Relation -> Declaration
       -----------
       disconnect conn
-      verboseLn (flags fSpec) "Disconnected."
+      verboseLn (getOpts fSpec) "Disconnected."
       let r_exprvalue = parseexprs r_exprvalue' --parsing is the safest way to get the Term
-      --verboseLn (flags fSpec) (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
+      --verboseLn (getOpts fSpec) (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
       actx <- makectx opts r_ctxnm (fsLang fSpec)
                      r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      r_gengen r_genspc r_genrhs

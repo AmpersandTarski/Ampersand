@@ -1,28 +1,27 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Fspec.GenerateUML (generateUML) where
+module Database.Design.Ampersand.FSpec.GenerateUML (generateUML) where
 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
-import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram
-import Database.Design.Ampersand.Fspec
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
+import Database.Design.Ampersand.FSpec
 import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map
 import Control.Monad.State.Lazy  (State, gets, evalState, modify)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.GenerateUML"
+fatal = fatalMsg "FSpec.GenerateUML"
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.
 
-generateUML :: Fspc -> String
+generateUML :: FSpec -> String
 generateUML fSpec = showUML (fSpec2UML fSpec)
 
 showUML :: UML -> String
 showUML uml = unlines $ evalState uml $ UMLState 0 Map.empty [] []
 
-fSpec2UML :: Fspc -> UML
+fSpec2UML :: FSpec -> UML
 fSpec2UML fSpec =
  do { packageId0 <- mkUnlabeledId "TopPackage"
     ; packageId1 <- mkUnlabeledId "PackageClasses"
@@ -182,7 +181,7 @@ genCustomProfileElements =
         where keyMeaning = "Meaning"++show nr
               keyRef     = "Reference"++show nr
 
-genCustomReqElements :: Fspc -> String -> UML
+genCustomReqElements :: FSpec -> String -> UML
 genCustomReqElements fSpec parentPackageId =
  do { reqVals <- gets reqValues
     ; return [reqUML req | req <- reverse reqVals]
@@ -212,7 +211,7 @@ instance Meaning Req where
                   Right rul -> meaning l rul
                   Left  dcl -> meaning l dcl
 
-requirements :: Fspc -> [Req]
+requirements :: FSpec -> [Req]
 requirements fSpec
    = [decl2req d | d <- vrels  fSpec]
    ++[rule2req r | r <- vrules fSpec]

@@ -1,6 +1,5 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
+module Database.Design.Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks, chpInterfacesPics)
@@ -61,13 +60,13 @@ import Data.List (nub)
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: Fspc -> (Pandoc, [Picture])
+fSpec2Pandoc :: FSpec -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
   where
     myDoc =
       ( (setTitle
            (case metaValues "title" fSpec of
-                [] -> text (case (fsLang fSpec, diagnosisOnly (flags fSpec)) of
+                [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                                  (Dutch  , False) -> "Functionele Specificatie van "
                                  (English, False) -> "Functional Specification of "
                                  (Dutch  ,  True) -> "Diagnose van "
@@ -82,15 +81,15 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
                      Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
                      English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
-           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (flags fSpec) ]
+           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (getOpts fSpec) ]
 
         )
-      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (flags fSpec)))))
+      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec)))))
       )
       (doc (foldr (<>) mempty docContents))
     docContents :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (flags fSpec)]
+    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])

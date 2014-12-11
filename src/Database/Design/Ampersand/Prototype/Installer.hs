@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.Installer
   (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
    createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
@@ -11,14 +10,14 @@ import Database.Design.Ampersand.Prototype.RelBinGenSQL(selectExprRelation,sqlRe
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"
 
-installerDBstruct :: Fspc -> String
+installerDBstruct :: FSpec -> String
 installerDBstruct fSpec = unlines $
       ["<?php"
       , "// Try to connect to the database"
       , ""
       , "include \"dbSettings.php\";"
       , ""
-      , "$DB_name='"++addSlashes (dbName (flags fSpec))++"';"
+      , "$DB_name='"++addSlashes (dbName (getOpts fSpec))++"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
@@ -49,7 +48,7 @@ installerDBstruct fSpec = unlines $
       , "?>"
       ]
 
-installerTriggers :: Fspc -> String
+installerTriggers :: FSpec -> String
 installerTriggers fSpec = unlines $
       [ "<?php"
       , ""
@@ -85,7 +84,7 @@ installerTriggers fSpec = unlines $
          , "    END\";"
          ]
 
-installerDefPop :: Fspc -> String
+installerDefPop :: FSpec -> String
 installerDefPop fSpec = unlines $
       ["<?php"
       , "// Connect to the database"
@@ -102,7 +101,7 @@ installerDefPop fSpec = unlines $
       ["?>"
       ]
 
-dumpPopulationToADL :: Fspc -> String
+dumpPopulationToADL :: FSpec -> String
 dumpPopulationToADL fSpec = unlines $
       ["<?php"
       ,"  $content = '"
@@ -139,7 +138,7 @@ dumpPopulationToADL fSpec = unlines $
       , "?>"
       ]
 
-createTablesPHP :: Fspc ->[String]
+createTablesPHP :: FSpec ->[String]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
@@ -191,7 +190,7 @@ createTablesPHP fSpec =
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
 
-populateTablesPHP :: Fspc -> [String]
+populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
     concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where

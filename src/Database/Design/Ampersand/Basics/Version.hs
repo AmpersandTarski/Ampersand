@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 -- | This module contains Version of Ampersand
 module Database.Design.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatalMsg) where
 

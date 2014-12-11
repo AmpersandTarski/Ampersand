@@ -4,9 +4,9 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
-import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
-import Database.Design.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.FSpec.Motivations
 import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
@@ -17,7 +17,7 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: Fspc -> (Blocks,[Picture])
+chpDataAnalysis :: FSpec -> (Blocks,[Picture])
 chpDataAnalysis fSpec = (theBlocks, thePictures)
  where
 
@@ -61,9 +61,9 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
 
   -- | In some cases, only a summary of the data analysis is required as output.
   summaryOnly :: Bool
-  summaryOnly = theme (flags fSpec) `elem` [StudentTheme]
+  summaryOnly = theme (getOpts fSpec) `elem` [StudentTheme]
 
-classificationSection :: Int -> Fspc -> (Blocks,Picture)
+classificationSection :: Int -> FSpec -> (Blocks,Picture)
 classificationSection lev fSpec = (theBlocks,pict)
  where
   theBlocks =
@@ -80,17 +80,17 @@ classificationSection lev fSpec = (theBlocks,pict)
               )
     else para (case fsLang fSpec of
               Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                       <> (if canXRefer (flags fSpec)
-                           then  "Deze is in figuur " <> xRefReference (flags fSpec) pict <> "weergegeven."
+                       <> (if canXRefer (getOpts fSpec)
+                           then  "Deze is in figuur " <> xRefReference (getOpts fSpec) pict <> "weergegeven."
                            else "Deze is in onderstaand figuur weergegeven."
                           )
               English -> "A number of concepts is organized in a classification structure. "
-                       <> (if canXRefer (flags fSpec)
-                           then "This is shown in figure " <> xRefReference (flags fSpec) pict <> "."
+                       <> (if canXRefer (getOpts fSpec)
+                           then "This is shown in figure " <> xRefReference (getOpts fSpec) pict <> "."
                            else "This is shown in the figure below."
                           )
             )
-         <> para (showImage (flags fSpec) pict)
+         <> para (showImage (getOpts fSpec) pict)
 
    where
   classificationModel :: ClassDiag
@@ -99,7 +99,7 @@ classificationSection lev fSpec = (theBlocks,pict)
   pict :: Picture
   pict = makePicture fSpec PTClassDiagram
 
-logicalDataModelSection :: Int -> Fspc -> (Blocks,[Picture])
+logicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
 logicalDataModelSection lev fSpec = (theBlocks, [pict])
  where
   theBlocks =
@@ -109,17 +109,17 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                 )
     <> para (case fsLang fSpec of
                Dutch   -> (text "De afspraken zijn vertaald naar een gegevensmodel. "
-                         <> ( if canXRefer (flags fSpec)
-                              then text "Dit gegevensmodel is in figuur " <> xRefReference (flags fSpec) pict <> text " weergegeven."
+                         <> ( if canXRefer (getOpts fSpec)
+                              then text "Dit gegevensmodel is in figuur " <> xRefReference (getOpts fSpec) pict <> text " weergegeven."
                               else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
                           ) )
                English -> (text "The functional requirements have been translated into a data model. "
-                         <> ( if canXRefer (flags fSpec)
-                              then text "This model is shown by figure " <> xRefReference (flags fSpec) pict <> text "."
+                         <> ( if canXRefer (getOpts fSpec)
+                              then text "This model is shown by figure " <> xRefReference (getOpts fSpec) pict <> text "."
                               else text "This model is shown by the figure below. "
                           ) )
             )
-     <> para (showImage (flags fSpec) pict)
+     <> para (showImage (getOpts fSpec) pict)
      <> let nrOfClasses = length (classes oocd)
         in case fsLang fSpec of
              Dutch   -> para (case nrOfClasses of
@@ -151,7 +151,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                      <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
-             Just (_, purposes)  -> purposes2Blocks (flags fSpec) purposes
+             Just (_, purposes)  -> purposes2Blocks (getOpts fSpec) purposes
         <> case fsLang fSpec of
              Dutch   -> para $ text "Deze gegevensverzameling bevat de volgende attributen: "
              English -> para $ text "This entity type has the following attributes: "
@@ -189,10 +189,10 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                          , assSrc assoc == clName cl || assTgt assoc == clName cl]
        )
     where
-     assocToRow :: Database.Design.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
         (para.text.assrhr) assoc <>
-        purposes2Blocks (flags fSpec) (asspurp assoc) <>
+        purposes2Blocks (getOpts fSpec) (asspurp assoc) <>
         (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty ) <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
@@ -219,7 +219,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                               Mult MinOne  MaxOne  -> " For this association each " <> (emph.text.assTgt) assoc <> " has exactly one "  <> (emph.text.assSrc) assoc <> "."
                               Mult MinOne  MaxMany -> " For this association each " <> (emph.text.assTgt) assoc <> " has at least one " <> (emph.text.assSrc) assoc <> "."
 
-technicalDataModelSection :: Int -> Fspc -> (Blocks,[Picture])
+technicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
 technicalDataModelSection lev fSpec = (theBlocks,[pict])
  where
    theBlocks =
@@ -229,17 +229,17 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
                       )
     <> para (case fsLang fSpec of
                Dutch   -> ( "De afspraken zijn vertaald naar een technisch datamodel. "
-                         <> ( if canXRefer (flags fSpec)
-                              then "Dit model is in figuur " <> xRefReference (flags fSpec) pict <> " weergegeven."
+                         <> ( if canXRefer (getOpts fSpec)
+                              then "Dit model is in figuur " <> xRefReference (getOpts fSpec) pict <> " weergegeven."
                               else "Dit model is in onderstaand figuur weergegeven. "
                           ) )
                English -> ( "The functional requirements have been translated into a technical data model. "
-                         <> ( if canXRefer (flags fSpec)
-                              then "This model is shown by figure " <> xRefReference (flags fSpec) pict <> "."
+                         <> ( if canXRefer (getOpts fSpec)
+                              then "This model is shown by figure " <> xRefReference (getOpts fSpec) pict <> "."
                               else "This model is shown by the figure below. "
                           ) )
             )
-    <> para (showImage (flags fSpec) pict)
+    <> para (showImage (getOpts fSpec) pict)
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
              case fsLang fSpec of
@@ -343,7 +343,7 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
    pict :: Picture
    pict = makePicture fSpec PTTechnicalDM
 
-daBasicsSection :: Int -> Fspc -> Blocks
+daBasicsSection :: Int -> FSpec -> Blocks
 -- | The function daBasicsSection lists the basic sentences that have been used in assembling the data model.
 daBasicsSection lev fSpec = theBlocks
  where
@@ -381,7 +381,7 @@ daBasicsSection lev fSpec = theBlocks
 
           )
 
-daRulesSection :: Int -> Fspc -> Blocks
+daRulesSection :: Int -> FSpec -> Blocks
 daRulesSection lev fSpec = theBlocks
  where
   theBlocks = mconcat 
@@ -422,9 +422,9 @@ daRulesSection lev fSpec = theBlocks
   docRule heading rule = mconcat $
      [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
      , fromList $ meaning2Blocks (fsLang fSpec) rule
-     , if showPredExpr (flags fSpec)
+     , if showPredExpr (getOpts fSpec)
        then let pred = toPredLogic rule
-            in  if fspecFormat (flags fSpec) == Frtf then -- todo: bit hacky to check format here, but otherwise we need a major refactoring
+            in  if fspecFormat (getOpts fSpec) == Frtf then -- todo: bit hacky to check format here, but otherwise we need a major refactoring
                   plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf pred)) 
                 else
                   fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex pred)

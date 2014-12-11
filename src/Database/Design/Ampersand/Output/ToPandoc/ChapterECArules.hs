@@ -1,19 +1,18 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterECArules
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Fspec.ToFspec.NormalForms (proofPA)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (proofPA)
 import Database.Design.Ampersand.ADL1
 
-chpECArules :: Fspc -> Blocks
+chpECArules :: FSpec -> Blocks
 chpECArules fSpec =
-  if genEcaDoc (flags fSpec)
+  if genEcaDoc (getOpts fSpec)
   then chpECArules' fSpec
   else mempty
 
-chpECArules' :: Fspc -> Blocks
+chpECArules' :: FSpec -> Blocks
 chpECArules' fSpec
  =   chptHeader (fsLang fSpec) EcaRules
   <> ecaIntro
@@ -35,7 +34,7 @@ chpECArules' fSpec
                           <> para ( linebreak <>
                                     "------ Afleiding ----->"   -- Dit in- en uitschakelbaar maken
                                   )
-                          <> (showProof (codeBlock . ("\n     "++) . showECA "\n     ") . proofPA (flags fSpec) . ecaAction) eca   --  voor het bewijs
+                          <> (showProof (codeBlock . ("\n     "++) . showECA "\n     ") . proofPA (getOpts fSpec) . ecaAction) eca   --  voor het bewijs
                           <> para ( linebreak <>
                                     "<------Einde afleiding --"   -- Dit in- en uitschakelbaar maken
                                   )
@@ -48,7 +47,7 @@ chpECArules' fSpec
                           <> para ( linebreak <>
                                     "------ Derivation ----->"   -- Dit in- en uitschakelbaar maken
                                   )
-                          <> (showProof (codeBlock . ("\n     "++) . showECA "\n     ") . proofPA (flags fSpec) . ecaAction) eca   --  voor het bewijs
+                          <> (showProof (codeBlock . ("\n     "++) . showECA "\n     ") . proofPA (getOpts fSpec) . ecaAction) eca   --  voor het bewijs
                           <> para ( linebreak <>
                                     "<------End Derivation --"   -- Dit in- en uitschakelbaar maken
                                   )

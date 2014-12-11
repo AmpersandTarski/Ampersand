@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.CoreImporter
     ( module Database.Design.Ampersand
     )
@@ -15,7 +14,7 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   , Declaration(..)
 --   , Expression(..)
 --   , P_Population(..)
---   , Fspc(..)
+--   , FSpec(..)
 --   , ObjectDef(..)
 --   , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
 --   , Relation(..)
@@ -65,7 +64,7 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   -- * Prettyprinters
 --   , showADL, showADLcode, showSQL
 --   -- * Generators
---   , makeFspec
+--   , makeFSpec
 --   , generate
 --   -- * Functions with Options
 --   , getOptions

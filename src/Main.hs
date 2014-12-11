@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 module Main where
 
 import Control.Monad
@@ -20,61 +19,61 @@ main =
  do opts <- getOptions
     if showVersion opts || showHelp opts
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
-    else do gFspec <- createFspec opts
-            case gFspec of
+    else do gFSpec <- createFSpec opts
+            case gFSpec of
               Errors err -> do putStrLn "Error(s) found:"
                                mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                exitWith $ ExitFailure 10
               Checked fSpec -> generateAmpersandOutput fSpec
                              >> generateProtoStuff opts fSpec
 
-generateProtoStuff :: Options -> Fspc -> IO ()
+generateProtoStuff :: Options -> FSpec -> IO ()
 generateProtoStuff opts fSpec
-  | validateSQL (flags fSpec) =
-      do { verboseLn (flags fSpec) "Validating SQL expressions..."
+  | validateSQL (getOpts fSpec) =
+      do { verboseLn (getOpts fSpec) "Validating SQL expressions..."
          ; isValid <- validateRulesSQL fSpec
          ; unless isValid (exitWith (ExitFailure 30))
          }
-  | export2adl (flags fSpec) && fileformat (flags fSpec)==Just Adl1Format =
-      do { verboseLn (flags fSpec) "Exporting Atlas DB content to .adl-file..."
+  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1Format =
+      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .adl-file..."
          ; cx<-atlas2context opts fSpec
-         ; writeFile (combine (dirOutput (flags fSpec)) (outputfile (flags fSpec))) (showADL cx)
-         ; verboseLn (flags fSpec) $ "Context written to " ++ combine (dirOutput (flags fSpec)) (outputfile (flags fSpec)) ++ "."
+         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) (showADL cx)
+         ; verboseLn (getOpts fSpec) $ "Context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
          }
-  | export2adl (flags fSpec) && fileformat (flags fSpec)==Just Adl1PopFormat =
-      do { verboseLn (flags fSpec) "Exporting Atlas DB content to .pop-file..."
+  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1PopFormat =
+      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .pop-file..."
          ; cxstr<-atlas2populations fSpec
-         ; writeFile (combine (dirOutput (flags fSpec)) (outputfile (flags fSpec))) cxstr
-         ; verboseLn (flags fSpec) $ "Population of context written to " ++ combine (dirOutput (flags fSpec)) (outputfile (flags fSpec)) ++ "."
+         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) cxstr
+         ; verboseLn (getOpts fSpec) $ "Population of context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
          }
   | otherwise =
-      do { verboseLn (flags fSpec) "Generating prototype artifacts..."
-         ; when (genPrototype (flags fSpec)) $ doGenProto fSpec
-         ; when (genBericht (flags fSpec))   $ doGenBericht fSpec
-         ; case testRule (flags fSpec) of
+      do { verboseLn (getOpts fSpec) "Generating prototype artifacts..."
+         ; when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
+         ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
+         ; case testRule (getOpts fSpec) of
              Just ruleName -> ruleTest fSpec ruleName
              Nothing       -> return ()
-    ; when ((not . null $ allViolations fSpec) && (development (flags fSpec) || theme (flags fSpec)==StudentTheme)) $
-        verboseLn (flags fSpec) "\nWARNING: There are rule violations (see above)."
-    ; verboseLn (flags fSpec) "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
+    ; when ((not . null $ allViolations fSpec) && (development (getOpts fSpec) || theme (getOpts fSpec)==StudentTheme)) $
+        verboseLn (getOpts fSpec) "\nWARNING: There are rule violations (see above)."
+    ; verboseLn (getOpts fSpec) "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
 
-doGenProto :: Fspc -> IO ()
+doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
- do { verboseLn (flags fSpec) "Checking on rule violations..."
+ do { verboseLn (getOpts fSpec) "Checking on rule violations..."
   --  ; let allViolations = violations fSpec
     ; reportViolations (allViolations fSpec)
 
-    ; if (not . null) (allViolations fSpec) && not (development (flags fSpec)) && theme (flags fSpec)/=StudentTheme
+    ; if (not . null) (allViolations fSpec) && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               }
-      else do { verboseLn (flags fSpec) "Generating prototype..."
+      else do { verboseLn (getOpts fSpec) "Generating prototype..."
               ; phpObjInterfaces fSpec
-              ; verboseLn (flags fSpec) $ "Prototype files have been written to " ++ dirPrototype (flags fSpec)
+              ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
     }
- where reportViolations []    = verboseLn (flags fSpec) "No violations found."
+ where reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
        reportViolations viols =
          let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"
@@ -82,7 +81,7 @@ doGenProto fSpec =
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
 
-ruleTest :: Fspc -> String -> IO ()
+ruleTest :: FSpec -> String -> IO ()
 ruleTest fSpec ruleName =
  case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
    [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."

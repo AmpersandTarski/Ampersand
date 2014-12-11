@@ -1,32 +1,31 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Fspec.ShowMeatGrinder
+module Database.Design.Ampersand.FSpec.ShowMeatGrinder
   (meatGrinder)
 where
 
 import Data.List
 import Data.Ord
-import Database.Design.Ampersand.Fspec.Fspec
-import Database.Design.Ampersand.Fspec.Motivations
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.Motivations
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Fspec.ShowADL
+import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1.Pair
 import Data.Hashable
 import Data.Maybe
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.ShowMeatGrinder"
+fatal = fatalMsg "FSpec.ShowMeatGrinder"
 
-meatGrinder :: Fspc -> (FilePath, String)
+meatGrinder :: FSpec -> (FilePath, String)
 meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
  where
   content = unlines
      ([ "{- Do not edit manually. This code has been generated!!!"
       , "    Generated with "++ampersandVersionStr
-      , "    Generated at "++show (genTime (flags fSpec))
+      , "    Generated at "++show (genTime (getOpts fSpec))
       , "-}"
       , ""
       , "CONTEXT RapPopulations"]
@@ -61,7 +60,7 @@ techId = show.hash.name
 class AdlId a where
  uri :: a -> String
 
-instance AdlId Fspc where
+instance AdlId FSpec where
  uri a= "Ctx"++techId a
 instance AdlId Pattern where
  uri a= "Pat"++techId a
@@ -94,9 +93,9 @@ mkAtom cpt value = Atom { atmRoot = cpt
                         }
 
 class MetaPopulations a where
- metaPops :: Fspc -> a -> [Pop]
+ metaPops :: FSpec -> a -> [Pop]
 
-instance MetaPopulations Fspc where
+instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
     (

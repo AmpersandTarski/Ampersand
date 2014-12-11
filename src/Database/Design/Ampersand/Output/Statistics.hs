@@ -1,39 +1,38 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
 
-   import Database.Design.Ampersand.Core.AbstractSyntaxTree
-   import Database.Design.Ampersand.Classes
-   import Database.Design.Ampersand.Fspec.Fspec
-   import Database.Design.Ampersand.Fspec.FPA
-   import Database.Design.Ampersand.Fspec.Plug ()
-   import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.FPA
+import Database.Design.Ampersand.FSpec.Plug ()
+import Database.Design.Ampersand.Basics (fatalMsg)
 
-   fatal :: Int -> String -> a
-   fatal = fatalMsg "Output.Statistics"
+fatal :: Int -> String -> a
+fatal = fatalMsg "Output.Statistics"
 
- -- TODO Deze module moet nog verder worden ingekleurd...
+-- TODO Deze module moet nog verder worden ingekleurd...
 
-   class Statistics a where
-    nInterfaces :: a -> Int      -- ^ The number of interfaces in a
-    nPatterns :: a -> Int      -- ^ The number of patterns in a
-    nFpoints :: a -> Int      -- ^ The number of function points in a
+class Statistics a where
+  nInterfaces :: a -> Int      -- ^ The number of interfaces in a
+  nPatterns :: a -> Int      -- ^ The number of patterns in a
+  nFpoints :: a -> Int      -- ^ The number of function points in a
 
-   instance Statistics a => Statistics [a] where
-    nInterfaces xs = sum (map nInterfaces xs)
-    nPatterns   xs = sum (map nPatterns xs)
-    nFpoints    xs = sum (map nFpoints xs)
+instance Statistics a => Statistics [a] where
+  nInterfaces xs = sum (map nInterfaces xs)
+  nPatterns   xs = sum (map nPatterns xs)
+  nFpoints    xs = sum (map nFpoints xs)
 
-   instance Statistics Fspc where
-    nInterfaces fSpec = length (fActivities fSpec) --TODO -> check correctness
-    nPatterns   fSpec = nPatterns (patterns fSpec)
-    nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)]
+instance Statistics FSpec where
+  nInterfaces fSpec = length (fActivities fSpec) --TODO -> check correctness
+  nPatterns   fSpec = nPatterns (patterns fSpec)
+  nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)]
                 --       + sum [fPoints (fpa plug) | InternalPlug plug <- plugInfos fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...
 
-   instance Statistics Pattern where
-    nInterfaces _ = 0 --TODO -> check correctness
-    nPatterns   _ = 1
-    nFpoints   _  = fatal 43 "function points are not defined for patterns at all."
+instance Statistics Pattern where
+  nInterfaces _ = 0 --TODO -> check correctness
+  nPatterns   _ = 1
+  nFpoints   _  = fatal 43 "function points are not defined for patterns at all."
 
 --   instance Statistics Activity where
 --    nInterfaces _ = 1
@@ -43,10 +42,10 @@ module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
 -- \***********************************************************************
 -- \*** Properties with respect to: Dataset                       ***
 -- \*** TODO: both datasets and interfaces are represented as ObjectDef. This does actually make a difference for the function point count, so we have work....
-   instance Statistics Interface where
-    nInterfaces _ = 1
-    nPatterns   _ = 0
-    nFpoints ifc  = fpVal $ fpaInterface ifc
+instance Statistics Interface where
+  nInterfaces _ = 1
+  nPatterns   _ = 0
+  nFpoints ifc  = fpVal $ fpaInterface ifc
 
 --   instance Statistics ObjectDef where
 --    nInterfaces (Obj{objmsub=Nothing}) = 2 -- this is an association, i.e. a binary relation --TODO -> check correctness

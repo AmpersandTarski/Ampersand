@@ -1,8 +1,7 @@
-{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
--- import Database.Design.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+-- import Database.Design.Ampersand.FSpec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
@@ -20,19 +19,19 @@ fatal = fatalMsg "Generate"
 customCssPath :: String
 customCssPath = "css/Custom.css"
 
-generateAll :: Fspc -> IO ()
+generateAll :: FSpec -> IO ()
 generateAll fSpec =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
---  ; verboseLn (flags fSpec) filecontent
+--  ; verboseLn (getOpts fSpec) filecontent
     ; writePrototypeFile "Generics.php" filecontent
-    ; when (genStaticFiles (flags fSpec))(
-       case customCssFile (flags fSpec) of
+    ; when (genStaticFiles (getOpts fSpec))(
+       case customCssFile (getOpts fSpec) of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
             ; writePrototypeFile customCssPath customCssContents
             }
         Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-         do { let dedicatedCSSPath = replaceExtension (fileName (flags fSpec)) "css"
+         do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
             ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
             ; if dedicatedCSSExists then
                do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
@@ -40,10 +39,10 @@ generateAll fSpec =
                   ; writePrototypeFile customCssPath customCssContents
                   }
               else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-               do { customExists <- doesFileExist (combine (dirPrototype (flags fSpec)) customCssPath)
+               do { customExists <- doesFileExist (combine (dirPrototype (getOpts fSpec)) customCssPath)
                   ; if customExists
-                    then verboseLn (flags fSpec) $ "  File " ++ customCssPath ++ " already exists."
-                    else do { verboseLn (flags fSpec) $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
+                    then verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " already exists."
+                    else do { verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
                             ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
                             }
                   }
@@ -54,7 +53,7 @@ generateAll fSpec =
     genericsPhpContent :: [String]
     genericsPhpContent =
       intercalate [""]
-        [ generateConstants (flags fSpec)
+        [ generateConstants (getOpts fSpec)
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -69,8 +68,8 @@ generateAll fSpec =
                       _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
     writePrototypeFile fname content =
-     do { verboseLn (flags fSpec) ("  Generating "++fname)
-        ; writeFile (combine (dirPrototype (flags fSpec)) fname) content
+     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
+        ; writeFile (combine (dirPrototype (getOpts fSpec)) fname) content
         }
 
 generateConstants :: Options -> [String]
@@ -84,7 +83,7 @@ generateConstants opts =
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
   ]
 
-generateSpecializations :: Fspc -> [String]
+generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
   [ "$allSpecializations = // transitive, so including specializations of specializations"
   , "  array" ] ++
@@ -94,7 +93,7 @@ generateSpecializations fSpec =
          | cpt <- concs fSpec, let specializations = smallerConcepts (gens fSpec) cpt,  not ( null specializations) ])
     )
 
-generateTableInfos :: Fspc -> [String]
+generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
   [ "$relationTableInfo ="
   , "  array" ] ++
@@ -155,7 +154,7 @@ generateTableInfos fSpec =
  where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
 
-generateRules :: Fspc -> [String]
+generateRules :: FSpec -> [String]
 generateRules fSpec =
   [ "$allRules ="
   , "  array"
@@ -172,23 +171,23 @@ generateRules fSpec =
            , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
            ] ++
-           ( if verboseP (flags fSpec)
+           ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
                   ++["        // "]
              else   []
            ) ++
-           ( if development (flags fSpec)
+           ( if development (getOpts fSpec)
              then [ "        // Rule ADL: "++escapePhpStr (showADL rExpr) ] ++
                   [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
            ] ++
            [ "        , 'contentsSQL'   => " ++
-             let contentsExpr = conjNF (flags fSpec) rExpr in
+             let contentsExpr = conjNF (getOpts fSpec) rExpr in
               showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
-           | development (flags fSpec) -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+           | development (getOpts fSpec) -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
            ] ++
            [ "        , 'pairView'      =>" -- a list of sql queries for the pair-view segments
@@ -202,7 +201,7 @@ generateRules fSpec =
          | rule <- vrules fSpec ++ grules fSpec
          , let rExpr=rrexp rule
          , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (flags fSpec) violExpr
+         , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
     ) )
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
@@ -223,7 +222,7 @@ generateRules fSpec =
          , "      )"
          ]
 
-generateConjuncts :: Fspc -> [String]
+generateConjuncts :: FSpec -> [String]
 generateConjuncts fSpec =
   [ "$allConjuncts ="
   , "  array"
@@ -234,15 +233,15 @@ generateConjuncts fSpec =
          [ [ mkConjunctName conj ++ " =>"
            , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
-           ( if verboseP (flags fSpec)
+           ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (flags fSpec)) violExpr]
+                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
                   ++["        // "]
              else   [] ) ++
-           ( if development (flags fSpec)
+           ( if development (getOpts fSpec)
              then [ "        // Conjunct ADL: "++escapePhpStr (showADL rExpr) ] ++
                   [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (flags fSpec) "\n        // ") violationsExpr))
+                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
            [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
            , "        )"
@@ -252,18 +251,18 @@ generateConjuncts fSpec =
          , rc_rulename conj `notElem` uniRuleNames fSpec
          , rc_rulename conj `elem` map name (invars fSpec)
          , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (flags fSpec) violExpr
+         , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
      ) )
     
-uniRuleNames :: Fspc -> [String]
+uniRuleNames :: FSpec -> [String]
 uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
 
 -- note the similarity with showHSName :: Conjunct -> String
 mkConjunctName :: Conjunct -> String
 mkConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
 
-generateRoles :: Fspc -> [String]
+generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
   , "  array"
@@ -278,7 +277,7 @@ generateRoles fSpec =
     ) )
   where maintainedByRole role (role',_) = role == role'
 
-generateViews :: Fspc -> [String]
+generateViews :: FSpec -> [String]
 generateViews fSpec =
   [ "//$allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView())."
   , "$allViews ="
@@ -307,7 +306,7 @@ generateViews fSpec =
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
 
-generateInterfaces :: Fspc -> [String]
+generateInterfaces :: FSpec -> [String]
 generateInterfaces fSpec =
   [ "$allInterfaceObjects ="
   , "  array"
@@ -318,7 +317,7 @@ generateInterfaces fSpec =
          (map (generateInterface fSpec) (interfaceS fSpec ++ interfaceG fSpec))
      ) )
 
-generateInterface :: Fspc -> Interface -> [String]
+generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
@@ -333,17 +332,17 @@ generateInterface fSpec interface =
                                   , rc_rulename conj `notElem` uniRuleNames fSpec
                                   , rc_rulename conj `elem` map name (invars fSpec) ] 
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
-  ++ (if verboseP (flags fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
+  ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
-           ++["      // "++ls | ls<-(showPrf showADL.cfProof (flags fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
+           ++["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
            ++["      //"]
       else   []
      )
   ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
-  ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (flags fSpec) ]
+  ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
   ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
   ++ case getEditableRelation editableRels normalizedInterfaceExp of 
@@ -370,9 +369,9 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
+ where normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
 
-generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
+generateMSubInterface :: FSpec -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ]

@@ -1,111 +1,110 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.ADL1.Rule    (
-                consequent, antecedent, rulefromProp, ruleviolations, hasantecedent)
-where
-   import Database.Design.Ampersand.Core.AbstractSyntaxTree
-   import Database.Design.Ampersand.Basics
-   import Database.Design.Ampersand.Core.ParseTree        ( Prop(..))
-   import Database.Design.Ampersand.Classes.Populated              ( fullContents)
-   import Database.Design.Ampersand.Misc
+module Database.Design.Ampersand.ADL1.Rule 
+  (consequent, antecedent, rulefromProp, ruleviolations, hasantecedent) where
 
-   fatal :: Int -> String -> a
-   fatal = fatalMsg "ADL1.Rule"
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Core.ParseTree ( Prop(..))
+import Database.Design.Ampersand.Classes.Populated ( fullContents)
+import Database.Design.Ampersand.Misc
 
-   hasantecedent :: Rule -> Bool
-   hasantecedent r
-    = case rrexp r of
-        EEqu{} -> True
-        EImp{} -> True
-        _      -> False
-   antecedent :: Rule -> Expression
-   antecedent r
-    = case rrexp r of
-        EEqu (le,_) -> le
-        EImp (le,_) -> le
-        _           -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
+fatal :: Int -> String -> a
+fatal = fatalMsg "ADL1.Rule"
 
-   consequent :: Rule -> Expression
-   consequent r
-    = case rrexp r of
-        EEqu (_,re) -> re
-        EImp (_,re) -> re
-        x           -> x
+hasantecedent :: Rule -> Bool
+hasantecedent r
+ = case rrexp r of
+     EEqu{} -> True
+     EImp{} -> True
+     _      -> False
+antecedent :: Rule -> Expression
+antecedent r
+ = case rrexp r of
+     EEqu (le,_) -> le
+     EImp (le,_) -> le
+     _           -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
 
-   ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
-   ruleviolations gens pt r = case rrexp r of
-        EEqu{} -> (cra >- crc) ++ (crc >- cra)
-        EImp{} -> cra >- crc
-        _      -> fullContents gens pt (EDcV (sign (consequent r))) >- crc  --everything not in con
-        where cra = fullContents gens pt (antecedent r)
-              crc = fullContents gens pt (consequent r)
+consequent :: Rule -> Expression
+consequent r
+ = case rrexp r of
+     EEqu (_,re) -> re
+     EImp (_,re) -> re
+     x           -> x
+
+ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
+ruleviolations gens pt r = case rrexp r of
+     EEqu{} -> (cra >- crc) ++ (crc >- cra)
+     EImp{} -> cra >- crc
+     _      -> fullContents gens pt (EDcV (sign (consequent r))) >- crc  --everything not in con
+     where cra = fullContents gens pt (antecedent r)
+           crc = fullContents gens pt (consequent r)
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
-   rulefromProp :: Prop -> Declaration -> Maybe Rule
-   rulefromProp Aut _ = Nothing
-   rulefromProp prp d@Sgn{} =
-     Just $ 
-        Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
-           , rrexp = rExpr
-           , rrfps = origin d
-           , rrmean = AMeaning $ explain True prp
-           , rrmsg = explain False prp
-           , rrviol = Nothing
-           , rrtyp = sign rExpr
-           , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
-           , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-           , r_usr = Multiplicity
-           , isSignal = False
-           , srrel = d{decnm=show prp++name d}
-           }
-          where
-           s = name (source d)
-           t = name (target d)
-           r:: Expression
-           r = EDcD d
-           rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
-                   then fatal 70 ("Illegal property of an endo relation "++show (name d)) else
-                   case prp of
-                        Uni-> flp r .:. r .|-. EDcI (target r)
-                        Tot-> EDcI (source r)  .|-. r .:. flp r
-                        Inj-> r .:. flp r .|-. EDcI (source r)
-                        Sur-> EDcI (target r)  .|-. flp r .:. r
-                        Sym-> r .==. flp r
-                        Asy-> flp r ./\. r .|-. EDcI (source r)
-                        Trn-> r .:. r .|-. r
-                        Rfx-> EDcI (source r) .|-. r
-                        Irf-> r .|-. ECpl (EDcI (source r))
-                        Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
-           explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
-                                 case prop of
-                                   Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
-                                   Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
-                                   Trn-> state isPositive English (name d++"["++s++"]") "transitive"
-                                   Rfx-> state isPositive English (name d++"["++s++"]") "reflexive"
-                                   Irf-> state isPositive English (name d++"["++s++"]") "irreflexive"
-                                   Uni-> state isPositive English (name d++"["++s++"*"++t++"]") "univalent"
-                                   Sur-> state isPositive English (name d++"["++s++"*"++t++"]") "surjective"
-                                   Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
-                                   Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
-                                   Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
-                                   ))
-                          ,   A_Markup Dutch ReST (string2Blocks ReST (
-                                 case prop of
-                                   Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."
-                                   Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."
-                                   Trn-> state isPositive Dutch (name d++"["++s++"]") "transitief."
-                                   Rfx-> state isPositive Dutch (name d++"["++s++"]") "reflexief."
-                                   Irf-> state isPositive Dutch (name d++"["++s++"]") "irreflexief."
-                                   Uni-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "univalent"
-                                   Sur-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "surjectief"
-                                   Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
-                                   Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
-                                   Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
-                                   ))
-                         ]
+rulefromProp :: Prop -> Declaration -> Maybe Rule
+rulefromProp Aut _ = Nothing
+rulefromProp prp d@Sgn{} =
+  Just $ 
+     Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
+        , rrexp = rExpr
+        , rrfps = origin d
+        , rrmean = AMeaning $ explain True prp
+        , rrmsg = explain False prp
+        , rrviol = Nothing
+        , rrtyp = sign rExpr
+        , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
+        , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+        , r_usr = Multiplicity
+        , isSignal = False
+        , srrel = d{decnm=show prp++name d}
+        }
+       where
+        s = name (source d)
+        t = name (target d)
+        r:: Expression
+        r = EDcD d
+        rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
+                then fatal 70 ("Illegal property of an endo relation "++show (name d)) else
+                case prp of
+                     Uni-> flp r .:. r .|-. EDcI (target r)
+                     Tot-> EDcI (source r)  .|-. r .:. flp r
+                     Inj-> r .:. flp r .|-. EDcI (source r)
+                     Sur-> EDcI (target r)  .|-. flp r .:. r
+                     Sym-> r .==. flp r
+                     Asy-> flp r ./\. r .|-. EDcI (source r)
+                     Trn-> r .:. r .|-. r
+                     Rfx-> EDcI (source r) .|-. r
+                     Irf-> r .|-. ECpl (EDcI (source r))
+                     Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
+        explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
+                              case prop of
+                                Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
+                                Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
+                                Trn-> state isPositive English (name d++"["++s++"]") "transitive"
+                                Rfx-> state isPositive English (name d++"["++s++"]") "reflexive"
+                                Irf-> state isPositive English (name d++"["++s++"]") "irreflexive"
+                                Uni-> state isPositive English (name d++"["++s++"*"++t++"]") "univalent"
+                                Sur-> state isPositive English (name d++"["++s++"*"++t++"]") "surjective"
+                                Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
+                                Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
+                                Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
+                                ))
+                       ,   A_Markup Dutch ReST (string2Blocks ReST (
+                              case prop of
+                                Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."
+                                Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."
+                                Trn-> state isPositive Dutch (name d++"["++s++"]") "transitief."
+                                Rfx-> state isPositive Dutch (name d++"["++s++"]") "reflexief."
+                                Irf-> state isPositive Dutch (name d++"["++s++"]") "irreflexief."
+                                Uni-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "univalent"
+                                Sur-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "surjectief"
+                                Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
+                                Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
+                                Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
+                                ))
+                      ]
 
-           state True  _       left right = left ++ " is " ++ right
-           state False English left right = left ++ " is not " ++ right
-           state False Dutch   left right = left ++ " is niet " ++ right
+        state True  _       left right = left ++ " is " ++ right
+        state False English left right = left ++ " is not " ++ right
+        state False Dutch   left right = left ++ " is niet " ++ right
 
-   rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined relations."
+rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined relations."

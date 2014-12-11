@@ -1,16 +1,15 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.Fspec.Graphic.Graphics
+module Database.Design.Ampersand.FSpec.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
 import Data.GraphViz
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Fspec.Fspec
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Fspec.Switchboard
+import Database.Design.Ampersand.FSpec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Fspec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
 import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String
@@ -19,7 +18,7 @@ import System.FilePath hiding (addExtension)
 import System.Directory
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec.Graphic.Graphics"
+fatal = fatalMsg "FSpec.Graphic.Graphics"
 
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
@@ -40,12 +39,12 @@ data Picture = Pict { pType :: PictureReq             -- ^ the type of the pictu
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 
-makePicture :: Fspc -> PictureReq -> Picture
+makePicture :: FSpec -> PictureReq -> Picture
 makePicture fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (flags fSpec) (clAnalysis fSpec)
+                               , dotSource = classdiagram2dot (getOpts fSpec) (clAnalysis fSpec)
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -54,7 +53,7 @@ makePicture fSpec pr =
                                }
    PTLogicalDM         -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (flags fSpec) (cdAnalysis fSpec)
+                               , dotSource = classdiagram2dot (getOpts fSpec) (cdAnalysis fSpec)
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -63,7 +62,7 @@ makePicture fSpec pr =
                                }
    PTTechnicalDM       -> Pict { pType = pr
                                , scale = scale'
-                               , dotSource = classdiagram2dot (flags fSpec) (tdAnalysis fSpec)
+                               , dotSource = classdiagram2dot (getOpts fSpec) (tdAnalysis fSpec)
                                , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
@@ -173,8 +172,8 @@ pictureID pr =
       PTSwitchBoard x     -> "SwitchBoard"++name x
       PTSingleRule r      -> "SingleRule"++name r
 
-conceptualGraph' :: Fspc -> PictureReq -> DotGraph String
-conceptualGraph' fSpec pr = conceptual2Dot (flags fSpec) cstruct
+conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
+conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
   where
     cstruct =
       case pr of
@@ -271,9 +270,9 @@ writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) | genAtlas opts ]++
-      [writeDot Canon  | {- genFspec opts || -} genAtlas opts ]++
---      [writeDot XDot   | genFspec opts || genAtlas opts ]++
-      [writeDot Png    | genFspec opts || genAtlas opts ]++
+      [writeDot Canon  | {- genFSpec opts || -} genAtlas opts ]++
+--      [writeDot XDot   | genFSpec opts || genAtlas opts ]++
+      [writeDot Png    | genFSpec opts || genAtlas opts ]++
       [writeDot Cmapx  |                   genAtlas opts ]
           )
    where
