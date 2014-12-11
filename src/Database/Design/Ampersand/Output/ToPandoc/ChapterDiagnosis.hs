@@ -11,7 +11,7 @@ import Database.Design.Ampersand.Output.PandocAux
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
-chpDiagnosis :: Fspc -> (Blocks,[Picture])
+chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
  = ( (chptHeader (fsLang fSpec) Diagnosis) <>
      fromList

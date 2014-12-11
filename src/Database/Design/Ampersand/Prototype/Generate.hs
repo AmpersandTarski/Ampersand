@@ -19,7 +19,7 @@ fatal = fatalMsg "Generate"
 customCssPath :: String
 customCssPath = "css/Custom.css"
 
-generateAll :: Fspc -> IO ()
+generateAll :: FSpec -> IO ()
 generateAll fSpec =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
 --  ; verboseLn (flags fSpec) filecontent
@@ -83,7 +83,7 @@ generateConstants opts =
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
   ]
 
-generateSpecializations :: Fspc -> [String]
+generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
   [ "$allSpecializations = // transitive, so including specializations of specializations"
   , "  array" ] ++
@@ -93,7 +93,7 @@ generateSpecializations fSpec =
          | cpt <- concs fSpec, let specializations = smallerConcepts (gens fSpec) cpt,  not ( null specializations) ])
     )
 
-generateTableInfos :: Fspc -> [String]
+generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
   [ "$relationTableInfo ="
   , "  array" ] ++
@@ -154,7 +154,7 @@ generateTableInfos fSpec =
  where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
 
-generateRules :: Fspc -> [String]
+generateRules :: FSpec -> [String]
 generateRules fSpec =
   [ "$allRules ="
   , "  array"
@@ -222,7 +222,7 @@ generateRules fSpec =
          , "      )"
          ]
 
-generateConjuncts :: Fspc -> [String]
+generateConjuncts :: FSpec -> [String]
 generateConjuncts fSpec =
   [ "$allConjuncts ="
   , "  array"
@@ -255,14 +255,14 @@ generateConjuncts fSpec =
          ]
      ) )
     
-uniRuleNames :: Fspc -> [String]
+uniRuleNames :: FSpec -> [String]
 uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
 
 -- note the similarity with showHSName :: Conjunct -> String
 mkConjunctName :: Conjunct -> String
 mkConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
 
-generateRoles :: Fspc -> [String]
+generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
   , "  array"
@@ -277,7 +277,7 @@ generateRoles fSpec =
     ) )
   where maintainedByRole role (role',_) = role == role'
 
-generateViews :: Fspc -> [String]
+generateViews :: FSpec -> [String]
 generateViews fSpec =
   [ "//$allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView())."
   , "$allViews ="
@@ -306,7 +306,7 @@ generateViews fSpec =
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
 
-generateInterfaces :: Fspc -> [String]
+generateInterfaces :: FSpec -> [String]
 generateInterfaces fSpec =
   [ "$allInterfaceObjects ="
   , "  array"
@@ -317,7 +317,7 @@ generateInterfaces fSpec =
          (map (generateInterface fSpec) (interfaceS fSpec ++ interfaceG fSpec))
      ) )
 
-generateInterface :: Fspc -> Interface -> [String]
+generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
@@ -332,7 +332,7 @@ generateInterface fSpec interface =
                                   , rc_rulename conj `notElem` uniRuleNames fSpec
                                   , rc_rulename conj `elem` map name (invars fSpec) ] 
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if verboseP (flags fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
@@ -371,7 +371,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ]
  where normalizedInterfaceExp = conjNF (flags fSpec) $ objctx object
 
-generateMSubInterface :: Fspc -> [Expression] -> Int -> Maybe SubInterface -> [String]
+generateMSubInterface :: FSpec -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ]

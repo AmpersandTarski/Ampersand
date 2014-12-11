@@ -14,10 +14,10 @@ import Database.Design.Ampersand.Fspec.FPA
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterInterfaces"
 
-chpInterfacesPics :: Fspc -> [Picture]
+chpInterfacesPics :: FSpec -> [Picture]
 chpInterfacesPics fSpec = []
 
-chpInterfacesBlocks :: Int -> Fspc -> Blocks
+chpInterfacesBlocks :: Int -> FSpec -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
   mconcat $ map interfaceChap regularInterfaces ++ [ messagesChap messageInterfaces | not (null messageInterfaces) ]
   where
@@ -160,7 +160,7 @@ data Entity = Entity { entName ::     String
                      , properties ::  [Entity]
                      } deriving Show
 
-genEntity_Interfaces :: Fspc -> [Interface] -> [Entity]
+genEntity_Interfaces :: FSpec -> [Interface] -> [Entity]
 genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
   where 
     genEntity_Interface ::Interface -> Entity

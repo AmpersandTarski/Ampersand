@@ -21,7 +21,7 @@ fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
          a datastructure needs to be added to the fSpec, which contains per theme the concepts, rules and relations
          that need to be printed.
 -}
-chpNatLangReqs :: Int -> Fspc -> Blocks
+chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***
    chptHeader (fsLang fSpec) SharedLang
@@ -77,7 +77,7 @@ chpNatLangReqs lev fSpec =
                  case fsLang fSpec of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
-               getRefs ::Fspc ->  [LawRef]
+               getRefs ::FSpec ->  [LawRef]
                getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
 
   dpRequirementesNew :: Blocks
@@ -370,7 +370,7 @@ chpNatLangReqs lev fSpec =
 -- TODO: fix showing/not showing based on relation
 -- TODO: what about relations in the target view?
 -- TODO: move these to some auxiliaries or utils
-showViewAtom :: Fspc -> Maybe Declaration -> A_Concept -> String -> String
+showViewAtom :: FSpec -> Maybe Declaration -> A_Concept -> String -> String
 showViewAtom fSpec mDec cncpt atom =
   case mapMaybe (getView fSpec) (cncpt : largerConcepts (gens fSpec) cncpt) of
     []    -> atom
@@ -389,14 +389,14 @@ showViewAtom fSpec mDec cncpt atom =
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]
 
 {-
-getIdentity :: Fspc -> A_Concept -> Maybe IdentityDef
+getIdentity :: FSpec -> A_Concept -> Maybe IdentityDef
 getIdentity fSpec cncpt =
   case filter ((== cncpt) .  idCpt) (vIndices fSpec) of
     []         -> Nothing
     identity:_ -> Just identity
 -}
 
-getView :: Fspc -> A_Concept -> Maybe ViewDef
+getView :: FSpec -> A_Concept -> Maybe ViewDef
 getView fSpec cncpt =
   case filter ((== cncpt) .  vdcpt) (vviews fSpec) of
     []       -> Nothing

@@ -86,7 +86,7 @@ colorRule :: Rule -> X11Color
 colorRule r  | isSignal r = Orange
              | otherwise  = Green
 
-sbDiagram :: Fspc -> SwitchBdDiagram
+sbDiagram :: FSpec -> SwitchBdDiagram
 sbDiagram fSpec
  = SBdgrm
      { sbName = name fSpec
@@ -156,7 +156,7 @@ sbDiagram fSpec
      eventsIn  = nub [ecaTriggr eca | eca<-fsbECAs fsb, not (isBlk (ecaAction eca)) ]
      eventsOut = nub [evt | eca<-fsbECAs fsb, let act=ecaAction eca, not (isBlk act), evt<-eventsFrom act]
 
-switchboardAct :: Fspc -> Activity -> SwitchBdDiagram
+switchboardAct :: FSpec -> Activity -> SwitchBdDiagram
 switchboardAct fSpec act
  = SBdgrm
      { sbName = name act
@@ -225,7 +225,7 @@ switchboardAct fSpec act
      nameONode :: [Declaration] -> Declaration -> String
      nameONode = nmLkp fSpec "out_"
 
-nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => Fspc -> String -> [a] -> a -> String
+nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => FSpec -> String -> [a] -> a -> String
 nmLkp _ prefix xs x
  = head ([prefix++show (i::Int) | (i,e)<-zip [1..] xs, e==x]++
          fatal 216 ("illegal lookup in nmLkp "++show prefix++": " ++showADL x++

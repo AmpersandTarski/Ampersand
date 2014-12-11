@@ -26,7 +26,7 @@ fatal = Basics.fatalMsg "InputProcessing"
 
 -- | create an Fspec, based on the user defined flags.
 createFspec :: Options  -- ^The options derived from the command line
-            -> IO(Guarded Fspc)
+            -> IO(Guarded FSpec)
 createFspec opts =
   do userCtx <- parseADL opts (fileName opts)
      bothCtx <- if includeRap opts

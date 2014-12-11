@@ -23,7 +23,7 @@ data Entity = Entity { entName ::     String
                      , properties ::  [Entity]
                      } deriving Show
 
-doGenBericht :: Fspc -> IO ()
+doGenBericht :: FSpec -> IO ()
 doGenBericht fSpec =
  do { verboseLn (flags fSpec) "Generating 'Berichtendefinities'..."
     ; createDirectoryIfMissing True $ combine (dirPrototype (flags fSpec)) "Berichten"

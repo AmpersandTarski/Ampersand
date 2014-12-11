@@ -14,7 +14,7 @@ fatal = fatalMsg "Output.ToPandoc.ChapterFunctionPointAnalysis"
 -- TODO: add introductory and explanatory text to chapter
 -- TODO: what about KGVs?
 
-chpFunctionPointAnalysis :: Fspc -> (Blocks,[Picture])
+chpFunctionPointAnalysis :: FSpec -> (Blocks,[Picture])
 chpFunctionPointAnalysis fSpec
  = ( (chptHeader (fsLang fSpec) FunctionPointAnalysis) <>
      (fromList . concat)

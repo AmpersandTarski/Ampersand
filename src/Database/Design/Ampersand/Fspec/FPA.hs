@@ -46,13 +46,13 @@ fpVal FP{fpType=OF,   fpComplexity=Eenvoudig} = 3
 fpVal FP{fpType=OF,   fpComplexity=Gemiddeld} = 4
 fpVal FP{fpType=OF,   fpComplexity=Moeilijk}  = 6
 
-fpAnalyze :: Fspc -> FPA
+fpAnalyze :: FSpec -> FPA
 fpAnalyze fSpec = FPA (countFPs $ fpaDataModel fSpec) (countFPs $ fpaUserTransactions fSpec)
   where countFPs :: [FP] -> ([FP], Int)
         countFPs fps = (fps, sum $ map fpVal fps)
 
 -- Na overleg met Frank Vogelenzang zijn de volgende criteria voor functiepuntentelling toegepast
-fpaDataModel :: Fspc -> [FP]
+fpaDataModel :: FSpec -> [FP]
 fpaDataModel fSpec = mapMaybe fpaPlugInfo $ plugInfos fSpec
 
 fpaPlugInfo :: PlugInfo -> Maybe FP
@@ -64,7 +64,7 @@ fpaPlugInfo p@(InternalPlug (TblSQL{fields=flds})) | Just cmplxty <- ilgvComplex
                          | otherwise = Just Moeilijk
 fpaPlugInfo _ = Nothing
 
-fpaUserTransactions :: Fspc -> [FP]
+fpaUserTransactions :: FSpec -> [FP]
 fpaUserTransactions fSpec = map fpaInterface $ interfaceS fSpec
 
 fpaInterface :: Interface -> FP

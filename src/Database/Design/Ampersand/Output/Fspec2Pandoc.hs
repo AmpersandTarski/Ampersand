@@ -60,7 +60,7 @@ import Data.List (nub)
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
-fSpec2Pandoc :: Fspc -> (Pandoc, [Picture])
+fSpec2Pandoc :: FSpec -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
   where
     myDoc =

@@ -17,7 +17,7 @@ module Database.Design.Ampersand
    , ViewSegment(..)
    , Expression(..)
    , Population(..)
-   , Fspc(..), concDefs
+   , FSpec(..), concDefs
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)

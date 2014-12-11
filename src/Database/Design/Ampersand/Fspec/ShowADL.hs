@@ -339,7 +339,7 @@ instance ShowADL A_Context where
     ++ (if null (ctxphp context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxphp context)) ++ "\n")
     ++ "\n\nENDCONTEXT"
 
-instance ShowADL Fspc where
+instance ShowADL FSpec where
  showADL fSpec
   = "CONTEXT " ++name fSpec
     ++ (if null (map ifcObj [] {- map fsv_ifcdef (fActivities fSpec) -})

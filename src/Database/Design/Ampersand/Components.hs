@@ -32,9 +32,9 @@ import System.FilePath
 fatal :: Int -> String -> a
 fatal = fatalMsg "Components"
 
---  | The Fspc is the datastructure that contains everything to generate the output. This monadic function
---    takes the Fspc as its input, and spits out everything the user requested.
-generateAmpersandOutput :: Fspc -> IO ()
+--  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
+--    takes the FSpec as its input, and spits out everything the user requested.
+generateAmpersandOutput :: FSpec -> IO ()
 generateAmpersandOutput fSpec =
  do { verboseLn (flags fSpec) "Generating common Ampersand artifacts..."
     ; when (genXML (flags fSpec))      $ doGenXML      fSpec
@@ -57,14 +57,14 @@ generateAmpersandOutput fSpec =
 --    Or do we assume a correct implementation with unambiguous expressions only?
 -- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
 --    So the answer is: we assume a correct implementation with unambiguous expressions only.
-doGenADL :: Fspc -> IO()
+doGenADL :: FSpec -> IO()
 doGenADL fSpec =
  do { writeFile outputFile (showADL fSpec)
     ; verboseLn (flags fSpec) $ ".adl-file written to " ++ outputFile ++ "."
     }
  where outputFile = combine (dirOutput (flags fSpec)) (outputfile (flags fSpec))
 
-doGenProofs :: Fspc -> IO()
+doGenProofs :: FSpec -> IO()
 doGenProofs fSpec =
  do { verboseLn (flags fSpec) $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
 --  ; verboseLn (flags fSpec) $ writeTextile def thePandoc
@@ -77,7 +77,7 @@ doGenProofs fSpec =
        theDoc = deriveProofs fSpec
        --theDoc = plain (text "Aap")  -- use for testing...
 
-doGenHaskell :: Fspc -> IO()
+doGenHaskell :: FSpec -> IO()
 doGenHaskell fSpec =
  do { verboseLn (flags fSpec) $ "Generating Haskell source code for "++name fSpec
 --  ; verboseLn (flags fSpec) $ fSpec2Haskell fSpec -- switch this on to display the contents of Installer.php on the command line. May be useful for debugging.
@@ -86,7 +86,7 @@ doGenHaskell fSpec =
     }
  where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension (baseName (flags fSpec)) ".hs"
 
-doGenMeatGrinder :: Fspc -> IO()
+doGenMeatGrinder :: FSpec -> IO()
 doGenMeatGrinder fSpec =
  do verboseLn (flags fSpec) $ "Generating meta-population for "++name fSpec
     let (nm,content) = meatGrinder fSpec
@@ -94,7 +94,7 @@ doGenMeatGrinder fSpec =
     writeFile outputFile content
     verboseLn (flags fSpec) $ "Meta population written into " ++ outputFile ++ "."
 
-doGenXML :: Fspc -> IO()
+doGenXML :: FSpec -> IO()
 doGenXML fSpec =
  do { verboseLn (flags fSpec) "Generating XML..."
     ; writeFile outputFile $ showXML fSpec (genTime (flags fSpec))
@@ -102,7 +102,7 @@ doGenXML fSpec =
     }
    where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension (baseName (flags fSpec)) ".xml"
 
-doGenUML :: Fspc -> IO()
+doGenUML :: FSpec -> IO()
 doGenUML fSpec =
  do { verboseLn (flags fSpec) "Generating UML..."
     ; writeFile outputFile $ generateUML fSpec
@@ -110,11 +110,11 @@ doGenUML fSpec =
     }
    where outputFile = combine (dirOutput (flags fSpec)) $ replaceExtension (baseName (flags fSpec)) ".xmi"
 
--- This function will generate all Pictures for a given Fspc.
--- the returned Fspc contains the details about the Pictures, so they
--- can be referenced while rendering the Fspc.
+-- This function will generate all Pictures for a given FSpec.
+-- the returned FSpec contains the details about the Pictures, so they
+-- can be referenced while rendering the FSpec.
 -- This function generates a pandoc document, possibly with pictures from an fSpec.
-doGenDocument :: Fspc -> IO()
+doGenDocument :: FSpec -> IO()
 doGenDocument fSpec =
  do { verboseLn (flags fSpec) ("Processing "++name fSpec)
     ; makeOutput
@@ -132,8 +132,8 @@ doGenDocument fSpec =
                  (_         , _      ) -> fSpec2Pandoc fSpec
         (outputFile,makeOutput,postProcessor) = writepandoc fSpec thePandoc
 
--- | This function will generate an Excel workbook file, containing an extract from the Fspc
-doGenFPAExcel :: Fspc -> IO()
+-- | This function will generate an Excel workbook file, containing an extract from the FSpec
+doGenFPAExcel :: FSpec -> IO()
 doGenFPAExcel fSpec =
  do { verboseLn (flags fSpec) "Generating Excel..."
     ; writeFile outputFile (showSpreadsheet (fspec2Workbook fSpec))

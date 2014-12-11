@@ -28,11 +28,11 @@ head (a:_) = a
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
 
-makeFspec :: Options -> A_Context -> Fspc
+makeFspec :: Options -> A_Context -> FSpec
 makeFspec opts context = fSpec
  where
      fSpec =
-         Fspc { fsName       = name context
+         FSpec { fsName       = name context
               , flags        = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
@@ -361,7 +361,7 @@ Each activity can be mapped to a single interface.
 A call to such an interface takes the population of the current context to another population,
 while maintaining all invariants.
 -}
-makeActivity :: Fspc -> Rule -> Activity
+makeActivity :: FSpec -> Rule -> Activity
 makeActivity fSpec rul
  = let s = Act{ actRule   = rul
               , actTrig   = decls
@@ -624,7 +624,7 @@ preEmpt opts ers = pr [length ers] (10::Int)
   cascade  _  (Ref _)      = fatal 612 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
   cascade  _  (GCH{})      = fatal 655 "Deze constructor is niet gedefinieerd" -- SJO, 20140428:Toegevoegd om warning te verwijderen
 
-switchboard :: Fspc -> Fswitchboard
+switchboard :: FSpec -> Fswitchboard
 switchboard fSpec
  = Fswtch
     { fsbEvIn  = eventsIn

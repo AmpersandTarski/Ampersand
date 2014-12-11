@@ -28,7 +28,7 @@ fatal = fatalMsg "ValidateSQL"
 tempDbName :: String
 tempDbName = "ampersand_TemporaryValidationDatabase"
 
-validateRulesSQL :: Fspc -> IO Bool
+validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
  do { when (any (not.isSignal.fst) (allViolations fSpec))
         (do { putStrLn "The population would violate invariants. Could not generate your database."
@@ -64,29 +64,29 @@ validateRulesSQL fSpec =
 
 -- functions for extracting all expressions from the context
 
-getAllInterfaceExps :: Fspc -> [ValidationExp]
+getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
                                    | ifc <- interfaceS fSpec ++ interfaceG fSpec ]
  where getObjExps iName objDef = (objctx objDef, "interface " ++ show iName) :
                                  concatMap (getObjExps iName) (attributes objDef)
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
-getAllRuleExps :: Fspc -> [ValidationExp]
+getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
  where getRuleExp rule = (notCpl (rrexp rule), "rule "++show (name rule))
 
-getAllPairViewExps :: Fspc -> [ValidationExp]
+getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
          [ (exp, "violation view for rule "++show (name r)) | PairViewExp _ exp <- pvsegs ]
        getPairViewExps _    = []
 
-getAllIdExps :: Fspc -> [ValidationExp]
+getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
  where getIdExps identity = [ (objctx objDef, "identity "++show (name identity))
                             | IdentityExp objDef <- identityAts identity ]
 
-getAllViewExps :: Fspc -> [ValidationExp]
+getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
  where getViewExps view = [ (objctx objDef, "view "++show (name view))
                           | ViewExp objDef <- vdats view ]
@@ -98,7 +98,7 @@ showVExp :: ShowADL a => (a, String) -> String
 showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
 
 -- validate a single expression and report the results
-validateExp :: Fspc -> ValidationExp -> IO (ValidationExp, Bool)
+validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
 validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
  do { putStr "."
     ; return (vExp, True)
@@ -124,7 +124,7 @@ validateExp fSpec vExp@(exp, origin) =
     }
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: Fspc -> Expression -> IO [(String,String)]
+evaluateExpSQL :: FSpec -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec exp =
   fmap sort (performQuery (flags fSpec) violationsQuery)
  where violationsExpr = conjNF (flags fSpec) exp
@@ -171,7 +171,7 @@ performQuery opts queryStr =
       , "echo ']';"
       ]
 
-createTempDatabase :: Fspc -> IO ()
+createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
  do { _ <- executePHP php
     ; return ()
@@ -264,7 +264,7 @@ executePHP phpStr =
 -- that every single SQL expression is thrown against the generated database. If the SQL syntax
 -- is incorrect, an error is generated.
 -- result of the query, a check is d
-validateSQLsyntax :: Fspc -> Bool
+validateSQLsyntax :: FSpec -> Bool
 validateSQLsyntax _ = False
 
 showPHP :: [String] -> String

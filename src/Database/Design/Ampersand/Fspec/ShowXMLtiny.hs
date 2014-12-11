@@ -16,7 +16,7 @@ import Data.List
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowXMLtiny"
 
-showXML :: Fspc -> LocalTime -> String
+showXML :: FSpec -> LocalTime -> String
 showXML fSpec now
          = validXML
             ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" ++
@@ -43,9 +43,9 @@ class XML a where
 still2bdone :: String -> XTree
 still2bdone worktxt = Node (Tag "NotImplementedYet" [mkAttr "work2do_in_ShowXML.hs"  worktxt])
 
-instance XML Fspc where
+instance XML FSpec where
   mkTag f = Tag "Fspec" [nameToAttr f]
-  mkXmlTree f@Fspc{}
+  mkXmlTree f@FSpec{}
      = Elem (mkTag f) (
           []
 --          ++ [ Elem (simpleTag "Plugs-In-Ampersand-Script")     (map mkXmlTree (vplugs f))]

@@ -39,7 +39,7 @@ data Picture = Pict { pType :: PictureReq             -- ^ the type of the pictu
                     , caption :: String               -- ^ a human readable name of this picture
                     }
 
-makePicture :: Fspc -> PictureReq -> Picture
+makePicture :: FSpec -> PictureReq -> Picture
 makePicture fSpec pr =
   case pr of
    PTClassDiagram      -> Pict { pType = pr
@@ -172,7 +172,7 @@ pictureID pr =
       PTSwitchBoard x     -> "SwitchBoard"++name x
       PTSingleRule r      -> "SingleRule"++name r
 
-conceptualGraph' :: Fspc -> PictureReq -> DotGraph String
+conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
 conceptualGraph' fSpec pr = conceptual2Dot (flags fSpec) cstruct
   where
     cstruct =

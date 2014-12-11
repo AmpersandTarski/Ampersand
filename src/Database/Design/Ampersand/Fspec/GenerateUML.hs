@@ -15,13 +15,13 @@ fatal = fatalMsg "Fspec.GenerateUML"
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.
 
-generateUML :: Fspc -> String
+generateUML :: FSpec -> String
 generateUML fSpec = showUML (fSpec2UML fSpec)
 
 showUML :: UML -> String
 showUML uml = unlines $ evalState uml $ UMLState 0 Map.empty [] []
 
-fSpec2UML :: Fspc -> UML
+fSpec2UML :: FSpec -> UML
 fSpec2UML fSpec =
  do { packageId0 <- mkUnlabeledId "TopPackage"
     ; packageId1 <- mkUnlabeledId "PackageClasses"
@@ -181,7 +181,7 @@ genCustomProfileElements =
         where keyMeaning = "Meaning"++show nr
               keyRef     = "Reference"++show nr
 
-genCustomReqElements :: Fspc -> String -> UML
+genCustomReqElements :: FSpec -> String -> UML
 genCustomReqElements fSpec parentPackageId =
  do { reqVals <- gets reqValues
     ; return [reqUML req | req <- reverse reqVals]
@@ -211,7 +211,7 @@ instance Meaning Req where
                   Right rul -> meaning l rul
                   Left  dcl -> meaning l dcl
 
-requirements :: Fspc -> [Req]
+requirements :: FSpec -> [Req]
 requirements fSpec
    = [decl2req d | d <- vrels  fSpec]
    ++[rule2req r | r <- vrules fSpec]

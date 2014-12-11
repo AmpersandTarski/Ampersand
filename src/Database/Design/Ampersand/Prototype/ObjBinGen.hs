@@ -19,7 +19,7 @@ import Data.Time.Format
 import System.Locale
 #endif
 
-phpObjInterfaces :: Fspc -> IO()
+phpObjInterfaces :: FSpec -> IO()
 phpObjInterfaces fSpec =
  do { writeStaticFiles (flags fSpec)
     ; verboseLn (flags fSpec) "---------------------------"
@@ -63,7 +63,7 @@ phpObjInterfaces fSpec =
        ]
     targetDir = dirPrototype (flags fSpec)
 
-doGenAtlas :: Fspc -> IO()
+doGenAtlas :: FSpec -> IO()
 doGenAtlas fSpec =
  do { verboseLn (flags fSpec) "Installing the Atlas application:"
     ; verboseLn (flags fSpec) ("Importing "++show (importfile (flags fSpec))++" into namespace "++ show (namespace (flags fSpec)) ++" of the Atlas ...")

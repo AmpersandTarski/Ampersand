@@ -41,7 +41,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.PandocAux"
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: Fspc -> [(String , String)]
+defaultWriterVariables :: FSpec -> [(String , String)]
 defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (flags fSpec)) of
                         (Dutch  , False) -> "Functionele Specificatie van "
@@ -105,7 +105,7 @@ defaultWriterVariables fSpec
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
-writepandoc :: Fspc -> Pandoc -> (String,IO(),IO())
+writepandoc :: FSpec -> Pandoc -> (String,IO(),IO())
 writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
          outputFile = addExtension (combine (dirOutput (flags fSpec)) (baseName (flags fSpec)))
@@ -603,7 +603,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-uniquecds :: Fspc -> A_Concept -> [(String,ConceptDef)]
+uniquecds :: FSpec -> A_Concept -> [(String,ConceptDef)]
 uniquecds fSpec c
  = [ (if length cDefs==1 then cdcpt cd else cdcpt cd++show i , cd)
    | let cDefs=concDefs fSpec c

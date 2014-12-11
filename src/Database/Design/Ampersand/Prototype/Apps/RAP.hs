@@ -17,10 +17,10 @@ dsnatlas = "DSN=RAPv1"
 
 ----------------------------------------------------
 
-fillAtlas :: Fspc -> IO()
+fillAtlas :: FSpec -> IO()
 fillAtlas fSpec = odbcinstall fSpec dsnatlas
 
-picturesForAtlas :: Fspc -> [Picture]
+picturesForAtlas :: FSpec -> [Picture]
 picturesForAtlas fSpec
    = map (makePicture fSpec)
          ( [PTRelsUsedInPat pat   | pat <- patterns fSpec] ++
@@ -35,7 +35,7 @@ picturesForAtlas fSpec
 type AtomVal = String
 type RelTbl = [(AtomVal,AtomVal)]
 selectdecl :: (IConnection conn) => conn
-      -> Fspc
+      -> FSpec
       -> String   -- ^The name of the declaration
       -> IO RelTbl
 selectdecl conn fSpec dclName
@@ -60,7 +60,7 @@ theonly xs err
 geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
 
-atlas2populations :: Fspc -> IO String
+atlas2populations :: FSpec -> IO String
 atlas2populations fSpec =
    do verboseLn (flags fSpec) "Connecting to atlas..."
       conn<-connectODBC dsnatlas
@@ -95,7 +95,7 @@ makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
    pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
 
-atlas2context :: Options -> Fspc -> IO A_Context
+atlas2context :: Options -> FSpec -> IO A_Context
 atlas2context opts fSpec =
    do --tbls <- readAtlas fSpec
       verboseLn (flags fSpec) "Connecting to atlas..."

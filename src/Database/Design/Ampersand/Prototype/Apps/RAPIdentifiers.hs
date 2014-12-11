@@ -22,7 +22,7 @@ data IdentifierNamespace = CNS String
 --use nonsid :: String -> ConceptIdentifier for those concepts
 nonsid :: String -> ConceptIdentifier
 nonsid = CID
-fsid :: (IdentifierNamespace,Fspc) -> ConceptIdentifier
+fsid :: (IdentifierNamespace,FSpec) -> ConceptIdentifier
 fsid (CNS ns,fs) = CID $ ns ++ "#" ++ name fs
 cptid :: A_Concept -> ConceptIdentifier
 cptid c = CID $ name c

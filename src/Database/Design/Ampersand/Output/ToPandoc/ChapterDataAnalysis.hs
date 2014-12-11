@@ -17,7 +17,7 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: Fspc -> (Blocks,[Picture])
+chpDataAnalysis :: FSpec -> (Blocks,[Picture])
 chpDataAnalysis fSpec = (theBlocks, thePictures)
  where
 
@@ -63,7 +63,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   summaryOnly :: Bool
   summaryOnly = theme (flags fSpec) `elem` [StudentTheme]
 
-classificationSection :: Int -> Fspc -> (Blocks,Picture)
+classificationSection :: Int -> FSpec -> (Blocks,Picture)
 classificationSection lev fSpec = (theBlocks,pict)
  where
   theBlocks =
@@ -99,7 +99,7 @@ classificationSection lev fSpec = (theBlocks,pict)
   pict :: Picture
   pict = makePicture fSpec PTClassDiagram
 
-logicalDataModelSection :: Int -> Fspc -> (Blocks,[Picture])
+logicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
 logicalDataModelSection lev fSpec = (theBlocks, [pict])
  where
   theBlocks =
@@ -219,7 +219,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                               Mult MinOne  MaxOne  -> " For this association each " <> (emph.text.assTgt) assoc <> " has exactly one "  <> (emph.text.assSrc) assoc <> "."
                               Mult MinOne  MaxMany -> " For this association each " <> (emph.text.assTgt) assoc <> " has at least one " <> (emph.text.assSrc) assoc <> "."
 
-technicalDataModelSection :: Int -> Fspc -> (Blocks,[Picture])
+technicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
 technicalDataModelSection lev fSpec = (theBlocks,[pict])
  where
    theBlocks =
@@ -343,7 +343,7 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
    pict :: Picture
    pict = makePicture fSpec PTTechnicalDM
 
-daBasicsSection :: Int -> Fspc -> Blocks
+daBasicsSection :: Int -> FSpec -> Blocks
 -- | The function daBasicsSection lists the basic sentences that have been used in assembling the data model.
 daBasicsSection lev fSpec = theBlocks
  where
@@ -381,7 +381,7 @@ daBasicsSection lev fSpec = theBlocks
 
           )
 
-daRulesSection :: Int -> Fspc -> Blocks
+daRulesSection :: Int -> FSpec -> Blocks
 daRulesSection lev fSpec = theBlocks
  where
   theBlocks = mconcat 

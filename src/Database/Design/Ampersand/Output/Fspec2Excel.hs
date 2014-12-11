@@ -12,7 +12,7 @@ import Data.Maybe
 
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
 
-fspec2Workbook :: Fspc -> Workbook
+fspec2Workbook :: FSpec -> Workbook
 fspec2Workbook fSpec =
    Workbook
       { workbookDocumentProperties = Just

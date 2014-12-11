@@ -4,7 +4,7 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format
 
-chpIntroduction :: Fspc -> Blocks
+chpIntroduction :: FSpec -> Blocks
 chpIntroduction fSpec =
       chptHeader (fsLang fSpec) Intro
    <> fromList purposesOfContext  -- the motivation(s) of this context

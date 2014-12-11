@@ -37,10 +37,10 @@ head (a:_) = a
 conjuncts :: Options -> Rule -> [Expression]
 conjuncts opts = exprIsc2list.conjNF opts.rrexp
 
--- testInterface :: Fspc -> Interface -> String
+-- testInterface :: FSpec -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
---   testInterface :: Fspc -> Interface -> String
+--   testInterface :: FSpec -> Interface -> String
 --   testInterface fSpec ifc
 --    = "\nInterface "++ name ifc++"("++intercalate ", " [showADL r++":"++name (target r) | r<-rels]++")\n"++
 --      " - The parameters correspond to editable fields in a user interface.\n   "++
@@ -81,7 +81,7 @@ conjuncts opts = exprIsc2list.conjNF opts.rrexp
 --                                 | length new   <= n = f new css
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
-testConfluence :: Fspc -> Blocks
+testConfluence :: FSpec -> Blocks
 testConfluence fSpec
  = let tcss = [(expr,tcs) | expr<-expressionsIn fSpec, let tcs=dfProofs expr, length tcs>1]
        sumt = sum (map (length.snd) tcss)
@@ -95,7 +95,7 @@ testConfluence fSpec
        bulletList [ showProof (para.str.showADL) prf | (_,prf)<-tcs ]
      | (expr,tcs)<-tcss]
 
-deriveProofs :: Fspc -> Blocks
+deriveProofs :: FSpec -> Blocks
 deriveProofs fSpec
  = testConfluence fSpec<>
    para (linebreak<>"--------------"<>linebreak)<>
@@ -479,7 +479,7 @@ actSem opts Del dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem
                          | otherwise           = conjNF opts (dcl ./\. notCpl delt)
 
 -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
-assembleECAs :: Fspc -> [Declaration] -> ([ECArule],[Blocks])
+assembleECAs :: FSpec -> [Declaration] -> ([ECArule],[Blocks])
 assembleECAs fSpec editables
  = unzip [eca i | (eca,i) <- zip ecas [(1::Int)..]]
    where

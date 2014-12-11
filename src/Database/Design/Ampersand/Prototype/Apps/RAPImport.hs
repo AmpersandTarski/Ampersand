@@ -23,7 +23,7 @@ fatal = fatalMsg "RAPImport"
 -----------------------------------------------------------------------------
 --exported functions---------------------------------------------------------
 -----------------------------------------------------------------------------
-importfspec ::  Fspc -> IO [P_Population]
+importfspec ::  FSpec -> IO [P_Population]
 importfspec fSpec
  = let pics = picturesForAtlas fSpec
    in  do verbose (flags fSpec) "Writing pictures for RAP... "
@@ -195,7 +195,7 @@ makeFilePops opts usrfiles savefiles
     ]
 
 --the fSpec to import into RAP -> options for file names and user name -> file names in the upload directory of the user -> pictures for the fSpec
-makeRAPPops :: Fspc -> [(String,ClockTime)] -> [Picture] -> [P_Population]
+makeRAPPops :: FSpec -> [(String,ClockTime)] -> [Picture] -> [P_Population]
 makeRAPPops fSpec usrfiles pics
  = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
        savepopfile = (tempdir, addExtension nextversion ".pop")

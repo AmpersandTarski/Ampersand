@@ -27,7 +27,7 @@ main =
               Checked fSpec -> generateAmpersandOutput fSpec
                              >> generateProtoStuff opts fSpec
 
-generateProtoStuff :: Options -> Fspc -> IO ()
+generateProtoStuff :: Options -> FSpec -> IO ()
 generateProtoStuff opts fSpec
   | validateSQL (flags fSpec) =
       do { verboseLn (flags fSpec) "Validating SQL expressions..."
@@ -58,7 +58,7 @@ generateProtoStuff opts fSpec
     ; verboseLn (flags fSpec) "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
 
-doGenProto :: Fspc -> IO ()
+doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
  do { verboseLn (flags fSpec) "Checking on rule violations..."
   --  ; let allViolations = violations fSpec
@@ -81,7 +81,7 @@ doGenProto fSpec =
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
 
-ruleTest :: Fspc -> String -> IO ()
+ruleTest :: FSpec -> String -> IO ()
 ruleTest fSpec ruleName =
  case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
    [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."

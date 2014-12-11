@@ -19,7 +19,7 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowMeatGrinder"
 
-meatGrinder :: Fspc -> (FilePath, String)
+meatGrinder :: FSpec -> (FilePath, String)
 meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
  where
   content = unlines
@@ -60,7 +60,7 @@ techId = show.hash.name
 class AdlId a where
  uri :: a -> String
 
-instance AdlId Fspc where
+instance AdlId FSpec where
  uri a= "Ctx"++techId a
 instance AdlId Pattern where
  uri a= "Pat"++techId a
@@ -93,9 +93,9 @@ mkAtom cpt value = Atom { atmRoot = cpt
                         }
 
 class MetaPopulations a where
- metaPops :: Fspc -> a -> [Pop]
+ metaPops :: FSpec -> a -> [Pop]
 
-instance MetaPopulations Fspc where
+instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
     (

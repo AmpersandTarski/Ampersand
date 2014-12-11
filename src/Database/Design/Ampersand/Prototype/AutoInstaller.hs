@@ -17,7 +17,7 @@ import Data.List  (intercalate)
 --fatal :: Int -> String -> a
 --fatal = fatalMsg "AutoInstaller"
 
-odbcinstall :: Fspc -> String -> IO()
+odbcinstall :: FSpec -> String -> IO()
 odbcinstall fSpec dsn =
    do verboseLn (flags fSpec) ("Connecting to ODBC connection "++ dsn ++"...")
       conn<-connectODBC dsn

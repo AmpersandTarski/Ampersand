@@ -6,7 +6,7 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 
-chpGlossary :: Int -> Fspc ->  Blocks
+chpGlossary :: Int -> FSpec ->  Blocks
 chpGlossary _ fSpec
  = fromList $
    if fspecFormat (flags fSpec)==FLatex

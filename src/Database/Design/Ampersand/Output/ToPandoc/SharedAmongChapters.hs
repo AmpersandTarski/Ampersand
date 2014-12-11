@@ -160,7 +160,7 @@ showImage opts pict =
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
-orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern or a process.
+orderingByTheme :: FSpec -> [( Maybe Theme   -- A theme is about either a pattern or a process.
                             , [Rule]        -- The rules of that theme
                             , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
                             , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
@@ -211,7 +211,7 @@ orderingByTheme fSpec
        isCptOfTheme c = c `elem` concatMap concs relsOfTheme
 
 --GMI: What's the meaning of the Int?
-dpRule :: Fspc -> [Rule] -> Int -> [A_Concept] -> [Declaration]
+dpRule :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
 dpRule fSpec = dpR
  where
@@ -296,7 +296,7 @@ dpRule fSpec = dpR
         rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)
 
-relsInThemes :: Fspc -> [Declaration]
+relsInThemes :: FSpec -> [Declaration]
 relsInThemes fSpec
         -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
  = [d | d<-relsDefdIn fSpec

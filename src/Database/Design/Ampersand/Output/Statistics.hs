@@ -22,7 +22,7 @@ instance Statistics a => Statistics [a] where
   nPatterns   xs = sum (map nPatterns xs)
   nFpoints    xs = sum (map nFpoints xs)
 
-instance Statistics Fspc where
+instance Statistics FSpec where
   nInterfaces fSpec = length (fActivities fSpec) --TODO -> check correctness
   nPatterns   fSpec = nPatterns (patterns fSpec)
   nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)]

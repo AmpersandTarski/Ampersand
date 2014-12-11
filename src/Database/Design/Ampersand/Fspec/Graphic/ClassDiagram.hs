@@ -59,7 +59,7 @@ instance CdNode Generalization where
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
-clAnalysis :: Fspc -> ClassDiag
+clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"++name fSpec
                    , classes = [ OOClass { clName = name c
@@ -85,7 +85,7 @@ clAnalysis fSpec =
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
 -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
 -- Properties and identities are not shown.
-cdAnalysis :: Fspc -> ClassDiag
+cdAnalysis :: FSpec -> ClassDiag
 cdAnalysis fSpec =
   OOclassdiagram { cdName  = "logical_"++name fSpec
                  , classes =
@@ -151,7 +151,7 @@ cdAnalysis fSpec =
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
-tdAnalysis :: Fspc -> ClassDiag
+tdAnalysis :: FSpec -> ClassDiag
 tdAnalysis fSpec =
   OOclassdiagram {cdName  = "technical_"++name fSpec
                  ,classes = allClasses

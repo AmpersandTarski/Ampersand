@@ -9,7 +9,7 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 -- TODO: Engels en Nederlands netjes scheiden.
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
-fpAnalysis :: Fspc -> Blocks
+fpAnalysis :: FSpec -> Blocks
 fpAnalysis _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where
 --  header :: Blocks

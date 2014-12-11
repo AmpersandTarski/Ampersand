@@ -11,10 +11,10 @@ import Database.Design.Ampersand.Output.PandocAux
 -- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
 -- In that case it will not be printed. To detect whether this is the case, we can look whether the
 -- mayEdit attributes remain empty.
-noProcesses :: Fspc -> Bool
+noProcesses :: FSpec -> Bool
 noProcesses fSpec = null (fRoles fSpec)
 
-chpProcessAnalysis :: Int -> Fspc -> (Blocks,[Picture])
+chpProcessAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpProcessAnalysis lev fSpec
  = ( if null procs
      then mempty

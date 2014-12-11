@@ -12,7 +12,7 @@ import Data.List (intersperse )
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis"
 
-chpConceptualAnalysis :: Int -> Fspc -> (Blocks,[Picture])
+chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec = (
       --  *** Header ***
    chptHeader (fsLang fSpec) ConceptualAnalysis

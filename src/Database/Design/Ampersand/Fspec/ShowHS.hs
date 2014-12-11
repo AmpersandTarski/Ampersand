@@ -20,7 +20,7 @@ import Data.Function
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowHS"
 
-fSpec2Haskell :: Fspc -> String
+fSpec2Haskell :: FSpec -> String
 fSpec2Haskell fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
           ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (flags fSpec))++"-}"
@@ -32,7 +32,7 @@ fSpec2Haskell fSpec
           ++"\nmain :: IO ()"
           ++"\nmain = do (flags fSpec) <- getOptions"
           ++"\n          putStr (showHS (flags fSpec) \"\\n  \" fSpec_"++baseName (flags fSpec)++")\n"
-          ++"\nfSpec_"++baseName (flags fSpec)++" :: Fspc"
+          ++"\nfSpec_"++baseName (flags fSpec)++" :: FSpec"
           ++"\nfSpec_"++baseName (flags fSpec)++" =\n  "++showHS (flags fSpec) "\n  " fSpec
 
 wrap :: String->String->(String->a->String)->[a]->String
@@ -239,13 +239,13 @@ instance ShowHS Conjunct where
        ]
      where indentA = indent ++"                    "
 
-instance ShowHSName Fspc where
+instance ShowHSName FSpec where
  showHSName fSpec = haskellIdentifier ("fSpc_"++name fSpec)
 
-instance ShowHS Fspc where
+instance ShowHS FSpec where
  showHS opts indent fSpec
   = intercalate (indent ++"    ")
-        [ "Fspc{ fsName        = " ++ show (name fSpec)
+        [ "FSpec{ fsName        = " ++ show (name fSpec)
         ,wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,     ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
         ,     ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
