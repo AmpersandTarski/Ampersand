@@ -8,7 +8,7 @@ import Database.Design.Ampersand.Basics hiding (indent)
 import Database.Design.Ampersand.Fspec.Plug
 import Database.Design.Ampersand.Fspec.Fspec
 import Database.Design.Ampersand.Fspec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
---   import Database.Design.Ampersand.Fspec.FPA   (fpa)
+--import Database.Design.Ampersand.Fspec.FPA   (fpa)
 import Data.List
 import Database.Design.Ampersand.Classes
 import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner

@@ -86,7 +86,8 @@ executable ampersand
     build-depends:   MissingH == 1.3.*,
                      unix == 2.7.*
         
-  other-modules:     Database.Design.Ampersand,
+  other-modules:     
+                     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
@@ -172,6 +173,5 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.RelBinGenBasics,
                      Database.Design.Ampersand.Prototype.RelBinGenSQL,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand
