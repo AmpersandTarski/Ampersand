@@ -122,7 +122,8 @@ getStaticFilesModuleContents =
                "                     }\n"++
                "\n"++
                "{-# NOINLINE allStaticFiles #-}\n" ++
-               "allStaticFiles =\n  [ "++ 
+               "allStaticFiles :: [StaticFile]\n" ++
+               "allStaticFiles =\n  [ " ++ 
                intercalate "\n  , " (staticFiles ++ staticFilesBinary) ++
                "\n  ]\n"
     }
