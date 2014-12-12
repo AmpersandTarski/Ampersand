@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Database.Design.Ampersand.ADL1 hiding (Association)
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
@@ -184,18 +184,24 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                          ]
                          | attr <- clAtts cl]
                        )
-        <> case fsLang fSpec of
-             Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
-             English -> para ( text (name cl) <> text " has the following associations: ")
-        <> orderedList [assocToRow assoc | assoc <- assocs oocd
-                         , assSrc assoc == clName cl || assTgt assoc == clName cl]
+        <> let asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl ] 
+           in  case asscs of
+                 [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
+                 [assoc] -> purposeAndMeaningOfAssoc assoc
+                 _       ->
+                   para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
+                   <> orderedList (map assocToRow asscs) 
        )
     where
+     purposeAndMeaningOfAssoc :: Association -> Blocks
+     purposeAndMeaningOfAssoc assoc =
+        purposes2Blocks (getOpts fSpec) (asspurp assoc) <>
+        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty )
+        
      assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
         (para.text.assrhr) assoc <>
-        purposes2Blocks (getOpts fSpec) (asspurp assoc) <>
-        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty )
+        purposeAndMeaningOfAssoc assoc
      {- <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
