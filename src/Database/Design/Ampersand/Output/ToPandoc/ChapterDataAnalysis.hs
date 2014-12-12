@@ -2,11 +2,9 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
-import Database.Design.Ampersand.FSpec.Motivations
 import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
@@ -20,7 +18,6 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
 chpDataAnalysis :: FSpec -> (Blocks,[Picture])
 chpDataAnalysis fSpec = (theBlocks, thePictures)
  where
-
   theBlocks
     =  chptHeader (fsLang fSpec) DataAnalysis  -- The header
     <> (case fsLang fSpec of
@@ -31,7 +28,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                                then  "We beginnen met "
                                else  "We beginnen met het classificatiemodel, gevolgd door "
                             <>  "een overzicht van alle relaties, die samen de basis vormen van de rest van deze analyse. "
-                            <>  "tenslotte volgen achtereenvolgend het logische- en technische gegevensmodel."
+                            <>  "Ten slotte volgen achtereenvolgend het logische- en technische gegevensmodel."
                              )
              English -> para (  "This chapter contains the result of the data analysis. "
                             <>  "It is structured as follows:"
@@ -48,11 +45,11 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
   thePictures
-    =  [classificationPicture | not summaryOnly]
+    =  (if not summaryOnly then maybe [] (\p->[p]) mClassificationPicture else [])
     ++ logicalDataModelPictures ++ technicalDataModelPictures
 
   daRulesBlocks                                          = daRulesSection            sectionLevel fSpec
-  (classificationBlocks    , classificationPicture     ) = classificationSection     sectionLevel fSpec
+  (classificationBlocks    , mClassificationPicture    ) = classificationSection     sectionLevel fSpec
   (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec
   (technicalDataModelBlocks, technicalDataModelPictures) = technicalDataModelSection sectionLevel fSpec
   sectionLevel = 2
@@ -61,22 +58,16 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   summaryOnly :: Bool
   summaryOnly = theme (getOpts fSpec) `elem` [StudentTheme]
 
-classificationSection :: Int -> FSpec -> (Blocks,Picture)
-classificationSection lev fSpec = (theBlocks,pict)
+classificationSection :: Int -> FSpec -> (Blocks, Maybe Picture)
+classificationSection _   fSpec | null (classes $ clAnalysis fSpec) = (mempty,    Nothing)
+classificationSection lev fSpec | otherwise                         = (theBlocks, Just pict)
  where
   theBlocks =
        header lev (case fsLang fSpec of
                     Dutch   ->  "Classificaties"
                     English ->  "Classifications"
                   )
-    <> content
-  content =
-    if null (classes classificationModel)
-    then para (case fsLang fSpec of
-              Dutch   ->  "Er zijn geen classificaties gedefinieerd."
-              English ->  "No classifications have been defined"
-              )
-    else para (case fsLang fSpec of
+    <> para (case fsLang fSpec of
               Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
                        <> (if canXRefer (getOpts fSpec)
                            then  "Deze is in figuur " <> xRefReference (getOpts fSpec) pict <> "weergegeven."
@@ -89,10 +80,6 @@ classificationSection lev fSpec = (theBlocks,pict)
                           )
             )
          <> para (showImage (getOpts fSpec) pict)
-
-   where
-  classificationModel :: ClassDiag
-  classificationModel = clAnalysis fSpec
 
   pict :: Picture
   pict = makePicture fSpec PTClassDiagram
