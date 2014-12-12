@@ -44,7 +44,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                              )
        )
     <> if summaryOnly then mempty else classificationBlocks
-    <> daBasicsBlocks
     <> daRulesBlocks
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
@@ -52,7 +51,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     =  [classificationPicture | not summaryOnly]
     ++ logicalDataModelPictures ++ technicalDataModelPictures
 
-  daBasicsBlocks                                         = daBasicsSection           sectionLevel fSpec
   daRulesBlocks                                          = daRulesSection            sectionLevel fSpec
   (classificationBlocks    , classificationPicture     ) = classificationSection     sectionLevel fSpec
   (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec
@@ -344,44 +342,6 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
                      )
    pict :: Picture
    pict = makePicture fSpec PTTechnicalDM
-
-daBasicsSection :: Int -> FSpec -> Blocks
--- | The function daBasicsSection lists the basic sentences that have been used in assembling the data model.
-daBasicsSection lev fSpec = theBlocks
- where
-  theBlocks =
-       header lev (case fsLang fSpec of
-                    Dutch   -> "Basiszinnen"
-                    English -> "Fact types"
-                  )
-   <> case fsLang fSpec of
-        Dutch   -> para ( "In deze paragraaf worden de basiszinnen opgesomd, die een rol spelen bij het ontwerp van de gegevensstructuur. "
-                       <> "Per basiszin wordt de naam en het bron- en doelconcept gegeven, alsook de eigenschappen van deze relatie."
-                        )
-        English -> para ( "This section enumerates the fact types, that have been used in the design of the datastructure. "
-                       <> "For each fact type its name, the source and target concept and the properties are documented."
-                        )
-   <> definitionList (map toDef (relsInThemes fSpec))
-    where
-      toDef :: Declaration -> (Inlines, [Blocks])
-      toDef d
-        = ( (math.showMath) d
-          , [   para linebreak
-             <> fromList (meaning2Blocks (fsLang fSpec) d)
-
-          <> para (   ((strong.text) (case fsLang fSpec of
-                                       Dutch   -> "Eigenschappen"
-                                       English -> "Properties"
-                                    ))
-                   <> text ": "
-                   <> if null (multiplicities d)
-                      then text "--"
-                      else inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d]
-                  )
-          <> para linebreak
-            ]
-
-          )
 
 daRulesSection :: Int -> FSpec -> Blocks
 daRulesSection lev fSpec = theBlocks
