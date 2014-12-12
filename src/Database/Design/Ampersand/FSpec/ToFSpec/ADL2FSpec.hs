@@ -433,6 +433,7 @@ quads opts rs
       makeCjcts :: Rule -> [Conjunct]
       makeCjcts rule = [Cjct { rc_int = i
                              , rc_rulename = name rule
+                             , rc_usr = r_usr rule
                              , rc_conjunct = expr
                              , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
                              }

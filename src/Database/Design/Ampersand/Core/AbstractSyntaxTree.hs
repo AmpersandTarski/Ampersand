@@ -331,6 +331,7 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
 
 data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
                      , rc_rulename   :: String -- the name of the rule
+                     , rc_usr        :: RuleOrigin
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving Show
