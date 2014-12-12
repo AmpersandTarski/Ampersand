@@ -1,12 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis
-where
+module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
+
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Data.List
 import Database.Design.Ampersand.Output.PandocAux
+import Data.List
+import System.FilePath
+
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
@@ -270,41 +272,41 @@ chpDiagnosis fSpec
                            (case rs>-rs' of
                               []  -> []
                               [r] -> [ Str "De bestaansreden van regel ", Emph [Str (name r)]
-                                     , Str (" op regelnummer "++ln r++" van bestand "++fn r)
+                                     , Str (" op regelnummer "++getLineNr r++" van bestand "++getFileName r)
                                      , Str " wordt niet uitgelegd. "
                                      ]
                               rls -> (upC . commaNLPandoc (Str "en")  )
                                         [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaNLPandoc (Str "en") nrs++
-                                                    [Str " van bestand "]++[(Str . locnm . head) cl])
+                                                    [Str " van bestand "]++[(Str . takeFileName . locnm . head) cl])
                                         | cl<-eqCl locnm (map origin rls)] ++
                                        [ Str " worden regels gedefinieerd, waarvan de bestaansreden niet wordt uitgelegd. " ]
                             ++
                             case rs'>-rs of
                               []  -> []
                               [r] -> [ Str "De betekenis van regel ", Emph [Str (name r)]
-                                     , Str (" op regelnummer "++ln r++" van bestand "++fn r)
+                                     , Str (" op regelnummer "++getLineNr r++" van bestand "++getFileName r)
                                      , Str " wordt uitgelegd in taal die door de computer is gegenereerd. "
                                      ]
                               rls -> (upC . commaNLPandoc (Str "en")  )
                                         [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaNLPandoc (Str "en") nrs++
-                                                    [Str " van bestand "]++[(Str . locnm . head) cl])
+                                                    [Str " van bestand "]++[(Str . takeFileName . locnm . head) cl])
                                         | cl<-eqCl locnm (map origin rls)] ++
                                        [ Str " staan regels, waarvan de betekenis wordt uitgelegd in taal die door de computer is gegenereerd. " ]
                             ++
                             case rs `isc` rs' of
                               []  -> []
                               [r] -> [ Str "Regel ", Emph [Str (name r)]
-                                     , Str (" op regelnummer "++ln r++" van bestand "++fn r++" wordt niet uitgelegd. ")
+                                     , Str (" op regelnummer "++getLineNr r++" van bestand "++getFileName r++" wordt niet uitgelegd. ")
                                      ]
                               rls -> (upC . commaNLPandoc (Str "en")  )
                                         [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaNLPandoc (Str "en") nrs++
-                                                    [Str " van bestand "]++[(Str . locnm . head) cl])
+                                                    [Str " van bestand "]++[(Str . takeFileName . locnm . head) cl])
                                         | cl<-eqCl locnm (map origin rls)] ++
                                        [ Str " worden regels gedefinieerd, zonder verdere uitleg. " ]
                            )
@@ -315,41 +317,41 @@ chpDiagnosis fSpec
                            ( case rs>-rs' of
                               []  -> []
                               [r] -> [ Str "The purpose of rule ", Emph [Str (name r)]
-                                     , Str (" on line "++ln r++" of file "++fn r)
+                                     , Str (" on line "++getLineNr r++" of file "++getFileName r)
                                      , Str " is not documented. "
                                      ]
                               rls -> (upC . commaEngPandoc (Str "and") )
                                         [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaEngPandoc (Str "and") nrs ++
-                                                    [Str " of file "]++[(Str . locnm . head) cl])
+                                                    [Str " of file "]++[(Str . takeFileName . locnm . head) cl])
                                         | cl<-eqCl locnm (map origin rls)] ++
                                        [ Str " rules are defined without documenting their purpose. " ]
                            ) ++
                            ( case rs'>-rs of
                               []  -> []
                               [r] -> [ Str "The meaning of rule ", Emph [Str (name r)]
-                                     , Str (" on line "++ln r++" of file "++fn r)
+                                     , Str (" on line "++getLineNr r++" of file "++getFileName r)
                                      , Str " is documented by means of computer generated language. "
                                      ]
                               rls -> (upC . commaEngPandoc (Str "and") )
                                         [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaEngPandoc (Str "and") nrs ++
-                                                    [Str " of file "]++[(Str . locnm . head) cl])
+                                                    [Str " of file "]++[(Str . takeFileName . locnm . head) cl])
                                         | cl<-eqCl locnm (map origin rls)] ++
                                        [ Str " rules are defined, the meaning of which is documented by means of computer generated language. " ]
                            ) ++
                            ( case rs `isc` rs' of
                               []  -> []
                               [r] -> [ Str "Rule ", Emph [Str (name r)]
-                                     , Str (" on line "++ln r++" of file "++fn r++" is not documented. ")
+                                     , Str (" on line "++getLineNr r++" of file "++getFileName r++" is not documented. ")
                                      ]
                               rls -> (upC . commaEngPandoc (Str "and") )
                                         [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaEngPandoc (Str "and") nrs ++
-                                                    [Str " of file "]++[(Str . locnm . head) cl])
+                                                    [Str " of file "]++[(Str . takeFileName . locnm . head) cl])
                                         | cl<-eqCl locnm (map origin rls)] ++
                                        [ Str " rules are defined without any explanation. " ]
                            )
@@ -370,8 +372,13 @@ chpDiagnosis fSpec
                        concat [udefrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
            upC (Str str':strs) = Str (upCap str'):strs
            upC str' = str'
-           fn r = locnm (origin r)
-           ln r = locln (origin r)
+
+           getFileName :: Traced a => a -> String
+           getFileName x = takeFileName . locnm . origin $ x 
+           
+           getLineNr :: Traced a => a -> String
+           getLineNr x = locln . origin $ x
+
            strconcat :: [Inline] -> Inline
            strconcat strs = (Str . concat) [ str' | Str str'<-strs]
 
