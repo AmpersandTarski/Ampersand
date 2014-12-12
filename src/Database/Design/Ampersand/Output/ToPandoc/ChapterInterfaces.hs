@@ -15,7 +15,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterInterfaces"
 
 chpInterfacesPics :: FSpec -> [Picture]
-chpInterfacesPics fSpec = []
+chpInterfacesPics _ = []
 
 chpInterfacesBlocks :: Int -> FSpec -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
@@ -55,7 +55,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       (if null $ ifcControls ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
-             bulletList [ plainText $ rc_rulename rule | rule <- ifcControls ifc]) <>
+              (bulletList . map plainText . nub) [rc_rulename conj | conj <- ifcControls ifc, rc_usr conj == UserDefined]) <>
       (if genFPAChap (getOpts fSpec)
        then (plain . strong . text) "Functiepunten:" <>
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
@@ -97,7 +97,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                   [ plainText $ "DEBUG: Props: ["++props++"]" | development (getOpts fSpec) ] ++
                   case editableRelM of
                     Nothing -> []
-                    Just (srcConcept, d, tgtConcept, isFlipped) -> 
+                    Just (_, d, _, isFlipped) -> 
                       [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
                       , plainText $ "DEBUG: showADL: " ++ showADL d
                       ] 
@@ -119,7 +119,6 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 
             iExp = conjNF (getOpts fSpec) $ objctx object
                     
-            fieldType = name (target iExp)
             subInterfaceDocs = docMSubInterface editableRels roles hierarchy (objmsub object)
 
     docMSubInterface :: [Expression] -> [String] -> [Int] -> Maybe SubInterface -> [Blocks]
@@ -144,8 +143,8 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       ]
       
     mkTableRows :: Entity -> [[Blocks]]
-    mkTableRows (Entity nm dpth expr card def refTp props) = 
-      [plain $ (fromList $ replicate (dpth*3) nbsp) <> (if dpth == 0 then strong else id) (text nm) , plainText card, plainText expr, plainText def]
+    mkTableRows (Entity nm dpth xpr card df _ props) = 
+      [plain $ (fromList $ replicate (dpth*3) nbsp) <> (if dpth == 0 then strong else id) (text nm) , plainText card, plainText xpr, plainText df]
       : concatMap mkTableRows props
       where nbsp :: Inline
             nbsp = RawInline (Format "latex") "~"
@@ -172,7 +171,7 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
                   , depth = dpth
                   , expr = showADL $ objctx objDef
                   , cardinality = card $ objctx objDef
-                  , definition  = def $ objctx objDef
+                  , definition  = defn $ objctx objDef
                   , refType     = name (target $ objctx objDef)
                   , properties  =
                       case objmsub objDef of
@@ -182,7 +181,7 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
                   }
         where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
   
-              def rel = case concDefs fSpec (target rel) of
+              defn rel = case concDefs fSpec (target rel) of
                             Cd {cddef=def'} : _ | def' /= "" -> def'
                             _                                -> "** NO DEFINITION **"
 
@@ -196,10 +195,10 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
 showRoles :: [String] -> String
 showRoles roles = case roles of
                     [] -> "alle rollen"
-                    [role] -> "de rol " ++ quoteName role
-                    [role1,role2] -> "de rollen " ++ quoteName role1 ++ " en " ++ quoteName role2
-                    (role1:roles) -> "de rollen " ++ quoteName role1 ++ 
-                                         (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map quoteName roles)
+                    [rl] -> "de rol " ++ quoteName rl
+                    [rl1,rl2] -> "de rollen " ++ quoteName rl1 ++ " en " ++ quoteName rl2
+                    (rl1:rls) -> "de rollen " ++ quoteName rl1 ++ 
+                                 (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map quoteName rls)
 
 quoteName :: String -> String
 quoteName role = "``"++role++"''"
