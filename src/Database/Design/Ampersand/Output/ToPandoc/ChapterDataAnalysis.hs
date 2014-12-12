@@ -355,7 +355,7 @@ daRulesSection lev fSpec = theBlocks
                ( NL "Deze specificatie bevat geen procesregels."
                , EN "This specification does not contain any process rules.")
                (NL "Procesregel", EN "Process rule")
-               processRules
+               prcssRules
     , docRules (NL "Invarianten", EN "Invariants")
                ( NL "TODO: uitleg invarianten"
                , EN "TODO: explain invariants")
@@ -363,18 +363,11 @@ daRulesSection lev fSpec = theBlocks
                , EN "This specification does not contain any invariants.")
                (NL "Invariant", EN "Invariant")
                userInvariants
-    , docRules (NL "Afgeleide regels", EN "Derived rules") -- TODO: maybe call these "derived invariants" instead?
-               ( NL "TODO: uitleg afgeleide regels"
-               , EN "TODO: explain derived rules")
-               ( NL "Deze specificatie bevat geen afgeleide regels."
-               , EN "This specification does not contain any derived rules.")
-               (NL "Afgeleide regel", EN "Derived rule") $
-               grules fSpec
     ]
-  (processRules, userInvariants) = partition isSignal $ vrules fSpec
+  (prcssRules, userInvariants) = partition isSignal $ vrules fSpec
   docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
-  docRules _ _ noRules _       [] = para . text $ l noRules
-  docRules title intro noRules heading rules = mconcat $
+  docRules _     _     noRules _       []    = para . text $ l noRules
+  docRules title intro _       heading rules = mconcat $
     [ header (lev+1) . text $ l title 
     , para . text $ l intro
     ] ++
@@ -385,11 +378,11 @@ daRulesSection lev fSpec = theBlocks
      [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
      , fromList $ meaning2Blocks (fsLang fSpec) rule
      , if showPredExpr (getOpts fSpec)
-       then let pred = toPredLogic rule
+       then let predicate = toPredLogic rule
             in  if fspecFormat (getOpts fSpec) == Frtf then -- todo: bit hacky to check format here, but otherwise we need a major refactoring
-                  plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf pred)) 
+                   plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                 else
-                  fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex pred)
+                  fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex predicate)
        else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
             (plain . code $ showADL (rrexp rule))
      , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
