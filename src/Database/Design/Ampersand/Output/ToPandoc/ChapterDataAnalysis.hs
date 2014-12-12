@@ -366,14 +366,17 @@ daRulesSection lev fSpec = theBlocks
      , fromList $ meaning2Blocks (fsLang fSpec) rule
      , if showPredExpr (getOpts fSpec)
        then let predicate = toPredLogic rule
-            in  if fspecFormat (getOpts fSpec) == Frtf then -- todo: bit hacky to check format here, but otherwise we need a major refactoring
+            in  if format == Frtf then
                    plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                 else
                   fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex predicate)
-       else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
-            (plain . code $ showADL (rrexp rule))
+       else if format == FLatex
+            then fromList $ pandocEquation (showMath rule)
+            else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
+                 (plain . code $ showADL (rrexp rule))
      , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
      ]
+    where format = fspecFormat (getOpts fSpec) -- todo: bit hacky to use the output format here, but otherwise we need a major refactoring
   
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
