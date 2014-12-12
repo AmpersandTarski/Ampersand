@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
-where
+module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
+
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
@@ -119,13 +120,29 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                 _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
                                   <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
                              )
+     <> conceptTable
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+
+
+  -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l lstr = localize (fsLang fSpec) lstr
 
   pict :: Picture
   pict = makePicture fSpec PTLogicalDM
 
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec
+
+  conceptTable :: Blocks
+  conceptTable = simpleTable [ plainText $ l (NL "Type", EN "Type"), plainText $ l (NL "Betekenis", EN "Meaning")
+                             , plainText $ l (NL "Technisch type", EN "Technical type") ] $
+                             [ [ plainText $ name c
+                               , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
+                               , if c `elem` ooCpts oocd then plainText "Sleutel" else mempty
+                               ]
+                             | c <- allConcepts fSpec
+                             ]
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
