@@ -153,8 +153,8 @@ makePicture fSpec pr =
             PTSingleRule{}   -> "0.7"
             PTConcept{}      -> "0.7"
             PTFinterface{}   -> "0.7"
-            PTLogicalDM    -> "0.7"
-            PTTechnicalDM  -> "0.7"
+            PTLogicalDM    -> "1.2"
+            PTTechnicalDM  -> "1.2"
    graphVizCmdForConceptualGraph = Sfdp
 
 pictureID :: PictureReq -> String
