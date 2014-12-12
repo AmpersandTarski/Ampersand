@@ -76,8 +76,8 @@ chpProcessAnalysis lev fSpec
                   English -> RawInline (Format "latex") "Role&Rule\\\\ \\hline\n"
                ]++
                [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
-                       [ role++" & "++name r++
-                         concat[ "\\\\\n   &"++name rul | rul<-map snd (tail rrClass)]
+                       [ latexEscShw role++" & "++latexEscShw (name r)++
+                         concat[ "\\\\\n   &"++latexEscShw  (name rul) | rul<-map snd (tail rrClass)]
                        | rrClass<-eqCl fst (fRoleRuls fSpec)
                        , let role=fst (head rrClass), let r=snd (head rrClass)
                        ]
