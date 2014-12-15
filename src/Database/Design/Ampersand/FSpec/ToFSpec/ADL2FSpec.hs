@@ -435,7 +435,7 @@ quads opts rs
    where
    -- The function makeCjcts yields an expression which has constructor EUni in every case.
       makeCjcts :: Rule -> [Conjunct]
-      makeCjcts rule = [Cjct { rc_int = i
+      makeCjcts rule = [Cjct { rc_id = "conj_"++rrnm rule++"_"++show i
                              , rc_orgRule = rule
                              , rc_conjunct = expr
                              , rc_dnfClauses = allShifts opts (expr2dnfClause expr)

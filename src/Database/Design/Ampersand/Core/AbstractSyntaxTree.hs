@@ -175,7 +175,8 @@ instance Association Rule where
 
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
-data Conjunct = Cjct { rc_int        :: Int    -- the index number of the expression for the rule. (must be unique for the rule)
+data Conjunct = Cjct { rc_id         :: String -- string that identifies this conjunct ('id' rather than 'name', because 
+                                               -- this is an internal id that has no counterpart at the ADL level)
                      , rc_orgRule    :: Rule   -- The rule from which this conjunct originated
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]

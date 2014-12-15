@@ -230,7 +230,7 @@ generateConjuncts fSpec =
   addToLastLine ";"
      (indent 4
        (blockParenthesize  "(" ")" ","
-         [ [ mkConjunctName conj ++ " =>"
+         [ [ rc_id conj ++ " =>"
            , "  array ( 'ruleName'   => "++(showPhpStr . rrnm . rc_orgRule)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
            ( if verboseP (getOpts fSpec)
@@ -256,10 +256,6 @@ generateConjuncts fSpec =
     
 uniRuleNames :: FSpec -> [String]
 uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
-
--- note the similarity with showHSName :: Conjunct -> String
-mkConjunctName :: Conjunct -> String
-mkConjunctName conj = showPhpStr ("cjct_"++rrnm (rc_orgRule conj)++"_"++show (rc_int conj))
 
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
@@ -325,8 +321,8 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map mkConjunctName invConjs)++")"
-          , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map mkConjunctName sgnlConjs)++")"
+          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map rc_id invConjs)++")"
+          , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map rc_id sgnlConjs)++")"
           ]
           where (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) 
                   [ conj
