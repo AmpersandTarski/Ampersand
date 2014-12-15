@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Prototype.Installer
   (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
-   createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historyTableSpec,sessionTableSpec,TableSpec) where
+   createTablesPHP,populateTablesPHP,plug2TableSpecl,dropplug,historyTableSpec,sessionTableSpec,TableSpec) where
 
 import Data.List
 import Database.Design.Ampersand
@@ -159,7 +159,7 @@ createTablesPHP fSpec =
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
         ]
         -- Create all plugs
-        ++ concatMap (createTablePHP . plug2tbl) [p | InternalPlug p <- plugInfos fSpec]
+        ++ concatMap (createTablePHP . plug2TableSpecl) [p | InternalPlug p <- plugInfos fSpec]
 
 --                 (headerCmmnt,tableName,crflds,engineOpts)
 type TableSpec = (String,String,[String],String)
@@ -180,8 +180,8 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   , "}"
   , "" ]
 
-plug2tbl :: PlugSQL -> TableSpec
-plug2tbl plug
+plug2TableSpecl :: PlugSQL -> TableSpec
+plug2TableSpecl plug
  = ( unlines $ commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
    , name plug
    , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
@@ -203,7 +203,7 @@ sessionTableSpec
    , "__SessionTimeout__"
    , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , ", `lastAccess` BIGINT NOT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8")
+   , "InnoDB DEFAULT CHARACTER SET UTF8" )
 
 historyTableSpec :: TableSpec
 historyTableSpec
