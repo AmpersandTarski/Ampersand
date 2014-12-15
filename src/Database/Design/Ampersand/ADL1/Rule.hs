@@ -55,7 +55,6 @@ rulefromProp prp d@Sgn{} =
         , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
         , r_usr = Multiplicity
         , isSignal = False
-        , srrel = d{decnm=show prp++name d}
         }
        where
         s = name (source d)

@@ -160,7 +160,6 @@ data Rule =
         , r_env :: String                  -- ^ Name of pattern in which it was defined.
         , r_usr :: RuleOrigin              -- ^ Where does this rule come from?
         , isSignal :: Bool                    -- ^ True if this is a signal; False if it is an invariant
-        , srrel :: Declaration             -- ^ the signal relation
         }
 instance Eq Rule where
   r==r' = rrnm r==rrnm r'

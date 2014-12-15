@@ -344,13 +344,11 @@ instance ShowHS FSpec where
     ) ++
     (if null (vrules   fSpec ) then "" else
      "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vrules     fSpec ]++"\n"++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-map srrel (vrules fSpec)]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vrules     fSpec ]++"\n"
     )++
     (if null (grules   fSpec ) then "" else
      "\n -- *** Generated rules (total: "++(show.length.grules) fSpec++" rules) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-grules     fSpec ]++"\n"++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-map srrel (grules fSpec)]++"\n"
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-grules     fSpec ]++"\n"
     )++
     (if null (vconjs fSpec ) then "" else
      "\n -- *** Conjuncts (total: "++(show.length.vconjs) fSpec++" conjuncts) ***: "++
@@ -573,7 +571,7 @@ instance ShowHSName Rule where
  showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
 instance ShowHS Rule where
- showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
+ showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
    = intercalate indent
      ["Ru{ rrnm   = " ++ show (rrnm   r)
      ,"  , rrexp  = -- " ++ showADL (rrexp  r) ++ indent++"             " ++ showHS opts (indent++"             ") (rrexp  r)
@@ -588,7 +586,6 @@ instance ShowHS Rule where
      ,"  , r_env  = " ++ show (r_env  r)
      ,"  , r_usr  = " ++ show (r_usr  r)
      ,"  , isSignal = " ++ show (isSignal  r)
-     ,"  , srrel  = " ++ showHSName (srrel  r)
      ,"  }"
      ]
 

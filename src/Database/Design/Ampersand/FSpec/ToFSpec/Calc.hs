@@ -326,7 +326,6 @@ derivMono expr -- preconditie van actie a
                                     , r_env = ""
                                     , r_usr = Multiplicity
                                     , isSignal = fatal 336 $ "erroneous reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
-                                    , srrel = fatal 337 $ "erroneous reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                     }
                  | otherwise   = Ru { rrnm  = ""
                                     , rrfps = Origin "rule generated for not(isTrue neg') by Calc"
@@ -341,7 +340,6 @@ derivMono expr -- preconditie van actie a
                                     , r_env = ""
                                     , r_usr = Multiplicity
                                     , isSignal = fatal 352 $ "illegal reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
-                                    , srrel = fatal 353 $ "illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                     }
   showOp expr' = case expr' of
                   EEqu{} -> "="
