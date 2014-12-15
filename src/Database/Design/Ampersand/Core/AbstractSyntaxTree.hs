@@ -327,9 +327,8 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
                                 [ifc] -> ifc
                                 _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
 
-data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
-                     , rc_rulename   :: String -- the name of the rule
-                     , rc_usr        :: RuleOrigin
+data Conjunct = Cjct { rc_int        :: Int    -- the index number of the expression for the rule. (must be unique for the rule)
+                     , rc_orgRule    :: Rule   -- The rule from which this conjunct originated
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving Show

@@ -101,7 +101,7 @@ makeFSpec opts context = fSpec
            , ifcControls = [ conj
                            | conj<-allConjs
                            , (not.null) (ifcParams ifc `isc` primsMentionedIn (rc_conjunct conj))
-                           , take 3 (rc_rulename conj) `notElem` ["UNI", "INJ"]
+                           , take 3 (rrnm $ rc_orgRule conj) `notElem` ["UNI", "INJ"]
                            ]
            }
         where editables = [d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc]
@@ -436,8 +436,7 @@ quads opts rs
    -- The function makeCjcts yields an expression which has constructor EUni in every case.
       makeCjcts :: Rule -> [Conjunct]
       makeCjcts rule = [Cjct { rc_int = i
-                             , rc_rulename = name rule
-                             , rc_usr = r_usr rule
+                             , rc_orgRule = rule
                              , rc_conjunct = expr
                              , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
                              }

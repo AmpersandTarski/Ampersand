@@ -226,13 +226,13 @@ instance ShowHS DnfClause where
        ]
 
 instance ShowHSName Conjunct where
- showHSName x = haskellIdentifier ("cjct_"++rc_rulename x++"_"++show (rc_int x))
+ showHSName x = haskellIdentifier ("cjct_"++rrnm (rc_orgRule x)++"_"++show (rc_int x))
 
 instance ShowHS Conjunct where
  showHS opts indent x
    = intercalate (indent ++"    ")
        [   "Cjct{ rc_int        = " ++ show (rc_int x)
-       ,       ", rc_rulename   = " ++ show (rc_rulename x)
+       ,       ", rc_orgRule    = " ++ showHSName (rc_orgRule x)
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"

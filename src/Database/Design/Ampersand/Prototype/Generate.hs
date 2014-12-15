@@ -231,7 +231,7 @@ generateConjuncts fSpec =
      (indent 4
        (blockParenthesize  "(" ")" ","
          [ [ mkConjunctName conj ++ " =>"
-           , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
+           , "  array ( 'ruleName'   => "++(showPhpStr . rrnm . rc_orgRule)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
            ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
@@ -248,8 +248,8 @@ generateConjuncts fSpec =
            ]
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
-         , rc_rulename conj `notElem` uniRuleNames fSpec
-         , rc_rulename conj `elem` map name (invars fSpec)
+         , rrnm (rc_orgRule conj) `notElem` uniRuleNames fSpec
+         , not . isSignal $ rc_orgRule conj
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
@@ -260,7 +260,7 @@ uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsIn
 
 -- note the similarity with showHSName :: Conjunct -> String
 mkConjunctName :: Conjunct -> String
-mkConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
+mkConjunctName conj = showPhpStr ("cjct_"++rrnm (rc_orgRule conj)++"_"++show (rc_int conj))
 
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
@@ -329,8 +329,8 @@ generateInterface fSpec interface =
           , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map mkConjunctName invConjs)++")"
           ]
           where invConjs = [ conj | conj <- ifcControls interface
-                                  , rc_rulename conj `notElem` uniRuleNames fSpec
-                                  , rc_rulename conj `elem` map name (invars fSpec) ] 
+                                  , rrnm (rc_orgRule conj) `notElem` uniRuleNames fSpec
+                                  , rrnm (rc_orgRule conj) `elem` map name (invars fSpec) ] 
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
