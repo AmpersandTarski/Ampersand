@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Prototype.Installer
   (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
-   createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
+   createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historyTableSpec,sessionTableSpec,TableSpec) where
 
 import Data.List
 import Database.Design.Ampersand
@@ -49,7 +49,7 @@ installerDBstruct fSpec = unlines $
       ]
 
 installerTriggers :: FSpec -> String
-installerTriggers fSpec = unlines $
+installerTriggers _ = unlines $
       [ "<?php"
       , ""
       , ""
@@ -72,7 +72,7 @@ installerTriggers fSpec = unlines $
       , ""
       , "}"
       , "?>"
-      ]
+      ] {-
   where
       trigger tablename query
        = [ "// Trigger for DELETE Atom or Pair in function in Concept table"
@@ -82,7 +82,7 @@ installerTriggers fSpec = unlines $
          , "    BEGIN "
          , "        DELETE FROM <other table> WHERE <other table>.<column name> = OLD.<column name>; "
          , "    END\";"
-         ]
+         ] -}
 
 installerDefPop :: FSpec -> String
 installerDefPop fSpec = unlines $
@@ -138,28 +138,14 @@ dumpPopulationToADL fSpec = unlines $
       , "?>"
       ]
 
+
 createTablesPHP :: FSpec ->[String]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
-        , "// Session timeout table"
-        , "if($columns = mysqli_query($DB_link, "++showPhpStr "SHOW COLUMNS FROM `__SessionTimeout__`"++")){"
-        , "    mysqli_query($DB_link, "++showPhpStr "DROP TABLE `__SessionTimeout__`"++");"
-        , "}"
-        ] ++ createTablePHP 21 sessiontbl ++
-        [ "if($err=mysqli_error($DB_link)) {"
-        , "  $error=true; echo $err.'<br />';"
-        , "}"
-        , ""
-        , "// Timestamp table"
-        , "if($columns = mysqli_query($DB_link, "++showPhpStr "SHOW COLUMNS FROM `__History__`"++")){"
-        , "    mysqli_query($DB_link, "++showPhpStr "DROP TABLE `__History__`"++");"
-        , "}"
-        ] ++ createTablePHP 21 historytbl ++
-        [ "if($err=mysqli_error($DB_link)) {"
-        , "  $error=true; echo $err.'<br />';"
-        , "}"
-        , "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
+        ] ++
+        concatMap createTablePHP [ sessionTableSpec, historyTableSpec ] ++
+        [ "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
         , "$microseconds = substr($time[0], 2,6);"
         , "$seconds =$time[1].$microseconds;"
         , "date_default_timezone_set(\"Europe/Amsterdam\");"
@@ -171,24 +157,62 @@ createTablesPHP fSpec =
         , "}"
         , ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
+        ]
+        -- Create all plugs
+        ++ concatMap (createTablePHP . plug2tbl) [p | InternalPlug p <- plugInfos fSpec]
 
-        -- The next statements will drop each table if exists:
-        , "if(true){"
-        ] ++ indentBlock 2 (concatMap checkPlugexists (plugInfos fSpec))
-        ++ ["}"]
+--                 (headerCmmnt,tableName,crflds,engineOpts)
+type TableSpec = (String,String,[String],String)
 
-        -- The next statements will create all plugs
-        ++ concatMap createPlugPHP [p | InternalPlug p <- plugInfos fSpec]
-  where
-    checkPlugexists (ExternalPlug _) = []
-    checkPlugexists (InternalPlug plug)
-         = [ "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM "++quote (name plug)++"")++")){"
-           , "  mysqli_query($DB_link, "++showPhpStr (dropplug plug)++");" --todo: incremental behaviour
-           , "}" ]
-    createPlugPHP plug
-         = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
-           ++ createTablePHP 17 (plug2tbl plug)
-           ++ ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+createTablePHP :: TableSpec -> [String]
+createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
+  [ headerCmmnt
+  -- Drop table if it already exists
+  , "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM `"++tableName++"`")++")){"
+  , "    mysqli_query($DB_link, "++showPhpStr ("DROP TABLE `"++tableName++"`")++");"
+  , "}"
+  ] ++
+  [ "mysqli_query($DB_link,\"CREATE TABLE `"++tableName++"`"] ++
+  indentBlock 20 crflds ++
+  [replicate 23 ' ' ++ ") ENGINE=" ++engineOpts ++ "\");"]++
+  [ "if($err=mysqli_error($DB_link)) {"
+  , "  $error=true; echo $err.'<br />';"
+  , "}"
+  , "" ]
+
+plug2tbl :: PlugSQL -> TableSpec
+plug2tbl plug
+ = ( unlines $ commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+   , name plug
+   , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
+     | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
+      case (plug, (head.plugFields) plug) of
+           (BinSQL{}, _)   -> []
+           (_,    primFld) ->
+                case flduse primFld of
+                   TableKey isPrim _ -> [ ", "++ (if isPrim then "PRIMARY " else "")
+                                          ++ "KEY (`"++fldname primFld++"`)"
+                                        ]
+                   ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
+                   PlainAttr     -> []
+   , "InnoDB DEFAULT CHARACTER SET UTF8")
+
+sessionTableSpec :: TableSpec
+sessionTableSpec
+ = ( "// Session timeout table"
+   , "__SessionTimeout__"
+   , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
+     , ", `lastAccess` BIGINT NOT NULL" ]
+   , "InnoDB DEFAULT CHARACTER SET UTF8")
+
+historyTableSpec :: TableSpec
+historyTableSpec
+ = ( "// Timestamp table"
+   , "__History__"
+   , [ "( `Seconds` VARCHAR(255) DEFAULT NULL"
+     , ", `Date` VARCHAR(255) DEFAULT NULL" ]
+   , "InnoDB DEFAULT CHARACTER SET UTF8" )
+
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
@@ -207,44 +231,6 @@ populateTablesPHP fSpec =
      where
         valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
 
--- (CREATE TABLE name, fields, engine)
-type CreateTable = (String,[String],String)
-
-createTablePHP :: Int -> CreateTable -> [String]
-createTablePHP i (crtbl,crflds,crengine)
-         = [ "mysqli_query($DB_link,\""++ crtbl]
-           ++ indentBlock i crflds
-           ++ [replicate i ' ' ++ crengine ++ "\");"]
-
-plug2tbl :: PlugSQL -> CreateTable
-plug2tbl plug
- = ( "CREATE TABLE "++quote (name plug)
-   , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
-     | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
-      case (plug, (head.plugFields) plug) of
-           (BinSQL{}, _)   -> []
-           (_,    primFld) ->
-                case flduse primFld of
-                   TableKey isPrim _ -> [ ", "++ (if isPrim then "PRIMARY " else "")
-                                          ++ "KEY (`"++fldname primFld++"`)"
-                                        ]
-                   ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
-                   PlainAttr     -> []
-   , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 dropplug :: PlugSQL -> String
 dropplug plug = "DROP TABLE "++quote (name plug)++""
-
-historytbl :: CreateTable
-historytbl
- = ( "CREATE TABLE `__History__`"
-   , [ "( `Seconds` VARCHAR(255) DEFAULT NULL"
-     , ", `Date` VARCHAR(255) DEFAULT NULL"]
-   , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
-
-sessiontbl :: CreateTable
-sessiontbl
- = ( "CREATE TABLE `__SessionTimeout__`"
-   , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
-     , ", `lastAccess` BIGINT NOT NULL"]
-   , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
