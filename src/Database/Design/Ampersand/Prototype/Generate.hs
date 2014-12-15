@@ -230,7 +230,7 @@ generateConjuncts fSpec =
   addToLastLine ";"
      (indent 4
        (blockParenthesize  "(" ")" ","
-         [ [ rc_id conj ++ " =>"
+         [ [ showPhpStr (rc_id conj) ++ " =>"
            , "  array ( 'ruleName'   => "++(showPhpStr . rrnm . rc_orgRule)   conj -- the name of the rule that gave rise to this conjunct 
            ] ++
            ( if verboseP (getOpts fSpec)
@@ -321,8 +321,8 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map rc_id invConjs)++")"
-          , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map rc_id sgnlConjs)++")"
+          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map (showPhpStr . rc_id) invConjs)++")"
+          , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map (showPhpStr . rc_id) sgnlConjs)++")"
           ]
           where (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) 
                   [ conj
