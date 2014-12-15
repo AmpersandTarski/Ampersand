@@ -32,8 +32,8 @@ makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context = fSpec
  where
      fSpec =
-         FSpec { fsName       = name context
-              , getOpts        = opts
+        FSpec { fsName       = name context
+              , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
@@ -81,7 +81,8 @@ makeFSpec opts context = fSpec
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , initialPops  = initialpops
-              , allViolations = [(r,vs) |r<-allrules, not (isSignal r), let vs = ruleviolations (gens context) initialpops r,  not (null vs)]
+              , allViolations = allVltns
+              , allSignals    = allSgnls
               }
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context) ++ map name allProcs
@@ -114,6 +115,9 @@ makeFSpec opts context = fSpec
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)
+
+     (allSgnls, allVltns) = partition (isSignal . fst) 
+       [ (r,vs) | r <- allrules, let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
 
      allQuads = quads opts allrules
      allConjs = nub (concatMap qConjuncts allQuads)
