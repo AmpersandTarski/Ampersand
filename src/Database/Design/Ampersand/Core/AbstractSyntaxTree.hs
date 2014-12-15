@@ -176,6 +176,17 @@ instance Association Rule where
 
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
+data Conjunct = Cjct { rc_int        :: Int    -- the index number of the expression for the rule. (must be unique for the rule)
+                     , rc_orgRule    :: Rule   -- The rule from which this conjunct originated
+                     , rc_conjunct   :: Expression
+                     , rc_dnfClauses :: [DnfClause]
+                     } deriving Show
+
+data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+
+instance Eq Conjunct where
+ rc==rc' = rc_conjunct rc==rc_conjunct rc'
+
 data Declaration =
   Sgn { decnm :: String     -- ^ the name of the declaration
       , decsgn :: Sign       -- ^ the source and target concepts of the declaration
@@ -326,17 +337,6 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
                                 []    -> fatal 327 $ "getInterface by name: no interfaces named "++show nm
                                 [ifc] -> ifc
                                 _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
-
-data Conjunct = Cjct { rc_int        :: Int    -- the index number of the expression for the rule. (must be unique for the rule)
-                     , rc_orgRule    :: Rule   -- The rule from which this conjunct originated
-                     , rc_conjunct   :: Expression
-                     , rc_dnfClauses :: [DnfClause]
-                     } deriving Show
-
-data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
-
-instance Eq Conjunct where
- rc==rc' = rc_conjunct rc==rc_conjunct rc'
  
 objAts :: ObjectDef -> [ObjectDef]
 objAts obj
