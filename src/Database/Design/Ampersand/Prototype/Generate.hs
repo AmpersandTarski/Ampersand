@@ -248,8 +248,7 @@ generateConjuncts fSpec =
            ]
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
-         , rrnm (rc_orgRule conj) `notElem` uniRuleNames fSpec
-         , not . isSignal $ rc_orgRule conj
+         , not (rrnm (rc_orgRule conj) `elem` uniRuleNames fSpec && not (isSignal $ rc_orgRule conj)) -- don't include UNI conjuncts for invariants 
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
@@ -327,10 +326,14 @@ generateInterface fSpec interface =
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
           , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map mkConjunctName invConjs)++")"
+          , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map mkConjunctName sgnlConjs)++")"
           ]
-          where invConjs = [ conj | conj <- ifcControls interface
-                                  , rrnm (rc_orgRule conj) `notElem` uniRuleNames fSpec
-                                  , rrnm (rc_orgRule conj) `elem` map name (invars fSpec) ] 
+          where (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) 
+                  [ conj
+                  | conj <- ifcControls interface
+                  , not (rrnm (rc_orgRule conj) `elem` uniRuleNames fSpec && not (isSignal $ rc_orgRule conj)) 
+                  -- don't include UNI conjuncts for invariants
+                  ] 
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
