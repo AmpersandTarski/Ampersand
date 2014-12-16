@@ -4,8 +4,8 @@ module Database.Design.Ampersand.Prototype.Installer
 
 import Data.List
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes,phpIndent,showPhpStr, quote, sqlAtomQuote)
-import Database.Design.Ampersand.Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
+import Database.Design.Ampersand.Prototype.RelBinGenBasics
+import Database.Design.Ampersand.Prototype.RelBinGenSQL
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Installer"
@@ -144,7 +144,7 @@ createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
         ] ++
-        concatMap createTablePHP [ sessionTableSpec, historyTableSpec ] ++
+        concatMap createTablePHP [ sessionTableSpec, signalTableSpec, historyTableSpec ] ++
         [ "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
         , "$microseconds = substr($time[0], 2,6);"
         , "$seconds =$time[1].$microseconds;"
@@ -164,6 +164,9 @@ createTablesPHP fSpec =
 --                 (headerCmmnt,tableName,crflds,engineOpts)
 type TableSpec = (String,String,[String],String)
 
+getTableName :: TableSpec -> String
+getTableName (_,nm,_,_) = nm
+
 createTablePHP :: TableSpec -> [String]
 createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   [ headerCmmnt
@@ -173,7 +176,7 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   , "}"
   ] ++
   [ "mysqli_query($DB_link,\"CREATE TABLE `"++tableName++"`"] ++
-  indentBlock 20 crflds ++
+  [ replicate 23 ' ' ++ [pref] ++ " " ++ fld | (pref, fld) <- zip ('(' : repeat ',') crflds ] ++
   [replicate 23 ' ' ++ ") ENGINE=" ++engineOpts ++ "\");"]++
   [ "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
@@ -184,13 +187,13 @@ plug2TableSpecl :: PlugSQL -> TableSpec
 plug2TableSpecl plug
  = ( unlines $ commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
    , name plug
-   , [ comma: " "++quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
-     | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]++
+   , [ quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
+     | f <- plugFields plug ]++
       case (plug, (head.plugFields) plug) of
            (BinSQL{}, _)   -> []
            (_,    primFld) ->
                 case flduse primFld of
-                   TableKey isPrim _ -> [ ", "++ (if isPrim then "PRIMARY " else "")
+                   TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
                                           ++ "KEY (`"++fldname primFld++"`)"
                                         ]
                    ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
@@ -201,23 +204,40 @@ sessionTableSpec :: TableSpec
 sessionTableSpec
  = ( "// Session timeout table"
    , "__SessionTimeout__"
-   , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
-     , ", `lastAccess` BIGINT NOT NULL" ]
+   , [ "`SESSION` VARCHAR(255) UNIQUE NOT NULL"
+     , "`lastAccess` BIGINT NOT NULL" ]
+   , "InnoDB DEFAULT CHARACTER SET UTF8" )
+
+signalTableSpec :: TableSpec
+signalTableSpec
+ = ( "// Signal table"
+   , "__AllSignals__"
+   , [ "`src` VARCHAR(255) NOT NULL"
+     , "`tgt` VARCHAR(255) NOT NULL"
+     , "`rule` VARCHAR(255) NOT NULL" ]
    , "InnoDB DEFAULT CHARACTER SET UTF8" )
 
 historyTableSpec :: TableSpec
 historyTableSpec
  = ( "// Timestamp table"
    , "__History__"
-   , [ "( `Seconds` VARCHAR(255) DEFAULT NULL"
-     , ", `Date` VARCHAR(255) DEFAULT NULL" ]
+   , [ "`Seconds` VARCHAR(255) DEFAULT NULL"
+     , "`Date` VARCHAR(255) DEFAULT NULL" ]
    , "InnoDB DEFAULT CHARACTER SET UTF8" )
-
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
-    concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
+  fillSignalTable ++
+  concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
+    fillSignalTable =[ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (getTableName signalTableSpec)
+                                                           ++" (`src`, `tgt`, `rule`)"
+                                                           ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") 
+                                                               [ "(" ++sqlAtomQuote src++", "++sqlAtomQuote tgt++", "++sqlAtomQuote (name rule)++")" | (rule, pairs) <- allSignals fSpec, (src, tgt) <- pairs]
+                                                           ++phpIndent 16 )
+                                        ++");"
+                     , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+    
     populatePlugPHP plug
          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
                [] -> []
