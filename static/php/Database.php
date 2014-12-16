@@ -304,7 +304,7 @@ function checkRules($ruleOrConjunctNames, $rulesAreConjuncts) {
       $ruleName = $conjunct['ruleName'];
       $rule = $allRules[$ruleName]; // and use the rule that gave rise to this conjunct for everything else
       emitLog('Checking conjunct: ' . $ruleOrConjunctName);
-      emitLog('Coming from  rule: ' . $ruleName);
+      emitLog('Coming from rule: ' . $ruleName);
     } else {
       $ruleName = $ruleOrConjunctName;
       $rule = $allRules[$ruleName];
@@ -393,6 +393,55 @@ function checkRules($ruleOrConjunctNames, $rulesAreConjuncts) {
   }
   return $allRulesHold;
 }
+
+// TODO: add ExecEngine support
+function reportSignals($roleNr) {
+  global $allRoles;
+  global $allRules;
+
+  $allRoleRules = array ();
+
+  if ($roleNr == -1) { // if no role is selected, evaluate the rules for all roles
+    for ($r = 0; $r < count($allRoles); $r++) { 
+      if ($allRoles[$r]['name'] != 'DATABASE') { // filter rules for role 'DATABASE', these will be handled by runAllProcedures() 
+        $allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
+      }
+    }
+    $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
+  } else {
+    $role = $allRoles[$roleNr];
+    $allRoleRules = $role['ruleNames'];
+  }
+  
+  //emitAmpersandLog('$allRoleRules: '.print_r($allRoleRules,true));
+  foreach ($allRoleRules as $ruleName) {
+    //emitAmpersandLog("Rule: $ruleName");
+    $rule = $allRules[$ruleName];
+    if (!$rule)
+      error("Rule \"$ruleName\" does not exist.");
+    $signalTableName = $rule['signalTable'];
+    $rows = queryDb("SELECT `src`,`tgt`,`conj` FROM `$signalTableName`");
+    
+    if (count($rows) > 0) {  
+      // if the rule has an associated message, we show that instead of the name and the meaning
+      $message = $rule['message'] ? $rule['message'] : "Rule '$rule[name]' is broken: $rule[meaning]";
+      emitAmpersandLog($message);
+
+      foreach ($rows as $violation) {
+        //emitAmpersandLog('print_r: '.print_r($violation));
+        
+        $pairView = $rule['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
+    
+        $srcNrOfIfcs = getNrOfInterfaces($rule['srcConcept'], $roleNr);
+        $tgtNrOfIfcs = getNrOfInterfaces($rule['tgtConcept'], $roleNr);
+    
+        $theMessage = showPair($violation['src'], $rule['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $rule['tgtConcept'], $tgtNrOfIfcs, $pairView);
+        emitAmpersandLog('- ' . $theMessage);
+      }
+    }
+  }
+}
+
 
 // Numbering transactions allows optimization of ExecEngine rules, e.g. transitive closure computations.
 function dbStartTransaction() {

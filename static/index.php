@@ -399,7 +399,7 @@ function genSignalLogWindow($selectedRoleNr) {
   echo "<div class=LogWindow id=SignalLog minimized=false><div class=MinMaxButton></div><div class=Title>".
        ($selectedRoleNr==-1 ? "All signals" : "Signals for ".getRoleName($selectedRoleNr)).
        "</div>";
-  checkRoleRules($selectedRoleNr);
+  reportSignals($selectedRoleNr);
   echo "</div>";
 }
 
