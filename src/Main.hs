@@ -61,9 +61,8 @@ generateProtoStuff opts fSpec
 doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
  do { verboseLn (getOpts fSpec) "Checking on rule violations..."
-  --  ; let allViolations = violations fSpec
     ; reportViolations (allViolations fSpec)
-
+    --; reportSignals (initialSignals fSpec)
     ; if (not . null) (allViolations fSpec) && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
@@ -80,6 +79,13 @@ doGenProto fSpec =
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
+                          
+       reportSignals [] =  verboseLn (getOpts fSpec) "No signals for the initial population."
+       reportSignals sigs = putStrLn $ "Signals for initial population:\n" ++ intercalate "\n"
+         [ "Rule \"" ++ name rule ++ "\": conjunct " ++ showADL (rc_conjunct conj) ++ "\n" ++
+             concatMap (\viol -> "- "++show viol++"\n") viols
+         | (rule, conjViols) <- sigs, (conj, viols) <- conjViols
+         ]
 
 ruleTest :: FSpec -> String -> IO ()
 ruleTest fSpec ruleName =

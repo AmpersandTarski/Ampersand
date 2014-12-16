@@ -81,8 +81,18 @@ makeFSpec opts context = fSpec
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , initialPops  = initialpops
-              , allViolations = allVltns
-              , allSignals    = allSgnls
+              , allViolations  = [ (r,vs)
+                                 | r <- allrules, not (isSignal r)
+                                 , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+              , initialSignals = [ (rule, conjViols) 
+                                 | rule <- vRules, isSignal rule -- TODO: maybe use conjs from quads? (will need to group them on rule)
+                                 , let conjViols =
+                                         [ (c, viols) 
+                                         | c <- makeCjcts opts rule
+                                         , let viols = conjunctViolations (gens context) initialpops c, not $ null viols
+                                         ]
+                                 , not $ null conjViols
+                                 ]
               }
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context) ++ map name allProcs
@@ -114,10 +124,7 @@ makeFSpec opts context = fSpec
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)
-
-     (allSgnls, allVltns) = partition (isSignal . fst) 
-       [ (r,vs) | r <- allrules, let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
      allQuads = quads opts allrules
      allConjs = nub (concatMap qConjuncts allQuads)
@@ -428,20 +435,21 @@ quads :: Options -> [Rule] -> [Quad]
 quads opts rs
  = [ Quad { qDcl     = d
           , qRule    = rule
-          , qConjuncts = makeCjcts rule
+          , qConjuncts = makeCjcts opts rule
           }
    | rule<-rs, d<-relsUsedIn rule
    ]
+
+-- The function makeCjcts yields an expression which has constructor EUni in every case.
+makeCjcts :: Options -> Rule -> [Conjunct]
+makeCjcts opts rule = [Cjct { rc_id = "conj_"++rrnm rule++"_"++show (i :: Int)
+                       , rc_orgRule = rule
+                       , rc_conjunct = expr
+                       , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+                       }
+                 | (expr,i)<-zip (conjuncts opts rule) [0..]
+                 ]
    where
-   -- The function makeCjcts yields an expression which has constructor EUni in every case.
-      makeCjcts :: Rule -> [Conjunct]
-      makeCjcts rule = [Cjct { rc_id = "conj_"++rrnm rule++"_"++show i
-                             , rc_orgRule = rule
-                             , rc_conjunct = expr
-                             , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
-                             }
-                       | (expr,i)<-zip (conjuncts opts rule) [0..]
-                       ]
       expr2dnfClause :: Expression -> DnfClause
 
       expr2dnfClause conj = (split (Dnf [] []).exprUni2list) conj

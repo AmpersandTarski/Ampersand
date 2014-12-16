@@ -206,7 +206,7 @@ plug2TableSpecl plug
 mkSignalTableSpec :: Rule -> TableSpec
 mkSignalTableSpec rule =
   ( "// Signal table for rule " ++ name rule
-  , "signals_" ++ name rule -- TODO: ESCAPE!!
+  , "signals_" ++ showHSName rule -- TODO: escape is not completely safe, regarding case and non-alphanum characters (but other parts of ampersand will already fail before this becomes a problem)
   , [ "`src` VARCHAR(255) NOT NULL"
     , "`tgt` VARCHAR(255) NOT NULL"
     , "`conj` VARCHAR(255) NOT NULL" ]
@@ -231,16 +231,16 @@ historyTableSpec
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
-  concatMap fillSignalTable (vrules fSpec) ++
+  concatMap fillSignalTable (initialSignals fSpec) ++
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
-    fillSignalTable rule =
+    fillSignalTable (rule, conjViols) =
       [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName $ mkSignalTableSpec rule)
                                                                     ++" (`src`, `tgt`, `conj`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlAtomQuote src++", "++sqlAtomQuote tgt++", "++sqlAtomQuote ("CONJ")++")" 
-                                                | (_, pairs) <- allSignals fSpec, (src, tgt) <- pairs
+                                                [ "(" ++sqlAtomQuote src++", "++sqlAtomQuote tgt++", "++sqlAtomQuote (rc_id conj)++")" 
+                                                | (conj, pairs) <- conjViols, (src, tgt) <- pairs
                                                 ])++"\n"++
         "            );"
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"

@@ -83,8 +83,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , initialPops ::  [Population]             -- all user defined populations of relations and concepts
-                   , allViolations :: [(Rule,[Paire])]        -- all invariant rules with violations.
-                   , allSignals :: [(Rule,[Paire])]           -- all process rules with violations.
+                   , initialSignals :: [(Rule,[(Conjunct,[Paire])])] -- all process rules with violations per conjunct.
+                   , allViolations ::  [(Rule,[Paire])]        -- all invariant rules with violations.
                    }
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
