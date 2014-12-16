@@ -12,6 +12,7 @@ import System.Directory
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import Control.Exception
+import Database.Design.Ampersand.Prototype.Installer (mkSignalTableSpec, getTableName)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
@@ -164,6 +165,7 @@ generateRules fSpec =
       (blockParenthesize  "(" ")" ","
          [ [ (showPhpStr.rrnm) rule ++ " =>"
            , "  array ( 'name'          => "++(showPhpStr.rrnm)              rule
+           , "        , 'signalTable'   => "++(showPhpStr.getTableName.mkSignalTableSpec) rule
            , "        , 'ruleAdl'       => "++(showPhpStr.showADL.rrexp)     rule
            , "        , 'origin'        => "++(showPhpStr.show.rrfps)        rule
            , "        , 'meaning'       => "++(showPhpStr.showMeaning)       rule

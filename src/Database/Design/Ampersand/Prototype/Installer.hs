@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Prototype.Installer
   (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
-   createTablesPHP,populateTablesPHP,plug2TableSpecl,dropplug,historyTableSpec,sessionTableSpec,TableSpec) where
+   createTablesPHP,populateTablesPHP,plug2TableSpecl,dropplug,historyTableSpec,sessionTableSpec,mkSignalTableSpec,getTableName,TableSpec) where
 
 import Data.List
 import Database.Design.Ampersand
