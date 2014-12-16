@@ -139,12 +139,12 @@ dumpPopulationToADL fSpec = unlines $
       ]
 
 
-createTablesPHP :: FSpec ->[String]
+createTablesPHP :: FSpec -> [String]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
         ] ++
-        concatMap createTablePHP [ sessionTableSpec, signalTableSpec, historyTableSpec ] ++
+        concatMap createTablePHP [sessionTableSpec, historyTableSpec] ++
         [ "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
         , "$microseconds = substr($time[0], 2,6);"
         , "$seconds =$time[1].$microseconds;"
@@ -156,6 +156,9 @@ createTablesPHP fSpec =
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , ""
+        ] ++
+        concatMap (createTablePHP . mkSignalTableSpec) (vrules fSpec) ++
+        [ ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
         ]
         -- Create all plugs
@@ -200,21 +203,22 @@ plug2TableSpecl plug
                    PlainAttr     -> []
    , "InnoDB DEFAULT CHARACTER SET UTF8")
 
+mkSignalTableSpec :: Rule -> TableSpec
+mkSignalTableSpec rule =
+  ( "// Signal table for rule " ++ name rule
+  , "signals_" ++ name rule -- TODO: ESCAPE!!
+  , [ "`src` VARCHAR(255) NOT NULL"
+    , "`tgt` VARCHAR(255) NOT NULL"
+    , "`conj` VARCHAR(255) NOT NULL" ]
+  , "InnoDB DEFAULT CHARACTER SET UTF8"
+  )
+
 sessionTableSpec :: TableSpec
 sessionTableSpec
  = ( "// Session timeout table"
    , "__SessionTimeout__"
    , [ "`SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , "`lastAccess` BIGINT NOT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8" )
-
-signalTableSpec :: TableSpec
-signalTableSpec
- = ( "// Signal table"
-   , "__AllSignals__"
-   , [ "`src` VARCHAR(255) NOT NULL"
-     , "`tgt` VARCHAR(255) NOT NULL"
-     , "`rule` VARCHAR(255) NOT NULL" ]
    , "InnoDB DEFAULT CHARACTER SET UTF8" )
 
 historyTableSpec :: TableSpec
@@ -227,16 +231,20 @@ historyTableSpec
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
-  fillSignalTable ++
+  concatMap fillSignalTable (vrules fSpec) ++
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
-    fillSignalTable =[ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (getTableName signalTableSpec)
-                                                           ++" (`src`, `tgt`, `rule`)"
-                                                           ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") 
-                                                               [ "(" ++sqlAtomQuote src++", "++sqlAtomQuote tgt++", "++sqlAtomQuote (name rule)++")" | (rule, pairs) <- allSignals fSpec, (src, tgt) <- pairs]
-                                                           ++phpIndent 16 )
-                                        ++");"
-                     , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+    fillSignalTable rule =
+      [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName $ mkSignalTableSpec rule)
+                                                                    ++" (`src`, `tgt`, `conj`)"
+                                              ++phpIndent 24++"VALUES " ++ 
+                                              intercalate (phpIndent 29++", ") 
+                                                [ "(" ++sqlAtomQuote src++", "++sqlAtomQuote tgt++", "++sqlAtomQuote ("CONJ")++")" 
+                                                | (_, pairs) <- allSignals fSpec, (src, tgt) <- pairs
+                                                ])++"\n"++
+        "            );"
+      , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
+      ]
     
     populatePlugPHP plug
          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
