@@ -47,7 +47,7 @@ if (isset($_REQUEST['resetSession'])) {
   processCommands(); // update database according to edit commands
   
   // Process processRules first, because the ExecEngine may execute code while processing this stuff.
-  updateSignals($interface);
+  updateSignals($interface, $selectedRoleNr);
   echo '<div id="ProcessRuleResults">';
   reportSignals($selectedRoleNr);
   echo '</div>';
@@ -59,7 +59,7 @@ if (isset($_REQUEST['resetSession'])) {
   runAllProcedures();
   
   echo '<div id="InvariantRuleResults">';
-  $invariantRulesHold = checkInvariantRules($interface);
+  $invariantRulesHold = checkInvariants($interface);
   echo '</div>';
   
   if ($invariantRulesHold) {
@@ -395,6 +395,45 @@ function checkRules($ruleOrConjunctNames, $rulesAreConjuncts) {
   return $allRulesHold;
 }
 
+function checkInvariants($interface, $roleNr) {
+  global $allInterfaceObjects;
+  global $allRoles;
+  global $allRules;
+  global $allConjuncts;
+
+  $allRulesHold = true;
+  
+  $conjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
+  emitLog("Checking invariant rules for interface ".$interface);
+  //emitLog("Corresponding conjuncts: ".print_r($conjunctNames, true));
+
+  foreach ($conjunctNames as $conjunctName) {
+    $conjunct = $allConjuncts[$conjunctName];
+    $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
+    $ruleName = $conjunct['ruleName'];
+    $rule = $allRules[$ruleName]; // and use the rule that gave rise to this conjunct for everything else
+    emitLog('Checking conjunct: ' . $conjunctName);
+    emitLog('Coming from rule: ' . $ruleName);
+    
+    $error = '';
+    $violations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
+    if ($error)
+      error("While evaluating rule '$ruleName': " . $error);
+      
+    if (count($violations) == 0) {
+      //emitLog('Rule '.$rule['name'].' holds'); // log successful conjunct validation
+    } else {
+      $allRulesHold = false;
+      emitLog('Rule ' . $rule['name'] . ' is broken');
+      
+      emitAmpersandLog( brokenRuleMessage($rule) );
+      foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
+        emitAmpersandLog( $msg );
+    }
+  }
+  return $allRulesHold;
+}
+
 function reportSignals($roleNr) {
   global $allRoles;
   global $allRules;
@@ -419,25 +458,14 @@ function reportSignals($roleNr) {
     $rule = $allRules[$ruleName];
     if (!$rule)
       error("Rule \"$ruleName\" does not exist.");
+      
     $signalTableName = $rule['signalTable'];
-    $rows = queryDb("SELECT `src`,`tgt`,`conj` FROM `$signalTableName`");
+    $violations = queryDb("SELECT `src`,`tgt`,`conj` FROM `$signalTableName`");
     
-    if (count($rows) > 0) {  
-      // if the rule has an associated message, we show that instead of the name and the meaning
-      $message = $rule['message'] ? $rule['message'] : "Rule '$rule[name]' is broken: $rule[meaning]";
-      emitAmpersandLog($message);
-
-      foreach ($rows as $violation) {
-        //emitAmpersandLog('print_r: '.print_r($violation));
-        
-        $pairView = $rule['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
-    
-        $srcNrOfIfcs = getNrOfInterfaces($rule['srcConcept'], $roleNr);
-        $tgtNrOfIfcs = getNrOfInterfaces($rule['tgtConcept'], $roleNr);
-    
-        $theMessage = showPair($violation['src'], $rule['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $rule['tgtConcept'], $tgtNrOfIfcs, $pairView);
-        emitAmpersandLog('- ' . $theMessage);
-      }
+    if (count($violations) > 0) {  
+      emitAmpersandLog( brokenRuleMessage($rule) );
+      foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
+        emitAmpersandLog( $msg );
     }
   }
 }
@@ -466,10 +494,28 @@ function updateSignals($interface) {
     // and insert the newly computed violations.
     queryDb( "INSERT INTO `$signalTableName`"
            . " SELECT violations.src, violations.tgt, '$conjunctId' AS `conj`"
-           . " FROM ($violationsSQL) AS violations;"); 
+           . " FROM ($violationsSQL) AS violations;" ); 
   }
 }
 
+function brokenRuleMessage($rule) {
+  // if the rule has an associated message, we show that instead of the name and the meaning
+  return $rule['message'] ? $rule['message'] : "Rule '$rule[name]' is broken: $rule[meaning]";
+}
+
+function violationMessages($roleNr, $rule, $violations) {
+  $srcNrOfIfcs = getNrOfInterfaces($rule['srcConcept'], $roleNr);
+  $tgtNrOfIfcs = getNrOfInterfaces($rule['tgtConcept'], $roleNr);
+  
+  $pairView = $rule['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
+  
+  $msgs = array ();
+  foreach ($violations as $violation) {
+    $pair = showPair($violation['src'], $rule['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $rule['tgtConcept'], $tgtNrOfIfcs, $pairView);
+    array_push($msgs, '- ' . $pair);
+  }
+  return $msgs;
+}
 
 // Numbering transactions allows optimization of ExecEngine rules, e.g. transitive closure computations.
 function dbStartTransaction() {
