@@ -236,23 +236,6 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   queryDb($query);
 }
 
-// NOTE: log messages emited here are only shown on a commit, not during normal navigation.
-function checkRoleRules($roleNr) {
-  global $allRoles;
-  $allRoleRules = array ();
-  
-  if ($roleNr == -1) { // if no role is selected, evaluate the rules for all roles
-    for ($r = 0; $r < count($allRoles); $r++) { 
-      if ($allRoles[$r]['name'] != 'DATABASE') { // filter rules for role 'DATABASE', these will be handled by runAllProcedures() 
-        $allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
-      }
-    }
-    $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
-    checkRules($allRoleRules, false); // check every rule
-  } else
-    checkRoleRulesPerRole($roleNr);
-}
-
 // new function
 function runAllProcedures() {
   $query = "CALL AllProcedures";
@@ -260,141 +243,7 @@ function runAllProcedures() {
   queryDb($query);
 }
 
-// Precondition: $roleNr >= 0
-function checkRoleRulesPerRole($roleNr) {
-  global $allRoles;
-  
-  $role = $allRoles[$roleNr];
-  emitLog("Checking rules for role $role[name]");
-  checkRules($role['ruleNames'], false);
-}
-
-function checkInvariantRules($interface) {
-  global $allInterfaceObjects;
-  $interfaceConjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
-  //emitLog("Checking invariant rules for interface ".$interface);
-  //emitLog("Corresponding conjuncts: ".print_r($interfaceConjunctNames, true));
-  return checkRules($interfaceConjunctNames, true);
-}
-
-// $rulesAreConjuncts == true means the names are conjunct names
-function checkRules($ruleOrConjunctNames, $rulesAreConjuncts) {
-  global $allRoles;
-  global $allRules;
-  global $allConjuncts;
-  global $selectedRoleNr;
-  global $execEngineWhispers; // set in 'pluginsettings.php'
-  global $execEngineSays; // set in 'pluginsettings.php'
-  
-  global $ExecEngineRules; // array met alle ruleNames van de ExecEngine 
-  if (!isset($ExecEngineRules)) {
-    foreach ($allRoles as $role) {
-      if ($role['name'] == 'ExecEngine') {
-        $ExecEngineRules = $role['ruleNames'];
-      }
-    }
-  }
-  
-  $allRulesHold = true; // by default $allRulesHold = true
-  $error = '';
-  
-  foreach ($ruleOrConjunctNames as $ruleOrConjunctName) {
-    if ($rulesAreConjuncts) {
-      $conjunct = $allConjuncts[$ruleOrConjunctName];
-      $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
-      $ruleName = $conjunct['ruleName'];
-      $rule = $allRules[$ruleName]; // and use the rule that gave rise to this conjunct for everything else
-      emitLog('Checking conjunct: ' . $ruleOrConjunctName);
-      emitLog('Coming from rule: ' . $ruleName);
-    } else {
-      $ruleName = $ruleOrConjunctName;
-      $rule = $allRules[$ruleName];
-      $violationsSQL = $rule['violationsSQL'];
-      emitLog('Checking rule: ' . $rule['name']);
-    }
-    
-    $rows = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
-    if ($error)
-      error("While evaluating rule '$ruleName': " . $error);
-      
-      // if there are rows (i.e. violations)
-    if (count($rows) == 0) { // emitLog('Rule '.$rule['name'].' holds');
-    } else {
-      $allRulesHold = false;
-      emitLog('Rule ' . $rule['name'] . ' is broken');
-      
-      // if the rule has an associated message, we show that instead of the name and the meaning
-      $message = $rule['message'] ? $rule['message'] : "Rule '$rule[name]' is broken: $rule[meaning]";
-      // however, for ExecEngine output we have the possibility to suppress some stuff
-      if (isset($ExecEngineRules)) { // Er is geen garantie dat de rol 'ExecEngine' altijd bestaat.
-        if (in_array($ruleName, $ExecEngineRules)) {
-          ExecEngineSays("[{EE} restored '$ruleName']");
-          ExecEngineWhispers($message);
-        } else {
-          emitAmpersandLog($message);
-        }
-      } else {
-        emitAmpersandLog($message);
-      }
-      
-      $srcNrOfIfcs = getNrOfInterfaces($rule['srcConcept'], $selectedRoleNr);
-      $tgtNrOfIfcs = getNrOfInterfaces($rule['tgtConcept'], $selectedRoleNr);
-      
-      $pairView = $rule['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
-      
-      // For optimization purposes, e.g. for computing transitive closures (see plugin_Warshall.php), we allow plugins to be run only for the first violation, and skip all the others.
-      global $violationID;
-      $violationID = 0;
-      // It may become tedious to scroll through many log records on the screen for some violations. Therefore, we allow plugins to tinker with $execEngineWhispers and $execEngineSays, which we will restore.
-      $whisper = $execEngineWhispers;
-      $says = $execEngineSays;
-      $functionsToBeCalled = 1;
-      foreach ($rows as $violation) {
-        $violationID++;
-        if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'], '{EX}') === 0) { // Check for execution (or not)
-          $theMessage = execPair($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $pairView);
-          // emitAmpersandLog($theMessage);
-          $theCleanMessage = strip_tags($theMessage);
-          $theCleanMessage = substr($theCleanMessage, 4); // Strip {EX} tag
-          
-          $functionsToBeCalled = explode('{EX}', $theCleanMessage); // Split off subsequent function calls
-          if (count($functionsToBeCalled) > 1)
-            ExecEngineWhispers("[[START]]");
-          
-          foreach ($functionsToBeCalled as $functionToBeCalled) {
-            $params = explode(';', $functionToBeCalled); // Split off variables
-            $cleanparams = array ();
-            foreach ($params as $param)
-              $cleanparams[] = trim($param);
-            $params = $cleanparams;
-            unset($cleanparams);
-            ExecEngineWhispers($functionToBeCalled);
-            $func = array_shift($params); // First parameter is function name
-            if (function_exists($func)) {
-              call_user_func_array($func, $params);
-            } else {
-              ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
-            }
-          }
-          if (count($functionsToBeCalled) > 1)
-            ExecEngineWhispers("[[DONE]]");
-        } else {
-          $theMessage = showPair($violation['src'], $rule['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $rule['tgtConcept'], $tgtNrOfIfcs, $pairView);
-          emitAmpersandLog('- ' . $theMessage);
-        }
-      }
-      if (count($functionsToBeCalled) > 1 && $execEngineWhispers != $whisper) {
-        $execEngineWhispers = $whisper;
-        $execEngineSays = $says;
-        ExecEngineWhispers("... etc ... [[DONE]]");
-      }
-      $execEngineWhispers = $whisper;
-      $execEngineSays = $says;
-    }
-  }
-  return $allRulesHold;
-}
-
+// TODO: add ExecEngine support
 function checkInvariants($interface, $roleNr) {
   global $allInterfaceObjects;
   global $allRoles;
@@ -404,7 +253,7 @@ function checkInvariants($interface, $roleNr) {
   $allRulesHold = true;
   
   $conjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
-  emitLog("Checking invariant rules for interface ".$interface);
+  //emitLog("Checking invariant rules for interface ".$interface);
   //emitLog("Corresponding conjuncts: ".print_r($conjunctNames, true));
 
   foreach ($conjunctNames as $conjunctName) {
@@ -412,8 +261,8 @@ function checkInvariants($interface, $roleNr) {
     $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
     $ruleName = $conjunct['ruleName'];
     $rule = $allRules[$ruleName]; // and use the rule that gave rise to this conjunct for everything else
-    emitLog('Checking conjunct: ' . $conjunctName);
-    emitLog('Coming from rule: ' . $ruleName);
+    //emitLog('Checking conjunct: ' . $conjunctName);
+    //emitLog('Coming from rule: ' . $ruleName);
     
     $error = '';
     $violations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
