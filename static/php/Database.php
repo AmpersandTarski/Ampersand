@@ -47,8 +47,9 @@ if (isset($_REQUEST['resetSession'])) {
   processCommands(); // update database according to edit commands
   
   // Process processRules first, because the ExecEngine may execute code while processing this stuff.
+  updateSignals($interface);
   echo '<div id="ProcessRuleResults">';
-  checkRoleRules($selectedRoleNr);
+  reportSignals($selectedRoleNr);
   echo '</div>';
   
   // Run all stored procedures in the database
@@ -394,7 +395,6 @@ function checkRules($ruleOrConjunctNames, $rulesAreConjuncts) {
   return $allRulesHold;
 }
 
-// TODO: add ExecEngine support
 function reportSignals($roleNr) {
   global $allRoles;
   global $allRules;
@@ -439,6 +439,34 @@ function reportSignals($roleNr) {
         emitAmpersandLog('- ' . $theMessage);
       }
     }
+  }
+}
+
+// TODO: add ExecEngine support
+function updateSignals($interface) {
+  global $allInterfaceObjects;
+  global $allRules;
+  global $allConjuncts;
+  
+  $interfaceConjunctIds = $allInterfaceObjects[$interface]['interfaceSignalConjunctNames'];
+  //emitLog("Checking signals for interface ".$interface);
+  //emitLog("Conjuncts: ".print_r($interfaceConjunctIds, true));
+  
+  foreach ($interfaceConjunctIds as $conjunctId) {
+    $conjunct = $allConjuncts[$conjunctId];
+    $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
+    $ruleName = $conjunct['ruleName'];
+    $rule = $allRules[$ruleName];
+    $signalTableName = $rule['signalTable'];
+    //emitLog('Checking conjunct: ' . $conjunctId);
+    //emitLog('Coming from rule: ' . $ruleName . ', signal table: ' . $signalTableName);
+    
+    // Remove all violations for this conjunct from the signal table for the rule
+    queryDb("DELETE FROM `$signalTableName` WHERE `conj`='$conjunctId'");
+    // and insert the newly computed violations.
+    queryDb( "INSERT INTO `$signalTableName`"
+           . " SELECT violations.src, violations.tgt, '$conjunctId' AS `conj`"
+           . " FROM ($violationsSQL) AS violations;"); 
   }
 }
 
