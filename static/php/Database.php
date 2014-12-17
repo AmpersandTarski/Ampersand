@@ -278,7 +278,7 @@ function checkInvariants($interface, $roleNr) {
       if (!$violationsPerRule[ $ruleName ])
         $violationsPerRule[ $ruleName ] = array ();
         
-      $violationsPerRule[$ruleName] = array_merge( $violationsPerRule[ $ruleName ], $violations); // TODO: can we have duplicate violations here?
+      $violationsPerRule[$ruleName] = array_merge( $violationsPerRule[ $ruleName ], $violations);
     }
   }
   
@@ -318,7 +318,7 @@ function reportSignals($roleNr) {
       error("Rule \"$ruleName\" does not exist.");
       
     $signalTableName = $rule['signalTable'];
-    $violations = queryDb("SELECT `src`,`tgt`,`conj` FROM `$signalTableName`");
+    $violations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
     
     if (count($violations) > 0) {  
       emitAmpersandLog( brokenRuleMessage($rule) );
@@ -368,7 +368,11 @@ function violationMessages($roleNr, $rule, $violations) {
   $pairView = $rule['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
   
   $msgs = array ();
-  foreach ($violations as $violation) {
+  
+  $violationsNoDups =  array_map("unserialize", array_unique(array_map("serialize", $violations)));
+  // Not the most elegant way to remove duplicates, but then again, this is php.
+  
+  foreach ($violationsNoDups as $violation) {
     $pair = showPair($violation['src'], $rule['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $rule['tgtConcept'], $tgtNrOfIfcs, $pairView);
     array_push($msgs, '- ' . $pair);
   }
