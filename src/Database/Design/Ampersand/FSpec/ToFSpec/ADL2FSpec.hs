@@ -3,27 +3,21 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.Poset
-import Prelude hiding (Ord(..),head)
+import Prelude hiding (Ord(..))
 import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms  --  (delta,conjNF,disjNF,normPA)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
---import Database.Design.Ampersand.FSpec.ShowHS -- only for diagnostic purposes during debugging
 import Database.Design.Ampersand.FSpec.ShowADL
 import Text.Pandoc
 import Data.Maybe
-import Data.List (nub,intersect,partition,group,delete)
-import Data.Char        (toLower)
---import Debug.Trace -- only for diagnostic purposes during debugging
-
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
+import Data.List
+import Data.Char
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
