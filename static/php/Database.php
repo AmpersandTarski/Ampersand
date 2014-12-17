@@ -258,9 +258,9 @@ function checkInvariants($interface, $roleNr) {
 
   foreach ($conjunctNames as $conjunctName) {
     $conjunct = $allConjuncts[$conjunctName];
-    $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
+    $violationsSQL = $conjunct['violationsSQL'];
     $ruleName = $conjunct['ruleName'];
-    $rule = $allRules[$ruleName]; // and use the rule that gave rise to this conjunct for everything else
+    $rule = $allRules[$ruleName];
     //emitLog('Checking conjunct: ' . $conjunctName);
     //emitLog('Coming from rule: ' . $ruleName);
     
