@@ -18,6 +18,7 @@ import Text.Pandoc
 import Data.Maybe
 import Data.List
 import Data.Char
+import Data.Function
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -121,7 +122,7 @@ makeFSpec opts context = fSpec
        where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
      allQuads = quads opts allrules
-     allConjs = nub (concatMap qConjuncts allQuads)
+     allConjs = nubBy ((==) `on` rc_id) (concatMap qConjuncts allQuads)
 --      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==qRule q]
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules

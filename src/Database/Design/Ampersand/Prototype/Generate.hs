@@ -326,7 +326,12 @@ generateInterface fSpec interface =
           , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map (showPhpStr . rc_id) invConjs)++")"
           , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map (showPhpStr . rc_id) sgnlConjs)++")"
           ]
-          where (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) 
+          where invConjs = nub nonNubbedInvConjs -- NOTE: equality is on expression, not on id
+                -- We nub the invariant conjuncts, since each expression needs to be checked only once,
+                -- but for the signals, all rule signal databases need to be updated, so if an expression originates
+                -- from multiple rules, we need to process all of these. If the extra performance is needed, this could be optimized
+                -- by grouping the conjuncts.
+                (sgnlConjs, nonNubbedInvConjs) = partition (isSignal . rc_orgRule) 
                   [ conj
                   | conj <- ifcControls interface
                   , not (rrnm (rc_orgRule conj) `elem` uniRuleNames fSpec && not (isSignal $ rc_orgRule conj)) 
