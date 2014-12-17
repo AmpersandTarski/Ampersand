@@ -249,14 +249,15 @@ function checkInvariants($interface, $roleNr) {
   global $allRoles;
   global $allRules;
   global $allConjuncts;
-
-  $allRulesHold = true;
   
   $conjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
   //emitLog("Checking invariant rules for interface ".$interface);
   //emitLog("Corresponding conjuncts: ".print_r($conjunctNames, true));
 
+  $violationsPerRule = array (); // will contain all violations, indexed by rule name 
   foreach ($conjunctNames as $conjunctName) {
+    // evaluate each conjunct and store violations in $violationsPerRule
+    
     $conjunct = $allConjuncts[$conjunctName];
     $violationsSQL = $conjunct['violationsSQL'];
     $ruleName = $conjunct['ruleName'];
@@ -267,20 +268,28 @@ function checkInvariants($interface, $roleNr) {
     $error = '';
     $violations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
     if ($error)
-      error("While evaluating rule '$ruleName': " . $error);
+      error("While evaluating conjunct $conjunctName of rule '$ruleName': " . $error);
       
     if (count($violations) == 0) {
-      //emitLog('Rule '.$rule['name'].' holds'); // log successful conjunct validation
+      emitLog("Conjunct $conjunctName of rule '$ruleName' holds"); // log successful conjunct validation
     } else {
-      $allRulesHold = false;
-      emitLog('Rule ' . $rule['name'] . ' is broken');
+      emitLog("Conjunct $conjunctName of rule '$ruleName' is broken");
       
-      emitAmpersandLog( brokenRuleMessage($rule) );
-      foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
-        emitAmpersandLog( $msg );
+      if (!$violationsPerRule[ $ruleName ])
+        $violationsPerRule[ $ruleName ] = array ();
+        
+      $violationsPerRule[$ruleName] = array_merge( $violationsPerRule[ $ruleName ], $violations); // TODO: can we have duplicate violations here?
     }
   }
-  return $allRulesHold;
+  
+  // Report violations for each rule
+  foreach ($violationsPerRule as $ruleName => $violations) {
+    emitAmpersandLog( brokenRuleMessage($allRules[$ruleName]) );
+    foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
+      emitAmpersandLog( $msg );
+  }
+        
+  return count($violationsPerRule) == 0;
 }
 
 function reportSignals($roleNr) {
