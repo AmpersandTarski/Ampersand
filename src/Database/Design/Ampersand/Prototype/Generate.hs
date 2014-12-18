@@ -326,12 +326,10 @@ generateInterface fSpec interface =
           , "      , 'interfaceInvariantConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) invConjs)++")"
           , "      , 'interfaceSignalConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) sgnlConjs)++")"
           ]
-          where invConjs = nub nonNubbedInvConjs -- NOTE: equality is on expression, not on id
-                -- We nub the invariant conjuncts, since each expression needs to be checked only once,
-                -- but for the signals, all rule signal databases need to be updated, so if an expression originates
-                -- from multiple rules, we need to process all of these. If the extra performance is needed, this could be optimized
-                -- by grouping the conjuncts.
-                (sgnlConjs, nonNubbedInvConjs) = partition (isSignal . rc_orgRule) 
+          where -- Currently, conjuncts that appear in several rules will be evaluated multiple times, to be able to report
+                -- failure of each rule (and for signals update each rule signal database.) This can be optimized by having
+                -- only one conjunct for each unique conjunct expression, and keep a list of originating rules in that conjunct.
+                (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) 
                   [ conj
                   | conj <- ifcControls interface
                   , not (rrnm (rc_orgRule conj) `elem` uniRuleNames fSpec && not (isSignal $ rc_orgRule conj)) 
