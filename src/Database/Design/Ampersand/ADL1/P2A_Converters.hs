@@ -537,27 +537,23 @@ pCtx2aCtx' _
 
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> parRuls ppat <*> parKeys ppat <*> parPops ppat <*> parViews ppat <*> parPrps ppat <*> sequenceA rrels
+     = f <$> parRuls ppat <*> parKeys ppat <*> parPops ppat <*> parViews ppat <*> parPrps ppat
        where
-        f prules keys' pops' views' xpls rrels'
+        f prules keys' pops' views' xpls
            = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
              in A_Pat { ptnm  = name ppat
                       , ptpos = pt_pos ppat
                       , ptend = pt_end ppat
-                      , ptrls = map snd prules
+                      , ptrls = prules
                       , ptgns = agens'
                       , ptdcs = decls'
                       , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
-                      , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
-                      , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                       , ptids = keys'
                       , ptvds = views'
                       , ptxps = xpls
                       }
         agens'   = map pGen2aGen (pt_gns ppat)
-        parRuls  = traverse (\x -> pRul2aRul' [rol | prr <- pt_rus ppat, rul<-mRules prr, name x == rul, rol<-mRoles prr] (name ppat) x) . pt_rls
-        rrels :: [Guarded RoleRelation]
-        rrels =  [(\x -> RR (rr_Roles prr) x (origin prr)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- pt_res ppat]
+        parRuls  = traverse (pRul2aRul []  (name ppat)) . pt_rls
         parKeys  = traverse pIdentity2aIdentity . pt_ids
         parPops  = traverse pPop2aPop . pt_pop
         parViews = traverse pViewDef2aViewDef . pt_vds

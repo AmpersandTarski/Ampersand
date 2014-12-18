@@ -441,14 +441,6 @@ instance ShowHS Pattern where
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
      , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
-     , case ptrruls pat of
-        []          -> ", ptrruls = [] {- no role-rule assignments -}"
-        [(rol,rul)] -> ", ptrruls = [ ("++show rol++", "++showHSName rul++") ]"
-        rs          -> ", ptrruls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
-     , case ptrrels pat of
-        []          -> ", ptrrels = [] {- no role-relation assignments -}"
-        [(rol,rel)] -> ", ptrrels = [ ("++show rol++", "++showHS opts "" rel++") ]"
-        rs          -> ", ptrrels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS opts "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
      , wrap ", ptxps = " indentB (showHS opts) (ptxps pat)
      , "}"

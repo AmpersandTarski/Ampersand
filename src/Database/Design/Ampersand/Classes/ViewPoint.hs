@@ -197,8 +197,6 @@ instance Language Rule where
                        , ptgns = []  -- A rule defines no Gens.
                        , ptdcs = relsDefdIn r
                        , ptups = []
-                       , ptrruls = []
-                       , ptrrels = []
                        , ptids = []
                        , ptvds = []
                        , ptxps = []

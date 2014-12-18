@@ -153,8 +153,6 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
-             , pt_rus = [r | Pm r<-pes]
-             , pt_res = [r | Pl r<-pes]
              , pt_cds = [c nm | Pc c<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
@@ -165,8 +163,6 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
     pPatElem = Pr <$> pRuleDef      <|>
                Py <$> pClassify     <|>
                Pd <$> pRelationDef  <|>
-               Pm <$> pRoleRule     <|>
-               Pl <$> pRoleRelation <|>
                Pc <$> pConceptDef   <|>
                Pg <$> pGenDef       <|>
                Pk <$> pIndex        <|>
@@ -177,8 +173,6 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
 data PatElem = Pr (P_Rule TermPrim)
              | Py P_Gen
              | Pd P_Declaration
-             | Pm RoleRule
-             | Pl P_RoleRelation
              | Pc (String->ConceptDef)
              | Pg P_Gen
              | Pk P_IdentDef
