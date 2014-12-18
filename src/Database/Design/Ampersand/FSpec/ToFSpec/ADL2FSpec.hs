@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-         (makeFSpec, quads, preEmpt, editable) where
+         (makeFSpec, preEmpt, editable) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.Poset
@@ -121,7 +121,7 @@ makeFSpec opts context = fSpec
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
-     allQuads = quads opts allrules
+     allQuads = makeQuads opts allrules
      allConjs = nubBy ((==) `on` rc_id) (concatMap qConjuncts allQuads)
 --      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==qRule q]
      allrules = vRules ++ gRules
@@ -148,7 +148,7 @@ makeFSpec opts context = fSpec
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
      totsurs
-      = nub [rel | q<-quads opts (invariants context), isIdent (qDcl q)
+      = nub [rel | q<-makeQuads opts (invariants context), isIdent (qDcl q)
                  , x<-qConjuncts q, Dnf antcs conss<-rc_dnfClauses x
                  , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                  , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
@@ -426,8 +426,8 @@ makeActivity fSpec rul
 -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
 -- the rule may have to be restored using functionality from one of the clauses.
 -- The rule is carried along for traceability.
-quads :: Options -> [Rule] -> [Quad]
-quads opts rs
+makeQuads :: Options -> [Rule] -> [Quad]
+makeQuads opts rs
  = [ Quad { qDcl     = d
           , qRule    = rule
           , qConjuncts = makeCjcts opts rule
@@ -641,7 +641,7 @@ switchboard fSpec
     }
    where
      qs :: [Quad]
-     qs        = quads (getOpts fSpec) (invariants fSpec)
+     qs        = makeQuads (getOpts fSpec) (invariants fSpec)
      (ecas, _) = assembleECAs fSpec (allDecls fSpec)
      conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qConjuncts q]
      eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
