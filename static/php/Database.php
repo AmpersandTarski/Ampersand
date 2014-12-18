@@ -284,7 +284,8 @@ function checkInvariants($interface, $roleNr) {
   
   // Report violations for each rule
   foreach ($violationsPerRule as $ruleName => $violations) {
-    emitAmpersandLog( brokenRuleMessage($allRules[$ruleName]) );
+    $rule = $allRules[$ruleName];
+    emitAmpersandLog( brokenRuleMessage($rule) );
     foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
       emitAmpersandLog( $msg );
   }
