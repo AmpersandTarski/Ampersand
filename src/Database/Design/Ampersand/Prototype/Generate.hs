@@ -323,8 +323,8 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map (showPhpStr . rc_id) invConjs)++")"
-          , "      , 'interfaceSignalConjunctNames' => array ("++intercalate ", " (map (showPhpStr . rc_id) sgnlConjs)++")"
+          , "      , 'interfaceInvariantConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) invConjs)++")"
+          , "      , 'interfaceSignalConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) sgnlConjs)++")"
           ]
           where invConjs = nub nonNubbedInvConjs -- NOTE: equality is on expression, not on id
                 -- We nub the invariant conjuncts, since each expression needs to be checked only once,

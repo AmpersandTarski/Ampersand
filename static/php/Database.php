@@ -250,30 +250,30 @@ function checkInvariants($interface, $roleNr) {
   global $allRules;
   global $allConjuncts;
   
-  $conjunctNames = $allInterfaceObjects[$interface]['interfaceInvariantConjunctNames'];
+  $conjunctIds = $allInterfaceObjects[$interface]['interfaceInvariantConjunctIds'];
   //emitLog("Checking invariant rules for interface ".$interface);
-  //emitLog("Corresponding conjuncts: ".print_r($conjunctNames, true));
+  //emitLog("Corresponding conjuncts: ".print_r($conjunctIds, true));
 
   $violationsPerRule = array (); // will contain all violations, indexed by rule name 
-  foreach ($conjunctNames as $conjunctName) {
+  foreach ($conjunctIds as $conjunctId) {
     // evaluate each conjunct and store violations in $violationsPerRule
     
-    $conjunct = $allConjuncts[$conjunctName];
+    $conjunct = $allConjuncts[$conjunctId];
     $violationsSQL = $conjunct['violationsSQL'];
     $ruleName = $conjunct['ruleName'];
     $rule = $allRules[$ruleName];
-    //emitLog('Checking conjunct: ' . $conjunctName);
+    //emitLog('Checking conjunct: ' . $conjunctId);
     //emitLog('Coming from rule: ' . $ruleName);
     
     $error = '';
     $violations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
     if ($error)
-      error("While evaluating conjunct $conjunctName of rule '$ruleName': " . $error);
+      error("While evaluating conjunct $conjunctId of rule '$ruleName': " . $error);
       
     if (count($violations) == 0) {
-      emitLog("Conjunct $conjunctName of rule '$ruleName' holds"); // log successful conjunct validation
+      emitLog("Conjunct $conjunctId of rule '$ruleName' holds"); // log successful conjunct validation
     } else {
-      emitLog("Conjunct $conjunctName of rule '$ruleName' is broken");
+      emitLog("Conjunct $conjunctId of rule '$ruleName' is broken");
       
       if (!$violationsPerRule[ $ruleName ])
         $violationsPerRule[ $ruleName ] = array ();
@@ -334,7 +334,7 @@ function updateSignals($interface) {
   global $allRules;
   global $allConjuncts;
   
-  $interfaceConjunctIds = $allInterfaceObjects[$interface]['interfaceSignalConjunctNames'];
+  $interfaceConjunctIds = $allInterfaceObjects[$interface]['interfaceSignalConjunctIds'];
   //emitLog("Checking signals for interface ".$interface);
   //emitLog("Conjuncts: ".print_r($interfaceConjunctIds, true));
   
