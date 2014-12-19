@@ -348,7 +348,6 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ case getEditableRelation editableRels normalizedInterfaceExp of 
        Just (srcConcept, d, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
-         , "      , 'isEditable' => True"
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
          (if isFlipped 
           then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
@@ -360,14 +359,8 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
          ]
        _ ->
          [ "      , 'relation' => '' // this interface expression is not editable"
-         , "      , 'isEditable' => False"
-         , "      , 'relationIsFlipped' => ''"] ++
-         (if isFlipped 
-          then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
-               , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
-          else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
-               , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]) ++
-         [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
+         , "      , 'relationIsFlipped' => ''"
+         , "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
          ]
   ++
