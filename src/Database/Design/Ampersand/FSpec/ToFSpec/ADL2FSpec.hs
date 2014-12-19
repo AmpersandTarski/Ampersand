@@ -106,7 +106,8 @@ makeFSpec opts context = fSpec
            , ifcControls = [ conj
                            | conj<-allConjs
                            , (not.null) (ifcParams ifc `isc` primsMentionedIn (rc_conjunct conj))
-                           , take 3 (rrnm $ rc_orgRule conj) `notElem` ["UNI", "INJ"]
+                           , maybe True (\(p,_) -> p `notElem` [Uni,Inj]) $ rrdcl (rc_orgRule conj)
+                           -- If the conjunct's rule comes from a declared property, don't include the conjunct if the property is Uni or Inj.
                            ]
            }
         where editables = [d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc]
