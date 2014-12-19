@@ -329,13 +329,8 @@ generateInterface fSpec interface =
           where -- Currently, conjuncts that appear in several rules will be evaluated multiple times, to be able to report
                 -- failure of each rule (and for signals update each rule signal database.) This can be optimized by having
                 -- only one conjunct for each unique conjunct expression, and keep a list of originating rules in that conjunct.
-                (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) 
-                  [ conj
-                  | conj <- ifcControls interface
-                  , not (rrnm (rc_orgRule conj) `elem` uniRuleNames fSpec && not (isSignal $ rc_orgRule conj)) 
-                  -- don't include UNI conjuncts for invariants
-                  ] 
--- two arrays: one for the object and one for the list of subinterfaces
+                (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) [ conj | conj <- ifcControls interface ] 
+
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
