@@ -40,6 +40,18 @@ require_once __DIR__.'/php/loadplugins.php'; // make ExecEngine plugins availabl
 function init() {
         initialize();
 
+$(".AtomList[concept='StatusPercentage']").each(function(){
+           var percent = $(this).find(".AtomRow[rowtype='Normal']").find(".AtomName").val();
+           
+           percent = 67;
+           // if ($.isNumeric(percent)){ // isNumeric function kan vanaf jQuery v1.7
+               r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
+               g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
+               color = 'rgb('+r+','+g+',0)';
+               $(this).closest(".InterfaceList").css("background-color", color);
+           // }
+          });
+          
 // het onderstaande maakt het mogelijk om blokjes te kleuren. Hiervan wordt bijvoorbeeld gebruik gemaakt door de app 'ISTAR'
   $(".AtomName:contains('Green')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "green").find("div").css("color", "white");
   $(".AtomName:contains('Red')").closest(".AtomList[concept='Status']").closest(".InterfaceList").css("background-color", "red").find("div").css("color", "white");
