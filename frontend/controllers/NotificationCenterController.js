@@ -12,3 +12,4 @@ AmpersandApp.factory('NotificationCenterFactory', ['$resource', function($resour
 		get: {method:'GET'}
 	});
 }]);
+

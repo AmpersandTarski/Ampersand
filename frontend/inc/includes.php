@@ -1,7 +1,7 @@
 <?php
 
 /* FUNCTIONS OF NEWER VERSIONS OF PHP */
-require_once (__DIR__ . '/functions/array_column.php');
+require_once (__DIR__ . '/functions/array_column.php'); //TODO: can be removed after PHP update
 
 /* OTHER GENERIC FUNCTIONS */
 require_once (__DIR__ . '/functions/getDirectoryList.php');

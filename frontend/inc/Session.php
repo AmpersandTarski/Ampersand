@@ -21,11 +21,12 @@ class Session {
 		
 		// Database connection for within this class
 		try {
+			
 			$this->database = Database::singleton();
 			
 			// AMPERSAND SESSION
 			if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
-
+				
 				try {
 					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
 				} catch (Exception $e) {
@@ -36,21 +37,24 @@ class Session {
 				// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
 				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
 				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
-				
+
 				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
 				if (!Concept::isAtomInConcept(session_id(), 'SESSION')){ 
 					$this->database->addAtomToConcept(session_id(), 'SESSION');					
 				}
 
 				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+				
 			}else{
 				ErrorHandling::addError('Script does not contain SESSION concept!');
+				throw new Exception('Script does not contain SESSION concept!');
 				return;
 			}
-	
+			
 		} catch (Exception $e){
-		  	return;
-		}	
+		  	throw $e;
+		}
+		
 	}
 	
 	// Prevent any copy of this object

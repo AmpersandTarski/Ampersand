@@ -72,22 +72,17 @@ class Api
     	 
     	$atom = new Atom($atomid);
     	$interface = new ObjectInterface($interfaceName);
-    	return $atom->getContent($interface);
-    	//return current($session->interface->getContent($atom));
+    	return current($atom->getContent($interface));
     }
     
     /**
-     * @url PUT interface/{interfaceName}/atom/{atomid}
+     * @url PATCH interface/{interfaceName}/atom/{atomid}
      * @param string $interfaceName
      * @param string $atomid
      * @param int $roleId
      */
-    public function putAtom($interfaceName, $atomid, $roleId = null, $request_data = null)
+    public function patchAtom($interfaceName, $atomid, $roleId = null, $request_data = null)
     {
-    	// $request_data is a reserved name in Restler2. It will pass all the parameters passed as an associative array
-    	unset($request_data['$promise']); // request_data that is part of the request parameters, not the atom itself
-    	unset($request_data['$resolved']); // request_data that is part of the request parameters, not the atom itself
-    	
     	$session = Session::singleton();
     	try{
     		$session->setRole($roleId);
@@ -101,9 +96,10 @@ class Api
     	$atom = new Atom($atomid);
     	$interface = new ObjectInterface($interfaceName);
     	
-    	return $atom->setContent($interface, $request_data);
+    	return $atom->patch($interface, $request_data);
     
     }
+    
 	
 	/**
      * @url POST concept/{concept}/atom/

@@ -11,24 +11,24 @@ class Viewer {
 	public function __tostring(){
 		global $dbName;
 		
-		$this->addHtmlLine('<!DOCTYPE html>'."\n");  //TODO: "\n" op een of andere manier vervangen, of in functie zetten net als emit()
+		$this->addHtmlLine("<!doctype html>"."\n");  //TODO: "\n" op een of andere manier vervangen
 		$this->addHtmlLine('<html ng-app="AmpersandApp">');
-		$this->addHtmlLine('head');
+		$this->addHtmlLine('<head>');
 				
 		$this->addHtmlLine('<title>'.$dbName.'</title>');
 		
 		// Meta tags
-		$this->addHtmlLine('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+		$this->addHtmlLine('<meta name="viewport" content="width=device-width, initial-scale=1.0"/>');
 		$this->addHtmlLine('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>');
-		$this->addHtmlLine('<meta http-equiv="Pragma" content="no-cache">');
-		$this->addHtmlLine('<meta http-equiv="no-cache">');
-		$this->addHtmlLine('<meta http-equiv="Expires" content="-1">');
-		$this->addHtmlLine('<meta http-equiv="cache-Control" content="no-cache">');
+		$this->addHtmlLine('<meta http-equiv="Pragma" content="no-cache"/>');//TODO: kan weg?
+		$this->addHtmlLine('<meta http-equiv="no-cache"/>');//TODO: kan weg?
+		$this->addHtmlLine('<meta http-equiv="Expires" content="-1"/>'); //TODO: kan weg?
+		$this->addHtmlLine('<meta http-equiv="cache-Control" content="no-cache"/>');//TODO: kan weg?
 		
 		// JQuery
 		$this->addHtmlLine('<script src="lib/jquery/jquery-1.11.0.min.js"></script>');
 		$this->addHtmlLine('<script src="lib/jquery/jquery-migrate-1.2.1.js"></script>');
-		$this->addHtmlLine('<script src="lib/jquery/jquery-ui-1.10.4.custom.js"></script>');
+		$this->addHtmlLine('<script src="lib/jquery/jquery-ui-1.10.4.custom.js"></script>');		
 		
 		// Bootstrap
 		$this->addHtmlLine('<link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before Viewer specific css files that overwrite bootstrap.css
@@ -38,7 +38,16 @@ class Viewer {
 		$this->addHtmlLine('<script src="lib/angular/angular.min.js"></script>');
 		$this->addHtmlLine('<script src="lib/angular/angular-resource.min.js"></script>');
 		$this->addHtmlLine('<script src="lib/angular/angular-route.min.js"></script>');
-				
+		$this->addHtmlLine('<script src="lib/angular/createDialog.js"></script>');
+		
+		// Restangular (with depency for lodash)
+		$this->addHtmlLine('<script src="lib/restangular/restangular.min.js"></script>');
+		$this->addHtmlLine('<script src="lib/restangular/lodash.min.js"></script>');
+		
+		// jquery UI & bootstrap in native AngularJS
+		$this->addHtmlLine('<script src="lib/ui-bootstrap/ui-bootstrap-tpls-0.12.0.min.js"></script>');
+		
+		
 		// CSS files
 		$files = getDirectoryList('views/css');
 		foreach ((array)$files as $file){ 

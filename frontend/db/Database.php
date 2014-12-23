@@ -8,6 +8,7 @@ class Database
 {	
 	private $dblink;
 	private $dbname;
+	private $transaction;
 	
 	private static $_instance = null;
 	
@@ -42,7 +43,7 @@ class Database
 		$result = mysql_query($query,$this->dblink);
 		ErrorHandling::addLog('QUERY: ' . $query);
 
-		if (mysql_error()) throw new Exception(mysql_error());
+		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query);
 
 		if ($result === false) return false;
 		if ($result === true) return true;
@@ -119,6 +120,8 @@ class Database
 	// TODO: make private function
 	public function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it does not yet exist...
 	{ 
+		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+		
 		global $conceptTableInfo;
 
 		foreach ($conceptTableInfo[$concept] as $conceptTableCol) { 
@@ -135,7 +138,7 @@ class Database
 			$firstConceptColEsc = addslashes($conceptCols[0]);
 
 			$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), $firstConceptColEsc); // no need to filter duplicates and NULLs
-
+			
 			if (!in_array($newAtom, $existingAtoms)) {
 				$allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
 				$newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
@@ -143,17 +146,19 @@ class Database
 
 				$this->Exe("INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
 			}
+			
 		}
 		
 		return $newAtomEsc;
 	}
 	
 	// NOTE: if $originalAtom == '', editUpdate means insert for n-ary relations
-	// TODO: make private function
 	public function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept, $parentOrChild, $originalAtom)
 	{ 
+		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+		
 		global $relationTableInfo;
-		global $tableColumnInfo;		
+		global $tableColumnInfo;
 		
 		/* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
 		
@@ -174,8 +179,8 @@ class Database
 		}
 		*/
 		
-		// Change $rel because $relationTableInfo is changed
-		$rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept; 
+		// Change $rel because $relationTableInfo is changed (update: not needed anymore)
+		// $rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept; 
 		
 		$table = $relationTableInfo[$rel]['table'];
 		$srcCol = $relationTableInfo[$rel]['srcCol'];
@@ -212,10 +217,10 @@ class Database
 			*/
 			
 			// delete only if there was an $originalAtom
-			if ($originalAtom!=''){ 
+			if ($originalAtom != ''){ 
 				$this->Exe("DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc'");
 			}		
-		
+			
 			$this->Exe("INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
 		
 		}
@@ -224,23 +229,23 @@ class Database
 		$childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
 		$parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
 		$modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
-		// emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
 		
 		$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
 		// TODO: errors here are not reported correctly
 	}
 	
-	// TODO: make private function
 	public function editDelete($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept)
 	{ 
+		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+		
 		global $relationTableInfo;
 		global $tableColumnInfo;
 
 		$srcAtom = $isFlipped ? $childAtom : $parentAtom;
 		$tgtAtom = $isFlipped ? $parentAtom : $childAtom;
 		
-		// Change $rel because $relationTableInfo is changed
-		$rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept;
+		// Change $rel because $relationTableInfo is changed (update: not needed anymore)
+		// $rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept;
 
 		$table = $relationTableInfo[$rel]['table'];
 		$srcCol = $relationTableInfo[$rel]['srcCol'];
@@ -253,7 +258,7 @@ class Database
 		$tgtColEsc = addslashes($tgtCol);
 
 		if ($tableColumnInfo[$table][$tgtCol]['null']){ // note: this uniqueness is not set as an SQL table attribute
-			$this->Exe ("UPDATE `$tableEsc` SET `$tgtColEsc`=NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
+			$this->Exe ("UPDATE `$tableEsc` SET `$tgtColEsc`= NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
 		} else {
 			$this->Exe ("DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
 		}
@@ -265,6 +270,9 @@ class Database
 	// TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't
 	//       happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 	function deleteAtom($atom, $concept) {
+		
+		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+		
 		global $tableColumnInfo;
 
 		foreach ($tableColumnInfo as $table => $tableInfo){
@@ -305,6 +313,34 @@ class Database
 		$seconds =$time[1].$microseconds;  
 		$date = date("j-M-Y, H:i:s.").$microseconds; 
 		$this->Exe("INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
+		
+	}
+	
+	private function startTransaction(){
+		
+		$this->Exe("START TRANSACTION"); // start database transaction
+		$this->transaction = rand();
+		
+	}
+	
+	public function closeTransaction(){
+		$session = SESSION::singleton();
+		
+		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
+		$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->interfaceInvariantConjunctNames); // only invariants rules that might be violated after edits in this interface are checked.
+		
+		if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
+		
+		if ($invariantRulesHold) {
+			$this->setLatestUpdateTime();
+			$this->Exe("COMMIT"); // commit database transaction
+			ErrorHandling::addSuccess('Updated');
+			return true;
+		} else {
+			$this->Exe("ROLLBACK"); // rollback database transaction
+			return false; // TODO return invariant violations
+		}
+		unset($this->transaction);
 		
 	}
 }

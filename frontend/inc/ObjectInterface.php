@@ -8,7 +8,9 @@ class ObjectInterface {
 	public $link;
 	public $interfaceRoles = array();
 	// public $editableConcepts = array();
-	public $relation;
+	public $interfaceInvariantConjunctNames;
+	public $relation; 
+	public $relationIsFlipped;
 	public $univalent;
 	public $totaal;
 	public $editable; public $notEditable;
@@ -36,9 +38,11 @@ class ObjectInterface {
 		$this->interfaceRoles = $interface['interfaceRoles'];
 		
 		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
+		$this->interfaceInvariantConjunctNames = $interface['interfaceInvariantConjunctNames']; // only applies to top level interface
 		
 		// Information about the (editable) relation if applicable
-		$this->relation = $interface['relation'];
+		$this->relation = $interface['relation']; 
+		$this->relationIsFlipped = $interface['relationIsFlipped'];
 		$this->editable = (!empty($interface['relation'])) ? true : false; $this->notEditable = !$this->editable;
 		$this->totaal = ($interface['min'] == "One") ? true : false;
 		$this->univalent = ($interface['max'] == "One") ? true : false; 
@@ -107,6 +111,16 @@ class ObjectInterface {
 		}		
 		
 		return (in_array($roleName, $this->interfaceRoles) or empty($this->interfaceRoles));
+	}
+	
+	public static function getSubinterface($interface, $subinterfaceName){
+		
+		foreach((array)$interface->subInterfaces as $subinterface){
+			if($subinterface->name == $subinterfaceName) {
+				$result = $subinterface;
+			}
+		}
+		return empty($result) ? false : $result;
 	}
 }
 

@@ -1,4 +1,4 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'fundoo.services', 'ui.bootstrap']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -23,4 +23,12 @@ AmpersandApp.config(function($routeProvider) {
 				templateUrl: 'views/interfaces/Person.html'
 			})
 		.otherwise({redirectTo: '/'});
+});
+
+AmpersandApp.config(function(RestangularProvider) {
+    RestangularProvider.setBaseUrl('/CB/api/v1');
+    
+    RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
+        return data;
+    });
 });

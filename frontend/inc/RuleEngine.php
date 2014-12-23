@@ -23,11 +23,22 @@ class RuleEngine {
 	
 	}
 	
-	public static function checkInvariantRules(){
-		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions
-		$invariantRulesHold = true;
+	public static function checkInvariantRules($interfaceInvariantConjunctNames = null){
+		global $allConjuncts; // from Generics.php
+		global $allRules; // from Generics.php
 		
-		foreach (RuleEngine::getInvariantRules() as $rule) if(!RuleEngine::checkInvariantRule($rule)) $invariantRulesHold = false;
+		$invariantRulesHold = true; // default
+		
+		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions
+		
+		// if $interfaceInvariantConjunctNames is not provided (something different than empty array) then check allConjuncts
+		if(is_null($interfaceInvariantConjunctNames)) $interfaceInvariantConjunctNames = array_keys($allConjuncts);
+		
+		// check conjunct one by one
+		foreach((array)$interfaceInvariantConjunctNames as $conjunct){
+			$rule = RuleEngine::getRule($allConjuncts[$conjunct]['ruleName']); // get conjunct rule from $allRules
+			if(!RuleEngine::checkInvariantRule($rule)) $invariantRulesHold = false;
+		}
 		
 		return $invariantRulesHold;
 		
@@ -40,7 +51,7 @@ class RuleEngine {
 		try{
 			$result = $db->Exe($rule['violationsSQL']);
 			if(count($result) == 0){
-				ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
+				// ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
 			}else{				
 				foreach($result as $violation) {
 					$violations[] = array('src' => $violation['src'], 'tgt' => $violation['tgt']);
@@ -51,6 +62,7 @@ class RuleEngine {
 			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage);
 		}
 	}
+	
 	public static function checkInvariantRule($rule){
 		$db = Database::singleton();
 		try{
@@ -65,17 +77,6 @@ class RuleEngine {
 		}catch (Exception $e){
 			ErrorHandling::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage);
 		}
-	}
-	
-	public static function getInvariantRules(){
-		$rules = array();
-		global $invariantRuleNames; // from Generics.php
-		
-		foreach((array)$invariantRuleNames as $ruleName){
-			$rules[$ruleName] = RuleEngine::getRule($ruleName);		
-		}
-		
-		return $rules;
 	}
 	
 	public static function getRule($ruleName){

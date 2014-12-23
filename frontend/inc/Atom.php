@@ -13,80 +13,136 @@ Class Atom {
 	public function getContent($interface){
 		$database = Database::singleton();
 		
-		if(!$interface->univalent) $content = array();
+		$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
+		$tgtAtoms = array_column($database->Exe($query), 'tgt');
 		
-		$tgtAtoms = array_column($database->Exe("SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL"), 'tgt');
-		foreach ($tgtAtoms as $tgtAtom){
+		foreach ($tgtAtoms as $tgtAtomId){
+			$tgtAtom = new Atom($tgtAtomId);
 				
-			if(count($interface->subInterfaces) > 0){				
-				$atom = new Atom($tgtAtom);
-				$content['id'] = $atom->id;
-				$content['label'] = $atom->id; // TODO: enable ampersand VIEWS here
-				foreach($interface->subInterfaces as $subinterface){
-					
-					$content[$subinterface->name] = $atom->getContent($subinterface);
-				}
-				count($tgtAtoms) > 1 ? $arr[] = $content : $arr = $content;
+			// determine value atom 
+			if($interface->tgtDataType == "concept"){ // subinterface refers to other concept (i.e. not datatype).
+				$content = array ('id' => $tgtAtom->id, 'label' => $tgtAtom->id); // TODO: enable ampersand VIEWS here
+
 			}else{
-				if(strtolower($tgtAtom) === "true") $tgtAtom = true;
-				if(strtolower($tgtAtom) === "false") $tgtAtom = false;
+				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
+				if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
 				
-		
-				/*
-				$links = array();
-				$interfaces = array();
-				foreach($session->role->getInterfaces(null, $this->tgtConcept) as $interfaceForTgtConcept){
-					$links[] = $interfaceForTgtConcept->link . '/atom/' . urlencode($tgtAtom);
-					$interfaces[] = $interfaceForTgtConcept->name;
-				}*/
-				if($interface->univalent){
-					if($interface->tgtDataType == "concept"){
-						$content = array('id' => $tgtAtom, 'label' => $tgtAtom); // TODO: enable ampersand VIEWS here
-						// 'links' => $link; // TODO: views waarmee dit atom ook bekeken kan worden
-					}else{
-						$content = $tgtAtom;
-						
-					}					
-					
-				}else{
-					if($interface->tgtDataType == "concept"){
-						$content[] = array('id' => $tgtAtom, 'label' => $tgtAtom); // TODO: enable ampersand VIEWS here
-						// 'links' => $link; // TODO: views waarmee dit atom ook bekeken kan worden
-					}else{
-						$content[] = $tgtAtom;
-						
-					}	
-					
-				}
-				$arr = $content;
+				$content = $tgtAtom->id;
+				
+				
 			}
+			
+			// subinterfaces
+			foreach($interface->subInterfaces as $subinterface){
+			
+				$otherAtom = $tgtAtom->getContent($subinterface);
+				$content[$subinterface->name] = $otherAtom;
+				
+			}
+			
+			// determine whether value of atom must be inserted as list or as single value
+			if($interface->univalent AND !($interface->tgtDataType == "concept")){ // in cause of univalent (i.e. count of $tgtAtoms <= 1) and a datatype (i.e. not concept)
+				$arr = $content;
+			}elseif(!($interface->tgtDataType == "concept")){
+				$arr[] = $content;
+			}else{
+				$arr[$tgtAtom->id] = $content;
+			}			
+				
+			unset($content);			
+		
 		}
 		
 		return $arr;
 
 	}
 	
-	public function setContent($interface, $content){
+	public function patch(&$interface, $request_data){
 		$database = Database::singleton();
 		
-		$changes = JsonPatch::diff($this->getContent($interface), $content);
+		$before = current($this->getContent($interface));
 		
-		foreach ((array)$changes as $change){
-			switch($change['op']){ // operations
+		$patches = JsonPatch::diff($before, $request_data);
+		
+		foreach ((array)$patches as $key => $patch){
+			switch($patch['op']){ // operations
 				case "replace" :
-					$database->editUpdate('projectName', false, $this->id, "Project", $change['value'], "TEXT", 'child' , '');
-					ErrorHandling::addSuccess('Project updated');
+					$pathArr = explode('/', $patch['path']);
+						
+					$tgtInterface = $interface;
+					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+					
+					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					
+					// find the right subinterface
+					while (count($pathArr)){
+												
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						
+						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
+						$tgtAtom = array_shift($pathArr); // set tgtAtom 
+						if (empty($tgtAtom)) $tgtAtom = $patch['value'];
+						
+					}
+					
+					// perform editUpdate
+					if($tgtInterface->editable){
+						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
+						
+						// in case of empty $tgtAtom perform remove instead of replace.
+						if(!empty($tgtAtom)){ 
+							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+						}else{
+							// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
+							if(empty($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
+							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+							 
+						}					
+					}else{
+						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+					}
+					
 					break;
 				case "add" :
 					
 					break;
-				case "" :
+				case "remove" :
+					$pathArr = explode('/', $patch['path']);
+					
+					$tgtInterface = $interface;
+					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+					
+					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					
+					// find the right subinterface
+					while (count($pathArr)){
+						
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						
+						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
+						$tgtAtom = array_shift($pathArr); // set tgtAtom 
+
+					}
+					
+					// perform editDelete
+					if($tgtInterface->editable){
+						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
+						if(empty($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
+						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+					}else{
+						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+					}
 					
 					break;
 			}
 		}
 		
-		return array_merge($this->getContent($interface), array('notifications' => ErrorHandling::getAll())); 
+		$database->closeTransaction(); // close transaction => ROLLBACK or COMMIT
+		
+		return array_merge(
+				array('patches' => $patches), 
+				array('content' => current($this->getContent($interface))), 
+				array('notifications' => ErrorHandling::getAll())); 
 		
 	}
 	

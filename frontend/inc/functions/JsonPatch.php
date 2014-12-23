@@ -597,3 +597,4 @@ class JsonPatch
     return $doc;
   }
 }
+?>
