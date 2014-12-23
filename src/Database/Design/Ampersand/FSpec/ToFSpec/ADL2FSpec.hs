@@ -56,6 +56,7 @@ makeFSpec opts context = fSpec
               , invars       = invariants context
               , allRules     = allrules
               , vconjs       = allConjs
+              , allConjsPerRule = allConjsPerRule'
               , vquads       = allQuads
               , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
@@ -111,7 +112,8 @@ makeFSpec opts context = fSpec
        where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
-     allQuads = makeAllQuads allConjs
+     allConjsPerRule' = converse [(conj, rc_orgRules conj) | conj <- allConjs ]
+     allQuads = makeAllQuads allConjsPerRule'
 
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules
@@ -415,15 +417,14 @@ makeActivity fSpec rul
 -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
 -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
 -- the rule may have to be restored using functionality from one of the clauses.
-makeAllQuads :: [Conjunct] -> [Quad]
-makeAllQuads allConjs =
-  let conjsPerRule = converse [(conj, rc_orgRules conj) | conj <- allConjs ]
-  in  [ Quad { qDcl     = d
-             , qRule    = rule
-             , qConjuncts = conjs
-             }
-      | (rule,conjs) <- conjsPerRule, d <-relsUsedIn rule
-      ]
+makeAllQuads :: [(Rule, [Conjunct])] -> [Quad]
+makeAllQuads conjsPerRule =
+  [ Quad { qDcl     = d
+         , qRule    = rule
+         , qConjuncts = conjs
+         }
+  | (rule,conjs) <- conjsPerRule, d <-relsUsedIn rule
+  ]
   
 makeAllConjs :: Options -> [Rule] -> [Conjunct]
 makeAllConjs opts allRls =

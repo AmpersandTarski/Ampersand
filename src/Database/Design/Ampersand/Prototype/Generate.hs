@@ -171,7 +171,7 @@ generateRules fSpec =
            , "        , 'message'       => "++(showPhpStr.showMessage)       rule
            , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
-           , "        , 'conjunctIds'   => array ("++intercalate ", " (map showPhpStr conjIds) ++")"
+           , "        , 'conjunctIds'   => array ("++intercalate ", " (map (showPhpStr . rc_id) conjs) ++")"
            ] ++
            ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
@@ -200,7 +200,7 @@ generateRules fSpec =
                ((genMPairView.rrviol) rule
              ) ) ++
            [ "        )" ]
-         | (rule, conjIds) <- converse [(rc_id conj, rc_orgRules conj ) | conj <- vconjs fSpec]
+         | (rule, conjs) <- allConjsPerRule fSpec
          , let rExpr=rrexp rule
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
