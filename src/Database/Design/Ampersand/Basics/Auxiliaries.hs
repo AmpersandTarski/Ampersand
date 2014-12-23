@@ -5,6 +5,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
 import Data.List (nub,elemIndex)
 import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import Data.Maybe (fromMaybe)
+import qualified Data.Map as Map 
 import Debug.Trace
 
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
@@ -43,6 +44,11 @@ getCycles edges =
 combinations :: [[a]] -> [[a]]
 combinations []       = [[]]
 combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
+
+-- Convert list of a's with associated b's to a list of b's with associated a's.
+converse :: (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
+converse aBss = let asPerB = foldl (.) id [ Map.insertWith (++) b [a] | (a,bs) <- aBss, b <- bs ] $ Map.empty
+                in  Map.toList asPerB
 
 commaEng :: String -> [String] -> String
 commaEng str [a,b,c] = a++", "++b++", "++str++" "++c
