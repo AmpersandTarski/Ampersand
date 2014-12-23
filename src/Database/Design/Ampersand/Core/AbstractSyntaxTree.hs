@@ -8,6 +8,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..)
+ , ruleIsInvariantUniOrInj
  , RuleType(..)
  , RuleOrigin(..)
  , Declaration(..)
@@ -46,11 +47,11 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
+import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
---import Debug.Trace
+import Data.Function
 import Data.List (intercalate,nub,delete)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -163,6 +164,8 @@ data Rule =
         }
 instance Eq Rule where
   r==r' = rrnm r==rrnm r'
+instance Prelude.Ord Rule where
+  compare = Prelude.compare `on` rrnm
 instance Show Rule where
   showsPrec _ x
    = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (rrexp x)
@@ -173,6 +176,12 @@ instance Identified Rule where
 instance Association Rule where
   sign   = rrtyp
 
+ruleIsInvariantUniOrInj :: Rule -> Bool
+ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p `elem` [Uni, Inj]
+                             | otherwise                                     = False
+                             -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
+                             -- condition is unnecessary, but this will change in the future.    
+    
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
 data Conjunct = Cjct { rc_id         :: String -- string that identifies this conjunct ('id' rather than 'name', because 
