@@ -33,15 +33,14 @@ require_once __DIR__.'/php/loadplugins.php'; // make ExecEngine plugins availabl
 <link href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
 <script src="js/jquery-1.6.2.min.js"></script>
 <script src="js/jquery-ui-1.8.16.custom.min.js"></script>
-
 <script src="js/Ampersand.js"></script>
-<script type="text/javascript">
-
-function init() {
+<script type="text/javascript">function init() {
         initialize();
 
 $(".AtomList[concept='StatusPercentage']").each(function(){
-           var percent = $(this).find(".AtomRow[rowtype='Normal']").find(".AtomName").val();
+           var percent = $(this).find(".AtomRow[rowtype='Normal']").find(".AtomName").html();
+           // console.log(percent);
+           
            // if ($.isNumeric(percent)){ // isNumeric function kan vanaf jQuery v1.7
                r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
                g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
