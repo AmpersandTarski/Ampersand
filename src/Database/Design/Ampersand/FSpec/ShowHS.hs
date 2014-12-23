@@ -232,7 +232,7 @@ instance ShowHS Conjunct where
  showHS opts indent x
    = intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRule    = " ++ showHSName (rc_orgRule x)
+       ,       ", rc_orgRules   = " ++ "[ "++intercalate (", ") (map showHSName (rc_orgRules x))++"]"
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"

@@ -186,7 +186,7 @@ data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
 data Conjunct = Cjct { rc_id         :: String -- string that identifies this conjunct ('id' rather than 'name', because 
                                                -- this is an internal id that has no counterpart at the ADL level)
-                     , rc_orgRule    :: Rule   -- The rule from which this conjunct originated
+                     , rc_orgRules   :: [Rule] -- All rules this conjunct originates from
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving Show
@@ -194,7 +194,9 @@ data Conjunct = Cjct { rc_id         :: String -- string that identifies this co
 data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
 
 instance Eq Conjunct where
- rc==rc' = rc_conjunct rc==rc_conjunct rc'
+  rc==rc' = rc_id rc==rc_id rc'
+instance Prelude.Ord Conjunct where
+  compare = Prelude.compare `on` rc_id
 
 data Declaration =
   Sgn { decnm :: String     -- ^ the name of the declaration

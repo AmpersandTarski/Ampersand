@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
--- import Database.Design.Ampersand.FSpec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
@@ -12,7 +12,6 @@ import System.Directory
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import Control.Exception
-import Database.Design.Ampersand.Prototype.Installer (mkSignalTableSpec, getTableName)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
@@ -165,7 +164,6 @@ generateRules fSpec =
       (blockParenthesize  "(" ")" ","
          [ [ (showPhpStr.rrnm) rule ++ " =>"
            , "  array ( 'name'          => "++(showPhpStr.rrnm)              rule
-           , "        , 'signalTable'   => "++(showPhpStr.getTableName.mkSignalTableSpec) rule
            , "        , 'ruleAdl'       => "++(showPhpStr.showADL.rrexp)     rule
            , "        , 'origin'        => "++(showPhpStr.show.rrfps)        rule
            , "        , 'meaning'       => "++(showPhpStr.showMeaning)       rule
@@ -233,7 +231,9 @@ generateConjuncts fSpec =
      (indent 4
        (blockParenthesize  "(" ")" ","
          [ [ showPhpStr (rc_id conj) ++ " =>"
-           , "  array ( 'ruleName'   => "++(showPhpStr . rrnm . rc_orgRule)   conj -- the name of the rule that gave rise to this conjunct 
+           , "  array ( 'signalRuleNames' => array ("++ intercalate ", " signalRuleNames ++")"
+           , "        , 'invariantRuleNames' => array ("++ intercalate ", " invRuleNames ++")"
+                      -- the name of the rules that gave rise to this conjunct
            ] ++
            ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
@@ -250,15 +250,13 @@ generateConjuncts fSpec =
            ]
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
-         , not (rrnm (rc_orgRule conj) `elem` uniRuleNames fSpec && not (isSignal $ rc_orgRule conj)) -- don't include UNI conjuncts for invariants 
+         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isSignal r ] 
+         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, not $ isSignal r, not $ ruleIsInvariantUniOrInj r ]
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
      ) )
     
-uniRuleNames :: FSpec -> [String]
-uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
-
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
@@ -323,13 +321,14 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceInvariantConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) invConjs)++")"
-          , "      , 'interfaceSignalConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) sgnlConjs)++")"
+          , "      , 'invariantConjunctIds' => array ("++intercalate ", " invConjIds ++")"
+          , "      , 'signalConjunctIds' => array ("++intercalate ", " signalConjIds ++")"
           ]
-          where -- Currently, conjuncts that appear in several rules will be evaluated multiple times, to be able to report
-                -- failure of each rule (and for signals update each rule signal database.) This can be optimized by having
-                -- only one conjunct for each unique conjunct expression, and keep a list of originating rules in that conjunct.
-                (sgnlConjs, invConjs) = partition (isSignal . rc_orgRule) [ conj | conj <- ifcControls interface ] 
+        invConjIds = [ showPhpStr $ rc_id conj | conj <- ifcControls interface, let rules = rc_orgRules conj, any (not . isSignal) rules ]
+        -- all conjuncts that have an invariant as one of their originating rules
+        signalConjIds = [ showPhpStr $ rc_id conj | conj <- ifcControls interface, let rules = rc_orgRules conj, any isSignal rules ] 
+        -- all conjuncts that have a signal as one of their originating rules
+        -- Note that invConjIds and invConjIds may share conjuncts
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
