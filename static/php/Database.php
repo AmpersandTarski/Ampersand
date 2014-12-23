@@ -305,6 +305,10 @@ function computeViolationsPerRule($conjunctIds) {
   return $violationsPerRule;
 }
 
+function mkSignalTableName($conjunctId) {
+  return 'signals_'.$conjunctId;
+}
+
 function reportSignals($roleNr) {
   global $allRoles;
   global $allRules;
@@ -333,7 +337,7 @@ function reportSignals($roleNr) {
     $ruleViolations = array ();
     
     foreach ($rule['conjunctIds'] as $conjunctId) {
-      $signalTableName = 'signals_'.$conjunctId;
+      $signalTableName = mkSignalTableName($conjunctId);
       //emitAmpersandLog('-conjunct id: '.$conjunctId.' table: '.$signalTableName);
       $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
       $ruleViolations = array_merge($ruleViolations, $conjunctViolations);
@@ -363,7 +367,7 @@ function updateSignals($interface) {
     
     if (count($ruleNames) > 0) { // Only conjuncts that originate from signals have a signal table
       $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
-      $signalTableName = 'signals_'.$conjunctId;
+      $signalTableName = mkSignalTableName($conjunctId);
       //emitLog('Checking conjunct: ' . $conjunctId . ', signal table: ' . $signalTableName);
   
       //emitLog("Coming from (signals: [".join(",", $ruleNames)."])");
