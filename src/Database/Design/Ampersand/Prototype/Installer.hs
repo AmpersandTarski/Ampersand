@@ -208,8 +208,7 @@ mkSignalTableSpec conj =
   ( "// Signal table for conjunct " ++ rc_id conj
   , "signals_" ++ rc_id conj
   , [ "`src` VARCHAR(255) NOT NULL"
-    , "`tgt` VARCHAR(255) NOT NULL"
-    , "`conj` VARCHAR(255) NOT NULL" ]
+    , "`tgt` VARCHAR(255) NOT NULL" ]
   , "InnoDB DEFAULT CHARACTER SET UTF8"
   )
 

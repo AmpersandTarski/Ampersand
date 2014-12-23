@@ -250,37 +250,11 @@ function checkInvariants($interface, $roleNr) {
   global $allRules;
   global $allConjuncts;
   
-  $conjunctIds = $allInterfaceObjects[$interface]['interfaceInvariantConjunctIds'];
+  $conjunctIds = $allInterfaceObjects[$interface]['invariantConjunctIds'];
   //emitLog("Checking invariant rules for interface ".$interface);
   //emitLog("Corresponding conjuncts: ".print_r($conjunctIds, true));
 
-  $violationsPerRule = array (); // will contain all violations, indexed by rule name 
-  foreach ($conjunctIds as $conjunctId) {
-    // evaluate each conjunct and store violations in $violationsPerRule
-    
-    $conjunct = $allConjuncts[$conjunctId];
-    $violationsSQL = $conjunct['violationsSQL'];
-    $ruleName = $conjunct['ruleName'];
-    $rule = $allRules[$ruleName];
-    //emitLog('Checking conjunct: ' . $conjunctId);
-    //emitLog('Coming from rule: ' . $ruleName);
-    
-    $error = '';
-    $violations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
-    if ($error)
-      error("While evaluating conjunct $conjunctId of rule '$ruleName': " . $error);
-      
-    if (count($violations) == 0) {
-      emitLog("Conjunct $conjunctId of rule '$ruleName' holds"); // log successful conjunct validation
-    } else {
-      emitLog("Conjunct $conjunctId of rule '$ruleName' is broken");
-      
-      if (!$violationsPerRule[ $ruleName ])
-        $violationsPerRule[ $ruleName ] = array ();
-        
-      $violationsPerRule[$ruleName] = array_merge( $violationsPerRule[ $ruleName ], $violations);
-    }
-  }
+  $violationsPerRule = computeViolationsPerRule($conjunctIds, true);
   
   // Report violations for each rule
   foreach ($violationsPerRule as $ruleName => $violations) {
@@ -293,10 +267,46 @@ function checkInvariants($interface, $roleNr) {
   return count($violationsPerRule) == 0;
 }
 
+function computeViolationsPerRule($conjunctIds) {
+  global $allConjuncts;
+
+  $violationsPerRule = array (); // will contain all violations, indexed by rule name
+  foreach ($conjunctIds as $conjunctId) {
+    // evaluate each conjunct and store violations in $violationsPerRule
+
+    $conjunct = $allConjuncts[$conjunctId];
+    $violationsSQL = $conjunct['violationsSQL'];
+
+    $ruleNames = $conjunct['invariantRuleNames'];
+    $ruleNamesStr = "invariants: [".join(",", $ruleNames)."]";
+    
+    $error = '';
+    $conjunctViolations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
+    if ($error)
+      error("While evaluating conjunct $conjunctId ($ruleNamesStr):\n" . $error);
+
+    if (count($conjunctViolations) == 0) {
+      emitLog("Conjunct $conjunctId ($ruleNamesStr) holds"); // log successful conjunct validation
+    } else {
+      emitLog("Conjunct $conjunctId ($ruleNamesStr) is broken");
+    
+      // store this conjunct's violations for its originating rules in $violationsPerRule
+      foreach($ruleNames as $ruleName) { 
+        $rule = $allRules[$ruleName];    
+        if (!$violationsPerRule[ $ruleName ])
+          $violationsPerRule[ $ruleName ] = array ();
+    
+        $violationsPerRule[$ruleName] = array_merge( $violationsPerRule[ $ruleName ], $conjunctViolations);
+      }
+    }
+  }
+  
+  return $violationsPerRule;
+}
+
 function reportSignals($roleNr) {
   global $allRoles;
   global $allRules;
-
   $allRoleRules = array ();
 
   if ($roleNr == -1) { // if no role is selected, evaluate the rules for all roles
@@ -317,13 +327,20 @@ function reportSignals($roleNr) {
     $rule = $allRules[$ruleName];
     if (!$rule)
       error("Rule \"$ruleName\" does not exist.");
-      
-    $signalTableName = $rule['signalTable'];
-    $violations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
     
-    if (count($violations) > 0) {  
+    emitLog('signal check rule: '.$ruleName);
+    $ruleViolations = array ();
+    
+    foreach ($rule['conjunctIds'] as $conjunctId) {
+      $signalTableName = 'signals_'.$conjunctId;
+      //emitAmpersandLog('-conjunct id: '.$conjunctId.' table: '.$signalTableName);
+      $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
+      $ruleViolations = array_merge($ruleViolations, $conjunctViolations);
+    }
+          
+    if (count($ruleViolations) > 0) {  
       emitAmpersandLog( brokenRuleMessage($rule) );
-      foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
+      foreach ( violationMessages($roleNr, $rule, $ruleViolations) as $msg )
         emitAmpersandLog( $msg );
     }
   }
@@ -335,25 +352,26 @@ function updateSignals($interface) {
   global $allRules;
   global $allConjuncts;
   
-  $interfaceConjunctIds = $allInterfaceObjects[$interface]['interfaceSignalConjunctIds'];
+  $interfaceConjunctIds = $allInterfaceObjects[$interface]['signalConjunctIds'];
   //emitLog("Checking signals for interface ".$interface);
   //emitLog("Conjuncts: ".print_r($interfaceConjunctIds, true));
   
   foreach ($interfaceConjunctIds as $conjunctId) {
     $conjunct = $allConjuncts[$conjunctId];
     $violationsSQL = $conjunct['violationsSQL']; // take the violationSQL from the conjunct
-    $ruleName = $conjunct['ruleName'];
+    $ruleNames = $conjunct['signalRuleNames'];
     $rule = $allRules[$ruleName];
-    $signalTableName = $rule['signalTable'];
-    //emitLog('Checking conjunct: ' . $conjunctId);
-    //emitLog('Coming from rule: ' . $ruleName . ', signal table: ' . $signalTableName);
+    $signalTableName = 'signals_'.$conjunctId;
+    //emitLog('Checking conjunct: ' . $conjunctId . ', signal table: ' . $signalTableName);
+
+    //emitLog("Coming from (signals: [".join(",", $ruleNames)."])");
     
-    // Remove all violations for this conjunct from the signal table for the rule
-    queryDb("DELETE FROM `$signalTableName` WHERE `conj`='$conjunctId'");
+    // Remove all violations from the signal table for this conjunct
+    queryDb("TRUNCATE `$signalTableName`");
     // and insert the newly computed violations.
     queryDb( "INSERT INTO `$signalTableName`"
-           . " SELECT violations.src, violations.tgt, '$conjunctId' AS `conj`"
-           . " FROM ($violationsSQL) AS violations;" ); 
+           . " SELECT violations.src, violations.tgt"
+           . " FROM ($violationsSQL) AS violations" );
   }
 }
 

@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
+import Database.Design.Ampersand.Basics.Auxiliaries
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
@@ -170,6 +171,7 @@ generateRules fSpec =
            , "        , 'message'       => "++(showPhpStr.showMessage)       rule
            , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
+           , "        , 'conjunctIds'   => array ("++intercalate ", " (map showPhpStr conjIds) ++")"
            ] ++
            ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
@@ -198,7 +200,7 @@ generateRules fSpec =
                ((genMPairView.rrviol) rule
              ) ) ++
            [ "        )" ]
-         | rule <- vrules fSpec ++ grules fSpec
+         | (rule, conjIds) <- converse [(rc_id conj, rc_orgRules conj ) | conj <- vconjs fSpec]
          , let rExpr=rrexp rule
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
