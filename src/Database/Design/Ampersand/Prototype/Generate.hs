@@ -323,14 +323,8 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'invariantConjunctIds' => array ("++intercalate ", " invConjIds ++")"
-          , "      , 'signalConjunctIds' => array ("++intercalate ", " signalConjIds ++")"
+          , "      , 'conjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ ifcControls interface) ++")"
           ]
-        invConjIds = [ showPhpStr $ rc_id conj | conj <- ifcControls interface, let rules = rc_orgRules conj, any (not . isSignal) rules ]
-        -- all conjuncts that have an invariant as one of their originating rules
-        signalConjIds = [ showPhpStr $ rc_id conj | conj <- ifcControls interface, let rules = rc_orgRules conj, any isSignal rules ] 
-        -- all conjuncts that have a signal as one of their originating rules
-        -- Note that invConjIds and invConjIds may share conjuncts
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
