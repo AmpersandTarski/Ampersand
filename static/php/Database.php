@@ -329,7 +329,7 @@ function updateSignals($interface, $conjunctViolationCache) {
       //emitLog("Coming from (signals: [".join(",", $ruleNames)."])");
       
       // Remove all violations from the signal table for this conjunct
-      queryDb("TRUNCATE `$signalTableName`");
+      queryDb("DELETE FROM `$signalTableName`");
 
       $evaluatedConjunct = $conjunctViolationCache[$conjunctId];
       if (isset($evaluatedConjunct)) { // the conjunct has already been evaluated
