@@ -176,6 +176,8 @@ instance Identified Rule where
 instance Association Rule where
   sign   = rrtyp
 
+-- When an invariant rule is univalent or injective, the way it is stored in a table does not allow the univalence or injectivity
+-- to be broken. Hence, we need not check these rules in the prototype. (preventing breakage is the responsibility of the front-end)
 ruleIsInvariantUniOrInj :: Rule -> Bool
 ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p `elem` [Uni, Inj]
                              | otherwise                                     = False
