@@ -51,6 +51,8 @@ if (isset($_REQUEST['resetSession'])) {
   $invariantRulesHold = checkInvariants($interface, $conjunctViolationCache);
   echo '</div>';
   
+  // updateSignals is separate from checkInvariants, because we might not want to update signals when invariants fail
+  // (in which case, updateSignals would be called after 'if ($invariantRulesHold)' below)
   updateSignals($interface, $conjunctViolationCache);
   echo '<div id="ProcessRuleResults">';
   reportSignals($selectedRoleNr);
@@ -234,6 +236,14 @@ function runAllProcedures() {
   emitLog($query);
   queryDb($query);
 }
+
+
+
+
+//// TODO: rule-checking code should move to a different module (e.g. Eval.php) but is kept here for now to allow easy access
+//         to the history while fixing the exec engine functionality.
+
+
 
 // TODO: add ExecEngine support
 function checkInvariants($interface, &$conjunctViolationCache) {
