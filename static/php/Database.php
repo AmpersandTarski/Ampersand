@@ -42,7 +42,6 @@ if (isset($_REQUEST['resetSession'])) {
   }
   
   dbStartTransaction();
-  emitLog("BEGIN");
   
   processCommands(); // update database according to edit commands
     
@@ -59,10 +58,8 @@ if (isset($_REQUEST['resetSession'])) {
 
   if ($invariantRulesHold) {
     setTimeStamp();
-    emitLog("COMMIT");
     dbCommitTransaction();
   } else {
-    emitLog("ROLLBACK");
     dbRollbackTransaction();
   }
   echo '</div>';
@@ -162,7 +159,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   
   // only if the stable column is unique, we do an update
   // TODO: maybe we can do updates also in non-unique columns
-  emitLog('table ' . $table . ' col ' . $stableCol . ' ' . $tableColumnInfo[$table][$stableCol]['unique']);
+//  emitLog('table ' . $table . ' col ' . $stableCol . ' ' . $tableColumnInfo[$table][$stableCol]['unique']);
   if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
     $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog($query);
@@ -274,7 +271,6 @@ function computeViolationsPerRule($conjunctIds, &$conjunctViolationCache) {
     if (count($ruleNames) > 0) { // No need to evaluate sql if this conjunct does not originate from any invariants
       $ruleNamesStr = "invariants: [".join(",", $ruleNames)."]";
       
-      emitAmpersandLog("Evaluating SQL for $conjunctId");
       $violationsSQL = $conjunct['violationsSQL'];
       $error = '';
       $conjunctViolations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
@@ -425,14 +421,17 @@ function violationMessages($roleNr, $rule, $violations) {
 
 // Numbering transactions allows optimization of ExecEngine rules, e.g. transitive closure computations.
 function dbStartTransaction() {
+  emitLog('START TRANSACTION');
   queryDb('START TRANSACTION');
 }
 
 function dbCommitTransaction() {
+  emitLog('COMMIT');
   queryDb('COMMIT');
 }
 
 function dbRollbackTransaction() {
+  emitLog('ROLLBACK');
   queryDb('ROLLBACK');
 }
 
