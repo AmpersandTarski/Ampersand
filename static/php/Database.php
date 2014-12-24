@@ -505,10 +505,6 @@ function testRule($ruleName) {
   $error = '';
   $rows = queryDb($rule['contentsSQL'], $error);
   printBinaryTable($rows);
-  
-  echo "<h4>Rule violations SQL</h4><pre>$rule[violationsSQL]</pre><h4>results</h4>";
-  $rows = queryDb($rule['violationsSQL'], $error);
-  printBinaryTable($rows);
 }
 
 function timestampHtml() {

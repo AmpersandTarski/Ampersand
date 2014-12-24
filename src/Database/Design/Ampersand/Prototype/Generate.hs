@@ -173,25 +173,15 @@ generateRules fSpec =
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
            , "        , 'conjunctIds'   => array ("++intercalate ", " (map (showPhpStr . rc_id) conjs) ++")"
            ] ++
-           ( if verboseP (getOpts fSpec)
-             then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
-                  ++["        // "]
-             else   []
-           ) ++
            ( if development (getOpts fSpec)
-             then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) ] ++
-                  [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
-             else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
-           ] ++
-           [ "        , 'contentsSQL'   => " ++
-             let contentsExpr = conjNF (getOpts fSpec) rExpr in
-              showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
-           | development (getOpts fSpec) -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
-                                      -- php/Database.php?testRule=RULENAME
-           ] ++
+             then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
+                  , "        , 'contentsSQL'   => " ++
+                                  let contentsExpr = conjNF (getOpts fSpec) rExpr
+                                  in  showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+                    -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+                    -- php/Database.php?testRule=RULENAME
+                  ]
+             else [] ) ++                  
            [ "        , 'pairView'      =>" -- a list of sql queries for the pair-view segments
            , "            array"
            ] ++
@@ -202,8 +192,6 @@ generateRules fSpec =
            [ "        )" ]
          | (rule, conjs) <- allConjsPerRule fSpec
          , let rExpr=rrexp rule
-         , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
     ) )
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
