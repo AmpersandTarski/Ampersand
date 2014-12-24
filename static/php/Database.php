@@ -306,48 +306,6 @@ function mkSignalTableName($conjunctId) {
   return 'signals_'.$conjunctId;
 }
 
-function reportSignals($roleNr) {
-  global $allRoles;
-  global $allRules;
-  $allRoleRules = array ();
-
-  if ($roleNr == -1) { // if no role is selected, evaluate the rules for all roles
-    for ($r = 0; $r < count($allRoles); $r++) { 
-      if ($allRoles[$r]['name'] != 'DATABASE') { // filter rules for role 'DATABASE', these will be handled by runAllProcedures() 
-        $allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
-      }
-    }
-    $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
-  } else {
-    $role = $allRoles[$roleNr];
-    $allRoleRules = $role['ruleNames'];
-  }
-  
-  //emitAmpersandLog('$allRoleRules: '.print_r($allRoleRules,true));
-  foreach ($allRoleRules as $ruleName) {
-    //emitAmpersandLog("Rule: $ruleName");
-    $rule = $allRules[$ruleName];
-    if (!$rule)
-      error("Rule \"$ruleName\" does not exist.");
-    
-    //emitLog('signal check rule: '.$ruleName);
-    $ruleViolations = array ();
-    
-    foreach ($rule['conjunctIds'] as $conjunctId) {
-      $signalTableName = mkSignalTableName($conjunctId);
-      //emitAmpersandLog('-conjunct id: '.$conjunctId.' table: '.$signalTableName);
-      $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
-      $ruleViolations = array_merge($ruleViolations, $conjunctViolations);
-    }
-          
-    if (count($ruleViolations) > 0) {  
-      emitAmpersandLog( brokenRuleMessage($rule) );
-      foreach ( violationMessages($roleNr, $rule, $ruleViolations) as $msg )
-        emitAmpersandLog( $msg );
-    }
-  }
-}
-
 // TODO: add ExecEngine support
 function updateSignals($interface, $conjunctViolationCache) {
   // $conjunctViolationCache contains violations for already evaluated conjuncts (during invariant checking)
@@ -396,6 +354,48 @@ function updateSignals($interface, $conjunctViolationCache) {
                . " SELECT violations.src, violations.tgt"
                . " FROM ($violationsSQL) AS violations" );
       }
+    }
+  }
+}
+
+function reportSignals($roleNr) {
+  global $allRoles;
+  global $allRules;
+  $allRoleRules = array ();
+
+  if ($roleNr == -1) { // if no role is selected, evaluate the rules for all roles
+    for ($r = 0; $r < count($allRoles); $r++) { 
+      if ($allRoles[$r]['name'] != 'DATABASE') { // filter rules for role 'DATABASE', these will be handled by runAllProcedures() 
+        $allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
+      }
+    }
+    $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
+  } else {
+    $role = $allRoles[$roleNr];
+    $allRoleRules = $role['ruleNames'];
+  }
+  
+  //emitAmpersandLog('$allRoleRules: '.print_r($allRoleRules,true));
+  foreach ($allRoleRules as $ruleName) {
+    //emitAmpersandLog("Rule: $ruleName");
+    $rule = $allRules[$ruleName];
+    if (!$rule)
+      error("Rule \"$ruleName\" does not exist.");
+    
+    //emitLog('signal check rule: '.$ruleName);
+    $ruleViolations = array ();
+    
+    foreach ($rule['conjunctIds'] as $conjunctId) {
+      $signalTableName = mkSignalTableName($conjunctId);
+      //emitAmpersandLog('-conjunct id: '.$conjunctId.' table: '.$signalTableName);
+      $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
+      $ruleViolations = array_merge($ruleViolations, $conjunctViolations);
+    }
+          
+    if (count($ruleViolations) > 0) {  
+      emitAmpersandLog( brokenRuleMessage($rule) );
+      foreach ( violationMessages($roleNr, $rule, $ruleViolations) as $msg )
+        emitAmpersandLog( $msg );
     }
   }
 }
