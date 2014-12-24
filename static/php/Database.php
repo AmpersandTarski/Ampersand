@@ -45,27 +45,20 @@ if (isset($_REQUEST['resetSession'])) {
   emitLog("BEGIN");
   
   processCommands(); // update database according to edit commands
-  
-  // Process processRules first, because the ExecEngine may execute code while processing this stuff.
-  updateSignals($interface, $selectedRoleNr);
-  echo '<div id="ProcessRuleResults">';
-  reportSignals($selectedRoleNr);
-  echo '</div>';
-  
-  // Run all stored procedures in the database
-  // Doing so AFTER running the ExecEngine allows any problems with stored procedures to be 'fixed'
-  // 2do this: create a rule with the same ruleexpression and handle the violation with th ExecEngine
-  runAllProcedures();
-  runAllProcedures();
-  
+    
   echo '<div id="InvariantRuleResults">';
   $invariantRulesHold = checkInvariants($interface);
   echo '</div>';
   
   if ($invariantRulesHold) {
+    updateSignals($interface, $selectedRoleNr);
     setTimeStamp();
     emitLog("COMMIT");
     dbCommitTransaction();
+    echo '<div id="ProcessRuleResults">';
+    reportSignals($selectedRoleNr);
+    echo '</div>';
+
   } else {
     emitLog("ROLLBACK");
     dbRollbackTransaction();
