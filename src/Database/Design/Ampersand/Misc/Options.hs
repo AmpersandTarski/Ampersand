@@ -18,6 +18,7 @@ import Database.Design.Ampersand.Basics
 import Paths_ampersand (getDataDir)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
+import Data.Char
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Misc.Options"
@@ -121,7 +122,7 @@ getOptions =
                       , outputfile    = fatal 83 "No monadic options available."
                       , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
                                                   (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
-                      , dbName        = fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
+                      , dbName        = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
                       , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
                       , dirExec       = takeDirectory exePath
                       , ampersandDataDir = dataDir
@@ -246,8 +247,8 @@ options = map pp
             , Public)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> return opts{dbName = if nm == ""
-                                                           then baseName opts
-                                                           else nm}
+                                                         then dbName opts
+                                                         else map toLower nm}
                        ) "NAME")
                ("database name (overwrites environment variable "++ envdbName ++ ", defaults to filename)")
             , Public)
