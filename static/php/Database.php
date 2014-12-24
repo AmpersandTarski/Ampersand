@@ -487,6 +487,7 @@ function error($err) {
 function testRule($ruleName) {
   global $isDev;
   global $allRules;
+  global $allConjuncts;
   
   if (!$isDev) {
     echo "<span style=\"color: red\">Rule test unavailable: prototype was not generated with <tt>--dev</tt> option.</span>";
@@ -501,10 +502,20 @@ function testRule($ruleName) {
   echo "<h2>Testing rule $ruleName</h2>";
   $rule = $allRules[$ruleName];
   $ruleAdl = escapeHtmlAttrStr($rule['ruleAdl']);
-  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$rule[contentsSQL]</pre><h4>results</h4>";
-  $error = '';
-  $rows = queryDb($rule['contentsSQL'], $error);
+  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt></br>";
+  echo "<b>Conjunct ids:</b> [".join(",", $rule['conjunctIds'])."]";
+  echo "<h3>Rule SQL</h3><pre>$rule[contentsSQL]</pre><h4>results:</h4>";
+
+
+  $rows = queryDb($rule['contentsSQL']);
   printBinaryTable($rows);
+    
+  foreach ($rule['conjunctIds'] as $conjunctId) {
+    $conjunct = $allConjuncts[$conjunctId];
+    echo "<h3>Violation SQL conjunct $conjunctId</h3><pre>$conjunct[violationsSQL]</pre><h4>Conjunct violations:</h4>";
+    $rows = queryDb($conjunct['violationsSQL']);
+    printBinaryTable($rows);
+  }
 }
 
 function timestampHtml() {
