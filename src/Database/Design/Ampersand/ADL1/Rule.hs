@@ -3,9 +3,9 @@ module Database.Design.Ampersand.ADL1.Rule
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree ( Prop(..))
 import Database.Design.Ampersand.Classes.Populated ( fullContents)
 import Database.Design.Ampersand.Misc
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Rule"
@@ -32,7 +32,9 @@ consequent r
 
 conjunctViolations :: [A_Gen] -> [Population] -> Conjunct -> Pairs
 conjunctViolations gens pop conj =
-  fullContents gens pop (EDcV (sign (rc_conjunct conj))) >- fullContents gens pop (rc_conjunct conj)
+  let vConts    = Set.fromList $ fullContents gens pop (EDcV (sign (rc_conjunct conj)))
+      conjConts = Set.fromList $ fullContents gens pop (rc_conjunct conj)
+  in  Set.toList $ vConts `Set.difference` conjConts 
      
 ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
 ruleviolations gens pop r = case rrexp r of
