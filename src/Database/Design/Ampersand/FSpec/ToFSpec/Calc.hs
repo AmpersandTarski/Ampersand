@@ -549,8 +549,7 @@ assembleECAs fSpec editables
                                 ) -}
                          )
                        )
-                     | conjEqClass <- fatal 552 "assembleECAs needs to be adapted to new conjunct datatype" 
-                                      -- TODO: implement this once we can test it (note: computing eq. class is no longer necessary)
+                     | conjEqClass <- [] -- TODO: implement this once we can test it (note: computing eq. class is no longer necessary)
                     -- conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
                      , conjunct <- (fst.head) conjEqClass                  -- get conjuncts from the clauses
                      , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
