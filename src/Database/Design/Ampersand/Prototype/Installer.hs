@@ -133,8 +133,9 @@ dumpPopulationToADL fSpec = unlines $
       ,"  }"
       ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
       ,"  ?>';"
-      ,"  file_put_contents(\"dbdump.php.\",$content);"
-      , ""
+      ,"  @$res=file_put_contents(\"dbdump.php.\",$content);"
+      ,"  if($res===FALSE)"
+      ,"    echo '(population dump file not created, due to insufficient server permissions)<br/><br/>';"
       , "?>"
       ]
 
