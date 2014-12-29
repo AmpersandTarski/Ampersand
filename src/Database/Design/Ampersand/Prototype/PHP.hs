@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.Prototype.PHP 
          ( executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP
-         , createTablesPHP, populateTablesPHP, plug2TableSpec,dropplug,historyTableSpec,sessionTableSpec,TableSpec) where
+         , createTablesPHP, populateTablesPHP, populateTablesWithPopsPHP, plug2TableSpec
+         , dropplug, historyTableSpec, sessionTableSpec, TableSpec) where
 
 import Prelude hiding (exp)
 import Control.Exception
@@ -109,7 +110,7 @@ historyTableSpec
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
   concatMap fillSignalTable (initialConjunctSignals fSpec) ++
-  concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
+  populateTablesWithPopsPHP fSpec (initialPops fSpec)
   where
     fillSignalTable (conj, viols) =
       [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName $ mkSignalTableSpec conj)
@@ -122,9 +123,13 @@ populateTablesPHP fSpec =
         "            );"
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
       ]
-    
+
+populateTablesWithPopsPHP :: FSpec -> [Population] -> [String]
+populateTablesWithPopsPHP fSpec pops =
+  concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
+  where
     populatePlugPHP plug
-         = case tblcontents (gens fSpec) (initialPops fSpec) plug of
+         = case tblcontents (gens fSpec) pops plug of
                [] -> []
                tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"

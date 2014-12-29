@@ -41,7 +41,7 @@ generateProtoStuff opts fSpec
                                mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                exitWith $ ExitFailure 10
               Checked (beforePops, afterPops) ->
-               do { isValid <- validateEditScript beforePops afterPops (nm++".edit")
+               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit")
                   ; unless isValid (exitWith (ExitFailure 30))
                   }
          }
