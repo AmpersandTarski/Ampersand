@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Monad
+import Control.Applicative
 import Data.List
 import Data.Function (on)
 import System.FilePath        (combine)
@@ -9,8 +10,10 @@ import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand.Prototype.ObjBinGen    (phpObjInterfaces)
 import Database.Design.Ampersand.Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import Database.Design.Ampersand.Prototype.CoreImporter
+import Database.Design.Ampersand.InputProcessing
 import Database.Design.Ampersand.Prototype.GenBericht (doGenBericht)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+import Database.Design.Ampersand.Prototype.ValidateEdit
 -- import Database.Design.Ampersand.Input.ADL1.CtxError (showErr)
 -- import qualified Database.Design.Ampersand.Basics as Basics
 
@@ -29,6 +32,19 @@ main =
 
 generateProtoStuff :: Options -> FSpec -> IO ()
 generateProtoStuff opts fSpec
+  | Just nm <- validateEdit (getOpts fSpec) =
+      do { verboseLn (getOpts fSpec) "Validating edit operations:"
+         ; gBeforePops <- getPopulationsFrom opts $ nm ++ ".before"
+         ; gAfterPops <- getPopulationsFrom opts $ nm ++ ".after"
+         ; case (,) <$> gBeforePops <*> gAfterPops of
+              Errors err -> do putStrLn "Error(s) found in before/after populations:"
+                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+                               exitWith $ ExitFailure 10
+              Checked (beforePops, afterPops) ->
+               do { isValid <- validateEditScript beforePops afterPops (nm++".edit")
+                  ; unless isValid (exitWith (ExitFailure 30))
+                  }
+         }
   | validateSQL (getOpts fSpec) =
       do { verboseLn (getOpts fSpec) "Validating SQL expressions..."
          ; isValid <- validateRulesSQL fSpec
@@ -48,6 +64,7 @@ generateProtoStuff opts fSpec
          }
   | otherwise =
       do { verboseLn (getOpts fSpec) "Generating prototype artifacts..."
+         ; putStrLn $ show $ validateEdit (getOpts fSpec)
          ; when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
          ; case testRule (getOpts fSpec) of
