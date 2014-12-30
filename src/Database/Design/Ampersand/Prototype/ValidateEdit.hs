@@ -39,7 +39,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; resultingConceptTables <- mapM (getSqlConceptTable fSpec) concepts
             ; resultingRelationTables <- mapM (getSqlRelationTable fSpec) relations
             
-            ; putStrLn $ "Resulting concept tables:\n" ++ unlines [ name c | c <- concepts ] 
+            ; putStrLn $ "Resulting concept tables:\n" ++ unlines [ name c ++ ": " ++ show atoms | (c,atoms) <- resultingConceptTables ] 
             ; putStrLn $ "Resulting relations:\n" ++ unlines [ name d ++ ": " ++ show pairs | (d,pairs) <- resultingRelationTables ]
 
             ; putStrLn $ "Expected concept tables:\n" ++ unlines [ name c ++ ": " ++ show atoms | (c,atoms) <- expectedConceptTables ] 
@@ -60,19 +60,22 @@ createTempDatabase fSpec pops =
 
 getSqlConceptTable :: FSpec -> A_Concept -> IO (A_Concept, [String])
 getSqlConceptTable fSpec c =
- do { let query = case lookupCpt fSpec c of
+ do { -- to prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)
+      let query = case lookupCpt fSpec c of
                     []                      -> fatal 58  "No concept table for concept \"" ++ name c ++ "\""
-                    (table,conceptField):_ -> "SELECT DISTINCT `" ++ fldname conceptField ++ "` FROM `" ++ name table ++ "`" ++
+                    (table,conceptField):_ -> "SELECT DISTINCT `" ++ fldname conceptField ++ "` as `src`, NULL as `tgt`"++
+                                              " FROM `" ++ name table ++ "`" ++
                                               " WHERE `" ++ fldname conceptField ++ "` IS NOT NULL"
     ; putStrLn $ "Query for concept " ++ name c ++ ":" ++ query 
-    ; return (c, [])
+    ; atomsDummies <- performQuery (getOpts fSpec) tempDbName query
+    ; return (c, map fst atomsDummies)
     }
 
 getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String, String)])
 getSqlRelationTable fSpec d =
  do { let query = selectExprRelation fSpec (-1) "src" "tgt" d
  
-    ; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
+    --; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
     ; pairs <- performQuery (getOpts fSpec) tempDbName query
     ; return (d, pairs)
     }
