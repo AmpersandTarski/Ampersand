@@ -26,10 +26,10 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
     
 createTempDatabase :: FSpec -> [Population] -> IO ()
 createTempDatabase fSpec pops =
- do { _ <- executePHP . showPHP $ sqlServerConnectPHP fSpec ++
-                                  createTempDbPHP tempDbName ++
-                                  createTablesPHP fSpec ++
-                                  populateTablesWithPopsPHP fSpec pops
+ do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
+                                     createTempDbPHP tempDbName ++
+                                     createTablesPHP fSpec ++
+                                     populateTablesWithPopsPHP fSpec pops
     ; return ()
     }
  

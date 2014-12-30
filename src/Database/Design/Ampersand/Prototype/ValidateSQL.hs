@@ -127,7 +127,7 @@ evaluateExpSQL fSpec exp =
 
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery opts queryStr =
- do { queryResult <- (executePHP . showPHP) php
+ do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
               fatal 141 $ "PHP/SQL problem: "++queryResult
@@ -168,10 +168,10 @@ performQuery opts queryStr =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { _ <- executePHP . showPHP $ sqlServerConnectPHP fSpec ++
-                                  createTempDbPHP tempDbName ++
-                                  createTablesPHP fSpec ++
-                                  populateTablesPHP fSpec
+ do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
+                                     createTempDbPHP tempDbName ++
+                                     createTablesPHP fSpec ++
+                                     populateTablesPHP fSpec
     ; return ()
     }
  

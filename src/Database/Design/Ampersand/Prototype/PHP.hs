@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Prototype.PHP 
-         ( executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP
+         ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP
          , createTablesPHP, populateTablesPHP, populateTablesWithPopsPHP, plug2TableSpec
          , dropplug, historyTableSpec, sessionTableSpec, TableSpec) where
 
@@ -186,20 +186,26 @@ createTempDbPHP dbNm =
 
 
 -- call the command-line php with phpStr as input
-executePHP :: String -> IO String
-executePHP phpStr =
+executePHPStr :: String -> IO String
+executePHPStr phpStr =
  do { tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
                                  return ".")
 
-    ; (tempfile, temph) <- openTempFile tempdir "phpInput"
+    ; (tempPhpFile, temph) <- openTempFile tempdir "phpInput"
     ; hPutStr temph phpStr
     ; hClose temph
-
-    ; let cp = CreateProcess
-                { cmdspec       = RawCommand "php" [tempfile]
-                , cwd           = Nothing -- path
+    ; results <- executePHP Nothing tempPhpFile []
+    ; removeFile tempPhpFile
+    ; return results
+    }
+    
+executePHP :: Maybe String -> String -> [String] -> IO String
+executePHP mWorkingDir phpPath phpArgs =
+ do { let cp = CreateProcess
+                { cmdspec       = RawCommand "php" $ phpPath : phpArgs
+                , cwd           = mWorkingDir
                 , env           = Just [("TERM","dumb")] -- environment
                 , std_in        = Inherit
                 , std_out       = CreatePipe
@@ -226,7 +232,6 @@ executePHP phpStr =
               ; hClose stdOutH
               ; return outputStr'
               }
-    ; removeFile tempfile
 --    ; putStrLn $ "Results:\n" ++ outputStr
     ; return outputStr
     }
