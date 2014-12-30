@@ -316,8 +316,9 @@ function getAllConceptAtoms($concept) {
   $conceptColEsc = escapeSQL($conceptCol);
   
   // need to do array_unique and array_filter, since concept table may contain duplicates and NULLs
-  return array_unique(array_filter(firstCol(DB_doquer("SELECT `$conceptColEsc` FROM `$conceptTableEsc`")), 'notNull'));
-}
+  // TODO: more elegant to filter dups and nulls in SQL: ("SELECT DISTINCT `$conceptColEsc` FROM `$conceptTableEsc`  WHERE `$conceptColEsc` IS NOT NULL")
+  return array_unique(array_filter(firstCol(DB_doquer("SELECT `$conceptColEsc` FROM `$conceptTableEsc`")),'notNull'));  
+} 
 
 function notNull($atom) { // need a type-based comparison, otherwise 0 is also null
   return $atom !== null;
