@@ -1,11 +1,17 @@
 module Database.Design.Ampersand.Prototype.ValidateEdit where
 
 import Prelude hiding (putStr, putStrLn)
+import Data.List
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Prototype.PHP
+import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Misc.Options as Opts
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Prototype.ValidateEdit"
+
 
 tempDbName :: String
 tempDbName = "ampersand_temporaryeditvalidationdb"
@@ -17,13 +23,28 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
         Left err -> error $ "ERROR reading file " ++ editScriptPath ++ ":\n" ++ err
         Right editScript ->
          do { putStrLn $ "Population before edit operations:\n" ++ show beforePops
-            ; putStrLn $ "Expected population after edit operations:\n" ++ show afterPops
+            ; -- putStrLn $ "Expected population after edit operations:\n" ++ show afterPops
             ; putStrLn $ "Edit script:\n" ++ editScript
             
             ; createTempDatabase fSpec beforePops
             ; phpOutput <- executePHP (Just $ Opts.dirPrototype (getOpts fSpec)) "php/ValidateEdit.php" 
                              [editScript] -- TODO: escape
             ; putStrLn $ phpOutput 
+            
+            ; let expectedConceptTables  = [ (c,atoms) | PCptPopu c atoms <- afterPops ]
+            ; let expectedRelationTables = [ (d,pairs) | PRelPopu d pairs <- afterPops ]
+            
+            ; let concepts = allConcepts fSpec \\ [ONE]
+            ; let relations = allDecls fSpec
+            ; resultingConceptTables <- mapM (getSqlConceptTable fSpec) concepts
+            ; resultingRelationTables <- mapM (getSqlRelationTable fSpec) relations
+            
+            ; putStrLn $ "Resulting concept tables:\n" ++ unlines [ name c | c <- concepts ] 
+            ; putStrLn $ "Resulting relations:\n" ++ unlines [ name d ++ ": " ++ show pairs | (d,pairs) <- resultingRelationTables ]
+
+            ; putStrLn $ "Expected concept tables:\n" ++ unlines [ name c ++ ": " ++ show atoms | (c,atoms) <- expectedConceptTables ] 
+            ; putStrLn $ "Expected relations:\n" ++ unlines [ name d ++ ": " ++ show pairs | (d,pairs) <- expectedRelationTables ] 
+
             ; return True
             }
     }
@@ -37,7 +58,24 @@ createTempDatabase fSpec pops =
     ; return ()
     }
 
+getSqlConceptTable :: FSpec -> A_Concept -> IO (A_Concept, [String])
+getSqlConceptTable fSpec c =
+ do { let query = case lookupCpt fSpec c of
+                    []                      -> fatal 58  "No concept table for concept \"" ++ name c ++ "\""
+                    (table,conceptField):_ -> "SELECT DISTINCT `" ++ fldname conceptField ++ "` FROM `" ++ name table ++ "`" ++
+                                              " WHERE `" ++ fldname conceptField ++ "` IS NOT NULL"
+    ; putStrLn $ "Query for concept " ++ name c ++ ":" ++ query 
+    ; return (c, [])
+    }
 
+getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String, String)])
+getSqlRelationTable fSpec d =
+ do { let query = selectExprRelation fSpec (-1) "src" "tgt" d
+ 
+    ; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
+    ; pairs <- performQuery (getOpts fSpec) tempDbName query
+    ; return (d, pairs)
+    }
 -- TODO: are we going to use this data type?
 
 type EditScript = [SQLEditOp]
