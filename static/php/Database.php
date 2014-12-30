@@ -67,13 +67,15 @@ if (isset($_REQUEST['resetSession'])) {
   echo '</div>';
 }
 
-function processCommands() {
-  $commandsJson = $_POST['commands'];
-  if (isset($commandsJson)) {
-    $commandArray = json_decode($commandsJson);
-    foreach ($commandArray as $command)
-      processCommand($command);
-  }
+function processCommands()
+{ $commandsJson = $_POST['commands']; 
+  if (isset($commandsJson))
+    processCommandsJson($commandsJson);
+}
+
+function processCommandsJson($commandsJson)
+{ $commandArray = json_decode($commandsJson);
+    foreach ($commandArray as $command) processCommand($command);
 }
 
 function processCommand($command) {

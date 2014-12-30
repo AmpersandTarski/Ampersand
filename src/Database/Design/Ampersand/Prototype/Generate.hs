@@ -12,6 +12,7 @@ import System.FilePath
 import System.Directory
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Control.Exception
 
 fatal :: Int -> String -> a
@@ -77,7 +78,8 @@ generateConstants :: Options -> [String]
 generateConstants opts =
   [ "$versionInfo = "++showPhpStr ampersandVersionStr++";" -- so we can show the version in the php-generated html
   , ""
-  , "$dbName = "++showPhpStr (dbName opts)++";"
+  , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
+  , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""

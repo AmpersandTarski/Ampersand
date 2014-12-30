@@ -5,6 +5,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Prototype.PHP
+import qualified Database.Design.Ampersand.Misc.Options as Opts
 
 tempDbName :: String
 tempDbName = "ampersand_temporaryeditvalidationdb"
@@ -20,6 +21,9 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; putStrLn $ "Edit script:\n" ++ editScript
             
             ; createTempDatabase fSpec beforePops
+            ; phpOutput <- executePHP (Just $ Opts.dirPrototype (getOpts fSpec)) "php/ValidateEdit.php" 
+                             [editScript] -- TODO: escape
+            ; putStrLn $ phpOutput 
             ; return True
             }
     }
