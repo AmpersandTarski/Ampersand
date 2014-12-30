@@ -6,8 +6,6 @@ import Control.Monad
 import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
 import Database.Design.Ampersand hiding (putStr, origin)
-import Database.Design.Ampersand.Prototype.RelBinGenBasics
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import Database.Design.Ampersand.Prototype.Installer
 import Database.Design.Ampersand.Prototype.PHP
 
@@ -100,7 +98,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     }
 validateExp fSpec vExp@(exp, origin) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
-    ; violationsSQL <- fmap sort . evaluateExpSQL fSpec$ exp
+    ; violationsSQL <- fmap sort . evaluateExpSQL fSpec tempDbName $ exp
     ; let violationsAmp = sort [(srcPaire p, trgPaire p) | p <- fullContents (gens fSpec) (initialPops fSpec) exp]
 
     ; if violationsSQL == violationsAmp
@@ -117,54 +115,6 @@ validateExp fSpec vExp@(exp, origin) =
           ; return (vExp, False)
           }
     }
-
--- evaluate normalized exp in SQL
-evaluateExpSQL :: FSpec -> Expression -> IO [(String,String)]
-evaluateExpSQL fSpec exp =
-  fmap sort (performQuery (getOpts fSpec) violationsQuery)
- where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = selectExpr fSpec 26 "src" "tgt" violationsExpr
-
-performQuery :: Options -> String -> IO [(String,String)]
-performQuery opts queryStr =
- do { queryResult <- (executePHPStr . showPHP) php
-    ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then do verboseLn opts{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
-              fatal 141 $ "PHP/SQL problem: "++queryResult
-      else case reads queryResult of
-             [(pairs,"")] -> return pairs
-             _            -> fatal 143 $ "Parse error on php result: "++show queryResult
-    }
-   where
-    php =
-      [ "// Try to connect to the database"
-      , "$DB_name='"++addSlashes tempDbName++"';"
-      , "global $DB_host,$DB_user,$DB_pass;"
-      , "$DB_host='"++addSlashes (sqlHost opts)++"';"
-      , "$DB_user='"++addSlashes (sqlLogin opts)++"';"
-      , "$DB_pass='"++addSlashes (sqlPwd opts)++"';"
-      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
-      , "// Check connection"
-      , "if (mysqli_connect_errno()) {"
-      , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
-      , "  }"
-      , ""
-      , "$sql="++showPhpStr queryStr++";"
-      , "$result=mysqli_query($DB_link,$sql);"
-      , "if(!$result)"
-      , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
-      , "$rows=Array();"
-      , "  while ($row = mysqli_fetch_array($result)) {"
-      , "    $rows[]=$row;"
-      , "    unset($row);"
-      , "  }"
-      , "echo '[';"
-      , "for ($i = 0; $i < count($rows); $i++) {"
-      , "  if ($i==0) echo ''; else echo ',';"
-      , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
-      , "}"
-      , "echo ']';"
-      ]
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
