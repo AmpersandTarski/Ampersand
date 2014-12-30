@@ -36,4 +36,35 @@ createTempDatabase fSpec pops =
                                      populateTablesWithPopsPHP fSpec pops
     ; return ()
     }
+
+
+-- TODO: are we going to use this data type?
+
+type EditScript = [SQLEditOp]
+
+data SQLEditOp = SQLAddToConcept { atomNm :: String, conceptNm :: String }
+               | SQLDelete { relationNm :: String, relationIsFlipped :: Bool
+                           , parentAtomNm :: String, childAtomNm :: String }
+               | SQLUpdate { relationNm :: String, relationIsFlipped :: Bool
+                           , parentAtomNm :: String, parentConceptNm ::String
+                           , childAtomNm :: String, childConceptNm ::String
+                           , parentOrChild :: ParentOrChild, originalAtomNm :: String 
+                           }
+
+data ParentOrChild = Parent | Child deriving Show
+
+{- JSON for edit commands from Database.PHP:
+
+ { dbCmd: 'addToConcept', atom:atom, concept:concept }
+
+ { dbCmd: 'update', relation:relation, isFlipped:relationIsFlipped
+ , parentAtom:parentAtom, parentConcept:parentConcept
+ , childAtom:childAtom, childConcept:childConcept
+ , parentOrChild:parentOrChild, originalAtom:originalAtom
+ }
+
+ { dbCmd: 'delete', relation:relation, isFlipped:relationIsFlipped
+ , parentAtom:parentAtom, childAtom:childAtom
+ } 
  
+-}
