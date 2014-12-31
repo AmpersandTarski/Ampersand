@@ -102,7 +102,8 @@ generateTableInfos fSpec =
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [showPhpStr (showHSName decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
+         [ [showPhpStr (showHSName decl)++" => array ( 'name'       => "++showPhpStr (name decl)
+                                                 ++ ", 'srcConcept' => "++showPhpStr (name (source decl))
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
                                                  ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
