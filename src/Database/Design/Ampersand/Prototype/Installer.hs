@@ -132,6 +132,8 @@ dumpPopulationToADL fSpec = unlines $
       ,"    return \"POPULATION \".$rel.\" CONTAINS\\n  [\".substr($pop,1).\"]\\n\";"
       ,"  }"
       ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
+      -- TODO: There is an error here: \"\\\\\\\\\\\\\"\" becomes "\\\\\\"", which is not a valid PHP string ("\\ \\ \\ " ")
+      --       Anyway, having this many escape backslashes kind of signifies there's a few too many levels of abstraction here.  
       ,"  ?>';"
       ,"  @$res=file_put_contents(\"dbdump.php.\",$content);"
       ,"  if($res===FALSE)"
