@@ -398,9 +398,10 @@ function getTimestamp(&$error) {
 // set modification timestamp to the current time
 function setTimestamp() {
   $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-  $microseconds = substr($time[0], 2, 6); // we drop the leading "0." and trailing "00" from the microseconds
-  $seconds = $time[1] . $microseconds;
-  $date = date("j-M-Y, H:i:s.") . $microseconds;
+  $microseconds = substr($time[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
+  $seconds =$time[1].$microseconds;  
+  date_default_timezone_set('Europe/Amsterdam');
+  $date = date("j-M-Y, H:i:s.").$microseconds; 
   DB_doquer("INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
   // TODO: add error checking
 }
