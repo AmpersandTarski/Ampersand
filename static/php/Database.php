@@ -30,7 +30,9 @@ if (isset($_REQUEST['resetSession'])) {
   timestampHtml();
 } else if (isset($_REQUEST['testRule'])) {
   testRule($_REQUEST['testRule']);
-} else if (isset($_REQUEST['ip'])) {
+} else if (isset($_REQUEST['getPopulationADL']) ) {
+  showPopulationADL();
+} else if (isset($_REQUEST['ip']) ) {
   echo $_SERVER['SERVER_ADDR'];
 } else if (isset($_REQUEST['commands'])) {
   echo '<div id="UpdateResults">';
@@ -525,5 +527,9 @@ function timestampHtml() {
   if ($error) // Show error if there is one. If there is a problem, we will be able to trace it in the browser network log.
     echo "SQL error while fetching timestamp:\n".$error."\n";
   echo "<div class=Result timestamp='$timestamp'>$timestamp</div>";
+}
+
+function showPopulationADL() {
+  echo getPopulationADL();
 }
 ?>
