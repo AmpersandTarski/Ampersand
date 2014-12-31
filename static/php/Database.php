@@ -521,7 +521,9 @@ function testRule($ruleName) {
 }
 
 function timestampHtml() {
-  $timestamp = getTimestamp();
+  $timestamp = getTimestamp($error);
+  if ($error) // Show error if there is one. If there is a problem, we will be able to trace it in the browser network log.
+    echo "SQL error while fetching timestamp:\n".$error."\n";
   echo "<div class=Result timestamp='$timestamp'>$timestamp</div>";
 }
 ?>
