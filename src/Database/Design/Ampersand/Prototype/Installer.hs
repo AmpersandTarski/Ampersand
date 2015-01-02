@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Prototype.Installer
-  (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
+  (installerDBstruct{-,installerTriggers-},installerDefPop,dumpPopulationToADL,
    createTablesPHP,populateTablesPHP,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable) where
 
 import Data.List
@@ -48,41 +48,41 @@ installerDBstruct fSpec = unlines $
       , "?>"
       ]
 
-installerTriggers :: FSpec -> String
-installerTriggers fSpec = unlines $
-      [ "<?php"
-      , ""
-      , ""
-      , "// Array for trigger queries that need to be installed"
-      , "$queries = array();"
-      , ""
-      , ""
-      ] ++ [] -- something like:     map unlines [ trigger tablename query | ]
-       ++
-      [ "$queries[] = \"CREATE TRIGGER etc\";"
-      , ""
-      , ""
-      , ""
-      , ""
-      , "// Execute queries"
-      , "foreach ($queries as $query){"
-      , " print $query.\"<br/>\";"
-      , " // $db->Exe($query); "
-      , " // print($db->error());"
-      , ""
-      , "}"
-      , "?>"
-      ]
-  where
-      trigger tablename query
-       = [ "// Trigger for DELETE Atom or Pair in function in Concept table"
-         , "$queries['delete_"++tablename++"']"
-         , " = \"CREATE TRIGGER `delete_"++tablename++"` BEFORE DELETE ON `"++tablename++"`"
-         , "    FOR EACH ROW"
-         , "    BEGIN "
-         , "        DELETE FROM <other table> WHERE <other table>.<column name> = OLD.<column name>; "
-         , "    END\";"
-         ]
+--installerTriggers :: FSpec -> String
+--installerTriggers _ = unlines $
+--      [ "<?php"
+--      , ""
+--      , ""
+--      , "// Array for trigger queries that need to be installed"
+--      , "$queries = array();"
+--      , ""
+--      , ""
+--      ] ++ [] -- something like:     map unlines [ trigger tablename query | ]
+--       ++
+--      [ "$queries[] = \"CREATE TRIGGER etc\";"
+--      , ""
+--      , ""
+--      , ""
+--      , ""
+--      , "// Execute queries"
+--      , "foreach ($queries as $query){"
+--      , " print $query.\"<br/>\";"
+--      , " // $db->Exe($query); "
+--      , " // print($db->error());"
+--      , ""
+--      , "}"
+--      , "?>"
+--      ]
+--  where
+--      trigger tablename query
+--       = [ "// Trigger for DELETE Atom or Pair in function in Concept table"
+--         , "$queries['delete_"++tablename++"']"
+--         , " = \"CREATE TRIGGER `delete_"++tablename++"` BEFORE DELETE ON `"++tablename++"`"
+--         , "    FOR EACH ROW"
+--         , "    BEGIN "
+--         , "        DELETE FROM <other table> WHERE <other table>.<column name> = OLD.<column name>; "
+--         , "    END\";"
+--         ]
 
 installerDefPop :: FSpec -> String
 installerDefPop fSpec = unlines $

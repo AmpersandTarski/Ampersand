@@ -13,7 +13,7 @@ import System.FilePath
 import Database.Design.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner 
 import UU.Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import Database.Design.Ampersand.ADL1
 import Control.Exception
@@ -49,7 +49,8 @@ parseContext opts file
                                                                   Just rapCtx ->mergeContexts ctx rapCtx
                                                      in  verboseLn opts "Parsing successful"
                                                          >> return (Right ctx')
-                                       Left err -> verboseLn opts "Parsing failed"
+                                       Left err -> verboseLn opts "Parsing failed:"
+                                                >> verboseLn opts (show err)
                                                 >> return eRes
                     )
                   }

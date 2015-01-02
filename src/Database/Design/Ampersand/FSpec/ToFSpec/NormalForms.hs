@@ -1025,6 +1025,7 @@ tceDerivRules = concatMap (dRule.parseRule)
  , "I[A]\\/r[A*A]+ = r[A*A]*"
  ]
 
+{-
 -- Type conserving implications: The following implications have an identical signature on either side.
 tciDerivRules :: [DerivRule]
 tciDerivRules = concatMap (dRule.parseRule)
@@ -1043,13 +1044,15 @@ tciDerivRules = concatMap (dRule.parseRule)
  , "I[A] |- r[A*A]*"
  , "r[A*B] |- V[A*B]"
  ]
-
+-}
+{-
 -- Type altering equivalences: The following equivalences have an different signature on either side.
 taeDerivRules :: [DerivRule]
 taeDerivRules = concatMap (dRule.parseRule)
- [ "-r[A*B]\\/(q[A*C]/s[B*C]) = -(r[A*B];s[B*C])\\/q[A*C]"     -- T{-r\\/(q/s)} = [A*B] ;   T{-(r;s)\\/q} = [A*C] ; remove left residual (/)
- , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{(r\\q)\\/-s)} = [B*C] ; T{-(r;s)\\/q} = [A*C] ; remove right residual (\\)
+ [ "-r[A*B]\\/(q[A*C]/s[B*C]) = -(r[A*B];s[B*C])\\/q[A*C]"     -- T{ -r\\/(q/s)} = [A*B] ;   T{ -(r;s)\\/q} = [A*C] ; remove left residual (/)
+ , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{ (r\\q)\\/-s)} = [B*C] ; T{ -(r;s)\\/q} = [A*C] ; remove right residual (\\)
  ]
+-}
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"

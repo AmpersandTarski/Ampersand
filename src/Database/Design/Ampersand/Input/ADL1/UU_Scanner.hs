@@ -1,11 +1,18 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash #-}
-module Database.Design.Ampersand.Input.ADL1.UU_Scanner where
+module Database.Design.Ampersand.Input.ADL1.UU_Scanner 
+         ( scan,initPos,Pos(..)
+         , Token(..),TokenType(..),noPos
+         , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
+where
 
-import Data.Char
+import Data.Char hiding(isSymbol)
 import Data.List
 import Data.Maybe
 import Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
-import UU.Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
+import UU.Parsing(Symbol(..),IsParser,pSym,(<$>))
+import Database.Design.Ampersand.Basics (fatalMsg)
+fatal :: Int -> String -> a
+fatal = fatalMsg "UU_Scanner"
 
 data TokenType
   = TkSymbol
@@ -32,7 +39,7 @@ type Column = Int
 data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord, Show)
 type Filename   = String
 
-data Token = Tok { tp :: TokenType
+data Token = Tok { tp' :: TokenType
                  , val1 :: String
                  , val2 :: String
                  , pos :: !Pos
@@ -54,7 +61,7 @@ instance   Ord Token where
         || (ttypel == ttyper && stringl <= stringr)
 
 maybeshow :: Pos -> Filename -> String
-maybeshow (Pos 0 0) fn =  ""
+maybeshow (Pos 0 0) _  =  ""
 maybeshow (Pos l c) fn =  " at line " ++ show l
                        ++ ", column " ++ show c
                        ++ " of file " ++ show fn
@@ -66,24 +73,24 @@ noPos :: Pos
 noPos = Pos 0 0
 
 advl ::  Line -> Pos ->Pos
-advl i (Pos l c) = Pos (l+i) 1
+advl i (Pos l _) = Pos (l+i) 1
 
 advc :: Column -> Pos ->  Pos
 advc i (Pos l c) = Pos l (c+i)
 
 adv :: Pos -> Char -> Pos
-adv pos c = case c of
-  '\t' -> advc (tabWidth (column pos)) pos
-  '\n' -> advl 1 pos
-  _    -> advc 1 pos
+adv pos' c = case c of
+  '\t' -> advc (tabWidth (column pos')) pos'
+  '\n' -> advl 1 pos'
+  _    -> advc 1 pos'
 
 tabWidth :: Column -> Int
 tabWidth c = 8 - ((c-1) `mod` 8)
 
 instance Show Token where
-  showsPrec _ token
+  showsPrec _ token'
     = showString
-       (case token of
+       (case token' of
         (Tok TkSymbol    _  s2 i fn)  -> "symbol "                ++ s2         ++ maybeshow i fn
         (Tok TkOp        _  s2 i fn)  -> "operator "              ++ s2         ++ maybeshow i fn
         (Tok TkKeyword   _  s2 i fn)  ->                        show s2         ++ maybeshow i fn
@@ -98,7 +105,7 @@ instance Show Token where
         (Tok TkConid     _  s2 i fn)  -> "upper case identifier " ++ s2         ++ maybeshow i fn
         (Tok TkTextnm    _  s2 i fn)  -> "text name "             ++ s2         ++ maybeshow i fn
         (Tok TkTextln    _  s2 i fn)  -> "text line "             ++ s2         ++ maybeshow i fn
-        (Tok TkSpace     _  s2 i fn)  -> "spaces "                              ++ maybeshow i fn
+        (Tok TkSpace     _  _  i fn)  -> "spaces "                              ++ maybeshow i fn
         (Tok TkError     _  s2 i fn)  -> "error in scanner: "     ++ s2         ++ maybeshow i fn
        )
 
@@ -113,12 +120,9 @@ token  tp  = Tok tp ""
 errToken :: String -> Pos -> Filename -> Token
 errToken = token TkError
 
-skipline s = let (_,rest) = span (/='\n') s
-             in  rest
-
 scan :: [String] -> [String] -> String -> String -> String -> Pos -> String -> [Token]
-scan keywordstxt keywordsops specchars opchars fn pos input
-  = doScan pos input
+scan keywordstxt keywordsops specchars opchars fn pos' input
+  = doScan pos' input
 
  where
    locatein :: Ord a => [a] -> a -> Bool
@@ -136,7 +140,7 @@ scan keywordstxt keywordsops specchars opchars fn pos input
 
    scanIdent p s = let (name,rest) = span isIdChar s
                    in (name,advc (length name) p,rest)
-   doScan p [] = []
+   doScan _ [] = []
    doScan p (c:s)        | isSpace c = let (sp,next) = span isSpace s
                                        in  doScan (foldl adv p (c:sp)) next
 
@@ -158,15 +162,6 @@ scan keywordstxt keywordsops specchars opchars fn pos input
              then errToken "Unterminated atom literal" p fn : doScan (advc swidth p) rest
              else token TkAtom s p fn : doScan (advc (swidth+2) p) (tail rest)
 
-{- character literals are not used in Ampersand.  doScan p ('\'':ss) is commented out to make room for singleton atoms.
-      doScan p ('\'':ss)
-        = let (mc,cwidth,rest) = scanChar ss
-          in case mc of
-               Nothing -> errToken "Error in character literal" p fn : doScan (advc cwidth p) rest
-               Just c  -> if null rest || head rest /= '\''
-                             then errToken "Unterminated character literal" p fn : doScan (advc (cwidth+1) p) rest
-                             else token TkChar [c] p fn : doScan (advc (cwidth+2) p) (tail rest)
--}
 
    -- In Haskell infix identifiers consist of three separate tokens(two backquotes + identifier)
    doScan p ('`':ss)
@@ -209,24 +204,27 @@ scan keywordstxt keywordsops specchars opchars fn pos input
    getOp cs -- the longest prefix of cs occurring in keywordsops
     = f keywordsops cs ""
       where
-       f ops (e:s) op = if null [s | o:s<-ops, e==o] then (op,e:s) --was: f ops (e:s) op = if and (map null ops) then (op,e:s) --b.joosten
-                        else f [s | o:s<-ops, e==o] s (op++[e])
-       f [] es op     = ("",cs)
-       f ops [] op    = (op,[])
+       f ops (e:s) op = if null [s' | o:s'<-ops, e==o] then (op,e:s) --was: f ops (e:s) op = if and (map null ops) then (op,e:s) --b.joosten
+                        else f [s' | o:s'<-ops, e==o] s (op++[e])
+       f []  _     _  = ("",cs)
+       f _   []    op = (op,[])
 
-lexNest fn cont pos inp = lexNest' cont pos inp
+lexNest :: Filename -> (Pos -> [Char] -> [Token]) -> Pos -> [Char] -> [Token]
+lexNest fn cont pos' inp = lexNest' cont pos' inp
  where lexNest' c p ('-':'}':s) = c (advc 2 p) s
        lexNest' c p ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) s
        lexNest' c p (x:s)       = lexNest' c (adv p x) s
-       lexNest' _ _ []          = [ errToken "Unterminated nested comment" pos fn ]
+       lexNest' _ _ []          = [ errToken "Unterminated nested comment" pos' fn ]
 
-lexExpl fn cont pos inp = lexExpl' "" cont pos inp
+lexExpl :: Filename -> (Pos -> [Char] -> [Token]) -> Pos -> [Char] -> [Token]
+lexExpl fn cont pos' inp = lexExpl' "" cont pos' inp
  where lexExpl' str c p ('-':'}':s) = token TkExpl str p fn: c (advc 2 p) s
        lexExpl' str c p ('{':'-':s) = lexNest fn (lexExpl' str c) (advc 2 p) s
        lexExpl' str c p ('-':'-':s) = lexExpl' str c  p (dropWhile (/= '\n') s)
        lexExpl' str c p (x:s)       = lexExpl' (str++[x]) c (adv p x) s
-       lexExpl' _ _ _ []            = [ errToken "Unterminated PURPOSE section" pos fn ]
+       lexExpl' _ _ _ []            = [ errToken "Unterminated PURPOSE section" pos' fn ]
 
+scanString :: [Char] -> ([Char],Int,[Char])
 scanString []            = ("",0,[])
 scanString ('\\':'&':xs) = let (str,w,r) = scanString xs
                            in (str,w+2,r)
@@ -237,6 +235,7 @@ scanString xs = let (ch,cw,cr) = getchar xs
 --                    str' = maybe "" (:str) ch
                 in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
+scanAtom :: [Char] -> ([Char],Int,[Char])
 scanAtom []              = ("",0,[])
 scanAtom ('\\':'&':xs)   = let (str,w,r) = scanAtom xs
                            in (str,w+2,r)
@@ -247,9 +246,7 @@ scanAtom xs   = let (ch,cw,cr) = getchar xs
 --                    str' = maybe "" (:str) ch
                 in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
-scanChar ('"' :xs) = (Just '"',1,xs)
-scanChar xs        = getchar xs
-
+getchar :: [Char] -> (Maybe Char, Int, [Char])
 getchar []          = (Nothing,0,[])
 getchar s@('\n':_ ) = (Nothing,0,s )
 getchar s@('\t':_ ) = (Nothing,0,s)
@@ -259,12 +256,14 @@ getchar   ('\\':xs) = let (c,l,r) = getEscChar xs
                       in (c,l+1,r)
 getchar (x:xs)      = (Just x,1,xs)
 
+getEscChar :: [Char] -> (Maybe Char, Int, [Char])
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = let (tp,n,len,rest) = getNumber s
                                       val = case tp of
                                               TkInteger8  -> readn 8  n
                                               TkInteger16 -> readn 16 n
                                               TkInteger10 -> readn 10 n
+                                              _           -> fatal 279 "getExcChar: unknown tokentype."
                                   in  if val >= 0 && val <= 255
                                          then (Just (chr val),len, rest)
                                          else (Nothing,1,rest)
@@ -275,8 +274,11 @@ getEscChar s@(x:xs) | isDigit x = let (tp,n,len,rest) = getNumber s
                     ,('v','\v'),('\\','\\'),('"','\"')]
 -- character literals are not used in Ampersand. Since this scanner was used for Haskell-type languages, ('\'','\'') has been removed from cntrChars...
 
+readn :: Int -> [Char] -> Int
 readn base = foldl (\r x  -> value x + base * r) 0
 
+getNumber :: [Char] -> (TokenType, [Char], Int, [Char])
+getNumber [] = fatal 294 "getNumber" 
 getNumber cs@(c:s)
   | c /= '0'         = num10
   | null s           = const0
@@ -289,68 +291,45 @@ getNumber cs@(c:s)
                  in (TkInteger10,n,length n,r)
         num16   = readNum isHexaDigit  ts TkInteger16
         num8    = readNum isOctalDigit ts TkInteger8
-        readNum p ts tk
-          = let nrs@(n,rs) = span p ts
+        readNum p ts' tk
+          = let (n,rs) = span p ts'
             in  if null n then const0
                           else (tk         , n, 2+length n,rs)
 
+isHexaDigit :: Char -> Bool
 isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
+isOctalDigit :: Char -> Bool
 isOctalDigit d = d >= '0' && d <= '7'
 
+value :: Char -> Int
 value c | isDigit c = ord c - ord '0'
         | isUpper c = ord c - ord 'A' + 10
         | isLower c = ord c - ord 'a' + 10
+        | otherwise = fatal 321 ("value undefined for '"++ show c++"'")
 
+get_tok_val :: Token -> String
 get_tok_val (Tok _ _ s _ _) = s
 
 gsym :: IsParser p Token => TokenType -> String -> String -> p String
-gsym kind val val2 = get_tok_val <$> pSym (Tok kind val val2 noPos "")
-pString, pExpl, pAtom, pChar, pInteger8, pInteger10, pInteger16, pVarid, pConid,
-  pTextnm, pTextln, pInteger :: IsParser p Token => p String
-pOper name     =   gsym TkOp        name      name
+gsym kind val val2' = get_tok_val <$> pSym (Tok kind val val2' noPos "")
+pKey :: IsParser p Token => String -> p String
 pKey  keyword  =   gsym TkKeyword   keyword   keyword
+pSpec :: IsParser p Token => Char -> p String
 pSpec s        =   gsym TkSymbol    [s]       [s]
 
+pString, pExpl, pAtom, pInteger10, pVarid, pConid,
+  pInteger :: IsParser p Token => p String
 pString        =   gsym TkString    ""        ""
 pExpl          =   gsym TkExpl      ""        ""
 pAtom          =   gsym TkAtom      ""        ""
-pChar          =   gsym TkChar      ""        "\NUL"
-pInteger8      =   gsym TkInteger8  ""        "1"
 pInteger10     =   gsym TkInteger10 ""        "1"
-pInteger16     =   gsym TkInteger16 ""        "1"
 pVarid         =   gsym TkVarid     ""        "?lc?"
 pConid         =   gsym TkConid     ""        "?uc?"
-pTextnm        =   gsym TkTextnm    ""        ""
-pTextln        =   gsym TkTextln    ""        ""
 
 pInteger       =   pInteger10
 
-pComma, pSemi, pOParen, pCParen, pOBrack, pCBrack, pOCurly, pCCurly :: IsParser p Token => p String
+pComma, pSemi :: IsParser p Token => p String
 pComma  = pSpec ','
 pSemi   = pSpec ';'
-pOParen = pSpec '('
-pCParen = pSpec ')'
-pOBrack = pSpec '['
-pCBrack = pSpec ']'
-pOCurly = pSpec '{'
-pCCurly = pSpec '}'
 
-pCommas ::  IsParser p Token => p a -> p [a]
-pSemics ::  IsParser p Token => p a -> p [a]
-pParens ::  IsParser p Token => p a -> p a
-pBracks ::  IsParser p Token => p a -> p a
-pCurly ::  IsParser p Token => p a -> p a
 
-pCommas  = pListSep pComma
-pSemics  = pListSep pSemi
-pParens  = pPacked pOParen pCParen
-pBracks  = pPacked pOBrack pCBrack
-pCurly   = pPacked pOCurly pCCurly
-
-pParens_pCommas :: IsParser p Token => p a -> p [a]
-pBracks_pCommas :: IsParser p Token => p a -> p [a]
-pCurly_pSemics :: IsParser p Token => p a -> p [a]
-
-pParens_pCommas = pParens.pCommas
-pBracks_pCommas = pBracks.pCommas
-pCurly_pSemics  = pCurly .pSemics
