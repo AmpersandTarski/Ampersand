@@ -28,7 +28,7 @@ meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
       , "    Generated at "++show (genTime (getOpts fSpec))
       , "-}"
       , ""
-      , "CONTEXT RapPopulations"]
+      , "CONTEXT RapPopulations IN ENGLISH"]
       ++ (concat.intersperse  []) (map (lines.showADL) (metaPops fSpec fSpec))
       ++
       [ ""
