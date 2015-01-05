@@ -13,7 +13,7 @@ build-type:     Custom
 license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
-bug-reports:    http://sourceforge.net/apps/trac/ampersand/report/12
+bug-reports:    https://sourceforge.net/p/ampersand/tickets/
 data-files:     AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/FormalAmpersand/ADLTool.adl, 
                 AmpersandData/FormalAmpersand/admin_interfaces.adl, 
