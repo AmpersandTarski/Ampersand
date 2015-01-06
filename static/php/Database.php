@@ -474,12 +474,12 @@ function ExecEngineSHOUTS($msg) {
   echo "<div class=\"LogItem AmpersandErr\" style=\"color:red\"><b>$msg</b></div>";
 }
 
-function emitAmpersandLog($msg)
-{  echo "<div class=\"LogItem AmpersandErr\">$msg</div>\n";
+function emitAmpersandLog($msg) {
+  echo "<div class=\"LogItem AmpersandErr\">$msg</div>\n";
 }
 
-function emitLog($msg) 
-{  echo "<div class=\"LogItem LogMsg\">$msg</div>\n";
+function emitLog($msg) {
+  echo "<div class=\"LogItem LogMsg\">$msg</div>\n";
 }
 
 function error($err) {
