@@ -7,7 +7,7 @@
 module Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 where
 import Database.Design.Ampersand.Prototype.CoreImporter
-import Database.Design.Ampersand.Prototype.Installer (plug2TableSpecl,dropplug,TableSpec,sessionTableSpec,historyTableSpec)
+import Database.Design.Ampersand.Prototype.Installer (plug2TableSpec,dropplug,TableSpec,sessionTableSpec,historyTableSpec)
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(quote)
 import Database.HDBC.ODBC
 import Database.HDBC
@@ -25,7 +25,7 @@ odbcinstall fSpec dsn =
       verboseLn (getOpts fSpec) "Dropping tables..."
       _ <- drops conn ("DROP TABLE `__History__`":"DROP TABLE `__SessionTimeout__`":[dropplug p | InternalPlug p<-plugInfos fSpec])
       verboseLn (getOpts fSpec) "Creating tables..."
-      _ <- creates conn (historyTableSpec : sessionTableSpec : [plug2TableSpecl p |InternalPlug p<-plugInfos fSpec])
+      _ <- creates conn (historyTableSpec : sessionTableSpec : [plug2TableSpec p |InternalPlug p<-plugInfos fSpec])
       verboseLn (getOpts fSpec) "Populating tables..."
       _ <- inserts conn (gens fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
       commit conn

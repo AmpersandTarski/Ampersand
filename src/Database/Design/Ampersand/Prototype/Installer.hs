@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Prototype.Installer
   (installerDBstruct,installerTriggers,installerDefPop,dumpPopulationToADL,
-   createTablesPHP,populateTablesPHP,plug2TableSpecl,dropplug,historyTableSpec,sessionTableSpec,mkSignalTableSpec,getTableName,TableSpec) where
+   createTablesPHP,populateTablesPHP,plug2TableSpec,dropplug,historyTableSpec,sessionTableSpec,mkSignalTableSpec,getTableName,TableSpec) where
 
 import Data.List
 import Database.Design.Ampersand
@@ -162,7 +162,7 @@ createTablesPHP fSpec =
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
         ]
         -- Create all plugs
-        ++ concatMap (createTablePHP . plug2TableSpecl) [p | InternalPlug p <- plugInfos fSpec]
+        ++ concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
 
 --                 (headerCmmnt,tableName,crflds,engineOpts)
 type TableSpec = (String,String,[String],String)
@@ -186,8 +186,8 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   , "}"
   , "" ]
 
-plug2TableSpecl :: PlugSQL -> TableSpec
-plug2TableSpecl plug
+plug2TableSpec :: PlugSQL -> TableSpec
+plug2TableSpec plug
  = ( unlines $ commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
    , name plug
    , [ quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
