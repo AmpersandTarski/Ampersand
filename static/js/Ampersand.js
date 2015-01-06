@@ -112,9 +112,21 @@ function cancelEditing() {
     $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
   }
 }
-
-function downloadEditScript(event) {
+  
+function downloadEditScript(anchorElt, event) {
   event.stopPropagation(); // To prevent edit log from collapsing/expanding on button click.
+  var interface = $('#AmpersandRoot').attr('interface');
+
+  // TODO: check commands first
+  var dbCommands = computeDbCommands();
+  var commandsJson = JSON.stringify(dbCommands);
+  
+  // Returning a download link from JavaScript (similar to a <a target="_blank" ..>..) is surprisingly tricky, but we can do it by modifying the <a> element that contains the download button.
+  $(anchorElt).attr(
+    { 'download': interface + '.edit'
+    , 'href': 'data:application/csv;charset=utf-8,' + commandsJson
+    , 'target': '_blank'
+  });
 }
 
 function commitEditing() {

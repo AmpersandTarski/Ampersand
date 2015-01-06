@@ -170,7 +170,8 @@ if ($err) {
        ' timestamp="'.$timeStamp.'">';
     
   echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands'
-     . '<input type="button" value="Download" class="download-button" onclick="downloadEditScript(event)"></input></div></div>';
+     . '<a onclick="downloadEditScript(this,event)"><input type="button" value="Download" class="download-button" ></input></a>'
+     . '</div></div>';
   echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   
   echo '<div id=SignalAndPhpLogs>';
