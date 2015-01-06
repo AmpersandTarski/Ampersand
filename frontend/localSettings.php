@@ -1,9 +1,17 @@
 <?php
 
+require_once (__DIR__.'/ampersand/Generics.php');
+
 // define ('IP', 'http://localhost/[APP]');
 
 /************ CONFIG ********************/
 define ('DEFAULT_ROLEID', '1');
+
+/************ DB CONFIG ****************/
+$DB_host = 'localhost';
+$DB_user = 'ampersand';
+$DB_pass = 'ampersand';
+$DB_name = $dbName; // from Generics.php
 
 
 /************ EXTENSIONS ****************/

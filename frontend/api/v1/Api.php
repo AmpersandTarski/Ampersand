@@ -2,9 +2,21 @@
 
 class Api
 {
+/****************************** INSTALLER ******************************/
+	/**
+	 * @url GET installer
+	 */
+	public function installer(){
+		// include (__DIR__ . '/../ampersand/InstallerDBstruct.php');
+		// include (__DIR__ . '/../ampersand/InstallerDefPop.php');
+		
+		return ErrorHandling::getAll(); // Return all notifications
+		
+	}	
+
 /**************************** NOTIFICATIONS ****************************/	
 	/**
-	 * @url GET notificationcenter/all
+	 * @url GET notifications/all
 	 */
 	public function getAllNotifications()
 	{

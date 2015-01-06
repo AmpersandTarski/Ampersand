@@ -1,0 +1,99 @@
+<div class="container-fluid">
+	<fieldset>
+		<!-- I[Project] -->
+		<legend>{{Project.label}}</legend>
+		
+		<form class="form-horizontal" role="form">		
+			<!-- I[Project] disabled, because label of object is never editable-->
+			<div class="form-group">
+	   			<label class="col-md-1 control-label">Project</label>
+	   			<div class="col-md-11">
+	   				<input disabled ng-model="Project.label" type="text" class="form-control input-sm" ng-blur="patch()">
+	   			</div>
+	 		</div>
+	 		
+	 		<!-- Name -->
+			<div class="form-group">
+	   			<label class="col-md-1 control-label">Name</label>
+	   			<div class="col-md-11">
+					<input ng-model="Project.Name" type="text" class="form-control input-sm" ng-blur="patch()">
+				</div>
+	 		</div>
+	 		
+	 		<!-- Description -->
+			<div class="form-group">
+	   			<label class="col-md-1 control-label">Description</label>
+	   			<div class="col-md-11">
+	   				<textarea ng-model="Project.Description" class="form-control input-sm" placeholder="Textarea" rows="3" ng-blur="patch()"></textarea>
+				</div>
+	 		</div>
+	 		
+	 		<!-- Start date -->
+			<div class="form-group">
+	   			<label class="col-md-1 control-label">Start date</label>
+	   			<div class="col-md-11">
+	   				<div class="input-group">
+		   				<input ng-model="Project['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch()"/>
+	       				<span class="input-group-btn">
+	         				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start date')"><i class="glyphicon glyphicon-calendar"></i></button>
+	       				</span>
+       				</div>
+				</div>
+	 		</div>
+			
+	 		<!-- Projectleider -->
+	 		<div class="form-group">
+	   			<label class="col-md-1 control-label">Projectleider</label>
+	   			<div class="col-md-11">
+	   				<table class="table table-striped table-hover table-condensed" style="width:auto;">
+						<thead>
+							<tr>
+								<th>Projectleider</th>
+								<th>Status</th> 
+								<th>Email</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat="(key, val) in Project.Projectleider">
+								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+								<td>{{val.Status}}</td>
+								<td>{{val.Email}}</td>
+								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Project.Projectleider, val.id)"></span></td>
+							</tr>
+							<tr>
+								<td colspan="3"><small>Add new Projectleider</small></td>
+								<td><span class="glyphicon glyphicon-plus" ng-click="addProjectleider(Project, 'Projectleider')"></span></td>
+							</tr>
+						</tbody>
+	   				</table>
+	   			</div>
+	 		</div>
+	 		
+	 		<!-- Project members -->
+	 		<div class="form-group">
+	 			<label class="col-md-1 control-label">Project members</label>
+	 			<div class="col-md-11">
+	 				<table class="table table-striped table-hover table-condensed" style="width:auto;">
+						<thead>
+							<tr>
+								<th></th> <!-- empty when label is only column -->
+								<th></th> <!-- glyphicon when editable -->
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat="(key, val) in Project['Project members']">
+								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Project['Project members'], val.id)"></span></td>
+							</tr>
+							<tr>
+								<td colspan="1"><small>Add new Projectleider</small></td> <!-- add colspan for every extra column -->
+								<td><span class="glyphicon glyphicon-plus" ng-click="addProjectleider(Project, 'Project members')"></span></td>
+							</tr>
+						</tbody>
+	   				</table>
+	  			</div>
+			</div>
+	 	</form>
+ 	</fieldset>
+</div>
