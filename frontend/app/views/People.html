@@ -1,0 +1,49 @@
+<div class="container-fluid">	
+	<fieldset>
+		<legend>{{SESSION.label}}</legend>
+		<tabset>
+			<tab heading="People">
+				<table class="table table-striped table-hover table-condensed" style="width:auto;">
+					<thead>
+						<tr>
+							<th width="100px"></th> 
+							<th>Email</th>
+							<th>Projects</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="(key, val) in SESSION.People">
+							<td>
+								<div>
+									<a ng-href="#/Person/{{val.id}}">{{val.label}}</a>
+								</div>
+							</td>
+							
+							<!-- Text -->
+							<td>
+								<div class="input-group">
+									<input ng-model="val.Email" type="text" class="form-control input-sm" ng-blur="patch()">
+								</div>
+							</td>							 
+							
+							<!-- Relation to other concept -->
+							<td>
+								<div ng-repeat="row in val.Projects">
+									<div class="col-md-10"><a ng-href="#/Project/{{row.id}}">{{row.label}}</a></div>
+									<div class="col-md-2"><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projects, row.id)"></span></div>
+								</div>
+								<div my-showonhovertr>
+									<div class="col-md-10"><small>Add new Project</small></div>
+									<div class="col-md-2"><span class="glyphicon glyphicon-plus" ng-click="addProject(val, 'Projects')"></span></div>
+								</div>
+							</td>
+							 
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(SESSION.Projects, key)"></span></td>
+						</tr>
+			        </tbody>
+				</table>
+			</tab>
+		</tabset>
+	</fieldset>
+</div>

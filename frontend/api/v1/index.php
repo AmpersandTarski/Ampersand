@@ -104,7 +104,7 @@ Example 5: GET api/what/ever/you/want?anything=something returns
 
 */
 
-require_once (__DIR__ . '/../../inc/includes.php');
+require_once (__DIR__ . '/../../fw/includes.php');
 
 require_once '../vendor/restler.php';
 use Luracast\Restler\Restler;
