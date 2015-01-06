@@ -326,7 +326,6 @@ derivMono expr -- preconditie van actie a
                                     , r_env = ""
                                     , r_usr = Multiplicity
                                     , isSignal = fatal 336 $ "erroneous reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
-                                    , srrel = fatal 337 $ "erroneous reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                     }
                  | otherwise   = Ru { rrnm  = ""
                                     , rrfps = Origin "rule generated for not(isTrue neg') by Calc"
@@ -341,7 +340,6 @@ derivMono expr -- preconditie van actie a
                                     , r_env = ""
                                     , r_usr = Multiplicity
                                     , isSignal = fatal 352 $ "illegal reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
-                                    , srrel = fatal 353 $ "illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                     }
   showOp expr' = case expr' of
                   EEqu{} -> "="
@@ -551,7 +549,8 @@ assembleECAs fSpec editables
                                 ) -}
                          )
                        )
-                     | conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
+                     | conjEqClass <- [] -- TODO: implement this once we can test it (note: computing eq. class is no longer necessary)
+                    -- conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
                      , conjunct <- (fst.head) conjEqClass                  -- get conjuncts from the clauses
                      , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
                      , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct, because the type may be different.

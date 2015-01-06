@@ -1,11 +1,11 @@
 module Database.Design.Ampersand.ADL1.Rule 
-  (consequent, antecedent, rulefromProp, ruleviolations, hasantecedent) where
+  (consequent, antecedent, rulefromProp, ruleviolations, conjunctViolations, hasantecedent) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree ( Prop(..))
 import Database.Design.Ampersand.Classes.Populated ( fullContents)
 import Database.Design.Ampersand.Misc
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Rule"
@@ -30,13 +30,19 @@ consequent r
      EImp (_,re) -> re
      x           -> x
 
+conjunctViolations :: [A_Gen] -> [Population] -> Conjunct -> Pairs
+conjunctViolations gens pop conj =
+  let vConts    = Set.fromList $ fullContents gens pop (EDcV (sign (rc_conjunct conj)))
+      conjConts = Set.fromList $ fullContents gens pop (rc_conjunct conj)
+  in  Set.toList $ vConts `Set.difference` conjConts 
+     
 ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
-ruleviolations gens pt r = case rrexp r of
+ruleviolations gens pop r = case rrexp r of
      EEqu{} -> (cra >- crc) ++ (crc >- cra)
      EImp{} -> cra >- crc
-     _      -> fullContents gens pt (EDcV (sign (consequent r))) >- crc  --everything not in con
-     where cra = fullContents gens pt (antecedent r)
-           crc = fullContents gens pt (consequent r)
+     _      -> fullContents gens pop (EDcV (sign (consequent r))) >- crc  --everything not in con
+     where cra = fullContents gens pop (antecedent r)
+           crc = fullContents gens pop (consequent r)
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
@@ -55,7 +61,6 @@ rulefromProp prp d@Sgn{} =
         , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
         , r_usr = Multiplicity
         , isSignal = False
-        , srrel = d{decnm=show prp++name d}
         }
        where
         s = name (source d)

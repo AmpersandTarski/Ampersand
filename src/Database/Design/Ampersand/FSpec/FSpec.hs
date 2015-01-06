@@ -75,6 +75,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
+                   , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ All conjuncts, grouped by originating rule (note that a single conjunct may appear in several rules) 
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -83,7 +84,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , initialPops ::  [Population]             -- all user defined populations of relations and concepts
-                   , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
+                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- all conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,[Paire])]        -- all invariant rules with violations.
                    }
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
