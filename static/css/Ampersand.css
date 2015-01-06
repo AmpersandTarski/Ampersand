@@ -414,6 +414,12 @@ body {
     content: "\2227";  /* unicode logical and (^) */
     margin-top: 5px;
 }
+#EditLog[minimized=false] .download-button {
+    float: right;
+    margin-right: 0.7em;
+}
+#EditLog[minimized=true] .download-button {
+}
 
 #SignalAndPhpLogs { /* these two share a corner, so we have the logs float and use extra div for the absolute positioning */
     position:absolute;

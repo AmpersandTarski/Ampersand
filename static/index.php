@@ -169,7 +169,8 @@ if ($err) {
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($selectedRoleNr)).
        ' timestamp="'.$timeStamp.'">';
     
-  echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
+  echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands'
+     . '<input type="button" value="Download" class="download-button" onclick="downloadEditScript(event)"></input></div></div>';
   echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   
   echo '<div id=SignalAndPhpLogs>';

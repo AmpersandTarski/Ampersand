@@ -113,6 +113,10 @@ function cancelEditing() {
   }
 }
 
+function downloadEditScript(event) {
+  event.stopPropagation(); // To prevent edit log from collapsing/expanding on button click.
+}
+
 function commitEditing() {
   $editedAtom = getEnclosingAtom( $('#atomEditor') );
   if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
