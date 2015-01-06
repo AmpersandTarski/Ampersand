@@ -6,7 +6,6 @@ module Database.Design.Ampersand.Misc.Options
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import Database.Design.Ampersand.Misc.Languages (Lang(..))
-import Data.Char (toUpper)
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory

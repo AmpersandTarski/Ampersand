@@ -8,8 +8,8 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Basics
 import Data.Maybe
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.FPA"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "FSpec.FPA"
 
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 
@@ -58,7 +58,8 @@ fpaDataModel fSpec = mapMaybe fpaPlugInfo $ plugInfos fSpec
 fpaPlugInfo :: PlugInfo -> Maybe FP
 fpaPlugInfo p@(InternalPlug (TblSQL{fields=flds})) | Just cmplxty <- ilgvComplexity $ length flds =
   Just $ FP ILGV (name p) cmplxty
-  where ilgvComplexity n | n <= 2    = Nothing 
+  where ilgvComplexity :: Int -> Maybe Complexity
+        ilgvComplexity n | n <= 2    = Nothing 
                          | n <= 15   = Just Eenvoudig
                          | n <= 40   = Just Gemiddeld
                          | otherwise = Just Moeilijk
@@ -81,7 +82,8 @@ fpaInterface ifc =
                 | (isUni.objctx.ifcObj) ifc -> OF  -- If there is max one atom, this is a simple function.
                 | otherwise                 -> UF  -- Otherwise, it is a UF
     in FP tp nm cmplxty
-  where depth2Cmplxty d | d <= 1    = Eenvoudig
+  where depth2Cmplxty :: Int -> Complexity
+        depth2Cmplxty d | d <= 1    = Eenvoudig
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 

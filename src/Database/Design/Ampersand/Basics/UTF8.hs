@@ -107,7 +107,7 @@ hPutStrLn h s = hPutStr h (s ++ "\n")
 validateUTF8 :: B.ByteString -> Maybe B.ByteString
 validateUTF8 bs = fmap (B.pack . reverse) $ validate [] $ B.unpack bs
   where validate :: [Word8] -> [Word8] -> Maybe [Word8]
-        validate validated []                                     = Nothing
+        validate _         []                                     = Nothing
         validate validated (w:ws)            | bitMask0xxxxxxx w  = validate (w : validated) ws
         validate validated (w1:w2:ws)        | bitMask110xxxxx w1 
                                             && bitMask10xxxxxx w2 = validate (w2:w1 : validated) ws

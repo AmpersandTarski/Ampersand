@@ -264,8 +264,8 @@ executePHP phpStr =
 -- that every single SQL expression is thrown against the generated database. If the SQL syntax
 -- is incorrect, an error is generated.
 -- result of the query, a check is d
-validateSQLsyntax :: FSpec -> Bool
-validateSQLsyntax _ = False
+--validateSQLsyntax :: FSpec -> Bool
+--validateSQLsyntax _ = False
 
 showPHP :: [String] -> String
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]

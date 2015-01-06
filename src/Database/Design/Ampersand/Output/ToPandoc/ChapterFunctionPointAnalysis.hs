@@ -1,12 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis where
 
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes
-import Data.List
-import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.FSpec.FPA
-import Database.Design.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterFunctionPointAnalysis"
@@ -68,4 +64,4 @@ chpFunctionPointAnalysis fSpec
    where (fps, totalFP) = userTransactionFPA fpa
     
 plainStr :: String -> Block
-plainStr str = Plain [Str str]
+plainStr str'  = Plain [Str str']
