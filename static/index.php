@@ -163,7 +163,8 @@ if ($err) {
   
   $isNew = $concept != 'ONE' && !isAtomInConcept($atom, $concept);
   
-  echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
+  echo '<div id=AmpersandRoot context='.showHtmlAttrStr($contextName).
+       ' interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
        ' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept']).
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($selectedRoleNr)).

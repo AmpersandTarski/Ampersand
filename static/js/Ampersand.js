@@ -124,16 +124,15 @@ function commitEditing() {
 // Return current edit commands (if valid) as a download link
 function downloadEditScript(anchorElt, event) {
   event.stopPropagation(); // To prevent edit log from collapsing/expanding on button click.
+  var context = $('#AmpersandRoot').attr('context');
   var interface = $('#AmpersandRoot').attr('interface');
 
-  // TODO: maybe add context name
   var dbCommands = getCommandsToSend();
   if (getCommandsToSend()) {
     var commandsJson = JSON.stringify(dbCommands);
-    console.log('download commands'+commandsJson);  
     // Returning a download link from JavaScript (similar to a <a target="_blank" ..>..) is surprisingly tricky, but we can do it by modifying the <a> element that contains the download button.
     $(anchorElt).attr(
-      { 'download': interface + '.json'
+      { 'download': context + '_' + interface + '_editCommands.json'
       , 'href': 'data:application/json;charset=utf-8,' + encodeURI(commandsJson) // encodeURI prevents spaces from disappearing
       , 'target': '_blank'
     });
