@@ -38,6 +38,9 @@ body {
 #TopLevelInterfaces #MenuBarLogout {
     float: right;
 }
+#TopLevelInterfaces #MenuBarDownloadPop {
+    float: right;
+}
 #TopLevelInterfaces #MenuBarReset {
     float: right;
 }

@@ -118,7 +118,9 @@ if (isset($conceptTableInfo['SESSION'])) { // only show login/logout buttons whe
 }
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
   echo '<div class="MenuItem" id="MenuBarReset"><a href="javascript:resetDatabase()"><span class=TextContent>Reset</span></a></div>';
-  echo '<div class="MenuItem" id="MenuBarReset"><a onclick="downloadPopulation(this,event)"><span class=TextContent>Download population</span></a></div>';
+  $populationFilename = "${contextName}.pop";
+  echo '<div class="MenuItem" id="MenuBarDownloadPop"><a href="php/Database.php?getPopulationADL" download="'.$populationFilename.'">'
+     . '<span class=TextContent>Download population</span></a></div>';
 }
 echo '<div id="MenuBarTerminator"></div>';
 echo '</div>'; // .MenuBar
