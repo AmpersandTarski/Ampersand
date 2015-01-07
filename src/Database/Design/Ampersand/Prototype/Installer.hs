@@ -1,14 +1,13 @@
 module Database.Design.Ampersand.Prototype.Installer
-  (installerDBstruct,installerDefPop,dumpPopulationToADL,
+  (installerDBstruct,installerDefPop,
    createTablesPHP,populateTablesPHP) where
 
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.RelBinGenBasics
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import Database.Design.Ampersand.Prototype.PHP
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Installer"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Installer"
 
 installerDBstruct :: FSpec -> String
 installerDBstruct fSpec = unlines $
@@ -100,44 +99,3 @@ installerDefPop fSpec = unlines $
       populateTablesPHP fSpec ++
       ["?>"
       ]
-
-dumpPopulationToADL :: FSpec -> String
-dumpPopulationToADL fSpec = unlines $
-      ["<?php"
-      ,"  $content = '"
-      ,"  <?php"
-      ,"  require \"Generics.php\";"
-      ,"  require \"php/DatabaseUtils.php\";"
-      ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
-      ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++" IN DUTCH\\n\");"
-      ]
-      ++
-      ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));"
-      | d<-relsDefdIn fSpec, decusr d
-      , let dbrel = case sqlRelPlugs fSpec (EDcD d) of
-                      [] -> fatal 82 "null dbrel"
-                      x  -> x
-      , let (_,srcField,trgField) = head dbrel
-      , let qry = selectExprRelation fSpec (-1) (fldname srcField) (fldname trgField) d]
-      ++
-      ["  fwrite($dumpfile, \"ENDCONTEXT\");"
-      ,"  fclose($dumpfile);"
-      ,"  "
-      ,"  function dumprel ($rel,$quer)"
-      ,"  {"
-      ,"    $rows = DB_doquer($quer);"
-      ,"    $pop = \"\";"
-      ,"    foreach ($rows as $row)"
-      ,"      $pop = $pop.\";(\\\"\".escapedoublequotes($row[0]).\"\\\",\\\"\".escapedoublequotes($row[1]).\"\\\")\\n  \";"
-      ,"    return \"POPULATION \".$rel.\" CONTAINS\\n  [\".substr($pop,1).\"]\\n\";"
-      ,"  }"
-      ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
-      -- TODO: There is an error here: \"\\\\\\\\\\\\\"\" becomes "\\\\\\"", which is not a valid PHP string ("\\ \\ \\ " ")
-      --       Anyway, having this many escape backslashes kind of signifies there's a few too many levels of abstraction here.  
-      ,"  ?>';"
-      ,"  @$res=file_put_contents(\"dbdump.php.\",$content);"
-      ,"  if($res===FALSE)"
-      ,"    echo '(population dump file not created, due to insufficient server permissions)<br/><br/>';"
-      , "?>"
-      ]
-

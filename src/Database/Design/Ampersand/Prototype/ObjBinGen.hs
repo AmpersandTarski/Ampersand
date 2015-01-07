@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
 
-import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop,dumpPopulationToADL)
+import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop)
 import Database.Design.Ampersand.Prototype.RelBinGenBasics     (addSlashes)
 import Database.Design.Ampersand.Prototype.Apps
 import Database.Design.Ampersand.Prototype.Generate            (generateAll)
@@ -28,7 +28,6 @@ phpObjInterfaces fSpec =
     ; write "InstallerDBstruct.php"     (installerDBstruct fSpec)
 --    ; write "InstallerTriggers.php"     (installerTriggers fSpec)
     ; write "InstallerDefPop.php"       (installerDefPop fSpec)
-    ; write "DumpPopulationToADL.php"   (dumpPopulationToADL fSpec)
 
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
