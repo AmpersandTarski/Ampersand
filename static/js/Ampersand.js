@@ -128,7 +128,7 @@ function downloadEditScript(anchorElt, event) {
   var interface = $('#AmpersandRoot').attr('interface');
 
   var dbCommands = getCommandsToSend();
-  if (getCommandsToSend()) {
+  if (dbCommands) {
     var commandsJson = JSON.stringify(dbCommands);
     // Returning a download link from JavaScript (similar to a <a target="_blank" ..>..) is surprisingly tricky, but we can do it by modifying the <a> element that contains the download button.
     $(anchorElt).attr(
