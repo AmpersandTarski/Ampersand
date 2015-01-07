@@ -139,6 +139,20 @@ function downloadEditScript(anchorElt, event) {
   }
 }
 
+// Return current population as a download link
+function downloadPopulation(anchorElt, event) {
+  var context = $('#AmpersandRoot').attr('context');
+
+    getNoCache( 'php/Database.php?getPopulationADL', function(populationAdl){
+    // Returning a download link from JavaScript (similar to a <a target="_blank" ..>..) is surprisingly tricky, but we can do it by modifying the <a> element that contains the download button.
+    $(anchorElt).attr(
+      { 'download': context + '.pop'
+      , 'href': 'data:application/json;charset=utf-8,' + encodeURI(populationAdl) // encodeURI prevents spaces from disappearing
+      , 'target': '_blank'
+    });
+  });
+}
+
 // Stop editing, and, if commands are valid (no empty's or duplicated), return command array
 function getCommandsToSend() {
     $editedAtom = getEnclosingAtom( $('#atomEditor') );
