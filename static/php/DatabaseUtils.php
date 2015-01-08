@@ -338,7 +338,7 @@ function getRelationContents($relationInfo) {
   $srcColEsc = escapeSQL($srcCol);
   $tgtColEsc = escapeSQL($tgtCol);
 
-  $query = "SELECT `$srcColEsc` as `src`, `$tgtColEsc` as `tgt` FROM `$tableEsc`";
+  $query = "SELECT `$srcColEsc` as `src`, `$tgtColEsc` as `tgt` FROM `$tableEsc` WHERE `$srcColEsc` IS NOT NULL  AND  `$tgtColEsc` IS NOT NULL";
   $pairs = queryDb($query);
   return $pairs;
 }
