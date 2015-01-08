@@ -15,8 +15,8 @@ with the results from Haskell-based Ampersand rule evaluator. The latter is much
 therefore most likely to be correct in case of discrepancies.
 -}
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "ValidateSQL"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "ValidateSQL"
 
 tempDbName :: String
 tempDbName = "ampersand_temporaryvalidationdb"
