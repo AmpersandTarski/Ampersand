@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser
 
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner
          ( Token(..),TokenType(..),noPos
-         , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
+         , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pInteger,pSemi)
 import UU.Parsing hiding (Parser)
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
@@ -512,7 +512,7 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
 
 pPopulation :: AmpParser P_Population
 pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent <|>
-              pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
+              pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
       prelpop :: Origin -> TermPrim -> Pairs -> P_Population
       prelpop    orig     (Prel _ nm)  contents
@@ -737,10 +737,8 @@ pContent :: AmpParser Pairs
 pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
                 <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
     where
-    pRecord = mkPair<$> pValue <* pKey "*" <*> pValue
+    pRecord = mkPair<$> pString <* pKey "*" <*> pString
     pRecordObs = mkPair<$ pSpec '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete
-pValue :: AmpParser String
-pValue  = pAtom <|> pConid <|> pVarid <|> pInteger <|> ((++)<$>pInteger<*>pConid) <|> ((++)<$>pInteger<*>pVarid)
 
 pADLid :: AmpParser String
 pADLid            = pVarid <|> pConid <|> pString
@@ -772,7 +770,7 @@ pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  IsParser p To
 pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
 pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
 pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"
-pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""
+pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""    -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
 pKey_val_pos ::  IsParser p Token => String -> p (String,Origin)
 pKey_val_pos keyword = gsym_val_pos TkKeyword   keyword   keyword
 --   pSpec_val_pos ::  IsParser p Token => Char -> p (String,Origin)

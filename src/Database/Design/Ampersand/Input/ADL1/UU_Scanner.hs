@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Input.ADL1.UU_Scanner 
          ( scan,initPos,Pos(..)
          , Token(..),TokenType(..),noPos
-         , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger,pSemi)
+         , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pInteger,pSemi)
 where
 
 import Data.Char hiding(isSymbol)
@@ -317,11 +317,10 @@ pKey  keyword  =   gsym TkKeyword   keyword   keyword
 pSpec :: IsParser p Token => Char -> p String
 pSpec s        =   gsym TkSymbol    [s]       [s]
 
-pString, pExpl, pAtom, pInteger10, pVarid, pConid,
+pString, pExpl, pInteger10, pVarid, pConid,
   pInteger :: IsParser p Token => p String
 pString        =   gsym TkString    ""        ""
 pExpl          =   gsym TkExpl      ""        ""
-pAtom          =   gsym TkAtom      ""        ""
 pInteger10     =   gsym TkInteger10 ""        "1"
 pVarid         =   gsym TkVarid     ""        "?lc?"
 pConid         =   gsym TkConid     ""        "?uc?"
