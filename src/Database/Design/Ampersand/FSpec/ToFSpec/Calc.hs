@@ -496,7 +496,7 @@ assembleECAs fSpec editables
                     )
           )
         | rel <- editables -- allDecls fSpec ++ [ Isn c | c<-allConcepts fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
-        , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
+ --       , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
         , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
         , ev<-[Ins,Del]
         , let acts = [ -- go through all the events that affect that clause:
