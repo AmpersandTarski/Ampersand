@@ -30,7 +30,9 @@ if (isset($_REQUEST['resetSession'])) {
   timestampHtml();
 } else if (isset($_REQUEST['testRule'])) {
   testRule($_REQUEST['testRule']);
-} else if (isset($_REQUEST['ip'])) {
+} else if (isset($_REQUEST['getPopulationADL']) ) {
+  showPopulationADL();
+} else if (isset($_REQUEST['ip']) ) {
   echo $_SERVER['SERVER_ADDR'];
 } else if (isset($_REQUEST['commands'])) {
   echo '<div id="UpdateResults">';
@@ -67,13 +69,15 @@ if (isset($_REQUEST['resetSession'])) {
   echo '</div>';
 }
 
-function processCommands() {
-  $commandsJson = $_POST['commands'];
-  if (isset($commandsJson)) {
-    $commandArray = json_decode($commandsJson);
-    foreach ($commandArray as $command)
-      processCommand($command);
-  }
+function processCommands()
+{ $commandsJson = $_POST['commands']; 
+  if (isset($commandsJson))
+    processCommandsJson($commandsJson);
+}
+
+function processCommandsJson($commandsJson)
+{ $commandArray = json_decode($commandsJson);
+    foreach ($commandArray as $command) processCommand($command);
 }
 
 function processCommand($command) {
@@ -471,11 +475,11 @@ function ExecEngineSHOUTS($msg) {
 }
 
 function emitAmpersandLog($msg) {
-  echo "<div class=\"LogItem AmpersandErr\">$msg</div>";
+  echo "<div class=\"LogItem AmpersandErr\">$msg</div>\n";
 }
 
 function emitLog($msg) {
-  echo "<div class=\"LogItem LogMsg\">$msg</div>";
+  echo "<div class=\"LogItem LogMsg\">$msg</div>\n";
 }
 
 function error($err) {
@@ -519,7 +523,13 @@ function testRule($ruleName) {
 }
 
 function timestampHtml() {
-  $timestamp = getTimestamp();
+  $timestamp = getTimestamp($error);
+  if ($error) // Show error if there is one. If there is a problem, we will be able to trace it in the browser network log.
+    echo "SQL error while fetching timestamp:\n".$error."\n";
   echo "<div class=Result timestamp='$timestamp'>$timestamp</div>";
+}
+
+function showPopulationADL() {
+  echo getPopulationADL();
 }
 ?>
