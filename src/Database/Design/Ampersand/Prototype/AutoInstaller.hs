@@ -7,8 +7,8 @@
 module Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 where
 import Database.Design.Ampersand.Prototype.CoreImporter
-import Database.Design.Ampersand.Prototype.Installer (plug2TableSpec,dropplug,TableSpec,sessionTableSpec,historyTableSpec)
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(quote)
+import Database.Design.Ampersand.Prototype.PHP
 import Database.HDBC.ODBC
 import Database.HDBC
 import Data.List  (intercalate)

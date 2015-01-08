@@ -1,10 +1,8 @@
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
-module Database.Design.Ampersand.InputProcessing (
-   createFSpec
-)
-where
+module Database.Design.Ampersand.InputProcessing (createFSpec, getPopulationsFrom) where
+
 import qualified Database.Design.Ampersand.Basics as Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
@@ -81,6 +79,18 @@ createFSpec opts =
                          (Checked _ )        -> fatal 67 "Meatgrinder returns included file????"
      )
 
+getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
+getPopulationsFrom opts filePath =
+ do { gpCtx <- parseADL opts filePath
+    ; return $ case gpCtx of 
+                 Errors err    -> Errors err
+                 Checked pCtx  -> case pCtx2aCtx opts pCtx of
+                                    (Errors  err ) -> Errors err
+                                    (Checked aCtx) -> Checked $ initialPops (makeFSpec opts aCtx)
+                      
+    }
+ 
+ 
 -- Parse an Ampersand file and all transitive includes
 parseADL  :: Options -> FilePath -> IO (Guarded P_Context)
 parseADL opts filePath =
@@ -105,7 +115,7 @@ parseSingleADL opts filePath =
  do { verboseLn opts $ "Reading file " ++ filePath
     ; mFileContents <- Basics.readUTF8File filePath
     ; case mFileContents of
-        Left err -> error $ "ERROR in file " ++ filePath ++ ":\n" ++ err 
+        Left err -> error $ "ERROR reading file " ++ filePath ++ ":\n" ++ err 
                     -- TODO: would like to return an Errors value here, but this datatype currently only accommodates UUParsing Messages 
         Right fileContents ->
          do { whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 

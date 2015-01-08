@@ -1,7 +1,6 @@
 module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Basics.Auxiliaries
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
@@ -12,6 +11,7 @@ import System.FilePath
 import System.Directory
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Control.Exception
 
 fatal :: Int -> String -> a
@@ -54,7 +54,7 @@ generateAll fSpec =
     genericsPhpContent :: [String]
     genericsPhpContent =
       intercalate [""]
-        [ generateConstants (getOpts fSpec)
+        [ generateConstants fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -73,17 +73,21 @@ generateAll fSpec =
         ; writeFile (combine (dirPrototype (getOpts fSpec)) fname) content
         }
 
-generateConstants :: Options -> [String]
-generateConstants opts =
+generateConstants :: FSpec -> [String]
+generateConstants fSpec =
   [ "$versionInfo = "++showPhpStr ampersandVersionStr++";" -- so we can show the version in the php-generated html
   , ""
-  , "$dbName = "++showPhpStr (dbName opts)++";"
+  , "$contextName = " ++ showPhpStr (fsName fSpec) ++ ";"
+  , ""
+  , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
+  , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
   ]
-
+  where opts = getOpts fSpec
+  
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
   [ "$allSpecializations = // transitive, so including specializations of specializations"
@@ -100,7 +104,8 @@ generateTableInfos fSpec =
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [showPhpStr (showHSName decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
+         [ [showPhpStr (showHSName decl)++" => array ( 'name'       => "++showPhpStr (name decl)
+                                                 ++ ", 'srcConcept' => "++showPhpStr (name (source decl))
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
                                                  ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)

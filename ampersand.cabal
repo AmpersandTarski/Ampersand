@@ -151,7 +151,9 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
+                     Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.RelBinGenBasics,
                      Database.Design.Ampersand.Prototype.RelBinGenSQL,
+                     Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand

@@ -118,6 +118,9 @@ if (isset($conceptTableInfo['SESSION'])) { // only show login/logout buttons whe
 }
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
   echo '<div class="MenuItem" id="MenuBarReset"><a href="javascript:resetDatabase()"><span class=TextContent>Reset</span></a></div>';
+  $populationFilename = "${contextName}.pop";
+  echo '<div class="MenuItem" id="MenuBarDownloadPop"><a href="php/Database.php?getPopulationADL" download="'.$populationFilename.'">'
+     . '<span class=TextContent>Download population</span></a></div>';
 }
 echo '<div id="MenuBarTerminator"></div>';
 echo '</div>'; // .MenuBar
@@ -163,13 +166,16 @@ if ($err) {
   
   $isNew = $concept != 'ONE' && !isAtomInConcept($atom, $concept);
   
-  echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
+  echo '<div id=AmpersandRoot context='.showHtmlAttrStr($contextName).
+       ' interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
        ' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept']).
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($selectedRoleNr)).
        ' timestamp="'.$timeStamp.'">';
     
-  echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
+  echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands'
+     . '<a onclick="downloadEditScript(this,event)"><input type="button" value="Download" class="download-button" ></input></a>'
+     . '</div></div>';
   echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   
   echo '<div id=SignalAndPhpLogs>';
