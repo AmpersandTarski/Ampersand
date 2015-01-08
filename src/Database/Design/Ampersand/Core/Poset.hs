@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- COPIED FROM http://hackage.haskell.org/package/altfloat-0.3.1 -}
 {-
  - Copyright (C) 2009 Nick Bowler.
