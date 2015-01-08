@@ -226,9 +226,11 @@ lexExpl fn cont pos' inp = lexExpl' "" cont pos' inp
 
 scanString :: [Char] -> ([Char],Int,[Char])
 scanString []            = ("",0,[])
-scanString ('\\':'&':xs) = let (str,w,r) = scanString xs
+scanString ('\\':'&':xs) = let (str,w,r) = scanString xs  -- TODO: why do we ignore \& ?  
                            in (str,w+2,r)
-scanString ('\'':xs)     = let (str,w,r) = scanString xs
+scanString ('\\':'\'':xs) = let (str,w,r) = scanString xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)    
+                           in ('\'': str,w+2,r)
+scanString ('\'':xs)     = let (str,w,r) = scanString xs  -- single quote: '
                            in ('\'': str,w+1,r)
 scanString xs = let (ch,cw,cr) = getchar xs
                     (str,w,r)  = scanString cr
