@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser
 
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner
          ( Token(..),TokenType(..),noPos
-         , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pInteger,pSemi)
+         , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi)
 import UU.Parsing hiding (Parser)
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
