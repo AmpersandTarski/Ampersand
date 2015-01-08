@@ -31,6 +31,10 @@ input.ng-invalid.ng-dirty {
 #tno-timeline {
 	content: url('../images/tnotimeline.png');
 }
+#notificationCenter {
+	position	: fixed;
+	right		: 0px;
+}
 
 svg {
 	border: 1px solid black;
@@ -72,5 +76,9 @@ svg {
 }
 .glyphicon-plus {
 	color:green; 
+	cursor:pointer;
+}
+.glyphicon-bell {
+	color:orange; 
 	cursor:pointer;
 }

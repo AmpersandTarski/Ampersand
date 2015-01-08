@@ -22,10 +22,11 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		
 		// TODO: move output related things to Viewer. Move ErrorHandling to Session??
 		$violationMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
-		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
+		// $rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
+		$rowMessage = $srcAtom . ' - ' . $tgtAtom;
 		
-		self::$violations[$violationMessage][] = $rowMessage;
-		self::$logs[]['message'] = $rowMessage;
+		self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
+		self::$logs[]['message'] = $violationMessage . ' - ' . $rowMessage;
 	}
 	public static function addInfo($message){
 		self::$infos[]['message'] = $message;

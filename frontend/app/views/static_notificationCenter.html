@@ -1,4 +1,4 @@
-<div id="NotificationCenter" ng-controller="static_notificationCenterController">
+<div id="notificationCenter" ng-controller="static_notificationCenterController">
 	<div id="errors">
 		<div class="alert alert-danger alert-dismissable" ng-repeat="error in notifications.errors">
 			<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -14,13 +14,12 @@
 	</div>
 			
 	<div id="violations">
-		<div class="panel panel-warning" ng-repeat="violation in notifications.violantions">
-			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation{{violation.id}}">' 
-				<div class="text-left"><strong>Violation!</strong> {{violation.message}}</div>'
+		<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
+			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
+				<div class="text-left"><strong>Violation!</strong> {{val.violationMessage}}</div>
 			</div>
-		
-			<ul class="list-group collapse" id="violation{{violation.id}}">
-				<li class="list-group-item" ng-repeat="row in violation.rows">{{row.message}}</li>
+			<ul class="list-group collapse" id="violation-{{key}}">
+				<li class="list-group-item" ng-repeat="tuple in val.tuples">{{tuple}}</li>
 			</ul>
 		</div>
 	</div>

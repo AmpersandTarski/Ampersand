@@ -20,6 +20,9 @@ class Api
 	 */
 	public function getAllNotifications()
 	{
+		$session = Session::singleton();
+		RuleEngine::checkProcessRules($session->role->id);
+		
 		$test = ErrorHandling::getAll(); // "Return all notifications
 		
 		return $test;
