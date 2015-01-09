@@ -8,7 +8,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Project</label>
 	   			<div class="col-md-11">
-	   				<input disabled ng-model="Project.label" type="text" class="form-control input-sm" ng-change="patch()">
+	   				<input disabled ng-model="Project.label" type="text" class="form-control input-sm" ng-blur="patch()">
 	   			</div>
 	 		</div>
 	 		
@@ -16,7 +16,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Name</label>
 	   			<div class="col-md-11">
-					<input ng-model="Project.Name" type="text" class="form-control input-sm" ng-change="patch()">
+					<input ng-model="Project.Name" type="text" class="form-control input-sm" ng-blur="patch()">
 				</div>
 	 		</div>
 	 		
@@ -24,7 +24,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Description</label>
 	   			<div class="col-md-11">
-	   				<textarea ng-model="Project.Description" class="form-control input-sm" placeholder="Textarea" rows="3" ng-change="patch()"></textarea>
+	   				<textarea ng-model="Project.Description" class="form-control input-sm" placeholder="Textarea" rows="3" ng-blur="patch()"></textarea>
 				</div>
 	 		</div>
 	 		
@@ -58,7 +58,7 @@
 	   			<label class="col-md-1 control-label">Start date</label>
 	   			<div class="col-md-11">
 	   				<div class="input-group">
-		   				<input ng-model="Project['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-change="patch()"/>
+		   				<input ng-model="Project['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch()"/>
 	       				<span class="input-group-btn">
 	         				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start date')"><i class="glyphicon glyphicon-calendar"></i></button>
 	       				</span>
