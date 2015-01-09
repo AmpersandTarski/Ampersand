@@ -2,7 +2,7 @@
 
 class Api
 {
-/****************************** INSTALLER ******************************/
+/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
 	 * @url GET installer
 	 */
@@ -12,16 +12,39 @@ class Api
 		
 		return ErrorHandling::getAll(); // Return all notifications
 		
-	}	
+	}
+	
+	/**
+	 * @url GET session/
+	 */
+	public function getSession(){
+	
+		$session = Session::singleton();
+		return array('id' => session_id());
+	
+	}
+	
+	/**
+	 * @url DELETE session/
+	 * @url DELETE session/{session_id}
+	 */
+	public function destroySession($session_id){
+
+		$session = Session::singleton();
+		$session->destroySession($session_id);
+	
+	}
 
 /**************************** NOTIFICATIONS ****************************/	
 	/**
 	 * @url GET notifications/all
+	 * @param int $roleId
 	 */
-	public function getAllNotifications()
+	public function getAllNotifications($roleId = null)
 	{
 		$session = Session::singleton();
-		RuleEngine::checkProcessRules($session->role->id);
+		$session->setRole($roleId);
+		RuleEngine::checkRules($session->role->id);
 		
 		$test = ErrorHandling::getAll(); // "Return all notifications
 		
@@ -74,7 +97,7 @@ class Api
     {
     	$session = Session::singleton();
     	 
-    	if(is_null($atomid)) $atomid = session_id();
+    	if(is_null($atomid)) $atomid = session_id(); // TODO: wordt al gedaan door Session->setAtom(), hieronder met session->atom werken?
     	 
     	try{
     		$session->setRole($roleId);
@@ -223,17 +246,27 @@ class Api
 	
 	/**
      * @url GET roles/all
-	 * @url GET role/{roleNr}/
      */
-    public function getRoles($roleNr = NULL)
+    public function getAllRoles()
     {
-        if($roleNr !== NULL){	// do not use isset(), because roleNr can be 0.		
-			return new Role($roleNr); // "Return role with properties as defined in class Role"
-		}else{
-			return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
-			
-		}
+		return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
+		
     }
+    
+    /**
+     * @url GET role
+     * @url GET role/{roleNr}/
+     */
+    public function getRole($roleNr = NULL)
+    {
+    	if($roleNr !== NULL){	// do not use isset(), because roleNr can be 0.
+    		return new Role($roleNr); // Return role with properties as defined in class Role
+    	}else{
+    		return new Role(); // Return default role
+    			
+    	}
+    }
+    
 	
 	
 /**************************** INTERFACES ****************************/

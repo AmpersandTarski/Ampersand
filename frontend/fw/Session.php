@@ -36,11 +36,12 @@ class Session {
 				
 				// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
 				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
-				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->deleteAmpersandSession($expiredSessionAtom);
+				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroySession($expiredSessionAtom);
 
 				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
 				if (!Concept::isAtomInConcept(session_id(), 'SESSION')){ 
-					$this->database->addAtomToConcept(session_id(), 'SESSION');					
+					$this->database->addAtomToConcept(session_id(), 'SESSION');
+					$this->database->Exe("COMMIT"); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
 				}
 
 				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
@@ -69,32 +70,24 @@ class Session {
 		return self::$_instance;
 	}
 	
-	public function destroySession(){
-		global $conceptTableInfo;
+	public function destroySession($sessionAtom){
 		
-		$this->deleteAmpersandSession(session_id());
+		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
+		$this->database->deleteAtom($sessionAtom, 'SESSION');
+		$this->database->closeTransaction();
 		
-		$_SESSION = array(); // empty all $_SESSION variables
-		
-		session_destroy(); // session_destroy() destroys all of the data associated with the current session. It does not unset any of the global variables associated with the session, or unset the session cookie.
-		
-		self::$_instance = null;
 	}
 	
 	public function setRole($roleId = null){
 		try{
 			if(isset($roleId)){
 				$this->role = new Role($roleId);	
-			}elseif(isset($_SESSION['role'])){
-				$this->role = new Role($_SESSION['role']);
 			}else{
 				$this->role = new Role();
 			}
 			
-			ErrorHandling::addLog("Role $role->name selected");
-			$_SESSION['role'] = $this->role->id;	// store roleId in $_SESSION['role']
-	
-			RuleEngine::checkRules($this->role->id); // TODO: ergens anders plaatsen?
+			ErrorHandling::addLog("Role " . $this->role->name . " selected");
+
 			return $this->role->id;
 		}catch(Exception $e){
 			throw $e;
@@ -107,15 +100,10 @@ class Session {
 			if(isset($interfaceName)) {
 				$this->interface = new ObjectInterface($interfaceName);
 				ErrorHandling::addLog("Interface $interfaceName selected");
-			}elseif(isset($_SESSION['interface'])){ // interface already selected
-				$this->interface = new ObjectInterface($_SESSION['interface']);
-				$interfaceName = $_SESSION['interface'];
-				ErrorHandling::addLog("Interface $interfaceName selected");
 			}else{
 				$this->interface = null;
 				ErrorHandling::addInfo("No interface selected");
 			}
-			$_SESSION['interface'] = $interfaceName; // store interfaceName in $_SESSION['interface']
 		}catch (Exception $e){
 			throw $e;
 		}
@@ -130,23 +118,13 @@ class Session {
 		}elseif(is_null($atomId)){
 			$this->atom = session_id();
 			$atomId = session_id();
-		}elseif(isset($_SESSION['atom'])){ // atom already selected
-			$this->atom = $_SESSION['atom'];
-			$atomId = $_SESSION['atom'];
 		}else{
 			$this->atom = session_id();
 			$atomId = session_id();
 		}
 		ErrorHandling::addLog("Atom $atomId selected");
-		$_SESSION['atom'] = $atomId; // store atomId in $_SESSION['atom]
 		
 		return $atomId;
-	}
-	
-	private function deleteAmpersandSession($sessionAtom){
-		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
-		$this->database->deleteAtom($sessionAtom, 'SESSION');
-	
 	}
 }
 

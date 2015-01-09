@@ -324,7 +324,7 @@ class Database
 	}
 	
 	public function closeTransaction(){
-		$session = SESSION::singleton();
+		$session = Session::singleton();
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->interfaceInvariantConjunctNames); // only invariants rules that might be violated after edits in this interface are checked.

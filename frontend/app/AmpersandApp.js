@@ -36,11 +36,28 @@ AmpersandApp.config(function($routeProvider) {
 });
 
 AmpersandApp.config(function(RestangularProvider) {
+	
     RestangularProvider.setBaseUrl('/CB/api/v1'); // Generate: path to API folder
     
     RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
         return data;
     });
+    
+    RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
+    
+});
+
+AmpersandApp.run(function(Restangular, $rootScope){
+	
+	Restangular.one('role').get().then(function(data) {
+		$rootScope.roleId = data.id;
+	});
+	
+	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
+		params['roleId'] = $rootScope.roleId;
+		return params;
+	});
+	
 });
 
 AmpersandApp.directive('myShowonhovertr', function (){
