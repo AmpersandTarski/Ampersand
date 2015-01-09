@@ -139,7 +139,7 @@ class Database
 
 			$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), $firstConceptColEsc); // no need to filter duplicates and NULLs
 			
-			if (!in_array($newAtom, $existingAtoms)) {
+			if (!in_array(strtolower($newAtom), array_map('strtolower', $existingAtoms))) { // in_array is case sensitive ("true" != "TRUE"), but Mysql is case insensitive for Primary keys. Therefore first to lowercase. 
 				$allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
 				$newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
 				$allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
