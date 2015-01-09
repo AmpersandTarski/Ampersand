@@ -5,10 +5,16 @@ class Api
 /****************************** INSTALLER & SESSION RESET ******************************/
 	/**
 	 * @url GET installer
+	 * @param int $roleId
 	 */
-	public function installer(){
-		// include (__DIR__ . '/../ampersand/InstallerDBstruct.php');
-		// include (__DIR__ . '/../ampersand/InstallerDefPop.php');
+	public function installer($roleId){
+		include (__DIR__ . '/../../ampersand/InstallerDBstruct.php');
+		include (__DIR__ . '/../../ampersand/InstallerDefPop.php');
+		
+		RuleEngine::checkRules($roleId);
+		
+		// TODO: check all invariantRules
+		ErrorHandling::addSuccess("Database reset to initial value");
 		
 		return ErrorHandling::getAll(); // Return all notifications
 		
