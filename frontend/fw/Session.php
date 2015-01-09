@@ -41,7 +41,7 @@ class Session {
 				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
 				if (!Concept::isAtomInConcept(session_id(), 'SESSION')){ 
 					$this->database->addAtomToConcept(session_id(), 'SESSION');
-					$this->database->Exe("COMMIT"); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
+					$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
 				}
 
 				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");

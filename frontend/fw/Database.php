@@ -323,6 +323,13 @@ class Database
 		
 	}
 	
+	// TODO: verwijderen van functie, nu enkel nodig in Session voor session atom initiatie.
+	public function commitTransaction(){
+		$this->Exe("COMMIT"); // start database transaction
+		unset($this->transaction);
+		
+	}
+	
 	public function closeTransaction(){
 		$session = Session::singleton();
 		
