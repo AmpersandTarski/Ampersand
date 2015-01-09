@@ -76,7 +76,8 @@ Class Atom {
 					$tgtInterface = $interface;
 					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
 					
-					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 					
 					// find the right subinterface
 					while (count($pathArr)){
@@ -114,7 +115,8 @@ Class Atom {
 					$tgtInterface = $interface;
 					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
 					
-					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					if(empty(current($pathArr))) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 					
 					// find the right subinterface
 					while (count($pathArr)){
@@ -146,7 +148,8 @@ Class Atom {
 					$tgtInterface = $interface;
 					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
 					
-					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					if(empty(current($pathArr))) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 					
 					// find the right subinterface
 					while (count($pathArr)){
