@@ -24,11 +24,11 @@ main =
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do gFSpec <- createFSpec opts
             case gFSpec of
-              Errors err -> do putStrLn "Error(s) found:"
-                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
-                               exitWith $ ExitFailure 10
-              Checked fSpec -> generateAmpersandOutput fSpec
-                             >> generateProtoStuff opts fSpec
+              Errors err    -> do putStrLn "Error(s) found:"
+                                  mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+                                  exitWith $ ExitFailure 10
+              Checked fSpec -> do generateAmpersandOutput fSpec
+                                  generateProtoStuff opts fSpec
 
 generateProtoStuff :: Options -> FSpec -> IO ()
 generateProtoStuff opts fSpec
@@ -64,7 +64,6 @@ generateProtoStuff opts fSpec
          }
   | otherwise =
       do { verboseLn (getOpts fSpec) "Generating prototype artifacts..."
-         ; putStrLn $ show $ validateEdit (getOpts fSpec)
          ; when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
          ; case testRule (getOpts fSpec) of
