@@ -34,14 +34,14 @@ generateProtoStuff :: Options -> FSpec -> IO ()
 generateProtoStuff opts fSpec
   | Just nm <- validateEdit (getOpts fSpec) =
       do { verboseLn (getOpts fSpec) "Validating edit operations:"
-         ; gBeforePops <- getPopulationsFrom opts $ nm ++ ".before"
-         ; gAfterPops <- getPopulationsFrom opts $ nm ++ ".after"
+         ; gBeforePops <- getPopulationsFrom opts $ nm ++ ".before.pop"
+         ; gAfterPops <- getPopulationsFrom opts $ nm ++ ".after.pop"
          ; case (,) <$> gBeforePops <*> gAfterPops of
               Errors err -> do putStrLn "Error(s) found in before/after populations:"
                                mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                exitWith $ ExitFailure 10
               Checked (beforePops, afterPops) ->
-               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit")
+               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit.json")
                   ; unless isValid (exitWith (ExitFailure 30))
                   }
          }
