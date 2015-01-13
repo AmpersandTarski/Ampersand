@@ -123,7 +123,7 @@ pRule = return (Prim (PI OriginUnknown))
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 ---        Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' RelSign | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
 
---- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
+--- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' StringList ']'
 
 --- RoleRelation ::= 'ROLE' ADLidList 'EDITS' RelSignList
 
@@ -178,13 +178,9 @@ pTerm = pRule
 
 --- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
 ---     RecordList ::= Record (',' Record)*
----     Record ::= Value '*' Value
+---     Record ::= String '*' String
 ---     RecordObsList ::= RecordObsList (';' RecordObsList)
 ---     RecordObs ::= '(' String ',' String ')'
-
---- ValueList ::= Value (',' Value)*
-
---- Value ::= Atom | Conid | Varid | Integer (Conid | Varid)?
 
 --- ADLid ::= Varid | Conid | String
 
@@ -194,10 +190,13 @@ pTerm = pRule
 
 --- String ::= '"' Any* '"'
 
+--- StringList ::= String (',' String)*
+
 --- StringListSemi ::= String (';' String)*
 
 --- Expl ::= '{+' Any* '-}'
 
+-- TODO: this does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
 --- Atom ::= "'" Any* "'"
 
 --- Digit ::= ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9')
