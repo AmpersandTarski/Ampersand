@@ -70,8 +70,7 @@ getGitInfoStr =
  do { eSHA <- readProcessEither "git" ["rev-parse", "--short", "HEAD"] ""
     ; eBranch <- readProcessEither "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
     ; (exitCode, _, _) <- readProcessWithExitCode "git" ["diff", "--quiet"] ""
-    ; print exitCode
-    ; let isDirty = exitCode /= ExitSuccess -- for eDirty, exit status is used to signal dirtyness
+    ; let isDirty = exitCode /= ExitSuccess -- exit code signals whether branch is dirty
     ; case (eSHA, eBranch) of
         (Right sha, Right branch) -> 
          return $ strip branch ++ ":" ++ strip sha ++ (if isDirty then "*" else "")

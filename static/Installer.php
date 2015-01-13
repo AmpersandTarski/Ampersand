@@ -13,7 +13,6 @@
 <?php
   require 'InstallerDBstruct.php';
   require 'InstallerDefPop.php';
-  require 'DumpPopulationToADL.php';
   
   if ($error==false) {
     echo '<div id="ResetSuccess"/>The database has been reset to its initial population.<br/><br/><button onclick="window.location.href = document.referrer;">Ok</button>';
