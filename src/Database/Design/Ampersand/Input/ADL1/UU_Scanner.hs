@@ -109,3 +109,42 @@ instance Show Token where
 scan :: [String] -> [String] -> String -> String -> String -> Pos -> String -> [Token]
 scan keywordstxt keywordsops specchars opchars fn pos' input
   = []
+
+--- String ::= '"' Any* '"'
+
+--- StringList ::= String (',' String)*
+
+--- StringListSemi ::= String (';' String)*
+
+--- Expl ::= '{+' Any* '-}'
+
+-- TODO: this does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
+--- Atom ::= "'" Any* "'"
+
+--- Digit ::= ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9')
+
+--- Integer10 ::= ('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') Digit*
+
+--- Integer8 ::= ('00' | '0o') Digit+
+
+--- Integer16 ::= ('0x' | '0X') Digit+
+
+--- Varid ::= (LowerChar | '_') (Char | '_')*
+
+--- Conid ::= UpperChar (Char | '_')*
+
+--- Integer ::= Integer10 | Integer8 | Integer16
+
+--- Comma ::= ','
+
+--- Semi ::= ';'
+
+--- UpperChar ::= 'A'
+
+--- LowerChar ::= 'A'
+
+--- Char ::= 'A'
+
+--- Lower ::= 'A'
+
+--- Any ::= 'a'
