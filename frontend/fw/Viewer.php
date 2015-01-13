@@ -51,14 +51,14 @@ class Viewer {
 		
 		
 		// CSS files
-		$files = getDirectoryList('app/css');
+		$files = getDirectoryList(__DIR__ . '/../app/css');
 		foreach ((array)$files as $file){ 
 			if (substr($file,-3) !== 'css') continue;
 			$this->addHtmlLine('<link href="app/css/'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 		}
 		
 		// Javascript files
-		$files = getDirectoryList('app/js');
+		$files = getDirectoryList(__DIR__ . '/../app/js');
 		foreach ((array)$files as $file){ 
 			if (substr($file,-2) !== 'js') continue;
 			$this->addHtmlLine('<script src="app/js/'.$file.'"></script>');
@@ -66,7 +66,7 @@ class Viewer {
 		
 		$this->addHtmlLine('<script src="app/AmpersandApp.js"></script>');
 		// AngularApp controler files
-		$files = getDirectoryList('app/controllers');
+		$files = getDirectoryList(__DIR__ . '/../app/controllers');
 		foreach ((array)$files as $file){ 
 			if (substr($file,-2) !== 'js') continue;
 			$this->addHtmlLine('<script src="app/controllers/'.$file.'"></script>');
