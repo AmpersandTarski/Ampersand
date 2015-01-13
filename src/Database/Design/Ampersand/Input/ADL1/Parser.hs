@@ -3,7 +3,7 @@
 module Database.Design.Ampersand.Input.ADL1.Parser
   (AmpParser, pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
 
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner
+import Database.Design.Ampersand.Input.ADL1.Scanner
          ( Token(..),TokenType(..),Pos,noPos)
 import Text.Parsec.String
 import Text.Parsec.Char

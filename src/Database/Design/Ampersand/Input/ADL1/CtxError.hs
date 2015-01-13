@@ -24,7 +24,7 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
+import Database.Design.Ampersand.Input.ADL1.Scanner (Token)
 import Text.Parsec.Error
 import Database.Design.Ampersand.Core.ParseTree
 

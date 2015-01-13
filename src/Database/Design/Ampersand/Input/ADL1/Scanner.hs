@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash #-}
-module Database.Design.Ampersand.Input.ADL1.UU_Scanner 
+module Database.Design.Ampersand.Input.ADL1.Scanner 
          ( scan,initPos,Pos(..)
          , Token(..),TokenType(..),noPos
          )
@@ -8,7 +8,7 @@ where
 import Data.Char hiding(isSymbol)
 import Data.List
 import Data.Maybe
-import Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
+import Database.Design.Ampersand.Input.ADL1.BinaryTrees(tab2tree,btLocateIn)
 ---- import UU.Parsing(Symbol(..),IsParser,pSym,(<$>))
 import Database.Design.Ampersand.Basics (fatalMsg)
 fatal :: Int -> String -> a

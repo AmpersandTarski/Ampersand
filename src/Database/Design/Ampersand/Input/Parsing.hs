@@ -14,7 +14,7 @@ import System.FilePath
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner 
+import Database.Design.Ampersand.Input.ADL1.Scanner 
 import Database.Design.Ampersand.ADL1
 import Control.Exception
 

@@ -7,7 +7,7 @@ import qualified Database.Design.Ampersand.Basics as Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner
+import Database.Design.Ampersand.Input.ADL1.Scanner
 import Text.Parsec.Prim hiding (runParser)
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1

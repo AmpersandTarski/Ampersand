@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees
+module Database.Design.Ampersand.Input.ADL1.BinaryTrees
    ( BinSearchTree(..)
    , tab2tree
    , btFind
