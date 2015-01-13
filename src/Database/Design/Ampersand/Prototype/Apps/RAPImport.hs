@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.Prototype.CoreImporter
 --import Database.Design.Ampersand.Core.Poset (Poset(..),maxima)
 import Prelude hiding (Ord(..))
---import Database.Design.Ampersand.Input.ADL1.UU_Parsing (Message(..))
 import Database.Design.Ampersand.Prototype.Apps.RAPIdentifiers
 import Database.Design.Ampersand.Prototype.Apps.RAP         (picturesForAtlas)
 import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
