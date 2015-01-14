@@ -80,7 +80,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
             interfaceObjDoc :: Blocks
             interfaceObjDoc =
               mconcat $
-                [ plainText  $ fieldDescr ++ quoteName (name (target iExp)) ++ ". (" ++ maybe "niet-" (const "") editableRelM ++ "editable)"              
+                [ plainText  $ fieldDescr ++ quoteName (name (target iExp)) ++ ". (" ++ (if isEditable then "" else "niet ") ++ "editable)"              
                 ] ++
                 
                 case navigationDocs of
@@ -95,7 +95,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                 
                 if not $ development (getOpts fSpec) then [] else -- some debug info shown on --dev
                   [ plainText $ "DEBUG: Props: ["++props++"]" | development (getOpts fSpec) ] ++
-                  case editableRelM of
+                  case expressionRelM of
                     Nothing -> []
                     Just (_, d, _, isFlipped) -> 
                       [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
@@ -108,7 +108,9 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                                                        else ("Een lijst van 0 of meer velden van type ", "Elk veld")
                     props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
                     
-                    editableRelM = getEditableRelation editableRels iExp
+                    (expressionRelM, isEditable) = case getExpressionRelation iExp of
+                                                     Just e@(_,d,_,_) -> (Just e, EDcD d `elem` editableRels)
+                                                     Nothing          -> (Nothing, False)
                     
                     navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces
