@@ -65,13 +65,30 @@ defaultWriterVariables fSpec
     [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly (getOpts fSpec))]++
     [ ("header-includes", unlines
          [ "% ============Ampersand specific Begin================="
-         , "\\usepackage[toc]{glossaries}    % package used to define terms"
+         , "% First a couple of LaTeX packages are included:"
+         , ""
+         , "% The glossaries package supports acronyms and multiple glossaries"
+         , "\\usepackage[toc]{glossaries}    % Add the glossaries to the table of contents"
          , "\\makeglossaries"
+         , ""
+         , "% geometry provides a flexible and easy interface to page dimentions"
+         , "\\usepackage[ top=1.5cm, bottom=1.5cm, outer=5cm, inner=2cm"
+         , "            , heightrounded, footskip=.5cm"
+         , "            , marginparwidth=2.5cm, marginparsep=0.5cm]{geometry}"
+         , ""
+         , "% breqn – Automatic line breaking of displayed equations"
          , "\\usepackage{breqn}"
+         , ""
+         , "% colonequals – Colon equals symbols"
          , "\\usepackage{colonequals}"
+         , ""
+         , ""
          , "\\usepackage{textcomp}"
          , "% == [all]{hypcap} after {hyperref} shows the ref'd picture i.o. the caption @ click =="
+         , ""
          , "\\usepackage[all]{hypcap}"
+         , ""
+         , ""
          , "\\def\\id#1{\\mbox{\\em #1\\/}}"
          , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
          , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
@@ -98,7 +115,6 @@ defaultWriterVariables fSpec
          , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
          , "% ============Ampersand specific End==================="
          ])
---    , ("geometry", "margin=2cm, a4paper")
     ]
 
 --DESCR -> functions to write the pandoc
