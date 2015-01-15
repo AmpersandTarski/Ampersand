@@ -163,15 +163,14 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                        ( [[ (plain.text) "Id"
                           , (plain.text.name) cl
                           , (plain.text.l) (NL "Sleutel" , EN "Primary key")
-                         ]]
-                    <> [ [ (plain.text.name) attr
-                         , (plain.text.attTyp) attr
-                         , (plain.text.l) (if attOptional attr 
-                                           then (NL "Optioneel", EN "Optional")
-                                           else (NL "Verplicht", EN "Mandatory")
-                                          )
-                         ]
-                         | attr <- clAtts cl]
+                         ]] 
+                         <>
+                         [[ (plain.text.name) attr
+                          , (plain.text.attTyp) attr
+                          , (plain.text.l) (if attOptional attr 
+                                            then (NL "Optioneel", EN "Optional")
+                                            else (NL "Verplicht", EN "Mandatory")
+                                           )] | attr <- clAtts cl]
                        )
         <> let attrNames = map name (clAtts cl)
                asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
