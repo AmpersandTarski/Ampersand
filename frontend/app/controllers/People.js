@@ -1,7 +1,7 @@
 AmpersandApp.controller('PeopleController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
 	
 	// model (can be changed by view)
-	$scope.SESSION = Restangular.one('interface/People/atom', $routeParams.atom).get().$object;
+	$scope.SESSION = Restangular.one('interface/People/atom').get().$object;
 	
 	// patch function
 	$scope.patch = function(){

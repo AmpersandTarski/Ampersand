@@ -2,35 +2,39 @@ var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'res
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
+		// default start page
 		.when('/',
 			{
 				controller: '',
 				templateUrl: 'app/views/static_home.html'
 			})
-		.when('/Projects/:atom',
+		// installer page
+		.when('/installer',
+			{
+				controller: 'static_installerController',
+				templateUrl: 'app/views/static_installer.html'
+			})
+		// top level interfaces (session atom is inserted atomatically)
+		.when('/Projects',
 			{
 				controller: 'ProjectsController',
 				templateUrl: 'app/views/Projects.html'
 			})
+		.when('/People',
+			{
+				controller: 'PeopleController',
+				templateUrl: 'app/views/People.html'
+			})
+		// other interfaces (require atom)
 		.when('/Project/:atom',
 			{
 				controller: 'ProjectController',
 				templateUrl: 'app/views/Project.html'
 			})
-		.when('/People/:atom',
-			{
-				controller: 'PeopleController',
-				templateUrl: 'app/views/People.html'
-			})
 		.when('/Person/:atom',
 			{
 				controller: 'PersonController',
 				templateUrl: 'app/views/Person.html'
-			})
-		.when('/installer',
-			{
-				controller: 'static_installerController',
-				templateUrl: 'app/views/static_installer.html'
 			})
 		.otherwise({redirectTo: '/'});
 });
@@ -49,12 +53,15 @@ AmpersandApp.config(function(RestangularProvider) {
 
 AmpersandApp.run(function(Restangular, $rootScope){
 	
-	Restangular.one('role').get().then(function(data) {
-		$rootScope.roleId = data.id;
-	});
+	$rootScope.session = Restangular.one('session').get().$object;
 	
+	Restangular.one('role').get().then(function(data) {
+		$rootScope.roleId = data.id; // TODO: samenvoegen met opvragen session hierboven
+	});
+		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
 		params['roleId'] = $rootScope.roleId;
+		params['sessionId'] = $rootScope.session.id;
 		return params;
 	});
 	

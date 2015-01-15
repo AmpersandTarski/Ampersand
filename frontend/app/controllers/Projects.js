@@ -1,7 +1,7 @@
 AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
 	
 	// model (can be changed by view)
-	$scope.SESSION = Restangular.one('interface/Projects/atom', $routeParams.atom).get().$object;
+	$scope.SESSION = Restangular.one('interface/Projects/atom').get().$object;
 	
 	// patch function
 	$scope.patch = function(){

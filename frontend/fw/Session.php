@@ -13,9 +13,11 @@ class Session {
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
 	// prevent any outside instantiation of this object
-	private function __construct(){
+	private function __construct($sessionId){
 		global $conceptTableInfo;
 		
+		if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_star()t; 
+			
 		// PHP SESSION : Start a new, or resume the existing, PHP session
 		session_start(); 
 		
@@ -64,9 +66,9 @@ class Session {
 		
 	}
 	
-	public static function singleton()
+	public static function singleton($sessionId = null)
 	{
-		if(is_null (self::$_instance) ) self::$_instance = new Session();
+		if(is_null (self::$_instance) ) self::$_instance = new Session($sessionId);
 		return self::$_instance;
 	}
 	
@@ -75,6 +77,7 @@ class Session {
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
 		$this->database->closeTransaction();
+		session_regenerate_id(true);
 		
 	}
 	
