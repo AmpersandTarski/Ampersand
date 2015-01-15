@@ -135,52 +135,41 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
   oocd = cdAnalysis fSpec
 
   conceptTable :: Blocks
-  conceptTable = simpleTable [ plainText $ l (NL "Type", EN "Type"), plainText $ l (NL "Betekenis", EN "Meaning")
-                             , plainText $ l (NL "Technisch type", EN "Technical type") ] $
-                             [ [ plainText $ name c
+  conceptTable = simpleTable [ (plain.text.l) (NL "Type"          , EN "Type")
+                             , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
+                             , (plain.text.l) (NL "Technisch type", EN "Technical type") 
+                             ] 
+                             [ [ (plain.text.name) c
                                , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
-                               , if c `elem` ooCpts oocd then plainText "Sleutel" else mempty
+                               , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
                                ]
                              | c <- allConcepts fSpec
                              ]
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
-       (   header (lev+1) ((case fsLang fSpec of
-                       Dutch   -> text "Gegevensverzameling: "
-                       English -> text "Entity type: "
-                     )
-                     <> (emph.strong.text.name) cl)
+       (   header (lev+1) 
+                  (((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl))
         <> case clcpt cl of
              Nothing -> mempty
              Just (_, purposes)  -> purposes2Blocks (getOpts fSpec) purposes
-        <> case fsLang fSpec of
-             Dutch   -> para $ text "Deze gegevensverzameling bevat de volgende attributen: "
-             English -> para $ text "This entity type has the following attributes: "
-        <> simpleTable (case fsLang fSpec of
-                          Dutch   -> [(plain.text) "Attribuut"
-                                     ,(plain.text) "Type"
-                                     ,mempty
-                                     ]
-                          English -> [(plain.text) "Attribute"
-                                     ,(plain.text) "Type"
-                                     ,mempty
-                                     ]
-                       )
+        <> (para . text . l) ( NL "Deze gegevensverzameling bevat de volgende attributen: "
+                             , EN "This entity type has the following attributes: "
+                             )
+        <> simpleTable [(plain.text.l) (NL "Attribuut", EN "Attribute")
+                       ,(plain.text.l) (NL "Type"     , EN "Type")
+                       ,mempty
+                       ]
                        ( [[ (plain.text) "Id"
                           , (plain.text.name) cl
-                          , (plain.text) (case fsLang fSpec of
-                                            Dutch -> "Sleutel"
-                                            English -> "Primary key"
-                                         )
+                          , (plain.text.l) (NL "Sleutel" , EN "Primary key")
                          ]]
                     <> [ [ (plain.text.name) attr
                          , (plain.text.attTyp) attr
-                         , (plain.text) $ case (fsLang fSpec,attOptional attr) of
-                                            (Dutch  ,True ) -> "Optioneel"
-                                            (English,True ) -> "Optional"
-                                            (Dutch  ,False) -> "Verplicht"
-                                            (English,False) -> "Mandatory"
+                         , (plain.text.l) (if attOptional attr 
+                                           then (NL "Optioneel", EN "Optional")
+                                           else (NL "Verplicht", EN "Mandatory")
+                                          )
                          ]
                          | attr <- clAtts cl]
                        )
