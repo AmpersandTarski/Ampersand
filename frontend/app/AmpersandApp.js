@@ -37,7 +37,7 @@ AmpersandApp.config(function($routeProvider) {
 
 AmpersandApp.config(function(RestangularProvider) {
 	
-    RestangularProvider.setBaseUrl('/CB/api/v1'); // Generate: path to API folder
+    RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
     
     RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
         return data;

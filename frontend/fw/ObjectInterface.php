@@ -5,7 +5,6 @@ class ObjectInterface {
 	public $id;
 	public $name; // TODO: kan vervallen?
 	public $label;
-	public $link;
 	public $interfaceRoles = array();
 	// public $editableConcepts = array();
 	public $interfaceInvariantConjunctNames;
@@ -34,7 +33,6 @@ class ObjectInterface {
 		$this->id = $interface['name'];
 		$this->name = $interface['name'];
 		$this->label = $interface['name'];
-		$this->link = 'http://localhost/CB/api/v1/interface/'.urlencode($this->name); // TODO: make config for first part of link or do without.
 		$this->interfaceRoles = $interface['interfaceRoles'];
 		
 		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
