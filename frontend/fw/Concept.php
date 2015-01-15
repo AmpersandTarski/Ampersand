@@ -15,26 +15,30 @@ class Concept {
 		
 	}
 	
-	public static function getAllAtoms($concept){
-		$database = Database::singleton();
-		global $conceptTableInfo;
-
-		$conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept
-		$conceptCol = $conceptTableInfo[$concept][0]['cols'][0]; // for lookup, we just take the first table and its first column
-		$conceptTableEsc = addslashes($conceptTable);
-		$conceptColEsc = addslashes($conceptCol);
-
-		$tgtAtoms = array_column($database->Exe("SELECT DISTINCT `$conceptColEsc` FROM `$conceptTableEsc` WHERE `$conceptColEsc` IS NOT NULL"),$conceptColEsc);
+	public static function getAllAtomObjects($concept){
 		
-		foreach ($tgtAtoms as $tgtAtomId){
+		foreach (Concept::getAllAtomIds($concept) as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $concept);
 			$arr[] = $tgtAtom;
 		}
 		return $arr;
 	}
 	
+	public static function getAllAtomIds($concept){
+		$database = Database::singleton();
+		global $conceptTableInfo;
+	
+		$conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept
+		$conceptCol = $conceptTableInfo[$concept][0]['cols'][0]; // for lookup, we just take the first table and its first column
+		$conceptTableEsc = addslashes($conceptTable);
+		$conceptColEsc = addslashes($conceptCol);
+	
+		return $tgtAtoms = array_column($database->Exe("SELECT DISTINCT `$conceptColEsc` FROM `$conceptTableEsc` WHERE `$conceptColEsc` IS NOT NULL"),$conceptColEsc);
+		
+	}	
+	
 	public static function isAtomInConcept($atom, $concept) {
-		return in_array( $atom, (array)Concept::getAllAtoms($concept) );
+		return in_array( $atom, (array)Concept::getAllAtomIds($concept) );
 	}
 	
 	public static function createNewAtom($concept){

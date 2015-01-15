@@ -120,6 +120,32 @@ class Api
 	
 	}
 	
+	/**
+	 * @url GET interface/{interfaceName}/atoms
+	 * @param string $interfaceName
+	 * @param string $sessionId
+	 * @param int $roleId
+	 */
+	public function getAtoms($interfaceName, $sessionId, $roleId = null)
+	{
+		$session = Session::singleton($sessionId);
+				
+		try{
+			$session->setRole($roleId);
+			$session->setInterface($interfaceName);
+		}catch(Exception $e){
+			throw new RestException(404, $e->getMessage());
+		}
+		
+		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+		
+		foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
+			$atom = new Atom($atomId, $session->interface->srcConcept);
+			$arr[] = current($atom->getContent($session->interface));
+		}
+		return $arr;
+	}
+	
 
 /**************************** CONCEPTS AND ATOMS ****************************/
     /**
@@ -142,9 +168,9 @@ class Api
 	/**
      * @url GET concept/{concept}/atoms
      */
-    public function getAtoms($concept)
+    public function getConceptAtoms($concept)
     {
-        return Concept::getAllAtoms($concept); // "Return list of all atoms for $concept"
+        return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
     }
     
 	/**
