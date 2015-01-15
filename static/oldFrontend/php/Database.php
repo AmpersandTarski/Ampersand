@@ -317,10 +317,6 @@ function computeViolationsPerRule($conjunctIds, &$conjunctViolationCache) {
   return $violationsPerRule;
 }
 
-function mkSignalTableName($conjunctId) {
-  return 'signals_'.$conjunctId;
-}
-
 // TODO: add ExecEngine support
 function updateSignals($interface, $conjunctViolationCache) {
   // $conjunctViolationCache contains violations for already evaluated conjuncts (during invariant checking)
@@ -328,6 +324,7 @@ function updateSignals($interface, $conjunctViolationCache) {
   // Since any SQL evaluation is kept at the MySQL server by INSERTing it immediately, the cache is not modified here
   // and $conjunctViolationCache is not a reference parameter.
   
+  global $signalTableName;
   global $allInterfaceObjects;
   global $allRules;
   global $allConjuncts;
@@ -341,12 +338,11 @@ function updateSignals($interface, $conjunctViolationCache) {
     $ruleNames = $conjunct['signalRuleNames'];
     
     if (count($ruleNames) > 0) { // Only consider conjuncts that originate from signals
-      $signalTableName = mkSignalTableName($conjunctId);
       //emitLog('Checking conjunct: ' . $conjunctId . ', signal table: ' . $signalTableName);
       //emitLog("Coming from (signals: [".join(",", $ruleNames)."])");
       
-      // Remove all violations from the signal table for this conjunct
-      queryDb("DELETE FROM `$signalTableName`");
+      // Remove all violations for this conjunct from the signal table
+      queryDb("DELETE FROM `$signalTableName` WHERE conjId = '$conjunctId'");
 
       $evaluatedConjunct = $conjunctViolationCache[$conjunctId];
       if (isset($evaluatedConjunct)) { // the conjunct has already been evaluated
@@ -358,10 +354,10 @@ function updateSignals($interface, $conjunctViolationCache) {
           $isFirst = true; // php is a bad language
           foreach ($evaluatedConjunct as $violation) {
             $escaped_atoms = array_map('escapeSQLStr', array_values($evaluatedConjunct[0]));
-            $valuesStr .= ($isFirst ? '' : ',') . "('" . escapeSQL($violation['src']) . "','" . escapeSQL($violation['tgt']) . "')";
+            $valuesStr .= ($isFirst ? '' : ',') . "('$conjunctId', '" . escapeSQL($violation['src']) . "','" . escapeSQL($violation['tgt']) . "')";
             $isFirst = false;
           }
-          queryDb("INSERT INTO `$signalTableName` (src,tgt) VALUES $valuesStr");
+          queryDb("INSERT INTO `$signalTableName` (conjId,src,tgt) VALUES $valuesStr");
         }
 
       } else {
@@ -369,7 +365,7 @@ function updateSignals($interface, $conjunctViolationCache) {
         $violationsSQL = $conjunct['violationsSQL'];        
         emitLog("SQL local eval signal conjunct $conjunctId");
         queryDb( "INSERT INTO `$signalTableName`"
-               . " SELECT violations.src, violations.tgt"
+               . " SELECT '$conjunctId' AS conjId, violations.src, violations.tgt"
                . " FROM ($violationsSQL) AS violations" );
       }
     }
@@ -380,6 +376,7 @@ function reportSignals($roleNr, $conjunctViolationCache = array()) {
   // $conjunctViolationCache contains violations for already evaluated conjuncts (during invariant checking)
   // if reportSignals is only called on succesful invariant checking, the cached conjuncts will always have 0 violations.
   
+  global $signalTableName;
   global $allRoles;
   global $allRules;
   $allRoleRules = array ();
@@ -391,7 +388,7 @@ function reportSignals($roleNr, $conjunctViolationCache = array()) {
         $allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
       }
     }
-    $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
+    $allRoleRules = array_unique((array)$allRoleRules); // remove duplicate ruleNames
   } else {
     $role = $allRoles[$roleNr];
     $allRoleRules = $role['ruleNames'];
@@ -410,10 +407,10 @@ function reportSignals($roleNr, $conjunctViolationCache = array()) {
     foreach ($rule['conjunctIds'] as $conjunctId) {
       $conjunctViolations = $conjunctViolationCache[$conjunctId];
       if (!isset($conjunctViolations)) { // the conjunct is not in the cache, so we look it up in the SQL signal table
-        $signalTableName = mkSignalTableName($conjunctId);
+        $signalTableName = '__all_signals__';
         //emitAmpersandLog('-conjunct id: '.$conjunctId.' table: '.$signalTableName);
         emitLog("SQL lookup conjunct $conjunctId (for signal $ruleName)");
-        $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
+        $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName` WHERE `conjId` = '$conjunctId'");
         $conjunctViolationCache[$conjunctId] = $conjunctViolations; // cache it for other signals that may share this conjunct
       }
       $ruleViolations = array_merge($ruleViolations, $conjunctViolations);

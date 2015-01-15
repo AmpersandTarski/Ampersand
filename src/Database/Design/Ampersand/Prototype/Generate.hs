@@ -13,6 +13,7 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
+import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
 
 fatal :: Int -> String -> a
@@ -80,6 +81,8 @@ generateConstants fSpec =
   , ""
   , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
   , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
+  , ""
+  , "$signalTableName = "++showPhpStr (getTableName signalTableSpec)++";"
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
