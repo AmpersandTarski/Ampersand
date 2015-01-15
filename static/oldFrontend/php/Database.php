@@ -47,7 +47,8 @@ if (isset($_REQUEST['resetSession'])) {
   
   processCommands(); // update database according to edit commands
     
-  $conjunctViolationCache = array (); // for caching conjuncts evaluated in checkInvariants
+  $conjunctViolationCache = array (); // array of arrays of violations, indexed by conjunct id, for caching conjuncts evaluated during rule checking/reporting
+  // Haskell(ish) type: $conjunctViolationCache :: [ (ConjuncId, [(Src, Tgt)]) ]
   
   echo '<div id="InvariantRuleResults">';
   $invariantRulesHold = checkInvariants($interface, $conjunctViolationCache);
@@ -269,7 +270,7 @@ function checkInvariants($interface, &$conjunctViolationCache) {
     foreach ( violationMessages($roleNr, $rule, $violations) as $msg )
       emitAmpersandLog( $msg );
   }
-        
+
   return count($violationsPerRule) == 0;
 }
 
@@ -287,11 +288,15 @@ function computeViolationsPerRule($conjunctIds, &$conjunctViolationCache) {
       
       $violationsSQL = $conjunct['violationsSQL'];
       $error = '';
+      emitLog("SQL eval conjunct $conjunctId (for $ruleNamesStr)");
       $conjunctViolations = DB_doquerErr($violationsSQL, $error); // execute violationsSQL to check for violations
       if ($error)
         error("While evaluating conjunct $conjunctId ($ruleNamesStr):\n" . $error);
-      $conjunctViolationCache[$conjunctId] = $conjunctViolations; // cache violations so we don't need to re-evaluate on updating signal tables
-  
+      $conjunctViolationCache[$conjunctId] = $conjunctViolations;
+      // cache violations so we don't need to re-evaluate on updating signal tables
+      // NOTE: since we loop over the conjuncts rather than the invariants, there is no need to
+      //       use the cache within the invariant checking (no evaluated conjuncts will be encountered)
+      
       if (count($conjunctViolations) == 0) {
         emitLog("Conjunct $conjunctId ($ruleNamesStr) holds"); // log successful conjunct validation
       } else {
@@ -333,7 +338,7 @@ function updateSignals($interface, $conjunctViolationCache) {
     $conjunct = $allConjuncts[$conjunctId];
     $ruleNames = $conjunct['signalRuleNames'];
     
-    if (count($ruleNames) > 0) { // Only conjuncts that originate from signals have a signal table
+    if (count($ruleNames) > 0) { // Only consider conjuncts that originate from signals
       $signalTableName = mkSignalTableName($conjunctId);
       //emitLog('Checking conjunct: ' . $conjunctId . ', signal table: ' . $signalTableName);
       //emitLog("Coming from (signals: [".join(",", $ruleNames)."])");
@@ -344,7 +349,7 @@ function updateSignals($interface, $conjunctViolationCache) {
       $evaluatedConjunct = $conjunctViolationCache[$conjunctId];
       if (isset($evaluatedConjunct)) { // the conjunct has already been evaluated
 
-        //emitLog('Skipping sql eval for: ' . $conjunctId );
+        emitLog("Cached SQL eval conjunct: $conjunctId");
         
         if (count($evaluatedConjunct) > 0 ) { // only insert when violations>0 (sql doesn't handle empty lists elegantly)
           $valuesStr = '';
@@ -360,6 +365,7 @@ function updateSignals($interface, $conjunctViolationCache) {
       } else {
         // Compute and insert the new violations.
         $violationsSQL = $conjunct['violationsSQL'];        
+        emitLog("SQL local eval signal conjunct $conjunctId");
         queryDb( "INSERT INTO `$signalTableName`"
                . " SELECT violations.src, violations.tgt"
                . " FROM ($violationsSQL) AS violations" );
@@ -398,6 +404,7 @@ function reportSignals($roleNr) {
     foreach ($rule['conjunctIds'] as $conjunctId) {
       $signalTableName = mkSignalTableName($conjunctId);
       //emitAmpersandLog('-conjunct id: '.$conjunctId.' table: '.$signalTableName);
+      emitLog("SQL lookup conjunct $conjunctId (for signal $ruleName)");
       $conjunctViolations = queryDb("SELECT `src`,`tgt` FROM `$signalTableName`");
       $ruleViolations = array_merge($ruleViolations, $conjunctViolations);
     }
