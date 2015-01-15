@@ -1,5 +1,6 @@
 <?php
 
+use Luracast\Restler\Data\Object;
 class Api
 {
 /****************************** INSTALLER & SESSION RESET ******************************/
@@ -77,7 +78,7 @@ class Api
 	 */
 	public function getAtom($interfaceName, $sessionId, $atomid = null, $roleId = null)
 	{
-		$session = Session::singleton();
+		$session = Session::singleton($sessionId);
 	
 		if(is_null($atomid)) $atomid = $sessionId;
 	
@@ -91,8 +92,7 @@ class Api
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
 	
 		$atom = new Atom($atomid);
-		$interface = new ObjectInterface($interfaceName);
-		return current($atom->getContent($interface));
+		return current($atom->getContent($session->interface));
 	}
 	
 	/**
