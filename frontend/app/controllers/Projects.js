@@ -28,7 +28,7 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	$scope.addProjectleider = function(obj, property){
 		
 		var modalInstance = $modal.open({
-			templateUrl: 'ProjectsController_addProjectleider.html',
+			templateUrl: 'app/views/Projects_addProjectleider.html',
 			controller: 'ProjectsController_addProjectleider',
 			size: 'lg', // optional 'sm' (small), 'lg' (large)
 			backdrop: true, // true, false or 'static'
@@ -40,14 +40,14 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 			
 		});
 		
-		modalInstance.result.then(function (selectedItem) {
-			console.log('id:' + selectedItem.id + ', label:' + selectedItem.label);
+		modalInstance.result.then(function (selectedId) {
 			if(obj[property] == null){
 				obj[property] = {};
-				obj[property][selectedItem.id] = {'id' : selectedItem.id, 'label' : selectedItem.label};
+				obj[property][selectedId] = {'id' : selectedId};
 			}else{
-				obj[property][selectedItem.id] = {'id' : selectedItem.id, 'label' : selectedItem.label};
+				obj[property][selectedId] = {'id' : selectedId};
 			}
+			console.log('selected: ' + selectedId);
 			$scope.patch();
 		}, function () {
 			console.log('Modal dismissed at: ' + new Date());
@@ -67,14 +67,15 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	
 }]).controller('ProjectsController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
 	
-	$scope.Projectleiders = Restangular.all('concept/Person/atoms').getList().$object;
+	$scope.Projectleiders = Restangular.all('interface/Person/atoms').getList().$object;
 	
-	$scope.selected = {
-		Projectleider : '' // default no Projectleider selected
-	};
+	$scope.select = function(id) {
+		$scope.selectedId = id;
+		console.log('click: ' + id);
+	}
 	
 	$scope.ok = function () {
-		$modalInstance.close($scope.selected.Projectleider);
+		$modalInstance.close($scope.selectedId);
 	};
 	
 	$scope.cancel = function () {
