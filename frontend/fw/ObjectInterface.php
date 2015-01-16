@@ -12,7 +12,7 @@ class ObjectInterface {
 	public $relationIsFlipped;
 	public $univalent;
 	public $totaal;
-	public $editable; public $notEditable;
+	public $editable;
 	public $srcConcept;
 	public $tgtConcept;
 	public $tgtDataType;
@@ -41,7 +41,7 @@ class ObjectInterface {
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
-		$this->editable = (!empty($interface['relation'])) ? true : false; $this->notEditable = !$this->editable;
+		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
 		$this->totaal = ($interface['min'] == "One") ? true : false;
 		$this->univalent = ($interface['max'] == "One") ? true : false; 
 		$this->srcConcept = $interface['srcConcept'];
