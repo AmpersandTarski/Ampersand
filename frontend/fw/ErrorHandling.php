@@ -20,12 +20,15 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
 		
-		// TODO: move output related things to Viewer. Move ErrorHandling to Session??
+		$ruleHash = hash('md5', $rule['name']);
+		
 		$violationMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
-		// $rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
 		$rowMessage = $srcAtom . ' - ' . $tgtAtom;
 		
-		self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
+		self::$violations[$ruleHash]['violationMessage'] = $violationMessage;
+		self::$violations[$ruleHash]['tuples'][] = $rowMessage;
+		
+		// self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
 		self::$logs[]['message'] = $violationMessage . ' - ' . $rowMessage;
 	}
 	public static function addInfo($message){
@@ -54,7 +57,7 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		return self::$invariants;
 	}
 	public static function getViolations(){
-		return self::$violations;
+		return array_values(self::$violations);
 	}
 	public static function getInfos(){
 		return self::$infos;
@@ -66,17 +69,15 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		return self::$logs;
 	}
 	
-	// TODO: can be deleted when ErrorHandling is not static anymore but instantiated in Viewer class.
 	public static function getAll(){
-		$all['errors'] = self::$errors;
-		$all['invariants'] = self::$invariants;
-		$all['violations'] = self::$violations;
-		$all['infos'] = self::$infos;
-		$all['successes'] = self::$successes;
-		$all['logs'] = self::$logs;
+		$all['errors'] = self::getErrors();
+		$all['invariants'] = self::getInvariants();
+		$all['violations'] = self::getViolations();
+		$all['infos'] = self::getInfos();
+		$all['successes'] = self::getSuccesses();
+		$all['logs'] = self::getLogs();
 		
 		return $all;
-		
 	}
 	
 
