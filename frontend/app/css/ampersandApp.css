@@ -35,9 +35,13 @@ input .ng-invalid .ng-dirty {
 
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
-	position	: relative; // fixed
+	position		: relative; // fixed;
 	// right		: 0px;
 	// z-index		: 999;
+}
+
+#successes {
+	float:			right;	
 }
 
 .alert {

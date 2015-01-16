@@ -1,18 +1,12 @@
 <div id="notificationCenter" ng-controller="static_notificationCenterController">
 	<div id="errors">
-		<div class="alert alert-danger alert-dismissable" ng-repeat="error in notifications.errors">
-			<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-			<strong>Error!</strong> {{error.message}}
-		</div>
+		<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)"><strong>Error!</strong> {{error.message}}</alert>
 	</div>
 	
 	<div id="invariants">
-		<div class="alert alert-danger alert-dismissable" ng-repeat="invariant in notifications.invariants">
-			<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-			<strong>Invariant!</strong> {{invariant.message}} 
-		</div>
+		<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)"><strong>Invariant!</strong> {{invariant.message}}</alert>
 	</div>
-			
+				
 	<div id="violations">
 		<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
@@ -25,17 +19,10 @@
 	</div>
 	
 	<div id="infos">
-		<div class="alert alert-info alert-dismissable" ng-repeat="info in notifications.infos">
-			<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-			<strong>Info!</strong> {{info.message}}
-		</div>
-	
+		<alert ng-repeat="info in notifications.infos" type="info" close="closeAlert(notifications.infos, $index)"><strong>Info!</strong> {{info.message}}</alert>
 	</div>
 	
 	<div id=successes>
-		<div class="alert alert-success alert-dismissable" ng-repeat="success in notifications.successes">
-			<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-			<strong>Success!</strong> {{success.message}}
-		</div>
+		<alert ng-repeat="success in notifications.successes" type="success" close="closeAlert(notifications.successes, $index)">{{success.message}}</alert>
 	</div>
 </div>
