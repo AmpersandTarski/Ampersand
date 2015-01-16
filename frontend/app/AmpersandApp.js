@@ -80,4 +80,17 @@ AmpersandApp.directive('myShowonhovertr', function (){
 			});
 		}
 	}
+}).directive('myShowonhovertable', function (){
+	return {
+		link : function(scope, element, attrs) {
+			element.hide(); // default hide
+			
+			element.closest('table').bind('mouseenter', function() {
+				element.show();
+			});
+			element.closest('table').bind('mouseleave', function() {
+				element.hide();
+			});
+		}
+	}
 });
