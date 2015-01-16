@@ -51,7 +51,7 @@ class Api
 	{
 		$session = Session::singleton();
 		$session->setRole($roleId);
-		RuleEngine::checkRules($session->role->id);
+		RuleEngine::checkProcessRules($session->role->id);
 		
 		$test = ErrorHandling::getAll(); // "Return all notifications
 		
