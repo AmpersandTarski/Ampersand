@@ -45,16 +45,6 @@ class Role {
 		return $roles;
 	}
 	
-	public function getRules(){
-		$rules = array();
-		
-		foreach($this->maintains as $ruleName){
-			$rules[$ruleName] = RuleEngine::getRule($ruleName);
-		}
-		
-		return $rules;
-	}
-	
 	public function getInterfaces($srcConceptSESSION = null, $srcConcept = null){ // $srcConceptSESSION: true, false, null (=all), $srcConcept: <concept> or null (=all)
 		$interfaces = array();
 		
