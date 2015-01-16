@@ -247,13 +247,21 @@ generateConjuncts fSpec =
            ]
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
-         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isSignal r ] 
-         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, not $ isSignal r, not $ ruleIsInvariantUniOrInj r ]
+         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isFrontEndSignal r ] 
+         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, isFrontEndInvariant  r ]
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
      ) )
-    
+
+-- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
+-- two abstractions to guarantee the same implementation.
+isFrontEndInvariant :: Rule -> Bool
+isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
+
+isFrontEndSignal :: Rule -> Bool
+isFrontEndSignal r = isSignal r
+
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
@@ -318,8 +326,11 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'conjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ ifcControls interface) ++")"
+          , "      , 'invConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ invConjuncts) ++")"
+          , "      , 'sigConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ sigConjuncts) ++")"
           ]
+        invConjuncts = [ c | c <- ifcControls interface, any isFrontEndInvariant $ rc_orgRules c ] -- NOTE: these two
+        sigConjuncts = [ c | c <- ifcControls interface, any isFrontEndSignal    $ rc_orgRules c ] --       may overlap
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
