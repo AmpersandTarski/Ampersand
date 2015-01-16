@@ -55,7 +55,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       (if null $ ifcControls ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
-              (bulletList . map plainText . nub) [rc_rulename conj | conj <- ifcControls ifc, rc_usr conj == UserDefined]) <>
+              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcControls ifc, rule <- rc_orgRules conj, r_usr rule == UserDefined]) <>
       (if genFPAChap (getOpts fSpec)
        then (plain . strong . text) "Functiepunten:" <>
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
@@ -80,7 +80,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
             interfaceObjDoc :: Blocks
             interfaceObjDoc =
               mconcat $
-                [ plainText  $ fieldDescr ++ quoteName (name (target iExp)) ++ ". (" ++ maybe "niet-" (const "") editableRelM ++ "editable)"              
+                [ plainText  $ fieldDescr ++ quoteName (name (target iExp)) ++ ". (" ++ (if isEditable then "" else "niet ") ++ "editable)"              
                 ] ++
                 
                 case navigationDocs of
@@ -95,7 +95,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                 
                 if not $ development (getOpts fSpec) then [] else -- some debug info shown on --dev
                   [ plainText $ "DEBUG: Props: ["++props++"]" | development (getOpts fSpec) ] ++
-                  case editableRelM of
+                  case expressionRelM of
                     Nothing -> []
                     Just (_, d, _, isFlipped) -> 
                       [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
@@ -108,7 +108,9 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                                                        else ("Een lijst van 0 of meer velden van type ", "Elk veld")
                     props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
                     
-                    editableRelM = getEditableRelation editableRels iExp
+                    (expressionRelM, isEditable) = case getExpressionRelation iExp of
+                                                     Just e@(_,d,_,_) -> (Just e, EDcD d `elem` editableRels)
+                                                     Nothing          -> (Nothing, False)
                     
                     navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces

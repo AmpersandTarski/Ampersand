@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- SJC: is it possible to move this to the prototype part of ampersand? I mean,
 --      do functions like plugFields and plug-path really need to be here?
 --      perhaps we can at least move the largest part?

@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.Generate (generateAll) where
 
 import Database.Design.Ampersand
--- import Database.Design.Ampersand.FSpec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
@@ -9,8 +9,10 @@ import Data.Maybe
 import Control.Monad
 import System.FilePath
 import System.Directory
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Control.Exception
 
 fatal :: Int -> String -> a
@@ -53,7 +55,7 @@ generateAll fSpec =
     genericsPhpContent :: [String]
     genericsPhpContent =
       intercalate [""]
-        [ generateConstants (getOpts fSpec)
+        [ generateConstants fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -72,17 +74,21 @@ generateAll fSpec =
         ; writeFile (combine (dirPrototype (getOpts fSpec)) fname) content
         }
 
-generateConstants :: Options -> [String]
-generateConstants opts =
+generateConstants :: FSpec -> [String]
+generateConstants fSpec =
   [ "$versionInfo = "++showPhpStr ampersandVersionStr++";" -- so we can show the version in the php-generated html
   , ""
-  , "$dbName = "++showPhpStr (dbName opts)++";"
+  , "$contextName = " ++ showPhpStr (fsName fSpec) ++ ";"
+  , ""
+  , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
+  , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
   ]
-
+  where opts = getOpts fSpec
+  
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
   [ "$allSpecializations = // transitive, so including specializations of specializations"
@@ -99,7 +105,8 @@ generateTableInfos fSpec =
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [showPhpStr (showHSName decl)++" => array ( 'srcConcept' => "++showPhpStr (name (source decl))
+         [ [showPhpStr (showHSName decl)++" => array ( 'name'       => "++showPhpStr (name decl)
+                                                 ++ ", 'srcConcept' => "++showPhpStr (name (source decl))
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
                                                  ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
@@ -170,26 +177,17 @@ generateRules fSpec =
            , "        , 'message'       => "++(showPhpStr.showMessage)       rule
            , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
+           , "        , 'conjunctIds'   => array ("++intercalate ", " (map (showPhpStr . rc_id) conjs) ++")"
            ] ++
-           ( if verboseP (getOpts fSpec)
-             then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
-                  ++["        // "]
-             else   []
-           ) ++
            ( if development (getOpts fSpec)
-             then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) ] ++
-                  [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
-             else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 26 "src" "tgt" violationsExpr)
-           ] ++
-           [ "        , 'contentsSQL'   => " ++
-             let contentsExpr = conjNF (getOpts fSpec) rExpr in
-              showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
-           | development (getOpts fSpec) -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
-                                      -- php/Database.php?testRule=RULENAME
-           ] ++
+             then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
+                  , "        , 'contentsSQL'   => " ++
+                                  let contentsExpr = conjNF (getOpts fSpec) rExpr
+                                  in  showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+                    -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+                    -- php/Database.php?testRule=RULENAME
+                  ]
+             else [] ) ++                  
            [ "        , 'pairView'      =>" -- a list of sql queries for the pair-view segments
            , "            array"
            ] ++
@@ -198,10 +196,8 @@ generateRules fSpec =
                ((genMPairView.rrviol) rule
              ) ) ++
            [ "        )" ]
-         | rule <- vrules fSpec ++ grules fSpec
+         | (rule, conjs) <- allConjsPerRule fSpec
          , let rExpr=rrexp rule
-         , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
     ) )
  where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
@@ -230,8 +226,10 @@ generateConjuncts fSpec =
   addToLastLine ";"
      (indent 4
        (blockParenthesize  "(" ")" ","
-         [ [ mkConjunctName conj ++ " =>"
-           , "  array ( 'ruleName'   => "++(showPhpStr.rc_rulename)   conj -- the name of the rule that gave rise to this conjunct 
+         [ [ showPhpStr (rc_id conj) ++ " =>"
+           , "  array ( 'signalRuleNames' => array ("++ intercalate ", " signalRuleNames ++")"
+           , "        , 'invariantRuleNames' => array ("++ intercalate ", " invRuleNames ++")"
+                      -- the name of the rules that gave rise to this conjunct
            ] ++
            ( if verboseP (getOpts fSpec)
              then   ["        // Normalization steps:"]
@@ -248,20 +246,13 @@ generateConjuncts fSpec =
            ]
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
-         , rc_rulename conj `notElem` uniRuleNames fSpec
-         , rc_rulename conj `elem` map name (invars fSpec)
+         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isSignal r ] 
+         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, not $ isSignal r, not $ ruleIsInvariantUniOrInj r ]
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
      ) )
     
-uniRuleNames :: FSpec -> [String]
-uniRuleNames fSpec = [ name rule | Just rule <- map (rulefromProp Uni) $ declsInScope fSpec ]
-
--- note the similarity with showHSName :: Conjunct -> String
-mkConjunctName :: Conjunct -> String
-mkConjunctName conj = showPhpStr ("cjct_"++rc_rulename conj++"_"++show (rc_int conj))
-
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
@@ -323,15 +314,12 @@ generateInterface fSpec interface =
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
   , showPhpStr (name interface) ++ " => " ] ++
-  indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
+  indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'interfaceInvariantConjunctNames' => array ("++intercalate ", " (map mkConjunctName invConjs)++")"
+          , "      , 'conjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ ifcControls interface) ++")"
           ]
-          where invConjs = [ conj | conj <- ifcControls interface
-                                  , rc_rulename conj `notElem` uniRuleNames fSpec
-                                  , rc_rulename conj `elem` map name (invars fSpec) ] 
--- two arrays: one for the object and one for the list of subinterfaces
+
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
@@ -345,20 +333,21 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
   ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
-  ++ case getEditableRelation editableRels normalizedInterfaceExp of 
-       Just (srcConcept, d, tgtConcept, isFlipped) ->
-         [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
+  ++ case getExpressionRelation normalizedInterfaceExp of
+       Just (srcConcept, decl, tgtConcept, isFlipped) ->
+         [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
+         , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
          (if isFlipped 
-          then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
-               , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
-          else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
-               , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]) ++
-         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept)
-         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept)
+          then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
+               , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
+          else [ "      , 'min' => "++ if isTot decl then "'One'" else "'Zero'" 
+               , "      , 'max' => "++ if isUni decl then "'One'" else "'Many'" ]) ++
+         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (which may be flipped) 
+         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) --
          ]
-       _ ->
-         [ "      , 'relation' => '' // this interface expression is not editable"
+       Nothing ->
+         [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
          , "      , 'relationIsFlipped' => ''"
          , "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here

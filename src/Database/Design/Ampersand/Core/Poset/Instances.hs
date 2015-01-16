@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- COPIED FROM http://hackage.haskell.org/package/altfloat-0.3.1
  - Disabled Sortable instances for instances of Prelude.Ord -}
 {-
@@ -13,10 +14,9 @@
 module Database.Design.Ampersand.Core.Poset.Instances where
 
 import qualified Database.Design.Ampersand.Core.Poset.Internal as Poset
-import Database.Design.Ampersand.Core.Poset.Internal (Poset, Sortable, partialOrder, totalOrder)
+import Database.Design.Ampersand.Core.Poset.Internal (Poset, partialOrder)
 
 import Data.Ratio
-import Data.List
 import Data.Word
 import Data.Int
 

@@ -10,7 +10,6 @@
 {-# LANGUAGE FlexibleInstances, OverlappingInstances, UndecidableInstances #-}
 module Database.Design.Ampersand.Core.Poset.Internal where
 
-import qualified Data.List as List
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
 import Data.Monoid

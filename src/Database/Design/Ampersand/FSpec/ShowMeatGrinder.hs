@@ -28,7 +28,7 @@ meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
       , "    Generated at "++show (genTime (getOpts fSpec))
       , "-}"
       , ""
-      , "CONTEXT RapPopulations"]
+      , "CONTEXT RapPopulations IN ENGLISH"]
       ++ (concat.intersperse  []) (map (lines.showADL) (metaPops fSpec fSpec))
       ++
       [ ""
@@ -49,9 +49,9 @@ instance ShowADL Pop where
               ++
               if null (popPairs pop)
               then "[]"
-              else "\n"++indent++"[ "++intercalate ("\n"++indent++"; ") showContent++indent++"]"
+              else "\n"++indentA++"[ "++intercalate ("\n"++indentA++"; ") showContent++indentA++"]"
       Comment{} -> "-- "++comment pop
-    where indent = "   "
+    where indentA = "   "
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
 

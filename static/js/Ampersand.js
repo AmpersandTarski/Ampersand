@@ -114,29 +114,54 @@ function cancelEditing() {
 }
 
 function commitEditing() {
-  $editedAtom = getEnclosingAtom( $('#atomEditor') );
+  var dbCommands = getCommandsToSend();
+  if (getCommandsToSend()) {
+    window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
+    sendCommands(dbCommands);
+  }
+}
+
+// Return current edit commands (if valid) as a download link
+function downloadEditScript(anchorElt, event) {
+  event.stopPropagation(); // To prevent edit log from collapsing/expanding on button click.
+  var context = $('#AmpersandRoot').attr('context');
+  var interface = $('#AmpersandRoot').attr('interface');
+
+  var dbCommands = getCommandsToSend();
+  if (dbCommands) {
+    var commandsJson = JSON.stringify(dbCommands);
+    // Returning a download link from JavaScript is surprisingly tricky, but we can do it by modifying the <a> element that contains the download button.
+    $(anchorElt).attr(
+      { 'download': context + '_' + interface + '_editCommands.json'
+      , 'href': 'data:application/json;charset=utf-8,' + encodeURI(commandsJson) // encodeURI prevents spaces from disappearing
+      , 'target': '_blank'
+    });
+  }
+}
+
+// Stop editing, and, if commands are valid (no empty's or duplicated), return command array
+function getCommandsToSend() {
+    $editedAtom = getEnclosingAtom( $('#atomEditor') );
   if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
   
   if (getEmptyAtomsNotInTemplates().length > 0) {
     alert('Please fill out all <new> atoms first.');
-    return;
+    return null;
   }
   if (getNonUniqueAtomLists().length > 0) {
     alert('Please resolve duplicate atom names.');
-    return;
+    return null;
   }
   
   var dbCommands = computeDbCommands();
-  window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
-
   if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we commit a newly created atom, we also need to add the atom to the concept table.
     var atom = $('#AmpersandRoot').attr('atom');
     var concept = $('#AmpersandRoot').attr('concept');
     dbCommands.unshift( mkDbCommandAddToConcept(atom,concept) ); // put addToConcept command in front
   }
-  sendCommands(dbCommands);
+  return dbCommands;
 }
 
 function sendCommands(dbCommands) {
@@ -314,7 +339,7 @@ function computeDbCommands() {
       var $atomList = getEnclosingAtomList($childAtom);
       var relation = $atomList.attr('relation'); 
      
-      if (relation) {
+      if (relation && $atomList.attr('relationIsEditable')) {
         var relationIsFlipped = $atomList.attr('relationIsFlipped') ? attrBoolValue($atomList.attr('relationIsFlipped')) : false;
         var $parentAtom = getEnclosingAtom($childAtom);
         var parentAtom = $parentAtom.attr('atom');

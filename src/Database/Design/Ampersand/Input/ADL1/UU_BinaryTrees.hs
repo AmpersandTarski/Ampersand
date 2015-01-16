@@ -26,6 +26,7 @@ module Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees
    btLocateIn :: (a -> b -> Ordering) -> BinSearchTree a      -> b -> Maybe a
    btFind     = btLookup fst snd
    btLocateIn = btLookup id id
+   btLookup :: (d -> a) -> (d -> c) -> (a -> b -> Ordering) -> BinSearchTree d -> (b -> Maybe c)
    btLookup  key val cmp (Node Nil  kv Nil)
      =  let comp = cmp (key kv)
             r    = val kv

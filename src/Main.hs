@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Monad
+import Control.Applicative
 import Data.List
 import Data.Function (on)
 import System.FilePath        (combine)
@@ -9,8 +10,10 @@ import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand.Prototype.ObjBinGen    (phpObjInterfaces)
 import Database.Design.Ampersand.Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import Database.Design.Ampersand.Prototype.CoreImporter
+import Database.Design.Ampersand.InputProcessing
 import Database.Design.Ampersand.Prototype.GenBericht (doGenBericht)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+import Database.Design.Ampersand.Prototype.ValidateEdit
 -- import Database.Design.Ampersand.Input.ADL1.CtxError (showErr)
 -- import qualified Database.Design.Ampersand.Basics as Basics
 
@@ -21,14 +24,27 @@ main =
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do gFSpec <- createFSpec opts
             case gFSpec of
-              Errors err -> do putStrLn "Error(s) found:"
-                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
-                               exitWith $ ExitFailure 10
-              Checked fSpec -> generateAmpersandOutput fSpec
-                             >> generateProtoStuff opts fSpec
+              Errors err    -> do putStrLn "Error(s) found:"
+                                  mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+                                  exitWith $ ExitFailure 10
+              Checked fSpec -> do generateAmpersandOutput fSpec
+                                  generateProtoStuff opts fSpec
 
 generateProtoStuff :: Options -> FSpec -> IO ()
 generateProtoStuff opts fSpec
+  | Just nm <- validateEdit (getOpts fSpec) =
+      do { verboseLn (getOpts fSpec) "Validating edit operations:"
+         ; gBeforePops <- getPopulationsFrom opts $ nm ++ ".before.pop"
+         ; gAfterPops <- getPopulationsFrom opts $ nm ++ ".after.pop"
+         ; case (,) <$> gBeforePops <*> gAfterPops of
+              Errors err -> do putStrLn "Error(s) found in before/after populations:"
+                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+                               exitWith $ ExitFailure 10
+              Checked (beforePops, afterPops) ->
+               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit.json")
+                  ; unless isValid (exitWith (ExitFailure 30))
+                  }
+         }
   | validateSQL (getOpts fSpec) =
       do { verboseLn (getOpts fSpec) "Validating SQL expressions..."
          ; isValid <- validateRulesSQL fSpec
@@ -61,9 +77,8 @@ generateProtoStuff opts fSpec
 doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
  do { verboseLn (getOpts fSpec) "Checking on rule violations..."
-  --  ; let allViolations = violations fSpec
     ; reportViolations (allViolations fSpec)
-
+    ; reportSignals (initialConjunctSignals fSpec)
     ; if (not . null) (allViolations fSpec) && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
@@ -80,6 +95,13 @@ doGenProto fSpec =
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
+                          
+       reportSignals []        =  verboseLn (getOpts fSpec) "No signals for the initial population."
+       reportSignals conjViols = putStrLn $ "Signals for initial population:\n" ++ intercalate "\n"
+         [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
+             show viols
+         | (conj, viols) <- conjViols
+         ]
 
 ruleTest :: FSpec -> String -> IO ()
 ruleTest fSpec ruleName =

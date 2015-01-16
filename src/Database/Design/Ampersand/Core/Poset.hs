@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- COPIED FROM http://hackage.haskell.org/package/altfloat-0.3.1 -}
 {-
  - Copyright (C) 2009 Nick Bowler.
@@ -18,17 +19,17 @@ module Database.Design.Ampersand.Core.Poset (
     Poset(..), Sortable(..), Ordering(..), Ord, comparableClass,greatest,least,maxima,minima,sortWith
 ) where
 import qualified Prelude
-import qualified GHC.Exts (sortWith)
+--import qualified GHC.Exts (sortWith)
 
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.Poset.Instances
+import Database.Design.Ampersand.Core.Poset.Instances() --required for instance Int of Poset only
 import Database.Design.Ampersand.Core.Poset.Internal hiding (fatal)
 
-import Data.Function
+--import Data.Function
 import Data.Monoid
 
-import Database.Design.Ampersand.Basics (eqCl,isc,fatalMsg)
+--import Database.Design.Ampersand.Basics (eqCl,isc,fatalMsg)
 import qualified Data.List as List
 
 fatal :: Int -> String -> a
@@ -70,6 +71,7 @@ instance Poset a => Poset (Maybe a) where
 instance Poset a => Poset [a] where
     compare = (mconcat .) . zipWith compare
 
+{-
 -- | Sort a list using the default comparison function.
 sort :: Sortable a => [a] -> [a]
 sort = sortBy compare
@@ -77,6 +79,7 @@ sort = sortBy compare
 -- | Apply a function to values before comparing.
 comparing :: Poset b => (a -> b) -> a -> a -> Ordering
 comparing = on compare
+-}
 
 -- example where b=A_Concept: sortWith (snd . order , concs fSpec) idCpt (vIndices fSpec)
 sortWith :: (Show b,Poset b) => (b -> [[b]], [b]) -> (a -> b) -> [a] -> [a]
@@ -100,6 +103,7 @@ comparableClass GT = Prelude.GT
 comparableClass NC = fatal 123 "Uncomparable elements in comparable class."
 comparableClass CP = Prelude.EQ --the position of two comparable concepts is equal
 
+{-
 -- | If elements are in a total order, then they can be sortedBy totalOrder using the Prelude.Ordering
 --   When A_Concept should be in a total order with an Anything and Nothing: sortBy f = Data.List.sortBy ((totalOrder .) . f)
 totalOrder :: Ordering -> Prelude.Ordering
@@ -108,6 +112,7 @@ totalOrder EQ = Prelude.EQ
 totalOrder GT = Prelude.GT
 totalOrder NC = fatal 132 "Uncomparable elements in total order."
 totalOrder CP = fatal 133 "Uncomparable elements in total order."
+-}
 
 -- | takes the greatest a of comparables
 greatest :: (Show a,Sortable a) => [a] -> a
@@ -115,7 +120,7 @@ greatest xs =
   case maxima (List.nub xs) of
     []  -> fatal 138 "there is no greatest"
     [x] -> x
-    xs  -> fatal 140 ("there is more than one greatest: "++ show (List.nub xs))
+    xs'  -> fatal 140 ("there is more than one greatest: "++ show (List.nub xs'))
 -- | takes all a without anything larger
 maxima :: Sortable a => [a] -> [a]
 maxima [] = fatal 144 "the empty list has no maximum"
@@ -127,7 +132,7 @@ least xs =
   case minima (List.nub xs) of
     []  -> fatal 150 "there is no least"
     [x] -> x
-    xs  -> fatal 150 "there is more than one least. "
+    _   -> fatal 150 "there is more than one least. "
 -- | takes all a without anything less
 minima :: Sortable a => [a] -> [a]
 minima [] = fatal 156 "the empty list has no minimum"

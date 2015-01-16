@@ -326,7 +326,6 @@ derivMono expr -- preconditie van actie a
                                     , r_env = ""
                                     , r_usr = Multiplicity
                                     , isSignal = fatal 336 $ "erroneous reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
-                                    , srrel = fatal 337 $ "erroneous reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                     }
                  | otherwise   = Ru { rrnm  = ""
                                     , rrfps = Origin "rule generated for not(isTrue neg') by Calc"
@@ -341,7 +340,6 @@ derivMono expr -- preconditie van actie a
                                     , r_env = ""
                                     , r_usr = Multiplicity
                                     , isSignal = fatal 352 $ "illegal reference to isSignal in rule ("++showADL neg'++") |- ("++showADL pos'++")"
-                                    , srrel = fatal 353 $ "illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                     }
   showOp expr' = case expr' of
                   EEqu{} -> "="
@@ -498,7 +496,7 @@ assembleECAs fSpec editables
                     )
           )
         | rel <- editables -- allDecls fSpec ++ [ Isn c | c<-allConcepts fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
-        , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
+ --       , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
         , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
         , ev<-[Ins,Del]
         , let acts = [ -- go through all the events that affect that clause:
@@ -551,7 +549,8 @@ assembleECAs fSpec editables
                                 ) -}
                          )
                        )
-                     | conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
+                     | conjEqClass <- [] -- TODO: implement this once we can test it (note: computing eq. class is no longer necessary)
+                    -- conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
                      , conjunct <- (fst.head) conjEqClass                  -- get conjuncts from the clauses
                      , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
                      , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct, because the type may be different.

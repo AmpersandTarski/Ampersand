@@ -138,19 +138,19 @@ chpProcessAnalysis lev fSpec
          sctRules :: [(Inlines, [Blocks])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec(udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
-  txtProcessModel :: FProcess->Blocks
-  txtProcessModel p
-   = if not (genGraphics (getOpts fSpec)) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
-     then mempty
-     else
-        (case fsLang fSpec of                                     -- announce the processModel diagram
-             Dutch   -> para ( "Figuur " <> xRefReference (getOpts fSpec) pict <> " geeft het procesmodel weer.")
-             English -> para ( "Figure " <> xRefReference (getOpts fSpec) pict <> " shows the process model.")
-        ) <>
-        plain (showImage (getOpts fSpec) pict)
-     where pict = picProcessModel p
-
-  -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
-  picProcessModel :: FProcess->Picture
-  picProcessModel fproc = makePicture fSpec (PTProcess fproc)
+--  txtProcessModel :: FProcess->Blocks
+--  txtProcessModel p
+--   = if not (genGraphics (getOpts fSpec)) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
+--     then mempty
+--     else
+--        (case fsLang fSpec of                                     -- announce the processModel diagram
+--             Dutch   -> para ( "Figuur " <> xRefReference (getOpts fSpec) pict <> " geeft het procesmodel weer.")
+--             English -> para ( "Figure " <> xRefReference (getOpts fSpec) pict <> " shows the process model.")
+--        ) <>
+--        plain (showImage (getOpts fSpec) pict)
+--     where pict = picProcessModel p
+--
+--  -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
+--  picProcessModel :: FProcess->Picture
+--  picProcessModel fproc = makePicture fSpec (PTProcess fproc)
 

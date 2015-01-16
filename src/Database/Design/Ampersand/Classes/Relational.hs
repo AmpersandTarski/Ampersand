@@ -4,7 +4,6 @@ module Database.Design.Ampersand.Classes.Relational
 
 import Data.Maybe
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.ParseTree       (Prop(..))
 import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.Basics
 

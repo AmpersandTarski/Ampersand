@@ -6,7 +6,6 @@ module Database.Design.Ampersand.Misc.Options
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import Database.Design.Ampersand.Misc.Languages (Lang(..))
-import Data.Char (toUpper)
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory
@@ -18,6 +17,7 @@ import Database.Design.Ampersand.Basics
 import Paths_ampersand (getDataDir)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
+import Data.Char
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Misc.Options"
@@ -31,6 +31,7 @@ data Options = Options { showVersion :: Bool
                        , verboseP :: Bool
                        , development :: Bool
                        , validateSQL :: Bool
+                       , validateEdit :: Maybe String -- Nothing means no edit validation
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
                        , allInterfaces :: Bool
@@ -121,7 +122,7 @@ getOptions =
                       , outputfile    = fatal 83 "No monadic options available."
                       , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
                                                   (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
-                      , dbName        = fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
+                      , dbName        = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
                       , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
                       , dirExec       = takeDirectory exePath
                       , ampersandDataDir = dataDir
@@ -133,6 +134,7 @@ getOptions =
                       , verboseP      = False
                       , development   = False
                       , validateSQL   = False
+                      , validateEdit  = Nothing
                       , genPrototype  = False
                       , allInterfaces = False
                       , genAtlas      = False
@@ -238,6 +240,11 @@ options = map pp
                (NoArg (\opts -> return opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
             , Hidden)
+          , (Option []  ["validateEdit"]
+               (ReqArg (\nm opts -> return opts{validateEdit = Just nm}
+                       ) "NAME")
+               ("Compare results of applying edit operations in NAME.scr to population in NAME.before with population in NAME.after")
+            , Hidden)
           , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> return opts {dirPrototype = fromMaybe (dirPrototype opts) nm
                                                   ,genPrototype = True}
@@ -246,8 +253,8 @@ options = map pp
             , Public)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> return opts{dbName = if nm == ""
-                                                           then baseName opts
-                                                           else nm}
+                                                         then dbName opts
+                                                         else map toLower nm}
                        ) "NAME")
                ("database name (overwrites environment variable "++ envdbName ++ ", defaults to filename)")
             , Public)

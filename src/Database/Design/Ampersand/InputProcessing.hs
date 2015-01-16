@@ -1,11 +1,10 @@
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
-module Database.Design.Ampersand.InputProcessing (
-   createFSpec
-)
-where
-import qualified Database.Design.Ampersand.Basics as Basics
+module Database.Design.Ampersand.InputProcessing (createFSpec, getPopulationsFrom) where
+
+import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
@@ -22,7 +21,7 @@ import Control.Monad
 import Data.Traversable (sequenceA)
 
 fatal :: Int -> String -> a
-fatal = Basics.fatalMsg "InputProcessing"
+fatal = fatalMsg "InputProcessing"
 
 -- | create an FSpec, based on the provided command-line options.
 createFSpec :: Options  -- ^The options derived from the command line
@@ -81,6 +80,18 @@ createFSpec opts =
                          (Checked _ )        -> fatal 67 "Meatgrinder returns included file????"
      )
 
+getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
+getPopulationsFrom opts filePath =
+ do { gpCtx <- parseADL opts filePath
+    ; return $ case gpCtx of 
+                 Errors err    -> Errors err
+                 Checked pCtx  -> case pCtx2aCtx opts pCtx of
+                                    (Errors  err ) -> Errors err
+                                    (Checked aCtx) -> Checked $ initialPops (makeFSpec opts aCtx)
+                      
+    }
+ 
+ 
 -- Parse an Ampersand file and all transitive includes
 parseADL  :: Options -> FilePath -> IO (Guarded P_Context)
 parseADL opts filePath =
@@ -103,9 +114,9 @@ parseADLs opts parsedFilePaths filePaths =
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts filePath =
  do { verboseLn opts $ "Reading file " ++ filePath
-    ; mFileContents <- Basics.readUTF8File filePath
+    ; mFileContents <- readUTF8File filePath
     ; case mFileContents of
-        Left err -> error $ "ERROR in file " ++ filePath ++ ":\n" ++ err 
+        Left err -> error $ "ERROR reading file " ++ filePath ++ ":\n" ++ err 
                     -- TODO: would like to return an Errors value here, but this datatype currently only accommodates UUParsing Messages 
         Right fileContents ->
          do { whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 

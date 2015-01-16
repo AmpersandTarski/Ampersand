@@ -8,6 +8,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..)
+ , ruleIsInvariantUniOrInj
  , RuleType(..)
  , RuleOrigin(..)
  , Declaration(..)
@@ -46,11 +47,11 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
+import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
---import Debug.Trace
+import Data.Function
 import Data.List (intercalate,nub,delete)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -160,10 +161,11 @@ data Rule =
         , r_env :: String                  -- ^ Name of pattern in which it was defined.
         , r_usr :: RuleOrigin              -- ^ Where does this rule come from?
         , isSignal :: Bool                    -- ^ True if this is a signal; False if it is an invariant
-        , srrel :: Declaration             -- ^ the signal relation
         }
 instance Eq Rule where
   r==r' = rrnm r==rrnm r'
+instance Prelude.Ord Rule where
+  compare = Prelude.compare `on` rrnm
 instance Show Rule where
   showsPrec _ x
    = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (rrexp x)
@@ -174,7 +176,29 @@ instance Identified Rule where
 instance Association Rule where
   sign   = rrtyp
 
+-- When an invariant rule is univalent or injective, the way it is stored in a table does not allow the univalence or injectivity
+-- to be broken. Hence, we need not check these rules in the prototype. (preventing breakage is the responsibility of the front-end)
+ruleIsInvariantUniOrInj :: Rule -> Bool
+ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p `elem` [Uni, Inj]
+                             | otherwise                                     = False
+                             -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
+                             -- condition is unnecessary, but this will change in the future.    
+    
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
+
+data Conjunct = Cjct { rc_id         :: String -- string that identifies this conjunct ('id' rather than 'name', because 
+                                               -- this is an internal id that has no counterpart at the ADL level)
+                     , rc_orgRules   :: [Rule] -- All rules this conjunct originates from
+                     , rc_conjunct   :: Expression
+                     , rc_dnfClauses :: [DnfClause]
+                     } deriving Show
+
+data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+
+instance Eq Conjunct where
+  rc==rc' = rc_id rc==rc_id rc'
+instance Prelude.Ord Conjunct where
+  compare = Prelude.compare `on` rc_id
 
 data Declaration =
   Sgn { decnm :: String     -- ^ the name of the declaration
@@ -326,18 +350,6 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
                                 []    -> fatal 327 $ "getInterface by name: no interfaces named "++show nm
                                 [ifc] -> ifc
                                 _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
-
-data Conjunct = Cjct { rc_int        :: Int  -- the index number of the expression for the rule. (must be unique for the rule)
-                     , rc_rulename   :: String -- the name of the rule
-                     , rc_usr        :: RuleOrigin
-                     , rc_conjunct   :: Expression
-                     , rc_dnfClauses :: [DnfClause]
-                     } deriving Show
-
-data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
-
-instance Eq Conjunct where
- rc==rc' = rc_conjunct rc==rc_conjunct rc'
  
 objAts :: ObjectDef -> [ObjectDef]
 objAts obj

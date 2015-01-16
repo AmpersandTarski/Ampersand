@@ -23,7 +23,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlType(..)
           , SqlFieldUsage(..)
-          , getGeneralizations, getSpecializations, getEditableRelation
+          , getGeneralizations, getSpecializations, getExpressionRelation
           , Conjunct(..),DnfClause(..), dnf2expr
           )
 where
@@ -75,6 +75,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
+                   , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ All conjuncts, grouped by originating rule (note that a single conjunct may appear in several rules) 
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -83,7 +84,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , initialPops ::  [Population]             -- all user defined populations of relations and concepts
-                   , allViolations :: [(Rule,[Paire])]        -- all rules with violations.
+                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- all conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,[Paire])]        -- all invariant rules with violations.
                    }
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
@@ -339,9 +341,9 @@ getSpecializations fSpec = smallerConcepts (gens fSpec)
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
 -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
 -- This is used to determine the type of the atoms provided by the outside world through interfaces.
-getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
-getEditableRelation editableRels expr = case getRelation expr of
-   Just (s,Just d,t,isFlipped)  -> if EDcD d `elem` editableRels then Just (s,d,t,isFlipped) else Nothing
+getExpressionRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getExpressionRelation expr = case getRelation expr of
+   Just (s,Just d,t,isFlipped)  -> Just (s,d,t,isFlipped)
    _                            -> Nothing
  where
     -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target 

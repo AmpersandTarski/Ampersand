@@ -1,29 +1,23 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-         (makeFSpec, quads, preEmpt, editable) where
+         (makeFSpec, preEmpt, editable) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.Poset
-import Prelude hiding (Ord(..),head)
+import Prelude hiding (Ord(..))
 import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms  --  (delta,conjNF,disjNF,normPA)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
---import Database.Design.Ampersand.FSpec.ShowHS -- only for diagnostic purposes during debugging
 import Database.Design.Ampersand.FSpec.ShowADL
 import Text.Pandoc
 import Data.Maybe
-import Data.List (nub,intersect,partition,group,delete)
-import Data.Char        (toLower)
---import Debug.Trace -- only for diagnostic purposes during debugging
-
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
+import Data.List
+import Data.Char
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -32,8 +26,8 @@ makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context = fSpec
  where
      fSpec =
-         FSpec { fsName       = name context
-              , getOpts        = opts
+        FSpec { fsName       = name context
+              , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
@@ -61,7 +55,8 @@ makeFSpec opts context = fSpec
               , grules       = gRules
               , invars       = invariants context
               , allRules     = allrules
-              , vconjs       = allConjs   -- note that equality on Conjunct a and b is defined as:  rc_conjunct a == rc_conjunct b
+              , vconjs       = allConjs
+              , allConjsPerRule = allConjsPerRule'
               , vquads       = allQuads
               , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
@@ -81,7 +76,13 @@ makeFSpec opts context = fSpec
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , initialPops  = initialpops
-              , allViolations = [(r,vs) |r<-allrules, not (isSignal r), let vs = ruleviolations (gens context) initialpops r,  not (null vs)]
+              , allViolations  = [ (r,vs)
+                                 | r <- allrules, not (isSignal r)
+                                 , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+              , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
+                                         , let viols = conjunctViolations (gens context) initialpops conj
+                                         , not $ null viols
+                                         ]
               }
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context) ++ map name allProcs
@@ -97,14 +98,9 @@ makeFSpec opts context = fSpec
      enrichIfc :: Interface -> Interface
      enrichIfc ifc
       = ifc{ ifcEcas = fst (assembleECAs fSpec editables)
-           , ifcControls = [ conj
-                           | conj<-allConjs
-                           , (not.null) (ifcParams ifc `isc` primsMentionedIn (rc_conjunct conj))
-                           , take 3 (rc_rulename conj) `notElem` ["UNI", "INJ"]
-                           ]
+           , ifcControls = makeIfcControls (ifcParams ifc) allConjs
            }
         where editables = [d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc]
-
      initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
                              , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
                              }
@@ -113,11 +109,12 @@ makeFSpec opts context = fSpec
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)
+       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
-     allQuads = quads opts allrules
-     allConjs = nub (concatMap qConjuncts allQuads)
---      isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==qRule q]
+     allConjs = makeAllConjs opts allrules
+     allConjsPerRule' = converse [(conj, rc_orgRules conj) | conj <- allConjs ]
+     allQuads = makeAllQuads allConjsPerRule'
+
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
@@ -142,7 +139,8 @@ makeFSpec opts context = fSpec
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
      totsurs :: [Expression]
      totsurs
-      = nub [rel | q<-quads opts (invariants context), isIdent (qDcl q)
+      = nub [rel | q<-filter (not . isSignal . qRule) allQuads -- all quads for invariant rules
+                 , isIdent (qDcl q)
                  , x<-qConjuncts q, Dnf antcs conss<-rc_dnfClauses x
                  , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                  , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
@@ -264,7 +262,7 @@ makeFSpec opts context = fSpec
                                , objstrs = []
                                }
              , ifcEcas   = fst (assembleECAs fSpec directdecls)
-             , ifcControls = [ conj | conj<-allConjs, (not.null) (params `isc` primsMentionedIn (rc_conjunct conj))]
+             , ifcControls = makeIfcControls params allConjs
              , ifcPos    = Origin "generated interface for each concept in TblSQL or ScalarSQL"
              , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
              , ifcRoles  = []
@@ -303,7 +301,7 @@ makeFSpec opts context = fSpec
                                  , objmsub = Just . Box c $ objattributes
                                  , objstrs = [] }
              , ifcEcas     = fst (assembleECAs fSpec editables)
-             , ifcControls = [ conj | conj<-allConjs, (not.null) (params `isc` primsMentionedIn (rc_conjunct conj))]
+             , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
              , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
              , ifcRoles    = []
@@ -419,28 +417,30 @@ makeActivity fSpec rul
 -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
 -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
 -- the rule may have to be restored using functionality from one of the clauses.
--- The rule is carried along for traceability.
-quads :: Options -> [Rule] -> [Quad]
-quads opts rs
- = [ Quad { qDcl     = d
-          , qRule    = rule
-          , qConjuncts = makeCjcts rule
-          }
-   | rule<-rs, d<-relsUsedIn rule
-   ]
+makeAllQuads :: [(Rule, [Conjunct])] -> [Quad]
+makeAllQuads conjsPerRule =
+  [ Quad { qDcl     = d
+         , qRule    = rule
+         , qConjuncts = conjs
+         }
+  | (rule,conjs) <- conjsPerRule, d <-relsUsedIn rule
+  ]
+  
+makeAllConjs :: Options -> [Rule] -> [Conjunct]
+makeAllConjs opts allRls =
+  let conjExprs :: [(Expression, [Rule])]
+      conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
+      
+      conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
+                     , rc_orgRules   = rs
+                     , rc_conjunct   = expr
+                     , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+                     }
+              | ((expr, rs),i) <- zip conjExprs [0..]
+              ]
+  in  conjs
    where
-   -- The function makeCjcts yields an expression which has constructor EUni in every case.
-      makeCjcts :: Rule -> [Conjunct]
-      makeCjcts rule = [Cjct { rc_int = i
-                             , rc_rulename = name rule
-                             , rc_usr = r_usr rule
-                             , rc_conjunct = expr
-                             , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
-                             }
-                       | (expr,i)<-zip (conjuncts opts rule) [0..]
-                       ]
       expr2dnfClause :: Expression -> DnfClause
-
       expr2dnfClause conj = (split (Dnf [] []).exprUni2list) conj
        where
          split :: DnfClause -> [Expression] -> DnfClause
@@ -448,6 +448,15 @@ quads opts rs
          split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
          split dc              []             = dc
 
+makeIfcControls :: [Expression] -> [Conjunct] -> [Conjunct]
+makeIfcControls params allConjs = [ conj 
+                                | conj<-allConjs
+                                , (not.null) (params `isc` primsMentionedIn (rc_conjunct conj))
+                                -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
+                                -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
+                                -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
+                                ]
+  
 allShifts :: Options -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
@@ -635,7 +644,7 @@ switchboard fSpec
     }
    where
      qs :: [Quad]
-     qs        = quads (getOpts fSpec) (invariants fSpec)
+     qs        = filter (not . isSignal . qRule) (vquads fSpec) -- all quads for invariant rules
      (ecas, _) = assembleECAs fSpec (allDecls fSpec)
      conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qConjuncts q]
      eventsIn  = nub [ecaTriggr eca | eca<-ecas ]

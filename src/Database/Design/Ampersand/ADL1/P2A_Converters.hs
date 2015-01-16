@@ -590,20 +590,6 @@ pCtx2aCtx' _
              , r_env = env
              , r_usr = UserDefined
              , isSignal = not (null sgl)
-             , srrel = Sgn{ decnm   = nm
-                          , decsgn  = (sign exp')
-                          , decprps = []
-                          , decprps_calc = Nothing
-                          , decprL  = ""
-                          , decprM  = ""
-                          , decprR  = ""
-                          , decMean = pMean2aMean deflangCtxt deffrmtCtxt meanings
-                          , decfpos = orig
-                          , deciss  = True
-                          , decusr  = False
-                          , decpat  = env
-                          , decplug = False
-                          }
              }
              ) <$> maybeOverGuarded (typeCheckPairView orig exp') viols
           ) <?> typecheckTerm expr
