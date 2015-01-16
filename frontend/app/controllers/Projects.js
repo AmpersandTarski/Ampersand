@@ -28,31 +28,32 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	$scope.addProjectleider = function(obj, property){
 		
 		var modalInstance = $modal.open({
-			templateUrl: 'app/views/Projects_addProjectleider.html',
-			controller: 'ProjectsController_addProjectleider',
-			size: 'lg', // optional 'sm' (small), 'lg' (large)
-			backdrop: true, // true, false or 'static'
-			resolve: {
-				items : function () {
-					return $scope.items;
+			templateUrl		: 'app/views/Projects_addProjectleider.html',
+			controller		: 'ProjectsController_addProjectleider',
+			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
+			backdrop		: true,				// true, false or 'static'
+			// resolve		: { } 				// an optional map of dependencies which should be injected into the controller			
+		
+		});
+		
+		
+		modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed
+			.then( // then() called when promise is resolved or rejected
+				function (selectedId) { // function when modal is closed
+					if(obj[property] == null){
+						obj[property] = {};
+						obj[property][selectedId] = {'id' : selectedId};
+					}else{
+						obj[property][selectedId] = {'id' : selectedId};
+					}
+				
+					console.log('selected: ' + selectedId);
+					$scope.patch();
+				
+				}, function () { // function when modal is dismissed
+					console.log('Modal dismissed at: ' + new Date());
 				}
-			}
-			
-		});
-		
-		modalInstance.result.then(function (selectedId) {
-			if(obj[property] == null){
-				obj[property] = {};
-				obj[property][selectedId] = {'id' : selectedId};
-			}else{
-				obj[property][selectedId] = {'id' : selectedId};
-			}
-			console.log('selected: ' + selectedId);
-			$scope.patch();
-		}, function () {
-			console.log('Modal dismissed at: ' + new Date());
-		});
-		
+			);
 	}
 	
 	// function for Datapicker
@@ -70,13 +71,9 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	$scope.Projectleiders = Restangular.all('interface/Person/atoms').getList().$object;
 	
 	$scope.select = function(id) {
-		$scope.selectedId = id;
 		console.log('click: ' + id);
+		$modalInstance.close(id);
 	}
-	
-	$scope.ok = function () {
-		$modalInstance.close($scope.selectedId);
-	};
 	
 	$scope.cancel = function () {
 		$modalInstance.dismiss('cancel');

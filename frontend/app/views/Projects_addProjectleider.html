@@ -1,31 +1,33 @@
 <div class="modal-header">
-	<h3 class="modal-title">Select a projectleider</h3>
+	<form class="pull-right form-inline">
+		<div class="form-group">
+			<label class="control-label">Search</label>
+			<input ng-model="search" class="form-control input-sm"/>
+		</div>
+		<div class="form-group">
+			<button class="btn btn-sm btn-warning" ng-click="cancel()">Cancel</button>
+		</div>
+	</form>
+	<h3 class="modal-title">Select a projectleider</h3>	
 </div>
 
 <div class="modal-body">
-	<div class="pull-right">Search <input ng-model="search"></div>
-	
 	<table class="table table-striped table-hover table-condensed" style="width:auto;">
 		<thead>
 			<tr>
 				<th width="100px">Name</th> 
 				<th>Status</th>
 				<th>Email</th>
-				<th></th>
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="(key, val) in Projectleiders | filter:search" ng-click="select(val.id)">
+			<tr ng-repeat="(key, val) in Projectleiders | filter:search" class="pointer" ng-click="select(val.id)">
 				<td>{{val.label}}</td>
 				<td>{{val.Status}}</td>
 				<td>{{val.Email}}</td>
 			</tr>
         </tbody>
 	</table>
-	Selected: <b>{{ selectedId}}</b>
 </div>
 
-<div class="modal-footer">
-    <button class="btn btn-primary" ng-click="ok()">OK</button>
-    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
-</div>
+<div class="modal-footer"></div>

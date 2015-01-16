@@ -11,6 +11,9 @@ input .ng-invalid .ng-dirty {
 	border:2px solid red;
 }
 
+.pointer {
+	cursor: pointer;
+}
 
 /********* GLYPHICONS **************/
 .glyphicon-remove {
