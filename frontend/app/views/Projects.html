@@ -20,6 +20,7 @@
 					</thead>
 					<tbody>
 						<tr ng-repeat="(key, val) in SESSION['Started projects']">
+							<!-- I[Project] -->
 							<td>
 								<div>
 									<a ng-href="#/Project/{{val.id}}">{{val.label}}</a>
@@ -43,12 +44,12 @@
 							<!-- Relation to other concept -->
 							<td>
 								<div ng-repeat="row in val.Projectleider">
-									<div class="col-md-2"><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projectleider, row.id)"></span></div>
-									<div class="col-md-10"><a ng-href="#/Person/{{row.id}}">{{row.label}}</a></div>
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projectleider, row.id)"></span>
+									<a ng-href="#/Person/{{row.id}}">{{row.label}}</a>
 								</div>
 								<div my-showonhovertr>
-									<div class="col-md-2"><span class="glyphicon glyphicon-plus" ng-click="addProjectleider(val, 'Projectleider')"></span></div>
-									<div class="col-md-10"><small>Add new Projectleider</small></div>
+									<span class="glyphicon glyphicon-plus" ng-click="addProjectleider(val, 'Projectleider')"></span>
+									<small>Add new Projectleider</small>
 								</div>
 							</td>
 							 
@@ -114,12 +115,12 @@
 							<!-- Relation to other concept -->
 							<td>
 								<div ng-repeat="row in val.Projectleider">
-									<div class="col-md-2"><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projectleider, row.id)"></span></div>
-									<div class="col-md-10"><a ng-href="#/Person/{{row.id}}">{{row.label}}</a></div>
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projectleider, row.id)"></span>
+									<a ng-href="#/Person/{{row.id}}">{{row.label}}</a>
 								</div>
 								<div my-showonhovertr>
-									<div class="col-md-2"><span class="glyphicon glyphicon-plus" ng-click="addProjectleider(val, 'Projectleider')"></span></div>
-									<div class="col-md-10"><small>Add new Projectleider</small></div>
+									<span class="glyphicon glyphicon-plus" ng-click="addProjectleider(val, 'Projectleider')"></span>
+									<small>Add new Projectleider</small>
 								</div>
 							</td>
 							 

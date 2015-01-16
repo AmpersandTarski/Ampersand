@@ -36,16 +36,11 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 		
 		});
 		
-		
 		modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed
 			.then( // then() called when promise is resolved or rejected
 				function (selectedId) { // function when modal is closed
-					if(obj[property] == null){
-						obj[property] = {};
-						obj[property][selectedId] = {'id' : selectedId};
-					}else{
-						obj[property][selectedId] = {'id' : selectedId};
-					}
+					if(obj[property] === null) obj[property] = {};
+					obj[property][selectedId] = {'id' : selectedId};
 				
 					console.log('selected: ' + selectedId);
 					$scope.patch();

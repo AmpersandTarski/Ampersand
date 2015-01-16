@@ -24,10 +24,15 @@ AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routePar
 		$scope.patch();
 	}
 	
-	$scope.addObject = function(obj, val){
-		obj[val] = {'id': val};
-		$scope.patch();
-		$scope.selected.Theme = ''; // reset input field
+	$scope.addObject = function(obj, property, val){
+		if(val === undefined || val == ''){
+			console.log('object is undefined');
+		}else{
+			if(obj[property] === null) obj[property] = {};
+			obj[property][val] = {'id': val};
+			$scope.patch();
+			$scope.selected.Theme = ''; // reset input field
+		}
 	}
 	
 	$scope.typeahead = {};
