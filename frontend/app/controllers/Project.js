@@ -35,6 +35,7 @@ AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routePar
 		}
 	}
 	
+	$scope.selected = {}; // used for making selections from typeahead
 	$scope.typeahead = {};
 	$scope.typeahead.Theme = Restangular.all('concept/Theme/atoms').getList().$object;
 	$scope.typeahead.Person = Restangular.all('concept/Person/atoms').getList().$object;
