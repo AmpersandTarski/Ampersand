@@ -16,21 +16,28 @@ input .ng-invalid .ng-dirty {
 }
 
 /********* GLYPHICONS **************/
+.glyphicon {
+	cursor	: pointer;
+}
+
 .glyphicon-remove {
-	color:red; 
-	cursor:pointer;
+	color	: red; 
 }
+
 .glyphicon-ok {
-	color:green; 
-	cursor:pointer;
+	color	: green; 
 }
+
 .glyphicon-plus {
-	color:green; 
-	cursor:pointer;
+	color	: green; 
 }
-.glyphicon-bell {
-	color:orange; 
-	cursor:pointer;
+
+.glyphicon-orange {
+	color	: orange;
+}
+
+.glyphicon-blue {
+	color	: #428bca;
 }
 
 /********* NOTIFICATION CENTRE **************/
