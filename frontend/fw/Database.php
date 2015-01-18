@@ -53,58 +53,6 @@ class Database
 		return $resultarray;
 		
 	}
-	
-	public function transaction($commandArray, $roleId = null){
-		
-		$this->Exe("START TRANSACTION"); // start database transaction
-		
-		foreach ((array)$commandArray as $command){
-			if (!isset($command->dbCmd)) throw new Exception("Malformed command, missing 'dbCmd'");
-			
-			switch ($command->dbCmd){ 
-				case 'addToConcept':
-					if (array_key_exists('atom', $command) && array_key_exists('concept', $command))
-						$this->addAtomToConcept($command->atom, $command->concept);
-					else 
-						throw new Exception("Command '" .$command->dbCmd . "' is missing parameters");
-					break;
-				case 'update':
-					if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
-						array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
-						array_key_exists('parentOrChild', $command) && array_key_exists('originalAtom', $command) &&
-						array_key_exists('parentConcept', $command) && array_key_exists('childConcept', $command))
-						$this->editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->parentConcept, $command->childAtom, $command->childConcept, $command->parentOrChild, $command->originalAtom);
-					else 
-						throw new Exception("Command '" .$command->dbCmd . "' is missing parameters");
-					break;
-				case 'delete':
-					if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) && 
-						array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
-						array_key_exists('parentConcept', $command) && array_key_exists('childConcept', $command))
-						$this->editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
-					else 
-						throw new Exception("Command " .$command->dbCmd . " is missing parameters");
-					break;
-				default:
-					throw new Exception("Unkown command: '" .$command->dbCmd . "'");
-			}
-		}
-		
-		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
-		$invariantRulesHold = RuleEngine::checkInvariantRules(); // Process rules checken hoeft niet, aangezien dat niet noodzakelijk is voor een transaction
-		
-		if(isset($roleId)) RuleEngine::checkProcessRules($roleId);
-
-		if ($invariantRulesHold) {
-			$this->setLatestUpdateTime();
-			$this->Exe("COMMIT"); // commit database transaction
-			return true;
-		} else {
-			$this->Exe("ROLLBACK"); // rollback database transaction
-			return false; // TODO return invariant violations
-		}
-	
-	}
 
 	public static function Escape($item)
 	{
@@ -119,8 +67,9 @@ class Database
 	
 	// TODO: make private function
 	public function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it does not yet exist...
-	{ 
-		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+	{
+		// this function is under control of transaction check!
+		if (!isset($this->transaction)) $this->startTransaction();
 		
 		global $conceptTableInfo;
 
@@ -154,33 +103,12 @@ class Database
 	
 	// NOTE: if $originalAtom == '', editUpdate means insert for n-ary relations
 	public function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept, $parentOrChild, $originalAtom)
-	{ 
-		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+	{
+		// this function is under control of transaction check!
+		if (!isset($this->transaction)) $this->startTransaction();
 		
 		global $relationTableInfo;
-		global $tableColumnInfo;
-		
-		/* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
-		
-		// check if $relation appears in $relationTableInfo
-		if (array_key_exists($relation, $relationTableInfo)){
-			foreach($relationTableInfo as $key => $arr){
-				if($key == $relation){ 
-					if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept){ 
-						$table = $arr['table'];
-						$srcCol = $arr['srcCol'];
-						$tgtCol = $arr['tgtCol'];
-						echo "<br>[FOUND: table=$table, srcCol=$srcCol, tgtCol=$tgtCol]";
-					}
-				}
-			}
-		}else{ 
-			echo "ERROR: Relation $relation does not exist (in table info)";
-		}
-		*/
-		
-		// Change $rel because $relationTableInfo is changed (update: not needed anymore)
-		// $rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept; 
+		global $tableColumnInfo; 
 		
 		$table = $relationTableInfo[$rel]['table'];
 		$srcCol = $relationTableInfo[$rel]['srcCol'];
@@ -235,8 +163,9 @@ class Database
 	}
 	
 	public function editDelete($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept)
-	{ 
-		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+	{
+		// this function is under control of transaction check!
+		if (!isset($this->transaction)) $this->startTransaction();
 		
 		global $relationTableInfo;
 		global $tableColumnInfo;
@@ -244,9 +173,6 @@ class Database
 		$srcAtom = $isFlipped ? $childAtom : $parentAtom;
 		$tgtAtom = $isFlipped ? $parentAtom : $childAtom;
 		
-		// Change $rel because $relationTableInfo is changed (update: not needed anymore)
-		// $rel = $parentOrChild == 'parent' ? "rel_" . $rel . "_" . $childConcept . "_" . $parentConcept : "rel_" . $rel . "_" . $parentConcept . "_" . $childConcept;
-
 		$table = $relationTableInfo[$rel]['table'];
 		$srcCol = $relationTableInfo[$rel]['srcCol'];
 		$tgtCol = $relationTableInfo[$rel]['tgtCol'];
@@ -271,7 +197,8 @@ class Database
 	//       happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 	function deleteAtom($atom, $concept) {
 		
-		if (!isset($this->transaction)) $this->startTransaction(); // this function is under control of transaction check!
+		// this function is under control of transaction check!
+		if (!isset($this->transaction)) $this->startTransaction();
 		
 		global $tableColumnInfo;
 
@@ -345,7 +272,7 @@ class Database
 			return true;
 		} else {
 			$this->Exe("ROLLBACK"); // rollback database transaction
-			return false; // TODO return invariant violations
+			return false;
 		}
 		unset($this->transaction);
 		
