@@ -6,7 +6,7 @@
    There are no guarantees with respect to their 100% functioning. Have fun...
    
    This file has been modified to produce Exceptions rather than that it dies...
-   Such exceptions need to be caught. The syntax for doing this is as follows:
+   Such exceptions may be caught. The syntax for doing this is as follows:
    
    try { <insert code here>;
          throw new Exception("identification string of the exception");
@@ -26,15 +26,13 @@
    VIOLATION (TXT "InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	$database = Database::singleton();
 	
-	// Check if combination of $relation, $srcConcept, $tgtConcept exists. Otherwise this causes database issues.
-	if (!Relation::isCombination($relation, $srcConcept, $tgtConcept)){
-		// Tip: If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration. TODO: create ticket for Prototype generator to fix this.
-		throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
-	}
-	
+	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
+	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+	if (!$relation) throw new Exception('Cannot find relation with signature' . $relationName . '[' . $srcConcept . '*' . $tgtConcept.']');
+		
 	// if srcAtom is specified as NULL, a new atom of srcConcept is created
     if($srcAtom == "NULL"){
 		$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
@@ -51,7 +49,7 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	
 	$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
 	
-	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relation.'['.$srcConcept.'*'.$tgtConcept.']';
+	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
 /*
@@ -62,18 +60,16 @@ Example of a rule that automatically deletes pairs from a relation:
   VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	$database = Database::singleton();
 	
-	// Check if combination of $relation, $srcConcept, $tgtConcept exists. Otherwise this causes database issues.
-	if (!Relation::isCombination($relation, $srcConcept, $tgtConcept)){
-		// Tip: If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration. TODO: create ticket for Prototype generator to fix this.
-		throw new Exception('Cannot find ' . $relation . '[' . $srcConcept . '*' . $tgtConcept.']');
-	}
+	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
+	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+	if (!$relation) throw new Exception('Cannot find relation with signature' . $relationName . '[' . $srcConcept . '*' . $tgtConcept.']');
 	
 	$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 	
-	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relation.'['.$srcConcept.'*'.$tgtConcept.']';
+	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
 // TODO: NewStruct afstemmen met Rieks, moet nog bijgewerkt worden naar nieuwe Database functies

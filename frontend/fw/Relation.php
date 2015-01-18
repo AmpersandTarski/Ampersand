@@ -11,7 +11,12 @@ class Relation {
 		*/
 		global $relationTableInfo;
 		
-		return array_key_exists("rel_" . $relation . "_" . $srcConcept . "_" . $tgtConcept, $relationTableInfo);
+		$result = false;
+		
+		foreach($relationTableInfo as $key => $relationInfo){
+			if($relationInfo['name'] == $relation && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
+				return $key; // relation signature: 'rel_<relation>_<srcConcept>_<tgtConcept>'
+		}
 		
 	}
 }

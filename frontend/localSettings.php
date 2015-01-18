@@ -17,8 +17,8 @@ $DB_name = $dbName; // from Generics.php
 /************ EXTENSIONS ****************/
 
 // Enable ExecEngine
-// require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
-// $ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
+require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
+$ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
 
 // Enable ExecImport
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');

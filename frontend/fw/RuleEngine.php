@@ -64,10 +64,9 @@ class RuleEngine {
 			
 			if(count($result) == 0){
 				ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
-			}else{				
-				foreach($result as $violation) {
-					$violations[] = array('src' => $violation['src'], 'tgt' => $violation['tgt']);
-				}
+				
+			}else{
+				$violations = $result;
 			}
 			return $violations;
 		}catch (Exception $e){
