@@ -48,7 +48,9 @@ input .ng-invalid .ng-dirty {
 }
 
 #successes {
-	float:			right;	
+	position		: absolute;
+	width			: 100%;
+	z-index			: 999;
 }
 
 .alert {

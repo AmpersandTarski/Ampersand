@@ -22,6 +22,7 @@
 		<alert ng-repeat="info in notifications.infos" type="info" close="closeAlert(notifications.infos, $index)"><strong>Info!</strong> {{info.message}}</alert>
 	</div>
 	
+	<!-- Success notifications must be last in notifications center because of position:absolute -->
 	<div id=successes>
 		<alert ng-repeat="success in notifications.successes" type="success" close="closeAlert(notifications.successes, $index)">{{success.message}}</alert>
 	</div>
