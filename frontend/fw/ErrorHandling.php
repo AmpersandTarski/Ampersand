@@ -11,11 +11,11 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	
 	public static function addError($message){
 		self::$errors[]['message'] = $message;
-		self::$logs[]['message'] = $message;
+		self::$logs[] = $message;
 	}
 	public static function addInvariant($message){
 		self::$invariants[]['message'] = $message;
-		self::$logs[]['message'] = $message;
+		self::$logs[] = $message;
 	}
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
@@ -29,21 +29,24 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		self::$violations[$ruleHash]['tuples'][] = $rowMessage;
 		
 		// self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
-		self::$logs[]['message'] = $violationMessage . ' - ' . $rowMessage;
+		self::$logs[] = $violationMessage . ' - ' . $rowMessage;
 	}
 	public static function addInfo($message){
 		self::$infos[]['message'] = $message;
-		self::$logs[]['message'] = $message;
+		self::$logs[] = $message;
 	}
 	public static function addSuccess($message, $id = null){
+		self::$logs[] = $message;
+		
 		if(isset($id)){ // ID can be integer, but also string
 			self::$successes[$id]['rows'][] = $message;
+			return $id;
 		}else{
 			self::$successes[]['message'] = $message;
+			end(self::$successes); // pointer to end of array (i.e. new  inserted element)
+			return key(self::$successes); // return key of current element
 		}
-		self::$logs[]['message'] = $message;
-		end(self::$successes);
-		return key(self::$successes);
+		
 	}
 	
 	public static function addLog($message){
