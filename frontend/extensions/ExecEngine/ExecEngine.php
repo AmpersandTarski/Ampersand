@@ -1,7 +1,7 @@
 <?php
 
 // Define hooks
-$hooks['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
+$hooks['before_RuleEngine_checkProcessRules'][] = 'ExecEngine::run';
 
 class ExecEngine {
 	

@@ -100,8 +100,9 @@ class Api
 	 * @param string $interfaceName
 	 * @param string $atomid
 	 * @param int $roleId
+	 * @param bool $commit
 	 */
-	public function patchAtom($interfaceName, $atomid, $roleId = null, $request_data = null)
+	public function patchAtom($interfaceName, $atomid, $roleId = null, $commit = false, $request_data = null)
 	{
 		$session = Session::singleton();
 		try{
@@ -116,7 +117,7 @@ class Api
 		$atom = new Atom($atomid);
 		$interface = new ObjectInterface($interfaceName);
 		 
-		return $atom->patch($interface, $request_data);
+		return $atom->patch($interface, $request_data, $commit);
 	
 	}
 	

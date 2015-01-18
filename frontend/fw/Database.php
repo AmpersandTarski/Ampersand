@@ -250,28 +250,34 @@ class Database
 		
 	}
 	
-	// TODO: verwijderen van functie, nu enkel nodig in Session voor session atom initiatie.
+	// TODO: changes to private function, currently also used in Session class for session atom initiation.
 	public function commitTransaction(){
 		$this->Exe("COMMIT"); // start database transaction
 		unset($this->transaction);
 		
 	}
 	
-	public function closeTransaction(){
+	public function rollbackTransaction(){
+		$this->Exe("ROLLBACK"); // rollback database transaction
+		unset($this->transaction);
+	
+	}
+	
+	public function closeTransaction($tryCommit = true){
 		$session = Session::singleton();
 		
-		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->interfaceInvariantConjunctNames); // only invariants rules that might be violated after edits in this interface are checked.
 		
-		if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
-		
-		if ($invariantRulesHold) {
+		if ($invariantRulesHold && $tryCommit) {
 			$this->setLatestUpdateTime();
-			$this->Exe("COMMIT"); // commit database transaction
-			ErrorHandling::addSuccess('Updated');
+			$this->commitTransaction();
+			
+			ErrorHandling::addSuccess('Changes committed to the database');
+			
 			return true;
 		} else {
-			$this->Exe("ROLLBACK"); // rollback database transaction
+			$this->rollbackTransaction();
+			
 			return false;
 		}
 		unset($this->transaction);

@@ -61,8 +61,9 @@ Class Atom {
 
 	}
 	
-	public function patch(&$interface, $request_data){
+	public function patch(&$interface, $request_data, $commit = false){ // by default patch is not committed
 		$database = Database::singleton();
+		$session = Session::singleton();
 		
 		$before = current($this->getContent($interface));
 		
@@ -81,15 +82,19 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
-												
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+
+						$path = array_shift($pathArr);
+						// if 'label' of object is edited, skip
+						if($path == 'label') break 2; // break the while() and switch()
+						
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $path);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 
 						if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
 						elseif (is_null($tgtAtom)) $tgtAtom = $patch['value'];
 						
-					}
+					}					
 					
 					// perform editUpdate
 					if($tgtInterface->editable){
@@ -120,8 +125,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
+						
+						$path = array_shift($pathArr);
+						// if 'label' of object is edited, skip
+						if($path == 'label') break 2; // break the while() and switch()
 					
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $path);
 					
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
@@ -154,7 +163,11 @@ Class Atom {
 					// find the right subinterface
 					while (count($pathArr)){
 						
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						$path = array_shift($pathArr);
+						// if 'label' of object is edited, skip
+						if($path == 'label') break 2; // break the while() and switch()
+						
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $path);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 
@@ -174,11 +187,16 @@ Class Atom {
 			}
 		}
 		
-		$database->closeTransaction(); // close transaction => ROLLBACK or COMMIT
+		if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
+		
+		$content =  current($this->getContent($interface));
+		
+		// when $commit = true, the invariant rules will be checked and a commit is done when all invariant rules hold
+		$database->closeTransaction($commit);
 		
 		return array_merge(
 				array('patches' => $patches), 
-				array('content' => current($this->getContent($interface))), 
+				array('content' => $content), 
 				array('notifications' => ErrorHandling::getAll())); 
 		
 	}
