@@ -583,10 +583,10 @@ chpDiagnosis fSpec
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                toList(if xrefSupported (getOpts fSpec) then "(" <> symReqRef (getOpts fSpec) r <> ") " else mempty )++
+                toList(xRefTo (XRefRuleRequirement r) )++
                 (case fsLang fSpec of
-                  Dutch   -> [ Str "luidt: " ]
-                  English -> [ Str "says: "  ]
+                  Dutch   -> [ Str " luidt: " ]
+                  English -> [ Str " says: "  ]
                 )
               )]  ++meaning2Blocks (fsLang fSpec) r++
        [Plain ( case fsLang fSpec of

@@ -118,7 +118,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                 0 -> text "There are no entity types."
                                 1 -> text "There is only one entity type:"
                                 _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
-                                  <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
+                                  <> text "The details of each entity type are described (in alphabetical order) in the following paragraphs:"
                              )
      <> conceptTable
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
@@ -382,7 +382,7 @@ daRulesSection lev fSpec = theBlocks
             in  if format == Frtf then
                    plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                 else
-                  fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex predicate)
+                  fromList $ pandocEqnArrayWithLabel (XRefRuleDefinition rule) (showLatex predicate)
        else if format == FLatex
             then fromList $ pandocEquation (showMath rule)
             else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>

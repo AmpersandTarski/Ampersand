@@ -129,11 +129,12 @@ chpProcessAnalysis lev fSpec
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
-     = (  (labeledThing (getOpts fSpec) (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
-       <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
+     = (
+           headerWithLabel (XRefProcessAnalysis fproc) (lev+2) (text(name fproc))
+        <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
    --    <> (txtProcessModel fproc)
-       <> (if null sctRules then mempty else definitionList sctRules)
-       ):  iterat fps i' seenCrs seenDrs
+        <> (if null sctRules then mempty else definitionList sctRules)
+         ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec(udefrules (fpProc fproc)) i seenConcepts seenDeclarations

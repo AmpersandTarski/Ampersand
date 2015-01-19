@@ -1,14 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.PandocAux
       ( writepandoc
-      , labeledThing
-      , symDefLabel, symDefRef
-      , symReqLabel, symReqRef, symReqPageRef
-      , xrefSupported
-      , pandocEqnArray
-      , pandocEqnArrayOnelabel
+      , XRefObj(..) , xRefTo
+      , headerWithLabel
+      , definitionListItemLabel
+--      , labeledThing
+--      , symDefLabel, symDefRef
+--      , symReqLabel, symReqRef, symReqPageRef
+--      , xrefSupported
+      , pandocEqnArrayWithLabels
+      , pandocEqnArrayWithLabel
       , pandocEquation
-      , makeDefinition, uniquecds
+      , pandocEquationWithLabel
+      , uniquecds
       , count
       , ShowMath(..)
       , latexEscShw, escapeNonAlphaNum
@@ -323,42 +327,78 @@ count    lang    n      x
       (English, _) -> show n++" "++plural English x
 
 ------ Symbolic referencing ---------------------------------
+data XRefObj = XRefDeclarationRequirement Declaration
+             | XRefRuleRequirement Rule
+             | XRefPredicateXpression Rule
+             | XRefConceptDefinition A_Concept
+             | XRefRuleDefinition Rule
+             | XREFXXX Declaration
+             | XRefNaturalLanguageRule Rule
+             | XREFZZZPageRefRule Rule
+             | XRefProcessAnalysis FProcess
+             | XRefConceptualAnalysisPattern Pattern
+             | XRefConceptualAnalysisDeclaration Declaration
+             | XRefConceptualAnalysisRule Rule
+             | XRefInterfacesInterface Interface
+             | XRefNaturalLanguageTheme (Maybe Theme) --DataAnalysis
+xRefTo :: XRefObj -> Inlines
+xRefTo x = strong . superscript . str  $ "["++xRefRawLabel x++"]"
+xRefRawLabel :: XRefObj -> String
+xRefRawLabel x
+ = case x of
+     XRefProcessAnalysis x       -> "prcAnalPrc:"++(escapeNonAlphaNum.name) x
+     XRefConceptualAnalysisPattern p 
+                                 -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
+     XRefNaturalLanguageRule r   -> "natLangRule:"++(escapeNonAlphaNum.name) r
+     _                           -> "TODO:ReferentieNaarIets"
 
-class (Identified a) => SymRef a where
-  symLabel :: a -> String -- unique label for symbolic reference purposes
-  symReqLabel :: a -> String  -- labels the requirement of a
-  symReqLabel   c = "\\label{Req"++symLabel c++"}"
-  symDefLabel :: a -> String  -- labels the definition of a
-  symDefLabel   c = "\\label{Def"++symLabel c++"}"
-  symReqRef :: Options -> a -> Inlines  -- references the requirement of a
-  symReqRef  opts   c = case fspecFormat opts of
-                           FLatex  -> rawInline "latex" ("\\ref{Req"++symLabel c++"}")
-                           _       -> (str.name) c
-  symDefRef :: Options -> a -> Inlines  -- references the definition of a
-  symDefRef  opts   c = case fspecFormat opts of
-                           FLatex  -> rawInline "latex" ("\\ref{Def"++symLabel c++"}")
-                           _       -> (str.name) c
-  symReqPageRef :: Options -> a -> Inlines  -- references the requirement of a
-  symReqPageRef opts c = case fspecFormat opts of
-                           FLatex  -> rawInline "latex" ("\\pageref{Req"++symLabel c++"}")
-                           _       -> (str.name) c
-  symDefPageRef :: a -> String  -- references the definition of a
-  symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
+headerWithLabel :: XRefObj -> Int -> Inlines -> Blocks
+headerWithLabel x = headerWith (xRefRawLabel x, [],[])
 
-instance SymRef ConceptDef where
-  symLabel cd = "Concept:"++escapeNonAlphaNum (cdcpt cd)
+definitionListItemLabel :: XRefObj -> String -> Inlines
+definitionListItemLabel x prefix
+  = str prefix <>  str ("["++xRefRawLabel x++"]")
 
-instance SymRef A_Concept where
-  symLabel c = "Concept:"++escapeNonAlphaNum (name c)
 
-instance SymRef Declaration where
-  symLabel d = "Decl:"++escapeNonAlphaNum (name d++name (source d)++name (target d))
-
-instance SymRef Rule where
-  symLabel r = "Rule:"++escapeNonAlphaNum (name r)
-
-instance SymRef PlugInfo where
-  symLabel p = "PlugInfo "++escapeNonAlphaNum (name p)
+-- | this function can be used everywhere in the document where a refference to some object must be placed
+xRefReference :: XRefObj -> Inlines
+xRefReference (XRefDeclarationRequirement d) 
+     = str $ "["++"DeclarationRequirement:"++escapeNonAlphaNum (name d++name (source d)++name (target d))++"]"
+--class (Identified a) => SymRef a where
+--  symLabel :: a -> String -- unique label for symbolic reference purposes
+--  symReqLabel :: a -> String  -- labels the requirement of a
+--  symReqLabel   c = "\\label{Req"++symLabel c++"}"
+--  symDefLabel :: a -> String  -- labels the definition of a
+--  symDefLabel   c = "\\label{Def"++symLabel c++"}"
+--  symReqRef :: Options -> a -> Inlines  -- references the requirement of a
+--  symReqRef  opts   c = case fspecFormat opts of
+--                           FLatex  -> rawInline "latex" ("\\ref{Req"++symLabel c++"}")
+--                           _       -> (str.name) c
+--  symDefRef :: Options -> a -> Inlines  -- references the definition of a
+--  symDefRef  opts   c = case fspecFormat opts of
+--                           FLatex  -> rawInline "latex" ("\\ref{Def"++symLabel c++"}")
+--                           _       -> (str.name) c
+--  symReqPageRef :: Options -> a -> Inlines  -- references the requirement of a
+--  symReqPageRef opts c = case fspecFormat opts of
+--                           FLatex  -> rawInline "latex" ("\\pageref{Req"++symLabel c++"}")
+--                           _       -> (str.name) c
+--  symDefPageRef :: a -> String  -- references the definition of a
+--  symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
+--
+--instance SymRef ConceptDef where
+--  symLabel cd = "Concept:"++escapeNonAlphaNum (cdcpt cd)
+--
+--instance SymRef A_Concept where
+--  symLabel c = "Concept:"++escapeNonAlphaNum (name c)
+--
+--instance SymRef Declaration where
+--  symLabel d = "Decl:"++escapeNonAlphaNum (name d++name (source d)++name (target d))
+--
+--instance SymRef Rule where
+--  symLabel r = "Rule:"++escapeNonAlphaNum (name r)
+--
+--instance SymRef PlugInfo where
+--  symLabel p = "PlugInfo "++escapeNonAlphaNum (name p)
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
@@ -373,43 +413,52 @@ instance SymRef PlugInfo where
 --         We do not know yet how this relates to other formats like rtf.
 
 -- TODO: Fix the other labeled 'things', to make a neat reference.
-labeledThing :: Options -> Int -> String -> String -> Blocks
-labeledThing opts lev lbl t =
-    header (lev+1)
-       ((text t <> xrefLabel opts lbl))
-
+--labeledThing :: Options -> Int -> String -> String -> Blocks
+--labeledThing opts lev lbl t =
+--    header (lev+1)
+--       ((text t <> xrefLabel opts lbl))
+--
 -- | A label that can be cross referenced to. (only for output formats that support this feature)
-xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere rendering dan LaTeX
-xrefLabel opts myLabel
-   = if xrefSupported opts
-     then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
-     else mempty -- fatal 508 "Illegal use of xrefLabel."
-xrefSupported :: Options -> Bool
-xrefSupported opts = fspecFormat opts `elem` [FLatex]
+--xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere rendering dan LaTeX
+--xrefLabel opts myLabel
+--   = if xrefSupported opts
+--     then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
+--     else mempty -- fatal 508 "Illegal use of xrefLabel."
+--xrefSupported :: Options -> Bool
+--xrefSupported opts = fspecFormat opts `elem` [FLatex]
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
 xrefCitation myLabel = RawInline (Text.Pandoc.Builder.Format "latex") ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 
 -- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
-pandocEqnArray :: [(String,String,String)] -> [Block]
-pandocEqnArray xs
- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++
-                               intercalate "\\\\\n   " [ a++"&"++b++"&"++c | (a,b,c)<-xs ]++
-                               "\n\\end{eqnarray}") ]
-   | not (null xs)]
+pandocEqnArrayWithLabels :: [(XRefObj,String,String,String)] -> [Block]
+pandocEqnArrayWithLabels = toList . pandocEqnArrayWithLabels'
 
-pandocEqnArrayOnelabel :: String -> [(String,String,String)] -> [Block]
-pandocEqnArrayOnelabel label xs
- = case xs of
-    []           -> []
-    (a,b,c):rest -> [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++a++"&"++b++"&"++c++label++"\\\\\n   "++
-                               intercalate "\\nonumber\\\\\n   " [ l++"&"++m++"&"++r | (l,m,r)<-rest ]++
-                               "\\nonumber\n\\end{eqnarray}")
-                    ]      ]
+pandocEqnArrayWithLabels' :: [(XRefObj,String,String,String)] -> Blocks 
+pandocEqnArrayWithLabels' [] = mempty
+pandocEqnArrayWithLabels' xs
+ = (para . displayMath)  "\\label{eq1}\n\\begin{split}\nA & = \\frac{\\pi r^2}{2} \\\\\n & = \\frac{1}{2} \\pi r^2\n\\end{split}"
+ <>(para .displayMath . intercalate "\\\\\n   ") [ "\\label{"++xRefRawLabel x++"}\n"++intercalate "&" [a,b,c] | (x,a,b,c)<-xs ]
+-- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++
+--                               intercalate "\\\\\n   " [ a++"&"++b++"&"++c | (a,b,c)<-xs ]++
+--                               "\n\\end{eqnarray}") ]
+--   | not (null xs)]
 
+pandocEqnArrayWithLabel :: XRefObj -> [(String,String,String)] -> [Block]
+pandocEqnArrayWithLabel xref = toList . pandocEqnArrayWithLabel' xref
+
+pandocEqnArrayWithLabel' :: XRefObj -> [(String,String,String)] -> Blocks
+pandocEqnArrayWithLabel' _ [] = mempty
+pandocEqnArrayWithLabel' xref xs
+ = (para . displayMath)  ( "\\label{"++xRefRawLabel xref++"}\n"
+                         ++intercalate "\\\\\n   " [ intercalate "&" [a,b,c] | (a,b,c)<-xs ])
+                                
 pandocEquation :: String -> [Block]
-pandocEquation x
- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{equation}\n   "++ x ++"\n\\end{equation}") ]
-   | not (null x)]
+pandocEquation x = toList . para . displayMath $ x
+
+pandocEquationWithLabel :: XRefObj -> String -> [Block]
+pandocEquationWithLabel xref x = toList . para . displayMath 
+         $ "\\label{"++xRefRawLabel xref++"}\n"++x
+
 
 --DESCR -> pandoc print functions for Ampersand data structures
 ---------------------------------------
@@ -626,22 +675,22 @@ uniquecds fSpec c
    , (i,cd)<-zip [(1::Integer)..] cDefs ]
 -- was: [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
 
-makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
-makeDefinition opts i nm lbl defin ref =
-  case fspecFormat opts of
-    FLatex ->  [ Para ( [ RawInline (Text.Pandoc.Builder.Format "latex") $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
-                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ lbl ++ "\n" | i == 0] ++
-                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ insertAfterFirstWord refStr defStr] ++
-                        [ RawInline (Text.Pandoc.Builder.Format "latex") (latexEscShw (" ["++ref++"]")) | not (null ref) ]
-                      )
-               ]
-    _      ->  [ Para ( Str defin : [ Str (" ["++ref++"]") | not (null ref) ] )
-               ]
- where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}"
-       defStr = latexEscShw defin
-       -- by putting the ref after the first word of the definition, it aligns nicely with the definition
-       insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
-                                         in  fstWord ++ s ++ rest
+--makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
+--makeDefinition opts i nm lbl defin ref =
+--  case fspecFormat opts of
+--    FLatex ->  [ Para ( [ RawInline (Text.Pandoc.Builder.Format "latex") $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
+--                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ lbl ++ "\n" | i == 0] ++
+--                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ insertAfterFirstWord refStr defStr] ++
+--                        [ RawInline (Text.Pandoc.Builder.Format "latex") (latexEscShw (" ["++ref++"]")) | not (null ref) ]
+--                      )
+--               ]
+--    _      ->  [ Para ( Str defin : [ Str (" ["++ref++"]") | not (null ref) ] )
+--               ]
+-- where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}"
+--       defStr = latexEscShw defin
+--       -- by putting the ref after the first word of the definition, it aligns nicely with the definition
+--       insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
+--                                         in  fstWord ++ s ++ rest
 
 ---------------------------
 --- LaTeX related stuff ---

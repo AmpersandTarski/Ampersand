@@ -232,40 +232,41 @@ dpRule fSpec = dpR
              <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
              <> (if null nds then mempty else plain text1)
              <> (fromList $
-                  pandocEqnArray [ ( texOnly_Id(name d)
-                                    , ":"
-                                    , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
-                                    )
-                                 |d<-nds])
+                  pandocEqnArrayWithLabels
+                      [ ( XREFXXX d
+                        , texOnly_Id(name d)
+                        , ":"
+                        , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
+                        ) |d<-nds])
              <> (if null rds then mempty else plain text2)
              <> (plain text3)
              <> (if showPredExpr (getOpts fSpec)
-                 then fromList $ pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
-                 else fromList $ pandocEquation (showMath r++symDefLabel r)
+                 then fromList $ pandocEqnArrayWithLabel (XRefPredicateXpression r) ((showLatex.toPredLogic) r)
+                 else fromList $ pandocEquationWithLabel (XRefPredicateXpression r) (showMath r)
                 )
              <> (if length nds>1 then text5 else mempty)
              )
         text1, text2, text3  :: Inlines
         text1
          = case (nds,fsLang fSpec) of
-             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> (symDefRef (getOpts fSpec) d) <> "):")
-             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> (symDefRef (getOpts fSpec) d) <> "):")
-             (_  ,Dutch)   -> ("Om te komen tot de formalisatie in vergelijking" <> (rawInline "latex" "~")<>(symDefRef (getOpts fSpec) r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
-             (_  ,English) -> ("To arrive at the formalization in equation"      <> (rawInline "latex" "~")<>(symDefRef (getOpts fSpec) r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
+             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XREFXXX d) <> "):")
+             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XREFXXX d) <> "):")
+             (_  ,Dutch)   -> ("Om te komen tot de formalisatie van de afspraak " <> xRefTo (XRefNaturalLanguageRule r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
+             (_  ,English) -> ("To arrive at the formalization of requirement "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
         text2
          = (case ( nds, rds,fsLang fSpec) of
-             ([],[rd],Dutch)   -> ("Definitie " <>         (symDefRef (getOpts fSpec) rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
-             ([],[rd],English) -> ("We use definition " <> (symDefRef (getOpts fSpec) rd) <> "(" <> str (name rd) <> ")")
-             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> (symDefRef (getOpts fSpec) rd) <> "(" <> (str.name) rd <> ")" )
-             (_ ,[rd],English) -> ("Beside that, we use definition "   <> (symDefRef (getOpts fSpec) rd) <> "(" <> (str.name) rd <> ")" )
-             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [symDefRef (getOpts fSpec) d <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([],[rd],Dutch)   -> ("Definitie " <>         xRefTo (XREFXXX rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
+             ([],[rd],English) -> ("We use definition " <> xRefTo (XREFXXX rd) <> "(" <> str (name rd) <> ")")
+             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> xRefTo (XREFXXX rd) <> "(" <> (str.name) rd <> ")" )
+             (_ ,[rd],English) -> ("Beside that, we use definition "   <> xRefTo (XREFXXX rd) <> "(" <> (str.name) rd <> ")" )
+             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
+             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
            )<>
            (case (nds,fsLang fSpec) of
-             ([_],Dutch)   -> (" om eis" <> (symReqRef (getOpts fSpec) r) <> " te formaliseren: ")
-             ([_],English) -> (" to formalize requirement" <> (symReqRef (getOpts fSpec) r) <> ": ")
+             ([_],Dutch)   -> (" om eis" <> xRefTo (XRefNaturalLanguageRule r) <> " te formaliseren: ")
+             ([_],English) -> (" to formalize requirement" <> xRefTo (XRefNaturalLanguageRule r) <> ": ")
              ( _, _)        -> ". "
            )
         text3
@@ -281,14 +282,14 @@ dpRule fSpec = dpR
         text5 :: Blocks
         text5
          = case (fsLang fSpec,isSignal r) of
-             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <>":"
+             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> xRefTo (XREFZZZPageRefRule r) <>":"
                                       ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <>":"
+             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> xRefTo (XREFZZZPageRefRule r) <>":"
                                       ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (Dutch  ,True)  -> plain ( "Dit komt overeen met " <> (singleQuoted.str.name) r <>
-                                        " (" <> symReqRef (getOpts fSpec) r <> " op pg."  <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <> ").")
-             (English,True)  -> plain ( "This corresponds to " <> (singleQuoted.str.name) r <>
-                                        " (" <> symReqRef (getOpts fSpec) r <> " on page" <> (rawInline "latex" "~") <> (symReqPageRef (getOpts fSpec) r) <> ").")
+             (Dutch  ,True)  -> plain ( "Dit komt overeen met de afspraak " <> (singleQuoted.str.name) r <>
+                                        " (" <> xRefTo (XRefNaturalLanguageRule r) <> ".")
+             (English,True)  -> plain ( "This corresponds to the agreement " <> (singleQuoted.str.name) r <>
+                                        " (" <> xRefTo (XRefNaturalLanguageRule r) <> ".")
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
