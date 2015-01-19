@@ -14,7 +14,6 @@ class Api
 		
 		RuleEngine::checkRules($roleId);
 		
-		// TODO: check all invariantRules
 		ErrorHandling::addSuccess("Database reset to initial value");
 		
 		return ErrorHandling::getAll(); // Return all notifications
