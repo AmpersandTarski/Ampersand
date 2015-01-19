@@ -3,19 +3,29 @@ AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routePar
 	// model (can be changed by view)
 	$scope.Project = Restangular.one('interface/Project/atom', $routeParams.atom).get().$object;
 	
+	$scope.transactionButtonsVisible = false;
+	
 	$scope.patch = function(){
+		$scope.transactionButtonsVisible = true;
+		
 		$scope.Project
 			.patch()
 			.then(function(data) {
 				$rootScope.notifications = data.notifications;
 				$scope.Project = Restangular.restangularizeElement('', data.content, 'interface/Project/atom');
 				
-				$timeout(function() {
-			    	console.log('now');
-			    	$rootScope.notifications.successes = [];
-			    }, 3000);
 			});
 		
+	}
+	
+	$scope.commit = function(){
+		$scope.Project
+			.customOperation('patch', '', {'commit': true})
+			.then(function(data) {
+				$rootScope.notifications = data.notifications;
+				$scope.Project = Restangular.restangularizeElement('', data.content, 'interface/Project/atom');
+			});
+		$scope.transactionButtonsVisible = false;
 	}
 	
 	// function to remove item (key) from list (obj)

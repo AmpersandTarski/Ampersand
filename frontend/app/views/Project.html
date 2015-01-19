@@ -1,4 +1,7 @@
 <div class="container-fluid">
+	<div class="transactionButtons">
+		<button type="button" class="btn btn-sm btn-success" ng-show="transactionButtonsVisible" ng-click="commit()">Save/Request</button>
+	</div>
 	<fieldset>
 		<!-- I[Project] -->
 		<legend>{{Project.label}}</legend>

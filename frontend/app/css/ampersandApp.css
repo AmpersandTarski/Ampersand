@@ -6,13 +6,19 @@
   	padding: 100px 15px 0px 15px;
 }
 
-/********* FORMS, INPUTS, ETC **************/
+/****** FORMS, INPUTS, ETC *******/
 input .ng-invalid .ng-dirty {
 	border:2px solid red;
 }
 
 .pointer {
 	cursor: pointer;
+}
+
+/****** INTERFACE STYLES *********/
+.transactionButtons {
+	text-align		: right;
+	height			: 5px;	
 }
 
 /********* GLYPHICONS **************/
@@ -45,12 +51,6 @@ input .ng-invalid .ng-dirty {
 	position		: relative; // fixed;
 	// right		: 0px;
 	// z-index		: 999;
-}
-
-#successes {
-	position		: absolute;
-	width			: 100%;
-	z-index			: 999;
 }
 
 .alert {
