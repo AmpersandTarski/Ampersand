@@ -95,7 +95,7 @@ chpConceptualAnalysis lev fSpec = (
                 ( case ( null purp, fsLang fSpec) of
                    (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
                    (True , English) -> plain ("The following " <> str(ukadjs d) <> " has been defined ")
-                   (False, Dutch)   -> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " is gedefinieerd ")
+                   (False, Dutch)   -> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
                    (False, English) -> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning

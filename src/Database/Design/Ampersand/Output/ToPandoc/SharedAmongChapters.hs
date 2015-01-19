@@ -251,8 +251,8 @@ dpRule fSpec = dpR
          = case (nds,fsLang fSpec) of
              ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XREFXXX d) <> "):")
              ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XREFXXX d) <> "):")
-             (_  ,Dutch)   -> ("Om te komen tot de formalisatie van de afspraak " <> xRefTo (XRefNaturalLanguageRule r) <> str (" zijn de volgende "++count Dutch (length nds) "relaties"++" nodig."))
-             (_  ,English) -> ("To arrive at the formalization of requirement "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relations"++" are introduced."))
+             (_  ,Dutch)   -> ("Om te komen tot de formalisatie van de afspraak " <> xRefTo (XRefNaturalLanguageRule r) <> str (" zijn de volgende "++count Dutch (length nds) "relatie"++" nodig."))
+             (_  ,English) -> ("To arrive at the formalization of requirement "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
         text2
          = (case ( nds, rds,fsLang fSpec) of
              ([],[rd],Dutch)   -> ("Definitie " <>         xRefTo (XREFXXX rd) <> "(" <> str (name rd) <> ") wordt gebruikt")

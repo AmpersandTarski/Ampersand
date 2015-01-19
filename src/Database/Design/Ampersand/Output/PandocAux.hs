@@ -437,17 +437,19 @@ pandocEqnArrayWithLabels' :: [(XRefObj,String,String,String)] -> Blocks
 pandocEqnArrayWithLabels' [] = mempty
 pandocEqnArrayWithLabels' xs
  = (para . displayMath)  "\\label{eq1}\n\\begin{split}\nA & = \\frac{\\pi r^2}{2} \\\\\n & = \\frac{1}{2} \\pi r^2\n\\end{split}"
- <>(para .displayMath . intercalate "\\\\\n   ") [ "\\label{"++xRefRawLabel x++"}\n"++intercalate "&" [a,b,c] | (x,a,b,c)<-xs ]
+ <>(para .displayMath . intercalate "\\\\\n   ") [ "\\label{"++xRefRawLabel x++"}\\\\\n"++intercalate "&" [a,b,c] | (x,a,b,c)<-xs ]
 -- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++
 --                               intercalate "\\\\\n   " [ a++"&"++b++"&"++c | (a,b,c)<-xs ]++
 --                               "\n\\end{eqnarray}") ]
 --   | not (null xs)]
 
 pandocEqnArrayWithLabel :: XRefObj -> [(String,String,String)] -> [Block]
-pandocEqnArrayWithLabel xref = toList . pandocEqnArrayWithLabel' xref
-
+pandocEqnArrayWithLabel xref xs -- = toList . pandocEqnArrayWithLabel' xref
+ = [Para [Math DisplayMath ("\\label{"++xRefRawLabel xref++"}\\\\\n"
+                          ++"mijn formule{2}" -- intercalate "\\\\\n   " [ intercalate "&" [a,b,c] | (a,b,c)<-xs ]
+                          )]]
 pandocEqnArrayWithLabel' :: XRefObj -> [(String,String,String)] -> Blocks
-pandocEqnArrayWithLabel' _ [] = mempty
+pandocEqnArrayWithLabel' _ [] = fatal 450 "A labeld thing must not be empty"
 pandocEqnArrayWithLabel' xref xs
  = (para . displayMath)  ( "\\label{"++xRefRawLabel xref++"}\n"
                          ++intercalate "\\\\\n   " [ intercalate "&" [a,b,c] | (a,b,c)<-xs ])
@@ -506,8 +508,8 @@ instance ShowMath Expression where
           showExpr (EDcD d)     = "\\id{"++name d++"}"
           showExpr (EDcI c)     = "I_{\\id{"++name c++"}}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{\\id{"++show (source sgn)++"}\times\\id{"++show (target sgn)++"}}"
-          showExpr (EMp1 a _)   = "'{\tt "++a++"}'"
+          showExpr (EDcV sgn)   = "V_{\\id{"++show (source sgn)++"}\\times\\id{"++show (target sgn)++"}}"
+          showExpr (EMp1 a _)   = "'{\\tt "++a++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
