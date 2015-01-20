@@ -19,6 +19,22 @@ class Relation {
 		}
 		
 	}
+	
+	public static function getTable($fullRelationSignature){
+		global $relationTableInfo;
+		
+		return $relationTableInfo[$fullRelationSignature]['table'];
+	}
+	public static function getSrcCol($fullRelationSignature){
+		global $relationTableInfo;
+	
+		return $relationTableInfo[$fullRelationSignature]['srcCol'];
+	}
+	public static function getTgtCol($fullRelationSignature){
+		global $relationTableInfo;
+	
+		return $relationTableInfo[$fullRelationSignature]['tgtCol'];
+	}
 }
 
 ?>
