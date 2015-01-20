@@ -6,6 +6,11 @@
   	padding: 100px 15px 0px 15px;
 }
 
+/********* TABLE *****************/
+table {
+	width	: auto;
+}
+
 /********* FORMS, INPUTS, ETC **************/
 input .ng-invalid .ng-dirty {
 	border:2px solid red;
