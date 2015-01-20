@@ -50,6 +50,7 @@ class ExecEngine {
 			
 				$params = explode(';', $functionToBeCalled); // Split off variables
 				$params = array_map('trim', $params); // Trim all params
+				$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
 				
 				$function = array_shift($params); // First parameter is function name
 				
