@@ -32,12 +32,12 @@
 function TransitiveClosure($r,$C,$rCopy,$rStar){
 	ErrorHandling::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)");
 
-	if($GLOBALS['ext']['ExecEngine']['warshallRuleChecked'][$r]){
+	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
 		ErrorHandling::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)");
 		return;  // this is the case if we have executed this function already in this transaction		
 	}else{
 		
-		$GLOBALS['ext']['ExecEngine']['warshallRuleChecked'][$r] = true;
+		$GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
 		
 		// Compute transitive closure following Warshall's algorithm
 		$closure = RetrievePopulation($r, $C); // get adjacency matrix
