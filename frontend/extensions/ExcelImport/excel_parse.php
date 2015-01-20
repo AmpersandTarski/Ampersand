@@ -1,25 +1,20 @@
 <?php
 error_reporting(E_ALL);
-require_once (__DIR__ . '/../../inc/includes.php');
+
+require_once (__DIR__ . '/../../fw/includes.php');
 require_once (__DIR__ . '/ExcelImport.php');
 
-if (is_uploaded_file($_FILES['userfile']['tmp_name'])){
+if (is_uploaded_file($_FILES['file']['tmp_name'])){
 	// Parse:
-	$exparser = new ImportExcel($_FILES['userfile']['tmp_name']);
-	$result = $exparser->ParseFile();
-	print "File parsed!\n";	
-	unlink($_FILES['userfile']['tmp_name']);
+	$parser = new ImportExcel($_FILES['file']['tmp_name']);
+	$result = $parser->ParseFile();
+	unlink($_FILES['file']['tmp_name']);
 }else{
-    print "Error code 80085.4711\n";
+    ErrorHandling::addError('No file uploaded');
 }
 
-
-print 'Here is some more debugging info:';
-print "<pre>";
-print_r($_FILES);
-print_r($result);
-print_r(ErrorHandling::getLogs());
-print "</pre>";
+$result = array('notifications' => $result, 'files' => $_FILES);
+print json_encode($result);
 
 ?>
 

@@ -84,6 +84,7 @@ class Database
 			$newAtomEsc = addslashes($newAtom); 
 
 			// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one for checking the existence of a concept
+			// TODO: does this also works with the ISA solution?
 			$firstConceptColEsc = addslashes($conceptCols[0]);
 
 			$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), $firstConceptColEsc); // no need to filter duplicates and NULLs
@@ -257,7 +258,7 @@ class Database
 		
 	}
 	
-	public function closeTransaction(){
+	public function closeTransaction($succesMessage = 'Updated'){
 		$session = Session::singleton();
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
@@ -268,7 +269,7 @@ class Database
 		if ($invariantRulesHold) {
 			$this->setLatestUpdateTime();
 			$this->Exe("COMMIT"); // commit database transaction
-			ErrorHandling::addSuccess('Updated');
+			ErrorHandling::addSuccess($succesMessage);
 			return true;
 		} else {
 			$this->Exe("ROLLBACK"); // rollback database transaction

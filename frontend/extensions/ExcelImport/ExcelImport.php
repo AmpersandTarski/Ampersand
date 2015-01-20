@@ -2,23 +2,22 @@
 date_default_timezone_set('Europe/London');
 require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
-$apps[] = array('name' => 'Excel import', 'link' => 'extensions/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
+$apps[] = array('name' => 'Excel import', 'link' => '#/ext/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
 
 class ImportExcel
 {
 	public $file;
-	private $commandArray = array();
 
 	function __construct($filename){
 		$this->file = $filename;
+		$this->db = Database::singleton();
 	}
 
 	public function ParseFile(){
-		$database = Database::singleton();
+				
+		$this->ProcessFileContent();
 		
-		$this->ProcessFileContent(); // fills $this->commandArray
-		
-		$database->transaction($this->commandArray);
+		$this->db->closeTransaction('File uploaded');
 		
 		return ErrorHandling::getAll();
 		
@@ -138,20 +137,13 @@ class ImportExcel
 	}
 	
 	private function addAtomToConcept($atom, $concept){
-		$this->commandArray[] = json_decode(json_encode(array('dbCmd' => 'addToConcept', 'atom' => $atom, 'concept' => $concept)), false); // commands need to be objects. TODO: create command class for this.
+		$this->db->addAtomToConcept($atom, $concept);
+		
 	}
 	
-	private function insertRel($relation, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
-		$this->commandArray[] = json_decode(json_encode(array('dbCmd' => 'update'
-									, 'relation' => $relation
-									, 'isFlipped' => false
-									, 'parentAtom' => $srcAtom
-									, 'parentConcept' => $srcConcept
-									, 'childAtom' => $tgtAtom
-									, 'childConcept' => $tgtConcept
-									, 'parentOrChild' => 'child'
-									, 'originalAtom' => ''
-									)), false);
+	private function insertRel($relationName, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
+		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+		$this->db->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
 	}
 }
 
