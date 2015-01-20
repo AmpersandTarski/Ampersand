@@ -11,7 +11,7 @@ import Data.Either
 import Data.Char
 import System.FilePath
 import System.Directory
-import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS
 import Data.Time.Clock
 import Data.Time.Format
 import Data.Time.LocalTime
@@ -113,37 +113,34 @@ staticFileModuleName = "Database.Design.Ampersand.Prototype.StaticFiles_Generate
 
 getStaticFilesModuleContents :: IO String
 getStaticFilesModuleContents =
- do { staticFiles       <- readStaticFiles False "static" ""
-    ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
+ do { staticFiles       <- readStaticFiles "static" ""
     ; return $ "module "++staticFileModuleName++" where\n"++
                "\n"++
                "data StaticFile = SF { filePath      :: FilePath -- relative path, including extension\n"++
                "                     , timeStamp     :: Integer -- unix epoch time\n"++
-               "                     , isBinary      :: Bool\n"++
                "                     , contentString :: String\n"++
                "                     }\n"++
                "\n"++
                "{-# NOINLINE allStaticFiles #-}\n" ++
                "allStaticFiles :: [StaticFile]\n" ++
                "allStaticFiles =\n  [ " ++ 
-               intercalate "\n  , " (staticFiles ++ staticFilesBinary) ++
+               intercalate "\n  , " staticFiles ++
                "\n  ]\n"
     }
     
-readStaticFiles :: Bool -> FilePath -> FilePath -> IO [String]
-readStaticFiles isBin base fileOrDir = 
+readStaticFiles :: FilePath -> FilePath -> IO [String]
+readStaticFiles base fileOrDir = 
   do { let path = combine base fileOrDir
      ; isDir <- doesDirectoryExist path
      ; if isDir then 
         do { fOrDs <- getProperDirectoryContents path
-           ; fmap concat $ mapM (\fOrD -> readStaticFiles isBin base (combine fileOrDir fOrD)) fOrDs
+           ; fmap concat $ mapM (\fOrD -> readStaticFiles base (combine fileOrDir fOrD)) fOrDs
            }
        else
         do { timeStamp <- getModificationTime path
-           ; fileContents <- if isBin then fmap show $ BS.readFile path 
-                                      else readFile path
+           ; fileContents <- BS.readFile path 
            ; return ["SF "++show fileOrDir++" "++utcToEpochTime timeStamp++" {- "++show timeStamp++" -} "++
-                            show isBin++" "++show fileContents]
+                            show (BS.unpack fileContents)]
            }
      }
   where utcToEpochTime :: UTCTime -> String
