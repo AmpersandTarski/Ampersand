@@ -5,7 +5,7 @@ require_once (__DIR__.'/ampersand/Generics.php');
 // define ('IP', 'http://localhost/[APP]');
 
 /************ CONFIG ********************/
-define ('DEFAULT_ROLEID', '1');
+define ('DEFAULT_ROLEID', '0');
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
