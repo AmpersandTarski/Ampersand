@@ -49,15 +49,15 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	
 	$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
 	
-	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+	return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
 /*
-Example of a rule that automatically deletes pairs from a relation:
-  ROLE ExecEngine MAINTAINS "Remove Customers"
-  RULE "Remove Customers": customerOf[Person*Company] |- customerOrder[Person*Order];companyOrder[Company*Order]~
-  MEANING "Customers of a company for which no orders exist (any more), are no longer considered customers"
-  VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
+	Example of a rule that automatically deletes pairs from a relation:
+	ROLE ExecEngine MAINTAINS "Remove Customers"
+	RULE "Remove Customers": customerOf[Person*Company] |- customerOrder[Person*Order];companyOrder[Company*Order]~
+	MEANING "Customers of a company for which no orders exist (any more), are no longer considered customers"
+	VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
@@ -69,12 +69,11 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	
 	$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 	
-	return 'Tupple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+	return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
-// TODO: NewStruct afstemmen met Rieks, moet nog bijgewerkt worden naar nieuwe Database functies
 /* The function 'NewStruct' creates a new atom in some concept and uses this
-   atom to create two links (in relations in which the concept is SRC or TGT).
+   atom to create links (in relations in which the concept is SRC or TGT).
 
    Example:
    
@@ -86,57 +85,54 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
    
    ROLE ExecEngine MAINTAINS "insEquivalence" -- Creation of the atom
    RULE "insEquivalence": r |- r1;r2
-   VIOLATION (TXT "NewStruct;ConceptC;NULL" -- 'NULL' specifies that a name is to be generated
+   VIOLATION (TXT "NewStruct;ConceptC[;AtomC]" -- AtomC is optional. If not provided then create new, else used specified Atom
              ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"  -- Always use NULL as ConceptC atom
              ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I   -- Always use NULL as ConceptC atom
               )
 
-   ROLE ExecEngine MAINTAINS "delEquivalence" -- Deletion of the atom
-   RULE "delEquivalence": I[ConceptC] |- r1~;r;r2~ 
-   VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
 */
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
-
+	$database = Database::singleton();
+	
 	// We start with parsing the first one or two arguments
 	$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
-	$AtomC = mkUniqueAtomByTime($ConceptC);   // Default marker for atom-to-be-created.
-	if (func_num_args() % 5 == 2) {            // Check if name of new atom is explicitly specified
+	$AtomC = Concept::createNewAtom($ConceptC);   // Default marker for atom-to-be-created.
+	
+	if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
 		$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
-	} elseif (func_num_args() % 5 != 1){       // check for valid number of arguments
-		// ExecEngineSHOUTS("NewStruct: Illegal number of arguments: ".func_num_args());
-		die;
+	}elseif(func_num_args() % 5 != 1){       // check for valid number of arguments
+		throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments");
 	}
 	
 	// Then, we create a new atom of type $ConceptC
-	// ExecEngineWhispers ("Creating a structure based on an atom '$AtomC' for concept '$ConceptC'");
-	addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
+	$database->addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
 
 	// Next, for every relation that follows in the argument list, we create a link
 	for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
-		// emitLog ("i = $i");
+		
 		$relation   = func_get_arg($i);
 		$srcConcept = func_get_arg($i+1);
 		$srcAtom    = func_get_arg($i+2);
 		$tgtConcept = func_get_arg($i+3);
 		$tgtAtom    = func_get_arg($i+4);
-		// populate relation r1, first checking for allowed syntax:
 		
+		// populate relation r1, first checking for allowed syntax:		
 		if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')){ // Note: when populating a [PROP] relation, both atoms can be NULL
-			// ExecEngineSHOUTS("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL");
-			throw new Exception("Failure 1 in NewStruct in InsDelPairAtom.php");
+			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL
+			throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL");
 		}
 	
 		if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){ // Note: when populating a [PROP] relation, both atoms can be NULL
-			//ExecEngineSHOUTS("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC");
-			throw new Exception("Failure 2 in NewStruct in InsDelPairAtom.php");
+			// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
+			throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC");
 		}
 	
 		if ($srcConcept == $ConceptC){
 			if ($srcAtom == 'NULL'){
 				$srcAtom = $AtomC;
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-				ExecEngineSHOUTS ("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
-				throw new Exception("Failure 3 in NewStruct in InsDelPairAtom.php");
+				// NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)
+				throw new Exception("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
 			}
 		}
 	
@@ -144,15 +140,15 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			if ($tgtAtom == 'NULL'){  
 				$tgtAtom = $AtomC;
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-				// ExecEngineSHOUTS ("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
-				throw new Exception("Failure 4 in NewStruct in InsDelPairAtom.php");
+				// NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)
+				throw new Exception("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
 			}
 		}
 		
 		// Any logging is done by InsPair:
 		InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
 	}
-	// ExecEngineWhispers ("Completed structure creation.");
+	ErrorHandling::addLog("Completed structure creation");
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
@@ -161,9 +157,13 @@ function InsAtom($concept){
  
 	$database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
 	
-	
 }
 
+/* 
+	ROLE ExecEngine MAINTAINS "delEquivalence" -- Deletion of the atom
+	RULE "delEquivalence": I[ConceptC] |- r1~;r;r2~
+	VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
+*/
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atom){ 
 	$database = Database::singleton();
