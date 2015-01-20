@@ -57,19 +57,19 @@ class Viewer {
 			$this->addHtmlLine('<link href="app/css/'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 		}
 		
-		// Javascript files
-		$files = getDirectoryList(__DIR__ . '/../app/js');
-		foreach ((array)$files as $file){ 
-			if (substr($file,-2) !== 'js') continue;
-			$this->addHtmlLine('<script src="app/js/'.$file.'"></script>');
-		}
-		
 		$this->addHtmlLine('<script src="app/AmpersandApp.js"></script>');
 		// AngularApp controler files
 		$files = getDirectoryList(__DIR__ . '/../app/controllers');
 		foreach ((array)$files as $file){ 
 			if (substr($file,-2) !== 'js') continue;
 			$this->addHtmlLine('<script src="app/controllers/'.$file.'"></script>');
+		}
+		
+		// Javascript files
+		$files = getDirectoryList(__DIR__ . '/../app/js');
+		foreach ((array)$files as $file){
+			if (substr($file,-2) !== 'js') continue;
+			$this->addHtmlLine('<script src="app/js/'.$file.'"></script>');
 		}
 		
 		$this->addHtmlLine('</head>');
