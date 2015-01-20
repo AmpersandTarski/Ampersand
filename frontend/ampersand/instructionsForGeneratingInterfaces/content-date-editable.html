@@ -1,0 +1,19 @@
+<!-- This is the content for an editable DATE element in an interface -->
+<!-- 
+e.g.
+
+exp4 :: Project * DATE
+
+"Projects" 		: exp1
+	ROWS [ "Name" 				: exp2
+		 , "Description"		: exp3
+		 , "Start date"			: exp4
+		 ]
+
+-->
+<div class="input-group">
+	<input ng-model="val['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch()"/>
+	<span class="input-group-btn">
+		<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start date')"><i class="glyphicon glyphicon-calendar"></i></button>
+	</span>	
+</div>

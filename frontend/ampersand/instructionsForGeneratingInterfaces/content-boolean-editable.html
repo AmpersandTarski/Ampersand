@@ -1,0 +1,18 @@
+<!-- This is the content for an editable BOOLEAN element in an interface -->
+<!-- 
+e.g.
+
+exp4 :: Project * BOOLEAN
+
+"Projects" 		: exp1
+	ROWS [ "Name" 				: exp2
+		 , "Description"		: exp3
+		 , "Started"			: exp4
+		 ]
+
+-->
+<div class="checkbox">
+	<label>
+		<input ng-model="val[Started]" type="checkbox" ng-change="patch()"/>
+	</label>
+</div>
