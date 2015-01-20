@@ -148,14 +148,17 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		// Any logging is done by InsPair:
 		InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
 	}
-	ErrorHandling::addLog("Completed structure creation");
+	return "New structure '". $AtomC . "' created";
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($concept){ 
 	$database = Database::singleton();
- 
-	$database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
+	
+	$atom = Concept::createNewAtom($concept);
+	$database->addAtomToConcept($atom, $concept); // insert new atom in database
+	
+	return "Atom '".$atom."' added to concept '". $concept . "'";
 	
 }
 
@@ -169,7 +172,7 @@ function DelAtom($concept, $atom){
 	$database = Database::singleton();
 	
 	$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+	return "Atom '".$atom."' deleted from concept '". $concept . "'";
 	
 }
-
 ?>
