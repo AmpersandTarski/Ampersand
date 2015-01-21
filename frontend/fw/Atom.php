@@ -183,6 +183,19 @@ Class Atom {
 		
 	}
 	
+	public function delete(){
+		$database = Database::singleton();
+		
+		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided');
+		
+		$database->deleteAtom($this->id, $this->concept);
+		
+		$database->closeTransaction('Atom deleted'); // close transaction => ROLLBACK or COMMIT
+		
+		return array('notifications' => ErrorHandling::getAll());
+		
+	}
+	
 	private function getLabel(){
 		$database = Database::singleton();
 		$view = Concept::getView($this->concept);

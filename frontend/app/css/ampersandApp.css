@@ -6,9 +6,13 @@
   	padding: 100px 15px 0px 15px;
 }
 
-/********* TABLE *****************/
+/********* INTERFACES *****************/
 .interface table {
 	width	: auto;
+}
+.interface .deleteAtom {
+	font-size	: 14px;
+	margin-top	: 10px;
 }
 
 /********* FORMS, INPUTS, ETC **************/

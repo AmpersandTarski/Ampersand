@@ -1,7 +1,9 @@
 <div class="container-fluid interface">
 	<fieldset>
 		<!-- I[Project] -->
-		<legend>{{Project.label}}</legend>
+		<legend>{{Project.label}}
+			<span class="glyphicon glyphicon-trash pull-right deleteAtom" ng-click="deleteAtom()"></span>
+		</legend>
 		
 		<form class="form-horizontal" role="form">		
 			<!-- I[Project] disabled, because label of object is never editable-->

@@ -97,12 +97,14 @@ class Api
 	/**
 	 * @url PATCH interface/{interfaceName}/atom/{atomid}
 	 * @param string $interfaceName
+	 * @param string $sessionId
 	 * @param string $atomid
 	 * @param int $roleId
 	 */
-	public function patchAtom($interfaceName, $atomid, $roleId = null, $request_data = null)
+	public function patchAtom($interfaceName, $sessionId, $atomid, $roleId = null, $request_data = null)
 	{
-		$session = Session::singleton();
+		$session = Session::singleton($sessionId);
+		
 		try{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
@@ -118,6 +120,37 @@ class Api
 		return $atom->patch($interface, $request_data);
 	
 	}
+	
+	/**
+	 * @url DELETE interface/{interfaceName}/atom/{atomid}
+	 * @param string $interfaceName
+	 * @param string $sessionId
+	 * @param string $atomid
+	 * @param int $roleId
+	 */
+	public function deleteAtom($interfaceName, $sessionId, $atomid, $roleId = null, $request_data = null)
+	{
+		$session = Session::singleton($sessionId);
+	
+		try{
+			$session->setRole($roleId);
+			$session->setInterface($interfaceName);
+		}catch(Exception $e){
+			throw new RestException(404, $e->getMessage());
+		}
+	
+		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+			
+		$interface = new ObjectInterface($interfaceName);
+		
+		// TODO: insert check if Atom may be deleted with this interface
+		
+		$atom = new Atom($atomid, $interface->srcConcept);		
+			
+		return $atom->delete();
+	
+	}
+	
 	
 	/**
 	 * @url GET interface/{interfaceName}/atoms
@@ -186,7 +219,7 @@ class Api
 	 * @url DELETE concept/{concept}/atom/{atom}
 	 * @status 204
 	 */
-	function deleteAtom($concept, $atom){ 
+	function deleteConceptAtom($concept, $atom){ 
 		$database = Database::singleton();
 		
 		$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms

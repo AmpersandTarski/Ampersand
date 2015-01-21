@@ -1,4 +1,4 @@
-AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
+AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal, $location) {
 	
 	// model (can be changed by view)
 	$scope.Project = Restangular.one('interface/Project/atom', $routeParams.atom).get().$object;
@@ -14,8 +14,15 @@ AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routePar
 			    	console.log('now');
 			    	$rootScope.notifications.successes = [];
 			    }, 3000);
+			});	
+	}
+	$scope.deleteAtom = function (){
+		$scope.Project
+			.remove()
+			.then(function(data){
+				$rootScope.notifications = data.notifications;
+				$location.url('/');
 			});
-		
 	}
 	
 	// function to remove item (key) from list (obj)
@@ -109,7 +116,7 @@ AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routePar
 			);
 	}
 
-}]).controller('ProjectController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
+}).controller('ProjectController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
 	
 	$scope.Projectleiders = Restangular.all('interface/Person/atoms').getList().$object;
 	
