@@ -9,12 +9,13 @@ import Control.Exception
 import Data.List
 import Data.Either
 import Data.Char
-import System.FilePath
-import System.Directory
 import qualified Data.ByteString.Char8 as BS
 import Data.Time.Clock
 import Data.Time.Format
 import Data.Time.LocalTime
+import System.Directory
+import System.FilePath
+import System.IO
 import System.Locale
 
 main :: IO ()
@@ -32,15 +33,14 @@ generateBuildInfoHook pd  lbi uh bf =
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime 
     ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
-    ; writeFile (pathFromModule buildInfoModuleName) $
+    ; writeFile (pathFromModuleName buildInfoModuleName) $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
+    
+    ; generateStaticFileModule 
 
-    ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
-    ; writeFile (pathFromModule staticFileModuleName) staticFilesGeneratedContents 
-
+    ; putStrLn ""
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
- where pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
 
 buildInfoModuleName :: String
 buildInfoModuleName = "Database.Design.Ampersand.Basics.BuildInfo_Generated"
@@ -51,15 +51,16 @@ buildInfoModule cabalVersion gitInfo time = unlines
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
-  , "{-# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
+  -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 
+  , "{-"++"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
   , "cabalVersionStr :: String"
   , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
   , ""
-  , "{-# NOINLINE gitInfoStr #-}"
+  , "{-"++"# NOINLINE gitInfoStr #-}"
   , "gitInfoStr :: String"
   , "gitInfoStr = \"" ++ gitInfo ++ "\""
   , ""
-  , "{-# NOINLINE buildTimeStr #-}"
+  , "{-"++"# NOINLINE buildTimeStr #-}"
   , "buildTimeStr :: String"
   , "buildTimeStr = \"" ++ time ++ "\""
   , ""
@@ -96,39 +97,91 @@ warnNoCommitInfo :: IO String
 warnNoCommitInfo =
  do { putStrLn "\n\n\nWARNING: Execution of 'git' command failed."
     ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
-                 "Please find check your installation\n"
+                 "Please check your installation\n"
     ; return "no git info"
     }
 
 
-{- In order to handle static files, we generate a module StaticFiles_Generated.
-
-   For each file in the directory trees static and staticBinary, we generate a StaticFile value,
-   which contains the information needed to have Ampersand create the file at run-time.  
+{- For each file in the directory ampersand/static, we generate a StaticFile value,
+   which contains the information necessary for Ampersand to create the file at run-time.  
    
+   To prevent compiling the generated module (which can get rather big) on each build, we first try to read the
+   contents of the previously generated static file module and only update it if there are changes to timestamps
+   or filenames. This complicates the build process, but seems the only way to handle large amounts of diverse static
+   files, until Cabal's data-files mechanism is updated to allow fully recursive patterns.
 -}
 
 staticFileModuleName :: String
 staticFileModuleName = "Database.Design.Ampersand.Prototype.StaticFiles_Generated"
 
-getStaticFilesModuleContents :: IO String
-getStaticFilesModuleContents =
- do { staticFiles       <- readStaticFiles "static" ""
-    ; return $ "module "++staticFileModuleName++" where\n"++
-               "\n"++
-               "data StaticFile = SF { filePath      :: FilePath -- relative path, including extension\n"++
-               "                     , timeStamp     :: Integer -- unix epoch time\n"++
-               "                     , contentString :: String\n"++
-               "                     }\n"++
-               "\n"++
-               "{-# NOINLINE allStaticFiles #-}\n" ++
-               "allStaticFiles :: [StaticFile]\n" ++
-               "allStaticFiles =\n  [ " ++ 
-               intercalate "\n  , " staticFiles ++
-               "\n  ]\n"
+generateStaticFileModule :: IO ()
+generateStaticFileModule =
+ do { previousSFs <- readPreviousStaticFiles sfModulePath -- StaticFiles from previously generated module
+    ; let prevFilesAndTimestamps = getFilesAndTimestamps previousSFs
+    ; currentStaticFileContents <- readStaticFiles "static" "." -- StaticFiles from directory ampersand/static
+    ; let currentFilesAndTimestamps = map (\(pth,ts,_,_) -> (pth,ts)) currentStaticFileContents
+    ; if prevFilesAndTimestamps == currentFilesAndTimestamps 
+      then
+        putStrLn $ "Static files unchanged, no need to update "++sfModulePath
+      else
+       do { putStrLn $ "Static files have changed, creating updated "++sfModulePath
+          ; let staticFileModuleContents = mkStaticFileModuleContents currentStaticFileContents
+          ; writeFile sfModulePath staticFileModuleContents
+          }
+    }
+ where sfModulePath = pathFromModuleName staticFileModuleName
+ 
+readPreviousStaticFiles :: String -> IO [StaticFile]
+readPreviousStaticFiles sfModulePath =
+ do { exists <- doesFileExist sfModulePath
+    ; if not exists then return [] else
+        (withFile sfModulePath ReadMode $ \h ->
+          do { str <- hGetContents h
+             ; let sfsStr = (unlines . drop (length staticFileModuleHeader) . lines $ str)
+                   sfs = read sfsStr :: [StaticFile]
+                   
+             ; length sfs `seq` return () -- length & read will evaluate entire file. Lazy IO is :-(
+             ; return sfs
+             }) `catch` \err ->  -- old generated module exists, but we can't read the file or read the contents
+                do { putStrLn $ "\n\n\nERROR: Cannot read or parse previously generated " ++ sfModulePath ++ ":\n" ++
+                                show (err :: SomeException) ++ "\nTry to rebuild Ampersand, and if the error persist, please report this as a bug.\n"
+                   ; return []
+                   }
     }
     
-readStaticFiles :: FilePath -> FilePath -> IO [String]
+-- We need the declaration StaticFile to read the module without importing it (which fails if it's absent)
+data StaticFile = SF FilePath Integer String String deriving Read
+-- NOTE: this declaration cannot use record syntax, as this causes 'read' to work on record syntax (which is not how the Static values are encoded)
+
+getFilesAndTimestamps :: [StaticFile] -> [(FilePath,Integer)]
+getFilesAndTimestamps sfs = map (\(SF pth ts _ _) -> (pth,ts)) sfs
+
+staticFileModuleHeader :: [String]
+staticFileModuleHeader =
+  [ "module "++staticFileModuleName++" where"
+  , ""
+  , "data StaticFile = SF { filePath          :: FilePath -- relative path, including extension"
+  , "                     , timeStamp         :: Integer  -- unix epoch time"
+  , "                     , readableTimeStamp :: String   -- not used, only here for clarity"
+  , "                     , contentString     :: String"
+  , "                     }"
+  , ""
+  , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 
+  , "allStaticFiles :: [StaticFile]"
+  , "allStaticFiles ="
+  ]
+
+mkStaticFileModuleContents :: [(FilePath, Integer, String, BS.ByteString)] -> String
+mkStaticFileModuleContents sfTuples =
+  unlines staticFileModuleHeader ++ 
+  "  [ " ++ intercalate "\n  , " (map  mkStaticFile sfTuples) ++ "\n" ++
+  "  ]\n"
+  where mkStaticFile :: (FilePath, Integer, String, BS.ByteString) -> String
+        mkStaticFile (fileOrDir, ts, rts, cstr) =
+          "SF "++show fileOrDir++" "++ show ts ++" "++show rts++" "++show (BS.unpack cstr) 
+
+-- Scan static file directory and collect all files
+readStaticFiles :: FilePath -> FilePath -> IO [(FilePath, Integer, String, BS.ByteString)]
 readStaticFiles base fileOrDir = 
   do { let path = combine base fileOrDir
      ; isDir <- doesDirectoryExist path
@@ -139,13 +192,15 @@ readStaticFiles base fileOrDir =
        else
         do { timeStamp <- getModificationTime path
            ; fileContents <- BS.readFile path 
-           ; return ["SF "++show fileOrDir++" "++utcToEpochTime timeStamp++" {- "++show timeStamp++" -} "++
-                            show (BS.unpack fileContents)]
+           ; return [(fileOrDir, utcToEpochTime timeStamp, show timeStamp, fileContents)]
            }
      }
-  where utcToEpochTime :: UTCTime -> String
-        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
+  where utcToEpochTime :: UTCTime -> Integer
+        utcToEpochTime utcTime = read $ formatTime defaultTimeLocale "%s" utcTime
+          
           
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth
- 
+
+pathFromModuleName :: String -> String
+pathFromModuleName m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
