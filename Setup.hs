@@ -105,10 +105,14 @@ warnNoCommitInfo =
 {- For each file in the directory ampersand/static, we generate a StaticFile value,
    which contains the information necessary for Ampersand to create the file at run-time.  
    
-   To prevent compiling the generated module (which can get rather big) on each build, we first try to read the
-   contents of the previously generated static file module and only update it if there are changes to timestamps
-   or filenames. This complicates the build process, but seems the only way to handle large amounts of diverse static
+   To prevent compiling the generated module (which can get rather big) on each build, we compare the contents
+   the file we are about to generate with the contents of the already generated file and only write if there is a difference.
+   This complicates the build process, but seems the only way to handle large amounts of diverse static
    files, until Cabal's data-files mechanism is updated to allow fully recursive patterns.
+   
+   TODO: creating the entire file may be somewhat time-consuming, if this is a problem on slower machines, we may want to cache the
+         timestamps+names in a file and only generate when there is a change. (using the timestamps from the previously
+         generated module file is not an option, as a Haskell read on that file is extremely slow)
 -}
 
 staticFileModuleName :: String
@@ -116,73 +120,67 @@ staticFileModuleName = "Database.Design.Ampersand.Prototype.StaticFiles_Generate
 
 generateStaticFileModule :: IO ()
 generateStaticFileModule =
- do { previousSFs <- readPreviousStaticFiles sfModulePath -- StaticFiles from previously generated module
-    ; let prevFilesAndTimestamps = getFilesAndTimestamps previousSFs
-    ; currentStaticFileContents <- readAllStaticFiles
-    ; let currentFilesAndTimestamps = map (\(isNew,pth,ts,_,_) -> (isNew,pth,ts)) currentStaticFileContents
-    ; if prevFilesAndTimestamps == currentFilesAndTimestamps 
+ do { previousModuleContents <- getPreviousStaticFileModuleContents sfModulePath
+    ; currentModuleContents <- readAllStaticFiles
+    
+    -- simply compare file contents to see if we need to write (to prevent re-compilation)
+    ; if previousModuleContents == currentModuleContents
       then
         putStrLn $ "Static files unchanged, no need to update "++sfModulePath
       else
        do { putStrLn $ "Static files have changed, updating "++sfModulePath
-          ; let staticFileModuleContents = mkStaticFileModuleContents currentStaticFileContents
-          ; writeFile sfModulePath staticFileModuleContents
+          ; writeFile sfModulePath currentModuleContents
           }
     }
  where sfModulePath = pathFromModuleName staticFileModuleName
        
-       getFilesAndTimestamps :: [StaticFile] -> [(Bool,FilePath,Integer)] -- For correctness, we also include isNew
-       getFilesAndTimestamps sfs = map (\(SF isNew pth ts _ _) -> (isNew,pth,ts)) sfs
-       
- 
-readPreviousStaticFiles :: String -> IO [StaticFile]
-readPreviousStaticFiles sfModulePath =
- do { exists <- doesFileExist sfModulePath
-    ; if not exists then return [] else
-        (withFile sfModulePath ReadMode $ \h ->
-          do { str <- hGetContents h
-             ; let sfsStr = (unlines . drop (length staticFileModuleHeader) . lines $ str)
-                   sfs = read sfsStr :: [StaticFile]
-                   
-             ; length sfs `seq` return () -- length & read will evaluate entire file. Lazy IO is :-(
-             ; return sfs
-             }) `catch` \err ->  -- old generated module exists, but we can't read the file or read the contents
-                do { putStrLn $ "\n\n\nERROR: Cannot read or parse previously generated " ++ sfModulePath ++ ":\n" ++
-                                show (err :: SomeException) ++ "\nTry to rebuild Ampersand, and if the error persist, please report this as a bug.\n"
-                   ; return []
-                   }
-    }
-
+getPreviousStaticFileModuleContents :: String -> IO String
+getPreviousStaticFileModuleContents sfModulePath = 
+  (withFile sfModulePath ReadMode $ \h ->
+   do { str <- hGetContents h
+      --; putStrLn $ "reading old file"      
+      ; length str `seq` return () -- lazy IO is :-(
+      --; putStrLn $ "Done"      
+      ; return str
+      }) `catch` \err ->  -- old generated module exists, but we can't read the file or read the contents
+   do { putStrLn $ "\n\n\nERROR: Cannot read previously generated " ++ sfModulePath ++ ":\n" ++
+                   show (err :: SomeException) ++ "\nTry to rebuild Ampersand, and if the error persist, please report this as a bug.\n"
+      ; return []
+      }
+        
 -- Scan static file directory and collect all files from oldFrontend and newFrontend
-readAllStaticFiles :: IO [(Bool, FilePath, Integer, String, BS.ByteString)]
+readAllStaticFiles :: IO String
 readAllStaticFiles = 
-  do { oldStaticFiles <- readStaticFiles "static/oldFrontend" "."
-     ; newStaticFiles <- readStaticFiles "frontend" "."
-     ; return $ map (addIsNew False) oldStaticFiles ++ map (addIsNew True) newStaticFiles
+  do { oldStaticFiles <- readStaticFiles False "static/oldFrontend" "."
+     ; newStaticFiles <- readStaticFiles True  "frontend" "."
+     ; return $ mkStaticFileModule $ oldStaticFiles ++ newStaticFiles
      }
-  where addIsNew isNew (pth, ts, rts, cstr) = (isNew, pth, ts, rts, cstr)
   
-readStaticFiles :: FilePath -> FilePath -> IO [(FilePath, Integer, String, BS.ByteString)]
-readStaticFiles base fileOrDir = 
-  do { let path = combine base fileOrDir
+readStaticFiles :: Bool -> FilePath -> FilePath -> IO [String]
+readStaticFiles isNewFrontend base fileOrDirPth = 
+  do { let path = combine base fileOrDirPth
      ; isDir <- doesDirectoryExist path
      ; if isDir then 
         do { fOrDs <- getProperDirectoryContents path
-           ; fmap concat $ mapM (\fOrD -> readStaticFiles base (combine fileOrDir fOrD)) fOrDs
+           ; fmap concat $ mapM (\fOrD -> readStaticFiles isNewFrontend base (combine fileOrDirPth fOrD)) fOrDs
            }
        else
         do { timeStamp <- getModificationTime path
            ; fileContents <- BS.readFile path 
-           ; return [(fileOrDir, utcToEpochTime timeStamp, show timeStamp, fileContents)]
+           ; return [ "SF "++show isNewFrontend++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
+                             " {-"++show timeStamp++" -} "++show (BS.unpack fileContents)
+                    ]
            }
      }
-  where utcToEpochTime :: UTCTime -> Integer
-        utcToEpochTime utcTime = read $ formatTime defaultTimeLocale "%s" utcTime
+  where utcToEpochTime :: UTCTime -> String
+        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
 
--- We need the declaration StaticFile to read the module without importing it (which fails if it's absent)
-data StaticFile = SF Bool FilePath Integer String String deriving Read
--- NOTE: this declaration cannot use record syntax, as this causes 'read' to work on record syntax (which is not how the Static values are encoded)
-
+mkStaticFileModule :: [String] -> String
+mkStaticFileModule sfDeclStrs =
+  unlines staticFileModuleHeader ++ 
+  "  [ " ++ intercalate "\n  , " sfDeclStrs ++ "\n" ++
+  "  ]\n"
+           
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "module "++staticFileModuleName++" where"
@@ -190,7 +188,6 @@ staticFileModuleHeader =
   , "data StaticFile = SF { isNewFrontend     :: Bool"
   , "                     , filePath          :: FilePath -- relative path, including extension"
   , "                     , timeStamp         :: Integer  -- unix epoch time"
-  , "                     , readableTimeStamp :: String   -- not used, only here for clarity"
   , "                     , contentString     :: String"
   , "                     }"
   , ""
@@ -199,14 +196,6 @@ staticFileModuleHeader =
   , "allStaticFiles ="
   ]
 
-mkStaticFileModuleContents :: [(Bool, FilePath, Integer, String, BS.ByteString)] -> String
-mkStaticFileModuleContents sfTuples =
-  unlines staticFileModuleHeader ++ 
-  "  [ " ++ intercalate "\n  , " (map  mkStaticFile sfTuples) ++ "\n" ++
-  "  ]\n"
-  where mkStaticFile :: (Bool, FilePath, Integer, String, BS.ByteString) -> String
-        mkStaticFile (isNew, pth, ts, rts, cstr) =
-          "SF "++show isNew++" "++show pth++" "++ show ts ++" "++show rts++" "++show (BS.unpack cstr) 
           
           
 getProperDirectoryContents :: FilePath -> IO [String]
