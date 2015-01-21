@@ -118,18 +118,22 @@ generateStaticFileModule :: IO ()
 generateStaticFileModule =
  do { previousSFs <- readPreviousStaticFiles sfModulePath -- StaticFiles from previously generated module
     ; let prevFilesAndTimestamps = getFilesAndTimestamps previousSFs
-    ; currentStaticFileContents <- readStaticFiles "static" "." -- StaticFiles from directory ampersand/static
-    ; let currentFilesAndTimestamps = map (\(pth,ts,_,_) -> (pth,ts)) currentStaticFileContents
+    ; currentStaticFileContents <- readAllStaticFiles
+    ; let currentFilesAndTimestamps = map (\(isNew,pth,ts,_,_) -> (isNew,pth,ts)) currentStaticFileContents
     ; if prevFilesAndTimestamps == currentFilesAndTimestamps 
       then
         putStrLn $ "Static files unchanged, no need to update "++sfModulePath
       else
-       do { putStrLn $ "Static files have changed, creating updated "++sfModulePath
+       do { putStrLn $ "Static files have changed, updating "++sfModulePath
           ; let staticFileModuleContents = mkStaticFileModuleContents currentStaticFileContents
           ; writeFile sfModulePath staticFileModuleContents
           }
     }
  where sfModulePath = pathFromModuleName staticFileModuleName
+       
+       getFilesAndTimestamps :: [StaticFile] -> [(Bool,FilePath,Integer)] -- For correctness, we also include isNew
+       getFilesAndTimestamps sfs = map (\(SF isNew pth ts _ _) -> (isNew,pth,ts)) sfs
+       
  
 readPreviousStaticFiles :: String -> IO [StaticFile]
 readPreviousStaticFiles sfModulePath =
@@ -148,39 +152,16 @@ readPreviousStaticFiles sfModulePath =
                    ; return []
                    }
     }
-    
--- We need the declaration StaticFile to read the module without importing it (which fails if it's absent)
-data StaticFile = SF FilePath Integer String String deriving Read
--- NOTE: this declaration cannot use record syntax, as this causes 'read' to work on record syntax (which is not how the Static values are encoded)
 
-getFilesAndTimestamps :: [StaticFile] -> [(FilePath,Integer)]
-getFilesAndTimestamps sfs = map (\(SF pth ts _ _) -> (pth,ts)) sfs
-
-staticFileModuleHeader :: [String]
-staticFileModuleHeader =
-  [ "module "++staticFileModuleName++" where"
-  , ""
-  , "data StaticFile = SF { filePath          :: FilePath -- relative path, including extension"
-  , "                     , timeStamp         :: Integer  -- unix epoch time"
-  , "                     , readableTimeStamp :: String   -- not used, only here for clarity"
-  , "                     , contentString     :: String"
-  , "                     }"
-  , ""
-  , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 
-  , "allStaticFiles :: [StaticFile]"
-  , "allStaticFiles ="
-  ]
-
-mkStaticFileModuleContents :: [(FilePath, Integer, String, BS.ByteString)] -> String
-mkStaticFileModuleContents sfTuples =
-  unlines staticFileModuleHeader ++ 
-  "  [ " ++ intercalate "\n  , " (map  mkStaticFile sfTuples) ++ "\n" ++
-  "  ]\n"
-  where mkStaticFile :: (FilePath, Integer, String, BS.ByteString) -> String
-        mkStaticFile (fileOrDir, ts, rts, cstr) =
-          "SF "++show fileOrDir++" "++ show ts ++" "++show rts++" "++show (BS.unpack cstr) 
-
--- Scan static file directory and collect all files
+-- Scan static file directory and collect all files from oldFrontend and newFrontend
+readAllStaticFiles :: IO [(Bool, FilePath, Integer, String, BS.ByteString)]
+readAllStaticFiles = 
+  do { oldStaticFiles <- readStaticFiles "static/oldFrontend" "."
+     ; newStaticFiles <- readStaticFiles "static/newFrontend" "."
+     ; return $ map (addIsNew False) oldStaticFiles ++ map (addIsNew True) newStaticFiles
+     }
+  where addIsNew isNew (pth, ts, rts, cstr) = (isNew, pth, ts, rts, cstr)
+  
 readStaticFiles :: FilePath -> FilePath -> IO [(FilePath, Integer, String, BS.ByteString)]
 readStaticFiles base fileOrDir = 
   do { let path = combine base fileOrDir
@@ -197,6 +178,35 @@ readStaticFiles base fileOrDir =
      }
   where utcToEpochTime :: UTCTime -> Integer
         utcToEpochTime utcTime = read $ formatTime defaultTimeLocale "%s" utcTime
+
+-- We need the declaration StaticFile to read the module without importing it (which fails if it's absent)
+data StaticFile = SF Bool FilePath Integer String String deriving Read
+-- NOTE: this declaration cannot use record syntax, as this causes 'read' to work on record syntax (which is not how the Static values are encoded)
+
+staticFileModuleHeader :: [String]
+staticFileModuleHeader =
+  [ "module "++staticFileModuleName++" where"
+  , ""
+  , "data StaticFile = SF { isNewFrontend     :: Bool"
+  , "                     , filePath          :: FilePath -- relative path, including extension"
+  , "                     , timeStamp         :: Integer  -- unix epoch time"
+  , "                     , readableTimeStamp :: String   -- not used, only here for clarity"
+  , "                     , contentString     :: String"
+  , "                     }"
+  , ""
+  , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 
+  , "allStaticFiles :: [StaticFile]"
+  , "allStaticFiles ="
+  ]
+
+mkStaticFileModuleContents :: [(Bool, FilePath, Integer, String, BS.ByteString)] -> String
+mkStaticFileModuleContents sfTuples =
+  unlines staticFileModuleHeader ++ 
+  "  [ " ++ intercalate "\n  , " (map  mkStaticFile sfTuples) ++ "\n" ++
+  "  ]\n"
+  where mkStaticFile :: (Bool, FilePath, Integer, String, BS.ByteString) -> String
+        mkStaticFile (isNew, pth, ts, rts, cstr) =
+          "SF "++show isNew++" "++show pth++" "++ show ts ++" "++show rts++" "++show (BS.unpack cstr) 
           
           
 getProperDirectoryContents :: FilePath -> IO [String]

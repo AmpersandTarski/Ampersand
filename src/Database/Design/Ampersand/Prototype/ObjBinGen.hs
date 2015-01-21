@@ -75,7 +75,9 @@ writeStaticFiles opts =
 #else
       verboseLn opts "Writing static files"
 #endif
-    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) | sf <- allStaticFiles ]
+    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) 
+                | sf@SF{isNewFrontend=isNew} <- allStaticFiles, isNew == newFrontend opts
+                ]
     }
   else
       verboseLn opts "Skipping static files (because of command line argument)"
