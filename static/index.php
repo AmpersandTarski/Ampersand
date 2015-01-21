@@ -199,7 +199,7 @@ if ($err) {
   // We add the atom to its concept in a temporary transaction, so we can generate the interface in the normal way (by querying
   // the database). When the interface is done, the transaction is rolled back. On save, the atom is added to the concept table
   // again.
-  // TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we enocode a session number
+  // TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we encode a session number
   //       in the unique atom name. But since the atom names are based on microseconds, the chances of a problem are pretty slim.
   if ($isNew) {
     DB_doquer('START TRANSACTION');
@@ -296,7 +296,7 @@ function generateInterface($interface, $srcAtom, $isRef = false) {
 /*
  *  <Interface label='interface label' isRef=true'/'false'>
  *   <Label>interface label</Label>
- *   <AtomList concept=.. [relation=..  relationIsFlipped=..]>
+ *   <AtomList concept=.. [relation=..  relationIsEditable=.. relationIsFlipped=.. min=.. max=.. nrOfAtoms=..]>
  *     ..
  *     for each $tgtAtom in codomain of relation of $interface
  *     <AtomRow rowType=Normal>         <DeleteStub/> <AtomListElt> generateAtomInterfaces($interface, $tgtAtom) </AtomListElt> </AtomRow>
@@ -324,7 +324,9 @@ function generateInterface($interface, $srcAtom, $isRef = false) {
 
   $nrOfAtoms = count($codomainAtoms) - 1; // disregard the null for the NewAtomTemplate
 
-  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrBool($interface['relationIsFlipped'])
+  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation'])
+                                                    .' relationIsEditable='.showHtmlAttrBool($interface['relationIsEditable'])
+                                                    .' relationIsFlipped='.showHtmlAttrBool($interface['relationIsFlipped'])
                                                     .' min='.showHtmlAttrStr($interface['min']).' max='.showHtmlAttrStr($interface['max'])
                                                     .' nrOfAtoms='.showHtmlAttrStr($nrOfAtoms);
   emit($html, '<div class="AtomList" concept=' . showHtmlAttrStr($interface['tgtConcept']) . $relationAttrs . '>');
@@ -465,7 +467,7 @@ function getEditableConceptsForInterfaceObject($interfaceObj) {
     $editableConcepts = array_merge($editableConcepts, getEditableConceptsForInterfaceObject($subInterfaceObj));
   }
   
-  if ($interfaceObj['relation']) { // put this interface's target concept in front, if it's editable
+  if ($interfaceObj['relationIsEditable']) { // put this interface's target concept in front, if it's editable
     array_unshift($editableConcepts, $interfaceObj['tgtConcept']);
   }
   

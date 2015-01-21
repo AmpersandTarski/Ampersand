@@ -3,7 +3,8 @@
 -- This might include that RAP is included in the returned FSpec.
 module Database.Design.Ampersand.InputProcessing (createFSpec, getPopulationsFrom) where
 
-import qualified Database.Design.Ampersand.Basics as Basics
+import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
@@ -20,7 +21,7 @@ import Control.Monad
 import Data.Traversable (sequenceA)
 
 fatal :: Int -> String -> a
-fatal = Basics.fatalMsg "InputProcessing"
+fatal = fatalMsg "InputProcessing"
 
 -- | create an FSpec, based on the provided command-line options.
 createFSpec :: Options  -- ^The options derived from the command line
@@ -113,7 +114,7 @@ parseADLs opts parsedFilePaths filePaths =
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts filePath =
  do { verboseLn opts $ "Reading file " ++ filePath
-    ; mFileContents <- Basics.readUTF8File filePath
+    ; mFileContents <- readUTF8File filePath
     ; case mFileContents of
         Left err -> error $ "ERROR reading file " ++ filePath ++ ":\n" ++ err 
                     -- TODO: would like to return an Errors value here, but this datatype currently only accommodates UUParsing Messages 

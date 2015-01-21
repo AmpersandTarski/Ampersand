@@ -339,7 +339,7 @@ function computeDbCommands() {
       var $atomList = getEnclosingAtomList($childAtom);
       var relation = $atomList.attr('relation'); 
      
-      if (relation) {
+      if (relation && $atomList.attr('relationIsEditable')) {
         var relationIsFlipped = $atomList.attr('relationIsFlipped') ? attrBoolValue($atomList.attr('relationIsFlipped')) : false;
         var $parentAtom = getEnclosingAtom($childAtom);
         var parentAtom = $parentAtom.attr('atom');

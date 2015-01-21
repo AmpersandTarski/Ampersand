@@ -23,7 +23,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlType(..)
           , SqlFieldUsage(..)
-          , getGeneralizations, getSpecializations, getEditableRelation
+          , getGeneralizations, getSpecializations, getExpressionRelation
           , Conjunct(..),DnfClause(..), dnf2expr
           )
 where
@@ -341,9 +341,9 @@ getSpecializations fSpec = smallerConcepts (gens fSpec)
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
 -- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
 -- This is used to determine the type of the atoms provided by the outside world through interfaces.
-getEditableRelation :: [Expression] -> Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
-getEditableRelation editableRels expr = case getRelation expr of
-   Just (s,Just d,t,isFlipped)  -> if EDcD d `elem` editableRels then Just (s,d,t,isFlipped) else Nothing
+getExpressionRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getExpressionRelation expr = case getRelation expr of
+   Just (s,Just d,t,isFlipped)  -> Just (s,d,t,isFlipped)
    _                            -> Nothing
  where
     -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target 

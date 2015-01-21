@@ -377,8 +377,7 @@ inlineIntercalate _ [x] = x
 inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 
 plainText :: String -> Blocks 
-plainText s = plain . text $ s
-
+plainText = plain . text 
 
 -- Temporary fixes of Pandoc builder. ---
 bulletList :: [Blocks] -> Blocks

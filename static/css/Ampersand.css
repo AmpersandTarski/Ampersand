@@ -189,7 +189,7 @@ body {
     
 /* Editing */  
 
-[editing=true] .AtomList[relation] {
+[editing=true] .AtomList[relationIsEditable=true] {
     border-color: #0000ff;
     border-style: solid;
     border-width: 2px ;
@@ -197,16 +197,16 @@ body {
     background-color: #f0f0f0;
 }
 
-[editing=true] .AtomList[relation][hover=true] {
+[editing=true] .AtomList[relationIsEditable=true][hover=true] {
     border-color: #0080ff;
     background-color: #e0e0e0;
 }
       
-[editing=true] .AtomList[relation][hover=true] > .AtomRow > .AtomListElt > .Atom > .AtomName:hover {
+[editing=true] .AtomList[relationIsEditable=true][hover=true] > .AtomRow > .AtomListElt > .Atom > .AtomName:hover {
     background-color: #808080;
 }
     
-[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
+[editing=true] .AtomList[relationIsEditable=true] > .AtomRow > .DeleteStub {
     display: table-cell;
     visibility: hidden;
     background-image: url('../images/DeleteButton.png');
@@ -216,10 +216,10 @@ body {
 }
 
 /* Don't show deletestub if there should be at least one field and we only have one atom */
-[editing=true] .AtomList[relation][min=One][nrOfAtoms="1"] > .AtomRow > .DeleteStub {
+[editing=true] .AtomList[relationIsEditable=true][min=One][nrOfAtoms="1"] > .AtomRow > .DeleteStub {
     visibility: hidden;
 }
-[editing=true] .AtomList[relation] > .AtomRow[rowType=Normal] > .DeleteStub {
+[editing=true] .AtomList[relationIsEditable=true] > .AtomRow[rowType=Normal] > .DeleteStub {
     display:table-cell;
 }
 
@@ -231,12 +231,12 @@ body {
     background-image: url('../images/DeleteButtonHover.png');
 }
 
-[editing=true] .AtomList[relation] > .AtomRow > .InsertStub {
+[editing=true] .AtomList[relationIsEditable=true] > .AtomRow > .InsertStub {
     display:block;  /* only show the insert stub when there is an editable relation */
 }
 
 /* Don't show insertStub if there should be at most one field and we already have one atom */
-[editing=true] .AtomList[relation][max=One][nrOfAtoms="1"] > .AtomRow > .InsertStub {
+[editing=true] .AtomList[relationIsEditable=true][max=One][nrOfAtoms="1"] > .AtomRow > .InsertStub {
     visibility: hidden;  /* we hide it rather than set display to none, so the width doesn't change */
 }                        /* would be nice to set the height to 0, but turns out to be rather complicated */
 

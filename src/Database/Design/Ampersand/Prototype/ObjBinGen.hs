@@ -8,7 +8,7 @@ import Database.Design.Ampersand.Prototype.Generate            (generateAll)
 import Control.Monad
 import System.FilePath
 import System.Directory
-import qualified Data.ByteString as Bin
+import qualified Data.ByteString.Char8 as BS
 import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
 
@@ -91,6 +91,7 @@ writeWhenMissingOrOutdated opts staticFile writeFileAction =
 -- On Mac/Linux we set the modification time for generated static files to the modification time of the compiled versions
 -- in StaticFiles_Generated.hs. This allows us to only replace those static files that are outdated (or missing.) 
  do { exists <- doesFileExist $ absFilePath opts staticFile
+    ; verboseLn opts $ "  Processing static file "++ filePath staticFile
     ; if exists then
        do { oldTimeStampUTC <- getModificationTime $ absFilePath opts staticFile
           ; let oldTimeStamp = read $ formatTime defaultTimeLocale "%s" oldTimeStampUTC -- convert to epoch seconds
@@ -123,9 +124,7 @@ writeStaticFile opts sf =
      ; setFileTimes (absFilePath opts sf) t t
 #endif
      }
- where write a b = if isBinary sf
-                   then Bin.writeFile a (read b)
-                   else writeFile a b
+ where write a b = BS.writeFile a (BS.pack b)
 
 absFilePath :: Options -> StaticFile -> FilePath
 absFilePath opts sf = combine (dirPrototype opts) (filePath sf)

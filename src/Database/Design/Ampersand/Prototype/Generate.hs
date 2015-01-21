@@ -9,6 +9,7 @@ import Data.Maybe
 import Control.Monad
 import System.FilePath
 import System.Directory
+import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
@@ -313,7 +314,7 @@ generateInterface fSpec interface =
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
   , showPhpStr (name interface) ++ " => " ] ++
-  indent 2 (genInterfaceObjects fSpec(ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
+  indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
           , "      , 'conjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ ifcControls interface) ++")"
@@ -332,20 +333,21 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
   ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
-  ++ case getEditableRelation editableRels normalizedInterfaceExp of 
-       Just (srcConcept, d, tgtConcept, isFlipped) ->
-         [ "      , 'relation' => "++showPhpStr (showHSName d) ++ " // this interface expression is editable"
+  ++ case getExpressionRelation normalizedInterfaceExp of
+       Just (srcConcept, decl, tgtConcept, isFlipped) ->
+         [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
+         , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
          , "      , 'relationIsFlipped' => "++show isFlipped ] ++
          (if isFlipped 
-          then [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
-               , "      , 'max' => "++ if isInj d then "'One'" else "'Many'" ]
-          else [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" 
-               , "      , 'max' => "++ if isUni d then "'One'" else "'Many'" ]) ++
-         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept)
-         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept)
+          then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
+               , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
+          else [ "      , 'min' => "++ if isTot decl then "'One'" else "'Zero'" 
+               , "      , 'max' => "++ if isUni decl then "'One'" else "'Many'" ]) ++
+         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (which may be flipped) 
+         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) --
          ]
-       _ ->
-         [ "      , 'relation' => '' // this interface expression is not editable"
+       Nothing ->
+         [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
          , "      , 'relationIsFlipped' => ''"
          , "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
