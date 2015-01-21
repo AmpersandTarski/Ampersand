@@ -157,7 +157,7 @@ readPreviousStaticFiles sfModulePath =
 readAllStaticFiles :: IO [(Bool, FilePath, Integer, String, BS.ByteString)]
 readAllStaticFiles = 
   do { oldStaticFiles <- readStaticFiles "static/oldFrontend" "."
-     ; newStaticFiles <- readStaticFiles "static/newFrontend" "."
+     ; newStaticFiles <- readStaticFiles "frontend" "."
      ; return $ map (addIsNew False) oldStaticFiles ++ map (addIsNew True) newStaticFiles
      }
   where addIsNew isNew (pth, ts, rts, cstr) = (isNew, pth, ts, rts, cstr)
