@@ -19,8 +19,12 @@ class ImportExcel
 	}
 
 	public function ParseFile(){
+		
+		ErrorHandling::addLog('------------------------- EXCEL IMPORT STARTED -------------------------');
 				
 		$this->ProcessFileContent();
+		
+		ErrorHandling::addLog('------------------------- END OF EXCEL IMPORT -------------------------');
 		
 		$this->db->closeTransaction('File uploaded');
 		

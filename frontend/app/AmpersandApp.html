@@ -5,6 +5,16 @@
 	<!--  Notification center -->
 	<div ng-include="'app/views/static_notificationCenter.html'"></div>
 	
-	<!--  Placeholder for views -->
+	<!-- Placeholder for views -->
 	<div ng-view></div>
+	
+	<!-- Log -->
+	<div class="row">
+		<div class="col-md-12">
+			<h3>Log</h3>
+			<ol style="font-size : 10px;">
+				<li ng-repeat="log in notifications.logs track by $index">{{log}}</li>
+			</ol>
+		</div>
+	</div>
 </div>

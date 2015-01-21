@@ -9,6 +9,8 @@ class ExecEngine {
 	
 	public static function run(){
 		
+		ErrorHandling::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
+		
 		$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : $this->defaultRoleName;
 		
 		// Load the execEngine functions (security hazard :P)
@@ -31,42 +33,44 @@ class ExecEngine {
 		}else{
 			ErrorHandling::addError("ExecEngine role '" . $roleName . "'not found.");
 		}
+		
+		ErrorHandling::addLog('------------------------- END OF EXEC ENGINE -------------------------');
 				
 	}
 	
 	public static function fixViolations($rule, $violations){
-		
-		foreach ($violations as $violation){
-			$theMessage = ExecEngine::execPair($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
+		if(count($violations)){
+			ErrorHandling::addLog('ExecEngine fixing rule ' . $rule['name']);
 			
-			// This function tries to return a string with all NULL bytes, HTML and PHP tags stripped from a given str. Strip_tags() is binary safe.
-			$theCleanMessage = strip_tags($theMessage);
-			
-			// Determine actions/functions to be taken
-			$functionsToBeCalled = explode('{EX}', $theCleanMessage);
-			
-			// Execute actions/functions
-			foreach ($functionsToBeCalled as $functionToBeCalled) { 
-			
-				$params = explode(';', $functionToBeCalled); // Split off variables
-				$params = array_map('trim', $params); // Trim all params
-				$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
+			foreach ($violations as $violation){
+				$theMessage = ExecEngine::execPair($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
 				
-				$function = array_shift($params); // First parameter is function name
+				// This function tries to return a string with all NULL bytes, HTML and PHP tags stripped from a given str. Strip_tags() is binary safe.
+				$theCleanMessage = strip_tags($theMessage);
 				
-				if (function_exists($function)){ 
-					$successMessages[] = call_user_func_array($function,$params);
-				}else{
-					$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";
-					throw new Exception($errorMessage);
+				// Determine actions/functions to be taken
+				$functionsToBeCalled = explode('{EX}', $theCleanMessage);
+				
+				// Execute actions/functions
+				foreach ($functionsToBeCalled as $functionToBeCalled) { 
+				
+					$params = explode(';', $functionToBeCalled); // Split off variables
+					$params = array_map('trim', $params); // Trim all params
+					$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
+					
+					$function = array_shift($params); // First parameter is function name
+					
+					if (function_exists($function)){
+						$successMessage = call_user_func_array($function,$params);
+						ErrorHandling::addLog($successMessage);
+						
+					}else{
+						$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";
+						throw new Exception($errorMessage);
+					}
 				}
 			}
-		}
-		
-		if(count($violations)){
-			// provide success message for every fixed violation
-			$id = ErrorHandling::addSuccess('ExecEngine fixed rule ' . $rule['name']);
-			foreach ((array)$successMessages as $successMessage) ErrorHandling::addSuccess($successMessage, $id);
+			ErrorHandling::addSuccess('ExecEngine fixed rule ' . $rule['name']);
 		}
 	}
 

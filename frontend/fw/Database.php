@@ -41,7 +41,7 @@ class Database
 	{
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
 		$result = mysql_query($query,$this->dblink);
-		ErrorHandling::addLog('QUERY: ' . $query);
+		ErrorHandling::addLog($query, 'QUERY');
 
 		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query);
 
@@ -245,7 +245,7 @@ class Database
 	}
 	
 	private function startTransaction(){
-		
+		ErrorHandling::addLog('========================= STARTING TRANSACTION =========================');
 		$this->Exe("START TRANSACTION"); // start database transaction
 		$this->transaction = rand();
 		
@@ -261,17 +261,21 @@ class Database
 	public function closeTransaction($succesMessage = 'Updated'){
 		$session = Session::singleton();
 		
+		ErrorHandling::addLog('========================= CLOSING TRANSACTION =========================');
+		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->interfaceInvariantConjunctNames); // only invariants rules that might be violated after edits in this interface are checked.
 		
 		if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
 		
 		if ($invariantRulesHold) {
-			$this->setLatestUpdateTime();
+			ErrorHandling::addLog('------------------------- COMMIT -------------------------');
+			$this->setLatestUpdateTime();			
 			$this->Exe("COMMIT"); // commit database transaction
 			ErrorHandling::addSuccess($succesMessage);
 			return true;
 		} else {
+			ErrorHandling::addLog('------------------------- ROLLBACK -------------------------');
 			$this->Exe("ROLLBACK"); // rollback database transaction
 			return false;
 		}

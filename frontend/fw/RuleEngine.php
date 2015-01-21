@@ -14,6 +14,7 @@ class RuleEngine {
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkProcessRules'] as $hook) call_user_func($hook); // Hook functions
 		$role = new Role($roleId);
 		
+		ErrorHandling::addLog('------------------------- CHECKING PROCESS RULES -------------------------');
 		foreach ($role->maintains as $ruleName){
 			$rule = RuleEngine::getRule($ruleName);
 			
@@ -39,6 +40,7 @@ class RuleEngine {
 		}
 		
 		// check invariant rules
+		ErrorHandling::addLog('------------------------- CHECKING INVARIANT RULES -------------------------');
 		foreach (RuleEngine::getAllInvariantRulesNames() as $ruleName){
 			$rule = RuleEngine::getRule($ruleName);
 				
@@ -57,6 +59,7 @@ class RuleEngine {
 		$db = Database::singleton();
 		$violations = array();
 		
+		ErrorHandling::addLog("Checking rule '" . $rule['name']."'");
 		try{
 			foreach($rule['conjuncts'] as $conjunct){
 				$result = array_merge((array)$result, $db->Exe($conjunct['violationsSQL']));
