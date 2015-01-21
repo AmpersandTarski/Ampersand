@@ -66,128 +66,138 @@ class Database
 	}
 	
 	// TODO: make private function
-	public function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it does not yet exist...
-	{
-		// this function is under control of transaction check!
-		if (!isset($this->transaction)) $this->startTransaction();
-		
-		global $conceptTableInfo;
-
-		foreach ($conceptTableInfo[$concept] as $conceptTableCol) { 
-			// $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
-			// (we have an array rather than a single column because of generalizations)
+	public function addAtomToConcept($newAtom, $concept){ // Insert 'newAtom' only if it does not yet exist...
+		try{
+			// this function is under control of transaction check!
+			if (!isset($this->transaction)) $this->startTransaction();
 			
-			$conceptTable = $conceptTableCol['table']; 
-			$conceptCols = $conceptTableCol['cols'];   // We insert the new atom in each of them.
-
-			$conceptTableEsc = addslashes($conceptTable);
-			$newAtomEsc = addslashes($newAtom); 
-
-			// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one for checking the existence of a concept
-			// TODO: does this also works with the ISA solution?
-			$firstConceptColEsc = addslashes($conceptCols[0]);
-
-			$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), $firstConceptColEsc); // no need to filter duplicates and NULLs
-			
-			if (!in_array(strtolower($newAtom), array_map('strtolower', $existingAtoms))) { // in_array is case sensitive ("true" != "TRUE"), but Mysql is case insensitive for Primary keys. Therefore first to lowercase. 
-				$allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
-				$newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
-				$allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
-
-				$this->Exe("INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
+			global $conceptTableInfo;
+	
+			foreach ((array)$conceptTableInfo[$concept] as $conceptTableCol) { 
+				// $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
+				// (we have an array rather than a single column because of generalizations)
+				
+				$conceptTable = $conceptTableCol['table']; 
+				$conceptCols = $conceptTableCol['cols'];   // We insert the new atom in each of them.
+	
+				$conceptTableEsc = addslashes($conceptTable);
+				$newAtomEsc = addslashes($newAtom); 
+	
+				// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one for checking the existence of a concept
+				// TODO: does this also works with the ISA solution?
+				$firstConceptColEsc = addslashes($conceptCols[0]);
+	
+				$existingAtoms = array_column($this->Exe("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`"), $firstConceptColEsc); // no need to filter duplicates and NULLs
+				
+				if (!in_array(strtolower($newAtom), array_map('strtolower', $existingAtoms))) { // in_array is case sensitive ("true" != "TRUE"), but Mysql is case insensitive for Primary keys. Therefore first to lowercase. 
+					$allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
+					$newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
+					$allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
+	
+					$this->Exe("INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
+				}
+				
 			}
-			
-		}
 		
-		return $newAtomEsc;
+			return $newAtomEsc;
+		}catch(Exception $e){
+			ErrorHandling::addError($e->getMessage());
+			// throw new Exception($e->message);
+		}
 	}
 	
 	// NOTE: if $originalAtom == '', editUpdate means insert for n-ary relations
-	public function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept, $parentOrChild, $originalAtom)
-	{
-		// this function is under control of transaction check!
-		if (!isset($this->transaction)) $this->startTransaction();
-		
-		global $relationTableInfo;
-		global $tableColumnInfo; 
-		
-		$table = $relationTableInfo[$rel]['table'];
-		$srcCol = $relationTableInfo[$rel]['srcCol'];
-		$tgtCol = $relationTableInfo[$rel]['tgtCol'];
-		$parentCol = $isFlipped ? $tgtCol : $srcCol;
-		$childCol =  $isFlipped ? $srcCol : $tgtCol;
-
-		$modifiedCol = $parentOrChild == 'parent' ? $parentCol : $childCol;
-		$modifiedAtom= $parentOrChild == 'parent' ? $parentAtom : $childAtom;
-		$stableCol   = $parentOrChild == 'parent' ? $childCol : $parentCol;
-		$stableAtom  = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
-
-		$tableEsc = addslashes($table);
-		$modifiedColEsc = addslashes($modifiedCol);
-		$stableColEsc = addslashes($stableCol);
-		$modifiedAtomEsc = addslashes($modifiedAtom);
-		$stableAtomEsc = addslashes($stableAtom);
-		$originalAtomEsc = addslashes($originalAtom);
-
-		// only if the stable column is unique, we do an update
-		// TODO: maybe we can do updates also in non-unique columns
-		if ($tableColumnInfo[$table][$stableCol]['unique']){ // note: this uniqueness is not set as an SQL table attribute
+	public function editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom){
+		try{
+			ErrorHandling::addLog("editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)");
 			
-			$this->Exe("UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'");
-		
-		} else { 
-			/* 
-			if ($tableColumnInfo[$table][$modifiedCol]['unique']){
-				// todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an	insert, not an update.
-				$query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
-				emitLog ($query);
-				queryDb($query);
+			// this function is under control of transaction check!
+			if (!isset($this->transaction)) $this->startTransaction();
+			
+			// Check if $rel, $srcConcept, $tgtConcept is a combination
+			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
+			$tgtConcept = $isFlipped ? $stableConcept : $modifiedConcept;
+			if (!$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept)) throw new Exception("Relation '" . $rel . "' does not exists");
+			
+			global $tableColumnInfo;
+			
+			$table = Relation::getTable($fullRelationSignature);
+			$srcCol = Relation::getSrcCol($fullRelationSignature);
+			$tgtCol = Relation::getTgtCol($fullRelationSignature);
+			
+			$stableCol = $isFlipped ? $tgtCol : $srcCol;
+			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
+	
+			// only if the stable column is unique, we do an update
+			// TODO: maybe we can do updates also in non-unique columns
+			if ($tableColumnInfo[$table][$stableCol]['unique']){ // note: this uniqueness is not set as an SQL table attribute
+				
+				$this->Exe("UPDATE `$table` SET `$modifiedCol`='$modifiedAtom' WHERE `$stableCol`='$stableAtom'");
+			
 			} else { 
-			*/
+				/* 
+				if ($tableColumnInfo[$table][$modifiedCol]['unique']){
+					// todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an	insert, not an update.
+					$query = "UPDATE `$table` SET `$stableCol`='$stableAtom' WHERE `$modifiedCol`='$modifiedAtom'";
+					emitLog ($query);
+					queryDb($query);
+				} else { 
+				*/
+				
+				// delete only if there was an $originalAtom
+				if ($originalAtom != ''){ 
+					$this->Exe("DELETE FROM `$table` WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$originalAtom'");
+				}		
+				
+				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtom', '$modifiedAtom')");
 			
-			// delete only if there was an $originalAtom
-			if ($originalAtom != ''){ 
-				$this->Exe("DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc'");
-			}		
+			}
+	
+			// ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
+			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
 			
-			$this->Exe("INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
-		
+		}catch(Exception $e){
+			ErrorHandling::addError($e->getMessage());
+			// throw new Exception($e->message);
 		}
-
-		// ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
-		$childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
-		$parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
-		$modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
-		
-		$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
-		// TODO: errors here are not reported correctly
 	}
 	
-	public function editDelete($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept)
-	{
-		// this function is under control of transaction check!
-		if (!isset($this->transaction)) $this->startTransaction();
-		
-		global $relationTableInfo;
-		global $tableColumnInfo;
-
-		$srcAtom = $isFlipped ? $childAtom : $parentAtom;
-		$tgtAtom = $isFlipped ? $parentAtom : $childAtom;
-		
-		$table = $relationTableInfo[$rel]['table'];
-		$srcCol = $relationTableInfo[$rel]['srcCol'];
-		$tgtCol = $relationTableInfo[$rel]['tgtCol'];
-
-		$tableEsc = addslashes($table);
-		$srcAtomEsc = addslashes($srcAtom);
-		$tgtAtomEsc = addslashes($tgtAtom);
-		$srcColEsc = addslashes($srcCol);
-		$tgtColEsc = addslashes($tgtCol);
-
-		if ($tableColumnInfo[$table][$tgtCol]['null']){ // note: this uniqueness is not set as an SQL table attribute
-			$this->Exe ("UPDATE `$tableEsc` SET `$tgtColEsc`= NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
-		} else {
-			$this->Exe ("DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
+	public function editDelete($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept){
+		try{
+			ErrorHandling::addLog("editDelete($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept)");
+			
+			// this function is under control of transaction check!
+			if (!isset($this->transaction)) $this->startTransaction();
+			
+			// Check if $rel, $srcConcept, $tgtConcept is a combination
+			$srcConcept = $isFlipped ? $childConcept : $parentConcept;
+			$tgtConcept = $isFlipped ? $parentConcept : $childConcept;
+			if (!Relation::isCombination($rel, $srcConcept, $tgtConcept)) throw new Exception("Relation '" . $rel . "' does not exists");
+			
+			global $relationTableInfo;
+			global $tableColumnInfo;
+	
+			$srcAtom = $isFlipped ? $childAtom : $parentAtom;
+			$tgtAtom = $isFlipped ? $parentAtom : $childAtom;
+			
+			$table = $relationTableInfo[$rel]['table'];
+			$srcCol = $relationTableInfo[$rel]['srcCol'];
+			$tgtCol = $relationTableInfo[$rel]['tgtCol'];
+	
+			$tableEsc = addslashes($table);
+			$srcAtomEsc = addslashes($srcAtom);
+			$tgtAtomEsc = addslashes($tgtAtom);
+			$srcColEsc = addslashes($srcCol);
+			$tgtColEsc = addslashes($tgtCol);
+	
+			if ($tableColumnInfo[$table][$tgtCol]['null']){ // note: this uniqueness is not set as an SQL table attribute
+				$this->Exe ("UPDATE `$tableEsc` SET `$tgtColEsc`= NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
+			} else {
+				$this->Exe ("DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'");
+			}
+		}catch(Exception $e){
+			ErrorHandling::addError($e->getMessage());
+			// throw new Exception($e->message);
 		}
 
 	}
@@ -196,28 +206,33 @@ class Database
 	// In tables where the atom may not be null, the entire row is removed. 
 	// TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't
 	//       happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
-	function deleteAtom($atom, $concept) {
+	function deleteAtom($atom, $concept){
+		try{
 		
-		// this function is under control of transaction check!
-		if (!isset($this->transaction)) $this->startTransaction();
-		
-		global $tableColumnInfo;
-
-		foreach ($tableColumnInfo as $table => $tableInfo){
-			foreach ($tableInfo as $column => $fieldInfo) {
-				// TODO: could be optimized by doing one query per table. But deleting per column yields the same result.
-				//       (unlike adding)
-				if ($fieldInfo['concept']==$concept) {
-					$tableEsc = addslashes($table);
-					$columnEsc = addslashes($column);
-					$atomEsc = addslashes($atom);
-
-					if ($fieldInfo['null'])  // if the field can be null, we set all occurrences to null
-						$this->Exe("UPDATE `$tableEsc` SET `$columnEsc`=NULL WHERE `$columnEsc`='$atomEsc'");
-					else // otherwise, we remove the entire row for each occurrence
-						$this->Exe("DELETE FROM `$tableEsc` WHERE `$columnEsc` = '$atomEsc'");
+			// this function is under control of transaction check!
+			if (!isset($this->transaction)) $this->startTransaction();
+			
+			global $tableColumnInfo;
+	
+			foreach ($tableColumnInfo as $table => $tableInfo){
+				foreach ($tableInfo as $column => $fieldInfo) {
+					// TODO: could be optimized by doing one query per table. But deleting per column yields the same result.
+					//       (unlike adding)
+					if ($fieldInfo['concept']==$concept) {
+						$tableEsc = addslashes($table);
+						$columnEsc = addslashes($column);
+						$atomEsc = addslashes($atom);
+	
+						if ($fieldInfo['null'])  // if the field can be null, we set all occurrences to null
+							$this->Exe("UPDATE `$tableEsc` SET `$columnEsc`=NULL WHERE `$columnEsc`='$atomEsc'");
+						else // otherwise, we remove the entire row for each occurrence
+							$this->Exe("DELETE FROM `$tableEsc` WHERE `$columnEsc` = '$atomEsc'");
+					}
 				}
 			}
+		}catch(Exception $e){
+			ErrorHandling::addError($e->getMessage());
+			// throw new Exception($e->message);
 		}
 	}
 	

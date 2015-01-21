@@ -97,11 +97,11 @@ Class Atom {
 						
 						// in case $tgtAtom is empty string -> perform remove instead of replace.
 						if(!$tgtAtom == ''){ 
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, '');
 						}else{
 							// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 							$tgtAtom = JsonPatch::get($before, $patch['path']);
-							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 							 
 						}					
 					}else{
@@ -135,7 +135,7 @@ Class Atom {
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
 						if(is_null($tgtAtom)) ErrorHandling::addError($tgtInterface->name . ": add operation without value '");
 						
-						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, '');
 						
 					}else{
 						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
@@ -165,7 +165,7 @@ Class Atom {
 					if($tgtInterface->editable){
 						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 						if(is_null($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
-						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
 						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}

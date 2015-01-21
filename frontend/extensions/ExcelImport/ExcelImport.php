@@ -12,6 +12,7 @@ $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImpor
 class ImportExcel
 {
 	public $file;
+	private $db;
 
 	function __construct($filename){
 		$this->file = $filename;
@@ -151,8 +152,7 @@ class ImportExcel
 	}
 	
 	private function insertRel($relationName, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
-		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
-		$this->db->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
+		$this->db->editUpdate($relationName, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, '');
 	}
 }
 

@@ -2,7 +2,7 @@
 
 class Relation {
 
-	public static function isCombination($relation, $srcConcept, $tgtConcept){
+	public static function isCombination($relationName, $srcConcept, $tgtConcept){
 		/*
 		$relationTableInfo from Generics.php 
 		contains array with all relations, for each relation the following is specified: 
@@ -11,13 +11,15 @@ class Relation {
 		*/
 		global $relationTableInfo;
 		
-		$result = false;
-		
 		foreach($relationTableInfo as $key => $relationInfo){
-			if($relationInfo['name'] == $relation && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
+			if($relationInfo['name'] == $relationName && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
 				return $key; // relation signature: 'rel_<relation>_<srcConcept>_<tgtConcept>'
+			
+			if($key == $relationName && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
+				return $key;
 		}
 		
+		return false;
 	}
 	
 	public static function getTable($fullRelationSignature){

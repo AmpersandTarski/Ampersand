@@ -47,7 +47,7 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		$database->addAtomToConcept($tgtAtom, $tgtConcept);
 	}
 	
-	$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, 'child', '');
+	$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, '');
 	
 	return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 }
