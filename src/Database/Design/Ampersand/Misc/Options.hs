@@ -84,7 +84,7 @@ data Options = Options { showVersion :: Bool
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
                        , oldNormalizer :: Bool
-                       , oldFrontend :: Bool
+                       , newFrontend :: Bool
                        }
 
 getOptions :: IO Options
@@ -180,7 +180,7 @@ getOptions =
                       , sqlLogin      = "ampersand"
                       , sqlPwd        = "ampersand"
                       , oldNormalizer = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
-                      , oldFrontend   = True
+                      , newFrontend   = False
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -472,7 +472,7 @@ options = map pp
                "use the new normalizer at your own risk." -- :-)
             , Hidden)
           , (Option []        ["newFrontend"]
-               (NoArg (\opts -> return opts{oldFrontend = False}))
+               (NoArg (\opts -> return opts{newFrontend = True}))
                "Use the new frontend."
             , Hidden)
           ]

@@ -29,7 +29,7 @@ writePrototypeFile fSpec relFilePath content =
 getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
   let protoDir = dirPrototype (getOpts fSpec)
-  in  if (oldFrontend $ getOpts fSpec) then protoDir else protoDir </> "generated"
+  in  if (newFrontend $ getOpts fSpec) then protoDir </> "generated" else protoDir
 
 quote :: String->String
 quote [] = []
