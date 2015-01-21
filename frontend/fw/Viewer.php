@@ -56,6 +56,7 @@ class Viewer {
 			if (substr($file,-3) !== 'css') continue;
 			$this->addHtmlLine('<link href="app/css/'.$file.'" rel="stylesheet" media="screen" type="text/css">');
 		}
+		foreach ((array)$GLOBALS['hooks']['after_Viewer_load_cssFiles'] as $cssFile) $this->addHtmlLine('<link href="'.$cssFile.'" rel="stylesheet" media="screen" type="text/css">');
 		
 		$this->addHtmlLine('<script src="app/AmpersandApp.js"></script>');
 		// AngularApp controler files
@@ -64,6 +65,7 @@ class Viewer {
 			if (substr($file,-2) !== 'js') continue;
 			$this->addHtmlLine('<script src="app/controllers/'.$file.'"></script>');
 		}
+		foreach ((array)$GLOBALS['hooks']['after_Viewer_load_angularScripts'] as $angularScript) $this->addHtmlLine('<script src="'.$angularScript.'"></script>');
 		
 		// Javascript files
 		$files = getDirectoryList(__DIR__ . '/../app/js');

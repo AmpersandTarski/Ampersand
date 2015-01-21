@@ -7,7 +7,7 @@ AmpersandApp.config(function($routeProvider) {
 		.when('/ext/ExcelImport',
 			{
 				controller: 'ExcelImportController',
-				templateUrl: 'app/ext/ExcelImport/views/ExcelImport.html'
+				templateUrl: 'extensions/ExcelImport/ui/views/ExcelImport.html'
 			});
 });
 

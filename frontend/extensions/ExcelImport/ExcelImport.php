@@ -4,6 +4,11 @@ require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
 $apps[] = array('name' => 'Excel import', 'link' => '#/ext/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
 
+// UI
+$GLOBALS['hooks']['after_Viewer_load_cssFiles'][] = 'extensions/ExcelImport/ui/css/style.css';
+$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/angular-file-upload.min.js';
+$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/ExcelImport.js';
+
 class ImportExcel
 {
 	public $file;
