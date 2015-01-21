@@ -11,6 +11,7 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
 import Prelude hiding (writeFile)
 import Data.Char(isAlphaNum,isDigit)
 import Data.List
+import System.Directory
 import System.FilePath
 import Database.Design.Ampersand
 
@@ -20,7 +21,9 @@ fatal = fatalMsg "ProtoUtil"
 writePrototypeFile :: FSpec -> String -> String -> IO ()
 writePrototypeFile fSpec fname content =
  do { verboseLn (getOpts fSpec) ("  Generating "++fname)
-    ; writeFile ((dirPrototype (getOpts fSpec)) </> fname) content
+    ; let filePath = dirPrototype (getOpts fSpec) </> fname
+    ; createDirectoryIfMissing True (takeDirectory filePath)
+    ; writeFile filePath content
     }
 
 quote :: String->String
