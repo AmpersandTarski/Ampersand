@@ -25,12 +25,12 @@ generateAll :: FSpec -> IO ()
 generateAll fSpec =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
 --  ; verboseLn (getOpts fSpec) filecontent
-    ; writePrototypeFile "Generics.php" filecontent
+    ; writePrototypeFile fSpec "Generics.php" filecontent
     ; when (genStaticFiles (getOpts fSpec))(
        case customCssFile (getOpts fSpec) of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
-            ; writePrototypeFile customCssPath customCssContents
+            ; writePrototypeFile fSpec customCssPath customCssContents
             }
         Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
          do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
@@ -38,14 +38,14 @@ generateAll fSpec =
             ; if dedicatedCSSExists then
                do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
                   ; customCssContents <- readCustomCssFile dedicatedCSSPath
-                  ; writePrototypeFile customCssPath customCssContents
+                  ; writePrototypeFile fSpec customCssPath customCssContents
                   }
               else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
                do { customExists <- doesFileExist (combine (dirPrototype (getOpts fSpec)) customCssPath)
                   ; if customExists
                     then verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " already exists."
                     else do { verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
-                            ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
+                            ; writePrototypeFile fSpec customCssPath "@import url(\"Oblomilan.css\");"
                             }
                   }
             }
@@ -69,10 +69,6 @@ generateAll fSpec =
             (\e -> do let err = show (e :: IOException)
                       _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
-    writePrototypeFile fname content =
-     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
-        ; writeFile (combine (dirPrototype (getOpts fSpec)) fname) content
-        }
 
 generateConstants :: FSpec -> [String]
 generateConstants fSpec =

@@ -1,21 +1,27 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
-         ( phpIdentifier,commentBlock,strReplace
+         ( writePrototypeFile
+         , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , pDebug,indentBlockBetween,quote,sqlAtomQuote
+         , indentBlockBetween,quote,sqlAtomQuote
          , phpIndent,showPhpStr,escapePhpStr,showPhpBool
          ) where
  
+import Prelude hiding (writeFile)
 import Data.Char(isAlphaNum,isDigit)
 import Data.List
+import System.FilePath
 import Database.Design.Ampersand
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ProtoUtil"
 
-pDebug :: Bool
-pDebug = True
+writePrototypeFile :: FSpec -> String -> String -> IO ()
+writePrototypeFile fSpec fname content =
+ do { verboseLn (getOpts fSpec) ("  Generating "++fname)
+    ; writeFile ((dirPrototype (getOpts fSpec)) </> fname) content
+    }
 
 quote :: String->String
 quote [] = []

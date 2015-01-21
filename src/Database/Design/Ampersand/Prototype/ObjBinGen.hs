@@ -25,9 +25,9 @@ phpObjInterfaces fSpec =
     ; verboseLn (getOpts fSpec) "---------------------------"
     ; verboseLn (getOpts fSpec) "Generating php Object files with Ampersand"
     ; verboseLn (getOpts fSpec) "---------------------------"
-    ; write "InstallerDBstruct.php"     (installerDBstruct fSpec)
---    ; write "InstallerTriggers.php"     (installerTriggers fSpec)
-    ; write "InstallerDefPop.php"       (installerDefPop fSpec)
+    ; writePrototypeFile fSpec "InstallerDBstruct.php"     (installerDBstruct fSpec)
+--    ; writePrototypeFile fSpec "InstallerTriggers.php"     (installerTriggers fSpec)
+    ; writePrototypeFile fSpec "InstallerDefPop.php"       (installerDefPop fSpec)
 
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
@@ -35,7 +35,7 @@ phpObjInterfaces fSpec =
     ; if dbSettingsExists
       then verboseLn (getOpts fSpec) "  Using existing dbSettings.php."
       else do { verboseLn (getOpts fSpec) "  Writing dbSettings.php."
-              ; writeFile dbSettingsFilePath dbsettings
+              ; writePrototypeFile fSpec dbSettingsFilePath dbsettings
               }
 
     ; generateAll fSpec
@@ -43,10 +43,6 @@ phpObjInterfaces fSpec =
     ; verboseLn (getOpts fSpec) "\n"
     }
    where
-    write fname content =
-     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
-        ; writeFile (combine targetDir fname) content
-        }
     dbsettings = unlines
        [ "<?php"
        , ""
