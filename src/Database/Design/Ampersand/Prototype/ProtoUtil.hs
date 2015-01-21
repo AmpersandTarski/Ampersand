@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
-         ( writePrototypeFile
+         ( writePrototypeFile, getGenericsDir
          , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
@@ -19,12 +19,17 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "ProtoUtil"
 
 writePrototypeFile :: FSpec -> String -> String -> IO ()
-writePrototypeFile fSpec fname content =
- do { verboseLn (getOpts fSpec) ("  Generating "++fname)
-    ; let filePath = dirPrototype (getOpts fSpec) </> fname
+writePrototypeFile fSpec relFilePath content =
+ do { verboseLn (getOpts fSpec) ("  Generating "++relFilePath)
+    ; let filePath = getGenericsDir fSpec </> relFilePath
     ; createDirectoryIfMissing True (takeDirectory filePath)
     ; writeFile filePath content
     }
+
+getGenericsDir :: FSpec -> String
+getGenericsDir fSpec = 
+  let protoDir = dirPrototype (getOpts fSpec)
+  in  if (oldFrontend $ getOpts fSpec) then protoDir else protoDir </> "generated"
 
 quote :: String->String
 quote [] = []

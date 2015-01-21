@@ -29,7 +29,7 @@ phpObjInterfaces fSpec =
 --    ; writePrototypeFile fSpec "InstallerTriggers.php"     (installerTriggers fSpec)
     ; writePrototypeFile fSpec "InstallerDefPop.php"       (installerDefPop fSpec)
 
-    ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
+    ; let dbSettingsFilePath = getGenericsDir fSpec </> "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php only if it does not exist already.
     ; if dbSettingsExists
@@ -56,7 +56,6 @@ phpObjInterfaces fSpec =
        , ""
        , "?>"
        ]
-    targetDir = dirPrototype (getOpts fSpec)
 
 doGenAtlas :: FSpec -> IO()
 doGenAtlas fSpec =
