@@ -9,8 +9,10 @@ import Data.Char hiding(isSymbol)
 import Data.List
 import Data.Maybe
 import Database.Design.Ampersand.Input.ADL1.BinaryTrees(tab2tree,btLocateIn)
----- import UU.Parsing(Symbol(..),IsParser,pSym,(<$>))
 import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Input.ADL1.LexerMonad
+import Database.Design.Ampersand.Input.ADL1.LexerMessage
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Scanner"
 
@@ -105,6 +107,10 @@ instance Show Token where
         (Tok TkSpace     _  _  i fn)  -> "spaces "                              ++ maybeshow i fn
         (Tok TkError     _  s2 i fn)  -> "error in scanner: "     ++ s2         ++ maybeshow i fn
        )
+
+type Lexer = [Char] -> LexerMonad [Token]
+
+
 
 scan :: [String] -> [String] -> String -> String -> String -> Pos -> String -> [Token]
 scan keywordstxt keywordsops specchars opchars fn pos' input

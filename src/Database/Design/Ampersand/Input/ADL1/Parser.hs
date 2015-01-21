@@ -13,7 +13,7 @@ import Database.Design.Ampersand.Core.ParseTree
 import Data.List
 import Data.Maybe
 
-type AmpParser a = Parser a -- GenParser Token Pos a
+type AmpParser a = GenParser Token Pos a
 data Pair a r = Pair a r
 
 fatal :: Int -> String -> a
