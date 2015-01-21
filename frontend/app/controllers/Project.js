@@ -35,6 +35,15 @@ AmpersandApp.controller('ProjectController', ['$scope', '$rootScope', '$routePar
 		}
 	}
 	
+	// function for Datapicker
+	$scope.datepicker = [];
+	$scope.openDatepicker = function($event, datepicker) {
+		$event.preventDefault();
+		$event.stopPropagation();
+		
+		$scope.datepicker[datepicker] = {'open' : true};
+	};
+	
 	$scope.selected = {}; // used for making selections from typeahead
 	$scope.typeahead = {};
 	$scope.typeahead.Theme = Restangular.all('concept/Theme/atoms').getList().$object;
