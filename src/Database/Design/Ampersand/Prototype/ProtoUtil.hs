@@ -13,7 +13,10 @@ import Data.Char(isAlphaNum,isDigit)
 import Data.List
 import System.Directory
 import System.FilePath
-import Database.Design.Ampersand
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Misc.Options (verboseLn) -- TODO: verboseLn shouldn't be in Options
+import qualified Database.Design.Ampersand.Misc.Options as Opts
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ProtoUtil"
@@ -28,8 +31,8 @@ writePrototypeFile fSpec relFilePath content =
 
 getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
-  let protoDir = dirPrototype (getOpts fSpec)
-  in  if (newFrontend $ getOpts fSpec) then protoDir </> "generated" else protoDir
+  let protoDir = Opts.dirPrototype (getOpts fSpec)
+  in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generated" else protoDir
 
 quote :: String->String
 quote [] = []
