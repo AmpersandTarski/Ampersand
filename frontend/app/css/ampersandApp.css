@@ -13,7 +13,10 @@
 
 /********* FORMS, INPUTS, ETC **************/
 input .ng-invalid .ng-dirty {
-	border:2px solid red;
+	border	: 2px solid red;
+}
+.table-header-textarea {
+	width	: 250px;
 }
 
 .pointer {
