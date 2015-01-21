@@ -13,11 +13,15 @@ AmpersandApp.config(function($routeProvider) {
 
 AmpersandApp.controller('ExcelImportController', function ($scope, $rootScope, FileUploader) {
 	
-	$scope.uploader = new FileUploader({
-		 url: 'extensions/ExcelImport/excel_parse.php'
-	});
+	// $rootScope, so that all information and uploaded files are kept while browsing in the application
+	if (typeof $rootScope.uploader == 'undefined') {
+
+		$rootScope.uploader = new FileUploader({
+			 url: 'extensions/ExcelImport/excel_parse.php'
+		});
+	}
 	
-	$scope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
+	$rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
 		$rootScope.notifications = response.notifications;
         console.info('onSuccessItem', fileItem, response, status, headers);
     };
