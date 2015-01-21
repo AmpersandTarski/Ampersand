@@ -8,26 +8,20 @@ where
 import Control.Monad
 import Data.Char
 import Data.Maybe
-import Data.Either
 import System.Directory
 import System.FilePath
-import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Input.ADL1.Scanner 
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner 
+import UU.Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import Database.Design.Ampersand.ADL1
 import Control.Exception
 
-import Text.Parsec.Error
-import Text.Parsec.Char
-import Text.Parsec.String
-import Text.Parsec.Prim hiding (runParser)
+type ParseError = Message Token (Maybe Token)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.Parsing"
-
--- structures from uulib TODO: Delete them
-data Pair a r = Pair a r
 
 -- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
@@ -201,11 +195,11 @@ parsePops str fn =
       Right result -> Right result
       Left  msg    -> Left $ "Parse errors:\n"++show msg
 
-runParser :: forall res . Parser res -> String -> String -> Either ParseError res
-runParser parser filename input = parse parser filename input
---let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
---    steps = parse parser (scanner input)
---in  case  getMsgs steps of
---       []    -> let Pair res _ = evalSteps steps
---                in  Right res
---       msg:_ -> Left msg
+runParser :: forall res . Parser Token res -> String -> String -> Either ParseError res
+runParser parser filename input =
+  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
+      steps = parse parser (scanner input)
+  in  case  getMsgs steps of
+         []    -> let Pair res _ = evalSteps steps
+                  in  Right res
+         msg:_ -> Left msg

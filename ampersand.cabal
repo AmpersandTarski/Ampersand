@@ -79,7 +79,7 @@ executable ampersand
                      text == 1.1.*,
                      time == 1.4.*,
                      utf8-string == 0.3.*,
-                     parsec == 3.1.*
+                     uulib == 0.9.*
 
   -- Unfortunately, unix and MissingH are not available on windows
   if !os(windows)
@@ -136,8 +136,8 @@ executable ampersand
                      Database.Design.Ampersand.Input.ADL1.CtxError,
                      Database.Design.Ampersand.Input.ADL1.FilePos,
                      Database.Design.Ampersand.Input.ADL1.Parser,
-                     Database.Design.Ampersand.Input.ADL1.BinaryTrees,
-                     Database.Design.Ampersand.Input.ADL1.Scanner,
+                     Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
+                     Database.Design.Ampersand.Input.ADL1.UU_Scanner,
                      Database.Design.Ampersand.Input.Parsing,
                      Database.Design.Ampersand.InputProcessing,
                      Database.Design.Ampersand.Misc,

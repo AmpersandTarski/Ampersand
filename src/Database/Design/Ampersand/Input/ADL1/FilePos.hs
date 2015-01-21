@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Input.ADL1.FilePos
          (FilePos(..), Origin(..), Pos(Pos) , Traced(..)) where
 
-import Database.Design.Ampersand.Input.ADL1.Scanner (Pos(Pos))
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
 --import Database.Design.Ampersand.Basics (fatalMsg)
 
 --fatal :: Int -> String -> a

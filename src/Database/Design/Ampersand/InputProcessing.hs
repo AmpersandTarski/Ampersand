@@ -7,8 +7,8 @@ import qualified Database.Design.Ampersand.Basics as Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
-import Database.Design.Ampersand.Input.ADL1.Scanner
-import Text.Parsec.Prim hiding (runParser)
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner
+import UU.Parsing (getMsgs,parse,evalSteps,Pair(..))
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Input.ADL1.CtxError
@@ -128,17 +128,12 @@ parseSingleADL opts filePath =
 
 runParser :: AmpParser res -> String -> String -> Guarded res
 runParser parser filename input =
-    let result = parse parser filename input
-    in case result of
-        Left err -> Errors [PE err]
-        Right res -> Checked res
---runParser parser filename input =
---  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
---      steps = parse parser (scanner input)
---  in  case  getMsgs steps of
---         []    -> let Pair res _ = evalSteps steps
---                  in  Checked res
---         msg:_ -> Errors [PE msg]
+  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
+      steps = parse parser (scanner input)
+  in  case  getMsgs steps of
+         []    -> let Pair res _ = evalSteps steps
+                  in  Checked res
+         msg:_ -> Errors [PE msg]
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)

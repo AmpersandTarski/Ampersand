@@ -24,8 +24,8 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.Scanner (Token)
-import Text.Parsec.Error
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
+import UU.Parsing (Message(..),Action(..))
 import Database.Design.Ampersand.Core.ParseTree
 
 fatal,_notUsed :: Int -> String -> a
@@ -38,7 +38,7 @@ infixl 4 <?>
 (<?>) f (Checked a) = f a
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE (ParseError)
+              | PE (Message Token (Maybe Token))
               deriving Show
 
 errors :: Guarded t -> [CtxError]
@@ -211,17 +211,17 @@ whenCheckedIO ioGA fIOGB =
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
-showErr (PE err)   = show err -- showMessage msg
--- where showMessage (Msg expecting token action) =  
---         let pos = case token of
---                     Nothing -> "at end of file"
---                     Just s  -> case action of 
---                                  Insert _ -> "before " ++ show s
---                                  Delete t -> "at " ++ show t  
---                                  Other str -> str -- Probably never used, UU.Parsing.parseIO ignores this case
---         in  "\nParse error " ++ pos ++
---             "\nExpecting " ++ show expecting ++
---             "\nTry " ++ show action ++ "\n"                
+showErr (PE msg)   = showMessage msg
+ where showMessage (Msg expecting token action) =  
+         let pos = case token of
+                     Nothing -> "at end of file"
+                     Just s  -> case action of 
+                                  Insert _ -> "before " ++ show s
+                                  Delete t -> "at " ++ show t  
+                                  Other str -> str -- Probably never used, UU.Parsing.parseIO ignores this case
+         in  "\nParse error " ++ pos ++
+             "\nExpecting " ++ show expecting ++
+             "\nTry " ++ show action ++ "\n"                
  
 
 showFullOrig :: Origin -> String
