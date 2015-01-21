@@ -10,7 +10,10 @@
 	<div id="violations">
 		<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
-				<div class="text-left"><strong>Violation!</strong> {{val.violationMessage}}</div>
+				<div class="text-left">
+					<strong>Violation!</strong> {{val.violationMessage}}
+					<span class="badge pull-right">{{val.tuples.length}}</span>
+				</div>
 			</div>
 			<ul class="list-group collapse" id="violation-{{key}}">
 				<li class="list-group-item" ng-repeat="tuple in val.tuples">{{tuple}}</li>
