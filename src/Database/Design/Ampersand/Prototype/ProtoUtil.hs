@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Prototype.RelBinGenBasics
+module Database.Design.Ampersand.Prototype.ProtoUtil
          ( phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
@@ -12,7 +12,7 @@ import Data.List
 import Database.Design.Ampersand
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "RelBinGenBasics"
+fatal = fatalMsg "ProtoUtil"
 
 pDebug :: Bool
 pDebug = True

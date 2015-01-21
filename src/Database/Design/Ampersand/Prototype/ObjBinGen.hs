@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
 
 import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop)
-import Database.Design.Ampersand.Prototype.RelBinGenBasics     (addSlashes)
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.Apps
 import Database.Design.Ampersand.Prototype.Generate            (generateAll)
 import Control.Monad

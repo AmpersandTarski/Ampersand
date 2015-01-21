@@ -174,7 +174,7 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
-                     Database.Design.Ampersand.Prototype.RelBinGenBasics,
+                     Database.Design.Ampersand.Prototype.ProtoUtil,
                      Database.Design.Ampersand.Prototype.RelBinGenSQL,
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,

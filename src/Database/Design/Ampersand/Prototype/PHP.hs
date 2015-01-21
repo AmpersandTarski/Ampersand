@@ -12,7 +12,7 @@ import System.Process
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
 import Database.Design.Ampersand hiding (putStr, origin)
-import Database.Design.Ampersand.Prototype.RelBinGenBasics
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 
 

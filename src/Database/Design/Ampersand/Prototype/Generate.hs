@@ -10,7 +10,7 @@ import Control.Monad
 import System.FilePath
 import System.Directory
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Control.Exception
