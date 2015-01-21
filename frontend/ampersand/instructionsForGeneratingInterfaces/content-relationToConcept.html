@@ -1,0 +1,20 @@
+ <!-- This is the content for a relation to another Concept -->
+<!-- 
+e.g.
+
+pl :: Project * Person
+
+"Projects" 		: exp1
+	ROWS [ "Name" 				: exp2
+		 , "Description"		: exp3
+		 , "Projectleader"		: pl
+		 ]
+
+-->
+<div ng-repeat="row in val['Projectleader']">	
+	<!-- If INTERFACE exists for ROLE that takes TgtConcept of relation als SrcConcept -->
+	<a ng-href="#/<INTERFACE>/{{row['id']}}">{{row['label']}}</a>
+	
+	<!-- If no INTERFACE is available -->
+	{{val['label']}}
+</div>

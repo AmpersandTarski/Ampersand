@@ -1,0 +1,16 @@
+ <!-- This is the content for a BLOB element in an interface -->
+<!-- 
+e.g.
+
+projectDescription :: Project * BLOB
+
+"Projects" 		: exp1
+	ROWS [ "Name" 				: exp2
+		 , "Description"		: projectDescription
+		 , "Projectleader"		: exp4
+		 ]
+
+-->
+<div style="max-width: 200px;">
+	{{val['Description'] | limitTo:50}}...
+</div>
