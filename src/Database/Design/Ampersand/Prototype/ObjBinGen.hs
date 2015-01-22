@@ -88,7 +88,7 @@ writeWhenMissingOrOutdated opts staticFile writeFileAction =
 -- On Mac/Linux we set the modification time for generated static files to the modification time of the compiled versions
 -- in StaticFiles_Generated.hs. This allows us to only replace those static files that are outdated (or missing.) 
  do { exists <- doesFileExist $ absFilePath opts staticFile
-    ; verboseLn opts $ "  Processing static file "++ filePath staticFile
+    --; verboseLn opts $ "  Processing static file "++ filePath staticFile
     ; if exists then
        do { oldTimeStampUTC <- getModificationTime $ absFilePath opts staticFile
           ; let oldTimeStamp = read $ formatTime defaultTimeLocale "%s" oldTimeStampUTC -- convert to epoch seconds
