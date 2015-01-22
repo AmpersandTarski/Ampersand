@@ -99,11 +99,12 @@ chpConceptualAnalysis lev fSpec = (
                    (False, English) -> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning
-               <> fromList ( pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)
-                     [ ( texOnly_Id(name d)
+               <> pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)
+                     [ [ texOnly_Id(name d)
                        , ":"
                        , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d)) 
-                       )  ])
+                       ]  
+                     ]
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
                            Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
@@ -150,25 +151,27 @@ chpConceptualAnalysis lev fSpec = (
              , [  -- First the reason why the rule exists, if any..
                   purp
                   -- Then the rule as a requirement
-               ++ [Plain$[if null purp then Str "De volgende afspraak is gesteld in paragraaf "
-                                       else Str "Daarom is als afspraak gesteld in paragraaf " | fsLang fSpec==Dutch]
-                      ++ [if null purp then Str "The following requirement has been defined in section "
-                                       else Str "Therefore the following requirement has been defined in section " | fsLang fSpec==English]
+               ++ [Plain$[if null purp then Str ""
+                                       else Str "Daarom bestaat " | fsLang fSpec==Dutch]
+                      ++ [if null purp then Str ""
+                                       else Str "Therefore " | fsLang fSpec==English]
                       ++ (toList . xRefTo . XRefNaturalLanguageRule) r
---                      ++ [RawInline (Format "latex") "~"]
---                      ++ toList ( symReqRef (getOpts fSpec) r)
---                      ++ [Str " p."
---                         ,RawInline (Format "latex") "~"]
---                      ++ toList (symReqPageRef (getOpts fSpec) r)
-                      ++ [Str ": "]]
+                      ++ [if null purp then Str " is gemaakt :"
+                                       else Str ":" | fsLang fSpec==Dutch]
+                      ++ [if null purp then Str " has been made:"
+                                       else Str " exists:" | fsLang fSpec==English]
+                         ]
                ++ meaning2Blocks (fsLang fSpec) r
                   -- then the formal rule
-               ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | fsLang fSpec==Dutch]
-                      ++ [Str "This is formalized - using relations "     | fsLang fSpec==English]
-                      ++ toList (mconcat (intersperse  (str ", ") [ xRefTo (XREFXXX d) | d@Sgn{}<-relsMentionedIn r]))
-                      ++ [Str " - als " | fsLang fSpec==Dutch]
-                      ++ [Str " - as "     | fsLang fSpec==English]]
-               ++ (if showPredExpr (getOpts fSpec)
+               ++ [Plain$[Str "Dit is - gebruikmakend van relaties " | fsLang fSpec==Dutch]
+                      ++ [Str "Using relations "               | fsLang fSpec==English]
+                      ++ toList (mconcat (intersperse  (str ", ") 
+                                [   xRefTo (XRefConceptualAnalysisDeclaration d) 
+                                 <> text (" ("++name d++")")
+                                | d@Sgn{}<-relsMentionedIn r])) 
+                      ++ [Str " - geformaliseerd als " | fsLang fSpec==Dutch]
+                      ++ [Str ", this is formalized as "     | fsLang fSpec==English]]
+               ++ toList (if showPredExpr (getOpts fSpec)
                    then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
                    else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
                   )

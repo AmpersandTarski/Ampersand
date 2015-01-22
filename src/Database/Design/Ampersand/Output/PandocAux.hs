@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.PandocAux
       ( writepandoc
-      , XRefObj(..) , xRefTo
+      , XRefObj(..) , xRefTo, xRefToLatexRefString
       , headerWithLabel
       , definitionListItemLabel
 --      , labeledThing
 --      , symDefLabel, symDefRef
 --      , symReqLabel, symReqRef, symReqPageRef
 --      , xrefSupported
+      , pandocEqnArray
       , pandocEqnArrayWithLabels
       , pandocEqnArrayWithLabel
       , pandocEquation
@@ -91,6 +92,28 @@ defaultWriterVariables fSpec
          , "% == [all]{hypcap} after {hyperref} shows the ref'd picture i.o. the caption @ click =="
          , ""
          , "\\usepackage[all]{hypcap}"
+         , ""
+         , "% hack1) described at http://tex.stackexchange.com/questions/1230/reference-name-of-description-list-item-in-latex"
+         , "\\makeatletter"
+         , "\\let\\orgdescriptionlabel\\descriptionlabel"
+         , "\\renewcommand*{\\descriptionlabel}[1]{%"
+         , "  \\let\\orglabel\\label"
+         , "  \\let\\label\\@gobble"
+         , "  \\phantomsection"
+         , "  \\edef\\@currentlabel{#1}%"
+         , "  %\\edef\\@currentlabelname{#1}%"
+         , "  \\let\\label\\orglabel"
+         , "  \\orgdescriptionlabel{#1}%"
+         , "}"
+         , "\\makeatother"
+         , "% End-hack1"
+         , ""
+         , "% hack2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that ecuations are"
+         , "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note"
+         , "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath"
+         , "\\DeclareRobustCommand{\\[}{\\begin{equation}}"
+         , "\\DeclareRobustCommand{\\]}{\\end{equation}}"
+         , "% End-hack2"
          , ""
          , ""
          , "\\def\\id#1{\\mbox{\\em #1\\/}}"
@@ -327,139 +350,93 @@ count    lang    n      x
       (English, _) -> show n++" "++plural English x
 
 ------ Symbolic referencing ---------------------------------
-data XRefObj = XRefDeclarationRequirement Declaration
-             | XRefRuleRequirement Rule
+data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefPredicateXpression Rule
-             | XRefConceptDefinition A_Concept
-             | XRefRuleDefinition Rule
-             | XREFXXX Declaration
+             | XRefNaturalLanguageConcept A_Concept
+             | XRefDataAnalRule Rule
              | XRefNaturalLanguageRule Rule
-             | XREFZZZPageRefRule Rule
              | XRefProcessAnalysis FProcess
+             | XRefProcessAnalysisDeclaration Declaration
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisDeclaration Declaration
              | XRefConceptualAnalysisRule Rule
              | XRefInterfacesInterface Interface
-             | XRefNaturalLanguageTheme (Maybe Theme) --DataAnalysis
+             | XRefNaturalLanguageTheme (Maybe Theme) 
 xRefTo :: XRefObj -> Inlines
-xRefTo x = strong . superscript . str  $ "["++xRefRawLabel x++"]"
+xRefTo x = rawInline "latex"  $ xRefToLatexRefString x
+xRefToLatexRefString :: XRefObj -> String
+xRefToLatexRefString x = "\\ref{"++xRefRawLabel x++"}"
 xRefRawLabel :: XRefObj -> String
 xRefRawLabel x
  = case x of
-     XRefProcessAnalysis x       -> "prcAnalPrc:"++(escapeNonAlphaNum.name) x
+     XRefNaturalLanguageDeclaration d -> "natLangDcl:"++(escapeNonAlphaNum.name) d
+     XRefPredicateXpression r     -> "pex:"++(escapeNonAlphaNum.name) r
+     XRefNaturalLanguageConcept c -> "natLangCpt:"++(escapeNonAlphaNum.name) c
+     XRefDataAnalRule r           -> "rd:"++(escapeNonAlphaNum.name) r
+     XRefNaturalLanguageRule r    -> "natLangRule:"++(escapeNonAlphaNum.name) r
+     XRefProcessAnalysis p        -> "prcAnal:"++(escapeNonAlphaNum.name) p
+     XRefProcessAnalysisDeclaration d 
+                                  -> "prcAnalDcl:"++(escapeNonAlphaNum.name) d
      XRefConceptualAnalysisPattern p 
-                                 -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
-     XRefNaturalLanguageRule r   -> "natLangRule:"++(escapeNonAlphaNum.name) r
-     _                           -> "TODO:ReferentieNaarIets"
+                                  -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
+     XRefConceptualAnalysisDeclaration d 
+                                  -> "cptAnalDcl:"++(escapeNonAlphaNum.name) d
+     XRefConceptualAnalysisRule r -> "cptAnalRule:"++(escapeNonAlphaNum.name) r
+     XRefInterfacesInterface i    -> "interface:"++(escapeNonAlphaNum.name) i
+     XRefNaturalLanguageTheme (Just t)
+                                  -> "theme:"++(escapeNonAlphaNum.name) t
+     XRefNaturalLanguageTheme Nothing 
+                                  -> ":losseEindjes"
+                                  
 
 headerWithLabel :: XRefObj -> Int -> Inlines -> Blocks
 headerWithLabel x = headerWith (xRefRawLabel x, [],[])
 
 definitionListItemLabel :: XRefObj -> String -> Inlines
 definitionListItemLabel x prefix
-  = str prefix <>  str ("["++xRefRawLabel x++"]")
+  = str prefix <> rawInline "latex" ("\\label{"++xRefRawLabel x++"}")
 
 
--- | this function can be used everywhere in the document where a refference to some object must be placed
-xRefReference :: XRefObj -> Inlines
-xRefReference (XRefDeclarationRequirement d) 
-     = str $ "["++"DeclarationRequirement:"++escapeNonAlphaNum (name d++name (source d)++name (target d))++"]"
---class (Identified a) => SymRef a where
---  symLabel :: a -> String -- unique label for symbolic reference purposes
---  symReqLabel :: a -> String  -- labels the requirement of a
---  symReqLabel   c = "\\label{Req"++symLabel c++"}"
---  symDefLabel :: a -> String  -- labels the definition of a
---  symDefLabel   c = "\\label{Def"++symLabel c++"}"
---  symReqRef :: Options -> a -> Inlines  -- references the requirement of a
---  symReqRef  opts   c = case fspecFormat opts of
---                           FLatex  -> rawInline "latex" ("\\ref{Req"++symLabel c++"}")
---                           _       -> (str.name) c
---  symDefRef :: Options -> a -> Inlines  -- references the definition of a
---  symDefRef  opts   c = case fspecFormat opts of
---                           FLatex  -> rawInline "latex" ("\\ref{Def"++symLabel c++"}")
---                           _       -> (str.name) c
---  symReqPageRef :: Options -> a -> Inlines  -- references the requirement of a
---  symReqPageRef opts c = case fspecFormat opts of
---                           FLatex  -> rawInline "latex" ("\\pageref{Req"++symLabel c++"}")
---                           _       -> (str.name) c
---  symDefPageRef :: a -> String  -- references the definition of a
---  symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
---
---instance SymRef ConceptDef where
---  symLabel cd = "Concept:"++escapeNonAlphaNum (cdcpt cd)
---
---instance SymRef A_Concept where
---  symLabel c = "Concept:"++escapeNonAlphaNum (name c)
---
---instance SymRef Declaration where
---  symLabel d = "Decl:"++escapeNonAlphaNum (name d++name (source d)++name (target d))
---
---instance SymRef Rule where
---  symLabel r = "Rule:"++escapeNonAlphaNum (name r)
---
---instance SymRef PlugInfo where
---  symLabel p = "PlugInfo "++escapeNonAlphaNum (name p)
-
---   xrefChptReference :: String -> [Inline]
---   xrefChptReference myLabel = [RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
----   xrefTableReference :: String -> [Inline]
---   xrefTableReference myLabel = [RawInline (Text.Pandoc.Builder.Format "latex") ("\\ref{tab:"++myLabel++"}")]
--- BECAUSE: Why (SJ) does the code of labeledHeader look stupid?
---         When Han looked at pandoc code TexInfo.hs blockToTexinfo ln.208,
---         he expected chapter,section,sub,subsub respectively.
---         However, he got section,sub,subsub,plain text respectively.
---         Looks like an error in PanDoc, doesn't it?
---         So now he wrote chapters as 0 setting a [Inline] -> [RawInline (Text.Pandoc.Builder.Format "latex") "\\chapter{...}"].
---         We do not know yet how this relates to other formats like rtf.
-
--- TODO: Fix the other labeled 'things', to make a neat reference.
---labeledThing :: Options -> Int -> String -> String -> Blocks
---labeledThing opts lev lbl t =
---    header (lev+1)
---       ((text t <> xrefLabel opts lbl))
---
--- | A label that can be cross referenced to. (only for output formats that support this feature)
---xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere rendering dan LaTeX
---xrefLabel opts myLabel
---   = if xrefSupported opts
---     then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
---     else mempty -- fatal 508 "Illegal use of xrefLabel."
---xrefSupported :: Options -> Bool
---xrefSupported opts = fspecFormat opts `elem` [FLatex]
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
 xrefCitation myLabel = RawInline (Text.Pandoc.Builder.Format "latex") ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 
--- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
-pandocEqnArrayWithLabels :: [(XRefObj,String,String,String)] -> [Block]
-pandocEqnArrayWithLabels = toList . pandocEqnArrayWithLabels'
+pandocEqnArray :: [[String]] -> [Block]
+pandocEqnArray [] = []
+pandocEqnArray xs
+ = (toList . para . displayMath) 
+       ( "\\begin{aligned}\n"
+         ++ intercalate "\\\\\n   " [ intercalate "&" row  | row <-xs ]
+         ++"\n\\end{aligned}"
+       )
+    
+pandocEqnArrayWithLabels :: [(XRefObj,[String])] -> Blocks 
+pandocEqnArrayWithLabels [] = mempty
+pandocEqnArrayWithLabels rows
+ = (para .displayMath) 
+       ( "\\begin{aligned}\n"
+         ++ intercalate "\\\\\n   " [ intercalate "&" row ++ "\\label{"++xRefRawLabel x++"}" | (x,row)<-rows ]
+         ++"\n\\end{aligned}"
+       )
 
-pandocEqnArrayWithLabels' :: [(XRefObj,String,String,String)] -> Blocks 
-pandocEqnArrayWithLabels' [] = mempty
-pandocEqnArrayWithLabels' xs
- = (para . displayMath)  "\\label{eq1}\n\\begin{split}\nA & = \\frac{\\pi r^2}{2} \\\\\n & = \\frac{1}{2} \\pi r^2\n\\end{split}"
- <>(para .displayMath . intercalate "\\\\\n   ") [ "\\label{"++xRefRawLabel x++"}\\\\\n"++intercalate "&" [a,b,c] | (x,a,b,c)<-xs ]
--- = [ Para [ RawInline (Text.Pandoc.Builder.Format "latex") ("\\begin{eqnarray}\n   "++
---                               intercalate "\\\\\n   " [ a++"&"++b++"&"++c | (a,b,c)<-xs ]++
---                               "\n\\end{eqnarray}") ]
---   | not (null xs)]
-
-pandocEqnArrayWithLabel :: XRefObj -> [(String,String,String)] -> [Block]
-pandocEqnArrayWithLabel xref xs -- = toList . pandocEqnArrayWithLabel' xref
- = [Para [Math DisplayMath ("\\label{"++xRefRawLabel xref++"}\\\\\n"
-                          ++"mijn formule{2}" -- intercalate "\\\\\n   " [ intercalate "&" [a,b,c] | (a,b,c)<-xs ]
-                          )]]
-pandocEqnArrayWithLabel' :: XRefObj -> [(String,String,String)] -> Blocks
-pandocEqnArrayWithLabel' _ [] = fatal 450 "A labeld thing must not be empty"
-pandocEqnArrayWithLabel' xref xs
- = (para . displayMath)  ( "\\label{"++xRefRawLabel xref++"}\n"
-                         ++intercalate "\\\\\n   " [ intercalate "&" [a,b,c] | (a,b,c)<-xs ])
+pandocEqnArrayWithLabel :: XRefObj -> [[String]] -> Blocks
+pandocEqnArrayWithLabel _ [] = mempty
+pandocEqnArrayWithLabel xref rows
+ = (para . displayMath)  
+       ( "\\label{"++xRefRawLabel xref++"}\\begin{aligned}\\\\\n"
+         ++ intercalate "\\\\\n   " [ intercalate "&" row | row <- rows ]
+         ++"\n\\end{aligned}"
+       )
                                 
 pandocEquation :: String -> [Block]
 pandocEquation x = toList . para . displayMath $ x
 
-pandocEquationWithLabel :: XRefObj -> String -> [Block]
-pandocEquationWithLabel xref x = toList . para . displayMath 
-         $ "\\label{"++xRefRawLabel xref++"}\n"++x
+pandocEquationWithLabel :: XRefObj -> String -> Blocks
+pandocEquationWithLabel xref x = 
+   para . displayMath $
+        ( "\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n"
+           ++x
+           ++"\n\\end{aligned}"
+        )
 
 
 --DESCR -> pandoc print functions for Ampersand data structures

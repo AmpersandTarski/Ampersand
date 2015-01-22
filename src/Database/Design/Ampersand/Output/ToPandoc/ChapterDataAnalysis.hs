@@ -382,7 +382,7 @@ daRulesSection lev fSpec = theBlocks
             in  if format == Frtf then
                    plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                 else
-                  fromList $ pandocEqnArrayWithLabel (XRefRuleDefinition rule) (showLatex predicate)
+                  pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
        else if format == FLatex
             then fromList $ pandocEquation (showMath rule)
             else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>

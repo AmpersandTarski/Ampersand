@@ -21,7 +21,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , purposes2Blocks
     , isMissing
     , lclForLang
-    , dpRule
+    , dpRule'
     , relsInThemes
     , Counter(..),newCounter,incEis
     , inlineIntercalate
@@ -211,10 +211,11 @@ orderingByTheme fSpec
        isCptOfTheme c = c `elem` concatMap concs relsOfTheme
 
 --GMI: What's the meaning of the Int?
-dpRule :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
+dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
-dpRule fSpec = dpR
+dpRule' fSpec = dpR
  where
+   l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( str (name r)
@@ -227,69 +228,73 @@ dpRule fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-           let purps = purposesDefinedIn fSpec (fsLang fSpec) r in            -- Als eerste de uitleg van de betreffende regel..
-             (  (purposes2Blocks (getOpts fSpec) purps)
-             <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
-             <> (if null nds then mempty else plain text1)
-             <> (fromList $
-                  pandocEqnArrayWithLabels
-                      [ ( XREFXXX d
-                        , texOnly_Id(name d)
+         (  (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)) -- Als eerste de uitleg van de betreffende regel..
+         <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
+         <> case (nds, fsLang fSpec) of
+             ([] ,_)       -> mempty 
+             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
+             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
+             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefNaturalLanguageRule r) 
+                                    <>  " (" <> (singleQuoted.str.name) r  <> ") "
+                                    <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
+             (_  ,English) -> plain ("To arrive at the formalization of "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
+         <> (fromList $
+                  pandocEqnArray
+                      [ [ "("++xRefToLatexRefString (XRefConceptualAnalysisDeclaration d) ++ ")\\;\\;"
+                        ,  texOnly_Id(name d)
                         , ":"
                         , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
-                        ) |d<-nds])
-             <> (if null rds then mempty else plain text2)
-             <> (plain text3)
-             <> (if showPredExpr (getOpts fSpec)
-                 then fromList $ pandocEqnArrayWithLabel (XRefPredicateXpression r) ((showLatex.toPredLogic) r)
-                 else fromList $ pandocEquationWithLabel (XRefPredicateXpression r) (showMath r)
-                )
-             <> (if length nds>1 then text5 else mempty)
-             )
-        text1, text2, text3  :: Inlines
-        text1
-         = case (nds,fsLang fSpec) of
-             ([d],Dutch)   -> ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XREFXXX d) <> "):")
-             ([d],English) -> ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XREFXXX d) <> "):")
-             (_  ,Dutch)   -> ("Om te komen tot de formalisatie van de afspraak " <> xRefTo (XRefNaturalLanguageRule r) <> str (" zijn de volgende "++count Dutch (length nds) "relatie"++" nodig."))
-             (_  ,English) -> ("To arrive at the formalization of requirement "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
-        text2
-         = (case ( nds, rds,fsLang fSpec) of
-             ([],[rd],Dutch)   -> ("Definitie " <>         xRefTo (XREFXXX rd) <> "(" <> str (name rd) <> ") wordt gebruikt")
-             ([],[rd],English) -> ("We use definition " <> xRefTo (XREFXXX rd) <> "(" <> str (name rd) <> ")")
-             ([], _  ,Dutch)   -> ("We gebruiken definities " <> commaNLPandoc' "en"   [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             ([], _  ,English) -> ("We use definitions "      <> commaEngPandoc' "and" [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ ,[rd],Dutch)   -> ("Daarnaast gebruiken we definitie " <> xRefTo (XREFXXX rd) <> "(" <> (str.name) rd <> ")" )
-             (_ ,[rd],English) -> ("Beside that, we use definition "   <> xRefTo (XREFXXX rd) <> "(" <> (str.name) rd <> ")" )
-             (_ , _  ,Dutch)   -> ("Ook gebruiken we definities "<> commaNLPandoc' "en"  [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-             (_ , _  ,English) -> ("We also use definitions "<>     commaNLPandoc' "and" [xRefTo (XREFXXX d) <> " (" <> (emph.str.name) d <> ")" |d<-rds])
-           )<>
-           (case (nds,fsLang fSpec) of
-             ([_],Dutch)   -> (" om eis" <> xRefTo (XRefNaturalLanguageRule r) <> " te formaliseren: ")
-             ([_],English) -> (" to formalize requirement" <> xRefTo (XRefNaturalLanguageRule r) <> ": ")
-             ( _, _)        -> ". "
+                        ] |d<-nds])
+         <> (case nds of
+              [] -> case rds of
+                       []   -> mempty
+                       [rd] -> plain (  l (NL "Relatie ", EN "We use relations ")
+                                     <> xRefTo (XRefConceptualAnalysisDeclaration rd) <> "(" <> (emph.str.name) rd <> ")"
+                                     <> l (NL " wordt gebruikt.", EN ".")
+                                     )
+                       _    -> plain (  (case fsLang fSpec of
+                                          Dutch   ->  "We gebruiken de relaties " 
+                                                     <> commaNLPandoc'  "en"  [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                          English ->   "We use relations "
+                                                     <> commaEngPandoc' "and" [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                        )
+                                     )
+              _  -> if null rds then mempty
+                    else ( plain ( ( case rds of
+                                      []   -> mempty
+                                      [rd] ->   l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
+                                              <> xRefTo (XRefConceptualAnalysisDeclaration rd) <> "(" <> (str.name) rd <> ")"
+                                      _ -> (case fsLang fSpec of
+                                          Dutch   ->   "Ook gebruiken we relaties " 
+                                                     <> commaNLPandoc'  "en"  [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                          English ->   "We also use relations "
+                                                     <> commaEngPandoc' "and" [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                           )
+                                   )
+                                 <> l (NL " om ", EN " to formalize ")
+                                 <> xRefTo (XRefNaturalLanguageRule r)
+                                 <> l (NL "te formaliseren: ", EN ": ")
+                                 )
+                         )
            )
-        text3
-         = case (fsLang fSpec,isSignal r) of
-            (Dutch  ,False) -> "De regel luidt: "
-            (English,False) -> "This means: "
-            (Dutch  ,True)  -> "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
-            (English,True)  -> "Activities that are defined by this rule are finished when: "
---        text4
---         = case fsLang fSpec of
---                 Dutch   -> [Str " Deze activiteiten worden opgestart door:"]
---                 English -> [Str " These activities are signalled by:"]
-        text5 :: Blocks
-        text5
-         = case (fsLang fSpec,isSignal r) of
-             (Dutch  ,False) -> plain ( "Dit komt overeen met de afspraak op pg."     <> (rawInline "latex" "~") <> xRefTo (XREFZZZPageRefRule r) <>":"
-                                      ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (English,False) -> plain ( "This corresponds to the requirement on page" <> (rawInline "latex" "~") <> xRefTo (XREFZZZPageRefRule r) <>":"
-                                      ) <> fromList (meaning2Blocks (fsLang fSpec) r)
-             (Dutch  ,True)  -> plain ( "Dit komt overeen met de afspraak " <> (singleQuoted.str.name) r <>
-                                        " (" <> xRefTo (XRefNaturalLanguageRule r) <> ".")
-             (English,True)  -> plain ( "This corresponds to the agreement " <> (singleQuoted.str.name) r <>
-                                        " (" <> xRefTo (XRefNaturalLanguageRule r) <> ".")
+         <> plain (if isSignal r
+                   then l ( NL "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
+                          , EN "Activities that are defined by this rule are finished when: ")
+                   else l (NL "De regel luidt: ", EN "This means: ")
+                  )
+         <> (if showPredExpr (getOpts fSpec)
+             then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
+             else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
+            )
+         <> (if length nds<=1 
+             then mempty
+             else plain (  l (NL "Dit komt overeen met ", EN "This corresponds to ")
+                        <> xRefTo (XRefNaturalLanguageRule r)
+                        <> " (" <> (singleQuoted.str.name) r  <> ")."
+                        
+                        )
+            )
+         )
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r

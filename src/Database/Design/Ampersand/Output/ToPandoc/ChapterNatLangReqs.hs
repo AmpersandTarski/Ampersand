@@ -282,7 +282,7 @@ chpNatLangReqs lev fSpec =
               -- | make a block for a concept definition
               cdBlock :: A_Concept -> (Counter,String) -> (String,ConceptDef) -> Block
               cdBlock cpt (cnt,xcnt) tup 
-               = DefinitionList [( toList (definitionListItemLabel (XRefConceptDefinition cpt)
+               = DefinitionList [( toList (definitionListItemLabel (XRefNaturalLanguageConcept cpt)
                                             ((case fsLang fSpec of
                                                  Dutch   -> "Definitie "
                                                  English -> "Definition "
@@ -327,15 +327,17 @@ chpNatLangReqs lev fSpec =
                = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
                  toList (purposes2Blocks (getOpts fSpec) purps)
                  ++
-                 [ DefinitionList [(toList (definitionListItemLabel (XRefDeclarationRequirement dcl)
-                                                ((case fsLang fSpec of
-                                                      Dutch   -> "Afspraak "
-                                                      English -> "Agreement "
-                                                 )++show(getEisnr cnt)
-                                                  ++if development (getOpts fSpec) && name dcl/="" 
-                                                    then (" ("++name dcl++"):") 
-                                                    else ":"
-                                          )     )
+                 [ DefinitionList [(  (toList (definitionListItemLabel (XRefNaturalLanguageDeclaration dcl)
+                                                  ((case fsLang fSpec of
+                                                        Dutch   -> "Afspraak "
+                                                        English -> "Agreement "
+                                                   )++show(getEisnr cnt)
+                                                    ++if development (getOpts fSpec) && name dcl/="" 
+                                                      then (" ("++name dcl++")") 
+                                                      else ""
+                                                  )
+                                              )
+                                      )
                                    , [ meaning2Blocks (fsLang fSpec) dcl]
                                    )
                                   ] 
@@ -366,14 +368,14 @@ chpNatLangReqs lev fSpec =
    =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
       toList (purposes2Blocks (getOpts fSpec) purps)
       ++
-      [ DefinitionList [(toList (definitionListItemLabel (XRefRuleRequirement rul)
+      [ DefinitionList [(toList (definitionListItemLabel (XRefNaturalLanguageRule rul)
                                   ((case fsLang fSpec of
                                         Dutch   -> "Afspraak "
                                         English -> "Agreement "
                                    )++show(getEisnr cnt)
                                     ++if development (getOpts fSpec) && name rul/="" 
-                                      then (" ("++name rul++"):")
-                                      else ":"
+                                      then (" ("++name rul++")")
+                                      else ""
                                )  )
                         , [ meaning2Blocks (fsLang fSpec) rul]
                         ) 

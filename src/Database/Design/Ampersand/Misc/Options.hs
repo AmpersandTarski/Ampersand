@@ -48,7 +48,7 @@ data Options = Options { showVersion :: Bool
                        , genXML :: Bool
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
-                       , fspecFormat :: FSpecFormat
+                       , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
                        , genGraphics :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool

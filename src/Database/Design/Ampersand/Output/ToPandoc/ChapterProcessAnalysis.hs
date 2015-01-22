@@ -137,7 +137,7 @@ chpProcessAnalysis lev fSpec
          ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec(udefrules (fpProc fproc)) i seenConcepts seenDeclarations
+         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec(udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
 --  txtProcessModel :: FProcess->Blocks
 --  txtProcessModel p
