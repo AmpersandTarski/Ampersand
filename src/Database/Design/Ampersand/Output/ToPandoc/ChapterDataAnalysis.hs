@@ -118,7 +118,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                 0 -> text "There are no entity types."
                                 1 -> text "There is only one entity type:"
                                 _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
-                                  <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
+                                  <> text "The details of each entity type are described (in alphabetical order) in the following paragraphs:"
                              )
      <> conceptTable
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
@@ -163,15 +163,14 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                        ( [[ (plain.text) "Id"
                           , (plain.text.name) cl
                           , (plain.text.l) (NL "Sleutel" , EN "Primary key")
-                         ]]
-                    <> [ [ (plain.text.name) attr
-                         , (plain.text.attTyp) attr
-                         , (plain.text.l) (if attOptional attr 
-                                           then (NL "Optioneel", EN "Optional")
-                                           else (NL "Verplicht", EN "Mandatory")
-                                          )
-                         ]
-                         | attr <- clAtts cl]
+                         ]] 
+                         <>
+                         [[ (plain.text.name) attr
+                          , (plain.text.attTyp) attr
+                          , (plain.text.l) (if attOptional attr 
+                                            then (NL "Optioneel", EN "Optional")
+                                            else (NL "Verplicht", EN "Mandatory")
+                                           )] | attr <- clAtts cl]
                        )
         <> let attrNames = map name (clAtts cl)
                asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
@@ -383,7 +382,7 @@ daRulesSection lev fSpec = theBlocks
             in  if format == Frtf then
                    plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                 else
-                  fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex predicate)
+                  pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
        else if format == FLatex
             then fromList $ pandocEquation (showMath rule)
             else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>

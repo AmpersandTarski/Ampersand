@@ -14,6 +14,8 @@ license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    https://sourceforge.net/p/ampersand/tickets/
+-- Recursive patterns such as static/* are not allowed in data-files. Hence we cannot use them for static files, as
+-- we would need to specify a pattern for each extension in each subdirectory.
 data-files:     AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/FormalAmpersand/ADLTool.adl, 
                 AmpersandData/FormalAmpersand/admin_interfaces.adl, 
@@ -172,7 +174,7 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
-                     Database.Design.Ampersand.Prototype.RelBinGenBasics,
+                     Database.Design.Ampersand.Prototype.ProtoUtil,
                      Database.Design.Ampersand.Prototype.RelBinGenSQL,
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,

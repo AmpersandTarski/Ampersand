@@ -66,7 +66,7 @@ chpNatLangReqs lev fSpec =
 
   where
   legalRefs :: Blocks
-  legalRefs = (labeledThing (getOpts fSpec) (lev+1) "LegalRefs" sectionTitle)
+  legalRefs = (header (lev+2) sectionTitle)
             <> table caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
@@ -161,16 +161,12 @@ chpNatLangReqs lev fSpec =
        (Nothing, _:_)
           -> ( mempty, counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
        _  -> ( (  --  *** Header of the theme: ***
-                 labeledThing (getOpts fSpec) (lev+1)
-                              (xLabel DataAnalysis++case mTheme of
-                                                          Nothing ->  "_LooseEnds"
-                                                          _       -> themeName
-                                                   )
-                                  (case (mTheme,fsLang fSpec) of
-                                      (Nothing, Dutch  ) -> "Losse eindjes..."
-                                      (Nothing, English) -> "Loose ends..."
-                                      _                  -> themeName
-                                  )
+                 headerWithLabel (XRefNaturalLanguageTheme mTheme) (lev+2)
+                                 (case (mTheme,fsLang fSpec) of
+                                     (Nothing, Dutch  ) -> "Losse eindjes..."
+                                     (Nothing, English) -> "Loose ends..."
+                                     _                  -> text themeName
+                                 )
 
                <> --  *** Purpose of the theme: ***
                   case mTheme of
@@ -273,25 +269,55 @@ chpNatLangReqs lev fSpec =
                                   (_,x):_ -> origin x
                                , cptBlock c
                                )
-              -- | make a block for a c with all its purposes and definitions
+              -- | make a block for a concept with all its purposes and definitions
               cptBlock :: A_Concept -> Counter -> [Block]
               cptBlock cpt cnt = concat [amPandoc (explMarkup e) | e<-exps]
-                  ++ zipWith cdBlock
+                  ++ zipWith (cdBlock cpt)
                        (if length (uniquecds fSpec cpt) == 1 then [(cnt, "")] else
                           [(cnt, '.' : show i) | i <- [(1 :: Int) ..]])
-                       [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds fSpec cpt ]
+                       (uniquecds fSpec cpt)
                   where exps = case purposeOf fSpec (fsLang fSpec) cpt of
                                  Nothing -> []
                                  Just ps -> ps
               -- | make a block for a concept definition
-              cdBlock :: (Counter,String) -> (String,String,String,String) -> Block
-              cdBlock (cnt,xcnt) (nm,lbl,def',ref) = DefinitionList
-                                        [( [ Str (case fsLang fSpec of
-                                                                 Dutch   -> "Definitie "
-                                                                 English -> "Definition ")
-                                           , Str (show (getEisnr cnt)++xcnt)
-                                           , Str ":"]
-                                         , [ makeDefinition (getOpts fSpec) (getEisnr cnt)  nm lbl def' ref ])]
+              cdBlock :: A_Concept -> (Counter,String) -> (String,ConceptDef) -> Block
+              cdBlock cpt (cnt,xcnt) tup 
+               = DefinitionList [( toList (definitionListItemLabel (XRefNaturalLanguageConcept cpt)
+                                            ((case fsLang fSpec of
+                                                 Dutch   -> "Definitie "
+                                                 English -> "Definition "
+                                             ) ++ show (getEisnr cnt)++xcnt++":"
+                                          ) )
+                                   
+                                 , [toList $ makeDefinition (getOpts fSpec) tup] 
+                                 )
+                                ]
+
+              makeDefinition :: Options -> (String,ConceptDef) -> Blocks
+              makeDefinition opts (nm,cd) =
+                 para
+                   ( rawInline "latex"
+                               ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
+                                "     { name={"++latexEscShw nm ++"}\n"++
+                                "     , description={"++latexEscShw (cddef cd)++"}}\n") <>
+                     
+                     case fspecFormat opts of
+                       FLatex ->   rawInline "latex" (insertAfterFirstWord refStr defStr)
+                                <> if null ref then mempty
+                                   else rawInline "latex" (latexEscShw (" ["++ref++"]"))
+                       _      ->   str (cddef cd) 
+                                <> if null ref then mempty
+                                   else str (" ["++ref++"]") 
+                   )
+                 
+               where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}"
+                     defStr = latexEscShw (cddef cd)
+                     ref = cdref cd
+                     -- by putting the ref after the first word of the definition, it aligns nicely with the definition
+                     insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
+                                                       in  fstWord ++ s ++ rest
+
+
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               printRels :: [Declaration] -> [(Origin, Counter -> [Block])]
@@ -301,15 +327,21 @@ chpNatLangReqs lev fSpec =
                = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
                  toList (purposes2Blocks (getOpts fSpec) purps)
                  ++
-                 [ DefinitionList [ ( [ Str (case fsLang fSpec of
-                                                      Dutch   -> "Afspraak "
-                                                      English -> "Agreement ")
-                                     , Str (show(getEisnr cnt))
-                                     ,if development (getOpts fSpec) && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
-                                   , [ Plain [RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel dcl]:
-                                       meaning2Blocks (fsLang fSpec) dcl
-                                     ]
-                                   )] ]++
+                 [ DefinitionList [(  (toList (definitionListItemLabel (XRefNaturalLanguageDeclaration dcl)
+                                                  ((case fsLang fSpec of
+                                                        Dutch   -> "Afspraak "
+                                                        English -> "Agreement "
+                                                   )++show(getEisnr cnt)
+                                                    ++if development (getOpts fSpec) && name dcl/="" 
+                                                      then (" ("++name dcl++")") 
+                                                      else ""
+                                                  )
+                                              )
+                                      )
+                                   , [ meaning2Blocks (fsLang fSpec) dcl]
+                                   )
+                                  ] 
+                 ]++
                  ( case (fsLang fSpec, length samplePop) of
                         (_      , 0) -> []
                         (Dutch  , 1) -> [Para [Str "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"]]
@@ -336,15 +368,17 @@ chpNatLangReqs lev fSpec =
    =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
       toList (purposes2Blocks (getOpts fSpec) purps)
       ++
-      [ DefinitionList [ ( [ Str (case fsLang fSpec of
-                                    Dutch   -> "Afspraak "
-                                    English -> "Agreement ")
-                           , Str (show(getEisnr cnt))
-                           , if development (getOpts fSpec) && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
-                         , [ Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel rul] :
-                                       meaning2Blocks (fsLang fSpec) rul
-                           ]
-                         )
+      [ DefinitionList [(toList (definitionListItemLabel (XRefNaturalLanguageRule rul)
+                                  ((case fsLang fSpec of
+                                        Dutch   -> "Afspraak "
+                                        English -> "Agreement "
+                                   )++show(getEisnr cnt)
+                                    ++if development (getOpts fSpec) && name rul/="" 
+                                      then (" ("++name rul++")")
+                                      else ""
+                               )  )
+                        , [ meaning2Blocks (fsLang fSpec) rul]
+                        ) 
                        ]
       | not (null$meaning2Blocks (fsLang fSpec) rul)]
    where purps = purposesDefinedIn fSpec (fsLang fSpec) rul

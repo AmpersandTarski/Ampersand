@@ -48,7 +48,7 @@ data Options = Options { showVersion :: Bool
                        , genXML :: Bool
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
-                       , fspecFormat :: FSpecFormat
+                       , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
                        , genGraphics :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
@@ -84,6 +84,7 @@ data Options = Options { showVersion :: Bool
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
                        , oldNormalizer :: Bool
+                       , newFrontend :: Bool
                        }
 
 getOptions :: IO Options
@@ -179,6 +180,7 @@ getOptions =
                       , sqlLogin      = "ampersand"
                       , sqlPwd        = "ampersand"
                       , oldNormalizer = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
+                      , newFrontend   = False
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -468,6 +470,10 @@ options = map pp
           , (Option []        ["newNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = False}))
                "use the new normalizer at your own risk." -- :-)
+            , Hidden)
+          , (Option []        ["newFrontend"]
+               (NoArg (\opts -> return opts{newFrontend = True}))
+               "Use the new frontend."
             , Hidden)
           ]
      where pp :: (OptionDef, DisplayMode) -> (OptionDef, DisplayMode)

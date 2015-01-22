@@ -55,7 +55,7 @@ chpConceptualAnalysis lev fSpec = (
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
-        ( labeledThing (getOpts fSpec) (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
+        headerWithLabel (XRefConceptualAnalysisPattern pat) (lev+2) ((text.name) pat)
         -- The section starts with the reason why this pattern exists
      <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
         -- followed by a conceptual model for this pattern
@@ -72,17 +72,17 @@ chpConceptualAnalysis lev fSpec = (
         -- now provide the text of this pattern.
         (case fsLang fSpec of
            Dutch   -> para "De definities van concepten zijn te vinden in de index."
-                   <> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
+                   <> header (lev+3) "Gedeclareerde relaties"
                    <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
            English -> para "The definitions of concepts can be found in the glossary."
-                   <> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
+                   <> header (lev+3) "Declared relations"
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
      <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
      <> (case fsLang fSpec of
-           Dutch   -> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
+           Dutch   -> header (lev+3) "Formele regels"
                    <> plain "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
-           English -> (labeledThing (getOpts fSpec) (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
+           English -> header (lev+3) "Formal rules"
                    <> plain "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."
         )
      <> fromList [DefinitionList blocks | let blocks = map caRule (invariants pat `isc` udefrules pat), not(null blocks)]
@@ -95,15 +95,16 @@ chpConceptualAnalysis lev fSpec = (
                 ( case ( null purp, fsLang fSpec) of
                    (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
                    (True , English) -> plain ("The following " <> str(ukadjs d) <> " has been defined ")
-                   (False, Dutch)   -> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " is gedefinieerd ")
+                   (False, Dutch)   -> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
                    (False, English) -> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning
-               <> fromList ( pandocEqnArray
-                     [ ( texOnly_Id(name d)
+               <> pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)
+                     [ [ texOnly_Id(name d)
                        , ":"
-                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d)) ++symDefLabel d -- TODO: HJO,20140724 Dit is niet de plaats van een label, want de relatie kan in meerdere patterns voorkomen. Maar wat is dan wél de juiste plaats?
-                       )  ])
+                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d)) 
+                       ]  
+                     ]
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
                            Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
@@ -150,29 +151,32 @@ chpConceptualAnalysis lev fSpec = (
              , [  -- First the reason why the rule exists, if any..
                   purp
                   -- Then the rule as a requirement
-               ++ [Plain$[if null purp then Str "De volgende afspraak is gesteld in paragraaf "
-                                       else Str "Daarom is als afspraak gesteld in paragraaf " | fsLang fSpec==Dutch]
-                      ++ [if null purp then Str "The following requirement has been defined in section "
-                                       else Str "Therefore the following requirement has been defined in section " | fsLang fSpec==English]
-                      ++ [RawInline (Format "latex") "~"]
-                      ++ toList ( symReqRef (getOpts fSpec) r)
-                      ++ [Str " p."
-                         ,RawInline (Format "latex") "~"]
-                      ++ toList (symReqPageRef (getOpts fSpec) r)
-                      ++ [Str ": "]]
+               ++ [Plain$[if null purp then Str ""
+                                       else Str "Daarom bestaat " | fsLang fSpec==Dutch]
+                      ++ [if null purp then Str ""
+                                       else Str "Therefore " | fsLang fSpec==English]
+                      ++ (toList . xRefTo . XRefNaturalLanguageRule) r
+                      ++ [if null purp then Str " is gemaakt :"
+                                       else Str ":" | fsLang fSpec==Dutch]
+                      ++ [if null purp then Str " has been made:"
+                                       else Str " exists:" | fsLang fSpec==English]
+                         ]
                ++ meaning2Blocks (fsLang fSpec) r
                   -- then the formal rule
-               ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | fsLang fSpec==Dutch]
-                      ++ [Str "This is formalized - using relations "     | fsLang fSpec==English]
-                      ++ toList (mconcat (intersperse  (str ", ") [ symDefRef (getOpts fSpec) d | d@Sgn{}<-relsMentionedIn r]))
-                      ++ [Str " - als " | fsLang fSpec==Dutch]
-                      ++ [Str " - as "     | fsLang fSpec==English]]
-               ++ (if showPredExpr (getOpts fSpec)
-                   then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
-                   else pandocEquation (showMath r++symDefLabel r)
+               ++ [Plain$[Str "Dit is - gebruikmakend van relaties " | fsLang fSpec==Dutch]
+                      ++ [Str "Using relations "               | fsLang fSpec==English]
+                      ++ toList (mconcat (intersperse  (str ", ") 
+                                [   xRefTo (XRefConceptualAnalysisDeclaration d) 
+                                 <> text (" ("++name d++")")
+                                | d@Sgn{}<-relsMentionedIn r])) 
+                      ++ [Str " - geformaliseerd als " | fsLang fSpec==Dutch]
+                      ++ [Str ", this is formalized as "     | fsLang fSpec==English]]
+               ++ toList (if showPredExpr (getOpts fSpec)
+                   then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
+                   else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
                   )
                -- followed by a conceptual model for this rule
-               ++ toList
+               ++ (toList
                ( case (genGraphics (getOpts fSpec), fsLang fSpec) of
                   (True,Dutch  ) ->
                         para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfRule r) <> " geeft een conceptueel diagram van deze regel.")
@@ -180,6 +184,6 @@ chpConceptualAnalysis lev fSpec = (
                   (True,English) ->
                         para ("Figure " <> xRefReference (getOpts fSpec) (pictOfRule r) <> " shows a conceptual diagram of this rule.")
                      <> plain (showImage (getOpts fSpec) (pictOfRule r))
-                  _              -> mempty)
+                  _              -> mempty))
 
                ])
