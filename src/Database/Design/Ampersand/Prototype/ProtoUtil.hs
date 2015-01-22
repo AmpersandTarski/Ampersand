@@ -1,21 +1,38 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Prototype.RelBinGenBasics
-         ( phpIdentifier,commentBlock,strReplace
+module Database.Design.Ampersand.Prototype.ProtoUtil
+         ( writePrototypeFile, getGenericsDir
+         , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , pDebug,indentBlockBetween,quote,sqlAtomQuote
+         , indentBlockBetween,quote,sqlAtomQuote
          , phpIndent,showPhpStr,escapePhpStr,showPhpBool
          ) where
  
+import Prelude hiding (writeFile)
 import Data.Char(isAlphaNum,isDigit)
 import Data.List
-import Database.Design.Ampersand
+import System.Directory
+import System.FilePath
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Misc.Options (verboseLn) -- TODO: verboseLn shouldn't be in Options
+import qualified Database.Design.Ampersand.Misc.Options as Opts
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "RelBinGenBasics"
+fatal = fatalMsg "ProtoUtil"
 
-pDebug :: Bool
-pDebug = True
+writePrototypeFile :: FSpec -> String -> String -> IO ()
+writePrototypeFile fSpec relFilePath content =
+ do { verboseLn (getOpts fSpec) ("  Generating "++relFilePath)
+    ; let filePath = getGenericsDir fSpec </> relFilePath
+    ; createDirectoryIfMissing True (takeDirectory filePath)
+    ; writeFile filePath content
+    }
+
+getGenericsDir :: FSpec -> String
+getGenericsDir fSpec = 
+  let protoDir = Opts.dirPrototype (getOpts fSpec)
+  in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generated" else protoDir
 
 quote :: String->String
 quote [] = []

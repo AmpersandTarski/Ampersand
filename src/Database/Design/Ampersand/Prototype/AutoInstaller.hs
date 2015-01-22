@@ -7,7 +7,7 @@
 module Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 where
 import Database.Design.Ampersand.Prototype.CoreImporter
-import Database.Design.Ampersand.Prototype.RelBinGenBasics(quote)
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.PHP
 import Database.HDBC.ODBC
 import Database.HDBC
