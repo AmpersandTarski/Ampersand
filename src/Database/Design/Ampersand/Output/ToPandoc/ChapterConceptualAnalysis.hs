@@ -89,14 +89,14 @@ chpConceptualAnalysis lev fSpec = (
     )
   caRelation :: Declaration -> (Inlines, [Blocks])
   caRelation d
-        = let purp = toList (purposes2Blocks (getOpts fSpec) [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
+        = let purp =  (purposes2Blocks (getOpts fSpec) [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
           in (mempty
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
-                ( case ( null purp, fsLang fSpec) of
+                ( case ( isNull purp, fsLang fSpec) of
                    (True , Dutch)   -> plain ("De volgende " <> str(nladjs d) <> " is gedefinieerd ")
                    (True , English) -> plain ("The following " <> str(ukadjs d) <> " has been defined ")
-                   (False, Dutch)   -> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
-                   (False, English) -> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
+                   (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
+                   (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning
                <> pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)

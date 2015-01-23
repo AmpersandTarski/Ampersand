@@ -372,7 +372,7 @@ xRefRawLabel x
      XRefNaturalLanguageDeclaration d -> "natLangDcl:"++(escapeNonAlphaNum.name) d
      XRefPredicateXpression r     -> "pex:"++(escapeNonAlphaNum.name) r
      XRefNaturalLanguageConcept c -> "natLangCpt:"++(escapeNonAlphaNum.name) c
-     XRefDataAnalRule r           -> "rd:"++(escapeNonAlphaNum.name) r
+     XRefDataAnalRule r           -> "dataAnalRule:"++(escapeNonAlphaNum.name) r
      XRefNaturalLanguageRule r    -> "natLangRule:"++(escapeNonAlphaNum.name) r
      XRefProcessAnalysis p        -> "prcAnal:"++(escapeNonAlphaNum.name) p
      XRefProcessAnalysisDeclaration d 

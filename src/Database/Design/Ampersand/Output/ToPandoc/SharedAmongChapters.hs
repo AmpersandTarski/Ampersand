@@ -273,7 +273,7 @@ dpRule' fSpec = dpR
                                    )
                                  <> l (NL " om ", EN " to formalize ")
                                  <> xRefTo (XRefNaturalLanguageRule r)
-                                 <> l (NL "te formaliseren: ", EN ": ")
+                                 <> l (NL " te formaliseren: ", EN ": ")
                                  )
                          )
            )
