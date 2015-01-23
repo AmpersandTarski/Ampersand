@@ -1,0 +1,26 @@
+ <!-- This is the content for an editable relation to another Concept -->
+<!-- 
+e.g.
+
+pl :: Project * Person
+
+"Projects" 		: exp1
+	ROWS [ "Name" 				: exp2
+		 , "Description"		: exp3
+		 , "Projectleader"		: pl
+		 ]
+
+-->
+<div ng-repeat="row in val['Projectleader']">
+	<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleader'], row['id'])"></span>
+	
+	<!-- If INTERFACE exists for ROLE that takes TgtConcept of relation als SrcConcept -->
+	<a ng-href="#/<INTERFACE>/{{row['id']}}">{{row['label']}}</a>
+	
+	<!-- If no INTERFACE is available -->
+	{{val['label']}}
+</div>
+<div my-showonhovertr class="pointer" ng-click="addProjectleider(val, 'Projectleider')">
+	<span class="glyphicon glyphicon-plus"></span>
+	<small>Add new Projectleider</small>
+</div>

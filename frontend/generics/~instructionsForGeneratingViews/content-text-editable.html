@@ -1,0 +1,16 @@
+<!-- This is the content for an editable TEXT element in an interface -->
+<!-- 
+e.g.
+
+projectName :: Project * TEXT
+
+"Projects" 		: exp1
+	ROWS [ "Name" 				: projectName
+		 , "Description"		: exp3
+		 , "Projectleader"		: exp4
+		 ]
+
+-->
+<div class="input-group">
+	<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch()">
+</div>

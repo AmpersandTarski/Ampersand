@@ -5,22 +5,27 @@ class ObjectInterface {
 	public $id;
 	public $name; // TODO: kan vervallen?
 	public $label;
-	public $link;
+	
 	public $interfaceRoles = array();
-	// public $editableConcepts = array();
-	public $interfaceInvariantConjunctNames;
+	
+	public $invariantConjuctsIds;
+	public $signalConjunctsIds;
+	
 	public $relation; 
 	public $relationIsFlipped;
 	public $univalent;
 	public $totaal;
-	public $editable; public $notEditable;
+	public $editable;
+	
 	public $srcConcept;
 	public $tgtConcept;
 	public $tgtDataType;
+	
 	public $refInterface;
 	private $boxSubInterfaces;
-	public $expressionSQL;
 	public $subInterfaces = array();
+	
+	public $expressionSQL;
 
 	public function __construct($name, $interface = array()){
 		global $allInterfaceObjects; // from Generics.php
@@ -34,8 +39,10 @@ class ObjectInterface {
 		$this->id = $interface['name'];
 		$this->name = $interface['name'];
 		$this->label = $interface['name'];
-		$this->link = 'http://localhost/CB/api/v1/interface/'.urlencode($this->name); // TODO: make config for first part of link or do without.
 		$this->interfaceRoles = $interface['interfaceRoles'];
+		
+		$this->invariantConjuctsIds = $interface['invariantConjuctsIds']; // only applicable for Top-level interfaces
+		$this->signalConjunctsIds = $interface['signalConjuctsIds']; // only applicable for Top-level interfaces
 		
 		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
 		$this->interfaceInvariantConjunctNames = $interface['interfaceInvariantConjunctNames']; // only applies to top level interface
@@ -43,7 +50,7 @@ class ObjectInterface {
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
-		$this->editable = (!empty($interface['relation'])) ? true : false; $this->notEditable = !$this->editable;
+		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
 		$this->totaal = ($interface['min'] == "One") ? true : false;
 		$this->univalent = ($interface['max'] == "One") ? true : false; 
 		$this->srcConcept = $interface['srcConcept'];

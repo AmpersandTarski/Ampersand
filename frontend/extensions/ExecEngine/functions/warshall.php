@@ -29,100 +29,91 @@
       and a 'DelTransitiveClosure'
 */
 
-function TransitiveClosure($r,$C,$rCopy,$rStar)
-{ ExecEngineWhispers("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)");
-  global $violationID; // 'array-index' of violations that are being processed; 
-  if ($violationID > 1) // If we are not dealing with the first violation of a rule:
-  { ExecEngineWhispers("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)");
-    return;  // this is the case if we have executed this function already in this transaction
-  }
-  
-  // Compute transitive closure following Warshall's algorithm
-  $closure = RetrievePopulation($r, $C); // get adjacency matrix
-  OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation  
+function TransitiveClosure($r,$C,$rCopy,$rStar){
+	ErrorHandling::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)");
 
-  // Get all unique atoms from this population
-  $atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure 
-  foreach ($closure as $tgtAtomsList) // Loop to add 'Tgt' atoms that not yet exist
-  { $tgtAtoms = array_keys($tgtAtomsList);
-    foreach ($tgtAtoms as $tgtAtom)
-    { if (!in_array($tgtAtom, $atoms)) 
-      {  $atoms[] = $tgtAtom;
-  } } }
-
-  foreach ($atoms as $k)
-  { foreach ($atoms as $i)
-    { if ($closure[$i][$k])
-      { foreach ($atoms as $j)
-         { $closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
-   } } } }
-
-  OverwritePopulation($closure, $rStar, $C);
+	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
+		ErrorHandling::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)");
+		return;  // this is the case if we have executed this function already in this transaction		
+	}else{
+		
+		$GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
+		
+		// Compute transitive closure following Warshall's algorithm
+		$closure = RetrievePopulation($r, $C); // get adjacency matrix
+		
+		OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
+		
+		// Get all unique atoms from this population
+		$atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
+		
+		foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
+			$tgtAtoms = array_keys($tgtAtomsList);
+			foreach ($tgtAtoms as $tgtAtom){
+				if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
+			}
+		}
+		
+		foreach ($atoms as $k){
+			foreach ($atoms as $i){
+				if ($closure[$i][$k]){
+					foreach ($atoms as $j){
+						$closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
+					}
+				}
+			}
+		}
+		
+		OverwritePopulation($closure, $rStar, $C);
+	}
 }
 
-function RetrievePopulation($relation, $concept)
-{ global $relationTableInfo; // For comments on this function see plugin_InsDelPairAtom.php
-  global $tableColumnInfo;
-
-  $found = false; // check if $relation appears in $relationTableInfo
-  foreach($relationTableInfo as $key => $arr)
-    {   if($key == $relation && $arr['srcConcept'] == $concept && $arr['tgtConcept'] == $concept)
-        { $found = true;
-          $table = $arr['table'];
-            $srcCol = $arr['srcCol'];
-            $tgtCol = $arr['tgtCol'];
-        }
-    }
-    if (!$found)
-    { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
-      ExecEngineSHOUTS("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
-      ExecEngineSays("If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration.");
-      die;
-    }
-
-  $tableEsc = escapeSQL($table);
-  $query = "SELECT * FROM $tableEsc";
-  $result = mysql_query($query);
-  if (!$result) die ('Error: '.mysql_error());
-  while($row = mysql_fetch_array($result, MYSQL_NUM))
-  { $array[$row[0]][$row[1]] = true;
-  }
-  return (array) $array;
+function RetrievePopulation($relationName, $concept){
+	$database = Database::singleton();
+	
+	if($fullRelationSignature = Relation::isCombination($relationName, $concept, $concept)){
+		$table = Relation::getTable($fullRelationSignature);
+		$srcCol = Relation::getSrcCol($fullRelationSignature);
+		$tgtCol = Relation::getTgtCol($fullRelationSignature);
+	}else{
+		ErrorHandling::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
+		return;
+	}
+	
+	$query = "SELECT * FROM $table";
+	$result = $database->Exe($query);
+	
+	// initialization of 2-dimensional array
+	foreach($result as $row){
+		$array[$row['src']][$row['tgt']] = true;
+	}
+	
+	return (array)$array;
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-function OverwritePopulation($rArray, $relation, $concept)
-{ global $relationTableInfo; // For comments on this function see plugin_InsDelPairAtom.php
-  global $tableColumnInfo;
-
-  $found = false; // check if $relation appears in $relationTableInfo
-  foreach($relationTableInfo as $key => $arr)
-    {   if($key == $relation && $arr['srcConcept'] == $concept && $arr['tgtConcept'] == $concept)
-        { $found = true;
-          $table = $arr['table'];
-            $srcCol = $arr['srcCol'];
-            $tgtCol = $arr['tgtCol'];
-        }
-    }
-    if (!$found)
-    { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
-      ExecEngineSHOUTS("ERROR in OverwritePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
-      ExecEngineSays("If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration.");
-      die;
-    }
-
-  $tableEsc = escapeSQL($table);
-  $srcColEsc = escapeSQL($srcCol);
-  $tgtColEsc = escapeSQL($tgtCol);
-  
-  $query = "TRUNCATE TABLE $tableEsc";
-  DB_doquer($query);
-  
-  foreach($rArray as $src => $tgtArray)
-  { foreach($tgtArray as $tgt => $bool)
-    { if($bool)
-      { $query = "INSERT INTO $tableEsc (`$srcColEsc`, `$tgtColEsc`) VALUES ('$src','$tgt')";
-        DB_doquer($query);
-} } } } 
-
+function OverwritePopulation($rArray, $relation, $concept){
+	$database = Database::singleton();
+	
+	if($fullRelationSignature = Relation::isCombination($relationName, $concept, $concept)){
+		$table = Relation::getTable($fullRelationSignature);
+		$srcCol = Relation::getSrcCol($fullRelationSignature);
+		$tgtCol = Relation::getTgtCol($fullRelationSignature);
+	}else{
+		ErrorHandling::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
+		return;
+	}
+	
+	$query = "TRUNCATE TABLE $table";
+	$database->Exe($query);
+	
+	foreach($rArray as $src => $tgtArray){
+		foreach($tgtArray as $tgt => $bool){
+			if($bool){
+				$query = "INSERT INTO $table (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
+				$database->Exe($query);
+			}
+		}
+	} 
+}
 ?>

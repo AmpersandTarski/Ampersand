@@ -1,0 +1,170 @@
+<div class="container-fluid interface">	
+	<fieldset>
+		<!-- I[SESSION] -->
+		<legend>{{SESSION.label}}</legend>
+		
+		<!-- TABS -->
+		<tabset>
+			<tab heading="Started projects">
+				<table class="table table-striped table-hover table-condensed">
+					<thead>
+						<tr>
+							<th></th>
+							<th width="100px">Projects</th> 
+							<th>Name</th>
+							<th class="table-header-textarea">Description</th>
+							<th>Projectleider</th>
+							<th>Start</th>
+							<th>Started</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="(key, val) in SESSION['Started projects']">
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(SESSION['Started projects'], key)"></span></td>
+							<!-- I[Project] --> 
+							<td>
+								<div>
+									<a ng-href="#/Project/{{val['id']}}">{{val['label']}}</a>
+								</div>
+							</td>
+							<!--
+							<td>
+								<div>
+									{{val['label']}}
+								</div>
+							</td>
+							-->
+							
+							<!-- Text -->
+							<td>
+								<div class="input-group">
+									<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch()">
+								</div>
+							</td>
+							
+							<!-- Textarea 
+							<td>
+								<div class="input-group">
+									<textarea ng-model="val['Description']" class="form-control input-sm" placeholder="Textarea" rows="1" ng-blur="patch()"></textarea>
+								</div>
+							</td>
+							-->
+							<td>
+								<div>
+									{{val['Description'] | limitTo:50}}...
+								</div>
+							</td>
+							 
+							<!-- Relation to other concept -->
+							<td>
+								<div ng-repeat="row in val['Projectleider']">
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'])"></span>
+									<a ng-href="#/Person/{{row['id']}}">{{row['label']}}</a>
+								</div>
+								<div my-showonhovertr class="pointer" ng-click="addProjectleider(val, 'Projectleider')">
+									<span class="glyphicon glyphicon-plus"></span>
+									<small>Add new Projectleider</small>
+								</div>
+							</td>
+							 
+							<!-- Date 
+							<td>
+								<div class="input-group">
+									<input ng-model="val['Start']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start'].open" ng-blur="patch()"/>
+			             				<span class="input-group-btn">
+			               				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start')"><i class="glyphicon glyphicon-calendar"></i></button>
+			             				</span>	
+								</div>
+							</td>
+							-->
+							<td>
+								<div>
+									{{val['Start'] | date : 'dd-MM-yyyy'}}
+								</div>
+							</td>
+							
+							<!-- Checkbox -->
+							<td>
+								<div class="checkbox">
+									<label>
+										<input ng-model="val['Started']" type="checkbox" ng-change="patch()"/>
+									</label>
+								</div>
+							</td>
+						</tr>
+			        </tbody>
+				</table>
+			</tab>
+			<tab heading="Unstarted projects">
+				<table class="table table-striped table-hover table-condensed">
+					<thead>
+						<tr>
+							<th></th>
+							<th width="100px">Projects</th> 
+							<th>Name</th>
+							<th class="table-header-textarea">Description</th>
+							<th>Projectleider</th>
+							<th>Start</th>
+							<th>Started</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="(key, val) in SESSION['Unstarted projects']">
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(SESSION['Unstarted projects'], key)"></span></td>
+							<td>
+								<div>
+									<a ng-href="#/Project/{{val['id']}}">{{val['label']}}</a>
+								</div>
+							</td>
+							
+							<!-- Text -->
+							<td>
+								<div class="input-group">
+									<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch()">
+								</div>
+							</td>
+							
+							<!-- Textarea -->
+							<td>
+								<div class="input-group">
+									<textarea ng-model="val['Description']" class="form-control input-sm" placeholder="Textarea" rows="2" ng-blur="patch()"></textarea>
+								</div>
+							</td>
+							 
+							<!-- Relation to other concept -->
+							<td>
+								<div ng-repeat="row in val['Projectleider']">
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'])"></span>
+									<a ng-href="#/Person/{{row['id']}}">{{row['label']}}</a>
+								</div>
+								<div my-showonhovertr class="pointer" ng-click="addProjectleider(val, 'Projectleider')">
+									<span class="glyphicon glyphicon-plus"></span>
+									<small>Add new Projectleider</small>
+								</div>
+							</td>
+							 
+							<!-- Date -->
+							<td>
+								<div class="input-group">
+									<input ng-model="val['Start']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start'].open" ng-blur="patch()"/>
+			             				<span class="input-group-btn">
+			               				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start')"><i class="glyphicon glyphicon-calendar"></i></button>
+			             				</span>	
+								</div>
+							</td>
+							
+							<!-- Checkbox -->
+							<td>
+								<div class="checkbox">
+									<label>
+										<input ng-model="val['Started']" type="checkbox" ng-change="patch()"/>
+									</label>
+								</div>
+							</td>
+						</tr>
+			        </tbody>
+				</table>
+			</tab>
+		</tabset>
+	</fieldset>
+</div>

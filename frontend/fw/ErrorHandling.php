@@ -10,50 +10,61 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	static $logs = array();
 	
 	public static function addError($message){
-		self::$errors[]['message'] = $message;
-		self::$logs[]['message'] = $message;
+		$errorHash = hash('md5', $message);
+		
+		self::$errors[$errorHash]['message'] = $message;
+		self::$errors[$errorHash]['count']++;
+		self::addLog($message, 'ERROR');
 	}
 	public static function addInvariant($message){
 		self::$invariants[]['message'] = $message;
-		self::$logs[]['message'] = $message;
+		self::addLog($message, 'INVARIANT');
 	}
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
 		
-		// TODO: move output related things to Viewer. Move ErrorHandling to Session??
-		$violationMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
-		$rowMessage = '<a href="?interface='.current($session->role->getInterfaces(null, $rule['srcConcept']))->name.'&atom='.$srcAtom.'">' . Viewer::viewAtom($srcAtom, $rule['srcConcept']) . ' ('. $rule['srcConcept'] .')</a> - ' . Viewer::viewAtom($tgtAtom, $rule['tgtConcept']); // TODO: support for multiple interface. Now the first (using current()) is picked.
+		$ruleHash = hash('md5', $rule['name']);
 		
-		self::$violations[$violationMessage][] = $rowMessage;
-		self::$logs[]['message'] = $rowMessage;
+		$violationMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
+		$rowMessage = $srcAtom . ' - ' . $tgtAtom;
+		
+		self::$violations[$ruleHash]['violationMessage'] = $violationMessage;
+		self::$violations[$ruleHash]['tuples'][] = $rowMessage;
+		
+		// self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
+		self::addLog($violationMessage . ' - ' . $rowMessage, 'VIOLATION');
 	}
 	public static function addInfo($message){
 		self::$infos[]['message'] = $message;
-		self::$logs[]['message'] = $message;
+		self::addLog($message, 'INFO');
 	}
 	public static function addSuccess($message, $id = null){
+		
 		if(isset($id)){ // ID can be integer, but also string
 			self::$successes[$id]['rows'][] = $message;
+			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');;
+			return $id;
 		}else{
+			self::addLog($message, 'SUCCESS');
 			self::$successes[]['message'] = $message;
+			end(self::$successes); // pointer to end of array (i.e. new  inserted element)
+			return key(self::$successes); // return key of current element
 		}
-		self::$logs[]['message'] = $message;
-		end(self::$successes);
-		return key(self::$successes);
+		
 	}
 	
-	public static function addLog($message){
-		self::$logs[] = $message;
+	public static function addLog($message, $type = 'LOG'){
+		self::$logs[] = $type . ': ' . $message;
 	}
 	
 	public static function getErrors(){
-		return self::$errors;
+		return array_values(self::$errors);
 	}
 	public static function getInvariants(){
 		return self::$invariants;
 	}
 	public static function getViolations(){
-		return self::$violations;
+		return array_values(self::$violations);
 	}
 	public static function getInfos(){
 		return self::$infos;
@@ -65,17 +76,15 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		return self::$logs;
 	}
 	
-	// TODO: can be deleted when ErrorHandling is not static anymore but instantiated in Viewer class.
 	public static function getAll(){
-		$all['errors'] = self::$errors;
-		$all['invariants'] = self::$invariants;
-		$all['violations'] = self::$violations;
-		$all['infos'] = self::$infos;
-		$all['successes'] = self::$successes;
-		$all['logs'] = self::$logs;
+		$all['errors'] = self::getErrors();
+		$all['invariants'] = self::getInvariants();
+		$all['violations'] = self::getViolations();
+		$all['infos'] = self::getInfos();
+		$all['successes'] = self::getSuccesses();
+		$all['logs'] = self::getLogs();
 		
 		return $all;
-		
 	}
 	
 

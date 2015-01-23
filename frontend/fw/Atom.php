@@ -76,7 +76,8 @@ Class Atom {
 					$tgtInterface = $interface;
 					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
 					
-					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 					
 					// find the right subinterface
 					while (count($pathArr)){
@@ -96,11 +97,11 @@ Class Atom {
 						
 						// in case $tgtAtom is empty string -> perform remove instead of replace.
 						if(!$tgtAtom == ''){ 
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						}else{
 							// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 							$tgtAtom = JsonPatch::get($before, $patch['path']);
-							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 							 
 						}					
 					}else{
@@ -114,7 +115,8 @@ Class Atom {
 					$tgtInterface = $interface;
 					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
 					
-					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 					
 					// find the right subinterface
 					while (count($pathArr)){
@@ -133,7 +135,7 @@ Class Atom {
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
 						if(is_null($tgtAtom)) ErrorHandling::addError($tgtInterface->name . ": add operation without value '");
 						
-						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						
 					}else{
 						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
@@ -146,7 +148,8 @@ Class Atom {
 					$tgtInterface = $interface;
 					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
 					
-					if(empty(current($pathArr))) array_shift($pathArr); // remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 					
 					// find the right subinterface
 					while (count($pathArr)){
@@ -162,7 +165,7 @@ Class Atom {
 					if($tgtInterface->editable){
 						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 						if(is_null($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
-						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, 'child', '');
+						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
 						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
@@ -171,12 +174,25 @@ Class Atom {
 			}
 		}
 		
-		$database->closeTransaction(); // close transaction => ROLLBACK or COMMIT
+		$database->closeTransaction('Updated', false); // close transaction => ROLLBACK or COMMIT
 		
 		return array_merge(
 				array('patches' => $patches), 
 				array('content' => current($this->getContent($interface))), 
 				array('notifications' => ErrorHandling::getAll())); 
+		
+	}
+	
+	public function delete(){
+		$database = Database::singleton();
+		
+		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided');
+		
+		$database->deleteAtom($this->id, $this->concept);
+		
+		$database->closeTransaction('Atom deleted'); // close transaction => ROLLBACK or COMMIT
+		
+		return array('notifications' => ErrorHandling::getAll());
 		
 	}
 	

@@ -3,6 +3,11 @@ AmpersandApp.controller('static_installerController', ['$scope', '$rootScope', '
 	$scope.installer = Restangular.one('installer').get().then(function(data) {
 		$rootScope.notifications = data;
 		
+		// refresh session
+		$rootScope.session = Restangular.one('session').get().$object;
+		
+		// refresh interfaces list
+		$rootScope.interfaces = Restangular.all('interfaces/top').getList().$object;
 	});
 
 	

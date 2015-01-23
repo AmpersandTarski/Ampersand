@@ -2,23 +2,32 @@
 date_default_timezone_set('Europe/London');
 require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
-$apps[] = array('name' => 'Excel import', 'link' => 'extensions/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
+$apps[] = array('name' => 'Excel import', 'link' => '#/ext/ExcelImport/', 'icon' => 'glyphicon glyphicon-upload'); // activeer app extension in framework
+
+// UI
+$GLOBALS['hooks']['after_Viewer_load_cssFiles'][] = 'extensions/ExcelImport/ui/css/style.css';
+$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/angular-file-upload.min.js';
+$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/ExcelImport.js';
 
 class ImportExcel
 {
 	public $file;
-	private $commandArray = array();
+	private $db;
 
 	function __construct($filename){
 		$this->file = $filename;
+		$this->db = Database::singleton();
 	}
 
 	public function ParseFile(){
-		$database = Database::singleton();
 		
-		$this->ProcessFileContent(); // fills $this->commandArray
+		ErrorHandling::addLog('------------------------- EXCEL IMPORT STARTED -------------------------');
+				
+		$this->ProcessFileContent();
 		
-		$database->transaction($this->commandArray);
+		ErrorHandling::addLog('------------------------- END OF EXCEL IMPORT -------------------------');
+		
+		$this->db->closeTransaction('File uploaded');
 		
 		return ErrorHandling::getAll();
 		
@@ -138,20 +147,12 @@ class ImportExcel
 	}
 	
 	private function addAtomToConcept($atom, $concept){
-		$this->commandArray[] = json_decode(json_encode(array('dbCmd' => 'addToConcept', 'atom' => $atom, 'concept' => $concept)), false); // commands need to be objects. TODO: create command class for this.
+		$this->db->addAtomToConcept($atom, $concept);
+		
 	}
 	
-	private function insertRel($relation, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
-		$this->commandArray[] = json_decode(json_encode(array('dbCmd' => 'update'
-									, 'relation' => $relation
-									, 'isFlipped' => false
-									, 'parentAtom' => $srcAtom
-									, 'parentConcept' => $srcConcept
-									, 'childAtom' => $tgtAtom
-									, 'childConcept' => $tgtConcept
-									, 'parentOrChild' => 'child'
-									, 'originalAtom' => ''
-									)), false);
+	private function insertRel($relationName, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
+		$this->db->editUpdate($relationName, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 	}
 }
 

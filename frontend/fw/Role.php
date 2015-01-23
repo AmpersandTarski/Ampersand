@@ -35,9 +35,9 @@ class Role {
 	}
 		
 	public static function getAllRoles(){
-		$roles = array();
 		global $allRoles; // from Generics.php
 		
+		$roles = array();
 		foreach((array)$allRoles as $key => $arr){
 			$roles[$key] = new Role($key);
 		}
@@ -45,14 +45,13 @@ class Role {
 		return $roles;
 	}
 	
-	public function getRules(){
-		$rules = array();
+	public static function getRole($roleName){
+		global $allRoles; // from Generics.php
 		
-		foreach($this->maintains as $ruleName){
-			$rules[$ruleName] = RuleEngine::getRule($ruleName);
+		foreach((array)$allRoles as $key => $arr){
+			if($arr['name'] == $roleName) return new Role($key);
 		}
-		
-		return $rules;
+		return false; // when $roleName is not found in $allRoles
 	}
 	
 	public function getInterfaces($srcConceptSESSION = null, $srcConcept = null){ // $srcConceptSESSION: true, false, null (=all), $srcConcept: <concept> or null (=all)

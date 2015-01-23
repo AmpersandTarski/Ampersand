@@ -1,4 +1,4 @@
-<div class="container-fluid">
+<div class="container-fluid interface">
 	<fieldset>
 		<!-- I[Person] -->
 		<legend>{{Person.label}}</legend>
@@ -8,7 +8,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Name</label>
 	   			<div class="col-md-11">
-	   				<input disabled ng-model="Person.Name" type="text" class="form-control input-sm" ng-blur="patch()">
+	   				<input disabled ng-model="Person.label" type="text" class="form-control input-sm" ng-blur="patch()">
 	   			</div>
 	 		</div>
 	 		
@@ -27,6 +27,25 @@
 					<input ng-model="Person.Email" type="text" class="form-control input-sm" ng-blur="patch()">
 				</div>
 	 		</div>
+	 		
+	 		<!-- Works with -->
+	 		<div class="form-group">
+	 			<label class="col-md-1 control-label">Works with</label>
+	 			<div class="col-md-11">
+	 				<table class="table table-striped table-hover table-condensed">
+						<thead>
+							<tr>
+								<th></th> <!-- empty when label is only column -->
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat="(key, val) in Person['Works with']">
+								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+							</tr>
+						</tbody>
+	   				</table>
+	  			</div>
+			</div>
 	 	</form>
  	</fieldset>
 </div>
