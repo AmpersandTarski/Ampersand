@@ -27,15 +27,26 @@ class Relation {
 		
 		return $relationTableInfo[$fullRelationSignature]['table'];
 	}
+	
 	public static function getSrcCol($fullRelationSignature){
 		global $relationTableInfo;
 	
 		return $relationTableInfo[$fullRelationSignature]['srcCol'];
 	}
+	
 	public static function getTgtCol($fullRelationSignature){
 		global $relationTableInfo;
 	
 		return $relationTableInfo[$fullRelationSignature]['tgtCol'];
+	}
+	
+	public static function getTableColumnInfo($table, $column){
+		global $tableColumnInfo;
+		
+		if(!array_key_exists($table, $tableColumnInfo)) throw new Exception('Table $table does not exists in tableColumnInfo');
+		if(!array_key_exists($column, $tableColumnInfo[$table])) throw new Exception('Column $column does not exists in table $table');
+		
+		return $tableColumnInfo[$table][$column];
 	}
 }
 

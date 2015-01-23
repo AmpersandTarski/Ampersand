@@ -1,10 +1,15 @@
 <div id="notificationCenter" ng-controller="static_notificationCenterController">
 	<div id="errors">
-		<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)"><strong>Error!</strong> {{error.message}}</alert>
+		<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
+			<strong>Error!</strong> {{error.message}}
+			<span class="badge pull-right">{{error.count}}</span>
+		</alert>
 	</div>
 	
 	<div id="invariants">
-		<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)"><strong>Invariant!</strong> {{invariant.message}}</alert>
+		<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
+			<strong>Invariant!</strong> {{invariant.message}}
+		</alert>
 	</div>
 				
 	<div id="violations">
@@ -12,7 +17,7 @@
 			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 				<div class="text-left">
 					<strong>Violation!</strong> {{val.violationMessage}}
-					<span class="badge pull-right">{{val.tuples.length}}</span>
+					<span class="badge pull-right">{{val.tuples.length}}</span>					
 				</div>
 			</div>
 			<ul class="list-group collapse" id="violation-{{key}}">

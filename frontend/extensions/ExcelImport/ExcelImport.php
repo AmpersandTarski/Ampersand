@@ -152,7 +152,7 @@ class ImportExcel
 	}
 	
 	private function insertRel($relationName, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
-		$this->db->editUpdate($relationName, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept, '');
+		$this->db->editUpdate($relationName, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 	}
 }
 
