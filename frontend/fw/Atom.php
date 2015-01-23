@@ -174,7 +174,7 @@ Class Atom {
 			}
 		}
 		
-		$database->closeTransaction(); // close transaction => ROLLBACK or COMMIT
+		$database->closeTransaction('Updated', false); // close transaction => ROLLBACK or COMMIT
 		
 		return array_merge(
 				array('patches' => $patches), 

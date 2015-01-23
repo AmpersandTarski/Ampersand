@@ -258,13 +258,18 @@ class Database
 		unset($this->transaction);
 	}
 	
-	public function closeTransaction($succesMessage = 'Updated'){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllInvariantConjucts = true){ // default check all invariant conjuncts.
 		$session = Session::singleton();
 		
 		ErrorHandling::addLog('========================= CLOSING TRANSACTION =========================');
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
-		$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->interfaceInvariantConjunctNames); // only invariants rules that might be violated after edits in this interface are checked.
+		
+		if($checkAllInvariantConjucts){
+			$invariantRulesHold = RuleEngine::checkInvariantRules(); // all invariant conjuncts are checked.
+		}else{
+			$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->invariantConjuctsIds); // only conjuncts that might be violated after edits in this interface are checked.
+		}	
 		
 		if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
 		

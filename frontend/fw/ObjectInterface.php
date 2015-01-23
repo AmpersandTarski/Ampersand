@@ -5,21 +5,27 @@ class ObjectInterface {
 	public $id;
 	public $name; // TODO: kan vervallen?
 	public $label;
+	
 	public $interfaceRoles = array();
-	// public $editableConcepts = array();
-	public $interfaceInvariantConjunctNames;
+	
+	public $invariantConjuctsIds;
+	public $signalConjunctsIds;
+	
 	public $relation; 
 	public $relationIsFlipped;
 	public $univalent;
 	public $totaal;
 	public $editable;
+	
 	public $srcConcept;
 	public $tgtConcept;
 	public $tgtDataType;
+	
 	public $refInterface;
 	private $boxSubInterfaces;
-	public $expressionSQL;
 	public $subInterfaces = array();
+	
+	public $expressionSQL;
 
 	public function __construct($name, $interface = array()){
 		global $allInterfaceObjects; // from Generics.php
@@ -34,6 +40,9 @@ class ObjectInterface {
 		$this->name = $interface['name'];
 		$this->label = $interface['name'];
 		$this->interfaceRoles = $interface['interfaceRoles'];
+		
+		$this->invariantConjuctsIds = $interface['invariantConjuctsIds']; // only applicable for Top-level interfaces
+		$this->signalConjunctsIds = $interface['signalConjuctsIds']; // only applicable for Top-level interfaces
 		
 		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
 		$this->interfaceInvariantConjunctNames = $interface['interfaceInvariantConjunctNames']; // only applies to top level interface
