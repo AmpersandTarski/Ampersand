@@ -18,23 +18,23 @@ AmpersandApp.config(function($routeProvider) {
 		.when('/Projects',
 			{
 				controller: 'ProjectsController',
-				templateUrl: 'app/views/Projects.html'
+				templateUrl: 'generics/app/views/Projects.html'
 			})
 		.when('/People',
 			{
 				controller: 'PeopleController',
-				templateUrl: 'app/views/People.html'
+				templateUrl: 'generics/app/views/People.html'
 			})
 		// other interfaces (require atom)
 		.when('/Project/:atom',
 			{
 				controller: 'ProjectController',
-				templateUrl: 'app/views/Project.html'
+				templateUrl: 'generics/app/views/Project.html'
 			})
 		.when('/Person/:atom',
 			{
 				controller: 'PersonController',
-				templateUrl: 'app/views/Person.html'
+				templateUrl: 'generics/app/views/Person.html'
 			})
 		.otherwise({redirectTo: '/'});
 });

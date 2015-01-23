@@ -1,7 +1,7 @@
 <?php
 
 /* FUNCTIONS OF NEWER VERSIONS OF PHP */
-require_once (__DIR__ . '/functions/array_column.php'); //TODO: can be removed after PHP update
+require_once (__DIR__ . '/functions/array_column.php'); //TODO: can be removed after PHP update >= 5.5
 
 /* OTHER GENERIC FUNCTIONS */
 require_once (__DIR__ . '/functions/getDirectoryList.php');
@@ -9,7 +9,7 @@ require_once (__DIR__ . '/functions/JsonPatch.php'); // to compare 2 different J
 
 /* INCLUDES OF AMPERSAND FRAMEWORK */
 
-require_once (__DIR__ . '/../ampersand/Generics.php'); // loading the Ampersand model
+require_once (__DIR__ . '/../generics/Generics.php'); // loading the Ampersand model
 
 require_once (__DIR__ . '/Database.php');
 require_once (__DIR__ . '/Concept.php');

@@ -9,8 +9,8 @@ class Api
 	 * @param int $roleId
 	 */
 	public function installer($roleId){
-		include (__DIR__ . '/../../ampersand/InstallerDBstruct.php');
-		include (__DIR__ . '/../../ampersand/InstallerDefPop.php');
+		include (__DIR__ . '/../../generics/InstallerDBstruct.php');
+		include (__DIR__ . '/../../generics/InstallerDefPop.php');
 		
 		RuleEngine::checkRules($roleId);
 		
