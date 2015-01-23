@@ -11,12 +11,13 @@ import System.Directory
 import qualified Data.ByteString.Char8 as BS
 import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
-
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
-#ifdef MIN_VERSION_MissingH
-import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file
-import Data.Time.Format
-import System.Locale
+
+#ifdef MIN_VERSION_unix
+import System.Posix.Files (setFileTimes) -- If unix is not available, we are on windows and cannot set file timestamps 
+
+import Data.Time.Format -- not unix specific, but only needed if we set file timestamps
+import System.Locale    -- 
 #endif
 
 phpObjInterfaces :: FSpec -> IO()
@@ -70,7 +71,7 @@ writeStaticFiles opts =
   if genStaticFiles opts
   then
  do {
-#ifdef MIN_VERSION_MissingH
+#ifdef MIN_VERSION_unix
       verboseLn opts "Updating static files"
 #else
       verboseLn opts "Writing static files"
@@ -84,7 +85,7 @@ writeStaticFiles opts =
 
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
 writeWhenMissingOrOutdated opts staticFile writeFileAction =
-#ifdef MIN_VERSION_MissingH
+#ifdef MIN_VERSION_unix
 -- On Mac/Linux we set the modification time for generated static files to the modification time of the compiled versions
 -- in StaticFiles_Generated.hs. This allows us to only replace those static files that are outdated (or missing.) 
  do { exists <- doesFileExist $ absFilePath opts staticFile
@@ -116,7 +117,7 @@ writeStaticFile :: Options -> StaticFile -> IO()
 writeStaticFile opts sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
      ; write (absFilePath opts sf) (contentString sf)
-#ifdef MIN_VERSION_MissingH
+#ifdef MIN_VERSION_unix
      ; let t = (fromIntegral $ timeStamp sf)
      ; setFileTimes (absFilePath opts sf) t t
 #endif
