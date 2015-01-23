@@ -2,7 +2,7 @@ module Database.Design.Ampersand.Prototype.PHP
          ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP
          , evaluateExpSQL, performQuery
          , createTablesPHP, populateTablesPHP, populateTablesWithPopsPHP, plug2TableSpec
-         , dropplug, historyTableSpec, sessionTableSpec, TableSpec) where
+         , dropplug, historyTableSpec, sessionTableSpec, signalTableSpec, TableSpec, getTableName) where
 
 import Prelude hiding (exp)
 import Control.Exception
@@ -37,7 +37,7 @@ createTablesPHP fSpec =
         , "}"
         , ""
         ] ++
-        concatMap (createTablePHP . mkSignalTableSpec) (vconjs fSpec) ++
+        createTablePHP signalTableSpec ++
         [ ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
         ]
@@ -84,11 +84,12 @@ plug2TableSpec plug
                    PlainAttr     -> []
    , "InnoDB DEFAULT CHARACTER SET UTF8")
 
-mkSignalTableSpec :: Conjunct -> TableSpec
-mkSignalTableSpec conj =
-  ( "// Signal table for conjunct " ++ rc_id conj
-  , "signals_" ++ rc_id conj
-  , [ "`src` VARCHAR(255) NOT NULL"
+signalTableSpec :: TableSpec
+signalTableSpec =
+  ( "// Signal table"
+  , "__all_signals__"
+  , [ "`conjId` VARCHAR(255) NOT NULL"
+    , "`src` VARCHAR(255) NOT NULL"
     , "`tgt` VARCHAR(255) NOT NULL" ]
   , "InnoDB DEFAULT CHARACTER SET UTF8"
   )
@@ -111,16 +112,18 @@ historyTableSpec
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
-  concatMap fillSignalTable (initialConjunctSignals fSpec) ++
+  fillSignalTable (initialConjunctSignals fSpec) ++
   populateTablesWithPopsPHP fSpec (initialPops fSpec)
   where
-    fillSignalTable (conj, viols) =
-      [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName $ mkSignalTableSpec conj)
-                                                                    ++" (`src`, `tgt`)"
+    fillSignalTable conjSignals =
+      [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName signalTableSpec)
+                                                                    ++" (`conjId`, `src`, `tgt`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlAtomQuote src++", "++sqlAtomQuote tgt++")" 
-                                                | (src, tgt) <- viols
+                                                [ "(" ++sqlConjId++", "++sqlAtomQuote src++", "++sqlAtomQuote tgt++")" 
+                                                | (conj, viols) <- conjSignals
+                                                , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
+                                                , (src, tgt) <- viols
                                                 ])++"\n"++
         "            );"
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
