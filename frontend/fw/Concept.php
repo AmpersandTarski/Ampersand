@@ -9,7 +9,7 @@ class Concept {
 	}
 
 	public static function getSpecializations($concept) {
-		global $allSpecializations;
+		global $allSpecializations; // from Generics.php
 		
 		return isset($allSpecializations[$concept]) ? $allSpecializations[$concept] : array ();
 		
@@ -26,19 +26,21 @@ class Concept {
 	
 	public static function getAllAtomIds($concept){
 		$database = Database::singleton();
-		global $conceptTableInfo;
-	
-		$conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept
-		$conceptCol = $conceptTableInfo[$concept][0]['cols'][0]; // for lookup, we just take the first table and its first column
-		$conceptTableEsc = addslashes($conceptTable);
-		$conceptColEsc = addslashes($conceptCol);
-	
-		return $tgtAtoms = array_column($database->Exe("SELECT DISTINCT `$conceptColEsc` FROM `$conceptTableEsc` WHERE `$conceptColEsc` IS NOT NULL"),$conceptColEsc);
+		
+		$conceptTableInfo = Concept::getConceptTableInfo($concept);
+		$conceptTable = $conceptTableInfo[0]['table'];
+		
+		// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary col for checking the existence of a concept
+		// TODO: check if this also works with the ISA solution?
+		$firstConceptCol = $conceptTableInfo[0]['cols'][0]; // for lookup, we just take the first table and its first column
+		
+		// Query all atoms in table
+		return $existingAtoms = array_column($database->Exe("SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL"), $firstConceptCol); // no need to filter duplicates and NULLs
 		
 	}	
 	
 	public static function isAtomInConcept($atom, $concept) {
-		return in_array( $atom, (array)Concept::getAllAtomIds($concept) );
+		return in_array(strtolower($atom), array_map('strtolower', (array)Concept::getAllAtomIds($concept))); // in_array is case sensitive ("true" != "TRUE"), but Mysql is case insensitive for Primary keys. Therefore first to lowercase.
 	}
 	
 	public static function createNewAtom($concept){
@@ -49,12 +51,23 @@ class Concept {
 	}
 	
 	public static function getView($concept){
-		global $allViews;
+		global $allViews; // from Generics.php
 		
 		foreach ((array)$allViews as $view){
 			if ($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept']))) return $view;
 		}
 		return null;
+	}
+	
+	public static function getConceptTableInfo($concept){
+		global $conceptTableInfo; // from Generics.php
+		// $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
+		// (we have an array rather than a single column because of generalizations) 
+		// TODO: still the right solution?, because generalizations/specializations are in one table
+		
+		if(!array_key_exists($concept, $conceptTableInfo)) throw new Exception('Concept $concept does not exists in conceptTableInfo');
+		
+		return (array)$conceptTableInfo[$concept];
 	}
 
 }
