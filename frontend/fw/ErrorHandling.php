@@ -10,7 +10,10 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	static $logs = array();
 	
 	public static function addError($message){
-		self::$errors[]['message'] = $message;
+		$errorHash = hash('md5', $message);
+		
+		self::$errors[$errorHash]['message'] = $message;
+		self::$errors[$errorHash]['count']++;
 		self::addLog($message, 'ERROR');
 	}
 	public static function addInvariant($message){
@@ -55,7 +58,7 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	}
 	
 	public static function getErrors(){
-		return self::$errors;
+		return array_values(self::$errors);
 	}
 	public static function getInvariants(){
 		return self::$invariants;
