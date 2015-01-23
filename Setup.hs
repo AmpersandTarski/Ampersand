@@ -152,7 +152,7 @@ getPreviousStaticFileModuleContents sfModulePath =
 readAllStaticFiles :: IO String
 readAllStaticFiles = 
   do { oldStaticFiles <- readStaticFiles False "static/oldFrontend" "."
-     ; newStaticFiles <- readStaticFiles True  "frontend" "."
+     ; newStaticFiles <- readStaticFiles True  "static/newFrontend" "."
      ; return $ mkStaticFileModule $ oldStaticFiles ++ newStaticFiles
      }
   
