@@ -65,7 +65,7 @@ class Concept {
 		// (we have an array rather than a single column because of generalizations) 
 		// TODO: still the right solution?, because generalizations/specializations are in one table
 		
-		if(!array_key_exists($concept, $conceptTableInfo)) throw new Exception('Concept $concept does not exists in conceptTableInfo');
+		if(!array_key_exists($concept, $conceptTableInfo)) throw new Exception("Concept $concept does not exists in conceptTableInfo");
 		
 		return (array)$conceptTableInfo[$concept];
 	}
