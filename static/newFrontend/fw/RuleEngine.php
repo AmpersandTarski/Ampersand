@@ -15,7 +15,13 @@ class RuleEngine {
 		
 	}
 	
-	public static function checkProcessRules($roleId){
+	/* 
+	 * $cacheConjuncts
+	 * 		true: chache conjuncts
+	 * 		false: don't cache conjuncts (is used by ExecEngine)
+	 * 		default: true
+	 */
+	public static function checkProcessRules($roleId, $cacheConjuncts = true){
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkProcessRules'] as $hook) call_user_func($hook); // Hook functions
 		$role = new Role($roleId);
 		
@@ -23,16 +29,19 @@ class RuleEngine {
 		foreach ($role->maintains as $ruleName){
 			$rule = RuleEngine::getRule($ruleName);
 			
-			$violations = RuleEngine::checkRule($rule);
+			$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 			foreach ((array)$violations as $violation) ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);
 		}
 	
 	}
 	
-	public static function checkInvariantRules($allInvariantConjuctsIds = null){
-		global $allConjuncts; // from Generics.php
-		global $allRules; // from Generics.php
-		
+	/*
+	 * $cacheConjuncts
+	 * 		true: chache conjuncts
+	 * 		false: don't cache conjuncts (is used by ExecEngine)
+	 * 		default: true
+	 */
+	public static function checkInvariantRules($allInvariantConjuctsIds = null, $cacheConjuncts = true){		
 		$invariantRulesHold = true; // default
 		
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions 
@@ -44,12 +53,12 @@ class RuleEngine {
 		if(!is_null($allInvariantConjuctsIds)) {
 			ErrorHandling::addLog("Checking all provided conjuncts");
 			foreach ((array)$allInvariantConjuctsIds as $conjunctId){
-				$violations = RuleEngine::checkConjunct($conjunctId);
+				$violations = RuleEngine::checkConjunct($conjunctId, $cacheConjuncts);
 				if(!empty($violations)) {
 					$invariantRulesHold = false;
-					ErrorHandling::addLog("Violation of conjunct '".$conjunctId."'");
 					
-					foreach ($allConjuncts[$conjunctId]['invariantRuleNames'] as $ruleName){
+					$conjunct = RuleEngine::getConjunct($conjunctId);
+					foreach ($conjunct['invariantRuleNames'] as $ruleName){
 						$rule = RuleEngine::getRule($ruleName);
 						ErrorHandling::addInvariant("Violation of rule '".$rule['name']."'");
 					}
@@ -63,7 +72,7 @@ class RuleEngine {
 			foreach (RuleEngine::getAllInvariantRulesNames() as $ruleName){
 				$rule = RuleEngine::getRule($ruleName);
 			
-				$violations = RuleEngine::checkRule($rule);
+				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				if(!empty($violations)) {
 					$invariantRulesHold = false;
 					ErrorHandling::addInvariant("Violation of rule '".$rule['name']."'");
@@ -75,14 +84,20 @@ class RuleEngine {
 		
 	}
 	
-	public static function checkRule($rule){
+	/*
+	 * $cacheConjuncts
+	 * 		true: chache conjuncts
+	 * 		false: don't cache conjuncts (is used by ExecEngine)
+	 * 		default: true
+	 */
+	public static function checkRule($rule, $cacheConjuncts = true){
 		$db = Database::singleton();
 		$violations = array();
 		
 		ErrorHandling::addLog("Checking rule '" . $rule['name']."'");
 		try{
-			foreach($rule['conjuncts'] as $conjunct){
-				$result = array_merge((array)$result, $db->Exe($conjunct['violationsSQL']));
+			foreach($rule['conjunctIds'] as $conjunctId){
+				$result = array_merge((array)$result, RuleEngine::checkConjunct($conjunctId, $cacheConjuncts));
 			}
 			
 			if(count($result) == 0){
@@ -155,17 +170,31 @@ class RuleEngine {
 	public static function getRule($ruleName){
 		// from Generics.php
 		global $allRules;
-		global $allConjuncts;
+
+		if(!array_key_exists($ruleName, $allRules)) throw new Exception("Rule $ruleName does not exists in allRules");
 		
-		$rule = $allRules[$ruleName];
-		$rule['conjuncts'] = array();
-		foreach($rule['conjunctIds'] as $conjunctId){
-			$rule['conjuncts'][] = $allConjuncts[$conjunctId];
-		}		
+		return $rule = $allRules[$ruleName];
 		
-		return $rule;
 	}
 	
+	public static function getConjunct($conjunctId){
+		// from Generics.php
+		global $allConjuncts;
+		
+		if(!array_key_exists($conjunctId, $allConjuncts)) throw new Exception("Conjunct $conjunctId does not exists in allConjuncts");
+		
+		return $conjunct = $allConjuncts[$conjunctId];
+		
+	}
+	
+	/*
+	 * This function returns all InvariantRulesNames. Currently there is no such array in Generics.php.
+	 * Therefore this function finds all the processRuleNames (as provided by the $allRoles array) and
+	 * selects those rules from $allRules, that are not processRules (a rule is either a processRule or 
+	 * an invariantRule, but not both).
+	 * 
+	 * TODO: 
+	 */
 	public static function getAllInvariantRulesNames(){
 		// from Generics.php
 		global $allRoles;
