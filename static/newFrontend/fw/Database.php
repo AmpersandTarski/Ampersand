@@ -266,8 +266,10 @@ class Database
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		
 		if($checkAllInvariantConjucts){
+			ErrorHandling::addLog("Check all invariant rules");
 			$invariantRulesHold = RuleEngine::checkInvariantRules(); // all invariant conjuncts are checked.
 		}else{
+			ErrorHandling::addLog("Check all relevant invariant conjuncts for interface " . $session->interface->name);
 			$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->invariantConjuctsIds); // only conjuncts that might be violated after edits in this interface are checked.
 		}	
 		

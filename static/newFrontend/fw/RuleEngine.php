@@ -37,6 +37,7 @@ class RuleEngine {
 		
 		// If $allInvariantConjuctsIds is provided (i.e. not null, which is something different than an empty array), check only those invariant conjuncts
 		if(!is_null($allInvariantConjuctsIds)) {
+			ErrorHandling::addLog("Checking all provided conjuncts");
 			foreach ((array)$allInvariantConjuctsIds as $conjunctId){
 				$violations = RuleEngine::checkConjunct($conjunctId);
 				if(!empty($violations)) {
@@ -53,6 +54,7 @@ class RuleEngine {
 
 		// Otherwise check all invariantConjuncts
 		}else{
+			ErrorHandling::addLog("Checking all invariant rules");
 			foreach (RuleEngine::getAllInvariantRulesNames() as $ruleName){
 				$rule = RuleEngine::getRule($ruleName);
 			
@@ -90,7 +92,7 @@ class RuleEngine {
 		}
 	}
 	
-	private function checkConjunct($conjunctId){
+	private static function checkConjunct($conjunctId){
 		ErrorHandling::addLog("Checking conjunct '" . $conjunctId."'");
 		try{
 			$db = Database::singleton();

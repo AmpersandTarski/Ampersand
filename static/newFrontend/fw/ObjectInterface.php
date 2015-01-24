@@ -41,8 +41,8 @@ class ObjectInterface {
 		$this->label = $interface['name'];
 		$this->interfaceRoles = $interface['interfaceRoles'];
 		
-		$this->invariantConjuctsIds = $interface['invariantConjuctsIds']; // only applicable for Top-level interfaces
-		$this->signalConjunctsIds = $interface['signalConjuctsIds']; // only applicable for Top-level interfaces
+		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
+		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
 		
 		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
 		$this->interfaceInvariantConjunctNames = $interface['interfaceInvariantConjunctNames']; // only applies to top level interface
