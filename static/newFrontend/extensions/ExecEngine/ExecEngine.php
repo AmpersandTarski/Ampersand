@@ -23,12 +23,12 @@ class ExecEngine {
 		
 		$role = Role::getRole($roleName);
 		if($role){
-			// get all rules that are maintained by the ExecEngine
+			// Get all rules that are maintained by the ExecEngine
 			foreach ($role->maintains as $ruleName){
 				$rule = RuleEngine::getRule($ruleName);
 					
-				// fix violations for every rule
-				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule));
+				// Fix violations for every rule
+				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 			}
 		}else{
 			ErrorHandling::addError("ExecEngine role '" . $roleName . "'not found.");
