@@ -50,11 +50,12 @@ class Api
 	{
 		$session = Session::singleton();
 		$session->setRole($roleId);
-		RuleEngine::checkProcessRules($session->role->id);
 		
-		$test = ErrorHandling::getAll(); // "Return all notifications
+		$session->role->getViolations();
+		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
 		
-		return $test;
+		return ErrorHandling::getAll();
+
 	}
 	
 	/**

@@ -183,6 +183,23 @@ class RuleEngine {
 		}
 	}
 	
+	public static function getSignalsFromDB($conjunctIds){
+		$db = Database::singleton();
+		
+		$conjunctIds = array_unique($conjunctIds); // remove duplicates
+		
+		if (count($conjunctIds) > 0) {
+			// TODO: DB Query can be changed to WHERE `conjId` IN (<conjId1>, <conjId2>, etc)
+			$query = "SELECT * FROM `__all_signals__` WHERE " . implode(' OR ', array_map( function($conjunctId) {return "`conjId` = '$conjunctId'";}, $conjunctIds));
+			return $signals = $db->Exe($query);
+		} else {
+			ErrorHandling::addInfo("No conjunctIds provided (can be that this role does not maintain any rule)");
+		}
+		
+		return false;
+		
+	}
+	
 	public static function getRule($ruleName){
 		// from Generics.php
 		global $allRules;
