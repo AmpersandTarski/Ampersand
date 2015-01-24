@@ -21,16 +21,28 @@ class RuleEngine {
 	 * 		false: don't cache conjuncts (is used by ExecEngine)
 	 * 		default: true
 	 */
-	public static function checkProcessRules($roleId, $cacheConjuncts = true){
+	// TODO: function can be made simpler.
+	public static function checkProcessRules($roleId = null, $cacheConjuncts = true){
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkProcessRules'] as $hook) call_user_func($hook); // Hook functions
-		$role = new Role($roleId);
 		
-		ErrorHandling::addLog('------------------------- CHECKING PROCESS RULES -------------------------');
-		foreach ($role->maintains as $ruleName){
-			$rule = RuleEngine::getRule($ruleName);
+		if(!is_null($roleId)){
+			$role = new Role($roleId);
 			
-			$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
-			foreach ((array)$violations as $violation) ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);
+			ErrorHandling::addLog("------------------------- CHECKING PROCESS RULES (for role $role->name) -------------------------");
+			foreach ($role->maintains as $ruleName){
+				$rule = RuleEngine::getRule($ruleName);
+				
+				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
+				foreach ((array)$violations as $violation) ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);
+			}
+		}else{
+			ErrorHandling::addLog("------------------------- CHECKING ALL PROCESS RULES -------------------------");
+			foreach(RuleEngine::getAllProcessRuleNames() as $ruleName){
+				$rule = RuleEngine::getRule($ruleName);
+				
+				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
+				foreach ((array)$violations as $violation) ErrorHandling::addViolation($rule, $violation['src'], $violation['tgt']);;
+			}
 		}
 	
 	}
@@ -143,6 +155,10 @@ class RuleEngine {
 				if(count($violations) == 0){
 					ErrorHandling::addInfo("Conjunct '".$conjunctId."' holds");
 					
+					// Remove "old" conjunct violations from database
+					$query = "DELETE FROM `__all_signals__` WHERE `conjId` = '$conjunctId'";
+					$db->Exe($query);
+					
 				}elseif($cacheConjuncts){
 					ErrorHandling::addInfo("Conjunct '".$conjunctId."' broken, caching violations in database");
 					
@@ -211,6 +227,20 @@ class RuleEngine {
 		
 		// return list of all invariant rules (= all rules that are not process rules)
 		return array_diff($allRuleNames, $processRuleNames);
+	}
+	
+	public static function getAllProcessRuleNames(){
+		// from Generics.php
+		global $allRoles;
+		global $allRules;
+		
+		// list of all process rules
+		$processRuleNames = array();
+		foreach($allRoles as $role){
+			$processRuleNames = array_merge($processRuleNames, $role['ruleNames']);
+		}
+		
+		return $processRuleNames;
 	}
 
 }
