@@ -258,7 +258,13 @@ class Database
 		unset($this->transaction);
 	}
 	
-	public function closeTransaction($succesMessage = 'Updated', $checkAllInvariantConjucts = true){ // default check all invariant conjuncts.
+	/*
+	 * $checkAllInvariantConjuncts 
+	 * 		true: checkAllInvariantConjuncts, 
+	 * 		false: check only InvariantRules that are relevant for the interface of the current session.
+	 * 		default: true
+	 */
+	public function closeTransaction($succesMessage = 'Updated', $checkAllInvariantConjucts = true){
 		$session = Session::singleton();
 		
 		ErrorHandling::addLog('========================= CLOSING TRANSACTION =========================');
