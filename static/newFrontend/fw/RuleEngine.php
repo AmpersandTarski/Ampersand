@@ -2,6 +2,11 @@
 
 class RuleEngine {
 	
+	/*
+	 * $conjunctViolations[$conjId][] = array('src' => $srcAtom, 'tgt' => $tgtAtom)
+	 */
+	static $conjunctViolations = array();
+	
 	public static function checkRules($roleId){
 		
 		RuleEngine::checkProcessRules($roleId);
@@ -92,22 +97,55 @@ class RuleEngine {
 		}
 	}
 	
-	private static function checkConjunct($conjunctId){
+	/*
+	 * $cacheConjuncts
+	 * 		true: chache conjuncts, i.e. store them locally in self::$conjunctViolations and, if there are violations, in the database table `__all_signals__`
+	 * 		false: don't cache conjuncts (is used by ExecEngine)
+	 * 		default: true
+	 */
+	private static function checkConjunct($conjunctId, $cacheConjuncts = true){
 		ErrorHandling::addLog("Checking conjunct '" . $conjunctId."'");
 		try{
-			$db = Database::singleton();
 			
-			global $allConjuncts; // from Generics;
+			// If conjunct is already evaluated and conjunctCach may be used -> return violations
+			if(array_key_exists($conjunctId, self::$conjunctViolations) && $cacheConjuncts){
+				ErrorHandling::addLog("Conjunct is already evaluated, getting violations from cache");
+				return self::$conjunctViolations[$conjunctId];
 			
-			$result = $db->Exe($allConjuncts[$conjunctId]['violationsSQL']);
-			
-			if(count($result) == 0){
-				ErrorHandling::addInfo("Conjunct '".$conjunctId."' holds");
+			// Otherwise evaluate conjunct, cache and return violations
 			}else{
-				$violations = $result;
-			}
 			
-			return $violations;			
+				$db = Database::singleton();
+				
+				// Evaluate conjunct
+				$conjunct = RuleEngine::getConjunct($conjunctId);
+				$violations = $db->Exe($conjunct['violationsSQL']);
+				
+				// Cache violations
+				if($cacheConjuncts) self::$conjunctViolations[$conjunctId] = $violations;
+				
+				
+				if(count($violations) == 0){
+					ErrorHandling::addInfo("Conjunct '".$conjunctId."' holds");
+					
+				}elseif($cacheConjuncts){
+					ErrorHandling::addInfo("Conjunct '".$conjunctId."' broken, caching violations in database");
+					
+					// Remove "old" conjunct violations from database
+					$query = "DELETE FROM `__all_signals__` WHERE `conjId` = '$conjunctId'";
+					$db->Exe($query);
+					
+					// Add new conjunct violation to database table __all_signals__
+					$query = "INSERT IGNORE INTO `__all_signals__` (`conjId`, `src`, `tgt`) VALUES ";
+					foreach ($violations as $violation) $values[] = "('".$conjunctId."', '".$violation['src']."', '".$violation['tgt']."')";
+					$query .= implode(',', $values);
+					$db->Exe($query);
+				}else{
+					ErrorHandling::addInfo("Conjunct '".$conjunctId."' broken");
+				}
+				
+				return $violations;
+			}	
 			
 		}catch (Exception $e){
 			ErrorHandling::addError("While checking conjunct '".$conjunctId."': ".$e->getMessage);
