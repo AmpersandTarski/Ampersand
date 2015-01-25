@@ -369,25 +369,26 @@ xRefToLatexRefString x = "\\ref{"++xRefRawLabel x++"}"
 xRefRawLabel :: XRefObj -> String
 xRefRawLabel x
  = case x of
-     XRefNaturalLanguageDeclaration d -> "natLangDcl:"++(escapeNonAlphaNum.name) d
+     XRefNaturalLanguageDeclaration d -> "natLangDcl:"++(escapeNonAlphaNum.fullName) d
      XRefPredicateXpression r     -> "pex:"++(escapeNonAlphaNum.name) r
      XRefNaturalLanguageConcept c -> "natLangCpt:"++(escapeNonAlphaNum.name) c
      XRefDataAnalRule r           -> "dataAnalRule:"++(escapeNonAlphaNum.name) r
      XRefNaturalLanguageRule r    -> "natLangRule:"++(escapeNonAlphaNum.name) r
      XRefProcessAnalysis p        -> "prcAnal:"++(escapeNonAlphaNum.name) p
      XRefProcessAnalysisDeclaration d 
-                                  -> "prcAnalDcl:"++(escapeNonAlphaNum.name) d
+                                  -> "prcAnalDcl:"++(escapeNonAlphaNum.fullName) d
      XRefConceptualAnalysisPattern p 
                                   -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
      XRefConceptualAnalysisDeclaration d 
-                                  -> "cptAnalDcl:"++(escapeNonAlphaNum.name) d
+                                  -> "cptAnalDcl:"++(escapeNonAlphaNum.fullName) d
      XRefConceptualAnalysisRule r -> "cptAnalRule:"++(escapeNonAlphaNum.name) r
      XRefInterfacesInterface i    -> "interface:"++(escapeNonAlphaNum.name) i
      XRefNaturalLanguageTheme (Just t)
                                   -> "theme:"++(escapeNonAlphaNum.name) t
      XRefNaturalLanguageTheme Nothing 
                                   -> ":losseEindjes"
-                                  
+    where
+      fullName d = name d++"*"++(name.source) d++"*"++(name.target) d                              
 
 headerWithLabel :: XRefObj -> Int -> Inlines -> Blocks
 headerWithLabel x = headerWith (xRefRawLabel x, [],[])
