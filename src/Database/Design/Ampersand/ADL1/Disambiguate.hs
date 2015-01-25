@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..)) where
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Basics (Identified(name), fatalMsg)

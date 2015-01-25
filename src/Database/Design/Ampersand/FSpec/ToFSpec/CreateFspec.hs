@@ -5,7 +5,7 @@ where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.ADL1.P2A_Converters (Guarded(..),pCtx2aCtx,showErr)
+import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder

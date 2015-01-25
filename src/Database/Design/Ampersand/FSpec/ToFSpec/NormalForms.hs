@@ -9,8 +9,8 @@ import qualified Data.Set as Set
 import Data.List (nub, intercalate, permutations)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.ADL1.ECArule
-import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Database.Design.Ampersand.ADL1.Expression
+import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree

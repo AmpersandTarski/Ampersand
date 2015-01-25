@@ -12,13 +12,11 @@ module Database.Design.Ampersand.Components
 --   , doGenUML
 --   , doGenDocument
 --   , doGenFPAExcel
-   , Guarded(..)
     -- * etc...
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.ADL1.P2A_Converters
 import Text.Pandoc
 import Text.Pandoc.Builder
 import Database.Design.Ampersand.Basics

@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..), pCpt2aCpt )
+module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
 import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
@@ -29,12 +29,6 @@ instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
 instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
-
-pCpt2aCpt :: P_Concept -> A_Concept
-pCpt2aCpt pc
-    = case pc of
-        PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
-        P_Singleton -> ONE
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
