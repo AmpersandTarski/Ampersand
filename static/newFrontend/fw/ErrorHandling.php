@@ -37,8 +37,15 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	public static function addInfo($message, $id = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
-			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
+			// Set message of info, in case this is not done yet (use: $id for this)
+			if(empty(self::$infos[$id]['message'])) self::$infos[$id]['message'] = $id;
+			
+			// Set message of row (use: $message)
 			self::$infos[$id]['rows'][] = $message;
+			
+			// Add INFO also to logging
+			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
+			
 			return $id;
 		}else{
 			self::addLog($message, 'INFO');
