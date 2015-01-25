@@ -105,7 +105,6 @@ instance ConceptStructure FSpec where
                         , (expressionsIn.vviews) fSpec
                         , (expressionsIn.vIndices) fSpec
                         ]
-  mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an FSpec"
 
 instance Language FSpec where
   objectdef    fSpec = Obj { objnm   = name fSpec
@@ -231,7 +230,6 @@ instance ConceptStructure PlugInfo where
 instance ConceptStructure PlugSQL where
   concs     p = concs   (plugFields p)
   expressionsIn   p = expressionsIn (plugFields p)
-  mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
 
 data PlugSQL
    -- | stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
@@ -316,7 +314,6 @@ instance Ord SqlField where
 instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
   expressionsIn   f = expressionsIn   (fldexpr f)
-  mp1Exprs = fatal 452 "mp1Exprs is not meant to be for a plug."
 
 data SqlType = SQLChar    Int
              | SQLBlob              -- cannot compare, but can show (as a file)
