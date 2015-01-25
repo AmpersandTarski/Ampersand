@@ -21,13 +21,23 @@
 				</div>
 			</div>
 			<ul class="list-group collapse" id="violation-{{key}}">
-				<li class="list-group-item" ng-repeat="tuple in val.tuples">{{tuple}}</li>
+				<li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">{{tuple}}</li>
 			</ul>
 		</div>
 	</div>
 	
 	<div id="infos">
-		<alert ng-repeat="info in notifications.infos" type="info" close="closeAlert(notifications.infos, $index)"><strong>Info!</strong> {{info.message}}</alert>
+		<div class="panel panel-info" ng-repeat="(key, val) in notifications.infos">
+			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-{{key}}">
+				<div class="text-left">
+					<strong>Info!</strong> {{val.message}}
+					<span class="badge pull-right">{{val.rows.length}}</span>					
+				</div>
+			</div>
+			<ul class="list-group collapse" id="info-{{key}}">
+				<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
+			</ul>
+		</div>
 	</div>
 	
 	<!-- Success notifications must be last in notifications center because of position:absolute -->
