@@ -18,6 +18,7 @@ $endif$
 $if(math)$
 .. role:: math(raw)
    :format: html latex
+..
 
 $endif$
 $for(include-before)$
@@ -26,6 +27,8 @@ $include-before$
 $endfor$
 $if(toc)$
 .. contents::
+   :depth: $toc-depth$
+..
 
 $endif$
 $for(header-includes)$
