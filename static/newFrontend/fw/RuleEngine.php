@@ -113,7 +113,7 @@ class RuleEngine {
 			}
 			
 			if(count($result) == 0){
-				ErrorHandling::addInfo("Rule '".$rule['name']."' holds");
+				ErrorHandling::addInfo("Rule '".$rule['name']."' holds", 'Rules that hold');
 				
 			}else{
 				$violations = $result;
@@ -153,14 +153,14 @@ class RuleEngine {
 				
 				
 				if(count($violations) == 0){
-					ErrorHandling::addInfo("Conjunct '".$conjunctId."' holds");
+					ErrorHandling::addLog("Conjunct '".$conjunctId."' holds");
 					
 					// Remove "old" conjunct violations from database
 					$query = "DELETE FROM `__all_signals__` WHERE `conjId` = '$conjunctId'";
 					$db->Exe($query);
 					
 				}elseif($cacheConjuncts){
-					ErrorHandling::addInfo("Conjunct '".$conjunctId."' broken, caching violations in database");
+					ErrorHandling::addLog("Conjunct '".$conjunctId."' broken, caching violations in database");
 					
 					// Remove "old" conjunct violations from database
 					$query = "DELETE FROM `__all_signals__` WHERE `conjId` = '$conjunctId'";
@@ -172,7 +172,7 @@ class RuleEngine {
 					$query .= implode(',', $values);
 					$db->Exe($query);
 				}else{
-					ErrorHandling::addInfo("Conjunct '".$conjunctId."' broken");
+					ErrorHandling::addLog("Conjunct '".$conjunctId."' broken");
 				}
 				
 				return $violations;
