@@ -258,7 +258,13 @@ class Database
 		unset($this->transaction);
 	}
 	
-	public function closeTransaction($succesMessage = 'Updated', $checkAllInvariantConjucts = true){ // default check all invariant conjuncts.
+	/*
+	 * $checkAllInvariantConjuncts 
+	 * 		true: checkAllInvariantConjuncts, 
+	 * 		false: check only InvariantRules that are relevant for the interface of the current session.
+	 * 		default: true
+	 */
+	public function closeTransaction($succesMessage = 'Updated', $checkAllInvariantConjucts = true){
 		$session = Session::singleton();
 		
 		ErrorHandling::addLog('========================= CLOSING TRANSACTION =========================');
@@ -268,12 +274,17 @@ class Database
 		if($checkAllInvariantConjucts){
 			ErrorHandling::addLog("Check all invariant rules");
 			$invariantRulesHold = RuleEngine::checkInvariantRules(); // all invariant conjuncts are checked.
+			
+			// Check all process rules
+			RuleEngine::checkProcessRules();
 		}else{
 			ErrorHandling::addLog("Check all relevant invariant conjuncts for interface " . $session->interface->name);
 			$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->invariantConjuctsIds); // only conjuncts that might be violated after edits in this interface are checked.
-		}	
-		
-		if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
+			
+			// Check process rules that are relevant for this interface
+			// TODO: now all proces rules that are relevant for the current role, can be changed to sigConjucts of interface definition
+			if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
+		}
 		
 		if($invariantRulesHold){
 			$this->commitTransaction(); // commit database transaction

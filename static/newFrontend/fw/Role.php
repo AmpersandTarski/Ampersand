@@ -88,6 +88,28 @@ class Role {
 	public function isInterfaceForRole($interfaceName){
 		return in_array($interfaceName, $this->interfaces);
 	}
+	
+	public function getViolations(){
+		$conjunctIds = array();
+		$conjunctRuleMap = array();
+		foreach ($this->maintains as $ruleName){
+			$rule = RuleEngine::getRule($ruleName);
+			foreach($rule['conjunctIds'] as $conjunctId) $conjunctRuleMap[$conjunctId][] = $ruleName; 
+			$conjunctIds = array_merge($conjunctIds, $rule['conjunctIds']);
+		}
+		$signals = RuleEngine::getSignalsFromDB($conjunctIds);
+		
+		/*
+		 * $signal[] = array('conjId' => , 'src' => , 'tgt' => )
+		 * 
+		 */
+		foreach ($signals as $signal){
+			foreach($conjunctRuleMap[$signal['conjId']] as $ruleName){
+				ErrorHandling::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
+			}			
+		}
+		
+	}
 
 }
 
