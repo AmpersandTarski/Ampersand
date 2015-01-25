@@ -2,7 +2,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
          ( module Database.Design.Ampersand.Basics.Auxiliaries
          , module Debug.Trace) where
 
-import Data.List (nub,elemIndex)
+import Data.List (nub,elemIndex,groupBy)
 import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as Map 
@@ -15,8 +15,9 @@ import Debug.Trace
 -- Example> eqClass "Mississippi" = ["M","iiii","ssss","pp"]
 --
 eqClass :: (a -> a -> Bool) -> [a] -> [[a]]
-eqClass _ [] = []
-eqClass f (x:xs) = (x:[e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
+eqClass = groupBy
+--eqClass _ [] = []
+--eqClass f (x:xs) = (x:[e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
 
 -- | eqCl is used for gathering things that are equal wrt some criterion f.
 --   For instance, if you want to have persons with the same name:
