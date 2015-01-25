@@ -174,7 +174,9 @@ Class Atom {
 			}
 		}
 		
-		$database->closeTransaction('Updated', false); // close transaction => ROLLBACK or COMMIT
+		// TODO: change $checkAllInvariantConjucts parameter of closeTransaction to false, when 
+		//			ExecEngine is adapted for checking conjuncts (see ticket: #450)
+		$database->closeTransaction('Updated', true); // close transaction => ROLLBACK or COMMIT
 		
 		return array_merge(
 				array('patches' => $patches), 
