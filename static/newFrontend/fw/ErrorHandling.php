@@ -34,9 +34,28 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		// self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
 		self::addLog($violationMessage . ' - ' . $rowMessage, 'VIOLATION');
 	}
-	public static function addInfo($message){
-		self::$infos[]['message'] = $message;
-		self::addLog($message, 'INFO');
+	public static function addInfo($message, $id = null){
+		
+		if(isset($id)){
+			$idHash = hash('md5', $id); // ID can be integer, but also string
+			
+			// Set message of info, in case this is not done yet (use: $id for this)
+			if(empty(self::$infos[$idHash]['message'])) self::$infos[$idHash]['message'] = $id;
+			
+			// Set message of row (use: $message)
+			self::$infos[$idHash]['rows'][] = $message;
+			
+			// Add INFO also to logging
+			self::addLog(self::$infos[$idHash]['message'] .' - ' . $message, 'INFO');
+			
+			return $id;
+		}else{
+			self::addLog($message, 'INFO');
+			self::$infos[]['message'] = $message;
+			end(self::$infos); // pointer to end of array (i.e. new  inserted element)
+			return key(self::$infos); // return key of current element
+		}
+		
 	}
 	public static function addSuccess($message, $id = null){
 		
