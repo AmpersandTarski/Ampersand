@@ -36,15 +36,17 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 	}
 	public static function addInfo($message, $id = null){
 		
-		if(isset($id)){ // ID can be integer, but also string
+		if(isset($id)){
+			$idHash = hash('md5', $id); // ID can be integer, but also string
+			
 			// Set message of info, in case this is not done yet (use: $id for this)
-			if(empty(self::$infos[$id]['message'])) self::$infos[$id]['message'] = $id;
+			if(empty(self::$infos[$idHash]['message'])) self::$infos[$idHash]['message'] = $id;
 			
 			// Set message of row (use: $message)
-			self::$infos[$id]['rows'][] = $message;
+			self::$infos[$idHash]['rows'][] = $message;
 			
 			// Add INFO also to logging
-			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
+			self::addLog(self::$infos[$idHash]['message'] .' - ' . $message, 'INFO');
 			
 			return $id;
 		}else{
