@@ -9,9 +9,9 @@
 	<div ng-view></div>
 	
 	<!-- Log -->
-	<div class="row">
+	<div class="row" id="logWindow">
 		<div class="col-md-12">
-			<h3>Log</h3>
+			<h4>Log</h4>
 			<ol style="font-size : 10px;">
 				<li ng-repeat="log in notifications.logs track by $index">{{log}}</li>
 			</ol>
