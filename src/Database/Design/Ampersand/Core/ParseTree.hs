@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Core.ParseTree (
-     P_Context(..)
+     P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
    , P_Process(..)
@@ -614,4 +614,34 @@ data Label = Lbl { lblnm :: String
                  } deriving Show
 instance Eq Label where
  l==l' = lblnm l==lblnm l'
+
+mergeContexts :: P_Context -> P_Context -> P_Context
+mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
+              (PCtx nm2 pos2 _     markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
+  PCtx{ ctx_nm     = if null nm1 then nm2 else nm1
+      , ctx_pos    = pos1 ++ pos2
+      , ctx_lang   = lang1 -- By taking the first, we end up with the language of the top-level context
+      , ctx_markup = markup1 `orElse` markup2 `orElse` Nothing
+      , ctx_thms   = thms1 ++ thms2
+      , ctx_pats   = pats1 ++ pats2
+      , ctx_PPrcs  = pprcs1 ++ pprcs2
+      , ctx_rs     = rs1 ++ rs2
+      , ctx_ds     = ds1 ++ ds2
+      , ctx_cs     = cs1 ++ cs2
+      , ctx_ks     = ks1 ++ ks2
+      , ctx_vs     = vs1 ++ vs2
+      , ctx_gs     = gs1 ++ gs2
+      , ctx_ifcs   = ifcs1 ++ ifcs2
+      , ctx_ps     = ps1 ++ ps2
+      , ctx_pops   = pops1 ++ pops2
+      , ctx_sql    = sql1 ++ sql2
+      , ctx_php    = php1 ++ php2
+      , ctx_metas  = metas1 ++ metas2
+      }
+
+-- | Left-biased choice on maybes
+orElse :: Maybe a -> Maybe a -> Maybe a
+x `orElse` y = case x of
+                 Just _  -> x
+                 Nothing -> y
 

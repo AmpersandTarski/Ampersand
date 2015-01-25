@@ -9,13 +9,10 @@ import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand.Prototype.ObjBinGen    (phpObjInterfaces)
 import Database.Design.Ampersand.Prototype.Apps.RAP   (atlas2context, atlas2populations)
-import Database.Design.Ampersand.Prototype.CoreImporter
-import Database.Design.Ampersand.InputProcessing
+import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht (doGenBericht)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Database.Design.Ampersand.Prototype.ValidateEdit
--- import Database.Design.Ampersand.Input.ADL1.CtxError (showErr)
--- import qualified Database.Design.Ampersand.Basics as Basics
 
 main :: IO ()
 main =

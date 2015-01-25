@@ -15,8 +15,7 @@ import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Misc.Options
-import Database.Design.Ampersand.Input.ADL1.Parser (pRule)
-import Database.Design.Ampersand.Input.Parsing
+import Database.Design.Ampersand.Input (parseRule)
 import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
 import Prelude hiding (head)
 -- import Debug.Trace
@@ -679,14 +678,7 @@ data DerivStep = DStep { lhs :: RTerm
 -- instance Show DerivStep where
 --  showsPrec _ r@DStep{}  = showString ("    "++showADL (lhs r)++"\n =  {" ++show (rul r)++"}\n    " ++showADL (rhs r))
 
--- In order to read derivation rules, we use the Ampersand parser.
--- Since it is applied on static code only, error messagea may be produced as fatals.
 
-parseRule :: String -> Term TermPrim
-parseRule str
-   = case  runParser pRule "inside Haskell code" str of
-       Right result -> result
-       Left  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
 
 dRule :: Term TermPrim -> [DerivRule]
 dRule (PEqu _ l r) = [DEquR { lTerm=term2rTerm l, rTerm=term2rTerm r }]

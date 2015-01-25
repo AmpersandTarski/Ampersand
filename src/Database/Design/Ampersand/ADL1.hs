@@ -14,7 +14,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , Prop(..)
          , P_Concept(..)
          , P_Sign(..)
-         , P_Context(..)
+         , P_Context(..), mergeContexts
          , Meta(..)
          , MetaObj(..)
          , P_Process(..), P_RoleRelation(..), RoleRule(..)
@@ -69,3 +69,4 @@ import Database.Design.Ampersand.ADL1.ECArule (
 import Database.Design.Ampersand.ADL1.Rule (
           rulefromProp, ruleviolations
          ,consequent,antecedent,hasantecedent)
+

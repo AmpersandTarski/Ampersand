@@ -140,7 +140,6 @@ executable ampersand
                      Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
                      Database.Design.Ampersand.Input.ADL1.UU_Scanner,
                      Database.Design.Ampersand.Input.Parsing,
-                     Database.Design.Ampersand.InputProcessing,
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
@@ -178,4 +177,5 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand
+                     Paths_ampersand,
+                     Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec

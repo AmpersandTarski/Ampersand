@@ -68,7 +68,7 @@ module Database.Design.Ampersand
    , getGeneralizations, getSpecializations
     -- * Type checking and calculus
    , Guarded(..), pCtx2aCtx
-   , makeFSpec
+   , makeFSpec, getPopulationsFrom
     -- * Generators of output
    , generateAmpersandOutput
    -- * Prettyprinters
@@ -108,5 +108,4 @@ import Database.Design.Ampersand.Components
 import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug (showPlug)
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
-import Database.Design.Ampersand.InputProcessing
 import Database.Design.Ampersand.ADL1.P2A_Converters
