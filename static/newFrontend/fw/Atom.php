@@ -183,10 +183,7 @@ Class Atom {
 		//			ExecEngine is adapted for checking conjuncts (see ticket: #450)
 		$database->closeTransaction('Updated', true); // close transaction => ROLLBACK or COMMIT
 		
-		return array_merge(
-				array('patches' => $patches), 
-				array('content' => current((array)$this->getContent($interface))), 
-				array('notifications' => ErrorHandling::getAll())); 
+		return $patches;
 		
 	}
 	
@@ -199,7 +196,7 @@ Class Atom {
 		
 		$database->closeTransaction('Atom deleted'); // close transaction => ROLLBACK or COMMIT
 		
-		return array('notifications' => ErrorHandling::getAll());
+		return;
 		
 	}
 	
