@@ -78,7 +78,7 @@ executable ampersand
                      pandoc-types == 1.12.*,
                      parsec == 3.1.*,
                      process == 1.2.*,
-                     QuickCheck == 2.4.*,
+                     QuickCheck == 2.5.*,
                      split == 0.2.*,
                      text == 1.1.*,
                      time == 1.4.*,
