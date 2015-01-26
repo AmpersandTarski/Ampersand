@@ -1,12 +1,14 @@
 AmpersandApp.controller('PersonController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal, $location) {
 	
-	
 	url = 'interface/Person/atom';
-	if(typeof $routeParams.atom != 'undefined'){
+	if($routeParams['new']){
+		newAtom = Restangular.one(url).post().then(function (data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		});
+	}else if(typeof $routeParams.atom != 'undefined'){
 		list = Restangular.one(url, $routeParams.atom).get().then(function(data){
 			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
 		});
-		
 	}else{
 		$scope.ResourceList = Restangular.all(url).getList().$object;
 	}
@@ -35,12 +37,6 @@ AmpersandApp.controller('PersonController', function ($scope, $rootScope, $route
 					$location.url('/');
 				});
 		}
-	}
-	
-	$scope.addAtom = function (){
-		newAtom = Restangular.one(url).post().then(function (data){
-			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
-		});
 	}
 	
 	// function to remove item (key) from list (obj)
