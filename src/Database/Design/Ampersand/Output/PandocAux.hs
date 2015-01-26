@@ -4,10 +4,6 @@ module Database.Design.Ampersand.Output.PandocAux
       , XRefObj(..) , xRefTo, xRefToLatexRefString
       , headerWithLabel
       , definitionListItemLabel
---      , labeledThing
---      , symDefLabel, symDefRef
---      , symReqLabel, symReqRef, symReqPageRef
---      , xrefSupported
       , pandocEqnArray
       , pandocEqnArrayWithLabels
       , pandocEqnArrayWithLabel
@@ -142,7 +138,7 @@ defaultWriterVariables fSpec
          , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
          , "% ============Ampersand specific End==================="
          ])
-    ]
+    | fspecFormat (getOpts fSpec) == FLatex ]
 
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
