@@ -309,7 +309,7 @@ class Api
     		throw new RestException(404, $e->getMessage());
     	}
     	 
-    	return $session->role->getInterfaces(true);  // "Return list of all interfaces"
+    	return $session->role->getInterfaces();  // "Return list of all interfaces"
     }
     
 	/**
