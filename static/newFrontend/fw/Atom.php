@@ -64,7 +64,12 @@ Class Atom {
 	public function patch(&$interface, $request_data){
 		$database = Database::singleton();
 		
-		$before = current($this->getContent($interface));
+		// Check if new Atom
+		if(empty($before = $this->getContent($interface))){
+			$database->addAtomToConcept($this->id, $this->concept);
+			$before = $this->getContent($interface);
+		}
+		$before = current($before);
 		
 		$patches = JsonPatch::diff($before, $request_data);
 		
@@ -180,7 +185,7 @@ Class Atom {
 		
 		return array_merge(
 				array('patches' => $patches), 
-				array('content' => current($this->getContent($interface))), 
+				array('content' => current((array)$this->getContent($interface))), 
 				array('notifications' => ErrorHandling::getAll())); 
 		
 	}

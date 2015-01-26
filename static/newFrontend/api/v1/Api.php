@@ -1,6 +1,7 @@
 <?php
 
 use Luracast\Restler\Data\Object;
+use Luracast\Restler\RestException;
 class Api
 {
 /****************************** INSTALLER & SESSION RESET ******************************/
@@ -80,8 +81,6 @@ class Api
 	{
 		$session = Session::singleton($sessionId);
 	
-		if(is_null($atomid)) $atomid = $sessionId;
-	
 		try{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
@@ -90,9 +89,23 @@ class Api
 		}
 	
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+		
+		$result = array();
+		if(is_null($atomid)) {
+			foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
+				$atom = new Atom($atomId, $session->interface->srcConcept);
+				$result = array_merge($result, (array)$atom->getContent($session->interface));
+			}
+		}else{
 	
-		$atom = new Atom($atomid);
-		return current($atom->getContent($session->interface));
+			$atom = new Atom($atomid, $session->interface-srcConcept);
+			$result = $atom->getContent($session->interface);
+		}
+		
+		if(empty($result)) throw new RestException(404, 'Resource not found');
+
+		return array_values($result); // array_values transforms assoc array to non-assoc array
+
 	}
 	
 	/**
@@ -115,8 +128,8 @@ class Api
 	
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
 	
-		$atom = new Atom($atomid);
 		$interface = new ObjectInterface($interfaceName);
+		$atom = new Atom($atomid, $interface->srcConcept);		
 		 
 		return $atom->patch($interface, $request_data);
 	
@@ -151,18 +164,16 @@ class Api
 		return $atom->delete();
 	
 	}
-	
-	
 	/**
-	 * @url GET interface/{interfaceName}/atoms
+	 * @url POST interface/{interfaceName}/atom
 	 * @param string $interfaceName
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function getAtoms($interfaceName, $sessionId, $roleId = null)
-	{
+	public function postAtom($interfaceName, $sessionId, $roleId = null){
 		$session = Session::singleton($sessionId);
-				
+		$db = Database::singleton();
+		
 		try{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
@@ -171,12 +182,17 @@ class Api
 		}
 		
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+			
+		$interface = new ObjectInterface($interfaceName);
 		
-		foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
-			$atom = new Atom($atomId, $session->interface->srcConcept);
-			$arr[] = current($atom->getContent($session->interface));
-		}
-		return $arr;
+		// TODO: insert check if Atom may be created with this interface
+		
+		$concept = $session->interface->srcConcept;
+		$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
+		$atom = new Atom($atomId, $concept);
+		
+		return array_values($atom->getContent($session->interface));
+		
 	}
 	
 
@@ -210,7 +226,7 @@ class Api
      * @url POST concept/{concept}/atom
 	 * @status 201
      */
-	function postAtom($concept){ 
+	function postConceptAtom($concept){ 
 		$database = Database::singleton();
 	 
 		return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
