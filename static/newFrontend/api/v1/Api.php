@@ -1,6 +1,7 @@
 <?php
 
 use Luracast\Restler\Data\Object;
+use Luracast\Restler\RestException;
 class Api
 {
 /****************************** INSTALLER & SESSION RESET ******************************/
@@ -80,8 +81,6 @@ class Api
 	{
 		$session = Session::singleton($sessionId);
 	
-		if(is_null($atomid)) $atomid = $sessionId;
-	
 		try{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
@@ -90,9 +89,23 @@ class Api
 		}
 	
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+		
+		$result = array();
+		if(is_null($atomid)) {
+			foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
+				$atom = new Atom($atomId, $session->interface->srcConcept);
+				$result = array_merge($result, (array)$atom->getContent($session->interface));
+			}
+		}else{
 	
-		$atom = new Atom($atomid);
-		return current($atom->getContent($session->interface));
+			$atom = new Atom($atomid, $session->interface-srcConcept);
+			$result = $atom->getContent($session->interface);
+		}
+		
+		if(empty($result)) throw new RestException(404, 'Resource not found');
+
+		return array_values($result); // array_values transforms assoc array to non-assoc array
+
 	}
 	
 	/**
@@ -115,10 +128,13 @@ class Api
 	
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
 	
-		$atom = new Atom($atomid);
 		$interface = new ObjectInterface($interfaceName);
-		 
-		return $atom->patch($interface, $request_data);
+		$atom = new Atom($atomid, $interface->srcConcept);		
+		
+		return array_merge(
+				array('patches' => $atom->patch($interface, $request_data)),
+				array('content' => current((array)$atom->getContent($interface))),
+				array('notifications' => ErrorHandling::getAll()));
 	
 	}
 	
@@ -129,7 +145,7 @@ class Api
 	 * @param string $atomid
 	 * @param int $roleId
 	 */
-	public function deleteAtom($interfaceName, $sessionId, $atomid, $roleId = null, $request_data = null)
+	public function deleteAtom($interfaceName, $sessionId, $atomid, $roleId = null)
 	{
 		$session = Session::singleton($sessionId);
 	
@@ -146,23 +162,22 @@ class Api
 		
 		// TODO: insert check if Atom may be deleted with this interface
 		
-		$atom = new Atom($atomid, $interface->srcConcept);		
-			
-		return $atom->delete();
+		$atom = new Atom($atomid, $interface->srcConcept);
+		$atom->delete();	
+		
+		return array('notifications' => ErrorHandling::getAll());
 	
 	}
-	
-	
 	/**
-	 * @url GET interface/{interfaceName}/atoms
+	 * @url POST interface/{interfaceName}/atom
 	 * @param string $interfaceName
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function getAtoms($interfaceName, $sessionId, $roleId = null)
-	{
+	public function postAtom($interfaceName, $sessionId, $roleId = null){
 		$session = Session::singleton($sessionId);
-				
+		$db = Database::singleton();
+		
 		try{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
@@ -171,12 +186,17 @@ class Api
 		}
 		
 		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+			
+		$interface = new ObjectInterface($interfaceName);
 		
-		foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
-			$atom = new Atom($atomId, $session->interface->srcConcept);
-			$arr[] = current($atom->getContent($session->interface));
-		}
-		return $arr;
+		// TODO: insert check if Atom may be created with this interface
+		
+		$concept = $session->interface->srcConcept;
+		$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
+		$atom = new Atom($atomId, $concept);
+		
+		return array_values($atom->getContent($session->interface));
+		
 	}
 	
 
@@ -210,7 +230,7 @@ class Api
      * @url POST concept/{concept}/atom
 	 * @status 201
      */
-	function postAtom($concept){ 
+	function postConceptAtom($concept){ 
 		$database = Database::singleton();
 	 
 		return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
@@ -293,7 +313,7 @@ class Api
     		throw new RestException(404, $e->getMessage());
     	}
     	 
-    	return $session->role->getInterfaces(true);  // "Return list of all interfaces"
+    	return $session->role->getInterfaces();  // "Return list of all interfaces"
     }
     
 	/**

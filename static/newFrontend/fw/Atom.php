@@ -64,7 +64,12 @@ Class Atom {
 	public function patch(&$interface, $request_data){
 		$database = Database::singleton();
 		
-		$before = current($this->getContent($interface));
+		// Check if new Atom
+		if(empty($before = $this->getContent($interface))){
+			$database->addAtomToConcept($this->id, $this->concept);
+			$before = $this->getContent($interface);
+		}
+		$before = current($before);
 		
 		$patches = JsonPatch::diff($before, $request_data);
 		
@@ -178,10 +183,7 @@ Class Atom {
 		//			ExecEngine is adapted for checking conjuncts (see ticket: #450)
 		$database->closeTransaction('Updated', true); // close transaction => ROLLBACK or COMMIT
 		
-		return array_merge(
-				array('patches' => $patches), 
-				array('content' => current($this->getContent($interface))), 
-				array('notifications' => ErrorHandling::getAll())); 
+		return $patches;
 		
 	}
 	
@@ -194,7 +196,7 @@ Class Atom {
 		
 		$database->closeTransaction('Atom deleted'); // close transaction => ROLLBACK or COMMIT
 		
-		return array('notifications' => ErrorHandling::getAll());
+		return;
 		
 	}
 	

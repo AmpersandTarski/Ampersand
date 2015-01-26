@@ -1,28 +1,42 @@
 AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal, $location) {
 	
-	// model (can be changed by view)
-	$scope.Project = Restangular.one('interface/Project/atom', $routeParams.atom).get().$object;
+	url = 'interface/Project/atom';
+	if($routeParams['new']){
+		newAtom = Restangular.one(url).post().then(function (data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		});
+	}else if(typeof $routeParams.atom != 'undefined'){
+		list = Restangular.one(url, $routeParams.atom).get().then(function(data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		});
+		
+	}else{
+		$scope.ResourceList = Restangular.all(url).getList().$object;
+	}
 	
-	$scope.patch = function(){
-		$scope.Project
+	$scope.patch = function(ResourceId){
+		$scope.ResourceList[ResourceId]
 			.patch()
 			.then(function(data) {
 				$rootScope.notifications = data.notifications;
-				$scope.Project = Restangular.restangularizeElement('', data.content, 'interface/Project/atom');
+				$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, 'interface/Project/atom');
 				
 				$timeout(function() {
 			    	console.log('now');
 			    	$rootScope.notifications.successes = [];
 			    }, 3000);
-			});	
-	}
-	$scope.deleteAtom = function (){
-		$scope.Project
-			.remove()
-			.then(function(data){
-				$rootScope.notifications = data.notifications;
-				$location.url('/');
 			});
+	}
+	
+	$scope.deleteAtom = function (ResourceId){
+		if(confirm('Are you sure?')){
+			$scope.ResourceList[ResourceId]
+				.remove()
+				.then(function(data){
+					$rootScope.notifications = data.notifications;
+					$location.url('/');
+				});
+		}
 	}
 	
 	// function to remove item (key) from list (obj)
@@ -59,7 +73,7 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 	$scope.addProjectleider = function(obj, property){
 		
 		var modalInstance = $modal.open({
-			templateUrl		: 'app/views/Project_addProjectleider.html',
+			templateUrl		: 'generics/app/views/Project_addProjectleider.html',
 			controller		: 'ProjectController_addProjectleider',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'
@@ -89,7 +103,7 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 	$scope.addProjectmember = function(obj, property){
 		
 		var modalInstance = $modal.open({
-			templateUrl		: 'app/views/Project_addProjectmember.html',
+			templateUrl		: 'generics/app/views/Project_addProjectmember.html',
 			controller		: 'ProjectController_addProjectmember',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'
@@ -118,7 +132,7 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 
 }).controller('ProjectController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
 	
-	$scope.Projectleiders = Restangular.all('interface/Person/atoms').getList().$object;
+	$scope.Projectleiders = Restangular.all('interface/Person/atom').getList().$object;
 	
 	$scope.select = function(id) {
 		console.log('click: ' + id);
@@ -132,7 +146,7 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 }]).controller('ProjectController_addProjectmember', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
 	
 	// api/v1/concept/{concept}/atoms provides for all atoms only id, label and concepttype
-	$scope.list = Restangular.all('concept/Person/atoms').getList().$object;
+	$scope.list = Restangular.all('concept/Person/atom').getList().$object;
 	
 	$scope.select = function(id) {
 		console.log('click: ' + id);

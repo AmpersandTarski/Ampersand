@@ -1,15 +1,22 @@
 AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
 	
-	// model (can be changed by view)
-	$scope.SESSION = Restangular.one('interface/Projects/atom').get().$object;
+	url = 'interface/Projects/atom';
+	if(typeof $routeParams.atom != 'undefined'){
+		list = Restangular.one(url, $routeParams.atom).get().then(function(data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		});
+		
+	}else{
+		$scope.ResourceList = Restangular.all(url).getList().$object;
+	}
 	
 	// patch function
-	$scope.patch = function(){
-		$scope.SESSION
+	$scope.patch = function(ResourceId){
+		$scope.ResourceList[ResourceId]
 			.patch()
 			.then(function(data) {
 				$rootScope.notifications = data.notifications;
-				$scope.SESSION = Restangular.restangularizeElement('', data.content, 'interface/Projects/atom');
+				$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, 'interface/Projects/atom');
 				
 				$timeout(function() {
 			    	console.log('now');
@@ -28,7 +35,7 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	$scope.addProjectleider = function(obj, property){
 		
 		var modalInstance = $modal.open({
-			templateUrl		: 'app/views/Projects_addProjectleider.html',
+			templateUrl		: 'generics/app/views/Projects_addProjectleider.html',
 			controller		: 'ProjectsController_addProjectleider',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'
@@ -63,7 +70,7 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	
 }]).controller('ProjectsController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
 	
-	$scope.Projectleiders = Restangular.all('interface/Person/atoms').getList().$object;
+	$scope.Projectleiders = Restangular.all('interface/Person/atom').getList().$object;
 	
 	$scope.select = function(id) {
 		console.log('click: ' + id);
