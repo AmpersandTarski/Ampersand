@@ -120,14 +120,14 @@ function editAddToConcept($atom, $concept) {
 
 // NOTE: if $originalAtom == '', editUpdate means insert
 function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $childConcept, $parentOrChild, $originalAtom) {
-  global $relationTableInfo;
+  global $allRelations;
   global $tableColumnInfo;
   
   emitLog("editUpdate($rel, " . ($isFlipped ? 'true' : 'false') . ", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
   /* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
-  // check if $relation appears in $relationTableInfo
-  if (array_key_exists($relation, $relationTableInfo))
-  { foreach($relationTableInfo as $key => $arr)
+  // check if $relation appears in $allRelations
+  if (array_key_exists($relation, $allRelations))
+  { foreach($allRelations as $key => $arr)
      if($key == $relation)
      { if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
         { $table = $arr['table'];
@@ -140,9 +140,9 @@ function editUpdate($rel, $isFlipped, $parentAtom, $parentConcept, $childAtom, $
   { echo "ERROR: Relation $relation does not exist (in table info)";
   }
 */
-  $table = $relationTableInfo[$rel]['table'];
-  $srcCol = $relationTableInfo[$rel]['srcCol'];
-  $tgtCol = $relationTableInfo[$rel]['tgtCol'];
+  $table = $allRelations[$rel]['table'];
+  $srcCol = $allRelations[$rel]['srcCol'];
+  $tgtCol = $allRelations[$rel]['tgtCol'];
   $parentCol = $isFlipped ? $tgtCol : $srcCol;
   $childCol = $isFlipped ? $srcCol : $tgtCol;
   
@@ -209,16 +209,16 @@ function getSuperColumns($table, $concept) {
 }
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
-  global $relationTableInfo;
+  global $allRelations;
   global $tableColumnInfo;
   
   emitLog("editDelete($rel, " . ($isFlipped ? 'true' : 'false') . ", $parentAtom, $childAtom)");
   $srcAtom = $isFlipped ? $childAtom : $parentAtom;
   $tgtAtom = $isFlipped ? $parentAtom : $childAtom;
   
-  $table = $relationTableInfo[$rel]['table'];
-  $srcCol = $relationTableInfo[$rel]['srcCol'];
-  $tgtCol = $relationTableInfo[$rel]['tgtCol'];
+  $table = $allRelations[$rel]['table'];
+  $srcCol = $allRelations[$rel]['srcCol'];
+  $tgtCol = $allRelations[$rel]['tgtCol'];
   
   $tableEsc = escapeSQL($table);
   $srcAtomEsc = escapeSQL($srcAtom);

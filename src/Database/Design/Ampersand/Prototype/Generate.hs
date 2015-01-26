@@ -102,7 +102,7 @@ generateSpecializations fSpec =
 
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
-  [ "$relationTableInfo =" -- TODO: rename
+  [ "$allRelations ="
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
@@ -121,7 +121,7 @@ generateTableInfos fSpec =
                  Just conjs -> conjs                 
          ])) ++
   [ ""
-  , "$conceptTableInfo = array" -- TODO: rename
+  , "$allConcepts = array"
   ] ++
   addToLastLine ";"
     (indent 2 $
