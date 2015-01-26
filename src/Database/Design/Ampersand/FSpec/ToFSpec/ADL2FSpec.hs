@@ -58,6 +58,7 @@ makeFSpec opts context = fSpec
               , vconjs       = allConjs
               , allConjsPerRule = allConjsPerRule'
               , allConjsPerDecl = allConjsPerDecl'
+              , allConjsPerConcept = allConjsPerConcept'
               , vquads       = allQuads
               , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
@@ -115,6 +116,7 @@ makeFSpec opts context = fSpec
      allConjs = makeAllConjs opts allrules
      allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
      allQuads = makeAllQuads allConjsPerRule'
 
      allrules = vRules ++ gRules
