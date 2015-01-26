@@ -102,7 +102,7 @@ generateSpecializations fSpec =
 
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
-  [ "$relationTableInfo ="
+  [ "$relationTableInfo =" -- TODO: rename
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
@@ -121,27 +121,32 @@ generateTableInfos fSpec =
                  Just conjs -> conjs                 
          ])) ++
   [ ""
-  , "$conceptTableInfo ="
-  , "  array"
+  , "$conceptTableInfo = array" -- TODO: rename
   ] ++
   addToLastLine ";"
-    (indent 4
-       (blockParenthesize "(" ")" ","
-         [ ( (showPhpStr.name) c++" => array "
-           ) :
-           indent 4
-              (blockParenthesize "(" ")" ","
-                [ [ "array ( 'table' => "++(showPhpStr.name) table
-                  , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")"
-                  , "      )"
-                  ]
-                -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
-                ]
-              )
+    (indent 2 $
+       blockParenthesize "(" ")" ","
+         [ [ (showPhpStr.name) c++" => array"] ++
+           (indent 2 $
+              [ "( 'affectedConjuncts' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affConjs) ++")"
+              , ", 'conceptTables' => array" ] ++
+              (indent 3
+                (blockParenthesize "(" ")" ","
+                  [ [ "array ( 'table' => "++(showPhpStr.name) table ++
+                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" ++
+                           " )"
+                    ]
+                  -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
+                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
+                  ])) ++
+              [ ")" ]
+           )
          | c <- concs fSpec
+         , let affConjs = case lookup c $ allConjsPerConcept fSpec of
+                 Nothing    -> []
+                 Just conjs -> conjs                 
          ]
-    )  ) ++
+    ) ++
   [ ""
   , "$tableColumnInfo ="
   , "  array"

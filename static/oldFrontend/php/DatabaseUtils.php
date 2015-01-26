@@ -244,9 +244,9 @@ function addAtomToConcept($newAtom, $concept, $shouldLog = false) { // Insert 'n
   global $conceptTableInfo;
   
   if ($shouldLog)
-    emitLog("adding to concept tables: $newAtom : $concept (" . count($conceptTableInfo[$concept]) . " columns)");
-  foreach ($conceptTableInfo[$concept] as $conceptTableCol) {
-    // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
+    emitLog("adding to concept tables: $newAtom : $concept (" . count($conceptTableInfo[$concept]['conceptTables']) . " columns)");
+  foreach ($conceptTableInfo[$concept]['conceptTables'] as $conceptTableCol) {
+    // $conceptTableInfo[$concept]['conceptTables'] is an array of tables with arrays of columns maintaining $concept.
     // (we have an array rather than a single column because of generalizations)
     $conceptTable = $conceptTableCol['table'];
     $conceptCols = $conceptTableCol['cols']; // We insert the new atom in each of them.
@@ -310,8 +310,8 @@ function createNewAtom($concept) {
 function getAllConceptAtoms($concept) {
   global $conceptTableInfo;
   
-  $conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept
-  $conceptCol = $conceptTableInfo[$concept][0]['cols'][0]; // for lookup, we just take the first table and its first column
+  $conceptTable = $conceptTableInfo[$concept]['conceptTables'][0]['table']; // $conceptTableInfo[$concept]['conceptTables'] is an array of tables with arrays of columns maintaining $concept
+  $conceptCol = $conceptTableInfo[$concept]['conceptTables'][0]['cols'][0]; // for lookup, we just take the first table and its first column
   $conceptTableEsc = escapeSQL($conceptTable);
   $conceptColEsc = escapeSQL($conceptCol);
   
