@@ -75,7 +75,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
-                   , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ All conjuncts, grouped by originating rule (note that a single conjunct may appear in several rules) 
+                   , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
+                   , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
+                   , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or targent of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts

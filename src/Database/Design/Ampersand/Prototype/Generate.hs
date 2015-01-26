@@ -102,7 +102,7 @@ generateSpecializations fSpec =
 
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
-  [ "$relationTableInfo ="
+  [ "$allRelations ="
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
@@ -111,32 +111,42 @@ generateTableInfos fSpec =
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
                                                  ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
-                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)++")"]
+                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)
+                                                 ++ ", 'affectedConjuncts' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affConjs) ++")"
+                                                 ++ ")"]
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
          , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
+         , let affConjs = case lookup decl $ allConjsPerDecl fSpec of
+                 Nothing    -> []
+                 Just conjs -> conjs                 
          ])) ++
   [ ""
-  , "$conceptTableInfo ="
-  , "  array"
+  , "$allConcepts = array"
   ] ++
   addToLastLine ";"
-    (indent 4
-       (blockParenthesize "(" ")" ","
-         [ ( (showPhpStr.name) c++" => array "
-           ) :
-           indent 4
-              (blockParenthesize "(" ")" ","
-                [ [ "array ( 'table' => "++(showPhpStr.name) table
-                  , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")"
-                  , "      )"
-                  ]
-                -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
-                ]
-              )
+    (indent 2 $
+       blockParenthesize "(" ")" ","
+         [ [ (showPhpStr.name) c++" => array"] ++
+           (indent 2 $
+              [ "( 'affectedConjuncts' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affConjs) ++")"
+              , ", 'conceptTables' => array" ] ++
+              (indent 3
+                (blockParenthesize "(" ")" ","
+                  [ [ "array ( 'table' => "++(showPhpStr.name) table ++
+                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" ++
+                           " )"
+                    ]
+                  -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
+                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
+                  ])) ++
+              [ ")" ]
+           )
          | c <- concs fSpec
+         , let affConjs = case lookup c $ allConjsPerConcept fSpec of
+                 Nothing    -> []
+                 Just conjs -> conjs                 
          ]
-    )  ) ++
+    ) ++
   [ ""
   , "$tableColumnInfo ="
   , "  array"
