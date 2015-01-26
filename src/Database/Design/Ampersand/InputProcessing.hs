@@ -1,7 +1,7 @@
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
-module Database.Design.Ampersand.InputProcessing (createFSpec, getPopulationsFrom) where
+module Database.Design.Ampersand.InputProcessing (createFSpec, getPopulationsFrom, runParser) where
 
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Basics
