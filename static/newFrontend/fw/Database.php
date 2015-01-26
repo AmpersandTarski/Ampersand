@@ -40,6 +40,8 @@ class Database
 
 	public function Exe($query)
 	{
+		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
+		
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
 		$result = mysql_query($query,$this->dblink);
 		ErrorHandling::addLog($query, 'QUERY');
