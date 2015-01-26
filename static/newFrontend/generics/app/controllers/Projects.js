@@ -1,4 +1,4 @@
-AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
+AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
 	
 	url = 'interface/Projects/atom';
 	if(typeof $routeParams.atom != 'undefined'){
@@ -27,31 +27,37 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 	}
 	
 	// function to remove item (key) from list (obj)
-	$scope.removeObject = function(obj, key){
+	$scope.removeObject = function(obj, key, ResourceId){
 		delete obj[key];
-		$scope.patch();
+		$scope.patch(ResourceId);
 	}
 	
-	$scope.addProjectleider = function(obj, property){
-		
+	// Also needed by addModal
+	$scope.addObject = function(obj, property, val, ResourceId){
+		if(val === undefined || val == ''){
+			console.log('object is undefined');
+		}else{
+			if(obj[property] === null) obj[property] = {};
+			obj[property][val] = {'id': val};
+			$scope.patch(ResourceId);
+			val = ''; // reset input field
+		}
+	}
+	
+	$scope.addModal = function(obj, property, ResourceId){
 		var modalInstance = $modal.open({
 			templateUrl		: 'generics/app/views/Projects_addProjectleider.html',
-			controller		: 'ProjectsController_addProjectleider',
+			controller		: 'static_addModalController',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'
-			// resolve		: { } 				// an optional map of dependencies which should be injected into the controller			
-		
+			resolve			: { restUrl: function () { return 'interface/Person/atom'; } }	// an optional map of dependencies which should be injected into the controller			
 		});
 		
 		modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed
 			.then( // then() called when promise is resolved or rejected
 				function (selectedId) { // function when modal is closed
-					if(obj[property] === null) obj[property] = {};
-					obj[property][selectedId] = {'id' : selectedId};
-				
 					console.log('selected: ' + selectedId);
-					$scope.patch();
-				
+					$scope.addObject(obj, property, selectedId, ResourceId);
 				}, function () { // function when modal is dismissed
 					console.log('Modal dismissed at: ' + new Date());
 				}
@@ -67,19 +73,5 @@ AmpersandApp.controller('ProjectsController', ['$scope', '$rootScope', '$routePa
 		$scope.datepicker[datepicker] = {'open' : true};
 	};
 
-	
-}]).controller('ProjectsController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
-	
-	$scope.Projectleiders = Restangular.all('interface/Person/atom').getList().$object;
-	
-	$scope.select = function(id) {
-		console.log('click: ' + id);
-		$modalInstance.close(id);
-	}
-	
-	$scope.cancel = function () {
-		$modalInstance.dismiss('cancel');
-	};
-	
-}]);
+});
 

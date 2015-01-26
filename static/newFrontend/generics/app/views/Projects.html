@@ -20,7 +20,7 @@
 					</thead>
 					<tbody>
 						<tr ng-repeat="(key, val) in Resource['Started projects']">
-							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Started projects'], key)"></span></td>
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Started projects'], key, ResourceId)"></span></td>
 							<!-- I[Project] --> 
 							<td>
 								<div>
@@ -58,10 +58,10 @@
 							<!-- Relation to other concept -->
 							<td>
 								<div ng-repeat="row in val['Projectleider']">
-									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'])"></span>
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'], ResourceId)"></span>
 									<a ng-href="#/Person/{{row['id']}}">{{row['label']}}</a>
 								</div>
-								<div my-showonhovertr class="pointer" ng-click="addProjectleider(val, 'Projectleider')">
+								<div my-showonhovertr class="pointer" ng-click="addModal(val, 'Projectleider', ResourceId)">
 									<span class="glyphicon glyphicon-plus"></span>
 									<small>Add new Projectleider</small>
 								</div>
@@ -110,7 +110,7 @@
 					</thead>
 					<tbody>
 						<tr ng-repeat="(key, val) in Resource['Unstarted projects']">
-							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Unstarted projects'], key)"></span></td>
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Unstarted projects'], key, ResourceId)"></span></td>
 							<td>
 								<div>
 									<a ng-href="#/Project/{{val['id']}}">{{val['label']}}</a>
@@ -134,10 +134,10 @@
 							<!-- Relation to other concept -->
 							<td>
 								<div ng-repeat="row in val['Projectleider']">
-									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'])"></span>
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'], ResourceId)"></span>
 									<a ng-href="#/Person/{{row['id']}}">{{row['label']}}</a>
 								</div>
-								<div my-showonhovertr class="pointer" ng-click="addProjectleider(val, 'Projectleider')">
+								<div my-showonhovertr class="pointer" ng-click="addModal(val, 'Projectleider', ResourceId)">
 									<span class="glyphicon glyphicon-plus"></span>
 									<small>Add new Projectleider</small>
 								</div>

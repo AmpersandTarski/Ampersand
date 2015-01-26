@@ -1,17 +1,17 @@
 AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal, $location) {
 	
-	url = 'interface/Project/atom';
+	$scope.url = 'interface/Project/atom';
 	if($routeParams['new']){
-		newAtom = Restangular.one(url).post().then(function (data){
-			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		newAtom = Restangular.one($scope.url).post().then(function (data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, $scope.url);
 		});
 	}else if(typeof $routeParams.atom != 'undefined'){
-		list = Restangular.one(url, $routeParams.atom).get().then(function(data){
-			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		list = Restangular.one($scope.url, $routeParams.atom).get().then(function(data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, $scope.url);
 		});
 		
 	}else{
-		$scope.ResourceList = Restangular.all(url).getList().$object;
+		$scope.ResourceList = Restangular.all($scope.url).getList().$object;
 	}
 	
 	$scope.patch = function(ResourceId){
@@ -40,19 +40,20 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 	}
 	
 	// function to remove item (key) from list (obj)
-	$scope.removeObject = function(obj, key){
+	$scope.removeObject = function(obj, key, ResourceId){
 		delete obj[key];
-		$scope.patch();
+		$scope.patch(ResourceId);
 	}
 	
-	$scope.addObject = function(obj, property, val){
+	// Also needed by addModal
+	$scope.addObject = function(obj, property, val, ResourceId){
 		if(val === undefined || val == ''){
 			console.log('object is undefined');
 		}else{
 			if(obj[property] === null) obj[property] = {};
 			obj[property][val] = {'id': val};
-			$scope.patch();
-			$scope.selected.Theme = ''; // reset input field
+			$scope.patch(ResourceId);
+			val = ''; // reset input field
 		}
 	}
 	
@@ -70,93 +71,26 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 	$scope.typeahead.Theme = Restangular.all('concept/Theme/atoms').getList().$object;
 	$scope.typeahead.Person = Restangular.all('concept/Person/atoms').getList().$object;
 	
-	$scope.addProjectleider = function(obj, property){
-		
+	$scope.addModal = function(obj, property, ResourceId){
 		var modalInstance = $modal.open({
 			templateUrl		: 'generics/app/views/Project_addProjectleider.html',
-			controller		: 'ProjectController_addProjectleider',
+			controller		: 'static_addModalController',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'
-			// resolve		: { } 				// an optional map of dependencies which should be injected into the controller			
-		
+			resolve			: { restUrl: function () { return 'interface/Person/atom'; } }	// an optional map of dependencies which should be injected into the controller			
 		});
 		
 		modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed
 			.then( // then() called when promise is resolved or rejected
 				function (selectedId) { // function when modal is closed
-					if(obj[property] == null){
-						obj[property] = {};
-						obj[property][selectedId] = {'id' : selectedId};
-					}else{
-						obj[property][selectedId] = {'id' : selectedId};
-					}
-				
 					console.log('selected: ' + selectedId);
-					$scope.patch();
-				
+					$scope.addObject(obj, property, selectedId, ResourceId);
 				}, function () { // function when modal is dismissed
 					console.log('Modal dismissed at: ' + new Date());
 				}
 			);
 	}
 	
-	$scope.addProjectmember = function(obj, property){
-		
-		var modalInstance = $modal.open({
-			templateUrl		: 'generics/app/views/Project_addProjectmember.html',
-			controller		: 'ProjectController_addProjectmember',
-			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
-			backdrop		: true,				// true, false or 'static'
-			// resolve		: { } 				// an optional map of dependencies which should be injected into the controller			
-		
-		});
-		
-		modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed
-			.then( // then() called when promise is resolved or rejected
-				function (selectedId) { // function when modal is closed
-					if(obj[property] == null){
-						obj[property] = {};
-						obj[property][selectedId] = {'id' : selectedId};
-					}else{
-						obj[property][selectedId] = {'id' : selectedId};
-					}
-				
-					console.log('selected: ' + selectedId);
-					$scope.patch();
-				
-				}, function () { // function when modal is dismissed
-					console.log('Modal dismissed at: ' + new Date());
-				}
-			);
-	}
-
-}).controller('ProjectController_addProjectleider', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
-	
-	$scope.Projectleiders = Restangular.all('interface/Person/atom').getList().$object;
-	
-	$scope.select = function(id) {
-		console.log('click: ' + id);
-		$modalInstance.close(id);
-	}
-	
-	$scope.cancel = function () {
-		$modalInstance.dismiss('cancel');
-	};
-	
-}]).controller('ProjectController_addProjectmember', ['$scope', 'Restangular', '$modalInstance', function($scope, Restangular, $modalInstance) {
-	
-	// api/v1/concept/{concept}/atoms provides for all atoms only id, label and concepttype
-	$scope.list = Restangular.all('concept/Person/atom').getList().$object;
-	
-	$scope.select = function(id) {
-		console.log('click: ' + id);
-		$modalInstance.close(id);
-	}
-	
-	$scope.cancel = function () {
-		$modalInstance.dismiss('cancel');
-	};
-	
-}]);
+});
 
 

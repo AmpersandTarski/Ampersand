@@ -1,4 +1,4 @@
-AmpersandApp.controller('PeopleController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
+AmpersandApp.controller('PeopleController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
 	
 	url = 'interface/People/atom';
 	if(typeof $routeParams.atom != 'undefined'){
@@ -27,19 +27,20 @@ AmpersandApp.controller('PeopleController', ['$scope', '$rootScope', '$routePara
 	}
 	
 	// function to remove item (key) from list (obj)
-	$scope.removeObject = function(obj, key){
+	$scope.removeObject = function(obj, key, ResourceId){
 		delete obj[key];
-		$scope.patch();
+		$scope.patch(ResourceId);
 	}
 	
-	$scope.addObject = function(obj, property, val){
+	// Also needed by addModal
+	$scope.addObject = function(obj, property, val, ResourceId){
 		if(val === undefined || val == ''){
 			console.log('object is undefined');
 		}else{
 			if(obj[property] === null) obj[property] = {};
 			obj[property][val] = {'id': val};
-			$scope.patch();
-			$scope.selected.Project = ''; // reset input field
+			$scope.patch(ResourceId);
+			val = ''; // reset input field
 		}
 	}
 	
@@ -47,5 +48,5 @@ AmpersandApp.controller('PeopleController', ['$scope', '$rootScope', '$routePara
 	$scope.typeahead = {};
 	$scope.typeahead.Project = Restangular.all('concept/Project/atoms').getList().$object;
 
-}]);
+});
 
