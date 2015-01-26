@@ -142,7 +142,7 @@ class Api
 	 * @param string $atomid
 	 * @param int $roleId
 	 */
-	public function deleteAtom($interfaceName, $sessionId, $atomid, $roleId = null, $request_data = null)
+	public function deleteAtom($interfaceName, $sessionId, $atomid, $roleId = null)
 	{
 		$session = Session::singleton($sessionId);
 	
