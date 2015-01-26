@@ -1,14 +1,17 @@
 <div class="container-fluid interface">
-	<fieldset>
-		<!-- I[Person] -->
-		<legend>{{Person.label}}</legend>
+	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
+		<legend>
+			<a ng-href="#/Person/{{Resource.id}}">{{Resource.label}}</a>
+			<a href=""><span class="glyphicon glyphicon-plus pull-right CRUDbuttons" ng-click="addAtom()"></span></a>
+			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteAtom(ResourceId)"></span></a>
+		</legend>
 		
 		<form class="form-horizontal" role="form">		
 			<!-- Name disabled, not editable-->
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Name</label>
 	   			<div class="col-md-11">
-	   				<input disabled ng-model="Person.label" type="text" class="form-control input-sm" ng-blur="patch()">
+	   				<input disabled ng-model="Resource.label" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 	   			</div>
 	 		</div>
 	 		
@@ -16,7 +19,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Status</label>
 	   			<div class="col-md-11">
-					<input ng-model="Person.Status" type="text" class="form-control input-sm" ng-blur="patch()">
+					<input ng-model="Resource.Status" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 				</div>
 	 		</div>
 	 		
@@ -24,7 +27,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Email</label>
 	   			<div class="col-md-11">
-					<input ng-model="Person.Email" type="text" class="form-control input-sm" ng-blur="patch()">
+					<input ng-model="Resource.Email" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 				</div>
 	 		</div>
 	 		
@@ -39,7 +42,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr ng-repeat="(key, val) in Person['Works with']">
+							<tr ng-repeat="(key, val) in Resource['Works with']">
 								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
 							</tr>
 						</tbody>

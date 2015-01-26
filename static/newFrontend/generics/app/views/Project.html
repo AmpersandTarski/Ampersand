@@ -1,8 +1,10 @@
 <div class="container-fluid interface">
-	<fieldset>
+	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
 		<!-- I[Project] -->
-		<legend>{{Project.label}}
-			<span class="glyphicon glyphicon-trash pull-right deleteAtom" ng-click="deleteAtom()"></span>
+		<legend>
+			<a ng-href="#/Project/{{Resource.id}}">{{Resource.label}}</a>
+			<a href=""><span class="glyphicon glyphicon-plus pull-right CRUDbuttons" ng-click="addAtom()"></span></a>
+			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteAtom(ResourceId)"></span></a>
 		</legend>
 		
 		<form class="form-horizontal" role="form">		
@@ -10,7 +12,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Project</label>
 	   			<div class="col-md-11">
-	   				<input disabled ng-model="Project.label" type="text" class="form-control input-sm" ng-blur="patch()">
+	   				<input disabled ng-model="Resource.label" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 	   			</div>
 	 		</div>
 	 		
@@ -18,7 +20,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Name</label>
 	   			<div class="col-md-11">
-					<input ng-model="Project.Name" type="text" class="form-control input-sm" ng-blur="patch()">
+					<input ng-model="Resource.Name" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 				</div>
 	 		</div>
 	 		
@@ -26,7 +28,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Description</label>
 	   			<div class="col-md-11">
-	   				<textarea ng-model="Project.Description" class="form-control input-sm" placeholder="Textarea" rows="3" ng-blur="patch()"></textarea>
+	   				<textarea ng-model="Resource.Description" class="form-control input-sm" placeholder="Textarea" rows="3" ng-blur="patch(ResourceId)"></textarea>
 				</div>
 	 		</div>
 	 		
@@ -42,14 +44,14 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr ng-repeat="(key, val) in Project['Theme']">
-								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Project['Theme'], val.id)"></span></td>
+							<tr ng-repeat="(key, val) in Resource['Theme']">
+								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Theme'], val.id)"></span></td>
 								<td><span>{{val.label}}</span></td>								
 							</tr>
 							<tr my-showonhovertable>
-								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Project, 'Theme', selected.Theme)"></span></td>
+								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Theme', selected.Theme)"></span></td>
 								<td colspan="1"> <!-- add colspan for every extra column -->
-									<input ng-model="selected.Theme" type="text" class="form-control input-sm" placeholder="Add new Theme" typeahead="Theme.id for Theme in typeahead.Theme | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Project, 'Theme', selected.Theme)">
+									<input ng-model="selected.Theme" type="text" class="form-control input-sm" placeholder="Add new Theme" typeahead="Theme.id for Theme in typeahead.Theme | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Resource, 'Theme', selected.Theme)">
 								</td>
 							</tr>
 						</tbody>
@@ -62,7 +64,7 @@
 	   			<label class="col-md-1 control-label">Start date</label>
 	   			<div class="col-md-11">
 	   				<div class="input-group">
-		   				<input ng-model="Project['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch()"/>
+		   				<input ng-model="Resource['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch(ResourceId)"/>
 	       				<span class="input-group-btn">
 	         				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start date')"><i class="glyphicon glyphicon-calendar"></i></button>
 	       				</span>
@@ -76,7 +78,7 @@
 				<div class="col-md-11">
 					
 					<!-- TABS -->
-					<tabset ng-repeat="(key1, val1) in Project['People']">
+					<tabset ng-repeat="(key1, val1) in Resource['People']">
 						<tab heading="Projectleider">
 							<table class="table table-striped table-hover table-condensed">
 								<thead>
@@ -139,7 +141,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr ng-repeat="(key, val) in Project.Projectleider">
+							<tr ng-repeat="(key, val) in Resource.Projectleider">
 								<td><span ng-repeat="row in val['Name']">{{row.label}}</span></td>
 								<td>{{val['Status']}}</td>
 								<td>
@@ -148,7 +150,7 @@
 								</td>
 								<td>
 									<div class="input-group">
-										<input ng-model="val['Pl from']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Pl from'].open" ng-blur="patch()"/>
+										<input ng-model="val['Pl from']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Pl from'].open" ng-blur="patch(ResourceId)"/>
 										<span class="input-group-btn">
 											<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Pl from')"><i class="glyphicon glyphicon-calendar"></i></button>
 										</span>	
@@ -172,14 +174,14 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr ng-repeat="(key, val) in Project['Project members']">
-								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Project['Project members'], val.id)"></span></td>
+							<tr ng-repeat="(key, val) in Resource['Project members']">
+								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Project members'], val.id)"></span></td>
 								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
 							</tr>
 							<tr my-showonhovertable>
-								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Project, 'Project members', selected.Person)"></span></td>
+								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Project members', selected.Person)"></span></td>
 								<td colspan="1"> <!-- add colspan for every extra column -->
-									<input ng-model="selected.Person" type="text" class="form-control input-sm" placeholder="Add new Project memeber" typeahead="Person.id for Person in typeahead.Person | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Project, 'Project members', selected.Person)">
+									<input ng-model="selected.Person" type="text" class="form-control input-sm" placeholder="Add new Project memeber" typeahead="Person.id for Person in typeahead.Person | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Resource, 'Project members', selected.Person)">
 								</td>								
 							</tr>
 						</tbody>

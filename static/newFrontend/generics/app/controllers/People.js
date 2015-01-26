@@ -1,15 +1,22 @@
 AmpersandApp.controller('PeopleController', ['$scope', '$rootScope', '$routeParams', 'Restangular', '$timeout', '$modal', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
 	
-	// model (can be changed by view)
-	$scope.SESSION = Restangular.one('interface/People/atom').get().$object;
+	url = 'interface/People/atom';
+	if(typeof $routeParams.atom != 'undefined'){
+		list = Restangular.one(url, $routeParams.atom).get().then(function(data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		});
+		
+	}else{
+		$scope.ResourceList = Restangular.all(url).getList().$object;
+	}
 	
 	// patch function
-	$scope.patch = function(){
-		$scope.SESSION
+	$scope.patch = function(ResourceId){
+		$scope.ResourceList[ResourceId]
 			.patch()
 			.then(function(data) {
 				$rootScope.notifications = data.notifications;
-				$scope.SESSION = Restangular.restangularizeElement('', data.content, 'interface/People/atom');
+				$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, 'interface/People/atom');
 				
 				$timeout(function() {
 			    	console.log('now');

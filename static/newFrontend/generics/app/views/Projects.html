@@ -1,7 +1,7 @@
 <div class="container-fluid interface">	
-	<fieldset>
-		<!-- I[SESSION] -->
-		<legend>{{SESSION.label}}</legend>
+	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
+		<!-- For top level interfaces, use: interface name -->
+		<legend>Projects (atom: {{Resource.label}})</legend> 
 		
 		<!-- TABS -->
 		<tabset>
@@ -19,8 +19,8 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="(key, val) in SESSION['Started projects']">
-							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(SESSION['Started projects'], key)"></span></td>
+						<tr ng-repeat="(key, val) in Resource['Started projects']">
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Started projects'], key)"></span></td>
 							<!-- I[Project] --> 
 							<td>
 								<div>
@@ -38,14 +38,14 @@
 							<!-- Text -->
 							<td>
 								<div class="input-group">
-									<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch()">
+									<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 								</div>
 							</td>
 							
 							<!-- Textarea 
 							<td>
 								<div class="input-group">
-									<textarea ng-model="val['Description']" class="form-control input-sm" placeholder="Textarea" rows="1" ng-blur="patch()"></textarea>
+									<textarea ng-model="val['Description']" class="form-control input-sm" placeholder="Textarea" rows="1" ng-blur="patch(ResourceId)"></textarea>
 								</div>
 							</td>
 							-->
@@ -70,7 +70,7 @@
 							<!-- Date 
 							<td>
 								<div class="input-group">
-									<input ng-model="val['Start']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start'].open" ng-blur="patch()"/>
+									<input ng-model="val['Start']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start'].open" ng-blur="patch(ResourceId)"/>
 			             				<span class="input-group-btn">
 			               				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start')"><i class="glyphicon glyphicon-calendar"></i></button>
 			             				</span>	
@@ -87,7 +87,7 @@
 							<td>
 								<div class="checkbox">
 									<label>
-										<input ng-model="val['Started']" type="checkbox" ng-change="patch()"/>
+										<input ng-model="val['Started']" type="checkbox" ng-change="patch(ResourceId)"/>
 									</label>
 								</div>
 							</td>
@@ -109,8 +109,8 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="(key, val) in SESSION['Unstarted projects']">
-							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(SESSION['Unstarted projects'], key)"></span></td>
+						<tr ng-repeat="(key, val) in Resource['Unstarted projects']">
+							<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Unstarted projects'], key)"></span></td>
 							<td>
 								<div>
 									<a ng-href="#/Project/{{val['id']}}">{{val['label']}}</a>
@@ -120,14 +120,14 @@
 							<!-- Text -->
 							<td>
 								<div class="input-group">
-									<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch()">
+									<input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 								</div>
 							</td>
 							
 							<!-- Textarea -->
 							<td>
 								<div class="input-group">
-									<textarea ng-model="val['Description']" class="form-control input-sm" placeholder="Textarea" rows="2" ng-blur="patch()"></textarea>
+									<textarea ng-model="val['Description']" class="form-control input-sm" placeholder="Textarea" rows="2" ng-blur="patch(ResourceId)"></textarea>
 								</div>
 							</td>
 							 
@@ -146,7 +146,7 @@
 							<!-- Date -->
 							<td>
 								<div class="input-group">
-									<input ng-model="val['Start']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start'].open" ng-blur="patch()"/>
+									<input ng-model="val['Start']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start'].open" ng-blur="patch(ResourceId)"/>
 			             				<span class="input-group-btn">
 			               				<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start')"><i class="glyphicon glyphicon-calendar"></i></button>
 			             				</span>	
@@ -157,7 +157,7 @@
 							<td>
 								<div class="checkbox">
 									<label>
-										<input ng-model="val['Started']" type="checkbox" ng-change="patch()"/>
+										<input ng-model="val['Started']" type="checkbox" ng-change="patch(ResourceId)"/>
 									</label>
 								</div>
 							</td>

@@ -10,9 +10,10 @@
 .interface table {
 	width	: auto;
 }
-.interface .deleteAtom {
+.interface .CRUDbuttons {
 	font-size	: 14px;
-	margin-top	: 10px;
+	margin-top	: 5px;
+	padding 	: 5px;
 }
 
 /********* FORMS, INPUTS, ETC **************/
