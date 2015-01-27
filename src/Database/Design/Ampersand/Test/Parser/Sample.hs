@@ -27,14 +27,14 @@ parse str = let pResult = runParser pContext "Sample.hs" str
                Errors  parseErr -> Errors parseErr
                Checked (pctx,_) -> pCtx2aCtx options pctx
 
-prop_pretty :: A_Context -> Bool
-prop_pretty xs =
-            let guard = parse (showADL xs)
-            in case guard of
+checkResult :: ShowADL a => Guarded a -> (a -> Bool) -> Bool
+checkResult guard check =
+            case guard of
                 Errors e   -> trace ("Cannot parse: " ++ show e) False
-                Checked p  ->
-                    if xs == p then True
-                    else trace ("original:" ++ (showADL xs) ++ "parsed:" ++ (showADL p)) False
+                Checked p  -> trace ("Parsed: " ++ showADL p) (check p)
+
+prop_pretty :: A_Context -> Bool
+prop_pretty xs = checkResult (parse $ showADL xs) (\p -> xs == p)
 
 runTests :: IO ()
 runTests = do quickCheck prop_pretty
