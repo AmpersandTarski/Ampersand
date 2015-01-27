@@ -40,6 +40,8 @@ class Api
 		$session = Session::singleton();
 		$session->destroySession($session_id);
 		
+		return array('notifications' => ErrorHandling::getAll());
+		
 	}
 
 /**************************** NOTIFICATIONS ****************************/	
