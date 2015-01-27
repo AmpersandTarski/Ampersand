@@ -3,9 +3,9 @@
 class Concept {
 
 	public static function getAllConcepts(){
-		global $conceptTableInfo; // from Generics.php
+		global $allConcepts; // from Generics.php
 		
-		return array_keys($conceptTableInfo);
+		return array_keys($allConcepts);
 	}
 
 	public static function getSpecializations($concept) {
@@ -60,14 +60,15 @@ class Concept {
 	}
 	
 	public static function getConceptTableInfo($concept){
-		global $conceptTableInfo; // from Generics.php
-		// $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
+		global $allConcepts; // from Generics.php
+		
+		// $allConcepts[$concept]['conceptTables] is an array of tables with arrays of columns maintaining $concept.
 		// (we have an array rather than a single column because of generalizations) 
 		// TODO: still the right solution?, because generalizations/specializations are in one table
 		
-		if(!array_key_exists($concept, $conceptTableInfo)) throw new Exception("Concept $concept does not exists in conceptTableInfo");
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts");
 		
-		return (array)$conceptTableInfo[$concept];
+		return (array)$allConcepts[$concept]['conceptTables'];
 	}
 
 }

@@ -14,7 +14,7 @@ class Session {
 	
 	// prevent any outside instantiation of this object
 	private function __construct($sessionId){
-		global $conceptTableInfo;
+		global $allConcepts;
 		
 		if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_star()t; 
 			
@@ -27,7 +27,7 @@ class Session {
 			$this->database = Database::singleton();
 			
 			// AMPERSAND SESSION
-			if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
+			if (array_key_exists('SESSION', $allConcepts)){ // Only execute following code when concept SESSION is used by adl script
 				
 				try {
 					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
