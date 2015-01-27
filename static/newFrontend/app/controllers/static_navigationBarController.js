@@ -16,7 +16,7 @@ AmpersandApp.controller('static_navigationBarController', ['$scope', '$rootScope
 	
 	$scope.destroySession = function(){
 		$rootScope.session.remove().then(function(data){
-			$rootScope.notifications = data.notifications;
+			$rootScope.updateNotifications(data.notifications);
 			$rootScope.session = '';
 			$rootScope.session = Restangular.one('session').get().$object;
 		});
