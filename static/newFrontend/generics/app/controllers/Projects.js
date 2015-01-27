@@ -1,50 +1,64 @@
-AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $routeParams, Restangular, $timeout, $modal) {
+AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $routeParams, Restangular, $location, $modal) {
 	
+	// URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
 	url = 'interface/Projects/atom';
-	if(typeof $routeParams.atom != 'undefined'){
-		list = Restangular.one(url, $routeParams.atom).get().then(function(data){
+	
+	// Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
+	if($routeParams['new']){
+		newAtom = Restangular.one(url).post().then(function (data){
 			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
 		});
-		
+	}else
+	
+	// Checks if resourceId is provided, and if so does a get() else a getList()
+	if(typeof $routeParams.resourceId != 'undefined'){
+		list = Restangular.one(url, $routeParams.resourceId).get().then(function(data){
+			$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+		});
 	}else{
 		$scope.ResourceList = Restangular.all(url).getList().$object;
 	}
 	
-	// patch function
+	// Patch function to update a Resource
 	$scope.patch = function(ResourceId){
 		$scope.ResourceList[ResourceId]
 			.patch()
 			.then(function(data) {
-				$rootScope.notifications = data.notifications;
-				$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, 'interface/Projects/atom');
-				
-				$timeout(function() {
-			    	console.log('now');
-			    	$rootScope.notifications.successes = [];
-			    }, 3000);
+				$rootScope.updateNotifications(data.notifications);
+				$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, url);
 			});
-		
 	}
 	
-	// function to remove item (key) from list (obj)
+	// RemoveObject function to remove an item (key) from list (obj).
 	$scope.removeObject = function(obj, key, ResourceId){
 		delete obj[key];
 		$scope.patch(ResourceId);
 	}
 	
-	// Also needed by addModal
-	$scope.addObject = function(obj, property, val, ResourceId){
-		if(val === undefined || val == ''){
-			console.log('object is undefined');
+	// AddObject function to add a new item (val) to a certain property (property) of an object (obj)
+	// Also needed by addModal function.
+	$scope.addObject = function(obj, property, selected, ResourceId){
+		if(selected.id === undefined || selected.id == ''){
+			console.log('selected id is undefined');
 		}else{
 			if(obj[property] === null) obj[property] = {};
-			obj[property][val] = {'id': val};
+			obj[property][selected.id] = {'id': selected.id};
+			selected.id = ''; // reset input field
 			$scope.patch(ResourceId);
-			val = ''; // reset input field
 		}
 	}
 	
-	$scope.addModal = function(obj, property, ResourceId){
+	// Function for Datapicker
+	$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
+	$scope.openDatepicker = function($event, datepicker) {
+		$event.preventDefault();
+		$event.stopPropagation();
+		
+		$scope.datepicker[datepicker] = {'open' : true};
+	}
+	
+	// PopUp function
+	$scope.popUp = function(obj, property, ResourceId){
 		var modalInstance = $modal.open({
 			templateUrl		: 'generics/app/views/Projects_addProjectleider.html',
 			controller		: 'static_addModalController',
@@ -57,21 +71,12 @@ AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $rou
 			.then( // then() called when promise is resolved or rejected
 				function (selectedId) { // function when modal is closed
 					console.log('selected: ' + selectedId);
-					$scope.addObject(obj, property, selectedId, ResourceId);
+					selected = {id : selectedId};
+					$scope.addObject(obj, property, selected, ResourceId);
 				}, function () { // function when modal is dismissed
 					console.log('Modal dismissed at: ' + new Date());
 				}
 			);
 	}
-	
-	// function for Datapicker
-	$scope.datepicker = [];
-	$scope.openDatepicker = function($event, datepicker) {
-		$event.preventDefault();
-		$event.stopPropagation();
-		
-		$scope.datepicker[datepicker] = {'open' : true};
-	};
-
 });
 

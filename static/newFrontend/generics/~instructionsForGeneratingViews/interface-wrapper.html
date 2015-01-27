@@ -15,8 +15,8 @@ e.g. INTERFACE "<name of interface>" (<editable relations>) FOR "<role>" : exp
 		<!-- Else use Label of atom. -->
 		<legend>{{Atom.label}}
 			<a ng-href="#/<interface>/{{Resource.id}}">{{Resource.label}}</a>
-			<a href=""><span class="glyphicon glyphicon-plus pull-right CRUDbuttons" ng-click="addAtom()"></span></a>
-			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteAtom(ResourceId)"></span></a>
+			<a href="#/<interface>/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
+			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"></span></a>
 		</legend>
 		
 		<!-- Here the content of the interface -->

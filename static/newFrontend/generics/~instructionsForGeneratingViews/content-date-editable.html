@@ -12,7 +12,7 @@ projectStartDate :: Project * DATE
 
 -->
 <div class="input-group">
-	<input ng-model="val['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch()"/>
+	<input ng-model="val['Start date']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Start date'].open" ng-blur="patch(ResourceId)"/>
 	<span class="input-group-btn">
 		<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker($event, key+'-Start date')"><i class="glyphicon glyphicon-calendar"></i></button>
 	</span>	

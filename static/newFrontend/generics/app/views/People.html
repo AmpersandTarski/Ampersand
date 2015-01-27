@@ -42,7 +42,7 @@
 									<a ng-href="#/Project/{{row.id}}">{{row.label}}</a>
 								</div>
 								<div my-showonhovertr>
-									<input ng-model="selected.Project" type="text" class="form-control input-sm" placeholder="Add new Project" typeahead="Project.id as Project.label for Project in typeahead.Project | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, 'Projects', selected.Project, ResourceId)">
+									<input ng-model="selected.id" type="text" class="form-control input-sm" placeholder="Add new Project" typeahead="Project.id as Project.label for Project in typeahead.Project | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, 'Projects', selected, ResourceId)">
 								</div>
 							</td>
 						</tr>

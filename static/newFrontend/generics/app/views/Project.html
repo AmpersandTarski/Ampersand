@@ -4,7 +4,7 @@
 		<legend>
 			<a ng-href="#/Project/{{Resource.id}}">{{Resource.label}}</a>
 			<a ng-href="#/Project/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
-			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteAtom(ResourceId)"></span></a>
+			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"></span></a>
 		</legend>
 		
 		<form class="form-horizontal" role="form">		
@@ -49,9 +49,9 @@
 								<td><span>{{val.label}}</span></td>								
 							</tr>
 							<tr my-showonhovertable>
-								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Theme', selected['Theme'], ResourceId)"></span></td>
+								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Theme', selected, ResourceId)"></span></td>
 								<td colspan="1"> <!-- add colspan for every extra column -->
-									<input ng-model="selected.Theme" type="text" class="form-control input-sm" placeholder="Add new Theme" typeahead="Theme.id for Theme in typeahead.Theme | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Resource, 'Theme', selected.Theme, ResourceId)">
+									<input ng-model="selected.id" type="text" class="form-control input-sm" placeholder="Add new" typeahead="Theme.id for Theme in typeahead.Theme | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Resource, 'Theme', selected, ResourceId)">
 								</td>
 							</tr>
 						</tbody>
@@ -96,7 +96,7 @@
 										<td>{{val.Status}}</td>
 										<td>{{val.Email}}</td>										
 									</tr>
-									<tr my-showonhovertable class="pointer" ng-click="addModal(val1, 'Projectleider', ResourceId)">
+									<tr my-showonhovertable class="pointer" ng-click="popUp(val1, 'Projectleider', ResourceId)">
 										<td><span class="glyphicon glyphicon-plus"></span></td>
 										<td colspan="3"><small>Add new Projectleider</small></td>										
 									</tr>
@@ -116,7 +116,7 @@
 										<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val1['Project members'], val.id, ResourceId)"></span></td>
 										<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
 									</tr>
-									<tr my-showonhovertable class="pointer" ng-click="addModal(val1, 'Project members', ResourceId)">
+									<tr my-showonhovertable class="pointer" ng-click="popUp(val1, 'Project members', ResourceId)">
 										<td><span class="glyphicon glyphicon-plus"></span></td>
 										<td colspan="1"><small>Add new Project member</small></td> <!-- add colspan for every extra column -->										
 									</tr>
@@ -179,9 +179,9 @@
 								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
 							</tr>
 							<tr my-showonhovertable>
-								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Project members', selected.Person, ResourceId)"></span></td>
+								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Project members', selected, ResourceId)"></span></td>
 								<td colspan="1"> <!-- add colspan for every extra column -->
-									<input ng-model="selected.Person" type="text" class="form-control input-sm" placeholder="Add new Project memeber" typeahead="Person.id for Person in typeahead.Person | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Resource, 'Project members', selected.Person, ResourceId)">
+									<input ng-model="selected.id" type="text" class="form-control input-sm" placeholder="Add new Project memeber" typeahead="Person.id for Person in typeahead.Person | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(Resource, 'Project members', selected, ResourceId)">
 								</td>								
 							</tr>
 						</tbody>
