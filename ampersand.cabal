@@ -181,5 +181,6 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
+                     Database.Design.Ampersand.Test.Parser.ArbitraryTree,
                      Database.Design.Ampersand.Test.Parser.Sample,
                      Paths_ampersand
