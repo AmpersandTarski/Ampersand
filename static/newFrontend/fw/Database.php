@@ -40,6 +40,7 @@ class Database
 
 	public function Exe($query)
 	{
+		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
