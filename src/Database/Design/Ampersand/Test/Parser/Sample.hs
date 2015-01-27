@@ -24,7 +24,7 @@ noCtx = ACtx{ctxnm="NO_CONTEXT"}
 parse :: String -> Guarded A_Context
 parse str = let pResult = runParser pContext "Sample.hs" str
             in case pResult of
-               Errors  parseErr -> Errors parseErr
+               Errors  parseErr -> trace ("Cannot parse: " ++ str) $ Errors parseErr
                Checked (pctx,_) -> pCtx2aCtx options pctx
 
 checkResult :: ShowADL a => Guarded a -> (a -> Bool) -> Bool
