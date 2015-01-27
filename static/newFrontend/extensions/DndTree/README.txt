@@ -1,0 +1,16 @@
+// Define interface in ADL
+INTERFACE "<interfacename>" FOR "Viewer" : '__MYSESSION__'
+	BOX [ "children"	: V[SESSION*Project]
+			BOX [ "children"	: (member \/ pl)
+					BOX [ "children" 	: workswith]
+				]
+		]
+		
+// Add view-controller to $routeProvider in AmpersandApp.js
+.when('/<interfacename>/:atom?',
+	{
+		controller: 'DndTreeController',
+		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
+	})
+
+// Go!
