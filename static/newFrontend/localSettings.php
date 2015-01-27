@@ -34,6 +34,4 @@ $ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
 // Enable ExecImport
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');
 
-
-
 ?>
