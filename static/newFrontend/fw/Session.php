@@ -76,7 +76,7 @@ class Session {
 		
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
-		$this->database->closeTransaction();
+		$this->database->closeTransaction('Session deleted', false);
 		session_regenerate_id(true);
 		
 	}

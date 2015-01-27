@@ -70,6 +70,22 @@ class Concept {
 		
 		return (array)$allConcepts[$concept]['conceptTables'];
 	}
+	
+	public static function getAffectedSigConjuncts($concept){
+		global $allConcepts; // from Generics.php
+		
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts");
+		
+		return (array)$allConcepts[$concept]['affectedSigConjunctIds'];
+	}
+	
+	public static function getAffectedInvConjuncts($concept){
+		global $allConcepts; // from Generics.php
+	
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts");
+	
+		return (array)$allConcepts[$concept]['affectedInvConjunctIds'];
+	}
 
 }
 

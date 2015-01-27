@@ -48,6 +48,22 @@ class Relation {
 		
 		return $tableColumnInfo[$table][$column];
 	}
+	
+	public static function getAffectedSigConjunctIds($fullRelationSignature){
+		global $allRelations; // from Generics.php
+	
+		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation $fullRelationSignature does not exists in allRelations");
+	
+		return (array)$allRelations[$fullRelationSignature]['affectedSigConjunctIds'];
+	}
+	
+	public static function getAffectedInvConjunctIds($fullRelationSignature){
+		global $allRelations; // from Generics.php
+	
+		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation $fullRelationSignature does not exists in allRelations");
+	
+		return (array)$allRelations[$fullRelationSignature]['affectedInvConjunctIds'];
+	}
 }
 
 ?>

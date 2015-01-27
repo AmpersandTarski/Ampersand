@@ -125,13 +125,24 @@ class RuleEngine {
 	}
 	
 	/*
+	 * $conjuncts = array of conjunctIds
+	 * $cacheConjuncts
+	 * 		true: chache conjuncts
+	 * 		false: don't cache conjuncts (is used by first run of ExecEngine)
+	 * 		default: true
+	 */
+	public static function checkConjuncts($conjuncts, $cacheConjuncts = true){
+		foreach((array)$conjuncts as $conjunctId) RuleEngine::checkConjunct($conjunctId);
+	}
+	
+	/*
 	 * $cacheConjuncts
 	 * 		true: chache conjuncts, i.e. store them locally in self::$conjunctViolations and, if there are violations, in the database table `__all_signals__`
 	 * 		false: don't cache conjuncts (is used by ExecEngine)
 	 * 		default: true
 	 */
 	private static function checkConjunct($conjunctId, $cacheConjuncts = true){
-		ErrorHandling::addLog("Checking conjunct '" . $conjunctId."'");
+		ErrorHandling::addLog("Checking conjunct '" . $conjunctId."' cache:".var_export($cacheConjuncts, true));
 		try{
 			
 			// If conjunct is already evaluated and conjunctCach may be used -> return violations
@@ -219,6 +230,39 @@ class RuleEngine {
 		return $conjunct = $allConjuncts[$conjunctId];
 		
 	}
+	
+	/*
+	 * $affectedConcepts is expected to be already unique (i.e. no duplicate entries)
+	 * $affectedRelations is expected to be already unique (i.e. no duplicate entries)
+	 * relations in $affectedRelations must be specified with full relation signature (i.e. rel_<relName>_<srcConcept>_<tgtConcept>)
+	 * 
+	 */
+	public static function getAffectedSigConjuncts($affectedConcepts, $affectedRelations){
+		
+		$affectedConjuncts = array();
+		foreach($affectedConcepts as $concept){
+			array_merge($affectedConjuncts, (array)Concept::getAffectedSigConjuncts($concept));
+		}
+		foreach($affectedRelations as $fullRelationSignature){
+			array_merge($affectedConjuncts, (array)Relation::getAffectedSigConjunctIds($fullRelationSignature));
+		}
+		
+		return array_unique($affectedConjuncts); // remove duplicate entries.
+	}
+	
+	public static function getAffectedInvConjuncts($affectedConcepts, $affectedRelations){
+	
+		$affectedConjuncts = array();
+		foreach($affectedConcepts as $concept){
+			array_merge($affectedConjuncts, (array)Concept::getAffectedInvConjuncts($concept));
+		}
+		foreach($affectedRelations as $fullRelationSignature){
+			array_merge($affectedConjuncts, (array)Relation::getAffectedInvConjunctIds($fullRelationSignature));
+		}
+	
+		return array_unique($affectedConjuncts); // remove duplicate entries.
+	}
+	
 	
 	/*
 	 * This function returns all InvariantRulesNames. Currently there is no such array in Generics.php.

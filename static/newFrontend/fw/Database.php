@@ -10,10 +10,12 @@ class Database
 	private $dblink;
 	private $dbname;
 	private $transaction;
+	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
+	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
 	
 	private static $_instance = null;
 	
-	// prevent any outside instantiation of this object
+	// Prevent any outside instantiation of this object
 	private function __construct()
 	{
 		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
@@ -27,19 +29,22 @@ class Database
 	}
 	
 	// Prevent any copy of this object
-	private function __clone()
-	{
+	private function __clone(){
 		
 	}
 	
-	public static function singleton()
-	{
+	public static function singleton(){
 		if(!is_object (self::$_instance) ) self::$_instance = new Database();
 		return self::$_instance;
 	}
-
-	public function Exe($query)
-	{
+	
+	/*
+	 *  TODO: 
+	 *  Create private equivalent that is used by addAtomToConcept(), editUpdate(), editDelete() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
+	 *  The public version should be allowed to only do SELECT queries.
+	 *  This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
+	 */
+	public function Exe($query){
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
@@ -58,14 +63,12 @@ class Database
 		
 	}
 
-	public static function Escape($item)
-	{
+	public static function Escape($item){
 		if (is_object($item) OR is_array($item)) die("Escape item is not a variable but an object or array.");
 		return mysql_escape_string($item);
 	}
 	
-	public function error()
-	{
+	public function error(){
 		return mysql_error($this->dblink);
 	}
 
@@ -97,6 +100,9 @@ class Database
 					$allValues = "'".implode("', '", $newAtomsArray)."'";
 	
 					$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
+					
+					if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+					
 					ErrorHandling::addLog("Atom $newAtom added into concept $concept");
 				}else{
 					ErrorHandling::addLog("Atom $newAtom already in concept $concept");
@@ -154,6 +160,8 @@ class Database
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
 				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$originalAtom'");			
 			}
+			
+			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
 	
 			// ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
 			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
@@ -198,6 +206,8 @@ class Database
 				$this->Exe("DELETE FROM `$table` WHERE `$srcCol`='$srcAtom' AND `$tgtCol`='$tgtAtom'");
 			}
 			
+			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+			
 		}catch(Exception $e){
 			ErrorHandling::addError($e->getMessage());
 			// throw new Exception($e->message);
@@ -231,6 +241,9 @@ class Database
 					}
 				}
 			}
+			
+			if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+			
 			ErrorHandling::addLog("Atom $atom (and all related links) deleted in database");
 		}catch(Exception $e){
 			ErrorHandling::addError($e->getMessage());
@@ -267,27 +280,36 @@ class Database
 	 * 		false: check only InvariantRules that are relevant for the interface of the current session.
 	 * 		default: true
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllInvariantConjucts = true){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true){
 		$session = Session::singleton();
 		
 		ErrorHandling::addLog('========================= CLOSING TRANSACTION =========================');
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		
-		if($checkAllInvariantConjucts){
-			ErrorHandling::addLog("Check all invariant rules");
-			$invariantRulesHold = RuleEngine::checkInvariantRules(); // all invariant conjuncts are checked.
+		if($checkAllConjucts){
+			ErrorHandling::addLog("Check all conjuncts");
 			
-			// Check all process rules
+			// Evaluate all invariant conjuncts. Conjuncts are cached.
+			$invariantRulesHold = RuleEngine::checkInvariantRules();
+			
+			// Evaluate all signal conjuncts. Conjuncts are cached
 			RuleEngine::checkProcessRules();
-		}else{
-			ErrorHandling::addLog("Check all relevant invariant conjuncts for interface " . $session->interface->name);
-			$invariantRulesHold = RuleEngine::checkInvariantRules($session->interface->invariantConjuctsIds); // only conjuncts that might be violated after edits in this interface are checked.
 			
-			// Check process rules that are relevant for this interface
-			// TODO: now all proces rules that are relevant for the current role, can be changed to sigConjucts of interface definition
+		}else{
+			ErrorHandling::addLog("Check all affected conjuncts");
+			
+			// Evaluate all affected invariant conjuncts. Conjuncts are cached.
+			$invariantRulesHold = RuleEngine::checkInvariantRules(RuleEngine::getAffectedInvConjuncts($this->affectedConcepts, $this->affectedRelations), true);
+			
+			// Evaluate all affected signal conjuncts. Conjuncts are cached
+			RuleEngine::checkConjuncts(RuleEngine::getAffectedSigConjuncts($this->affectedConcepts, $this->affectedRelations), true);
+			
+			// Check only those process rules that are relevant for the current role
 			if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
 		}
+		
+		unset($this->affectedConcepts, $this->affectedRelations);
 		
 		if($invariantRulesHold){
 			$this->commitTransaction(); // commit database transaction

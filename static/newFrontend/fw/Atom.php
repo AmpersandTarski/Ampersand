@@ -179,9 +179,8 @@ Class Atom {
 			}
 		}
 		
-		// TODO: change $checkAllInvariantConjucts parameter of closeTransaction to false, when 
-		//			ExecEngine is adapted for checking conjuncts (see ticket: #450)
-		$database->closeTransaction('Updated', true); // close transaction => ROLLBACK or COMMIT
+		// Close transaction => ROLLBACK or COMMIT.
+		$database->closeTransaction('Updated', false); 
 		
 		return $patches;
 		
@@ -194,7 +193,8 @@ Class Atom {
 		
 		$database->deleteAtom($this->id, $this->concept);
 		
-		$database->closeTransaction('Atom deleted'); // close transaction => ROLLBACK or COMMIT
+		// Close transaction => ROLLBACK or COMMIT.
+		$database->closeTransaction('Atom deleted', false);
 		
 		return;
 		
