@@ -13,4 +13,7 @@ INTERFACE "<interfacename>" FOR "Viewer" : '__MYSESSION__'
 		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
 	})
 
+// Enable in localSettings
+require_once(__DIR__ . '/extensions/DndTree/DndTree.php');
+
 // Go!

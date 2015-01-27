@@ -34,8 +34,4 @@ $ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
 // Enable ExecImport
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');
 
-// Enable DndTree
-require_once(__DIR__ . '/extensions/DndTree/DndTree.php');
-
-
 ?>

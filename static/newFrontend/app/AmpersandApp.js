@@ -35,11 +35,6 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'PersonController',
 				templateUrl: 'generics/app/views/Person.html'
 			})
-		.when('/Root/:atom?',
-			{
-				controller: 'DndTreeController',
-				templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
-			})	
 		.otherwise({redirectTo: '/'});
 });
 
