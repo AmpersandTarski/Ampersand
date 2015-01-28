@@ -26,8 +26,8 @@ noCtx = ACtx{ctxnm="NO_CONTEXT"}
 
 unguard :: String -> Guarded a -> Bool
 unguard str guard = case guard of
-   Errors  parseErr -> trace ("Cannot parse: " ++ (show parseErr) ++ ": " ++ str) True
-   Checked _        -> trace ("Parsed: "       ++ str) True
+   Errors  e -> trace ("Cannot parse: " ++ show e ++ ": " ++ str) True
+   Checked _ -> trace ("Parsed: " ++ str) True
 
 parseFile :: FilePath -> IO Bool
 parseFile name = do contents <- readFile name
@@ -43,8 +43,8 @@ parse str = let pResult = runParser pContext "Sample.hs" str
 checkResult :: ShowADL a => Guarded a -> (a -> Bool) -> Bool
 checkResult guard check =
             case guard of
-                Errors e   -> trace ("Cannot parse: " ++ show e) False --  ++ (show parseErr)
-                Checked p  -> check p -- trace ("Parsed: " ++ showADL p) (check p)
+                Errors e   -> trace (show e) False
+                Checked p  -> check p
 
 prop_pretty :: A_Context -> Bool
 prop_pretty xs = checkResult (parse $ showADL xs) (\p -> xs == p)
