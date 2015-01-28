@@ -52,10 +52,13 @@ AmpersandApp.config(function(RestangularProvider) {
 
 AmpersandApp.run(function(Restangular, $rootScope){
 	
-	$rootScope.session = Restangular.one('session').get().$object;
+	$rootScope.session = {}; // empty object
+	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
+	
+	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
 	Restangular.one('role').get().then(function(data) {
-		$rootScope.roleId = data.id; // TODO: samenvoegen met opvragen session hierboven
+		$rootScope.roleId = data.id; // TODO: do all initiation in one call (i.e. role, navigationbar, etc)
 	});
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){

@@ -27,6 +27,10 @@ class Viewer {
 		$this->addHtmlLine('<meta name="Expires" content="-1"/>');
 		$this->addHtmlLine('<meta name="cache-Control" content="no-cache"/>');
 		
+		// initSessionId
+		session_start();
+		$this->addHtmlLine('<script type="text/javascript">var initSessionId = \'' . session_id() . '\';</script>');
+		
 		// JQuery
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-1.11.0.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-migrate-1.2.1.js"></script>');

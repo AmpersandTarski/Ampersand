@@ -19,7 +19,8 @@ class Session {
 		if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_star()t; 
 			
 		// PHP SESSION : Start a new, or resume the existing, PHP session
-		session_start(); 
+		session_start();
+		ErrorHandling::addLog('Session id: ' . session_id(), 'SESSION');
 		
 		// Database connection for within this class
 		try {
