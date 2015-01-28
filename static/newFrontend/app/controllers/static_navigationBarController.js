@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_navigationBarController', ['$scope', '$rootScope', '$route', '$routeParams', 'Restangular', function ($scope, $rootScope, $route, $routeParams, Restangular) {
+AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular) {
 		
 	$rootScope.interfaces = Restangular.all('interfaces/top').getList().$object;
 		
@@ -26,4 +26,4 @@ AmpersandApp.controller('static_navigationBarController', ['$scope', '$rootScope
 		$route.reload();
 	}
 	
-}]);
+});

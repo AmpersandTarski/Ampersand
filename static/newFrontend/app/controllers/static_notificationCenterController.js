@@ -14,4 +14,15 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		alerts.splice(index, 1);
 	}
 	
+	$rootScope.switchShowViolations = true;
+	$rootScope.switchShowInfos = false;
+	
+	$rootScope.toggleShowViolations = function(){
+		$rootScope.switchShowViolations = !$rootScope.switchShowViolations;
+	}
+	
+	$rootScope.toggleShowInfos = function(){
+		$rootScope.switchShowInfos = !$rootScope.switchShowInfos;
+	}
+	
 });

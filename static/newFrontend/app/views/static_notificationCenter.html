@@ -13,7 +13,7 @@
 			</alert>
 		</div>
 					
-		<div id="violations">
+		<div id="violations" ng-show="switchShowViolations">
 			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 					<div class="text-left">
@@ -27,7 +27,7 @@
 			</div>
 		</div>
 		
-		<div class="hidden" id="infos">
+		<div id="infos" ng-show="switchShowInfos">
 			<div class="panel panel-info" ng-repeat="(key, val) in notifications.infos">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-{{key}}">
 					<div class="text-left">

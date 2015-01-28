@@ -52,10 +52,10 @@
 			<li class="dropdown pull-right" tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="top">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-eye-open"></span></a>
 				<ul class="dropdown-menu" role="menu">
-					<li><a href="" onclick='$( "#violations" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-bell glyphicon-orange"></span> Show/hide violations</a></li>
-					<li><a href="" onclick='$( "#infos" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-bell glyphicon-blue"></span> Show/hide info messages</a></li>
+					<li><a href="" ng-click="toggleShowViolations()"><switch ng-model="$root.switchShowViolations"></switch> Show violation messages</a></li>
+					<li><a href="" ng-click="toggleShowInfos()"><switch ng-model="$root.switchShowInfos"></switch> Show info messages</a></li>
 					<li class="divider" role="presentation"></li>
-					<li><a href="" onclick='$( "#logWindow" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-pencil"></span> Show/hide log</a></li>
+					<li><a href="" ng-click="toggleShowLogWindow()"><switch ng-model="$root.switchShowLogWindow"></switch> Show log window</a></li>
 				</ul>
 			</li>
 	 

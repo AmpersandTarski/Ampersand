@@ -1,4 +1,4 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
