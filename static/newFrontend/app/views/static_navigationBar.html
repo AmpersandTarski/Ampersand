@@ -36,22 +36,26 @@
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-th"></span></a>
 				<ul class="dropdown-menu" role="menu">
 					<li ng-repeat="extension in extensions"><a href="{{extension.link}}"><span class="{{extension.icon}}"></span> {{extension.name}}</a></li>
-					<li><a href="#" ng-click="destroySession()"><span class="glyphicon glyphicon-repeat"></span> Reset session</a></li>
-					<li><a href="#/installer"><span class="glyphicon glyphicon-trash"></span> Reset database</a></li>					
+					<!-- <li class="divider" role="presentation"></li>-->					
 				</ul>
 			</li>
 			
-			<li class="pull-right" tooltip="Refresh page" tooltip-trigger="mouseenter" tooltip-placement="top">
-				<a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span></a>
+			<li class="dropdown pull-right" tooltip="Refresh/reset options" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-refresh"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
+					<li><a href="#" ng-click="destroySession()"><span class="glyphicon glyphicon-repeat"></span> Reset session</a></li>
+					<li><a href="#/installer"><span class="glyphicon glyphicon-trash"></span> Reset database</a></li>
+				</ul>
 			</li>
 			
-			<li class="pull-right" dropdown is-open="status.isopen" tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="top">
-				<a href="" class="dropdown-toggle" dropdown-toggle ng-disabled="disabled"><span class="glyphicon glyphicon-bell glyphicon-blue"></span></a>
+			<li class="dropdown pull-right" tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-eye-open"></span></a>
 				<ul class="dropdown-menu" role="menu">
-					<li><a href="" onclick='$( "#violations" ).toggleClass( "hidden" );'>Show/hide violations</a></li>
-					<li><a href="" onclick='$( "#infos" ).toggleClass( "hidden" );'>Show/hide info messages</a></li>
-					<li class="divider"></li>
-					<li><a href="" onclick='$( "#logWindow" ).toggleClass( "hidden" );'>Show/hide log</a></li>
+					<li><a href="" onclick='$( "#violations" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-bell glyphicon-orange"></span> Show/hide violations</a></li>
+					<li><a href="" onclick='$( "#infos" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-bell glyphicon-blue"></span> Show/hide info messages</a></li>
+					<li class="divider" role="presentation"></li>
+					<li><a href="" onclick='$( "#logWindow" ).toggleClass( "hidden" );'><span class="glyphicon glyphicon-pencil"></span> Show/hide log</a></li>
 				</ul>
 			</li>
 	 
