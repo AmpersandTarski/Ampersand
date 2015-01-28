@@ -21,15 +21,15 @@ $DB_name = $dbName; // from Generics.php
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
 $ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
 	
-	// Config params for SendEmail function of ExecEngine
-	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['from'] = 'noreply.ampersand@gmail.com';
-	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['username'] = 'noreply.ampersand@gmail.com';
-	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['password'] = 'dawrRwARH6YxHYe2828D';
+	// Config params for SendEmail function of ExecEngine (now using Gmail) More settings in SendEmail.php
+	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['from'] = '';
+	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['username'] = '';
+	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['password'] = '';
 	
-	// Config params for SendSMS function of ExecEngine
-	$sender = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['sender'] = 'AmProtoType'; // Set the sender, could be a number (16 numbers) or letters (11 characters)
-	$GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['username'] = 'Naisunev';
-	$GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['password'] = 'Urb4nFl00d';
+	// Config params for SendSMS function of ExecEngine (using MessageBird.com)
+	$sender = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['sender'] = ''; // Set the sender, could be a number (16 numbers) or letters (11 characters)
+	$GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['username'] = '';
+	$GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['password'] = '';
 
 // Enable ExecImport
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');
