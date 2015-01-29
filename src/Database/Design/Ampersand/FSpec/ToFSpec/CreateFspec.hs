@@ -10,13 +10,11 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug (showPlug)
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-import Data.List
 import System.Directory
 import System.FilePath
-import Control.Monad
 import Data.Traversable (sequenceA)
+import Control.Applicative
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
@@ -26,68 +24,50 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userCtx <- parseADL opts (fileName opts)
-     bothCtx <- if includeRap opts
-                then do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> "FormalAmpersand.adl"
-                        exists <- doesFileExist rapFile
-                        when (not exists) (fatal 39 $ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
-                                                    ++"\n  "++show rapFile
-                                                    ++"\n  (You might want to re-install ampersand...)")
-                        rapCtx <- parseADL opts rapFile
-                        popsCtx <- popsCtxOf userCtx
-                        case userCtx of 
-                          Errors err   -> return (Errors err)
-                          Checked uCtx -> case sequenceA [rapCtx, popsCtx] of
-                                            Errors err -> return (Errors err)
-                                            Checked ctxs -> return (Checked $ foldr mergeContexts uCtx ctxs)
-                else return userCtx
-     case bothCtx of
-        Errors err -> return (Errors err)
-        Checked pCtx
-           -> do let (gaCtx) = pCtx2aCtx opts pCtx
-                 case gaCtx of
-                   (Errors  err ) -> return (Errors err)
-                   (Checked aCtx) -> 
-                    do { let fSpec = makeFSpec opts aCtx
-                       ; when (development (getOpts fSpec)) $
-                          do { putStrLn "Table structure for internal plugs:\n"
-                             ; putStrLn $ (unlines . concat) [showPlug plug | InternalPlug plug <- plugInfos fSpec]
-                             }
-                                      
-                       ; return $ Checked fSpec
-                       }
+     let userFspec = pCtx2Fspec userCtx
+     if includeRap opts
+     then do rapCtx <- getRap
+             let populatedRapCtx = 
+                   (merge.sequenceA) [grind <?> userFspec, rapCtx]
+             return $ pCtx2Fspec populatedRapCtx
+     else return userFspec
   where
-    popsCtxOf :: Guarded P_Context ->IO(Guarded P_Context)
-    popsCtxOf gp =
-     (case gp of
-       Errors _ -> return (Errors []) -- The errors are already in the error list
-       Checked pCtx
-         -> case pCtx2aCtx opts pCtx of
-              (Errors  err ) -> return (Errors err)
-              (Checked aCtx)
-                 -> do let fSpec = makeFSpec opts aCtx
-                           (popFilePath,popContents) = meatGrinder fSpec
-                       when (genMeat opts) $
-                          do let outputFile = combine (dirOutput opts) $ replaceExtension popContents ".adl"
-                             writeFile outputFile popContents
-                             verboseLn opts $ "Meta population written into " ++ outputFile ++ "."
-                          
-                       case parseCtx popFilePath popContents of
-                         (Errors  err) -> fatal 64 ("MeatGrinder has errors!"
-                                                 ++ intercalate "\n"(map showErr err))
-                         (Checked (pctx,[])) -> return (Checked pctx)
-                         (Checked _ )        -> fatal 67 "Meatgrinder returns included file????"
-     )
-
+    getRap :: IO (Guarded P_Context)
+    getRap 
+     = do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> "FormalAmpersand.adl"
+          exists <- doesFileExist rapFile
+          if exists then parseADL opts rapFile
+          else fatal 98 $ unlines
+                 [ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
+                 , "  "++show rapFile
+                 , "  (You might need to re-install ampersand...)"
+                 ]
+    toFspec :: A_Context -> Guarded FSpec
+    toFspec = pure . makeFSpec opts
+    pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
+    pCtx2Fspec c = toFspec <?> ((pCtx2aCtx opts) <?> c)
+    merge :: Guarded [P_Context] -> Guarded P_Context
+    merge ctxs = fmap f ctxs
+      where
+       f []     = fatal 77 $ "merge must not be applied to an empty list"
+       f (c:cs) = foldr mergeContexts c cs
+    grind :: FSpec -> Guarded P_Context
+    grind fSpec
+      = fmap fstIfNoIncludes $ parseCtx f c
+      where (f,c) = meatGrinder fSpec 
+            fstIfNoIncludes (a,includes)
+             = case includes of 
+               [] -> a
+               _  -> fatal 83 "Meatgrinder returns included file. That shouldn't be possible!"
+            
      
 getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
 getPopulationsFrom opts filePath =
- do { gpCtx <- parseADL opts filePath
-    ; return $ case gpCtx of 
-                 Errors err    -> Errors err
-                 Checked pCtx  -> case pCtx2aCtx opts pCtx of
-                                    (Errors  err ) -> Errors err
-                                    (Checked aCtx) -> Checked $ initialPops (makeFSpec opts aCtx)
-                      
-    }
+ do gpCtx <- parseADL opts filePath
+    return (f <?> gpCtx) 
+   where
+     f :: P_Context -> Guarded [Population]
+     f pCtx = pure . initialPops . makeFSpec opts
+          <?> (pCtx2aCtx opts pCtx)
      
      
