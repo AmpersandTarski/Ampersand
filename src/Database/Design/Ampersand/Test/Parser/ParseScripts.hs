@@ -39,7 +39,6 @@ getFiles ext dir =
 scripts :: IO [FilePath]
 -- scripts = getFiles ".adl" "../ampersand-models"
 scripts = return [
-    "../ampersand-models/VIRO/VIRO453.adl",
     "../ampersand-models/Arbeidsduur/Stef's demo van Arbeidsduur.adl",
     "../ampersand-models/Arbeidsduur/Arbeidsduur.adl",
     "../ampersand-models/Archimate1/ArchiSurance2.adl",
