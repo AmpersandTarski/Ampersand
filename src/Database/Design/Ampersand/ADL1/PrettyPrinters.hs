@@ -16,14 +16,13 @@ import Database.Design.Ampersand.Core.ParseTree
 (<~\>) a b = a <+\> (pretty b)
 
 perline :: Pretty b => [b] -> String
-perline []     = ""
-perline (b:bs) = pretty b ++ "\n" ++ perline bs
+perline bs = unlines (map pretty bs)
 
-quoted :: Pretty a => String -> String -> (a -> String) -> a -> String
-quoted q1 q2 f p = q1 ++ (f p) ++ q2
+quoteWith :: Pretty a => String -> String -> (a -> String) -> a -> String
+quoteWith q1 q2 f p = q1 ++ (f p) ++ q2
 
-str :: Pretty a => (a -> String) -> a -> String
-str = quoted "\"" "\""
+quote :: Pretty a => (a -> String) -> a -> String
+quote = quoteWith "\"" "\""
 
 class Pretty a where
     pretty :: a -> String
@@ -54,10 +53,10 @@ instance Pretty P_Context where
          --, 
 
 instance Pretty Meta where
-    pretty p = "META" <~> mtObj p <+> str mtName p <+> str mtVal p
+    pretty p = "META" <~> mtObj p <+> quote mtName p <+> quote mtVal p
 
 instance Pretty MetaObj where
-    pretty p = ""
+    pretty _ = ""
 
 instance Pretty P_Process where
     pretty p = show p
@@ -78,7 +77,14 @@ instance Pretty (Term a) where
     pretty _ = ""
 
 instance Pretty TermPrim where
-    pretty p = show p
+    pretty (PI _) = "I"
+    pretty (Pid _ pConcept) = "I[" ++ pretty pConcept ++ "]"
+    pretty (Patm _ str (Just pConcept)) = str ++ "[" ++ pretty pConcept ++ "]"
+    pretty (Patm _ str Nothing) = str
+    pretty (PVee _) = "V"
+    pretty (Pfull _ s1 s2) = "V" <~> (P_Sign s1 s2)
+    pretty (Prel _ str) = str
+    pretty (PTrel _ str sign) = str <~> sign
 
 instance Pretty (PairView a) where
     pretty _ = ""
@@ -129,19 +135,19 @@ instance Pretty (P_ViewSegmt a) where
     pretty _ = ""
 
 instance Pretty PPurpose where
-    pretty p = "PURPOSE CONTEXT" <~> pexObj p <~> pexMarkup p -- <+> perline pexRefIDs p
+    pretty p = "PURPOSE" <~> pexObj p <~> pexMarkup p <+> unlines (pexRefIDs p)
 
 instance Pretty PRef2Obj where
-    pretty (PRef2ConceptDef str)       = str
-    pretty (PRef2Declaration termPrim) = pretty termPrim
-    pretty (PRef2Rule str)             = str
-    pretty (PRef2IdentityDef str)      = str
-    pretty (PRef2ViewDef str)          = str
-    pretty (PRef2Pattern str)          = str
-    pretty (PRef2Process str)          = str
-    pretty (PRef2Interface str)        = str
-    pretty (PRef2Context str)          = str
-    pretty (PRef2Fspc str)             = str
+    pretty (PRef2ConceptDef str)       = "CONCEPT"   <+> str
+    pretty (PRef2Declaration termPrim) = "RELATION"  <~> termPrim
+    pretty (PRef2Rule str)             = "RULE"      <+> str
+    pretty (PRef2IdentityDef str)      = "IDENT"     <+> str
+    pretty (PRef2ViewDef str)          = "VIEW"      <+> str
+    pretty (PRef2Pattern str)          = "PATTERN"   <+> str
+    pretty (PRef2Process str)          = "PROCESS"   <+> str
+    pretty (PRef2Interface str)        = "INTERFACE" <+> str
+    pretty (PRef2Context str)          = "CONTEXT"   <+> str
+    pretty (PRef2Fspc str)             = "PRef2Fspc" <+> str
 
 instance Pretty PMeaning where
     pretty p = show p
@@ -153,7 +159,13 @@ instance Pretty P_Concept where
     pretty p = show p
 
 instance Pretty P_Sign where
-    pretty p = show p
+    pretty p = "[" ++ src ++ tgt ++ "]"
+        where src = pretty $ pSrc p
+              tgt = if pSrc p `equal` pTgt p then ""
+                    else "*" ++ pretty (pTgt p)
+              equal (PCpt x) (PCpt y) = x == y
+              equal P_Singleton P_Singleton = True
+              equal _ _ = False
 
 instance Pretty P_Gen where
     pretty p = show p
@@ -163,7 +175,7 @@ instance Pretty Lang where
     pretty English = "IN ENGLISH"
 
 instance Pretty P_Markup where
-    pretty p = pretty (mLang p) <~> mFormat p <+> quoted "{+" "-}" mString p
+    pretty p = pretty (mLang p) <~> mFormat p <+\> quoteWith "{+\n" "-}\n" mString p
 
 instance Pretty PandocFormat where
     pretty p = show p
