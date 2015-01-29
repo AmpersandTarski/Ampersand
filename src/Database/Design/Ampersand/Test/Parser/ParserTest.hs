@@ -12,7 +12,7 @@ import Debug.Trace
 unguard :: String -> Guarded (P_Context,[String]) -> Bool
 unguard str grd = case grd of
    Errors  e     -> trace ("Cannot parse: " ++ show e ++ ": " ++ str) False
-   Checked (p,_) -> trace ("Parsed: " ++ str ++ "\n" ++ pretty p) False
+   Checked (_,_) -> trace ("Parsed: " ++ str) True -- trace ("Parsed: " ++ str ++ "\n" ++ pretty p) False
 
 parseFile :: FilePath -> IO Bool
 parseFile name =
