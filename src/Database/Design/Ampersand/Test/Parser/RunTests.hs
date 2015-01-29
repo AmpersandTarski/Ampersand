@@ -8,7 +8,8 @@ import Database.Design.Ampersand.Test.Parser.QuickChecks
 runTests :: IO ()
 runTests = do scr <- scripts
               success <- testScripts scr
-              if success then parserQuickChecks
-              else return ()
+              --if success then parserQuickChecks
+              --else return ()
+              return ()
 
 -- main = $quickCheckAll >>= print
