@@ -141,6 +141,7 @@ executable ampersand
                      Database.Design.Ampersand.Input.ADL1.CtxError,
                      Database.Design.Ampersand.Input.ADL1.FilePos,
                      Database.Design.Ampersand.Input.ADL1.Parser,
+                     Database.Design.Ampersand.Input.ADL1.ParsingLib,
                      Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
                      Database.Design.Ampersand.Input.ADL1.UU_Scanner,
                      Database.Design.Ampersand.Input.Parsing,
