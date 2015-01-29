@@ -183,5 +183,8 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Database.Design.Ampersand.Test.Parser.ArbitraryTree,
                      Database.Design.Ampersand.Test.Parser.ArbitraryPandoc,
-                     Database.Design.Ampersand.Test.Parser.Sample,
+                     Database.Design.Ampersand.Test.Parser.ParseScripts,
+                     Database.Design.Ampersand.Test.Parser.ParserTest,
+                     Database.Design.Ampersand.Test.Parser.QuickChecks,
+                     Database.Design.Ampersand.Test.Parser.RunTests,
                      Paths_ampersand
