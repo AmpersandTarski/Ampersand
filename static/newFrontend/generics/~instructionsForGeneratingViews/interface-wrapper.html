@@ -1,14 +1,23 @@
 <!-- This is the wrapper for every interface -->
 <!-- 
 
-e.g. INTERFACE "<name of interface>" (<editable relations>) FOR "<role>" : I[SESSION]
+e.g. INTERFACE "<name of interface>" (<editable relations>) FOR "<role>" : exp
 
  -->
 <div class="container-fluid interface">
 
 	<!-- This is the fieldset that provides the header of the interface -->
-	<fieldset>
-		<legend>{{SESSION.label}}</legend> 	<!-- I[SESSION] -->
+	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
+	
+		<!-- For top level interfaces, use: interface name -->
+		<legend>[Interface name]</legend>
+		
+		<!-- Else use Label of atom. -->
+		<legend>{{Atom.label}}
+			<a ng-href="#/<interface>/{{Resource.id}}">{{Resource.label}}</a>
+			<a href="#/<interface>/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
+			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"></span></a>
+		</legend>
 		
 		<!-- Here the content of the interface -->
 		

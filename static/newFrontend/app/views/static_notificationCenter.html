@@ -1,47 +1,49 @@
-<div id="notificationCenter" ng-controller="static_notificationCenterController">
-	<div id="errors">
-		<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
-			<strong>Error!</strong> {{error.message}}
-			<span class="badge pull-right">{{error.count}}</span>
-		</alert>
-	</div>
-	
-	<div id="invariants">
-		<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
-			<strong>Invariant!</strong> {{invariant.message}}
-		</alert>
-	</div>
-				
-	<div id="violations">
-		<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
-			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
-				<div class="text-left">
-					<strong>Violation!</strong> {{val.violationMessage}}
-					<span class="badge pull-right">{{val.tuples.length}}</span>					
-				</div>
-			</div>
-			<ul class="list-group collapse" id="violation-{{key}}">
-				<li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">{{tuple}}</li>
-			</ul>
+<div class="container-fluid">
+	<div id="notificationCenter" ng-controller="static_notificationCenterController">
+		<div id="errors">
+			<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
+				<strong>Error!</strong> {{error.message}}
+				<span class="badge pull-right">{{error.count}}</span>
+			</alert>
 		</div>
-	</div>
-	
-	<div id="infos">
-		<div class="panel panel-info" ng-repeat="(key, val) in notifications.infos">
-			<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-{{key}}">
-				<div class="text-left">
-					<strong>Info!</strong> {{val.message}}
-					<span class="badge pull-right">{{val.rows.length}}</span>					
-				</div>
-			</div>
-			<ul class="list-group collapse" id="info-{{key}}">
-				<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
-			</ul>
+		
+		<div id="invariants">
+			<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
+				<strong>Invariant!</strong> {{invariant.message}}
+			</alert>
 		</div>
-	</div>
-	
-	<!-- Success notifications must be last in notifications center because of position:absolute -->
-	<div id=successes>
-		<alert ng-repeat="success in notifications.successes" type="success" close="closeAlert(notifications.successes, $index)">{{success.message}}</alert>
+					
+		<div id="violations" ng-show="switchShowViolations">
+			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
+					<div class="text-left">
+						<strong>Violation!</strong> {{val.violationMessage}}
+						<span class="badge pull-right">{{val.tuples.length}}</span>					
+					</div>
+				</div>
+				<ul class="list-group collapse" id="violation-{{key}}">
+					<li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">{{tuple}}</li>
+				</ul>
+			</div>
+		</div>
+		
+		<div id="infos" ng-show="switchShowInfos">
+			<div class="panel panel-info" ng-repeat="(key, val) in notifications.infos">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-{{key}}">
+					<div class="text-left">
+						<strong>Info!</strong> {{val.message}}
+						<span class="badge pull-right">{{val.rows.length}}</span>					
+					</div>
+				</div>
+				<ul class="list-group collapse" id="info-{{key}}">
+					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
+				</ul>
+			</div>
+		</div>
+		
+		<!-- Success notifications must be last in notifications center because of position:absolute -->
+		<div id=successes>
+			<alert ng-repeat="success in notifications.successes" type="success" close="closeAlert(notifications.successes, $index)">{{success.message}}</alert>
+		</div>
 	</div>
 </div>

@@ -1,4 +1,4 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -14,24 +14,23 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'static_installerController',
 				templateUrl: 'app/views/static_installer.html'
 			})
-		// top level interfaces (session atom is inserted atomatically)
-		.when('/Projects',
+		// atom parameter is optional
+		.when('/Projects/:resourceId?',
 			{
 				controller: 'ProjectsController',
 				templateUrl: 'generics/app/views/Projects.html'
 			})
-		.when('/People',
+		.when('/People/:resourceId?',
 			{
 				controller: 'PeopleController',
 				templateUrl: 'generics/app/views/People.html'
 			})
-		// other interfaces (require atom)
-		.when('/Project/:atom',
+		.when('/Project/:resourceId?',
 			{
 				controller: 'ProjectController',
 				templateUrl: 'generics/app/views/Project.html'
 			})
-		.when('/Person/:atom',
+		.when('/Person/:resourceId?',
 			{
 				controller: 'PersonController',
 				templateUrl: 'generics/app/views/Person.html'
@@ -53,10 +52,13 @@ AmpersandApp.config(function(RestangularProvider) {
 
 AmpersandApp.run(function(Restangular, $rootScope){
 	
-	$rootScope.session = Restangular.one('session').get().$object;
+	$rootScope.session = {}; // empty object
+	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
+	
+	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
 	Restangular.one('role').get().then(function(data) {
-		$rootScope.roleId = data.id; // TODO: samenvoegen met opvragen session hierboven
+		$rootScope.roleId = data.id; // TODO: do all initiation in one call (i.e. role, navigationbar, etc)
 	});
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){

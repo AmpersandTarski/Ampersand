@@ -15,9 +15,9 @@ import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Text.Pandoc
-import Data.Maybe
-import Data.List
 import Data.Char
+import Data.List
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -57,6 +57,8 @@ makeFSpec opts context = fSpec
               , allRules     = allrules
               , vconjs       = allConjs
               , allConjsPerRule = allConjsPerRule'
+              , allConjsPerDecl = allConjsPerDecl'
+              , allConjsPerConcept = allConjsPerConcept'
               , vquads       = allQuads
               , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
@@ -112,7 +114,9 @@ makeFSpec opts context = fSpec
        where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
-     allConjsPerRule' = converse [(conj, rc_orgRules conj) | conj <- allConjs ]
+     allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
+     allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
      allQuads = makeAllQuads allConjsPerRule'
 
      allrules = vRules ++ gRules

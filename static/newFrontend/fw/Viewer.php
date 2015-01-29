@@ -27,6 +27,10 @@ class Viewer {
 		$this->addHtmlLine('<meta name="Expires" content="-1"/>');
 		$this->addHtmlLine('<meta name="cache-Control" content="no-cache"/>');
 		
+		// initSessionId
+		session_start();
+		$this->addHtmlLine('<script type="text/javascript">var initSessionId = \'' . session_id() . '\';</script>');
+		
 		// JQuery
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-1.11.0.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-migrate-1.2.1.js"></script>');
@@ -41,6 +45,9 @@ class Viewer {
 		$this->addHtmlLine('<script src="app/lib/angular/angular-resource.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-route.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-filter.min.js"></script>');
+		// Third party directives for angular
+		$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch.min.js"></script>');	
+		$this->addHtmlLine('<link href="app/lib/angular/angular-ui-switch/angular-ui-switch.css" rel="stylesheet" media="screen" type="text/css">');
 		
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');

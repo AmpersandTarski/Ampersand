@@ -19,8 +19,8 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="(key, val) in list | filter:search" class="pointer" ng-click="select(val.id)">
-				<td>{{val.label}}</td>
+			<tr ng-repeat="(ResourceId, Resource) in ResourceList | filter:search" class="pointer" ng-click="select(Resource.id)">
+				<td>{{Resource.label}}</td>
 			</tr>
         </tbody>
 	</table>

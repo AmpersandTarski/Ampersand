@@ -27,7 +27,8 @@ class ImportExcel
 		
 		ErrorHandling::addLog('------------------------- END OF EXCEL IMPORT -------------------------');
 		
-		$this->db->closeTransaction('File uploaded');
+		// Close transaction => ROLLBACK or COMMIT.
+		$this->db->closeTransaction('File uploaded', false);
 		
 		return ErrorHandling::getAll();
 		

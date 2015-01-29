@@ -21,10 +21,10 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="(key, val) in Projectleiders | filter:search" class="pointer" ng-click="select(val.id)">
-				<td>{{val.label}}</td>
-				<td>{{val.Status}}</td>
-				<td>{{val.Email}}</td>
+			<tr ng-repeat="(ResourceId, Resource) in ResourceList | filter:search" class="pointer" ng-click="select(Resource.id)">
+				<td>{{Resource.label}}</td>
+				<td>{{Resource.Status}}</td>
+				<td>{{Resource.Email}}</td>
 			</tr>
         </tbody>
 	</table>

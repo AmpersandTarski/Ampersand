@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_navigationBarController', ['$scope', '$rootScope', '$route', '$routeParams', 'Restangular', function ($scope, $rootScope, $route, $routeParams, Restangular) {
+AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular) {
 		
 	$rootScope.interfaces = Restangular.all('interfaces/top').getList().$object;
 		
@@ -15,7 +15,8 @@ AmpersandApp.controller('static_navigationBarController', ['$scope', '$rootScope
 	};
 	
 	$scope.destroySession = function(){
-		$rootScope.session.remove().then(function(){
+		$rootScope.session.remove().then(function(data){
+			$rootScope.updateNotifications(data.notifications);
 			$rootScope.session = '';
 			$rootScope.session = Restangular.one('session').get().$object;
 		});
@@ -25,4 +26,4 @@ AmpersandApp.controller('static_navigationBarController', ['$scope', '$rootScope
 		$route.reload();
 	}
 	
-}]);
+});

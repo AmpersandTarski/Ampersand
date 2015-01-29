@@ -14,12 +14,13 @@ class Session {
 	
 	// prevent any outside instantiation of this object
 	private function __construct($sessionId){
-		global $conceptTableInfo;
+		global $allConcepts;
 		
 		if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_star()t; 
 			
 		// PHP SESSION : Start a new, or resume the existing, PHP session
-		session_start(); 
+		session_start();
+		ErrorHandling::addLog('Session id: ' . session_id(), 'SESSION');
 		
 		// Database connection for within this class
 		try {
@@ -27,7 +28,7 @@ class Session {
 			$this->database = Database::singleton();
 			
 			// AMPERSAND SESSION
-			if (array_key_exists('SESSION', $conceptTableInfo)){ // Only execute following code when concept SESSION is used by adl script
+			if (array_key_exists('SESSION', $allConcepts)){ // Only execute following code when concept SESSION is used by adl script
 				
 				try {
 					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
@@ -76,7 +77,7 @@ class Session {
 		
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
-		$this->database->closeTransaction();
+		$this->database->closeTransaction('Session deleted', false);
 		session_regenerate_id(true);
 		
 	}
