@@ -2,15 +2,11 @@
 
 module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse) where
 
-import Database.Design.Ampersand.ADL1.P2A_Converters(Guarded(..),pCtx2aCtx)
+import Database.Design.Ampersand.ADL1.P2A_Converters(Guarded(..))
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.InputProcessing
-import Database.Design.Ampersand.Misc.Options
 import Debug.Trace
-
-options :: Options
-options = Options {}
 
 unguard :: String -> Guarded a -> Bool
 unguard str grd = case grd of
@@ -18,9 +14,11 @@ unguard str grd = case grd of
    Checked _ -> trace ("Parsed: " ++ str) True
 
 parseFile :: FilePath -> IO Bool
-parseFile name = do contents <- readFile name
-                    let pResult = runParser pContext name contents
-                    return $ unguard name pResult
+parseFile name =
+     do contents <- readFile name
+        if null contents then return True
+        else return $ unguard name (run contents)
+     where run = runParser pContext name
 
 parse :: String -> Guarded P_Context
 parse str = let pResult = runParser pContext "Sample.hs" str
