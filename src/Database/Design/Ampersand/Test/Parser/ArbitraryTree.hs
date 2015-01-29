@@ -3,15 +3,12 @@
 module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
 
 import Test.QuickCheck
-import Test.QuickCheck.Arbitrary
-import Test.QuickCheck.Gen
-import Test.QuickCheck.Modifiers
 import Data.Char
 import Control.Applicative
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Test.Parser.ArbitraryPandoc
+import Database.Design.Ampersand.Test.Parser.ArbitraryPandoc()
 
 fixed :: a -> Gen a
 fixed x = elements [x]
