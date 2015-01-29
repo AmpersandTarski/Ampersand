@@ -3,15 +3,16 @@
 module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse) where
 
 import Database.Design.Ampersand.ADL1.P2A_Converters(Guarded(..))
+import Database.Design.Ampersand.ADL1.PrettyPrinters
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.InputProcessing
 import Debug.Trace
 
-unguard :: String -> Guarded a -> Bool
+unguard :: String -> Guarded (P_Context,[String]) -> Bool
 unguard str grd = case grd of
-   Errors  e -> trace ("Cannot parse: " ++ show e ++ ": " ++ str) False
-   Checked _ -> trace ("Parsed: " ++ str) True
+   Errors  e     -> trace ("Cannot parse: " ++ show e ++ ": " ++ str) False
+   Checked (p,_) -> trace ("Parsed: " ++ str ++ "\n" ++ pretty p) False
 
 parseFile :: FilePath -> IO Bool
 parseFile name =
