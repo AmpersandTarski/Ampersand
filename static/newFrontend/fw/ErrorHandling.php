@@ -29,12 +29,21 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		
 		$pairView = RuleEngine::getPairView($srcAtom, $rule['srcConcept'], $tgtAtom, $rule['tgtConcept'], $rule['pairView']); 
 		
-		self::$violations[$ruleHash]['violationMessage'] = $ruleMessage;
+		self::$violations[$ruleHash]['ruleMessage'] = $ruleMessage;
 		self::$violations[$ruleHash]['interfaceNames'] = $pairView['interfaceNames'];
-		self::$violations[$ruleHash]['tuples'][] = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
 		
-		// self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
-		self::addLog($violationMessage . ' - ' . $rowMessage, 'VIOLATION');
+		$violationMessage = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
+		
+		$links = array();
+		foreach ($pairView['interfaceNames'] as $interfaceName) {
+			
+			$links[] = '#/' . $interfaceName . '/' . $srcAtom; // TODO: srcAtom or tgtAtom depends on interface 
+		}
+		
+		self::$violations[$ruleHash]['tuples'][] = array('violationMessage' => $violationMessage
+														,'links' => $links);
+		 
+		self::addLog($violationMessage . ' - ' . $violationMessage, 'VIOLATION');
 	}
 	
 	public static function addInfo($message, $id = null){
