@@ -260,7 +260,7 @@ instance Functor P_SubIfc where fmap = fmapDefault
 instance Foldable P_SubIfc where foldMap = foldMapDefault
 instance Traversable P_SubIfc where
   traverse _ (P_InterfaceRef a b) = pure (P_InterfaceRef a b)
-  traverse f (P_Box b lst) = P_Box b <$> (traverse (traverse f) lst)
+  traverse f (P_Box o c lst) = P_Box o c <$> (traverse (traverse f) lst)
 
 instance Traced (P_SubIfc a) where
  origin = si_ori
@@ -424,6 +424,7 @@ data P_IClass = P_IClass { iclass_name :: String } deriving (Eq, Show)
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
               = P_Box          { si_ori :: Origin
+                               , si_class :: Maybe String
                                , si_box :: [P_ObjDef a] }
               | P_InterfaceRef { si_ori :: Origin
                                , si_str :: String }

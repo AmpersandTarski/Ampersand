@@ -117,9 +117,9 @@ instance ConceptStructure ObjectDef where
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
-  concs (Box _ objs)         = concs objs
-  concs (InterfaceRef _)   = []
-  expressionsIn (Box _ objs)       = expressionsIn objs
+  concs (Box _ _ objs)           = concs objs
+  concs (InterfaceRef _)         = []
+  expressionsIn (Box _ _ objs)   = expressionsIn objs
   expressionsIn (InterfaceRef _) = []
 
 instance ConceptStructure Pattern where

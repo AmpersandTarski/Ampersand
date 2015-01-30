@@ -73,11 +73,11 @@ instance Disambiguatable P_ViewSegmt where
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef a b) _   = (P_InterfaceRef a b,([],[]))
-  disambInfo (P_Box o []   ) _        = (P_Box o [],([],[]))
-  disambInfo (P_Box o (a:lst)) (x,_)  = (P_Box o (a':lst'),(r++nxt,[]))
-   where (a', (r,_))            = disambInfo a (nxt++x,[])
-         (P_Box _ lst',(nxt,_)) = disambInfo (P_Box o lst) (x++r,[])
+  disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,([],[]))
+  disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],([],[]))
+  disambInfo (P_Box o cl (a:lst)) (x,_)  = (P_Box o cl' (a':lst'),(r++nxt,[]))
+   where (a', (r,_))                = disambInfo a (nxt++x,[])
+         (P_Box _ cl' lst',(nxt,_)) = disambInfo (P_Box o cl lst) (x++r,[])
 
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression
