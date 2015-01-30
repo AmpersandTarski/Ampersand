@@ -9,10 +9,14 @@ import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.InputProcessing
 import Debug.Trace
 
+reparse p = show p ++ show (runParser pContext "Reparse" (pretty p))
+
 unguard :: String -> Guarded (P_Context,[String]) -> Bool
 unguard str grd = case grd of
    Errors  e     -> trace ("Cannot parse: " ++ show e ++ ": " ++ str) False
-   Checked (_,_) -> trace ("Parsed: " ++ str) True -- trace ("Parsed: " ++ str ++ "\n" ++ pretty p) False
+   Checked (p,_) -> trace ("Parsed: " ++ str ++ "\n" ++ pretty p ++ "\n" ++ reparse p) False
+   -- Checked (p,_) -> trace ("Parsed: " ++ str ++ "\n" ++ pretty p) False
+   -- Checked _     -> trace ("Parsed: " ++ str) True
 
 parseFile :: FilePath -> IO Bool
 parseFile name =

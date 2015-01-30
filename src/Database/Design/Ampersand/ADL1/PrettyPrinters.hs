@@ -24,8 +24,13 @@ perline bs = unlines (map pretty bs)
 quoteWith :: Pretty a => String -> String -> (a -> String) -> a -> String
 quoteWith q1 q2 f p = q1 ++ (f p) ++ q2
 
+--TODO: Remove a->String, make it just String -> String
 quote :: Pretty a => (a -> String) -> a -> String
 quote = quoteWith "\"" "\""
+
+maybeQuote :: String -> String
+maybeQuote a = if any isSpace a then "\"" ++ a ++ "\""
+               else a
 
 class Pretty a where
     pretty :: a -> String
@@ -89,7 +94,7 @@ instance Pretty a => Pretty (Term a) where
    pretty p = case p of
        Prim a -> pretty a
        PEqu _ t1 t2 -> two t1 t2 "="
-       PImp _ t1 t2 -> two t1 t2 "|-"
+       PImp _ t1 t2 -> two t1 t2 " |- "
        PIsc _ t1 t2 -> two t1 t2 "/\\"
        PUni _ t1 t2 -> two t1 t2 "\\/"
        PDif _ t1 t2 -> two t1 t2 "-"
@@ -106,7 +111,7 @@ instance Pretty a => Pretty (Term a) where
        PBrk _ t -> "( " ++ pretty t ++ " )"
        where pos t op     = "" ++ pretty t ++ op ++ ""
              pre t op     = "" ++ op ++ pretty t ++ ""
-             two t1 t2 op = "(" ++ pretty t1 ++ op ++ pretty t2 ++ ")"
+             two t1 t2 op = "" ++ pretty t1 ++ op ++ pretty t2 ++ ""
 
 instance Pretty TermPrim where
     pretty (PI _) = "I"
@@ -134,7 +139,7 @@ instance Pretty SrcOrTgt where
     pretty p = show p
 
 instance Pretty a => Pretty (P_Rule a) where
-    pretty p = "RULE" <+> (if null (rr_nm p) then "" else (rr_nm p) ++ ":") <~\>
+    pretty p = "RULE" <+> (if null (rr_nm p) then "" else (maybeQuote $ rr_nm p) ++ ":") <~\>
                rr_exp p <+\>
                perline (rr_mean p) <+\>
                perline (rr_msg p) <~\>
@@ -171,19 +176,24 @@ instance Pretty (P_ViewSegmt a) where
     pretty _ = ""
 
 instance Pretty PPurpose where
-    pretty p = "PURPOSE" <~> pexObj p <~> pexMarkup p <+> unlines (pexRefIDs p)
+    pretty p = "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
+             <+> quoteWith "{+\n" "-}\n" mString (pexMarkup p)
+        where lang = mFormat (pexMarkup p)
+              refs rs = unlines (map format rs)
+              format r = "REF" <+> maybeQuote r
 
 instance Pretty PRef2Obj where
-    pretty (PRef2ConceptDef str)       = "CONCEPT"   <+> str
-    pretty (PRef2Declaration termPrim) = "RELATION"  <~> termPrim
-    pretty (PRef2Rule str)             = "RULE"      <+> str
-    pretty (PRef2IdentityDef str)      = "IDENT"     <+> str
-    pretty (PRef2ViewDef str)          = "VIEW"      <+> str
-    pretty (PRef2Pattern str)          = "PATTERN"   <+> str
-    pretty (PRef2Process str)          = "PROCESS"   <+> str
-    pretty (PRef2Interface str)        = "INTERFACE" <+> str
-    pretty (PRef2Context str)          = "CONTEXT"   <+> str
-    pretty (PRef2Fspc str)             = "PRef2Fspc" <+> str
+    pretty p = case p of
+        PRef2ConceptDef str       -> "CONCEPT"   <+> maybeQuote str
+        PRef2Declaration termPrim -> "RELATION"  <~> termPrim
+        PRef2Rule str             -> "RULE"      <+> str
+        PRef2IdentityDef str      -> "IDENT"     <+> str
+        PRef2ViewDef str          -> "VIEW"      <+> str
+        PRef2Pattern str          -> "PATTERN"   <+> str
+        PRef2Process str          -> "PROCESS"   <+> str
+        PRef2Interface str        -> "INTERFACE" <+> str
+        PRef2Context str          -> "CONTEXT"   <+> str
+        PRef2Fspc str             -> "PRef2Fspc" <+> str
 
 instance Pretty PMeaning where
     pretty p = show p
@@ -214,7 +224,11 @@ instance Pretty P_Markup where
     pretty p = pretty (mLang p) <~> mFormat p <+\> quoteWith "{+\n" "-}\n" mString p
 
 instance Pretty PandocFormat where
-    pretty p = show p
+    pretty p = case p of
+        ReST     -> "REST"
+        HTML     -> "HTML"
+        LaTeX    -> "LATEX"
+        Markdown -> "MARKDOWN"
 
 instance Pretty Label where
     pretty p = show p
