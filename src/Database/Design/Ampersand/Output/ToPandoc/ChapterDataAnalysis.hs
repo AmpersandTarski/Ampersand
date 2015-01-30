@@ -135,16 +135,18 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
   oocd = cdAnalysis fSpec
 
   conceptTable :: Blocks
-  conceptTable = simpleTable [ (plain.text.l) (NL "Type"          , EN "Type")
-                             , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-                             , (plain.text.l) (NL "Technisch type", EN "Technical type") 
-                             ] 
-                             [ [ (plain.text.name) c
-                               , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
-                               , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
-                               ]
-                             | c <- allConcepts fSpec
-                             ]
+  conceptTable = table mempty
+                 [(AlignLeft,1/6),(AlignCenter,4/6),(AlignLeft,1/6)]
+                 [ (plain.text.l) (NL "Type"          , EN "Type")
+                 , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
+                 , (plain.text.l) (NL "Technisch type", EN "Technical type") 
+                 ] 
+                 [ [ (plain.text.name) c
+                   , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
+                   , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
+                   ]
+                 | c <- allConcepts fSpec
+                 ]
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
