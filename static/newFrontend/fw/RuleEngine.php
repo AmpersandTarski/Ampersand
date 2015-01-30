@@ -221,6 +221,43 @@ class RuleEngine {
 		
 	}
 	
+	public static function getPairView($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView){
+		$database = Database::singleton();
+		
+		ErrorHandling::addLog('Creating violation message');
+		$pairStrs = array();
+		$interfaceNames = array();
+		foreach ($pairView as $segment){
+			// text segment
+			if ($segment['segmentType'] == 'Text' && substr($segment['Text'], 0, 5) == '{IFC}'){
+				$interfaceNames = explode(';', substr($segment['Text'], 5));
+					
+			}elseif ($segment['segmentType'] == 'Text'){				
+				$pairStrs[] = $segment['Text'];
+					
+				// expressie segment
+			}elseif($segment['segmentType'] == 'Exp'){
+				// select starting atom depending on whether the segment uses the src of tgt atom.
+				$atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
+	
+				// quering the expression
+				$query = "SELECT DISTINCT `tgt` FROM (".$segment['expSQL'].") AS results WHERE src='".addslashes($atom)."'"; // SRC of TGT kunnen door een expressie gevolgd worden
+				$rows = $database->Exe($query);
+	
+				// returning the result
+				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom');
+				$pairStrs[] = $rows[0]['tgt'];
+	
+				// unknown segment
+			}else{
+				$errorMessage = "Unknown segmentType '" . $segment['segmentType'] . "' in pairview";
+				throw new Exception($errorMessage);
+			}
+		}
+		return array('violationMessage' => implode($pairStrs)
+					,'interfaceNames'	=> $interfaceNames);
+	}
+	
 	public static function getConjunct($conjunctId){
 		// from Generics.php
 		global $allConjuncts;
