@@ -81,7 +81,8 @@ chpNatLangReqs lev fSpec =
                getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
 
   --TODO: Deze nieuwe functie moet de oude dpRequirementsOld vervangen, waardoor een effectieve scheiding 
-  --wordt gerealiseerd van WAT er wordt afgedrukt en de VOLGORDE van afdrukken. 
+  --wordt gerealiseerd van WAT er wordt afgedrukt en de VOLGORDE van afdrukken. (code disabled until it will be used, to prevent warning) 
+  {-
   dpRequirementesNew :: Blocks
   dpRequirementesNew =  let (_,blocks) = foldl printTheme (newCounter,mempty)  (orderingByTheme fSpec)
                         in blocks
@@ -95,6 +96,7 @@ chpNatLangReqs lev fSpec =
      printTheme (counter,bs) themeStuff  =
         let (blocks,count') = printOneTheme themeStuff counter
         in (count',bs <> blocks)
+  -}
 
   dpRequirementsOld :: [Block]
   dpRequirementsOld = theBlocks
