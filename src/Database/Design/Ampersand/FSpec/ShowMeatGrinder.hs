@@ -120,6 +120,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "*** Declarations: (count="++(show.length.allDecls) fSpec++") ***"]
   ++   concatMap (metaPops fSpec) ((map snd.declOrder.allDecls)       fSpec)
+  ++[ Comment " ", Comment $ "*** Expressions: (count="++(show.length.allExprs) fSpec++") ***"]
+  ++   concatMap (metaPops fSpec) (allExprs  fSpec)
   ++[ Comment " ", Comment $ "*** Atoms: (count="++(show.length) allAtoms++") ***"]
   ++   concatMap (metaPops fSpec) allAtoms
   ++[ Comment " ", Comment $ "*** Pairs: (count="++(show.length) allPairs++") ***"]

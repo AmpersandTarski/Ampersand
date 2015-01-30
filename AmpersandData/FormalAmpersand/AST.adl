@@ -231,6 +231,9 @@ RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPATTERN
 
+PATTERN ToDo -- This pattern contains stuff still to be done.
+RELATION rrviols[Rule*Violation]
+ENDPATTERN
 ENDCONTEXT
 
 
