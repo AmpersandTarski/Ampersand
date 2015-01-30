@@ -43,7 +43,7 @@ class ExecEngine {
 			ErrorHandling::addLog('ExecEngine fixing rule ' . $rule['name']);
 			
 			foreach ($violations as $violation){
-				$theMessage = ExecEngine::execPair($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
+				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
 				
 				// This function tries to return a string with all NULL bytes, HTML and PHP tags stripped from a given str. Strip_tags() is binary safe.
 				$theCleanMessage = strip_tags($theMessage);
@@ -74,7 +74,8 @@ class ExecEngine {
 		}
 	}
 
-	public static function execPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView){ 
+	// Almost a copy of RuleEngine::getPairView()
+	public static function getPairView($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView){ 
 		$database = Database::singleton();
 		
 		$pairStrs = array();

@@ -25,15 +25,18 @@ class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error
 		
 		$ruleHash = hash('md5', $rule['name']);
 		
-		$violationMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
-		$rowMessage = $srcAtom . ' - ' . $tgtAtom;
+		$ruleMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
 		
-		self::$violations[$ruleHash]['violationMessage'] = $violationMessage;
-		self::$violations[$ruleHash]['tuples'][] = $rowMessage;
+		$pairView = RuleEngine::getPairView($srcAtom, $rule['srcConcept'], $tgtAtom, $rule['tgtConcept'], $rule['pairView']); 
+		
+		self::$violations[$ruleHash]['violationMessage'] = $ruleMessage;
+		self::$violations[$ruleHash]['interfaceNames'] = $pairView['interfaceNames'];
+		self::$violations[$ruleHash]['tuples'][] = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
 		
 		// self::$violations[] = array('violationMessage' => $violationMessage, 'tuples' => array($rowMessage)); //TODO: violations of the same rule in one array 
 		self::addLog($violationMessage . ' - ' . $rowMessage, 'VIOLATION');
 	}
+	
 	public static function addInfo($message, $id = null){
 		
 		if(isset($id)){
