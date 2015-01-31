@@ -3,6 +3,7 @@ where
 
 import Database.Design.Ampersand.Core.ParseTree
 import Data.Char
+import Data.List (intercalate)
 
 (<+>) :: String -> String -> String
 (<+>) a b = a ++ space ++ b
@@ -31,6 +32,12 @@ quote = quoteWith "\"" "\""
 maybeQuote :: String -> String
 maybeQuote a = if any isSpace a then "\"" ++ a ++ "\""
                else a
+
+prettyunwords :: Pretty a => [a] -> String
+prettyunwords xs = unwords $ map pretty xs
+
+listSep :: Pretty a => String -> [a] -> String
+listSep sep xs = intercalate sep $ map pretty xs
 
 class Pretty a where
     pretty :: a -> String
@@ -88,7 +95,17 @@ instance Pretty P_Pattern where
     pretty p = show p
 
 instance Pretty P_Declaration where
-    pretty p = show p
+    -- pretty p = dec_nm p <+> "::" <~> dec_sign p <~> pFun <~> pConceptRef
+    pretty p = "RELATION" <+> dec_nm p <~> dec_sign p <+> props <+> byplug <+\> pragma <+\> meanings <+\> content
+        where props = "[" ++ (listSep "," (dec_prps p)) ++ "]"
+              byplug = if (dec_plug p) then "BYPLUG" else ""
+              pragma = if null (concat [dec_prL p, dec_prM p, dec_prR p]) then ""
+                       else "PRAGMA" <+> quote dec_prL p <+> quote dec_prM p <+> quote dec_prR p
+              meanings = prettyunwords (dec_Mean p)
+              content = if null (dec_popu p) then ""
+                        else "=" <+> intercalate "," (map prettyPair (dec_popu p))
+              prettyPair :: (String,String) -> String
+              prettyPair (a,b) = quote (\_->a) p <+> "*" <+> quote (\_->b) p
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -139,11 +156,13 @@ instance Pretty SrcOrTgt where
     pretty p = show p
 
 instance Pretty a => Pretty (P_Rule a) where
-    pretty p = "RULE" <+> (if null (rr_nm p) then "" else (maybeQuote $ rr_nm p) ++ ":") <~\>
+    pretty p = "RULE" <+> name <~>
                rr_exp p <+\>
                perline (rr_mean p) <+\>
                perline (rr_msg p) <~\>
                rr_viol p
+             where name = if null (rr_nm p) then ""
+                          else (maybeQuote $ rr_nm p) ++ ":"
 
 instance Pretty ConceptDef where
     pretty p = show p
@@ -196,13 +215,15 @@ instance Pretty PRef2Obj where
         PRef2Fspc str             -> "PRef2Fspc" <+> str
 
 instance Pretty PMeaning where
-    pretty p = show p
+    pretty (PMeaning markup) = "MEANING" <~> markup
 
 instance Pretty PMessage where
-    pretty p = show p
+    pretty (PMessage markup) = "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
-    pretty p = show p
+    pretty p = case p of
+        PCpt _      -> quote p_cptnm p
+        P_Singleton -> "ONE"
 
 instance Pretty P_Sign where
     pretty p = "[" ++ src ++ tgt ++ "]"
@@ -235,3 +256,4 @@ instance Pretty Label where
 
 instance Pretty Prop where
     pretty p = show p
+

@@ -9,6 +9,8 @@ import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.InputProcessing
 import Debug.Trace
 
+--forall a.
+reparse :: (Pretty a, Show a) => a -> [Char]
 reparse p = show p ++ show (runParser pContext "Reparse" (pretty p))
 
 unguard :: String -> Guarded (P_Context,[String]) -> Bool

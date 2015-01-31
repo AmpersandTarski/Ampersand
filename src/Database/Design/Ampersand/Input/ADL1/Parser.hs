@@ -298,7 +298,7 @@ pRuleDef =  rebuild <$> pKey_pos "RULE"
 pSrcOrTgt :: AmpParser SrcOrTgt
 pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
 
---- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG' Pragma? Meaning* ('=' Content)? '.'?
+--- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser P_Declaration
 pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*> pFun  <*> pConceptRef
                       <|> rbd <$> pKey_pos "RELATION" <*> pVarid  <*> pSign
