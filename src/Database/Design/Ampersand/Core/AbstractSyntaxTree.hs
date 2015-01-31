@@ -356,7 +356,7 @@ objAts obj
   = case objmsub obj of
      Nothing       -> []
      Just (InterfaceRef _) -> []
-     Just (Box _ objs)     -> objs
+     Just (Box _ _ objs)     -> objs
 
 class Object a where
  concept :: a -> A_Concept        -- the type of the object
@@ -379,7 +379,7 @@ instance Identified ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 
-data SubInterface = Box A_Concept [ObjectDef] | InterfaceRef String deriving (Eq, Show)
+data SubInterface = Box A_Concept (Maybe String)[ObjectDef] | InterfaceRef String deriving (Eq, Show)
 
 data InsDel   = Ins | Del
                  deriving (Show,Eq)

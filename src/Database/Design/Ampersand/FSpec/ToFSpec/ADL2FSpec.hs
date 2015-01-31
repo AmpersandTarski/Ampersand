@@ -252,8 +252,8 @@ makeFSpec opts context = fSpec
              , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
                                , objctx  = EDcI c
-                               , objmsub = Just . Box c $
-                                           Obj { objnm   = "I["++name c++"]"
+                               , objmsub = Just . Box c Nothing $
+                                            Obj { objnm   = "I["++name c++"]"
                                                 , objpos  = Origin "generated object: step 4a - default theme"
                                                 , objctx  = EDcI c
                                                 , objmsub = Nothing
@@ -285,7 +285,7 @@ makeFSpec opts context = fSpec
              = [ Obj { objnm   = showADL t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
-                     , objmsub = Just . Box (target t) $ recur [ pth | (_:pth)<-cl, not (null pth) ]
+                     , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      , objstrs = [] }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
@@ -303,7 +303,7 @@ makeFSpec opts context = fSpec
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
-                                 , objmsub = Just . Box c $ objattributes
+                                 , objmsub = Just . Box c Nothing $ objattributes
                                  , objstrs = [] }
              , ifcEcas     = fst (assembleECAs fSpec editables)
              , ifcControls = makeIfcControls params allConjs
@@ -331,7 +331,7 @@ makeFSpec opts context = fSpec
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
-                                 , objmsub = Just . Box ONE $ [att]
+                                 , objmsub = Just . Box ONE Nothing $ [att]
                                  , objstrs = [] }
              , ifcEcas     = ifcEcas     ifcc
              , ifcControls = ifcControls ifcc

@@ -91,7 +91,7 @@ checkInterfaceRefs gCtx =
   where getInterfaceRefs :: ObjectDef -> [(ObjectDef, String)]
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
-        getInterfaceRefs Obj{objmsub=Just (Box _ objs)}              = concatMap getInterfaceRefs objs
+        getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}              = concatMap getInterfaceRefs objs
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
@@ -313,7 +313,7 @@ pCtx2aCtx' _
         -> case subi of
             Nothing -> pure (obj expr Nothing)
             Just (InterfaceRef s) -> pure (obj expr (Just$InterfaceRef s)) --TODO: check type!
-            Just b@(Box c _)
+            Just b@(Box c _ _)
               -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
                     r  -> pure (obj (addEpsilonRight' (head r) (fst expr), snd expr) (Just$ b))
@@ -343,15 +343,15 @@ pCtx2aCtx' _
 
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
-    pSubi2aSubi o@(P_Box _ []) = hasNone [] o
-    pSubi2aSubi o@(P_Box _ l)
+    pSubi2aSubi o@(P_Box _ _ []) = hasNone [] o
+    pSubi2aSubi o@(P_Box _ cl l)
      = (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
                   [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
                   r -> case [ objctx a
                             | (a,False) <- lst
                             , not ((name . source . objctx $ a) `elem` r)
                             ] of
-                            [] -> pure (Box (castConcept (head r)) (map fst lst))
+                            [] -> pure (Box (castConcept (head r)) cl (map fst lst))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
        ) <?> (traverse typecheckObjDef l <* uniqueNames l)
 
