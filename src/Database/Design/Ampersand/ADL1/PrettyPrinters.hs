@@ -7,14 +7,16 @@ import Data.List (intercalate)
 
 (<+>) :: String -> String -> String
 (<+>) a b = a ++ space ++ b
-          where space = if null (a) || isSpace(last a) then ""
+          where space = if null a || isSpace(last a) then ""
                         else " "
 
 (<~>) :: Pretty b => String -> b -> String
 (<~>) a b = a <+> pretty b
 
 (<+\>) :: String -> String -> String
-(<+\>) a b = a ++ "\n" ++ b
+(<+\>) a b = a ++ break_line ++ b
+           where break_line = if null a || last a == '\n' then ""
+                              else "\n"
 
 (<~\>) :: Pretty b => String -> b -> String
 (<~\>) a b = a <+\> (pretty b)
@@ -22,15 +24,14 @@ import Data.List (intercalate)
 perline :: Pretty b => [b] -> String
 perline bs = unlines (map pretty bs)
 
-quoteWith :: Pretty a => String -> String -> (a -> String) -> a -> String
-quoteWith q1 q2 f p = q1 ++ (f p) ++ q2
+quoteWith :: String -> String -> String -> String
+quoteWith q1 q2 str = q1 ++ str ++ q2
 
---TODO: Remove a->String, make it just String -> String
-quote :: Pretty a => (a -> String) -> a -> String
+quote :: String -> String
 quote = quoteWith "\"" "\""
 
 maybeQuote :: String -> String
-maybeQuote a = if any isSpace a then "\"" ++ a ++ "\""
+maybeQuote a = if any isSpace a then quote a
                else a
 
 prettyunwords :: Pretty a => [a] -> String
@@ -38,6 +39,9 @@ prettyunwords xs = unwords $ map pretty xs
 
 listSep :: Pretty a => String -> [a] -> String
 listSep sep xs = intercalate sep $ map pretty xs
+
+commas :: [String] -> String
+commas = intercalate ","
 
 class Pretty a where
     pretty :: a -> String
@@ -66,7 +70,7 @@ instance Pretty P_Context where
          --, ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
 
 instance Pretty Meta where
-    pretty p = "META" <~> mtObj p <+> quote mtName p <+> quote mtVal p
+    pretty p = "META" <~> mtObj p <+> quote (mtName p) <+> quote (mtVal p)
 
 instance Pretty MetaObj where
     pretty _ = ""
@@ -89,7 +93,8 @@ instance Pretty P_RoleRelation where
     pretty p = show p
 
 instance Pretty RoleRule where
-    pretty p = show p
+    pretty p = "ROLE" <+> id_list mRoles <+> "MAINTAINS" <+> id_list mRules
+        where id_list prop = commas (map maybeQuote $ prop p)
 
 instance Pretty P_Pattern where
     pretty p = show p
@@ -97,15 +102,15 @@ instance Pretty P_Pattern where
 instance Pretty P_Declaration where
     -- pretty p = dec_nm p <+> "::" <~> dec_sign p <~> pFun <~> pConceptRef
     pretty p = "RELATION" <+> dec_nm p <~> dec_sign p <+> props <+> byplug <+\> pragma <+\> meanings <+\> content
-        where props = "[" ++ (listSep "," (dec_prps p)) ++ "]"
+        where props = "[" ++ (listSep "," $ dec_prps p) ++ "]"
               byplug = if (dec_plug p) then "BYPLUG" else ""
               pragma = if null (concat [dec_prL p, dec_prM p, dec_prR p]) then ""
-                       else "PRAGMA" <+> quote dec_prL p <+> quote dec_prM p <+> quote dec_prR p
+                       else "PRAGMA" <+> quote (dec_prL p) <+> quote (dec_prM p) <+> quote (dec_prR p)
               meanings = prettyunwords (dec_Mean p)
               content = if null (dec_popu p) then ""
                         else "=" <+> intercalate "," (map prettyPair (dec_popu p))
               prettyPair :: (String,String) -> String
-              prettyPair (a,b) = quote (\_->a) p <+> "*" <+> quote (\_->b) p
+              prettyPair (a,b) = quote a <+> "*" <+> quote b
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -196,8 +201,9 @@ instance Pretty (P_ViewSegmt a) where
 
 instance Pretty PPurpose where
     pretty p = "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
-             <+> quoteWith "{+\n" "-}\n" mString (pexMarkup p)
-        where lang = mFormat (pexMarkup p)
+             <+> quoteWith "{+\n" "-}\n" (mString markup)
+        where markup = pexMarkup p
+              lang = mFormat markup
               refs rs = unlines (map format rs)
               format r = "REF" <+> maybeQuote r
 
@@ -222,7 +228,7 @@ instance Pretty PMessage where
 
 instance Pretty P_Concept where
     pretty p = case p of
-        PCpt _      -> quote p_cptnm p
+        PCpt _      -> quote$ p_cptnm p
         P_Singleton -> "ONE"
 
 instance Pretty P_Sign where
@@ -242,7 +248,7 @@ instance Pretty Lang where
     pretty English = "IN ENGLISH"
 
 instance Pretty P_Markup where
-    pretty p = pretty (mLang p) <~> mFormat p <+\> quoteWith "{+\n" "-}\n" mString p
+    pretty p = pretty (mLang p) <~> mFormat p <+\> quoteWith "{+\n" "-}\n" (mString p)
 
 instance Pretty PandocFormat where
     pretty p = case p of
