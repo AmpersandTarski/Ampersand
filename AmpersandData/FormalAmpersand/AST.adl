@@ -55,7 +55,7 @@ CLASSIFY PlainConcept ISA Concept
 
 RELATION cptnm[Concept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
-RELATION cptos[Concept*AtomID]
+RELATION cptos[Concept*AtomID] [SUR]
 MEANING "The population of a concept."
 RELATION cptdf[PlainConcept*Blob]
 MEANING "The definitions of a concept."
