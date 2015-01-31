@@ -4,6 +4,7 @@ where
 import Database.Design.Ampersand.Core.ParseTree
 import Data.Char
 import Data.List (intercalate)
+import Data.List.Utils (replace)
 
 (<+>) :: String -> String -> String
 (<+>) a b = a ++ space ++ b
@@ -28,7 +29,8 @@ quoteWith :: String -> String -> String -> String
 quoteWith q1 q2 str = q1 ++ str ++ q2
 
 quote :: String -> String
-quote = quoteWith "\"" "\""
+quote str = quoteWith "\"" "\"" $ escape "\"" str
+    where escape chr = replace chr $ "\\" ++ chr
 
 maybeQuote :: String -> String
 maybeQuote a = if any isSpace a then quote a
@@ -51,10 +53,11 @@ instance Pretty a => Pretty (Maybe a) where
     pretty Nothing = ""
 
 instance Pretty P_Context where
-    pretty p = "CONTEXT" <+> ctx_nm p <~> ctx_lang p <+\>
-               perline (ctx_metas p) <+>
-               perline (ctx_ps p) <+\>
-               perline (ctx_PPrcs p)
+    pretty p = "CONTEXT" <+> ctx_nm p <~> ctx_lang p
+               <+\> perline (ctx_metas p)
+               <+>  perline (ctx_ps p)
+               <+\> perline (ctx_PPrcs p)
+               <+\> "ENDCONTEXT"
          --, ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
          --, ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          --, ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
@@ -158,7 +161,9 @@ instance Pretty a => Pretty (PairViewSegmentTerm a) where
     pretty _ = ""
 
 instance Pretty SrcOrTgt where
-    pretty p = show p
+    pretty p = case p of
+                    Src -> "SRC"
+                    Tgt -> "TGT"
 
 instance Pretty a => Pretty (P_Rule a) where
     pretty p = "RULE" <+> name <~>
@@ -211,14 +216,14 @@ instance Pretty PRef2Obj where
     pretty p = case p of
         PRef2ConceptDef str       -> "CONCEPT"   <+> maybeQuote str
         PRef2Declaration termPrim -> "RELATION"  <~> termPrim
-        PRef2Rule str             -> "RULE"      <+> str
-        PRef2IdentityDef str      -> "IDENT"     <+> str
-        PRef2ViewDef str          -> "VIEW"      <+> str
-        PRef2Pattern str          -> "PATTERN"   <+> str
-        PRef2Process str          -> "PROCESS"   <+> str
-        PRef2Interface str        -> "INTERFACE" <+> str
-        PRef2Context str          -> "CONTEXT"   <+> str
-        PRef2Fspc str             -> "PRef2Fspc" <+> str
+        PRef2Rule str             -> "RULE"      <+> maybeQuote str
+        PRef2IdentityDef str      -> "IDENT"     <+> maybeQuote str
+        PRef2ViewDef str          -> "VIEW"      <+> maybeQuote str
+        PRef2Pattern str          -> "PATTERN"   <+> maybeQuote str
+        PRef2Process str          -> "PROCESS"   <+> maybeQuote str
+        PRef2Interface str        -> "INTERFACE" <+> maybeQuote str
+        PRef2Context str          -> "CONTEXT"   <+> maybeQuote str
+        PRef2Fspc str             -> "PRef2Fspc" <+> maybeQuote str
 
 instance Pretty PMeaning where
     pretty (PMeaning markup) = "MEANING" <~> markup
