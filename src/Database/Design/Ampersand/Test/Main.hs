@@ -2,14 +2,16 @@ module Main (main) where
 
 import Database.Design.Ampersand.Test.Parser.ParseScripts
 import Database.Design.Ampersand.Test.Parser.QuickChecks
+import System.Exit (ExitCode(..))
 
-runTests :: IO ()
+runTests :: IO Bool
 runTests =
      do scr <- scripts
         success <- testScripts scr
         if success then parserQuickChecks
-        else return ()
-        return ()
+        else return False
 
-main :: IO ()
-main = runTests
+main :: IO ExitCode
+main = do res <- runTests
+          if res then return ExitSuccess
+          else return $ ExitFailure 1

@@ -23,5 +23,9 @@ testParse text check =
 prop_pretty :: P_Context -> Bool
 prop_pretty ctx = testParse (pretty ctx) (\p -> ctx == p)
 
-parserQuickChecks :: IO ()
-parserQuickChecks = quickCheck prop_pretty
+parserQuickChecks :: IO Bool
+parserQuickChecks =
+         do res <- quickCheckResult prop_pretty
+            case res of
+                Success _ _ _ -> return True
+                _             -> return False
