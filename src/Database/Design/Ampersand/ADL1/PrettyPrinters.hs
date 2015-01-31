@@ -48,6 +48,9 @@ listSep sep xs = intercalate sep $ map pretty xs
 commas :: [String] -> String
 commas = intercalate ","
 
+prettyPair :: Paire -> String
+prettyPair (a,b) = maybeQuote a <+> "*" <+> maybeQuote b
+
 class Pretty a where
     pretty :: a -> String
 
@@ -114,9 +117,7 @@ instance Pretty P_Declaration where
                        else "PRAGMA" <+> quote (dec_prL p) <+> quote (dec_prM p) <+> quote (dec_prR p)
               meanings = prettyunwords (dec_Mean p)
               content = if null (dec_popu p) then ""
-                        else "=" <+> intercalate "," (map prettyPair (dec_popu p))
-              prettyPair :: (String,String) -> String
-              prettyPair (a,b) = quote a <+> "*" <+> quote b
+                        else "=" <+> commas (map prettyPair (dec_popu p))
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -184,8 +185,12 @@ instance Pretty ConceptDef where
                       else "TYPE" <+> cdtyp p
 
 instance Pretty P_Population where
-    pretty p = show p
-
+    pretty p = case p of
+                P_RelPopu nm    _ cs -> "POPULATION" <+> maybeQuote nm        <+> "CONTAINS" <+> contents cs
+                P_TRelPop nm tp _ cs -> "POPULATION" <+> maybeQuote nm <~> tp <+> "CONTAINS" <+> contents cs
+                P_CptPopu nm    _ ps -> "POPULATION" <+> maybeQuote nm        <+> "CONTAINS" <+> "[" ++ commas (quoteAll ps) ++ "]"
+               where contents cs = "[" ++ commas (map prettyPair cs) ++ "]"
+                
 instance Pretty P_Interface where
     pretty p = "INTERFACE" <+> maybeQuote (ifc_Name p) <+> class_
                <+> params <+> args <+> roles -- ifc_Prp
