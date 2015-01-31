@@ -295,7 +295,7 @@ pCtx2aCtx' _
     typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
      = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
                       [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                      r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft c r (name (source (objctx obj))) (objctx obj)})
+                      r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
                             else mustBeBound (origin obj) [(Tgt,objctx obj)]
        ) <?> typecheckObjDef ojd
      where c = name (vd_cpt o)
@@ -326,11 +326,6 @@ pCtx2aCtx' _
                , objmsub = s
                , objstrs = ostrs
                }, sr)
-    addEpsilonLeft :: String -> [String] -> String -> Expression -> Expression
-    addEpsilonLeft a b c e
-     = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
-               else if c/=name (source e) then fatal 202 ("addEpsilonLeft glues erroneously: c="++show c++"  and e="++show e++".")
-                    else EEps (castConcept (head b)) (castSign a c) .:. e
     addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
     addEpsilonLeft' a e
      = if a==name (source e) then e else EEps (leastConcept (source e) a) (castSign a (name (source e))) .:. e
@@ -338,8 +333,7 @@ pCtx2aCtx' _
      = if a==name (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (name (target e)) a)
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
-     = (if s==name (source e) then id else (EEps (leastConcept (source e) s) (castSign s (name (source e))) .:.)) $
-       (if t==name (target e) then id else (.:. EEps (leastConcept (target e) t) (castSign (name (target e)) t))) e
+     = addEpsilonLeft' s (addEpsilonRight' t e)
 
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
