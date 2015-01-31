@@ -30,7 +30,10 @@ quoteWith q1 q2 str = q1 ++ str ++ q2
 
 quote :: String -> String
 quote str = quoteWith "\"" "\"" $ escape "\"" str
-    where escape chr = replace chr $ "\\" ++ chr
+    where escape x = replace x ("\\" ++ x)
+
+quoteAll :: [String] -> [String]
+quoteAll = map quote
 
 maybeQuote :: String -> String
 maybeQuote a = if any isSpace a then quote a
@@ -54,23 +57,23 @@ instance Pretty a => Pretty (Maybe a) where
 
 instance Pretty P_Context where
     pretty p = "CONTEXT" <+> ctx_nm p <~> ctx_lang p
+               <~> ctx_markup p
                <+\> perline (ctx_metas p)
                <+>  perline (ctx_ps p)
                <+\> perline (ctx_PPrcs p)
+               <+\> perline (ctx_pats p)
+               <+\> perline (ctx_rs p)
+               <+\> perline (ctx_ds p)
+               <+\> perline (ctx_cs p)
+               <+\> perline (ctx_ks p)
+               <+\> perline (ctx_vs p)
+               <+\> perline (ctx_gs p)
+               <+\> perline (ctx_ifcs p)
+               <+\> perline (ctx_pops p)
+               <+\> perline (ctx_sql p)
+               <+\> perline (ctx_php p)
+               <+> unlines (quoteAll $ ctx_thms p)
                <+\> "ENDCONTEXT"
-         --, ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         --, ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-         --, ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         --, ctx_rs ::     [(P_Rule TermPrim)]         -- ^ All user defined rules in this context, but outside patterns and outside processes
-         --, ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
-         --, ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
-         --, ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
-         --, ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
-         --, ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
-         --, ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
-         --, ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
-         --, ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
-         --, ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
 
 instance Pretty Meta where
     pretty p = "META" <~> mtObj p <+> quote (mtName p) <+> quote (mtVal p)
@@ -175,22 +178,42 @@ instance Pretty a => Pretty (P_Rule a) where
                           else (maybeQuote $ rr_nm p) ++ ":"
 
 instance Pretty ConceptDef where
-    pretty p = show p
+    pretty p = "CONCEPT" <+> maybeQuote (cdcpt p) <+> (if cdplug p then "BYPLUG" else "")
+               <+> quote (cddef p) <+> type_ <+> quote (cdref p) -- cdfrom p
+        where type_ = if null $ cdtyp p then ""
+                      else "TYPE" <+> cdtyp p
 
 instance Pretty P_Population where
     pretty p = show p
 
 instance Pretty P_Interface where
-    pretty p = show p
+    pretty p = "INTERFACE" <+> maybeQuote (ifc_Name p) <+> class_
+               <+> params <+> args <+> roles -- ifc_Prp
+               <+> ":" <~\> obj_ctx (ifc_Obj p) <~> obj_msub (ifc_Obj p)
+                 where class_ = case ifc_Class p of
+                                     Nothing  -> ""
+                                     Just str -> "CLASS" <+> maybeQuote str
+                       params = if null $ ifc_Params p then ""
+                                else "(" <+> listSep "," (ifc_Params p) <+> ")"
+                       args = if null $ ifc_Args p then ""
+                              else "{" <+> (commas $ map (unwords.quoteAll) (ifc_Args p)) <+> "}"
+                       roles = if null $ ifc_Roles p then ""
+                               else "FOR" <+> (commas . quoteAll $ ifc_Roles p)
 
 instance Pretty P_IClass where
     pretty p = show p
 
-instance Pretty (P_ObjDef a) where
-    pretty _ = ""
+instance Pretty a => Pretty (P_ObjDef a) where
+    pretty p = maybeQuote (obj_nm p) <+> args <+> ":"
+            <~> obj_ctx p <~> obj_msub p
+           where args = if null $ obj_strs p then ""
+                        else "{" <+> (commas $ map (unwords.quoteAll) (obj_strs p)) <+> "}"
 
-instance Pretty (P_SubIfc a) where
-    pretty _ = ""
+instance Pretty a => Pretty (P_SubIfc a) where
+    pretty p = case p of
+                P_Box _ bs -> type_ <+> "[" ++ listSep "," bs ++ "]"
+                P_InterfaceRef _ str -> "INTERFACE" <+> maybeQuote str
+            where type_ = "BOX" -- "ROWS" or "COLS" too?
 
 instance Pretty P_IdentDef where
     pretty p = show p
@@ -198,15 +221,15 @@ instance Pretty P_IdentDef where
 instance Pretty P_IdentSegment where
     pretty p = show p
 
-instance Pretty (P_ViewD a) where
+instance Pretty a => Pretty (P_ViewD a) where
     pretty _ = ""
 
-instance Pretty (P_ViewSegmt a) where
+instance Pretty a => Pretty (P_ViewSegmt a) where
     pretty _ = ""
 
 instance Pretty PPurpose where
     pretty p = "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
-             <+> quoteWith "{+\n" "-}\n" (mString markup)
+             <+> quoteWith "{+" "-}" (mString markup)
         where markup = pexMarkup p
               lang = mFormat markup
               refs rs = unlines (map format rs)
@@ -255,6 +278,26 @@ instance Pretty Lang where
 instance Pretty P_Markup where
     pretty p = pretty (mLang p) <~> mFormat p <+\> quoteWith "{+\n" "-}\n" (mString p)
 
+--instance Pretty ContextElement where
+--    pretty p = case p of
+--                    CMeta x    -> pretty meta
+--                    CPat x     -> pretty pattern
+--                    CPrc x     -> pretty x
+--                    CRul x     -> pretty x
+--                    CCfy x     -> pretty x
+--                    CRel x     -> pretty x
+--                    CCon f     -> pretty (f $ "CONTEXT " ++ nm)
+--                    CGen x     -> pretty x
+--                    CIndx x    -> pretty x
+--                    CView x    -> pretty x
+--                    Cifc x     -> pretty x
+--                    CSqlPlug x -> pretty x
+--                    CPhpPlug x -> pretty x
+--                    CPrp x     -> pretty x
+--                    CPop x     -> pretty x
+--                    CThm xs    -> if null xs then "" else "THEMES" <+> commas xs
+--                    CIncl x    -> "INCLUDE" <+> x
+
 instance Pretty PandocFormat where
     pretty p = case p of
         ReST     -> "REST"
@@ -267,4 +310,3 @@ instance Pretty Label where
 
 instance Pretty Prop where
     pretty p = show p
-
