@@ -283,18 +283,19 @@ instance ShowHS FSpec where
         ,wrap ", kernels       = " indentA (\_->showHSName) (kernels fSpec)
         ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
         ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
-        ,wrap ", vgens         = " indentA (showHS opts)   (vgens fSpec)
+        ,wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
         ,wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fSpec)
         ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fSpec)
         ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
         ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
         ,     ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
         ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fSpec)
-        ,wrap ", conceptDefs   = " indentA (showHS opts) (conceptDefs fSpec)
-        ,wrap ", fSexpls       = " indentA (showHS opts)   (fSexpls fSpec)
+        ,wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
+        ,wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,     ", metas         = allMetas"
         ,wrap ", initialPops   = " indentA (showHS opts)   (initialPops fSpec)
         ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
+        ,wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
         ,"}"
         ] ++
     indent++"where"++
