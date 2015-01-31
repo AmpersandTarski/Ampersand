@@ -5,6 +5,7 @@ module Database.Design.Ampersand.FSpec.ShowMeatGrinder
 where
 
 import Data.List
+import Data.Char
 import Data.Ord
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.Motivations
@@ -12,7 +13,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.ADL1.Pair
+import Database.Design.Ampersand.Core.ParseTree
 import Data.Hashable
 import Data.Maybe
 
@@ -55,43 +56,50 @@ instance ShowADL Pop where
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
 
-techId :: Identified a => a -> String
-techId = show.hash.name
 class AdlId a where
  uri :: a -> String
 
 instance AdlId FSpec where
- uri a= "Ctx"++techId a
+ uri a= "Ctx"++(camelCase.name) a
 instance AdlId Pattern where
- uri a= "Pat"++techId a
+ uri a= "Pat"++(camelCase.name) a
 instance AdlId A_Concept where
- uri a= "Cpt"++techId a
+ uri a= "Cpt"++(camelCase.name) a
 instance AdlId ConceptDef where
- uri a= "CDf"++techId a
+ uri a= "CDf"++(camelCase.cdcpt) a++(show.hash)((show.origin) a)
 instance AdlId Rule where
- uri a= "Rul"++techId a
+ uri a= "Rul"++(camelCase.name) a
 instance AdlId A_Gen where
- uri a= "Gen"++(show.hash) g
+ uri a= "Gen"++camelCase g
         where g = case a of
                     Isa{} -> ((name.gengen) a++(name.genspc) a)
                     IsE{} -> ((concat.map name.genrhs) a++(name.genspc) a)
 instance AdlId Declaration where
- uri a= "Dcl"++techId a
+ uri a= "Dcl"++camelCase (name a++(uri.sign) a)
 instance AdlId Purpose where
  uri a= "Prp"++(show.hash)((show.origin) a)
 instance AdlId Sign where
- uri (Sign s t) = "Sgn"++(show.hash) (uri s++uri t)
+ uri (Sign s t) = "Sgn"++(uri s++"*"++uri t)
 instance AdlId Paire where
- uri p = "Paire"++(show.hash) (srcPaire p++"_"++trgPaire p)
+ uri p = "Paire"++camelCase (uri p++"-"++uri p)
 
 instance AdlId Atom where
  uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a
+instance AdlId PlugSQL where
+ uri a="PlugSql"++(camelCase.name) a
+
 
 mkAtom :: A_Concept -> String -> Atom
 mkAtom cpt value = Atom { atmRoot = cpt
                         , atmVal  = value
                         }
 
+camelCase :: String -> String
+camelCase str = concatMap capitalize (words str)
+  where
+    capitalize [] = []
+    capitalize (s:ss) = toUpper s : ss
+    
 class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
 
@@ -126,6 +134,13 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) allAtoms
   ++[ Comment " ", Comment $ "*** Pairs: (count="++(show.length) allPairs++") ***"]
   ++   concatMap (metaPops fSpec) allPairs
+  ++( let sgns = nub (  map sign (allRules fSpec)
+                    --  ++map sign (allConcepts fSpec)
+                      ++map sign (allDecls fSpec)
+                     )
+      in [ Comment " ", Comment $ "*** Signs: (count="++(show.length) sgns++") ***"]
+         ++   concatMap (metaPops fSpec) sgns
+    )
   )
    where
     allAtoms :: [Atom]
@@ -209,6 +224,8 @@ instance MetaPopulations Rule where
 --          [(uri rul,uri x) | x <- rrpic pat]
    , Pop "rrviols"  "Rule" "Violation"
           [(uri rul,show v) | (r,v) <- allViolations fSpec, r == rul]
+   , Pop "sign"  "Rule" "Sign"
+          [(uri rul,(uri.sign) rul)]
 
    ]
 instance MetaPopulations Declaration where
@@ -276,12 +293,12 @@ instance MetaPopulations Declaration where
                         PCptPopu{} -> False
 
 instance MetaPopulations Atom where
- metaPops _ _ = []
---   [ Pop "root"  "AtomID" "Concept"
---          [(uri atm,uri(atmRoot atm))]
---   , Pop "atomvalue"  "AtomID" "AtomValue"
---          [(uri atm,atmVal atm)]
---   ]
+ metaPops _ atm = 
+   [ Pop "cptos" "Concept" "AtomID" 
+          [(uri(atmRoot atm),uri atm)]
+   , Pop "atomvalue"  "AtomID" "Atom"
+          [(uri atm,(show.atmVal) atm)]
+   ]
 instance MetaPopulations Paire where
  metaPops _ p =
   [ Pop "left" "PairID" "AtomID"
@@ -324,6 +341,8 @@ instance MetaPopulations A_Concept where
 --           [(uri cpt,showADL x) | x <- cptdf cpt]
       , Pop "cptpurpose" "PlainConcept" "Blob"
              [(uri cpt,showADL x) | lang <- [English,Dutch], x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+      , Pop "in" "PlainConcept" "Plug"
+             [(uri cpt, uri plug) | plug <- nub $ map fst (lookupCpt fSpec cpt)]
       ]
      ONE -> [
             ]
