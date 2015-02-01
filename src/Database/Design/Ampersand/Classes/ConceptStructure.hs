@@ -6,6 +6,7 @@ import Database.Design.Ampersand.Basics
 import Data.List
 import Data.Maybe
 import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpression)
+import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ConceptStructure"
@@ -78,6 +79,8 @@ instance ConceptStructure A_Context where
                       , (expressionsIn.ctxvs) ctx
                       , (expressionsIn.ctxsql) ctx
                       , (expressionsIn.ctxphp) ctx
+                      , (expressionsIn.multrules) ctx
+                      , (expressionsIn.identityRules) ctx
                       ]
 
 instance ConceptStructure IdentityDef where
@@ -117,9 +120,9 @@ instance ConceptStructure ObjectDef where
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
-  concs (Box _ objs)         = concs objs
-  concs (InterfaceRef _)   = []
-  expressionsIn (Box _ objs)       = expressionsIn objs
+  concs (Box _ _ objs)           = concs objs
+  concs (InterfaceRef _)         = []
+  expressionsIn (Box _ _ objs)   = expressionsIn objs
   expressionsIn (InterfaceRef _) = []
 
 instance ConceptStructure Pattern where

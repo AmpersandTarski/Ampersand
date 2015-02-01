@@ -55,7 +55,7 @@ CLASSIFY PlainConcept ISA Concept
 
 RELATION cptnm[Concept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
-RELATION cptos[Concept*AtomID]
+RELATION cptos[Concept*AtomID] [SUR]
 MEANING "The population of a concept."
 RELATION cptdf[PlainConcept*Blob]
 MEANING "The definitions of a concept."
@@ -231,6 +231,9 @@ RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPATTERN
 
+PATTERN ToDo -- This pattern contains stuff still to be done.
+RELATION rrviols[Rule*Violation]
+ENDPATTERN
 ENDCONTEXT
 
 

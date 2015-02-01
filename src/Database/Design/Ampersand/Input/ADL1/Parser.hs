@@ -457,10 +457,13 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
           pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
 
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = P_Box <$> (pKey_pos "BOX" <|> pKey_pos "ROWS" <|> pKey_pos "TABS" <|> pKey_pos "COLS") <*> pBox
-                <|> rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos
-   where
-     rebuild (n,p) = P_InterfaceRef p n
+pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
+            <|> (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos
+  where pBoxKey :: AmpParser (Origin, Maybe String)
+        pBoxKey = (\o -> (o,Nothing))     <$> pKey_pos "BOX"
+              <|> (\o -> (o,Just "ROWS")) <$> pKey_pos "ROWS"
+              <|> (\o -> (o,Just "COLS")) <$> pKey_pos "COLS"
+              <|> (\o -> (o,Just "TABS")) <$> pKey_pos "TABS"
 
 pObjDef :: AmpParser P_ObjectDef
 pObjDef            = obj <$> pLabelProps

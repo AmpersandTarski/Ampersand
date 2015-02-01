@@ -144,6 +144,7 @@ executable ampersand
                      Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec,
                      Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug,
                      Database.Design.Ampersand.FSpec.ToFSpec.Calc,
+                     Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec,
                      Database.Design.Ampersand.FSpec.ToFSpec.NormalForms,
                      Database.Design.Ampersand.Input,
                      Database.Design.Ampersand.Input.ADL1.CtxError,
@@ -181,6 +182,7 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.CoreImporter,
                      Database.Design.Ampersand.Prototype.GenBericht,
                      Database.Design.Ampersand.Prototype.Generate,
+                     Database.Design.Ampersand.Prototype.GenFrontend,
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
@@ -189,5 +191,4 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand,
-                     Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec
+                     Paths_ampersand

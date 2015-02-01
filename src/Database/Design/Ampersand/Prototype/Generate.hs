@@ -389,13 +389,13 @@ generateMSubInterface fSpec editableRels depth subIntf =
     Just (InterfaceRef nm) -> [ "      // InterfaceRef"
                               , "      , 'refSubInterface' => "++ showPhpStr nm
                               ]
-    Just (Box _ objects)     -> [ "      // Box"
-                              , "      , 'boxSubInterfaces' =>"
-                              , "          array"
-                              ] ++
-                              indent 12
-                                (blockParenthesize "(" ")" ","
-                                  (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
+    Just (Box _ cl objects) -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
+                               , "      , 'boxSubInterfaces' =>"
+                               , "          array"
+                               ] ++
+                               indent 12
+                                 (blockParenthesize "(" ")" ","
+                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
 
 -- utils
 
