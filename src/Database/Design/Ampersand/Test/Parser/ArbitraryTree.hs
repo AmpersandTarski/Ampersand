@@ -8,14 +8,8 @@ import Control.Applicative
 import Database.Design.Ampersand.Core.ParseTree
 
 -- Useful functions to build on the quick check ones
-fixed :: a -> Gen a
-fixed x = elements [x]
-
 none :: Gen [a]
-none = elements [[]]
-
-not_implemented :: Gen a
-not_implemented = elements []
+none = return []
 
 ascii :: Gen Char
 ascii = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
@@ -34,113 +28,184 @@ identifier = suchThat str2 startUpper
     where startUpper = isUpper . head
 
 --- Now the arbitrary instances
+instance Arbitrary Origin where
+    arbitrary = return OriginUnknown
+
 instance Arbitrary P_Context where
-    arbitrary = not_implemented
+    arbitrary = PCtx <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                     <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                     <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                     <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary Meta where
-    arbitrary = not_implemented
+    arbitrary = Meta <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary MetaObj where
-    arbitrary = not_implemented
+    arbitrary = return ContextMeta
 
 instance Arbitrary P_Process where
-    arbitrary = not_implemented
+    arbitrary = P_Prc <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_RoleRelation where
-    arbitrary = not_implemented
+    arbitrary = P_RR <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary RoleRule where
-    arbitrary = not_implemented
+    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Pattern where
-    arbitrary = not_implemented
+    arbitrary = P_Pat <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary
 
 instance Arbitrary P_Declaration where
-    arbitrary = not_implemented
+    arbitrary = P_Sgn <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary (Term a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (Term a) where
+    arbitrary = oneof [
+           Prim <$> arbitrary,
+           PEqu <$> arbitrary <*> arbitrary <*> arbitrary,
+           PImp <$> arbitrary <*> arbitrary <*> arbitrary,
+           PIsc <$> arbitrary <*> arbitrary <*> arbitrary,
+           PUni <$> arbitrary <*> arbitrary <*> arbitrary,
+           PDif <$> arbitrary <*> arbitrary <*> arbitrary,
+           PLrs <$> arbitrary <*> arbitrary <*> arbitrary,
+           PRrs <$> arbitrary <*> arbitrary <*> arbitrary,
+           PDia <$> arbitrary <*> arbitrary <*> arbitrary,
+           PCps <$> arbitrary <*> arbitrary <*> arbitrary,
+           PRad <$> arbitrary <*> arbitrary <*> arbitrary,
+           PPrd <$> arbitrary <*> arbitrary <*> arbitrary,
+           PKl0 <$> arbitrary <*> arbitrary,
+           PKl1 <$> arbitrary <*> arbitrary,
+           PFlp <$> arbitrary <*> arbitrary,
+           PCpl <$> arbitrary <*> arbitrary,
+           PBrk <$> arbitrary <*> arbitrary
+        ]
 
 instance Arbitrary TermPrim where
-    arbitrary = not_implemented
+    arbitrary = oneof [
+           PI <$> arbitrary,
+           Pid <$> arbitrary <*> arbitrary,
+           Patm <$> arbitrary <*> arbitrary <*> arbitrary,
+           PVee <$> arbitrary,
+           Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
+           Prel <$> arbitrary <*> arbitrary,
+           PTrel <$> arbitrary <*> arbitrary <*> arbitrary
+        ]
 
-instance Arbitrary (PairView a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (PairView a) where
+    arbitrary = PairView <$> arbitrary
 
-instance Arbitrary (PairViewSegment a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (PairViewSegment a) where
+    arbitrary = oneof [
+            PairViewText <$> arbitrary,
+            PairViewExp <$> arbitrary <*> arbitrary
+        ]
 
-instance Arbitrary (PairViewTerm a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (PairViewTerm a) where
+    arbitrary = PairViewTerm <$> arbitrary -- should be only (PairView (Term a))
 
-instance Arbitrary (PairViewSegmentTerm a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (PairViewSegmentTerm a) where
+    arbitrary = PairViewSegmentTerm <$> arbitrary -- should be only PairViewSegment (Term a)
 
 instance Arbitrary SrcOrTgt where
-    arbitrary = not_implemented
+    arbitrary = elements[Src, Tgt]
 
-instance Arbitrary (P_Rule a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (P_Rule a) where
+    arbitrary = P_Ru <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                     <*> arbitrary
 
 instance Arbitrary ConceptDef where
-    arbitrary = not_implemented
+    arbitrary = Cd <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                   <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Population where
-    arbitrary = not_implemented
+    arbitrary = oneof [
+          P_RelPopu <$> arbitrary <*> arbitrary <*> arbitrary,
+          P_TRelPop <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary,
+          P_CptPopu <$> arbitrary <*> arbitrary <*> arbitrary
+        ]
 
 instance Arbitrary P_Interface where
-    arbitrary = not_implemented
+    arbitrary = P_Ifc <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary (P_ObjDef a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (P_ObjDef a) where
+    arbitrary = P_Obj <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary (P_SubIfc a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (P_SubIfc a) where
+    arbitrary = oneof [
+            P_Box          <$> arbitrary <*> arbitrary,
+            P_InterfaceRef <$> arbitrary <*> arbitrary
+        ]
 
 instance Arbitrary P_IdentDef where
-    arbitrary = not_implemented
+    arbitrary = P_Id <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_IdentSegment where
-    arbitrary = not_implemented
+    arbitrary = P_IdentExp <$> arbitrary
 
-instance Arbitrary (P_ViewD a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (P_ViewD a) where
+    arbitrary = P_Vd <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary (P_ViewSegmt a) where
-    arbitrary = not_implemented
+instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
+    arbitrary = oneof [
+            P_ViewExp <$> arbitrary,
+            P_ViewText <$> arbitrary,
+            P_ViewHtml <$> arbitrary
+        ]
 
 instance Arbitrary PPurpose where
-    arbitrary = not_implemented
+    arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary PRef2Obj where
-    arbitrary = not_implemented
+    arbitrary = oneof [
+            PRef2ConceptDef <$> arbitrary,
+            PRef2Declaration <$> arbitrary,
+            PRef2Rule <$> arbitrary,
+            PRef2IdentityDef <$> arbitrary,
+            PRef2ViewDef <$> arbitrary,
+            PRef2Pattern <$> arbitrary,
+            PRef2Process <$> arbitrary,
+            PRef2Interface <$> arbitrary,
+            PRef2Context <$> arbitrary,
+            PRef2Fspc <$> arbitrary
+        ]
 
 instance Arbitrary PMeaning where
-    arbitrary = not_implemented
+    arbitrary = PMeaning <$> arbitrary
 
 instance Arbitrary PMessage where
-    arbitrary = not_implemented
+    arbitrary = PMessage <$> arbitrary
 
 instance Arbitrary P_Concept where
-    arbitrary = not_implemented
+    arbitrary = oneof [
+            PCpt <$> arbitrary,
+            return P_Singleton
+        ]
 
 instance Arbitrary P_Sign where
-    arbitrary = not_implemented
+    arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
 instance Arbitrary P_Gen where
-    arbitrary = not_implemented
+    arbitrary = oneof [
+            P_Cy <$> arbitrary <*> arbitrary <*> arbitrary,
+            PGen <$> arbitrary <*> arbitrary <*> arbitrary
+        ]
 
 instance Arbitrary Lang where
-    arbitrary = not_implemented
+    arbitrary = elements [Dutch, English]
 
 instance Arbitrary P_Markup where
-    arbitrary = not_implemented
+    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary PandocFormat where
-    arbitrary = not_implemented
+    arbitrary = elements [HTML, ReST, LaTeX, Markdown]
 
 instance Arbitrary Label where
-    arbitrary = not_implemented
+    arbitrary = Lbl <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary Prop where
-    arbitrary = not_implemented
+    arbitrary = elements [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut]
