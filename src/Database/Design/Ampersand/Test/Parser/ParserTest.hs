@@ -10,11 +10,11 @@ import Database.Design.Ampersand.InputProcessing
 import Debug.Trace
 
 unguard :: FilePath -> String -> Guarded (P_Context, [String]) -> (P_Context, Bool)
-unguard _ txt result =
+unguard file txt result =
     case result of
         Errors  e     -> trace (show e ++ "\n" ++ txt) (dummy, False)
-        -- Checked (p,_) -> trace ("Parsed: " ++ file)    (p, True)
-        Checked (p,_) -> (p, True)
+        Checked (p,_) -> trace ("Parsed: " ++ file)    (p, True)
+        --- Checked (p,_) -> (p, True)
     where dummy = PCtx "DUMMY"  [] English Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
 parseFile :: FilePath -> IO Bool
