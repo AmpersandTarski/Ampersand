@@ -76,13 +76,14 @@ executable ampersand
                      old-time == 1.1.*,
                      pandoc == 1.13.*,
                      pandoc-types == 1.12.*,
+                     parsec == 3.1.*,
                      process == 1.2.*,
+                     QuickCheck == 2.5.*,
                      split == 0.2.*,
                      text == 1.1.*,
                      time == 1.4.*,
                      utf8-string == 0.3.*,
-                     uulib == 0.9.*,
-                     parsec == 3.1.*
+                     uulib == 0.9.*
 
   -- Unfortunately, unix and MissingH are not available on windows
   if !os(windows)
@@ -98,6 +99,7 @@ executable ampersand
                      Database.Design.Ampersand.ADL1.Lattices,
                      Database.Design.Ampersand.ADL1.P2A_Converters,
                      Database.Design.Ampersand.ADL1.Pair,
+                     Database.Design.Ampersand.ADL1.PrettyPrinters,
                      Database.Design.Ampersand.ADL1.Rule,
                      Database.Design.Ampersand.Basics,
                      Database.Design.Ampersand.Basics.Auxiliaries,
