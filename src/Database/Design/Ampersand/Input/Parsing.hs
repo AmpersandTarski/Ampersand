@@ -6,7 +6,8 @@ where
 -- TODO: This module is obsolete and should be consolidated with InputProcessing.hs (i.e. extend InputProcessing.hs and rename it to Parsing.hs)
 
 import Database.Design.Ampersand.Input.ADL1.Parser (pTerm,keywordstxt, keywordsops, specialchars, opchars)
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner 
+import Database.Design.Ampersand.Input.ADL1.ParsingLib -- New Stub to convert UULib to Parsec
+--import Database.Design.Ampersand.Input.ADL1.UU_Scanner  -- Old UU Lib
 import UU.Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import Database.Design.Ampersand.ADL1
 

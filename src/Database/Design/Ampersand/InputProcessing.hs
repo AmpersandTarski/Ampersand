@@ -10,7 +10,7 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.Input.ADL1.ParsingLib -- New Stub to convert UULib to Parsec
 -- import Database.Design.Ampersand.Input.ADL1.UU_Scanner  -- Old UU scanner Lib to be replaced by Parsec scanner
-import UU.Parsing (getMsgs,parse,evalSteps,Pair(..))
+--import UU.Parsing (getMsgs,parse,evalSteps,Pair(..)) Old UU Lib
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Input.ADL1.CtxError
