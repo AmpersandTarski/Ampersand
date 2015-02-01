@@ -124,7 +124,7 @@ data FProcess
   = FProc { fpProc :: Process
           , fpActivities :: [Activity]
           }
-instance Identified FProcess where
+instance Named FProcess where
   name = name . fpProc
 
 instance Language FProcess where
@@ -170,10 +170,10 @@ data Fswitchboard
 
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
-instance Identified FSpec where
+instance Named FSpec where
   name = fsName
 
-instance Identified FSid where
+instance Named FSid where
   name (FS_id nm) = nm
 
 data Activity = Act { actRule ::   Rule
@@ -184,7 +184,7 @@ data Activity = Act { actRule ::   Rule
                     , actPurp ::   [Purpose]
                     } deriving Show
 
-instance Identified Activity where
+instance Named Activity where
   name act = name (actRule act)
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
 --   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qConjuncts.
@@ -217,7 +217,7 @@ dnf2expr (Dnf antcs conss)
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
                 deriving (Show, Eq)
-instance Identified PlugInfo where
+instance Named PlugInfo where
   name (InternalPlug psql) = name psql
   name (ExternalPlug obj)  = name obj
 instance ConceptStructure PlugInfo where
@@ -268,7 +268,7 @@ data PlugSQL
            , cLkp :: A_Concept -- the concept implemented by this plug
            }
    deriving (Show)
-instance Identified PlugSQL where
+instance Named PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
   x==y = name x==name y

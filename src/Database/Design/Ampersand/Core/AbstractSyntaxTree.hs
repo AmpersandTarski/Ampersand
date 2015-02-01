@@ -82,12 +82,12 @@ instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
-instance Identified A_Context where
+instance Named A_Context where
   name  = ctxnm
 
 data Theme = PatternTheme Pattern | ProcessTheme Process
 
-instance Identified Theme where
+instance Named Theme where
   name (PatternTheme pat) = name pat
   name (ProcessTheme prc) = name prc
 
@@ -108,7 +108,7 @@ data Process = Proc { prcNm :: String
                     , prcVds :: [ViewDef]            -- ^ The view definitions defined in this process
                     , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
                     }
-instance Identified Process where
+instance Named Process where
   name = prcNm
 
 instance Traced Process where
@@ -134,7 +134,7 @@ data Pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
            } deriving Show    -- for debugging purposes
-instance Identified Pattern where
+instance Named Pattern where
  name = ptnm
 instance Traced Pattern where
  origin = ptpos
@@ -171,7 +171,7 @@ instance Show Rule where
    = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (rrexp x)
 instance Traced Rule where
   origin = rrfps
-instance Identified Rule where
+instance Named Rule where
   name   = rrnm
 instance Association Rule where
   sign   = rrtyp
@@ -254,7 +254,7 @@ aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
 
 data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord)
 
-instance Identified Declaration where
+instance Named Declaration where
   name d@Sgn{}   = decnm d
   name Isn{}     = "I"
   name Vs{}      = "V"
@@ -273,7 +273,7 @@ data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition 
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
                       , identityAts :: [IdentitySegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Eq,Show)
-instance Identified IdentityDef where
+instance Named IdentityDef where
   name = idLbl
 instance Traced IdentityDef where
   origin = idPos
@@ -285,7 +285,7 @@ data ViewDef = Vd { vdpos :: Origin         -- ^ position of this definition in 
                   , vdcpt :: A_Concept      -- ^ this expression describes the instances of this object, related to their context
                   , vdats :: [ViewSegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Eq,Show)
-instance Identified ViewDef where
+instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
@@ -339,7 +339,7 @@ data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions
 
 instance Eq Interface where
   s==s' = name s==name s'
-instance Identified Interface where
+instance Named Interface where
   name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
@@ -374,7 +374,7 @@ data ObjectDef = Obj { objnm ::   String         -- ^ view name of the object de
                      , objmsub :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
-instance Identified ObjectDef where
+instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
@@ -606,7 +606,7 @@ instance Eq A_Concept where
    ONE == ONE = True
    _ == _ = False
 
-instance Identified A_Concept where
+instance Named A_Concept where
   name PlainConcept{cptnm = nm} = nm
   name ONE = "ONE"
 

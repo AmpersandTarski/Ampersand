@@ -8,7 +8,7 @@ module Database.Design.Ampersand.FSpec.ToFSpec.Calc
           --  , testInterface
             ) where
 
-import Database.Design.Ampersand.Basics (fatalMsg,Collection (isc),Identified(..),eqCl,Flippable(..))
+import Database.Design.Ampersand.Basics (fatalMsg,Collection (isc),Named(..),eqCl,Flippable(..))
 import Data.List hiding (head)
 import Data.Monoid
 import GHC.Exts (sortWith)

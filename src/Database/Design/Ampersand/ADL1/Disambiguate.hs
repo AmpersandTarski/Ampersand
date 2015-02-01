@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (Identified(name), fatalMsg)
+import Database.Design.Ampersand.Basics (Named(name), fatalMsg)
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
 import Data.Traversable

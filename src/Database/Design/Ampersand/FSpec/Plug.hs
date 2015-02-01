@@ -44,7 +44,7 @@ fatal = fatalMsg "FSpec.Plug"
 --type Plugs = [Plug]
 --data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
 
-class (Identified p, Eq p, Show p) => Plugable p where
+class (Named p, Eq p, Show p) => Plugable p where
   makePlug :: PlugInfo -> p
 
 instance Plugable PlugSQL where

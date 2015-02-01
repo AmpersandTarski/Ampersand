@@ -73,7 +73,7 @@ cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showAD
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 
-uniqueNames :: (Identified a, Traced a) =>
+uniqueNames :: (Named a, Traced a) =>
                      [a] -> Guarded ()
 uniqueNames a = case (filter moreThanOne . groupWith name)  a of
                   [] -> pure ()
@@ -81,7 +81,7 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
     where
      moreThanOne (_:_:_) = True
      moreThanOne  _      = False
-     messageFor :: (Identified a, Traced a) => [a] -> CtxError
+     messageFor :: (Named a, Traced a) => [a] -> CtxError
      messageFor (x:xs) = CTXE (origin x)
                       ("Names / labels must be unique. "++(show . name) x++", however, is used at:"++
                         concatMap (("\n    "++ ) . show . origin) (x:xs)

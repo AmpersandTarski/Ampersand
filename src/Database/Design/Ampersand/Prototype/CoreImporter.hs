@@ -30,7 +30,7 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   -- * Classes:
 --   , Association(..), flp
 --   , Collection(..)
---   , Identified(..)
+--   , Named(..)
 --   , ProcessStructure(..)
 --   , Relational(..)
 --   , Interface(..)

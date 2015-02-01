@@ -12,7 +12,7 @@ module Database.Design.Ampersand.FSpec.ShowADL
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
+import Database.Design.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Named(..))
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
@@ -38,7 +38,7 @@ class ShowADL a where
 -- LanguageDependent is part of ShowAdl because the only application at time of writing is to disambiguate expressions for the purpose of printing
 -- SJ 31-12-2012: Since 'disambiguate' has become obsolete, do we still need this?
 class LanguageDependent a where
-  mapexprs :: (Language l, ConceptStructure l, Identified l) => (l -> Expression -> Expression) -> l -> a -> a
+  mapexprs :: (Language l, ConceptStructure l, Named l) => (l -> Expression -> Expression) -> l -> a -> a
   mapexprs _ _ = id
 
 instance LanguageDependent a => LanguageDependent (Maybe a) where
