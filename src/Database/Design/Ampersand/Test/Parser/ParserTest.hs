@@ -9,16 +9,14 @@ import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.InputProcessing
 import Debug.Trace
 
-dummy :: P_Context
-dummy = PCtx "DUMMY"  [] English Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] []
-
-unguard :: FilePath -> String -> Guarded (P_Context, [String]) -> (P_Context,Bool)
+unguard :: FilePath -> String -> Guarded (P_Context, [String]) -> (P_Context, Bool)
 unguard file txt result =
     case result of
         Errors  e     -> trace (show e ++ "\n" ++ txt) (dummy, False)
         -- Checked (p,_) -> trace ("Parsed: " ++ file ++ "\n" ++ pretty p) False
         -- Checked (p,_) -> trace ("Parsed: " ++ file ++ "\n" ++ pretty p) False
         Checked (p,_) -> trace ("Parsed: " ++ file) (p, True)
+    where dummy = PCtx "DUMMY"  [] English Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
 parseFile :: FilePath -> IO Bool
 parseFile name =
@@ -26,10 +24,10 @@ parseFile name =
         if null contents then return True
         else return $ snd $ parseReparse name contents
 
-parse :: FilePath -> String -> (P_Context,Bool)
+parse :: FilePath -> String -> (P_Context, Bool)
 parse file txt = unguard file txt $ runParser pContext file txt
 
-parseReparse :: FilePath -> String -> (P_Context,Bool)
+parseReparse :: FilePath -> String -> (P_Context, Bool)
 parseReparse file txt = if isParsed then (reparsed,isReparsed) else (parsed,isParsed)
                   where (parsed,isParsed) = run file txt
                         (reparsed,isReparsed) = run (file ++ "**pretty") (pretty parsed)

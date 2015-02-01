@@ -38,17 +38,18 @@ quoteAll :: [String] -> [String]
 quoteAll = map quote
 
 maybeQuote :: String -> String
-maybeQuote a = if any isSpace a then quote a
-               else a
+maybeQuote a = if all isIdChar a then a
+               else quote a
+               where isIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']++['0'..'9']
 
 prettyunwords :: Pretty a => [a] -> String
-prettyunwords xs = unwords $ map pretty xs
+prettyunwords = unwords . map pretty
 
 commas :: [String] -> String
 commas = intercalate ", "
 
 listOf :: Pretty a => [a] -> String
-listOf xs = commas $ map pretty xs
+listOf = commas . map pretty
 
 prettyPair :: Paire -> String
 prettyPair (a,b) = quote a <+> "*" <+> quote b
@@ -90,7 +91,7 @@ instance Pretty MetaObj where
     pretty ContextMeta = "" -- for the context meta we don't need a keyword
 
 instance Pretty P_Process where
-    pretty p = "PROCESS" <+> procNm p <+\>
+    pretty p = "PROCESS" <+> maybeQuote (procNm p) <+\>
                perline (procRules p) <+\>
                perline (procGens p) <+\>
                perline (procDcls p) <+\>
@@ -111,7 +112,17 @@ instance Pretty RoleRule where
         where id_list prop = commas (map maybeQuote $ prop p)
 
 instance Pretty P_Pattern where
-    pretty _ = "not_implemented(P_Pattern)"
+    pretty p = "PATTERN" <+> maybeQuote(pt_nm p)
+                  <+\> patElem pt_rls
+                  <+\> patElem pt_gns
+                  <+\> patElem pt_dcs
+                  <+\> patElem pt_cds
+                  <+\> patElem pt_ids
+                  <+\> patElem pt_vds
+                  <+\> patElem pt_xps
+                  <+\> patElem pt_pop
+                  <+> "ENDPATTERN"
+           where patElem pe = unlines(map pretty $ pe p)
 
 instance Pretty P_Declaration where
     -- pretty p = dec_nm p <+> "::" <~> dec_sign p <~> pFun <~> pConceptRef
@@ -149,14 +160,16 @@ instance Pretty a => Pretty (Term a) where
              two t1 t2 op = "" ++ pretty t1 ++ op ++ pretty t2 ++ ""
 
 instance Pretty TermPrim where
-    pretty (PI _) = "I"
-    pretty (Pid _ pConcept) = "I[" ++ pretty pConcept ++ "]"
-    pretty (Patm _ str (Just pConcept)) = str ++ "[" ++ pretty pConcept ++ "]"
-    pretty (Patm _ str Nothing) = str
-    pretty (PVee _) = "V"
-    pretty (Pfull _ s1 s2) = "V" <~> (P_Sign s1 s2)
-    pretty (Prel _ str) = str
-    pretty (PTrel _ str sign) = str <~> sign
+    pretty p = case p of
+        PI _ -> "I"
+        Pid _ concept -> "I[" ++ pretty concept ++ "]"
+        Patm _ str (Just concept) -> singleQuote str ++ "[" ++ pretty concept ++ "]"
+        Patm _ str Nothing -> singleQuote str
+        PVee _ -> "V"
+        Pfull _ s1 s2 -> "V" <~> (P_Sign s1 s2)
+        Prel _ str -> str
+        PTrel _ str sign -> str <~> sign
+      where singleQuote = quoteWith "'" "'"
 
 instance Pretty a => Pretty (PairView a) where
     pretty (PairView ss) = "VIOLATION" <+> "(" ++ listOf ss ++ ")"
