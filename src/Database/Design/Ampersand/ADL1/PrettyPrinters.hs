@@ -2,6 +2,7 @@ module Database.Design.Ampersand.ADL1.PrettyPrinters
 where
 
 import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Input.ADL1.Parser(keywordstxt)
 import Data.Char
 import Data.List (intercalate)
 import Data.List.Utils (replace)
@@ -31,14 +32,17 @@ quoteWith :: String -> String -> String -> String
 quoteWith q1 q2 str = q1 ++ str ++ q2
 
 quote :: String -> String
-quote str = quoteWith "\"" "\"" $ escape "\"" str
-    where escape x = replace x ("\\" ++ x)
+quote str = quoteWith "\"" "\""
+                $ escape  "\""
+                $ replace "\n" "\\n"
+                $ escape  "\\" str
+        where escape x = replace x ("\\" ++ x)
 
 quoteAll :: [String] -> [String]
 quoteAll = map quote
 
 maybeQuote :: String -> String
-maybeQuote a = if all isIdChar a then a
+maybeQuote a = if all isIdChar a && length a > 0 && a `notElem` keywordstxt then a
                else quote a
                where isIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']++['0'..'9']
 
@@ -65,10 +69,11 @@ instance Pretty a => Pretty (Maybe a) where
     pretty Nothing = ""
 
 instance Pretty P_Context where
-    pretty p = "CONTEXT" <+> ctx_nm p <~> ctx_lang p
+    pretty p = "CONTEXT" <+> maybeQuote(ctx_nm p) <~> ctx_lang p
                <~> ctx_markup p
                <+\> perline (ctx_metas p)
-               <+>  perline (ctx_ps p)
+               <+\> themes
+               <+\> perline (ctx_ps p)
                <+\> perline (ctx_PPrcs p)
                <+\> perline (ctx_pats p)
                <+\> perline (ctx_rs p)
@@ -81,8 +86,9 @@ instance Pretty P_Context where
                <+\> perline (ctx_pops p)
                <+\> perline (ctx_sql p)
                <+\> perline (ctx_php p)
-               <+> unlines (quoteAll $ ctx_thms p)
                <+\> "ENDCONTEXT"
+             where themes = if null $ ctx_thms p then ""
+                            else "THEMES " <+> commas (map maybeQuote $ ctx_thms p)
 
 instance Pretty Meta where
     pretty p = "META" <~> mtObj p <+> quote (mtName p) <+> quote (mtVal p)
@@ -105,7 +111,8 @@ instance Pretty P_Process where
                "ENDPROCESS"
 
 instance Pretty P_RoleRelation where
-    pretty _ = "not_implemented(P_RoleRelation)"
+    pretty (P_RR roles rels _) =
+        "ROLE" <+> commas (map maybeQuote roles) <+> "EDITS" <+> listOf rels
 
 instance Pretty RoleRule where
     pretty p = "ROLE" <+> id_list mRoles <+> "MAINTAINS" <+> id_list mRules
@@ -134,7 +141,7 @@ instance Pretty P_Declaration where
                        else "PRAGMA" <+> quote (dec_prL p) <+> quote (dec_prM p) <+> quote (dec_prR p)
               meanings = prettyunwords (dec_Mean p)
               content = if null (dec_popu p) then ""
-                        else "=" <+> commas (map prettyPair (dec_popu p))
+                        else "=\n[" <+> commas (map prettyPair (dec_popu p)) <+> "]"
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -200,16 +207,18 @@ instance Pretty a => Pretty (P_Rule a) where
 
 instance Pretty ConceptDef where
     pretty p = "CONCEPT" <+> maybeQuote (cdcpt p) <+> (if cdplug p then "BYPLUG" else "")
-               <+> quote (cddef p) <+> type_ <+> quote (cdref p) -- cdfrom p
+               <+> quote (cddef p) <+> type_ <+> ref -- cdfrom p
         where type_ = if null $ cdtyp p then ""
-                      else "TYPE" <+> cdtyp p
+                      else "TYPE" <+> quote(cdtyp p)
+              ref = if null $ cdref p then ""
+                    else quote(cdref p)
 
 instance Pretty P_Population where
     pretty p = case p of
                 P_RelPopu nm    _ cs -> "POPULATION" <+> maybeQuote nm        <+> "CONTAINS" <+> contents cs
                 P_TRelPop nm tp _ cs -> "POPULATION" <+> maybeQuote nm <~> tp <+> "CONTAINS" <+> contents cs
                 P_CptPopu nm    _ ps -> "POPULATION" <+> maybeQuote nm        <+> "CONTAINS" <+> "[" ++ commas (quoteAll ps) ++ "]"
-               where contents cs = "[" ++ commas (map prettyPair cs) ++ "]"
+               where contents cs = "[" ++ intercalate ",\n" (map prettyPair cs) ++ "]"
                 
 instance Pretty P_Interface where
     pretty p = "INTERFACE" <+> maybeQuote (ifc_Name p) <+> class_
@@ -226,10 +235,11 @@ instance Pretty P_Interface where
                                else "FOR" <+> (commas . quoteAll $ ifc_Roles p)
 
 instance Pretty a => Pretty (P_ObjDef a) where
-    pretty p = maybeQuote (obj_nm p) <+> args <+> ":"
-            <~> obj_ctx p <~> obj_msub p
-           where args = if null $ obj_strs p then ""
-                        else "{" <+> listOfLists(obj_strs p) <+> "}"
+    pretty (P_Obj nm _ ctx msub strs) =
+        quote nm <+> args <+> ":"
+            <~> ctx <~> msub
+           where args = if null strs then ""
+                        else "{" <+> listOfLists strs <+> "}"
 
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
@@ -238,8 +248,8 @@ instance Pretty a => Pretty (P_SubIfc a) where
             where type_ = "BOX" -- "ROWS" or "COLS" too?
 
 instance Pretty P_IdentDef where
-    pretty _ = "not_implemented(P_IdentDef)"
-    -- pretty (P_IdentExp (P_ObjDef p)) = "IDENT" <+> maybeQuote obj_nm p <+> ConceptRefPos <+> "(" ++ IndSegmentList ++ ")"
+    pretty (P_Id _ lbl cpt ats) =
+        "IDENT" <+> maybeQuote lbl <+> ":" <~> cpt <+> "(" ++ listOf ats ++ ")"
 
 instance Pretty P_IdentSegment where
     pretty (P_IdentExp p) =
@@ -261,11 +271,11 @@ instance Pretty a => Pretty (P_ViewSegmt a) where
                         
 instance Pretty PPurpose where
     pretty p = "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
-             <+> quoteWith "{+" "-}" (mString markup)
+             <+\> quoteWith "{+" "-}" (mString markup)
         where markup = pexMarkup p
               lang = mFormat markup
-              refs rs = unlines (map format rs)
-              format r = "REF" <+> maybeQuote r
+              refs rs = if null rs then ""
+                        else "REF" <+> quote (intercalate "; " rs)
 
 instance Pretty PRef2Obj where
     pretty p = case p of
@@ -301,7 +311,9 @@ instance Pretty P_Sign where
               equal _ _ = False
 
 instance Pretty P_Gen where
-    pretty _ = "not_implemented(P_Gen)"
+    pretty p = case p of
+            PGen spc gen _ -> "SPEC"     <~> spc <+> "ISA" <~> gen
+            P_Cy spc rhs _ -> "CLASSIFY" <~> spc <+> "IS"  <+> intercalate "/\\" (map pretty rhs)
 
 instance Pretty Lang where
     pretty Dutch   = "IN DUTCH"
