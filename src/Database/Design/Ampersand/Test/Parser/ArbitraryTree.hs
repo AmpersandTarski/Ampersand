@@ -91,9 +91,6 @@ instance Arbitrary P_Population where
 instance Arbitrary P_Interface where
     arbitrary = not_implemented
 
-instance Arbitrary P_IClass where
-    arbitrary = not_implemented
-
 instance Arbitrary (P_ObjDef a) where
     arbitrary = not_implemented
 

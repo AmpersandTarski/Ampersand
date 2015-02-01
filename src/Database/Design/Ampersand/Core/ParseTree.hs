@@ -14,7 +14,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , P_Population(..)
 
-   , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
+   , P_ObjectDef, P_SubInterface, P_Interface(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef(..) , P_IdentSegment(..)
    , P_ViewDef , P_ViewSegment
@@ -418,8 +418,6 @@ instance Identified P_Interface where
 
 instance Traced P_Interface where
  origin = ifc_Pos
-
-data P_IClass = P_IClass { iclass_name :: String } deriving (Eq, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
