@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
@@ -46,6 +47,7 @@ import Data.Traversable
 import Data.Foldable
 import Prelude hiding (foldr, sequence)
 import Control.Applicative
+import Data.Typeable
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -157,8 +159,10 @@ data ConceptDef
          , cdtyp :: String   -- ^ The (SQL) type of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
-         }   deriving (Show,Eq)
+         }   deriving (Show,Eq,Typeable)
 
+instance Unique ConceptDef where
+  showUnique cd = cdcpt cd++"At"++uniqueShow True (cdpos cd)
 instance Traced ConceptDef where
  origin = cdpos
 instance Named ConceptDef where
