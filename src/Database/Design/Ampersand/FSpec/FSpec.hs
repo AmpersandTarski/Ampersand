@@ -85,9 +85,10 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
-                   , initialPops ::  [Population]             -- all user defined populations of relations and concepts
-                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- all conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[Paire])]        -- all invariant rules with violations.
+                   , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
+                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
+                   , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
                    }
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
@@ -101,12 +102,7 @@ concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
 instance ConceptStructure FSpec where
   concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
-  expressionsIn fSpec = foldr (uni) []
-                        [ (expressionsIn.interfaceS) fSpec
-                        , (expressionsIn.vrules) fSpec
-                        , (expressionsIn.vviews) fSpec
-                        , (expressionsIn.vIndices) fSpec
-                        ]
+  expressionsIn fSpec = allExprs fSpec
 
 instance Language FSpec where
   objectdef    fSpec = Obj { objnm   = name fSpec

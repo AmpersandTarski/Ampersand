@@ -81,6 +81,7 @@ makeFSpec opts context = fSpec
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
                                  , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+              , allExprs     = expressionsIn context
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations (gens context) initialpops conj
                                          , not $ null viols
