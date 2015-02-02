@@ -120,10 +120,10 @@ populateTablesPHP fSpec =
                                                                     ++" (`conjId`, `src`, `tgt`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlConjId++", "++sqlAtomQuote src++", "++sqlAtomQuote tgt++")" 
+                                                [ "(" ++sqlConjId++", "++sqlAtomQuote (srcPaire p)++", "++sqlAtomQuote (trgPaire p)++")" 
                                                 | (conj, viols) <- conjSignals
                                                 , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
-                                                , (src, tgt) <- viols
+                                                , p <- viols
                                                 ])++"\n"++
         "            );"
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
