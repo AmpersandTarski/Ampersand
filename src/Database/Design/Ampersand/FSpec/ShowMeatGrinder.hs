@@ -14,7 +14,7 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree
-import Data.Hashable
+--import Data.Hashable
 import Data.Maybe
 
 fatal :: Int -> String -> a
@@ -56,38 +56,20 @@ instance ShowADL Pop where
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
 
-class AdlId a where
+class Unique a => AdlId a where
  uri :: a -> String
-
-instance AdlId FSpec where
- uri a= "Ctx"++(camelCase.name) a
-instance AdlId Pattern where
- uri a= "Pat"++(camelCase.name) a
-instance AdlId A_Concept where
- uri a= "Cpt"++(camelCase.name) a
-instance AdlId ConceptDef where
- uri a= "CDf"++(camelCase.cdcpt) a++(show.hash)((show.origin) a)
-instance AdlId Rule where
- uri a= "Rul"++(camelCase.name) a
-instance AdlId A_Gen where
- uri a= "Gen"++camelCase g
-        where g = case a of
-                    Isa{} -> ((name.gengen) a++(name.genspc) a)
-                    IsE{} -> ((concat.map name.genrhs) a++(name.genspc) a)
-instance AdlId Declaration where
- uri a= "Dcl"++camelCase (name a++(uri.sign) a)
-instance AdlId Purpose where
- uri a= "Prp"++(show.hash)((show.origin) a)
-instance AdlId Sign where
- uri (Sign s t) = "Sgn"++(uri s++"*"++uri t)
-instance AdlId Paire where
- uri p = "Paire"++camelCase (uri p++"-"++uri p)
-
-instance AdlId Atom where
- uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a
-instance AdlId PlugSQL where
- uri a="PlugSql"++(camelCase.name) a
-
+ uri = show . camelCase . uniqueShow True
+instance AdlId A_Concept
+instance AdlId A_Gen
+instance AdlId Atom
+instance AdlId Declaration
+instance AdlId FSpec
+instance AdlId Paire
+instance AdlId Pattern
+instance AdlId PlugSQL
+instance AdlId Purpose
+instance AdlId Rule
+instance AdlId Sign
 
 mkAtom :: A_Concept -> String -> Atom
 mkAtom cpt value = Atom { atmRoot = cpt
