@@ -7,7 +7,7 @@ INTERFACE "<interfacename>" FOR "Viewer" : '__MYSESSION__'
 		]
 		
 // Add view-controller to $routeProvider in AmpersandApp.js
-.when('/<interfacename>/:atom?',
+.when('/<interfacename>/:resourceId?',
 	{
 		controller: 'DndTreeController',
 		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'

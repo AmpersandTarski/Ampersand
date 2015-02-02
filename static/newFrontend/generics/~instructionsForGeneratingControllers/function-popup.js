@@ -10,7 +10,7 @@ $scope.popUp = function(obj, property, ResourceId){
 		controller		: 'static_addModalController',
 		size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 		backdrop		: true,				// true, false or 'static'
-		resolve			: { restUrl: function () { return 'interface/Person/atom'; } }	// an optional map of dependencies which should be injected into the controller			
+		resolve			: { restUrl: function () { return 'interface/Person'; } }	// an optional map of dependencies which should be injected into the controller			
 	});
 	
 	modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed

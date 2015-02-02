@@ -6,7 +6,7 @@
 AmpersandApp.controller('<interfaceName>Controller', function ($scope, $rootScope, $routeParams, Restangular, $location) {
 	
 	// URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
-	url = 'interface/<interfaceName>/atom';
+	url = 'interface/<interfaceName>';
 	
 	// Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
 	if($routeParams['new']){

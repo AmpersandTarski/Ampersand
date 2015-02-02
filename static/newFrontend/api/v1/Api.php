@@ -72,8 +72,8 @@ class Api
 /**************************** OBJECTINTERFACES ****************************/
 
 	/**
-	 * @url GET interface/{interfaceName}/atom
-	 * @url GET interface/{interfaceName}/atom/{atomid}
+	 * @url GET interface/{interfaceName}
+	 * @url GET interface/{interfaceName}/{atomid}
 	 * @param string $interfaceName
 	 * @param string $sessionId
 	 * @param string $atomid
@@ -111,7 +111,7 @@ class Api
 	}
 	
 	/**
-	 * @url PATCH interface/{interfaceName}/atom/{atomid}
+	 * @url PATCH interface/{interfaceName}/{atomid}
 	 * @param string $interfaceName
 	 * @param string $sessionId
 	 * @param string $atomid
@@ -141,7 +141,7 @@ class Api
 	}
 	
 	/**
-	 * @url DELETE interface/{interfaceName}/atom/{atomid}
+	 * @url DELETE interface/{interfaceName}/{atomid}
 	 * @param string $interfaceName
 	 * @param string $sessionId
 	 * @param string $atomid
@@ -171,7 +171,7 @@ class Api
 	
 	}
 	/**
-	 * @url POST interface/{interfaceName}/atom
+	 * @url POST interface/{interfaceName}
 	 * @param string $interfaceName
 	 * @param string $sessionId
 	 * @param int $roleId
@@ -320,7 +320,7 @@ class Api
     
 	/**
      * @url GET interfaces
-	 * @url GET interface/{interfaceName}
+	 * @url GET interfaces/{interfaceName}
 	 * @param string $interfaceName
 	 * @param int $roleId
      */

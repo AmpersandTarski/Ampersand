@@ -14,7 +14,6 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'static_installerController',
 				templateUrl: 'app/views/static_installer.html'
 			})
-		// atom parameter is optional
 		.when('/Projects/:resourceId?',
 			{
 				controller: 'ProjectsController',
