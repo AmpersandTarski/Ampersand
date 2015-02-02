@@ -69,7 +69,6 @@ AmpersandApp.run(function(Restangular, $rootScope){
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	
-    	console.log(response);
     	$rootScope.notifications.errors[$rootScope.notifications.errors.length] = {'message' : response.status + ' ' + response.data.error.message};	
     	
     	return false; // error handled
