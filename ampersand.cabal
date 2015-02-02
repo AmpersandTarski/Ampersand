@@ -115,6 +115,7 @@ executable ampersand
                      Database.Design.Ampersand.Basics.BuildInfo_Generated,
                      Database.Design.Ampersand.Basics.Collection,
                      Database.Design.Ampersand.Basics.String,
+                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.UTF8,
                      Database.Design.Ampersand.Basics.Version,
                      Database.Design.Ampersand.Classes,
