@@ -65,7 +65,8 @@ Class Atom {
 		$database = Database::singleton();
 		
 		// Check if new Atom
-		if(empty($before = $this->getContent($interface))){
+		$before = $this->getContent($interface);
+		if($before == false){ // was empty($before = $this->getContent($interface)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 			$database->addAtomToConcept($this->id, $this->concept);
 			$before = $this->getContent($interface);
 		}
