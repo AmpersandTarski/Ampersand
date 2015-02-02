@@ -16,10 +16,10 @@ class (Typeable e, Eq e) => Unique e where
                      , theShow  = showUnique
                      }
   -- | representation of a Unique thing into a string.  
-  showSelf :: Bool ->        -- ^ Should the type show too? 
-              UniqueObj e -> -- ^ the thing to show
+  uniqueShow :: Bool ->  -- ^ Should the type show too? 
+              e    ->  -- ^ the thing to show
               String
-  showSelf includeType x = typePrefix ++ (showUnique . theThing) x
+  uniqueShow includeType x = typePrefix ++ (showUnique . theThing . self) x
     where
       typePrefix = if includeType then show $ typeOf x else ""
   -- | A function to show a unique instance. It is the responsability
