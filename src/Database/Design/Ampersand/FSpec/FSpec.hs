@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {- | The intentions behind FSpec (SJ 30 dec 2008):
 Generation of functional specifications is the core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.
@@ -33,6 +34,8 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Options (Options)
 import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
+import Data.Typeable
+
 --import Debug.Trace
 
 fatal :: Int -> String -> a
@@ -89,14 +92,19 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
-                   }
+                   } deriving Typeable
+instance Eq FSpec where
+ f == f' = name f == name f'
+instance Unique FSpec where
+ showUnique = name
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
                  , atmVal :: String
-                 } deriving Eq
-
+                 } deriving (Typeable,Eq)
+instance Unique Atom where
+  showUnique a = atmVal a++" in "++uniqueShow True (atmRoot a)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
@@ -267,11 +275,13 @@ data PlugSQL
            , sqlColumn :: SqlField
            , cLkp :: A_Concept -- the concept implemented by this plug
            }
-   deriving (Show)
+   deriving (Show, Typeable)
 instance Named PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
   x==y = name x==name y
+instance Unique PlugSQL where
+  showUnique = name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
