@@ -13,9 +13,9 @@ class Api
 		include (__DIR__ . '/../../generics/InstallerDBstruct.php');
 		include (__DIR__ . '/../../generics/InstallerDefPop.php');
 		
-		RuleEngine::checkRules($roleId);
+		$db = Database::singleton();
 		
-		Notifications::addSuccess("Database reset to initial value");
+		$db->closeTransaction('Database reset to initial value', true);	
 		
 		return Notifications::getAll(); // Return all notifications
 		
