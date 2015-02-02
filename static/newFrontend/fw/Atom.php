@@ -110,7 +110,7 @@ Class Atom {
 							 
 						}					
 					}else{
-						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
 					
 					break;
@@ -138,12 +138,12 @@ Class Atom {
 						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
 					
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
-						if(is_null($tgtAtom)) ErrorHandling::addError($tgtInterface->name . ": add operation without value '");
+						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->name . ": add operation without value '");
 						
 						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						
 					}else{
-						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
 					
 					break;
@@ -172,7 +172,7 @@ Class Atom {
 						if(is_null($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
 						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
-						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
 					
 					break;

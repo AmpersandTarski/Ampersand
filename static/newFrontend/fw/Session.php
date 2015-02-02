@@ -20,7 +20,7 @@ class Session {
 			
 		// PHP SESSION : Start a new, or resume the existing, PHP session
 		session_start();
-		ErrorHandling::addLog('Session id: ' . session_id(), 'SESSION');
+		Notifications::addLog('Session id: ' . session_id(), 'SESSION');
 		
 		// Database connection for within this class
 		try {
@@ -33,7 +33,7 @@ class Session {
 				try {
 					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
 				} catch (Exception $e) {
-					ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
+					Notifications::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
 					return;
 				}
 				
@@ -50,7 +50,7 @@ class Session {
 				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 				
 			}else{
-				ErrorHandling::addError('Script does not contain SESSION concept!');
+				Notifications::addError('Script does not contain SESSION concept!');
 				throw new Exception('Script does not contain SESSION concept!');
 				return;
 			}
@@ -90,7 +90,7 @@ class Session {
 				$this->role = new Role();
 			}
 			
-			ErrorHandling::addLog("Role " . $this->role->name . " selected");
+			Notifications::addLog("Role " . $this->role->name . " selected");
 
 			return $this->role->id;
 		}catch(Exception $e){
@@ -103,10 +103,10 @@ class Session {
 		try{
 			if(isset($interfaceName)) {
 				$this->interface = new ObjectInterface($interfaceName);
-				ErrorHandling::addLog("Interface $interfaceName selected");
+				Notifications::addLog("Interface $interfaceName selected");
 			}else{
 				$this->interface = null;
-				ErrorHandling::addInfo("No interface selected");
+				Notifications::addInfo("No interface selected");
 			}
 		}catch (Exception $e){
 			throw $e;
@@ -126,7 +126,7 @@ class Session {
 			$this->atom = session_id();
 			$atomId = session_id();
 		}
-		ErrorHandling::addLog("Atom $atomId selected");
+		Notifications::addLog("Atom $atomId selected");
 		
 		return $atomId;
 	}

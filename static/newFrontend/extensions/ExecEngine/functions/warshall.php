@@ -30,10 +30,10 @@
 */
 
 function TransitiveClosure($r,$C,$rCopy,$rStar){
-	ErrorHandling::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)");
+	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)");
 
 	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
-		ErrorHandling::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)");
+		Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)");
 		return;  // this is the case if we have executed this function already in this transaction		
 	}else{
 		
@@ -76,7 +76,7 @@ function RetrievePopulation($relationName, $concept){
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
 	}else{
-		ErrorHandling::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
+		Notifications::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
 		return;
 	}
 	
@@ -100,7 +100,7 @@ function OverwritePopulation($rArray, $relation, $concept){
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
 	}else{
-		ErrorHandling::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
+		Notifications::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
 		return;
 	}
 	

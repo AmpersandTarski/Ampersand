@@ -14,7 +14,7 @@ require_once (__DIR__ . '/../generics/Generics.php'); // loading the Ampersand m
 require_once (__DIR__ . '/Database.php');
 require_once (__DIR__ . '/Concept.php');
 require_once (__DIR__ . '/Atom.php');
-require_once (__DIR__ . '/ErrorHandling.php');
+require_once (__DIR__ . '/Notifications.php');
 require_once (__DIR__ . '/Relation.php');
 require_once (__DIR__ . '/Role.php');
 require_once (__DIR__ . '/RuleEngine.php');

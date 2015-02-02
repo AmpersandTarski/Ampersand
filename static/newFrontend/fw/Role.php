@@ -14,7 +14,7 @@ class Role {
 		
 		if(is_null($id)){ 
 			$id = DEFAULT_ROLEID; // localSettings.php
-			ErrorHandling::addLog("Default role selected");
+			Notifications::addLog("Default role selected");
 		}
 		
 		// Check if role exists
@@ -105,7 +105,7 @@ class Role {
 		 */
 		foreach ($signals as $signal){
 			foreach($conjunctRuleMap[$signal['conjId']] as $ruleName){
-				ErrorHandling::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
+				Notifications::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
 			}			
 		}
 		

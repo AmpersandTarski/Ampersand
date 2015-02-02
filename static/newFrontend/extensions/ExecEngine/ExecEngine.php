@@ -9,7 +9,7 @@ class ExecEngine {
 	
 	public static function run(){
 		
-		ErrorHandling::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
+		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
 		
 		$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : $this->defaultRoleName;
 		
@@ -18,7 +18,7 @@ class ExecEngine {
 		foreach ($files as $file){
 			if (substr($file,-3) !== 'php') continue;
 			require_once __DIR__.'/functions/'.$file;
-			ErrorHandling::addLog('Included file: '.__DIR__ .'/functions/'.$file);
+			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file);
 		}
 		
 		$role = Role::getRole($roleName);
@@ -31,16 +31,16 @@ class ExecEngine {
 				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 			}
 		}else{
-			ErrorHandling::addError("ExecEngine role '" . $roleName . "'not found.");
+			Notifications::addError("ExecEngine role '" . $roleName . "'not found.");
 		}
 		
-		ErrorHandling::addLog('------------------------- END OF EXEC ENGINE -------------------------');
+		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------');
 				
 	}
 	
 	public static function fixViolations($rule, $violations){
 		if(count($violations)){
-			ErrorHandling::addLog('ExecEngine fixing rule ' . $rule['name']);
+			Notifications::addLog('ExecEngine fixing rule ' . $rule['name']);
 			
 			foreach ($violations as $violation){
 				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
@@ -62,7 +62,7 @@ class ExecEngine {
 					
 					if (function_exists($function)){
 						$successMessage = call_user_func_array($function,$params);
-						ErrorHandling::addLog($successMessage);
+						Notifications::addLog($successMessage);
 						
 					}else{
 						$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";
@@ -70,7 +70,7 @@ class ExecEngine {
 					}
 				}
 			}
-			ErrorHandling::addSuccess('ExecEngine fixed rule ' . $rule['name']);
+			Notifications::addSuccess('ExecEngine fixed rule ' . $rule['name']);
 		}
 	}
 

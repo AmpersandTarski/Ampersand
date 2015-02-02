@@ -10,7 +10,7 @@ if (is_uploaded_file($_FILES['file']['tmp_name'])){
 	$result = $parser->ParseFile();
 	unlink($_FILES['file']['tmp_name']);
 }else{
-    ErrorHandling::addError('No file uploaded');
+    Notifications::addError('No file uploaded');
 }
 
 $result = array('notifications' => $result, 'files' => $_FILES);

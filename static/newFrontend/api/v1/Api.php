@@ -15,9 +15,9 @@ class Api
 		
 		RuleEngine::checkRules($roleId);
 		
-		ErrorHandling::addSuccess("Database reset to initial value");
+		Notifications::addSuccess("Database reset to initial value");
 		
-		return ErrorHandling::getAll(); // Return all notifications
+		return Notifications::getAll(); // Return all notifications
 		
 	}
 	
@@ -40,7 +40,7 @@ class Api
 		$session = Session::singleton();
 		$session->destroySession($session_id);
 		
-		return array('notifications' => ErrorHandling::getAll());
+		return array('notifications' => Notifications::getAll());
 		
 	}
 
@@ -57,7 +57,7 @@ class Api
 		$session->role->getViolations();
 		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
 		
-		return ErrorHandling::getAll();
+		return Notifications::getAll();
 
 	}
 	
@@ -136,7 +136,7 @@ class Api
 		return array_merge(
 				array('patches' => $atom->patch($interface, $request_data)),
 				array('content' => current((array)$atom->getContent($interface))),
-				array('notifications' => ErrorHandling::getAll()));
+				array('notifications' => Notifications::getAll()));
 	
 	}
 	
@@ -167,7 +167,7 @@ class Api
 		$atom = new Atom($atomid, $interface->srcConcept);
 		$atom->delete();	
 		
-		return array('notifications' => ErrorHandling::getAll());
+		return array('notifications' => Notifications::getAll());
 	
 	}
 	/**

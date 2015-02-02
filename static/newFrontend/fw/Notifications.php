@@ -1,6 +1,6 @@
 <?php
 
-class ErrorHandling { 	// TODO: rename to ErrorHandler? integrate with php error handling system
+class Notifications {
 	
 	static $errors = array();
 	static $invariants = array();

@@ -50,7 +50,7 @@ class Database
 		
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
 		$result = mysql_query($query,$this->dblink);
-		ErrorHandling::addLog($query, 'QUERY');
+		Notifications::addLog($query, 'QUERY');
 
 		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query);
 
@@ -79,7 +79,7 @@ class Database
 	 */
 	// TODO: make private function
 	public function addAtomToConcept($newAtom, $concept){
-		ErrorHandling::addLog("addAtomToConcept($newAtom, $concept)");
+		Notifications::addLog("addAtomToConcept($newAtom, $concept)");
 		try{
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -103,9 +103,9 @@ class Database
 					
 					if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
 					
-					ErrorHandling::addLog("Atom $newAtom added into concept $concept");
+					Notifications::addLog("Atom $newAtom added into concept $concept");
 				}else{
-					ErrorHandling::addLog("Atom $newAtom already in concept $concept");
+					Notifications::addLog("Atom $newAtom already in concept $concept");
 				}
 				
 			}
@@ -113,7 +113,7 @@ class Database
 			return $newAtom;
 			
 		}catch(Exception $e){
-			ErrorHandling::addError($e->getMessage());
+			Notifications::addError($e->getMessage());
 			// throw new Exception($e->message);
 		}
 	}
@@ -128,7 +128,7 @@ class Database
 	 * NOTE: if $originalAtom is provided, this means that tuple rel(stableAtom, originalAtom) is replaced by rel(stableAtom, modifiedAtom).
 	 */
 	public function editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom = null){
-		ErrorHandling::addLog("editUpdate($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)");
+		Notifications::addLog("editUpdate($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)");
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -167,7 +167,7 @@ class Database
 			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
 			
 		}catch(Exception $e){
-			ErrorHandling::addError($e->getMessage());
+			Notifications::addError($e->getMessage());
 			// throw new Exception($e->message);
 		}
 	}
@@ -178,7 +178,7 @@ class Database
 	 * editDelete(r, true, b1, B, a1, A);
 	 */
 	public function editDelete($rel, $isFlipped, $leftAtom, $leftConcept, $rightAtom, $rightConcept){
-		ErrorHandling::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $leftAtom, $leftConcept, $rightAtom, $rightConcept)");
+		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $leftAtom, $leftConcept, $rightAtom, $rightConcept)");
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -209,7 +209,7 @@ class Database
 			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
 			
 		}catch(Exception $e){
-			ErrorHandling::addError($e->getMessage());
+			Notifications::addError($e->getMessage());
 			// throw new Exception($e->message);
 		}
 
@@ -220,7 +220,7 @@ class Database
 	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 	 */    
 	function deleteAtom($atom, $concept){
-		ErrorHandling::addLog("deleteAtom($atom, $concept)");
+		Notifications::addLog("deleteAtom($atom, $concept)");
 		try{
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -244,9 +244,9 @@ class Database
 			
 			if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
 			
-			ErrorHandling::addLog("Atom $atom (and all related links) deleted in database");
+			Notifications::addLog("Atom $atom (and all related links) deleted in database");
 		}catch(Exception $e){
-			ErrorHandling::addError($e->getMessage());
+			Notifications::addError($e->getMessage());
 			// throw new Exception($e->message);
 		}
 	}
@@ -254,7 +254,7 @@ class Database
 // =============================== TRANSACTIONS ===========================================================
 	
 	private function startTransaction(){
-		ErrorHandling::addLog('========================= STARTING TRANSACTION =========================');
+		Notifications::addLog('========================= STARTING TRANSACTION =========================');
 		$this->Exe("START TRANSACTION"); // start database transaction
 		$this->transaction = rand();
 		
@@ -262,14 +262,14 @@ class Database
 	
 	// TODO: make private function, now also used by in Session class for session atom initiation
 	public function commitTransaction(){
-		ErrorHandling::addLog('------------------------- COMMIT -------------------------');
+		Notifications::addLog('------------------------- COMMIT -------------------------');
 		$this->setLatestUpdateTime();
 		$this->Exe("COMMIT"); // commit database transaction
 		unset($this->transaction);
 	}
 	
 	private function rollbackTransaction(){
-		ErrorHandling::addLog('------------------------- ROLLBACK -------------------------');
+		Notifications::addLog('------------------------- ROLLBACK -------------------------');
 		$this->Exe("ROLLBACK"); // rollback database transaction
 		unset($this->transaction);
 	}
@@ -283,12 +283,12 @@ class Database
 	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true){
 		$session = Session::singleton();
 		
-		ErrorHandling::addLog('========================= CLOSING TRANSACTION =========================');
+		Notifications::addLog('========================= CLOSING TRANSACTION =========================');
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		
 		if($checkAllConjucts){
-			ErrorHandling::addLog("Check all conjuncts");
+			Notifications::addLog("Check all conjuncts");
 			
 			// Evaluate all invariant conjuncts. Conjuncts are cached.
 			$invariantRulesHold = RuleEngine::checkInvariantRules();
@@ -297,7 +297,7 @@ class Database
 			RuleEngine::checkProcessRules();
 			
 		}else{
-			ErrorHandling::addLog("Check all affected conjuncts");
+			Notifications::addLog("Check all affected conjuncts");
 			
 			// Evaluate all affected invariant conjuncts. Conjuncts are cached.
 			$invariantRulesHold = RuleEngine::checkInvariantRules(RuleEngine::getAffectedInvConjuncts($this->affectedConcepts, $this->affectedRelations), true);
@@ -313,7 +313,7 @@ class Database
 		
 		if($invariantRulesHold){
 			$this->commitTransaction(); // commit database transaction
-			ErrorHandling::addSuccess($succesMessage);
+			Notifications::addSuccess($succesMessage);
 			return true;
 		}else{
 			$this->rollbackTransaction(); // rollback database transaction
