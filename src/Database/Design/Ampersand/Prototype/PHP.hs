@@ -60,7 +60,7 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   ] ++
   [ "mysqli_query($DB_link,\"CREATE TABLE `"++tableName++"`"] ++
   [ replicate 23 ' ' ++ [pref] ++ " " ++ fld | (pref, fld) <- zip ('(' : repeat ',') crflds ] ++
-  [replicate 23 ' ' ++ ") ENGINE=" ++engineOpts ++ "\");"]++
+  [ replicate 23 ' ' ++ ") ENGINE=" ++engineOpts ++ "\");"]++
   [ "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
   , "}"
@@ -115,6 +115,7 @@ populateTablesPHP fSpec =
   fillSignalTable (initialConjunctSignals fSpec) ++
   populateTablesWithPopsPHP fSpec (initialPops fSpec)
   where
+    fillSignalTable []          = []
     fillSignalTable conjSignals =
       [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName signalTableSpec)
                                                                     ++" (`conjId`, `src`, `tgt`)"
