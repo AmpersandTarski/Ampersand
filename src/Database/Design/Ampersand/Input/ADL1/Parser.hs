@@ -836,7 +836,7 @@ pADLid            = pVarid <|> pConid <|> pString
 pADLid_val_pos :: AmpParser (String, Origin)
 pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
 
-pMaybe :: IsParser p s => p a -> p (Maybe a)
+pMaybe :: AmpParser a -> AmpParser (Maybe a)
 pMaybe p = Just <$> p <|> pSucceed Nothing
 
 -- Gets the location of the token in the file
@@ -847,10 +847,10 @@ get_tok_pos     (Tok _ _ s l f) = FileLoc(FilePos (f,l,s))
 get_tok_val_pos :: Token -> (String, Origin)
 get_tok_val_pos (Tok _ _ s l f) = (s,FileLoc(FilePos (f,l,s)))
 
-gsym_pos :: IsParser p Token => TokenType -> String -> String -> p Origin
+gsym_pos :: TokenType -> String -> String -> AmpParser Origin
 gsym_pos kind val' val2' = get_tok_pos <$> pSym (Tok kind val' val2' noPos "")
 
-gsym_val_pos :: IsParser p Token => TokenType -> String -> String -> p (String,Origin)
+gsym_val_pos :: TokenType -> String -> String -> AmpParser (String,Origin)
 gsym_val_pos kind val' val2' = get_tok_val_pos <$> pSym (Tok kind val' val2' noPos "")
 
 -- Key has no EBNF because in EBNF it's just the given keyword.
@@ -860,12 +860,12 @@ pKey_pos keyword  =   gsym_pos TkKeyword   keyword   keyword
 pSpec_pos :: Char -> AmpParser Origin
 pSpec_pos s       =   gsym_pos TkSymbol    [s]       [s]
 
-pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  IsParser p Token => p (String,Origin)
+pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
 pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
 pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
 pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"
 pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""    -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
-pKey_val_pos ::  IsParser p Token => String -> p (String,Origin)
+pKey_val_pos ::  String -> AmpParser (String,Origin)
 pKey_val_pos keyword = gsym_val_pos TkKeyword   keyword   keyword
 --   pSpec_val_pos ::  IsParser p Token => Char -> p (String,Origin)
 --   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]
