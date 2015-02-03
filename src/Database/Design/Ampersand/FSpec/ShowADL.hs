@@ -392,8 +392,12 @@ instance ShowADL P_Population where
                           P_TRelPop{} -> map showPaire (p_popps pop)
                           P_CptPopu{} -> map showAtom  (p_popas pop)
 showPaire :: Paire -> String
-showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
-
+showPaire p = showAtom (srcPaire p)++", "++ showAtom (trgPaire p)
+instance ShowADL Paire where
+ showADL p = "("++showAtom (srcPaire p)++","++ showAtom (trgPaire p)++")"
+instance ShowADL Pairs where
+ showADL ps = "["++intercalate ", " (map showADL ps)++"]"
+  
 instance ShowADL Population where
  showADL pop
   = "POPULATION "
