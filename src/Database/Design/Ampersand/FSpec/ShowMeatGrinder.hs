@@ -58,7 +58,7 @@ instance ShowADL Pop where
 
 class Unique a => AdlId a where
  uri :: a -> String
- uri = show . camelCase . uniqueShow True
+ uri = camelCase . uniqueShow True
 instance AdlId A_Concept
 instance AdlId A_Gen
 instance AdlId Atom
@@ -76,6 +76,7 @@ mkAtom cpt value = Atom { atmRoot = cpt
                         , atmVal  = value
                         }
 
+-- | remove spaces and make camelCase
 camelCase :: String -> String
 camelCase str = concatMap capitalize (words str)
   where
