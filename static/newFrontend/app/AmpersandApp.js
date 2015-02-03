@@ -14,27 +14,6 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'static_installerController',
 				templateUrl: 'app/views/static_installer.html'
 			})
-		.when('/Projects/:resourceId?',
-			{
-				controller: 'ProjectsController',
-				templateUrl: 'generics/app/views/Projects.html'
-			})
-		.when('/People/:resourceId?',
-			{
-				controller: 'PeopleController',
-				templateUrl: 'generics/app/views/People.html'
-			})
-		.when('/Project/:resourceId?',
-			{
-				controller: 'ProjectController',
-				templateUrl: 'generics/app/views/Project.html'
-			})
-		.when('/Person/:resourceId?',
-			{
-				controller: 'PersonController',
-				templateUrl: 'generics/app/views/Person.html'
-			})
-		.otherwise({redirectTo: '/'});
 });
 
 AmpersandApp.config(function(RestangularProvider) {
