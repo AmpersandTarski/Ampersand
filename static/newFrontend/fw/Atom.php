@@ -5,6 +5,8 @@ Class Atom {
 	public $id;
 	public $label;
 	public $concept;
+	public $context;
+	public $atId;
 	
 	public function __construct($id, $concept = null){
 		
@@ -12,6 +14,8 @@ Class Atom {
 		$this->concept = $concept;
 		$this->label = $this->getLabel();
 		
+		$this->context = JSONLD_CONTEXT_PATH . $concept . '.jsonld';
+		$this->atId = JSONLD_RESOURCE_PATH . $concept . '/' . $this->id;
 	}
 	
 	public function getContent($interface){
@@ -25,7 +29,10 @@ Class Atom {
 				
 			// determine value atom 
 			if($interface->tgtDataType == "concept"){ // subinterface refers to other concept (i.e. not datatype).
-				$content = array ('id' => $tgtAtom->id, 'label' => $tgtAtom->label); 
+				$content = array ( '@context' => $tgtAtom->context
+								 , '@id' => $tgtAtom->atId
+								 , 'id' => $tgtAtom->id
+								 , 'label' => $tgtAtom->label); 
 
 			}else{
 				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true

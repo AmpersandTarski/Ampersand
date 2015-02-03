@@ -213,23 +213,23 @@ class Api
 	
 	/**
      * @url GET concept/{concept}
-	 * @param string $direction the direction of the relations: "from", "to", "both".
-     */
-    public function getConcept($concept, $direction = "both")
-    {
-        return "Return all attributes and relations (direction: $direction) of concept $concept";
-    }
-	
-	/**
-     * @url GET concept/{concept}/atoms
      */
     public function getConceptAtoms($concept)
     {
         return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
     }
     
+    /**
+     * @url GET concept/{concept}/{atomId}
+     */
+    public function getConceptAtom($concept, $atomId)
+    {
+    	$atom = new Atom($atomId, $concept);
+    	return $atom;
+    }    
+    
 	/**
-     * @url POST concept/{concept}/atom
+     * @url POST concept/{concept}
 	 * @status 201
      */
 	function postConceptAtom($concept){ 
@@ -239,7 +239,7 @@ class Api
 	}
 
 	/**
-	 * @url DELETE concept/{concept}/atom/{atom}
+	 * @url DELETE concept/{concept}/{atom}
 	 * @status 204
 	 */
 	function deleteConceptAtom($concept, $atom){ 
