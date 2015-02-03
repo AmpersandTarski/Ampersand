@@ -228,14 +228,15 @@ class RuleEngine {
 		$pairStrs = array();
 		$interfaceNames = array();
 		foreach ($pairView as $segment){
-			// text segment
-			if ($segment['segmentType'] == 'Text' && substr($segment['Text'], 0, 5) == '{IFC}'){
-				$interfaceNames = explode(';', substr($segment['Text'], 5));
+			// interface segment
+			if ($segment['segmentType'] == 'Ifc'){
+				$interfaceNames = explode(';', $segment['Interfaces']);
 					
+			// text segment
 			}elseif ($segment['segmentType'] == 'Text'){				
 				$pairStrs[] = $segment['Text'];
 					
-				// expressie segment
+			// expressie segment
 			}elseif($segment['segmentType'] == 'Exp'){
 				// select starting atom depending on whether the segment uses the src of tgt atom.
 				$atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
@@ -248,7 +249,7 @@ class RuleEngine {
 				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom');
 				$pairStrs[] = $rows[0]['tgt'];
 	
-				// unknown segment
+			// unknown segment
 			}else{
 				$errorMessage = "Unknown segmentType '" . $segment['segmentType'] . "' in pairview";
 				throw new Exception($errorMessage);

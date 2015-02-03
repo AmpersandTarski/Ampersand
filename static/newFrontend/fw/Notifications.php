@@ -16,10 +16,12 @@ class Notifications {
 		self::$errors[$errorHash]['count']++;
 		self::addLog($message, 'ERROR');
 	}
+	
 	public static function addInvariant($message){
 		self::$invariants[]['message'] = $message;
 		self::addLog($message, 'INVARIANT');
 	}
+	
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
 		$session = Session::singleton();
 		
@@ -34,11 +36,15 @@ class Notifications {
 		
 		$violationMessage = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
 		
+		// Make links to interfaces
 		$links = array();
-		foreach ($pairView['interfaceNames'] as $interfaceName) {
-			
-			$links[] = '#/' . $interfaceName . '/' . $srcAtom; // TODO: srcAtom or tgtAtom depends on interface 
+		foreach ($session->role->getInterfaces(null, $rule['srcConcept']) as $interface){
+			$links[] = '#/' . $interface->name . '/' . $srcAtom;
 		}
+		foreach ($session->role->getInterfaces(null, $rule['tgtConcept']) as $interface){
+			$links[] = '#/' . $interface->name . '/' . $tgtAtom;
+		}
+		$links = array_unique($links);
 		
 		self::$violations[$ruleHash]['tuples'][] = array('violationMessage' => $violationMessage
 														,'links' => $links);
@@ -69,6 +75,7 @@ class Notifications {
 		}
 		
 	}
+	
 	public static function addSuccess($message, $id = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
