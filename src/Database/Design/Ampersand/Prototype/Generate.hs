@@ -132,7 +132,7 @@ generateTableInfos fSpec =
          [ [ (showPhpStr.name) c++" => array"] ++
            (indent 2 $
               [ "( 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
-              , "( 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
+              , ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
               , ", 'conceptTables' => array" ] ++
               (indent 3
                 (blockParenthesize "(" ")" ","
