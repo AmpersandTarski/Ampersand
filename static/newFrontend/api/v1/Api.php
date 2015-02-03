@@ -303,19 +303,20 @@ class Api
 /**************************** INTERFACES ****************************/
     
     /**
-     * @url GET interfaces/top
+     * @url GET interfaces/all
      * @param int $roleId
      */
-    public function getTopLevelInterfaces($roleId = null)
-    {
+    public function getAllInterfaces($roleId = null){
     	$session = Session::singleton();
+    	
     	try{
     		$session->setRole($roleId);
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());
     	}
-    	 
-    	return $session->role->getInterfaces();  // "Return list of all interfaces"
+    
+    	return array ('top' => $session->role->getInterfaces(true)
+    				 ,'new' => $session->role->getInterfaces(false));
     }
     
 	/**
@@ -324,8 +325,7 @@ class Api
 	 * @param string $interfaceName
 	 * @param int $roleId
      */
-    public function getInterfaces($interfaceName = null, $roleId = null)
-    {
+    public function getInterfaces($interfaceName = null, $roleId = null){
     	$session = Session::singleton();
     	try{
     		$session->setRole($roleId);

@@ -1,6 +1,6 @@
 AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular) {
 		
-	$rootScope.interfaces = Restangular.all('interfaces/top').getList().$object;
+	$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 		
 	$scope.roles = Restangular.all('roles/all').getList().$object;
 	
@@ -10,7 +10,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		$rootScope.roleId = roleId;
 		
 		// refresh interfaces list + notifications
-		$rootScope.interfaces = Restangular.all('interfaces/top').getList().$object;
+		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 		$rootScope.notifications = Restangular.one('notifications/all').get().$object;
 	};
 	
