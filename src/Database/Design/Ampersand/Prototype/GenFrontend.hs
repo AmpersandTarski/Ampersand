@@ -78,7 +78,7 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp obj) =
                        setAttribute "isRoot"                   (source iExp `elem` [ONE, PlainConcept "SESSION"]) .
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
-                                     , ("contents",            intercalate "\n" . indent 6 $ lns) -- intercalate, because unlines introduces a trailing \n
+                                     , ("contents",            intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
                                      ]
 
     ; let filename = interfaceName ++ ".html" -- TODO: escape
@@ -114,7 +114,7 @@ traverseObject fSpec depth obj =
              do { subifcLns <- traverseObject fSpec (depth + 1) subifc
                 ; return $ lines $ renderTemplate childTemplate $ 
                     setManyAttrib [ ("subObjectName", objName subifc)
-                                  , ("contents",         intercalate "\n" $ indent 2 subifcLns)
+                                  , ("contents",         intercalate "\n" $ indent 4 subifcLns)
                                   ]
                 }
       
