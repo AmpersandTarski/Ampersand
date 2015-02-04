@@ -134,9 +134,10 @@ readTemplate fSpec templatePath =
 renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> String
 renderTemplate (Template template absPath) setAttrs =
   let appliedTemplate = setAttrs template
-  in  case checkTemplate appliedTemplate of
-             (Just parseErrs, _,          _)       -> templateError parseErrs
-             (Nothing,        Just attrs, _)       -> templateError $ "Uninitialized template attributes: " ++ show attrs
-             (Nothing,        Nothing,    Just ts) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
-             (Nothing,        Nothing,    Nothing) -> render appliedTemplate
+  in  case checkTemplateDeep appliedTemplate of
+             ([],  [],    []) -> render appliedTemplate
+             (parseErrs@(_:_), _, _)        -> templateError $ concat [ "Parse error in " ++ tmplt ++ " " ++ err ++ "\n" 
+                                                                      | (tmplt,err) <- parseErrs]
+             ([], attrs@(_:_), _)        -> templateError $ "Uninitialized template attributes: " ++ show attrs
+             ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
   where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
