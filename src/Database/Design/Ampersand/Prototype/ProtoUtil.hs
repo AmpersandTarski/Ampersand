@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
-         ( writePrototypeFile, getGenericsDir, getTemplateDir
+         ( writePrototypeFile, getGenericsDir
          , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
@@ -33,11 +33,6 @@ getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
   let protoDir = Opts.dirPrototype (getOpts fSpec)
   in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generics" else protoDir
-
--- TODO: Keeping templates as statics requires that the static files are written before templates are used.
---       Maybe we should keep them as cabal data files instead. (file extensions and directory structure are predictable)
-getTemplateDir :: FSpec -> String
-getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> "templates"
 
 quote :: String->String
 quote [] = []
