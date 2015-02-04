@@ -59,22 +59,39 @@ instance ShowADL Pop where
 class Unique a => AdlId a where
  uri :: a -> String
  uri = camelCase . uniqueShow True
+-- All 'things' that are relevant in the meta-environment (RAP),
+-- must be an instance of AdlId:
 instance AdlId A_Concept
 instance AdlId A_Gen
-instance AdlId Atom
+instance AdlId AtomID
 instance AdlId Declaration
+instance AdlId Expression
 instance AdlId FSpec
-instance AdlId Paire
+instance AdlId PairID
 instance AdlId Pattern
 instance AdlId PlugSQL
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Sign
+instance AdlId a => AdlId [a] where
 
-mkAtom :: A_Concept -> String -> Atom
-mkAtom cpt value = Atom { atmRoot = cpt
-                        , atmVal  = value
-                        }
+mkAtom :: FSpec  -> A_Concept -> String -> AtomID
+mkAtom fSpec cpt value = 
+   AtomID { atmRoot = rootConcepts gens [cpt]
+          , atmIn   = largerConcepts gens cpt `uni` [cpt]
+          , atmVal  = value
+          }
+  where
+    gens = vgens fSpec
+mkLink :: FSpec -> Sign -> Paire -> PairID
+mkLink fSpec sgn p 
+  = PairID { lnkSgn = sgn
+         , lnkLeft  = mkAtom fSpec (source sgn) (srcPaire p) 
+         , lnkRight = mkAtom fSpec (target sgn) (trgPaire p)
+         }
+mkLinks :: FSpec -> Sign -> [Paire] -> [PairID]
+mkLinks fSpec sgn = map $ mkLink fSpec sgn
+
 
 -- | remove spaces and make camelCase
 camelCase :: String -> String
@@ -85,7 +102,10 @@ camelCase str = concatMap capitalize (words str)
     
 class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
-
+ 
+instance MetaPopulations a => MetaPopulations [a] where
+ metaPops fSpec = concatMap $ metaPops fSpec
+ 
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
@@ -93,8 +113,6 @@ instance MetaPopulations FSpec where
     [ Comment " "
     , Comment "The following relations are all known to be declared. This list"
     , Comment "should be helpful during the developement of the meatgrinder."
-    , Comment "NOTE:"
-    , Comment "  The order of the relations is determined in a special way, based on Concepts."
     ]
   ++[Comment ("  "++show i++") "++"Pop "++(show.name) dcl++" "++(show.name.source) dcl++" "++(show.name.target) dcl) | (i,dcl) <- (declOrder.allDecls)       fSpec]
   ++[ Pop "ctxnm"   "Context" "Conid"
@@ -115,25 +133,16 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
   ++[ Comment " ", Comment $ "*** Atoms: (count="++(show.length) allAtoms++") ***"]
   ++   concatMap (metaPops fSpec) allAtoms
-  ++[ Comment " ", Comment $ "*** Pairs: (count="++(show.length) allPairs++") ***"]
-  ++   concatMap (metaPops fSpec) allPairs
-  ++( let sgns = nub (  map sign (allRules fSpec)
-                    --  ++map sign (allConcepts fSpec)
-                      ++map sign (allDecls fSpec)
-                     )
-      in [ Comment " ", Comment $ "*** Signs: (count="++(show.length) sgns++") ***"]
-         ++   concatMap (metaPops fSpec) sgns
-    )
   )
    where
-    allAtoms :: [Atom]
+    allAtoms :: [AtomID]
     allAtoms = nub (concatMap atoms (initialPops fSpec))
       where
-        atoms :: Population -> [Atom]
+        atoms :: Population -> [AtomID]
         atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
-                      ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
-          PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
+          PRelPopu{} ->  map (mkAtom fSpec ((source.popdcl) udp).srcPaire) (popps udp)
+                      ++ map (mkAtom fSpec ((target.popdcl) udp).trgPaire) (popps udp)
+          PCptPopu{} ->  map (mkAtom fSpec (        popcpt  udp)         ) (popas udp)
     allPairs :: [Paire]
     allPairs= nub (concatMap pairs (initialPops fSpec))
       where
@@ -196,12 +205,14 @@ instance MetaPopulations Rule where
    , Comment $ "*** Rule `"++name rul++"` ***"
    , Pop "rrnm"  "Rule" "ADLid"
           [(uri rul,rrnm rul)]
+   , Pop "rrexp"  "Rule" "ExpressionID"
+          [(uri rul,uri (rrexp rul))]
    , Pop "rrmean"  "Rule" "Blob"
           [(uri rul,show(rrmean rul))]
+   , Pop "rrtyp"  "Rule" "Sign"
+          [(uri rul,uri(rrtyp rul))]
    , Pop "rrpurpose"  "Rule" "Blob"
           [(uri rul,showADL x) | x <- explanations rul]
-   , Pop "rrexp"  "Rule" "ExpressionID"
-          [(uri rul,showADL (rrexp rul))]
 --HJO, 20130728: TODO: De Image (Picture) van de rule moet worden gegenereerd op een of andere manier:
 --   , Pop "rrpic"   "Rule" "Image"
 --          [(uri rul,uri x) | x <- rrpic pat]
@@ -217,45 +228,29 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ "*** Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` ***"
-      , Pop "decmean"    "Declaration" "Blob"
-             [(uri dcl, show(decMean dcl))]
-      , Pop "decpurpose" "Declaration" "Blob"
-             [(uri dcl, showADL x) | x <- explanations dcl]
---      , Pop "decexample"    "Declaration" "PragmaSentence"
---             [(uri dcl, unwords ["PRAGMA",show (decprL dcl),show (decprM dcl),show (decprR dcl)])]
+      , Pop "decnm" "Declaration" "Varid"
+             [(uri dcl, name dcl)]
+      , Pop "decsgn" "Declaration" "Sign"
+             [(uri dcl,uri (decsgn dcl))]
+      , Comment $ " PropertyRules of "++name dcl++":"
       , Pop "decprps" "Declaration" "PropertyRule"
              [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
       , Pop "declaredthrough" "PropertyRule" "Property"
-             [(uri rul,show prp) | rul <- filter ofDecl (allRules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
-      , Pop "decpopu" "Declaration" "PairID"
-             [(uri dcl, uri p) | p <- pairsOf dcl]
---      , Pop "inipopu" "Declaration" "PairID"
---             [(uri dcl,mkUriRelPopu dcl InitPop)]
-      , Pop "decsgn" "Declaration" "Sign"
-             [(uri dcl,uri (decsgn dcl))]
-      , Pop "src" "Sign" "Concept"
-             [((uri.decsgn) dcl,(uri.source.decsgn) dcl)]
-      , Pop "trg" "Sign" "Concept"
-             [((uri.decsgn) dcl,(uri.target.decsgn) dcl)]
+             [(uri rul,show prp) | rul <- filter ofDecl (grules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
       , Pop "decprL" "Declaration" "String"
              [(uri dcl,decprL dcl)]
       , Pop "decprM" "Declaration" "String"
              [(uri dcl,decprM dcl)]
       , Pop "decprR" "Declaration" "String"
              [(uri dcl,decprR dcl)]
-      , Pop "decnm" "Declaration" "Varid"
-             [(uri dcl, name dcl)]
- --TODO HIER GEBLEVEN. (HJO, 20130802)
---      , Pop "cptos" "PlainConcept" "AtomID"
---      , Pop "rels" "ExpressionID" "Declaration"
---relnm : Relation × Varid The name of a relation used as a relation token.
---relsgn : Relation × Sign The signature of a relation.
---reldcl : Relation × Declaration A relation token refers to a relation.
---rrnm : Rule × ADLid The name of a rule.
---rrexp : Rule × ExpressionID The rule expressed in relation algebra.
---rrmean : Rule × Blob The meanings of a rule.
---rrpurpose : Rule × Blob The purposes of a rule.
-      ]
+      , Pop "decmean" "Declaration" "Blob"
+             [(uri dcl, show(decMean dcl))]
+      , Pop "decpurpose" "Declaration" "Blob"
+             [(uri dcl, showADL x) | x <- explanations dcl]
+      , Comment $ "The population of "++name dcl++":"
+      , Pop "decpopu" "Declaration" "PairID"
+             [(uri dcl,uri p) | p <- mkLinks fSpec (sign dcl) (pairsOf dcl)]
+      ]++ metaPops fSpec ( mkLinks fSpec (sign dcl) (pairsOf dcl))
 
      Isn{} -> fatal 157 "Isn is not implemented yet"
      Vs{}  -> fatal 158 "Vs is not implemented yet"
@@ -275,19 +270,23 @@ instance MetaPopulations Declaration where
                         PRelPopu{} -> popdcl p == d
                         PCptPopu{} -> False
 
-instance MetaPopulations Atom where
+instance MetaPopulations AtomID where
  metaPops _ atm = 
-   [ Pop "cptos" "Concept" "AtomID" 
-          [(uri(atmRoot atm),uri atm)]
+   [ Pop "atmRoot" "AtomId" "Concept" 
+          [(uri atm,uri (atmRoot atm))]
+   , Pop "atmIn" "AtomId" "Concept" 
+          [(uri atm,uri cpt)|cpt<-atmIn atm]
    , Pop "atomvalue"  "AtomID" "Atom"
           [(uri atm,(show.atmVal) atm)]
    ]
-instance MetaPopulations Paire where
+instance MetaPopulations PairID where
  metaPops _ p =
-  [ Pop "left" "PairID" "AtomID"
-         [(uri p, srcPaire p)]
-  , Pop "right" "PairID" "AtomID"
-         [(uri p, trgPaire p)]
+  [ Pop "lnkSgn" "PairID" "Sign"
+         [(uri p, uri(lnkSgn p))]
+  , Pop "left" "Link" "AtomID"
+         [(uri p, uri(lnkLeft p))]
+  , Pop "right" "Link" "AtomID"
+         [(uri p, uri(lnkRight p))]
   ]
 instance MetaPopulations A_Gen where
  metaPops _ gen =
