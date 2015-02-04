@@ -28,30 +28,34 @@ doGenFrontend fSpec =
     ; traverseInterfaces fSpec feInterfaces
     ; return ()
     }
+-- TODO: maybe introduce specific node for top-level interfaces and call the other ones objects
 
 -- TODO: interface ref: Editable relations from interface def of ref, or origin?
 --       both may result in unexpected editability. Maybe take intersection?
 
-data FEInterface = FEBox    { ifcName :: String, _ifcMClass :: Maybe String, _ifcSubIfcs :: [FEInterface] } -- _ disables 'not used' warning
-                 | FEAtomic { ifcName :: String } deriving Show
+data FEInterface = FEBox    { ifcName :: String, _ifcExp :: Expression
+                            , _ifcMClass :: Maybe String
+                            , _ifcIsRoot :: Bool, _ifcSubIfcs :: [FEInterface] } -- _ disables 'not used' warning
+                 | FEAtomic { ifcName :: String, _ifcExp :: Expression } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
 buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
 
 buildInterface :: FSpec -> Interface -> FEInterface
-buildInterface fSpec interface = buildObject fSpec {- (ifcParams interface) -} (ifcObj interface)
+buildInterface fSpec interface = buildObject fSpec {- (ifcParams interface) -} True (ifcObj interface)
 -- TODO: handle editable rels here, and maybe interface class
 
-buildObject :: FSpec -> ObjectDef -> FEInterface
-buildObject fSpec object =
+buildObject :: FSpec -> Bool -> ObjectDef -> FEInterface
+buildObject fSpec isTopLevel object =
   case objmsub object of
+    Nothing               -> FEAtomic (name object) (objctx object)
     Just (InterfaceRef nm) -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
                                 [i] -> buildInterface fSpec i -- TODO: skip interface root object, what about exp and editable rels?
                                 []  -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                                 _   -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-    Just (Box _ cl objects) -> FEBox    (name object) cl $ map (buildObject fSpec) objects
-    Nothing                 -> FEAtomic (name object)
-  
+    Just (Box _ cl objects) -> FEBox (name object) (objctx object) cl (isTopLevel) $
+                                 map (buildObject fSpec False) objects
+    
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
 traverseInterfaces fSpec ifcs =
@@ -60,12 +64,13 @@ traverseInterfaces fSpec ifcs =
     }
 
 traverseTopLevelInterface :: FSpec -> FEInterface -> IO ()
-traverseTopLevelInterface _     (FEAtomic _)                  =  fatal 57 $ "Unexpected atomic top-level interface"
-traverseTopLevelInterface fSpec ifc@(FEBox interfaceName _ _) =
+traverseTopLevelInterface _     (FEAtomic _ _)                         =  fatal 57 $ "Unexpected atomic top-level interface"
+traverseTopLevelInterface fSpec ifc@(FEBox interfaceName _ _ isRoot _) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ interfaceName
     ; lns <- traverseInterface fSpec 0 ifc
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
+                       setAttribute "isRoot"     isRoot .
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
                                      , ("contents",            unlines lns)
@@ -78,11 +83,11 @@ traverseTopLevelInterface fSpec ifc@(FEBox interfaceName _ _) =
 traverseInterface :: FSpec -> Int -> FEInterface -> IO [String]
 traverseInterface fSpec depth ifc =
   case ifc of
-    FEAtomic _ ->
+    FEAtomic _ _ ->
      do { template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template id
         }
-    FEBox _ mClass ifcs ->
+    FEBox _ _ mClass _ ifcs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
@@ -94,10 +99,10 @@ traverseInterface fSpec depth ifc =
 
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
         ; return $ lines $ renderTemplate parentTemplate $ 
-                           setAttribute "isEditable" False .
-                           setManyAttrib [ ("class",    clss)
-                                         , ("contents", wrappedChildrenContent)
-                                         ]
+                             setAttribute "isEditable" False .
+                             setManyAttrib [ ("class",    clss)
+                                           , ("contents", wrappedChildrenContent)
+                                           ]
         }
       where traverseSubinterface :: Template -> FEInterface -> IO [String]
             traverseSubinterface childTemplate subifc =
