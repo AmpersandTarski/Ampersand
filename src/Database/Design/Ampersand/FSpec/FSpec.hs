@@ -8,7 +8,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Database.Design.Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..)
+          ( FSpec(..), concDefs, AtomID(..), PairID(..)
           , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
 --        , InsDel(..)
@@ -34,6 +34,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Options (Options)
 import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
+import Data.List
 import Data.Typeable
 
 --import Debug.Trace
@@ -100,11 +101,24 @@ instance Unique FSpec where
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
-data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
-                 , atmVal :: String
-                 } deriving (Typeable,Eq)
-instance Unique Atom where
-  showUnique a = atmVal a++" in "++uniqueShow True (atmRoot a)
+data AtomID = AtomID { atmRoot :: [A_Concept] -- The root concept(s) of the atom.
+                     , atmIn   :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
+                     , atmVal  :: String
+                     } deriving (Typeable,Eq)
+instance Unique AtomID where
+  showUnique a = atmVal a++" in "
+         ++case atmRoot a of
+             []  -> fatal 110 "an atom must have at least one root concept"
+             [x] -> uniqueShow True x
+             xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
+data PairID = PairID { lnkSgn :: Sign
+                     , lnkLeft :: AtomID
+                     , lnkRight :: AtomID
+                     } deriving (Typeable,Eq)
+instance Unique PairID where
+  showUnique x = uniqueShow False (lnkSgn x)
+              ++ uniqueShow False (lnkLeft x)
+              ++ uniqueShow False (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
