@@ -279,10 +279,10 @@ class RuleEngine {
 		
 		$affectedConjuncts = array();
 		foreach($affectedConcepts as $concept){
-			array_merge($affectedConjuncts, (array)Concept::getAffectedSigConjuncts($concept));
+			$affectedConjuncts = array_merge($affectedConjuncts, (array)Concept::getAffectedSigConjuncts($concept));
 		}
 		foreach($affectedRelations as $fullRelationSignature){
-			array_merge($affectedConjuncts, (array)Relation::getAffectedSigConjunctIds($fullRelationSignature));
+			$affectedConjuncts = array_merge($affectedConjuncts, (array)Relation::getAffectedSigConjunctIds($fullRelationSignature));
 		}
 		
 		return array_unique($affectedConjuncts); // remove duplicate entries.
@@ -292,10 +292,10 @@ class RuleEngine {
 	
 		$affectedConjuncts = array();
 		foreach($affectedConcepts as $concept){
-			array_merge($affectedConjuncts, (array)Concept::getAffectedInvConjuncts($concept));
+			$affectedConjuncts = array_merge($affectedConjuncts, (array)Concept::getAffectedInvConjuncts($concept));
 		}
 		foreach($affectedRelations as $fullRelationSignature){
-			array_merge($affectedConjuncts, (array)Relation::getAffectedInvConjunctIds($fullRelationSignature));
+			$affectedConjuncts = array_merge($affectedConjuncts, (array)Relation::getAffectedInvConjunctIds($fullRelationSignature));
 		}
 	
 		return array_unique($affectedConjuncts); // remove duplicate entries.

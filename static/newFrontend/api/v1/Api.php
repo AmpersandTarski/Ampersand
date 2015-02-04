@@ -13,6 +13,9 @@ class Api
 		include (__DIR__ . '/../../generics/InstallerDBstruct.php');
 		include (__DIR__ . '/../../generics/InstallerDefPop.php');
 		
+		$session = Session::singleton();
+		$session->setRole($roleId);
+		
 		$db = Database::singleton();
 		
 		$db->closeTransaction('Database reset to initial value', true);	
