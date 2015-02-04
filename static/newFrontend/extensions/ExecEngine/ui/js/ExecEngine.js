@@ -8,8 +8,8 @@ AmpersandApp.config(function($routeProvider) {
 			});
 });
 
-AmpersandApp.controller('ExecEngineController', function ($scope, $rootScope) {
+AmpersandApp.controller('ExecEngineController', function ($scope, $rootScope, Restangular) {
 	
-	
+	$scope.role = Restangular.one('role/name/ExecEngine').get().$object;
     
 });

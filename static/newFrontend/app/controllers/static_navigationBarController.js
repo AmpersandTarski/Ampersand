@@ -2,7 +2,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		
 	$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 		
-	$scope.roles = Restangular.all('roles/all').getList().$object;
+	$scope.roles = Restangular.all('roles').getList().$object;
 	
 	$scope.extensions = Restangular.all('extensions/all').getList().$object;
 	

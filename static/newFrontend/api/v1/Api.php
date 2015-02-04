@@ -247,56 +247,40 @@ class Api
 		
 		$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
 	}
-	
-/**************************** RULES AND VIOLATIONS ****************************/
-	
-	/**
-     * @url GET rule
-	 * @url GET rule/{ruleName}
-     */
-    public function getRules($ruleName = NULL)
-    {
-		if(isset($ruleName)){
-			
-			return RuleEngine::getRule($ruleName); // "Return rule with name $ruleName";
-		}else{
-			return "Return list of all rules";
-		}
-    }
-	
-	/**
-     * @url GET rule/{ruleName}/violations
-     */
-    public function getViolations($ruleName)
-    {
-		$rule = RuleEngine::getRule($ruleName);
-        return RuleEngine::checkProcessRule($rule); // "Return list of violations (tuples of src, tgt atom) for rule $rule"
-    }
     
 	
 /**************************** ROLES ****************************/
 	
 	/**
-     * @url GET roles/all
+     * @url GET roles
      */
-    public function getAllRoles()
-    {
+    public function getAllRoles(){
+    	
 		return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
 		
     }
     
     /**
      * @url GET role
-     * @url GET role/{roleNr}
+     * @url GET role/{roleId}
      */
-    public function getRole($roleNr = NULL)
-    {
-    	if($roleNr !== NULL){	// do not use isset(), because roleNr can be 0.
-    		return new Role($roleNr); // Return role with properties as defined in class Role
+    public function getRole($roleId = NULL){
+    	
+    	if($roleId !== NULL){	// do not use isset(), because roleNr can be 0.
+    		return new Role($roleId); // Return role with properties as defined in class Role
     	}else{
     		return new Role(); // Return default role
     			
     	}
+    }
+    
+    /**
+     * @url GET role/name/{roleName}
+     */
+    public function getRoleByName($roleName){
+    	
+    	return Role::getRole($roleName);
+    	
     }
     
 	
