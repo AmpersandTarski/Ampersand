@@ -256,7 +256,8 @@ pCtx2aCtx' _
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x
-     = PlainConcept {cptnm = x}
+     = PlainConcept { cptnm = x
+                    , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "}
 
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }

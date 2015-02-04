@@ -600,7 +600,10 @@ rTerm2expr term
             , decplug = fatal 490 "Illegal RTerm in rTerm2expr"
             }
      makeConcept "ONE" = ONE
-     makeConcept  str  = PlainConcept str
+     makeConcept  str  = 
+        PlainConcept { cptnm = str
+                     , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "
+                     }
 
 instance ShowADL RTerm where
  showADL = showExpr 0

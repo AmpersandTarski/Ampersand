@@ -127,23 +127,16 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Comment " "
       , Comment $ "*** Concept `"++name cpt++"` ***"
-      , Pop "ctxcs"   "Context" "PlainConcept"
-           [(uri fSpec,uri cpt)]
-      , Pop "cptnm"      "Concept" "Conid"
+      , Pop "cptnm" "Concept" "Conid"
              [(uri cpt, name cpt)]
--- removed: equals ctxcs~
---     , Pop "context"    "PlainConcept" "Context"
---             [(uri cpt,uri fSpec)]
--- removed:
---    , Pop "cpttp"      "PlainConcept" "Blob"
---           [(uri cpt,cpttp cpt) ]
--- removed:
---    , Pop "cptdf"      "PlainConcept" "Blob"
---           [(uri cpt,showADL x) | x <- cptdf cpt]
+      , Pop "cptdf" "PlainConcept" "Blob"
+             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "PlainConcept" "Blob"
-             [(uri cpt,showADL x) | lang <- [English,Dutch], x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
-      , Pop "in" "PlainConcept" "Plug"
-             [(uri cpt, uri plug) | plug <- nub $ map fst (lookupCpt fSpec cpt)]
+             [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+      , Pop "cpttp" "PlainConcept" "Blob"
+             [ -- TODO: cpttp moet nog worden gefixed. 
+               -- wordt dan: [(uri cpt,cpttp cpt) ]
+             ]
       ]
      ONE -> [
             ]
@@ -235,7 +228,10 @@ instance MetaPopulations Rule where
 
 instance MetaPopulations PlugInfo where
  metaPops _ _ = 
-      [ Comment $ "TODO:  PlugInfo"]      
+      [ Comment $ "TODO:  PlugInfo"
+--      , Pop "in" "PlainConcept" "Plug"
+--             [(uri cpt, uri plug) | plug <- nub $ map fst (lookupCpt fSpec cpt)]
+      ]      
 
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
@@ -281,6 +277,7 @@ class Unique a => AdlId a where
 instance AdlId A_Concept
 instance AdlId A_Gen
 instance AdlId AtomID
+instance AdlId ConceptDef
 instance AdlId Declaration
 instance AdlId Expression
 instance AdlId FSpec

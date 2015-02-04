@@ -29,7 +29,10 @@ findConcept :: String -> A_Concept
 -- (1) made a programming error in the call of findConcept (in which case you should call findConceptOrONE instead)
 -- (2) made an error in the tokenizer/parser
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
-findConcept x = PlainConcept {cptnm = x}
+findConcept x = 
+   PlainConcept { cptnm = x
+                , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "
+                }
 
 class Disambiguatable d where
   disambInfo :: d (TermPrim,DisambPrim)

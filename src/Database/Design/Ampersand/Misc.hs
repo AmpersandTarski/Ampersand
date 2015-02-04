@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Misc
    , module Database.Design.Ampersand.Misc.Explain
    ) where
 import Database.Design.Ampersand.Misc.Languages
-       (Lang(..), plural)
+       (Lang(..), plural, allLangs)
 import Database.Design.Ampersand.Misc.Options
        (getOptions, Options(..),
         verboseLn, verbose, DocTheme(..), FSpecFormat(..),
