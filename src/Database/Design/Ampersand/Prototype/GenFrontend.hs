@@ -2,7 +2,6 @@ module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
 import Prelude hiding (putStrLn,readFile)
 import Data.List
-import Data.Maybe
 import System.FilePath
 import Text.StringTemplate
 import Database.Design.Ampersand.Basics
@@ -25,8 +24,8 @@ doGenFrontend fSpec =
 -- TODO: interface ref: Editable relations from interface def of ref, or origin?
 --       both may result in unexpected editability. Maybe take intersection?
 
-data FEInterface = FEBox    { ifcName :: String, ifcMClass :: Maybe String, ifcSubIfcs :: [FEInterface] }
-                 | FEAtomic { ifcName :: String } deriving Show
+data FEInterface = FEBox    {- ifcName -} String {- ifcMClass -} (Maybe String) {- ifcSubIfcs -} [FEInterface]
+                 | FEAtomic {- ifcName -} String deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
 buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
@@ -48,7 +47,7 @@ buildObject fSpec object =
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
 traverseInterfaces fSpec ifcs =
- do { putStrLn $ show $ map name (interfaceS fSpec)
+ do { verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
     ; mapM_ (traverseTopLevelInterface fSpec) $ ifcs
     }
 
@@ -73,7 +72,6 @@ traverseInterface fSpec depth subIntf =
     FEAtomic _ ->
      do { template <- readTemplate fSpec $ "views/Atomic.html"
         ; let contents = render $ template
-        ; putStrLn $ "ATOMIC contents" ++ show contents
         ; return $ lines contents
         }
     FEBox _ mClass ifcs ->
@@ -85,19 +83,18 @@ traverseInterface fSpec depth subIntf =
         ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html"
         
         ; let wrappedChildLnss = map (wrapChild childTemplate) childLnss 
-        ; putStrLn $ "wrapped child contents" ++ show wrappedChildLnss
+        
+        ; let wrappedChildrenContent = intercalate "\n" $ indent 2 $ concat wrappedChildLnss -- intercalate, because unlines introduces a trailing \n
         
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
         ; let contents = render $ setAttribute "class"    clss
-                                $ setAttribute "contents" (intercalate "\n" $ indent 2 $ concat wrappedChildLnss)
+                                $ setAttribute "contents" wrappedChildrenContent
                                 $ parentTemplate
-
-        ; putStrLn $ "BOX contents" ++ show contents
 
         ; return $ lines contents
         }
       where wrapChild :: StringTemplate String -> [String] -> [String]
-            wrapChild childTemplate childLns = trace ("childLns"++show childLns++"\nunlines indent "++show (unlines $ indent 2 childLns)) $ lines $
+            wrapChild childTemplate childLns = lines $
               render $ setAttribute "contents" (intercalate "\n" $ indent 2 childLns)
                      $ childTemplate
       
