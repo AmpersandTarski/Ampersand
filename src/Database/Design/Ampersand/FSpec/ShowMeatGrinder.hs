@@ -127,15 +127,14 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Comment " "
       , Comment $ "*** Concept `"++name cpt++"` ***"
-      , Pop "cptnm" "Concept" "Conid"
+      , Pop "cptnm" "PlainConcept" "Conid"
              [(uri cpt, name cpt)]
       , Pop "cptdf" "PlainConcept" "Blob"
              [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "PlainConcept" "Blob"
              [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       , Pop "cpttp" "PlainConcept" "Blob"
-             [ -- TODO: cpttp moet nog worden gefixed. 
-               -- wordt dan: [(uri cpt,cpttp cpt) ]
+             [(uri cpt,cpttp cpt)  | not.null.cpttp $ cpt
              ]
       ]
      ONE -> [
