@@ -1,9 +1,12 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
 import Prelude hiding (putStrLn,readFile)
+import Data.Data
 import Data.List
 import System.FilePath
 import Text.StringTemplate
+import Text.StringTemplate.GenericStandard () -- only import instances
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -13,6 +16,10 @@ import Database.Design.Ampersand.Prototype.ProtoUtil
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
+-- TODO: stringtemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
+--       correct isEditable for COLS
+--       atoms
+--       isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
 
 -- TODO: Keeping templates as statics requires that the static files are written before templates are used.
 --       Maybe we should keep them as cabal data files instead. (file extensions and directory structure are predictable)
@@ -20,6 +27,9 @@ getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> 
                          "templates"
 --                         "debugTemplates"
+
+-- For useful info on the template language, see
+-- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
                          
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
@@ -39,7 +49,7 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String 
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
                          , objExp :: Expression, _ifcSubIfcs :: [FEObject] }
-              | FEAtomic { objName :: String, _objExp :: Expression } deriving Show
+              | FEAtomic { objName :: String, objExp :: Expression } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
 buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
@@ -85,6 +95,8 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp obj) =
     ; writePrototypeFile fSpec ("views" </> filename) $ contents 
     }
 
+data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving (Show, Data, Typeable)
+ 
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
 traverseObject fSpec depth obj =
   case obj of
@@ -92,29 +104,35 @@ traverseObject fSpec depth obj =
      do { template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template id
         }
-    FEBox _ mClass _ ifcs ->
+    FEBox _ mClass _ subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
         ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html"
         
-        ; childLnss <- mapM (traverseSubObject childTemplate) ifcs
+        ; childLnss <- mapM (traverseSubObject childTemplate) subObjs
         
-        ; let wrappedChildrenContent = intercalate "\n" $ indent 2 $ concat childLnss
+        ; let wrappedChildrenContent = intercalate "\n" $ indent 6 $ concat childLnss
+        -- Indentation is not context sensitive, so some templates will be indented a bit too much (we take the maximum necessary value now)
+        
+        ; let subObjAttrs = [ SubObjAttr{subObjName = objName subObj
+                            , isBLOB = target (objExp subObj) == PlainConcept "BLOB" } 
+                            | subObj <- subObjs ]
 
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
         ; return $ lines $ renderTemplate parentTemplate $ 
-                             setAttribute "isEditable" False .
+                             setAttribute "isEditable" True .
+                             setAttribute "subObjects" subObjAttrs .
                              setManyAttrib [ ("class",    clss)
                                            , ("contents", wrappedChildrenContent)
                                            ]
         }
       where traverseSubObject :: Template -> FEObject -> IO [String]
-            traverseSubObject childTemplate subifc =
-             do { subifcLns <- traverseObject fSpec (depth + 1) subifc
+            traverseSubObject childTemplate subObj =
+             do { subObjLns <- traverseObject fSpec (depth + 1) subObj
                 ; return $ lines $ renderTemplate childTemplate $ 
-                    setManyAttrib [ ("subObjectName", objName subifc)
-                                  , ("contents",         intercalate "\n" $ indent 4 subifcLns)
+                    setManyAttrib [ ("subObjectName", objName subObj)
+                                  , ("contents",      intercalate "\n" $ indent 4 subObjLns)
                                   ]
                 }
       
