@@ -84,7 +84,7 @@ MEANING "The (technical) type of a concept"
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
 
 
-RELATION atomvalue[AtomID*Atom] [UNI,TOT]
+RELATION atomvalue[AtomID*AtomValue] [UNI,TOT]
 MEANING "The value of an atom."
 --RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
 --MEANING "An atom of a concept has a unique value within the class of that concept."
