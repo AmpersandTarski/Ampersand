@@ -99,24 +99,18 @@ instance MetaPopulations Pattern where
  metaPops fSpec pat =
    [ Comment " "
    , Comment $ "*** Pattern `"++name pat++"` ***"
-   , Pop "ctxpats" "Context" "Pattern"
-          [(uri fSpec,uri pat)]
-   , Pop "ptxps"   "Pattern" "Blob"
-          [(uri pat,uri x) | x <- ptxps pat]
    , Pop "ptnm"    "Pattern" "Conid"
           [(uri pat, ptnm pat)]
--- following fiedls would be double (ptctx = ~ctxpats)
---   , Pop "ptctx" "Pattern" "Context"
---          [(uri pat,uri fSpec)]
-   , Pop "ptdcs"   "Pattern" "Declaration"
-          [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptgns"   "Pattern" "Gen"
-          [(uri pat,uri x) | x <- ptgns pat]
---HJO, 20130728: TODO: De Image (Picture) van het pattern moet worden gegenereerd op een of andere manier:
---   , Pop "ptpic"   "Pattern" "Image"
---          [(uri pat,uri x) | x <- ptpic pat]
    , Pop "ptrls"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
+   , Pop "ctxpats" "Context" "Pattern"
+          [(uri fSpec,uri pat)]
+   , Pop "ptgns"   "Pattern" "Gen"
+          [(uri pat,uri x) | x <- ptgns pat]
+   , Pop "ptdcs"   "Pattern" "Declaration"
+          [(uri pat,uri x) | x <- ptdcs pat]
+   , Pop "ptxps"   "Pattern" "Blob"
+          [(uri pat,uri x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
  metaPops _ gen =
