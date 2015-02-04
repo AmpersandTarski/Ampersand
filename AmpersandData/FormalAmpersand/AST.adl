@@ -50,10 +50,10 @@ ENDPATTERN
 
 PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
-IDENT Concept: Concept(cptnm)
+IDENT PlainConcept: PlainConcept(cptnm)
 CLASSIFY PlainConcept ISA Concept
 
-RELATION cptnm[Concept*Conid] [UNI,TOT,INJ]
+RELATION cptnm[PlainConcept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
 --RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door in~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
 --MEANING "The population of a concept."
@@ -104,9 +104,8 @@ ENDPATTERN
 PATTERN Sign
 VIEW Sign: Sign( TXT "[" , src;cptnm , TXT "*" , trg;cptnm , TXT "]" )
 
-RELATION sign[Relation*Sign] [UNI,TOT]
-RELATION sign[PairID*Sign] [UNI,TOT]
-RELATION in[PairID*Relation] [UNI,TOT]
+RELATION sign[Declaration*Sign] [UNI,TOT]
+RELATION in[PairID*Declaration] [UNI,TOT]
 
 RELATION src[Sign*Concept] [UNI,TOT]
 MEANING "The source of a sign."
@@ -114,6 +113,8 @@ RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
 VIEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
+RELATION sign[PairID*Sign] [UNI,TOT]
+MEANING "The sign of a relationship"
 RELATION left[PairID*AtomID] [UNI,TOT]
 MEANING "The source of a relationship."
 RELATION right[PairID*AtomID] [UNI,TOT]
@@ -133,7 +134,7 @@ In a compiler, type consistency is ensured by a type system.
 In a repository, the type of any expression does not depend on the contents of the relations in it.
 As a consequence, the type of an expression can be computed based on the types of its constituent relations only.
 -}
-RULE "type consistency" : sign=in[PairID*Relation];sign
+RULE "type consistency" : sign=in[PairID*Declaration];sign
 MEANING "Type consistency means that all pairs in a relation have the same signature."
 ENDPATTERN
 
@@ -192,7 +193,7 @@ IDENT ExpressionID : ExpressionID(exprvalue)
 
 RELATION exprvalue[ExpressionID*Expression] [UNI,TOT]
 MEANING "The value of an expression."
-RELATION relsMentionedIn[ExpressionID*Relation]
+RELATION relsMentionedIn[ExpressionID*Declaration]
 MEANING "The user-declared relations in an expression."
 
 CLASSIFY RelationRef ISA Expression
@@ -229,7 +230,7 @@ PATTERN Plugs -- This pattern documents the semantics of plugs as of november 20
 RELATION sign[Rule*Sign] [UNI,TOT]
 RELATION maintains[Plug*Rule]
 RELATION in[PlainConcept*Plug] [UNI,TOT]
-RELATION in[Relation*Plug] [UNI,TOT]
+RELATION in[Declaration*Plug] [UNI,TOT]
 
 -- Rules
 RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
