@@ -6,6 +6,7 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Ass
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
+import Data.Char
 import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
@@ -246,9 +247,9 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
              in
              case fsLang fSpec of
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
-        English -> text ("The technical datamodel consists of the following "++show nrOfTables++"tables:")
+        English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` name) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
     where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
