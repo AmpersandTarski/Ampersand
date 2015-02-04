@@ -43,7 +43,7 @@ PURPOSE RULE specialization
 {+Specialization has the consequence that an atom does not necessarily have one concept only.
 If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 -}
-RULE specialization : gengen~;genspc;cptos |- cptos
+RULE specialization : gengen~;genspc;in~ |- in~
 MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
@@ -55,8 +55,8 @@ CLASSIFY PlainConcept ISA Concept
 
 RELATION cptnm[Concept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
-RELATION cptos[Concept*AtomID] [SUR]
-MEANING "The population of a concept."
+--RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door in~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
+--MEANING "The population of a concept."
 RELATION cptdf[PlainConcept*Blob]
 MEANING "The definitions of a concept."
 RELATION cptpurpose[PlainConcept*Blob]
@@ -82,9 +82,17 @@ MEANING "The (technical) type of a concept"
 --MEANING "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
 --MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
+ENDPATTERN
 
-
+PATTERN Atoms
+{-TODO: Documenteren! Het idee is grofweg als volgt:
+Een AtomID is een element in een Concept. Elk element heeft een waarde. Een element kan echter voorkomen in verschillende concepten, namelijk indien de een een generalisatie is van de ander.
+Als René in de verzameling Man zit, Man is een specialisatie van Persoon, dan zit diezelfde René ook in de verzameling Persoon. Er kan echter ook een René bestaan in de verzameling Hond. De hond René is echter iets anders dan de Persoon René. 
+-}
+RELATION atmRoot [AtomID*PlainConcept] [TOT]  -- most generic concept(s) where the AtomID is in. 
+RELATION in[AtomID*PlainConcept] [TOT]
 RELATION atomvalue[AtomID*AtomValue] [UNI,TOT]
+
 MEANING "The value of an atom."
 --RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
 --MEANING "An atom of a concept has a unique value within the class of that concept."
