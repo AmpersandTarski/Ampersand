@@ -101,13 +101,13 @@ instance Unique FSpec where
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
-data AtomID = AtomID { atmRoot :: [A_Concept] -- The root concept(s) of the atom.
-                     , atmIn   :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                     , atmVal  :: String
+data AtomID = AtomID { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
+                     , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
+                     , atmVal   :: String
                      } deriving (Typeable,Eq)
 instance Unique AtomID where
   showUnique a = atmVal a++" in "
-         ++case atmRoot a of
+         ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x
              xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
