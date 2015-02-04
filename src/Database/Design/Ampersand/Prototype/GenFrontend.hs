@@ -65,11 +65,11 @@ traverseTopLevelInterface fSpec ifc@(FEBox interfaceName _ _) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ interfaceName
     ; lns <- traverseInterface fSpec 0 ifc
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
-    ; let contents = render $ setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
-                                            , ("interfaceName",       interfaceName)
-                                            , ("contents",            unlines lns)
-                                            ]
-                                            template
+    ; let contents = renderTemplate template $
+                       setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
+                                     , ("interfaceName",       interfaceName)
+                                     , ("contents",            unlines lns)
+                                     ]
 
     ; let filename = interfaceName ++ ".html" -- TODO: escape
     ; writePrototypeFile fSpec ("views" </> filename) $ contents 
@@ -80,8 +80,7 @@ traverseInterface fSpec depth ifc =
   case ifc of
     FEAtomic _ ->
      do { template <- readTemplate fSpec $ "views/Atomic.html"
-        ; let contents = render $ template
-        ; return $ lines contents
+        ; return $ lines $ renderTemplate template id
         }
     FEBox _ mClass ifcs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass
@@ -92,31 +91,42 @@ traverseInterface fSpec depth ifc =
         ; childLnss <- mapM (traverseSubinterface childTemplate) ifcs
         
         ; let wrappedChildrenContent = intercalate "\n" $ indent 2 $ concat childLnss -- intercalate, because unlines introduces a trailing \n
-        
-        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
-        ; let contents = render $ setAttribute "isEditable" False $
-                                  setManyAttrib [ ("class",    clss)
-                                                , ("contents", wrappedChildrenContent)
-                                                ]
-                                                parentTemplate
 
-        ; return $ lines contents
+        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
+        ; return $ lines $ renderTemplate parentTemplate $ 
+                           setAttribute "isEditable" False .
+                           setManyAttrib [ ("class",    clss)
+                                         , ("contents", wrappedChildrenContent)
+                                         ]
         }
-      where traverseSubinterface :: StringTemplate String -> FEInterface -> IO [String]
+      where traverseSubinterface :: Template -> FEInterface -> IO [String]
             traverseSubinterface childTemplate subifc =
              do { subifcLns <- traverseInterface fSpec (depth + 1) subifc
-                ; return $ lines $
-                    render $ setManyAttrib [ ("subinterfaceName", ifcName subifc)
-                                           , ("contents",         intercalate "\n" $ indent 2 subifcLns)
-                                           ]
-                                           childTemplate
+                ; return $ lines $ renderTemplate childTemplate $ 
+                    setManyAttrib [ ("subinterfaceName", ifcName subifc)
+                                  , ("contents",         intercalate "\n" $ indent 2 subifcLns)
+                                  ]
                 }
       
-        
-readTemplate :: FSpec -> String -> IO (StringTemplate String)
+-- data type to keep template and source file together for better errors
+data Template = Template (StringTemplate String) String
+
+readTemplate :: FSpec -> String -> IO Template
 readTemplate fSpec templatePath =
- do { res <- readUTF8File $ (getTemplateDir fSpec) </> templatePath
+ do { let absPath = getTemplateDir fSpec </> templatePath
+    ; res <- readUTF8File $ absPath
     ; case res of
         Left err          -> error $ "Cannot read template file " ++ templatePath ++ "\n" ++ err
-        Right templateStr -> return $ newSTMP templateStr
+        Right templateStr -> return $ Template (newSTMP templateStr) absPath
     }
+
+-- having Bool attributes prevents us from using a [(String, String)] parameter for attribute settings
+renderTemplate :: Template -> (StringTemplate String -> StringTemplate String) -> String
+renderTemplate (Template template absPath) setAttrs =
+  let appliedTemplate = setAttrs template
+  in  case checkTemplate appliedTemplate of
+             (Just parseErrs, _,          _)       -> templateError parseErrs
+             (Nothing,        Just attrs, _)       -> templateError $ "Uninitialized template attributes: " ++ show attrs
+             (Nothing,        Nothing,    Just ts) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
+             (Nothing,        Nothing,    Nothing) -> render appliedTemplate
+  where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
