@@ -96,15 +96,13 @@ instance MetaPopulations FSpec where
     nullContent _ = False
 
 instance MetaPopulations Pattern where
- metaPops fSpec pat =
+ metaPops _ pat =
    [ Comment " "
    , Comment $ "*** Pattern `"++name pat++"` ***"
    , Pop "ptnm"    "Pattern" "Conid"
           [(uri pat, ptnm pat)]
    , Pop "ptrls"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
-   , Pop "ctxpats" "Context" "Pattern"
-          [(uri fSpec,uri pat)]
    , Pop "ptgns"   "Pattern" "Gen"
           [(uri pat,uri x) | x <- ptgns pat]
    , Pop "ptdcs"   "Pattern" "Declaration"
@@ -115,17 +113,13 @@ instance MetaPopulations Pattern where
 instance MetaPopulations A_Gen where
  metaPops _ gen =
   [ Pop "genspc"  "Gen" "PlainConcept"
-            [(uri gen,uri(genspc gen))]
-  ]++
-  case gen of
-   Isa{} ->
-     [ Pop "gengen"  "Gen" "PlainConcept"
-            [(uri gen,uri(gengen gen))]
-     ]
-   IsE{} ->
-     [ Pop "genrhs"  "Gen" "PlainConcept"
-          [(uri gen,uri c) | c<-genrhs gen]
-     ]
+          [(uri gen,uri(genspc gen))]
+  , Pop "gengen"  "Gen" "PlainConcept"
+          [(uri gen,uri c) | c<- case gen of
+                                   Isa{} -> [gengen gen]
+                                   IsE{} -> genrhs gen
+          ]
+  ]
 
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
