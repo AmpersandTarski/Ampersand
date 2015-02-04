@@ -3,6 +3,11 @@ module Database.Design.Ampersand.Basics.Unique
   (Unique(..),Named(..))
 where
 import Data.Typeable
+import Data.List
+import Database.Design.Ampersand.Basics.Version
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Unique"
 
 -- | anything could have some label, can't it?
 class Named a where
@@ -35,3 +40,8 @@ data UniqueObj a =
        UniqueObj { theThing :: a
                  , theShow  :: (a -> String)
                  } deriving (Typeable)
+
+instance Unique a => Unique [a] where
+   showUnique [] = fatal 74 $ "empty list is not unique"
+   showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
+

@@ -537,8 +537,9 @@ data Expression
       | EEps A_Concept Sign            -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Sign                      -- ^ Cartesian product relation
       | EMp1 String A_Concept          -- ^ constant (string between single quotes)
-      deriving (Eq, Prelude.Ord, Show)
-
+      deriving (Eq, Prelude.Ord, Show, Typeable)
+instance Unique Expression where
+  showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
 infixl 1 .==.   -- equivalence
@@ -702,3 +703,5 @@ showOrder :: A_Concept -> String
 showOrder x = "\nComparability classes:"++ind++intercalate ind (map show classes)
  where (_,classes,_,_,_) = cptgE x; ind = "\n   "
 -}
+
+  
