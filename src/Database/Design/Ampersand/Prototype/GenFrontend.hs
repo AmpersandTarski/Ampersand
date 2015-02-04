@@ -33,69 +33,74 @@ doGenFrontend fSpec =
 -- TODO: interface ref: Editable relations from interface def of ref, or origin?
 --       both may result in unexpected editability. Maybe take intersection?
 
-data FEInterface = FEBox    { ifcName :: String, _ifcExp :: Expression
-                            , _ifcMClass :: Maybe String
-                            , _ifcIsRoot :: Bool, _ifcSubIfcs :: [FEInterface] } -- _ disables 'not used' warning
-                 | FEAtomic { ifcName :: String, _ifcExp :: Expression } deriving Show
+
+data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String -- _ disables 'not used' warning for fields
+                               , _ifcExp :: Expression, _ifcObj :: FEObject }
+
+data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
+                         , objExp :: Expression, _ifcSubIfcs :: [FEObject] }
+              | FEAtomic { objName :: String, _objExp :: Expression } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
 buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
 
 buildInterface :: FSpec -> Interface -> FEInterface
-buildInterface fSpec interface = buildObject fSpec {- (ifcParams interface) -} True (ifcObj interface)
--- TODO: handle editable rels here, and maybe interface class
+buildInterface fSpec interface =
+  let obj = buildObject fSpec (ifcObj interface)
+  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) obj
+  -- NOTE: due to Amperand's interface object structure, the name and expression are taken from the root object 
+  -- TODO: handle editable rels here
 
-buildObject :: FSpec -> Bool -> ObjectDef -> FEInterface
-buildObject fSpec isTopLevel object =
+buildObject :: FSpec -> ObjectDef -> FEObject
+buildObject fSpec object =
   case objmsub object of
     Nothing               -> FEAtomic (name object) (objctx object)
-    Just (InterfaceRef nm) -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
-                                [i] -> buildInterface fSpec i -- TODO: skip interface root object, what about exp and editable rels?
-                                []  -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                                _   -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-    Just (Box _ cl objects) -> FEBox (name object) (objctx object) cl (isTopLevel) $
-                                 map (buildObject fSpec False) objects
+    Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
+                                  [i] -> buildObject fSpec (ifcObj i) -- TODO: skip interface root object, what about exp and editable rels?
+                                  []  -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
+                                  _   -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
+    Just (Box _ mCl objects) -> FEBox (name object) mCl (objctx object) $
+                                   map (buildObject fSpec) objects
     
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
 traverseInterfaces fSpec ifcs =
  do { verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
-    ; mapM_ (traverseTopLevelInterface fSpec) $ ifcs
+    ; mapM_ (traverseInterface fSpec) $ ifcs
     }
 
-traverseTopLevelInterface :: FSpec -> FEInterface -> IO ()
-traverseTopLevelInterface _     (FEAtomic _ _)                         =  fatal 57 $ "Unexpected atomic top-level interface"
-traverseTopLevelInterface fSpec ifc@(FEBox interfaceName iExp _ isRoot _) =
+traverseInterface :: FSpec -> FEInterface -> IO ()
+traverseInterface fSpec (FEInterface interfaceName _ iExp obj) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ interfaceName
-    ; lns <- traverseInterface fSpec 0 ifc
+    ; lns <- traverseObject fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"     (isRoot && source iExp `elem` [ONE, PlainConcept "SESSION"]).
+                       setAttribute "isRoot"                   (source iExp `elem` [ONE, PlainConcept "SESSION"]) .
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
-                                     , ("contents",            unlines . indent 6 $ lns)
+                                     , ("contents",            intercalate "\n" . indent 6 $ lns) -- intercalate, because unlines introduces a trailing \n
                                      ]
 
     ; let filename = interfaceName ++ ".html" -- TODO: escape
     ; writePrototypeFile fSpec ("views" </> filename) $ contents 
     }
 
-traverseInterface :: FSpec -> Int -> FEInterface -> IO [String]
-traverseInterface fSpec depth ifc =
-  case ifc of
+traverseObject :: FSpec -> Int -> FEObject -> IO [String]
+traverseObject fSpec depth obj =
+  case obj of
     FEAtomic _ _ ->
      do { template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template id
         }
-    FEBox _ _ mClass _ ifcs ->
+    FEBox _ mClass _ ifcs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
         ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html"
         
-        ; childLnss <- mapM (traverseSubinterface childTemplate) ifcs
+        ; childLnss <- mapM (traverseSubObject childTemplate) ifcs
         
-        ; let wrappedChildrenContent = intercalate "\n" $ indent 2 $ concat childLnss -- intercalate, because unlines introduces a trailing \n
+        ; let wrappedChildrenContent = intercalate "\n" $ indent 2 $ concat childLnss
 
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
         ; return $ lines $ renderTemplate parentTemplate $ 
@@ -104,11 +109,11 @@ traverseInterface fSpec depth ifc =
                                            , ("contents", wrappedChildrenContent)
                                            ]
         }
-      where traverseSubinterface :: Template -> FEInterface -> IO [String]
-            traverseSubinterface childTemplate subifc =
-             do { subifcLns <- traverseInterface fSpec (depth + 1) subifc
+      where traverseSubObject :: Template -> FEObject -> IO [String]
+            traverseSubObject childTemplate subifc =
+             do { subifcLns <- traverseObject fSpec (depth + 1) subifc
                 ; return $ lines $ renderTemplate childTemplate $ 
-                    setManyAttrib [ ("subinterfaceName", ifcName subifc)
+                    setManyAttrib [ ("subObjectName", objName subifc)
                                   , ("contents",         intercalate "\n" $ indent 2 subifcLns)
                                   ]
                 }
