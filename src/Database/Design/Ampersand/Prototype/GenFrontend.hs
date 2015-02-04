@@ -65,15 +65,15 @@ traverseInterfaces fSpec ifcs =
 
 traverseTopLevelInterface :: FSpec -> FEInterface -> IO ()
 traverseTopLevelInterface _     (FEAtomic _ _)                         =  fatal 57 $ "Unexpected atomic top-level interface"
-traverseTopLevelInterface fSpec ifc@(FEBox interfaceName _ _ isRoot _) =
+traverseTopLevelInterface fSpec ifc@(FEBox interfaceName iExp _ isRoot _) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ interfaceName
     ; lns <- traverseInterface fSpec 0 ifc
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"     isRoot .
+                       setAttribute "isRoot"     (isRoot && source iExp `elem` [ONE, PlainConcept "SESSION"]).
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
-                                     , ("contents",            unlines lns)
+                                     , ("contents",            unlines . indent 6 $ lns)
                                      ]
 
     ; let filename = interfaceName ++ ".html" -- TODO: escape
