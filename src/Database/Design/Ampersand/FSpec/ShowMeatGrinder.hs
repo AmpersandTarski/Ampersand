@@ -151,9 +151,15 @@ instance MetaPopulations AtomID where
    ]
 instance MetaPopulations Sign where
  metaPops _ sgn =
-      [ Pop "src"    "Sign" "Concept"
+--      [ Pop "sign" "Declaration" "Sign"
+--             [(aap,uri sgn)]
+--      , Pop "sign" "PairID" "Sign"
+--             [(noot,uri sgn)]
+      [ Pop "in" "PairID" "Declaration"
              [(uri sgn, uri (source sgn))]
-      , Pop "trg"   "Sign" "Concept"
+      , Pop "src" "Sign" "Concept"
+             [(uri sgn, uri (source sgn))]
+      , Pop "trg" "Sign" "Concept"
              [(uri sgn, uri (target sgn))]
       ]
 
