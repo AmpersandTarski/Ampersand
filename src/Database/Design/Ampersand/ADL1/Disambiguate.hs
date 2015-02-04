@@ -31,7 +31,9 @@ findConcept :: String -> A_Concept
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
 findConcept x = 
    PlainConcept { cptnm = x
-                , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "
+                , cpttp = [ -- TODO: Fix this, by getting all conceptDefs along with this call.  
+                            --  fatal 260 "the technical type should be derived from the conceptdefs of this concept. "
+                          ]
                 }
 
 class Disambiguatable d where
