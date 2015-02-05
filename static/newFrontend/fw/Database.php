@@ -10,8 +10,8 @@ class Database
 	private $dblink;
 	private $dbname;
 	private $transaction;
-	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
-	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
+	private $affectedConcepts; // array with all affected Concepts during a transaction.
+	private $affectedRelations; // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
 	
 	private static $_instance = null;
 	
@@ -26,6 +26,9 @@ class Database
 		
 		mysql_select_db($this->dbname, $this->dblink);
 		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
+		$this->affectedConcepts = array();
+		$this->affectedRelations = array();
 	}
 	
 	// Prevent any copy of this object
