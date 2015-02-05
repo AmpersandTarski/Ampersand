@@ -2,25 +2,31 @@
 
 use Luracast\Restler\Data\Object;
 use Luracast\Restler\RestException;
-class Api
-{
-/****************************** INSTALLER & SESSION RESET ******************************/
+class Api{
+	
+	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
 	 * @url GET installer
+	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function installer($roleId){
-		include (__DIR__ . '/../../generics/InstallerDBstruct.php');
-		include (__DIR__ . '/../../generics/InstallerDefPop.php');
+	public function installer($sessionId, $roleId = null){
+		try{
+			include (__DIR__ . '/../../generics/InstallerDBstruct.php');
+			include (__DIR__ . '/../../generics/InstallerDefPop.php');
+			
+			$session = Session::singleton($sessionId);
+			$session->setRole($roleId);
+			
+			$db = Database::singleton();
+			
+			$db->closeTransaction('Database reset to initial value', true);	
+			
+			return Notifications::getAll(); // Return all notifications
 		
-		$session = Session::singleton();
-		$session->setRole($roleId);
-		
-		$db = Database::singleton();
-		
-		$db->closeTransaction('Database reset to initial value', true);	
-		
-		return Notifications::getAll(); // Return all notifications
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 		
 	}
 	
@@ -28,151 +34,151 @@ class Api
 	 * @url GET session
 	 */
 	public function getSession(){
-	
-		$session = Session::singleton();
-		return array('id' => session_id());
+		try{
+			$session = Session::singleton();
+			
+			return array('id' => session_id());
+		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	
 	}
 	
 	/**
-	 * @url DELETE session
 	 * @url DELETE session/{session_id}
 	 */
 	public function destroySession($session_id){
-
-		$session = Session::singleton();
-		$session->destroySession($session_id);
+		try{
+			$session = Session::singleton($session_id);
+			$session->destroySession($session_id);
 		
-		return array('notifications' => Notifications::getAll());
-		
+			return array('notifications' => Notifications::getAll());
+			
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
 
-/**************************** NOTIFICATIONS ****************************/	
+	/**************************** NOTIFICATIONS ****************************/	
 	/**
 	 * @url GET notifications/all
 	 * @param int $roleId
 	 */
-	public function getAllNotifications($roleId = null)
-	{
-		$session = Session::singleton();
-		$session->setRole($roleId);
+	public function getAllNotifications($roleId = null){
+		try{
+			$session = Session::singleton();
+			$session->setRole($roleId);
 		
-		$session->role->getViolations();
-		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
+			$session->role->getViolations();
+			// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
 		
-		return Notifications::getAll();
-
+			return Notifications::getAll();
+			
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
 	
 	/**
 	 * @url GET extensions/all
 	 */
-	public function getAllExtensions()
-	{
-		return (array) $GLOBALS['apps'];
+	public function getAllExtensions(){
+		try{
+			return (array) $GLOBALS['apps'];
+		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
 
-/**************************** OBJECTINTERFACES ****************************/
-
+	/**************************** OBJECTINTERFACES ****************************/
 	/**
 	 * @url GET interface/{interfaceName}
-	 * @url GET interface/{interfaceName}/{atomid}
+	 * @url GET interface/{interfaceName}/{atomId}
 	 * @param string $interfaceName
 	 * @param string $sessionId
-	 * @param string $atomid
+	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function getAtom($interfaceName, $sessionId, $atomid = null, $roleId = null)
-	{
-		$session = Session::singleton($sessionId);
-	
+	public function getAtom($interfaceName, $sessionId, $atomId = null, $roleId = null){
 		try{
+			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
-		}catch(Exception $e){
-			throw new RestException(404, $e->getMessage());
-		}
-	
-		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
 		
-		$result = array();
-		if(is_null($atomid)) {
-			foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
-				$atom = new Atom($atomId, $session->interface->srcConcept);
-				$result = array_merge($result, (array)$atom->getContent($session->interface));
-			}
-		}else{
-	
-			$atom = new Atom($atomid, $session->interface-srcConcept);
-			$result = $atom->getContent($session->interface);
-		}
-		
-		if(empty($result)) throw new RestException(404, 'Resource not found');
-
-		return array_values($result); // array_values transforms assoc array to non-assoc array
-
-	}
-	
-	/**
-	 * @url PATCH interface/{interfaceName}/{atomid}
-	 * @param string $interfaceName
-	 * @param string $sessionId
-	 * @param string $atomid
-	 * @param int $roleId
-	 */
-	public function patchAtom($interfaceName, $sessionId, $atomid, $roleId = null, $request_data = null)
-	{
-		$session = Session::singleton($sessionId);
-		
-		try{
-			$session->setRole($roleId);
-			$session->setInterface($interfaceName);
-		}catch(Exception $e){
-			throw new RestException(404, $e->getMessage());
-		}
-	
-		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
-	
-		$interface = new ObjectInterface($interfaceName);
-		$atom = new Atom($atomid, $interface->srcConcept);		
-		
-		return array_merge(
-				array('patches' => $atom->patch($interface, $request_data)),
-				array('content' => current((array)$atom->getContent($interface))),
-				array('notifications' => Notifications::getAll()));
-	
-	}
-	
-	/**
-	 * @url DELETE interface/{interfaceName}/{atomid}
-	 * @param string $interfaceName
-	 * @param string $sessionId
-	 * @param string $atomid
-	 * @param int $roleId
-	 */
-	public function deleteAtom($interfaceName, $sessionId, $atomid, $roleId = null)
-	{
-		$session = Session::singleton($sessionId);
-	
-		try{
-			$session->setRole($roleId);
-			$session->setInterface($interfaceName);
-		}catch(Exception $e){
-			throw new RestException(404, $e->getMessage());
-		}
-	
-		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
+			$result = array();
 			
-		$interface = new ObjectInterface($interfaceName);
+			if(is_null($atomId)) {
+				foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
+					$atom = new Atom($atomId, $session->interface->srcConcept);
+					$result = array_merge($result, (array)$atom->getContent($session->interface));
+				}
+			}else{
 		
-		// TODO: insert check if Atom may be deleted with this interface
-		
-		$atom = new Atom($atomid, $interface->srcConcept);
-		$atom->delete();	
-		
-		return array('notifications' => Notifications::getAll());
+				$atom = new Atom($atomId, $session->interface-srcConcept);
+				$result = $atom->getContent($session->interface);
+			}
+			
+			if(empty($result)) throw new Exception('Resource not found', 404);
 	
+			return array_values($result); // array_values transforms assoc array to non-assoc array
+		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
+	
+	/**
+	 * @url PATCH interface/{interfaceName}/{atomId}
+	 * @param string $interfaceName
+	 * @param string $sessionId
+	 * @param string $atomId
+	 * @param int $roleId
+	 */
+	public function patchAtom($interfaceName, $sessionId, $atomId, $roleId = null, $request_data = null){
+		try{
+			$session = Session::singleton($sessionId);
+			$session->setRole($roleId);
+			$session->setInterface($interfaceName);
+			
+			$atom = new Atom($atomId, $session->interface->srcConcept);		
+			
+			return array_merge(array('patches' => $atom->patch($session->interface, $request_data))
+							  ,array('content' => current((array)$atom->getContent($session->interface)))
+							  ,array('notifications' => Notifications::getAll())
+							  );
+		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
+	}
+	
+	/**
+	 * @url DELETE interface/{interfaceName}/{atomId}
+	 * @param string $interfaceName
+	 * @param string $sessionId
+	 * @param string $atomId
+	 * @param int $roleId
+	 */
+	public function deleteAtom($interfaceName, $sessionId, $atomId, $roleId = null){
+		try{
+			$session = Session::singleton($sessionId);
+			$session->setRole($roleId);
+			$session->setInterface($interfaceName);
+		
+			// TODO: insert check if Atom may be deleted with this interface
+			
+			$atom = new Atom($atomId, $session->interface->srcConcept);
+			$atom->delete();
+			
+			return array('notifications' => Notifications::getAll());
+		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
+	}
+	
 	/**
 	 * @url POST interface/{interfaceName}
 	 * @param string $interfaceName
@@ -180,55 +186,63 @@ class Api
 	 * @param int $roleId
 	 */
 	public function postAtom($interfaceName, $sessionId, $roleId = null){
-		$session = Session::singleton($sessionId);
-		$db = Database::singleton();
-		
 		try{
+			$session = Session::singleton($sessionId);
+			$db = Database::singleton();
+			
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
-		}catch(Exception $e){
-			throw new RestException(404, $e->getMessage());
-		}
-		
-		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not accessible for specified role: '.$session->role->name.' (roleId:' . $roleId .')' );
 			
-		$interface = new ObjectInterface($interfaceName);
+			// TODO: insert check if Atom may be created with this interface
+			
+			$concept = $session->interface->srcConcept;
+			$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
+			$atom = new Atom($atomId, $concept);
+			
+			return array_values($atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
 		
-		// TODO: insert check if Atom may be created with this interface
-		
-		$concept = $session->interface->srcConcept;
-		$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
-		$atom = new Atom($atomId, $concept);
-		
-		return array_values($atom->getContent($session->interface));
-		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
 	
 
-/**************************** CONCEPTS AND ATOMS ****************************/
+	/**************************** CONCEPTS AND ATOMS ****************************/
     /**
      * @url GET concepts
      */
-    public function getConcepts()
-    {
-        return Concept::getAllConcepts(); // "Return list of all concepts"
+    public function getConcepts(){
+    	try{
+        	return Concept::getAllConcepts(); // "Return list of all concepts"
+        	
+        }catch(Exception $e){
+       		throw new RestException($e->getCode(), $e->getMessage());
+       	}
     }
 	
 	/**
      * @url GET concept/{concept}
      */
-    public function getConceptAtoms($concept)
-    {
-        return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
+    public function getConceptAtoms($concept){
+    	try{
+        	return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
+        	
+        }catch(Exception $e){
+        	throw new RestException($e->getCode(), $e->getMessage());
+        }
     }
     
     /**
      * @url GET concept/{concept}/{atomId}
      */
-    public function getConceptAtom($concept, $atomId)
-    {
-    	$atom = new Atom($atomId, $concept);
-    	return $atom;
+    public function getConceptAtom($concept, $atomId){
+    	try{
+    		$atom = new Atom($atomId, $concept);
+    		return $atom;
+    		
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+   		}
     }    
     
 	/**
@@ -236,9 +250,13 @@ class Api
 	 * @status 201
      */
 	function postConceptAtom($concept){ 
-		$database = Database::singleton();
-	 
-		return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
+		try{
+			$database = Database::singleton();
+			return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
+			
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
 
 	/**
@@ -246,21 +264,26 @@ class Api
 	 * @status 204
 	 */
 	function deleteConceptAtom($concept, $atom){ 
-		$database = Database::singleton();
+		try{
+			$database = Database::singleton();
+			$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
 		
-		$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
 	}
-    
-	
-/**************************** ROLES ****************************/
-	
+    	
+	/**************************** ROLES ****************************/
 	/**
      * @url GET roles
      */
     public function getAllRoles(){
-    	
-		return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
+    	try{
+			return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
 		
+    	}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
     }
     
     /**
@@ -268,42 +291,47 @@ class Api
      * @url GET role/{roleId}
      */
     public function getRole($roleId = NULL){
-    	
-    	if($roleId !== NULL){	// do not use isset(), because roleNr can be 0.
-    		return new Role($roleId); // Return role with properties as defined in class Role
-    	}else{
-    		return new Role(); // Return default role
-    			
-    	}
+    	try{
+    		if($roleId !== NULL){	// do not use isset(), because roleNr can be 0.
+    			return new Role($roleId); // Return role with properties as defined in class Role
+    		}else{
+    			return new Role(); // Return default role	
+    		}
+    		
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+   		}
     }
     
     /**
      * @url GET role/name/{roleName}
      */
     public function getRoleByName($roleName){
-    	
-    	return Role::getRole($roleName);
-    	
+    	try{
+    		return Role::getRole($roleName);
+    		
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+   		}
     }
     
-	
-/**************************** INTERFACES ****************************/
     
+	/**************************** INTERFACES ****************************/
     /**
      * @url GET interfaces/all
      * @param int $roleId
      */
     public function getAllInterfaces($roleId = null){
-    	$session = Session::singleton();
-    	
     	try{
+    		$session = Session::singleton();
     		$session->setRole($roleId);
+    		
+    		return array ('top' => $session->role->getInterfaces(true)
+    					 ,'new' => $session->role->getInterfaces(false));
+    		
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());
     	}
-    
-    	return array ('top' => $session->role->getInterfaces(true)
-    				 ,'new' => $session->role->getInterfaces(false));
     }
     
 	/**
@@ -313,26 +341,23 @@ class Api
 	 * @param int $roleId
      */
     public function getInterfaces($interfaceName = null, $roleId = null){
-    	$session = Session::singleton();
     	try{
+    		$session = Session::singleton();
     		$session->setRole($roleId);
-    	}catch(Exception $e){
-    		throw new RestException(404, $e->getMessage());
-    	}
     	
-    	if(!is_null($interfaceName)){
-	    	try{
-	    		$session->setInterface($interfaceName);
-	    	}catch(Exception $e){
-	    		throw new RestException(404, 'Interface \''.$interfaceName.'\' does not exists');
-	    	}
-    		if(!$session->role->isInterfaceForRole($interfaceName)) throw new RestException(403, 'Interface is not for specified role: ' . $roleId );
-    		return $session->interface->getInterface();
-        }else{
-        	return $session->role->getInterfaces();  // "Return list of all interfaces"
+	    	if(!is_null($interfaceName)){
+		    	$session->setInterface($interfaceName);
+	    		
+		    	return $session->interface->getInterface(); // Return specific interface
+	    		
+	        }else{
+	        	
+	        	return $session->role->getInterfaces();  // Return list of all interfaces for the given/default role
+			}
+		
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
 		}
-    }	
-	
+    }
 }
-
 ?>
