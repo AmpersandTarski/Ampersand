@@ -112,7 +112,9 @@ traverseObject fSpec depth obj =
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC" ++
                                       (if isEditable then "" else "not") ++ " editable"
         ; template <- readTemplate fSpec $ "views/Atomic.html"
-        ; return $ lines $ renderTemplate template id
+        ; return $ lines $ renderTemplate template $ 
+                             setAttribute "isEditable" isEditable
+        
         }
     FEBox _ mClass _ isEditable subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
