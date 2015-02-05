@@ -48,10 +48,10 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String 
                                , _ifcObj :: FEObject }
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
-                         , objExp :: Expression, _objTarget :: A_Concept
+                         , objExp :: Expression, _objSource :: A_Concept, _objTarget :: A_Concept
                          , _objIsEditable :: Bool, _ifcSubIfcs :: [FEObject] }
               | FEAtomic { objName :: String
-                         , objExp :: Expression, _objTarget :: A_Concept
+                         , objExp :: Expression, _objSource :: A_Concept, _objTarget :: A_Concept
                          , _objIsEditable :: Bool } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
@@ -63,24 +63,23 @@ buildInterface fSpec interface =
       obj = buildObject fSpec editableRels (ifcObj interface)
   in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) editableRels obj
   -- NOTE: due to Amperand's interface object structure, the name and expression are taken from the root object 
-  -- TODO: handle editable rels here
-
+  
 buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
 buildObject fSpec editableRels object =
   let iExp = conjNF (getOpts fSpec) $ objctx object
-      (isEditable, tgt) = 
+      (isEditable, src, tgt) = 
         case getExpressionRelation iExp of
-          Nothing                    -> (False, target iExp)
-          Just (_, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declTgt) 
-                                        -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation 
+          Nothing                          -> (False, source iExp, target iExp)
+          Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
+                                           -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation 
    in  case objmsub object of
-        Nothing                  -> FEAtomic (name object) iExp tgt isEditable
-        Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
+        Nothing                  -> FEAtomic (name object) iExp src tgt isEditable
+        Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface ref
                                       []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                                       (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                                       [i]     -> let editableRels' = editableRels `intersect` ifcParams i
                                                  in  buildObject fSpec editableRels' (ifcObj i)
-        Just (Box _ mCl objects) ->FEBox (name object) mCl iExp tgt isEditable $
+        Just (Box _ mCl objects) ->FEBox (name object) mCl iExp src tgt isEditable $
                                           map (buildObject fSpec editableRels) objects
     
   
@@ -112,17 +111,18 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
 traverseObject fSpec depth obj =
   case obj of
-    FEAtomic nm _ tgt isEditable ->
-     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm++" (target: "++ name tgt ++ "), " ++
-                                      (if isEditable then "" else "not ") ++ "editable"
+    FEAtomic nm _ src tgt isEditable ->
+     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
+                                        " [" ++ name src ++ "*"++ name tgt ++ "], " ++
+                                        (if isEditable then "" else "not ") ++ "editable"
         ; template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template $ 
                              setAttribute "isEditable" isEditable
         
         }
-    FEBox nm mClass _ tgt isEditable subObjs ->
+    FEBox nm mClass _ src tgt isEditable subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
-                                        " " ++ show nm ++ " (target: "++ name tgt ++ "), " ++
+                                        " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
