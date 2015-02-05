@@ -23,9 +23,13 @@ str1 = listOf1 ascii
 str2 :: Gen String
 str2 = suchThat str1 (\s -> length s > 1)
 
-identifier :: Gen String
-identifier = suchThat str2 startUpper
+upper_id :: Gen String
+upper_id = suchThat str2 startUpper
     where startUpper = isUpper . head
+
+lower_id :: Gen String
+lower_id = suchThat str2 startLower
+    where startLower = isLower . head
 
 --- Now the arbitrary instances
 instance Arbitrary Origin where
@@ -60,39 +64,43 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary
 
 instance Arbitrary P_Declaration where
-    arbitrary = P_Sgn <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Sgn <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (Term a) where
-    arbitrary = oneof [
-           Prim <$> arbitrary,
-           PEqu <$> arbitrary <*> arbitrary <*> arbitrary,
-           PImp <$> arbitrary <*> arbitrary <*> arbitrary,
-           PIsc <$> arbitrary <*> arbitrary <*> arbitrary,
-           PUni <$> arbitrary <*> arbitrary <*> arbitrary,
-           PDif <$> arbitrary <*> arbitrary <*> arbitrary,
-           PLrs <$> arbitrary <*> arbitrary <*> arbitrary,
-           PRrs <$> arbitrary <*> arbitrary <*> arbitrary,
-           PDia <$> arbitrary <*> arbitrary <*> arbitrary,
-           PCps <$> arbitrary <*> arbitrary <*> arbitrary,
-           PRad <$> arbitrary <*> arbitrary <*> arbitrary,
-           PPrd <$> arbitrary <*> arbitrary <*> arbitrary,
-           PKl0 <$> arbitrary <*> arbitrary,
-           PKl1 <$> arbitrary <*> arbitrary,
-           PFlp <$> arbitrary <*> arbitrary,
-           PCpl <$> arbitrary <*> arbitrary,
-           PBrk <$> arbitrary <*> arbitrary
+    arbitrary = sized genTerm
+
+genTerm :: Arbitrary a => Int -> Gen (Term a)
+genTerm 0 = Prim <$> arbitrary
+genTerm n = oneof [
+           PEqu <$> arbitrary <*> gen <*> gen,
+           PImp <$> arbitrary <*> gen <*> gen,
+           PIsc <$> arbitrary <*> gen <*> gen,
+           PUni <$> arbitrary <*> gen <*> gen,
+           PDif <$> arbitrary <*> gen <*> gen,
+           PLrs <$> arbitrary <*> gen <*> gen,
+           PRrs <$> arbitrary <*> gen <*> gen,
+           PDia <$> arbitrary <*> gen <*> gen,
+           PCps <$> arbitrary <*> gen <*> gen,
+           PRad <$> arbitrary <*> gen <*> gen,
+           PPrd <$> arbitrary <*> gen <*> gen,
+           PKl0 <$> arbitrary <*> gen,
+           PKl1 <$> arbitrary <*> gen,
+           PFlp <$> arbitrary <*> gen,
+           PCpl <$> arbitrary <*> gen,
+           PBrk <$> arbitrary <*> gen
         ]
+        where gen = genTerm (n `div` 2)
 
 instance Arbitrary TermPrim where
     arbitrary = oneof [
-           PI <$> arbitrary,
-           Pid <$> arbitrary <*> arbitrary,
-           Patm <$> arbitrary <*> arbitrary <*> arbitrary,
-           PVee <$> arbitrary,
+           PI    <$> arbitrary,
+           Pid   <$> arbitrary <*> arbitrary,
+           Patm  <$> arbitrary <*> arbitrary <*> arbitrary,
+           PVee  <$> arbitrary,
            Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
-           Prel <$> arbitrary <*> arbitrary,
-           PTrel <$> arbitrary <*> arbitrary <*> arbitrary
+           Prel  <$> arbitrary <*> lower_id,
+           PTrel <$> arbitrary <*> lower_id <*> arbitrary
         ]
 
 instance Arbitrary a => Arbitrary (PairView a) where
