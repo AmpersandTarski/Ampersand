@@ -100,7 +100,7 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp _ obj) =
                                      ]
 
     ; let filename = interfaceName ++ ".html" -- TODO: escape
-    ; writePrototypeFile fSpec ("views" </> filename) $ contents 
+    ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
     }
 
 data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving (Show, Data, Typeable)
