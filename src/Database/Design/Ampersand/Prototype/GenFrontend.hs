@@ -48,9 +48,10 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String 
                                , _ifcObj :: FEObject }
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
-                         , objExp :: Expression
+                         , objExp :: Expression, _objTarget :: A_Concept
                          , _objIsEditable :: Bool, _ifcSubIfcs :: [FEObject] }
-              | FEAtomic { objName :: String, objExp :: Expression
+              | FEAtomic { objName :: String
+                         , objExp :: Expression, _objTarget :: A_Concept
                          , _objIsEditable :: Bool } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
@@ -67,17 +68,19 @@ buildInterface fSpec interface =
 buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
 buildObject fSpec editableRels object =
   let iExp = conjNF (getOpts fSpec) $ objctx object
-      isEditable = case getExpressionRelation iExp of
-                     Nothing              -> False
-                     Just (_, decl, _, _) -> EDcD decl `elem` editableRels
+      (isEditable, tgt) = 
+        case getExpressionRelation iExp of
+          Nothing                    -> (False, target iExp)
+          Just (_, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declTgt) 
+                                        -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation 
    in  case objmsub object of
-        Nothing                  -> FEAtomic (name object) iExp isEditable
+        Nothing                  -> FEAtomic (name object) iExp tgt isEditable
         Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
                                       []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                                       (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                                       [i]     -> let editableRels' = editableRels `intersect` ifcParams i
                                                  in  buildObject fSpec editableRels' (ifcObj i)
-        Just (Box _ mCl objects) ->FEBox (name object) mCl iExp isEditable $
+        Just (Box _ mCl objects) ->FEBox (name object) mCl iExp tgt isEditable $
                                           map (buildObject fSpec editableRels) objects
     
   
@@ -103,22 +106,24 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp _ obj) =
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
     }
 
+-- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving (Show, Data, Typeable)
  
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
 traverseObject fSpec depth obj =
   case obj of
-    FEAtomic _ _ isEditable ->
-     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC" ++
-                                      (if isEditable then "" else "not") ++ " editable"
+    FEAtomic nm _ tgt isEditable ->
+     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm++" (target: "++ name tgt ++ "), " ++
+                                      (if isEditable then "" else "not ") ++ "editable"
         ; template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template $ 
                              setAttribute "isEditable" isEditable
         
         }
-    FEBox _ mClass _ isEditable subObjs ->
+    FEBox nm mClass _ tgt isEditable subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
-                                      (if isEditable then "" else "not") ++ " editable"
+                                        " " ++ show nm ++ " (target: "++ name tgt ++ "), " ++
+                                        (if isEditable then "" else "not ") ++ "editable"
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
         ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html"
