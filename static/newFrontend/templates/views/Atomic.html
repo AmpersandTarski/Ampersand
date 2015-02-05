@@ -1,1 +1,5 @@
-ATOMIC
+$if(isEditable)$<div class="input-group">
+  <input ng-model="val['Name']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
+</div>$else$<div>
+  {{val['Name']}}
+</div>$endif$
