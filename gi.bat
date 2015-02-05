@@ -1,4 +1,11 @@
-rem ghci -Wall -package-db .cabal-sandbox/x86_64-windows-ghc-7.8.3-packages.conf.d -isrc/exec:src/lib:dist/build/autogen:src:/MinGW/bin Main
-ghci -Wall ^
-	-isrc/exec:src/lib:dist/build/autogen:src:src/Database/Design/Ampersand/Test:/MinGW/bin ^
-	src/Database/Design/Ampersand/Test/Parser/ParseScripts
+@echo off
+
+if "%~1" == "" (
+	echo Please give either 'main' or 'test' as parameter
+) else if "%~1" == "main" (
+	ghci -Wall -isrc/exec:src/lib:dist/build/autogen:src Main
+) else if "%~1" == "test" (
+	ghci -Wall -isrc/exec:src/lib:dist/build/autogen:src:src/Database/Design/Ampersand/Test src\Database\Design\Ampersand\Test\Main
+) else (
+	echo "Module '%1' not configured in %0"
+)
