@@ -22,10 +22,10 @@ class Database
 		$this->dbname = $DB_name;
 		
 		$this->dblink = mysql_connect($DB_host, $DB_user, $DB_pass);
-		if (mysql_error()) throw new Exception(mysql_error());
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
 		
 		mysql_select_db($this->dbname, $this->dblink);
-		if (mysql_error()) throw new Exception(mysql_error());
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
 	}
 	
 	// Prevent any copy of this object
@@ -52,7 +52,7 @@ class Database
 		$result = mysql_query($query,$this->dblink);
 		Notifications::addLog($query, 'QUERY');
 
-		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query);
+		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query, 500);
 
 		if ($result === false) return false;
 		if ($result === true) return true;
@@ -113,8 +113,8 @@ class Database
 			return $newAtom;
 			
 		}catch(Exception $e){
+			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
-			// throw new Exception($e->message);
 		}
 	}
 	
@@ -136,7 +136,7 @@ class Database
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
 			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
 			$tgtConcept = $isFlipped ? $stableConcept : $modifiedConcept;
-			if (!$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept)) throw new Exception("Relation '" . $rel . "' does not exists");
+			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
 			
 			// Get table properties
 			$table = Relation::getTable($fullRelationSignature);
@@ -167,8 +167,8 @@ class Database
 			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
 			
 		}catch(Exception $e){
+			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
-			// throw new Exception($e->message);
 		}
 	}
 	
@@ -186,7 +186,7 @@ class Database
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
 			$srcConcept = $isFlipped ? $rightConcept : $leftConcept;
 			$tgtConcept = $isFlipped ? $leftConcept : $rightConcept;
-			if (!$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept)) throw new Exception("Relation '" . $rel . "' does not exists");
+			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
 			
 			// Determine srcAtom and tgtAtom
 			$srcAtom = $isFlipped ? $rightAtom : $leftAtom;
@@ -209,8 +209,8 @@ class Database
 			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
 			
 		}catch(Exception $e){
+			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
-			// throw new Exception($e->message);
 		}
 
 	}
@@ -246,8 +246,8 @@ class Database
 			
 			Notifications::addLog("Atom $atom (and all related links) deleted in database");
 		}catch(Exception $e){
+			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
-			// throw new Exception($e->message);
 		}
 	}
 	

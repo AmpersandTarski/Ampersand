@@ -30,7 +30,11 @@ AmpersandApp.config(function(RestangularProvider) {
 
 AmpersandApp.run(function(Restangular, $rootScope){
 	
-	$rootScope.session = {}; // empty object
+	// Declare $rootScope objects
+	$rootScope.session = {};
+	$rootScope.notifications = {'errors' : []};
+	
+	
 	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
 	
 	Restangular.restangularizeElement('', $rootScope.session, 'session');
@@ -47,7 +51,7 @@ AmpersandApp.run(function(Restangular, $rootScope){
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	
-    	$rootScope.notifications.errors[$rootScope.notifications.errors.length] = {'message' : response.status + ' ' + response.data.error.message};	
+    	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
     	
     	return false; // error handled
     });

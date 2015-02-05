@@ -69,51 +69,52 @@ function TransitiveClosure($r,$C,$rCopy,$rStar){
 }
 
 function RetrievePopulation($relationName, $concept){
-	$database = Database::singleton();
-	
-	if($fullRelationSignature = Relation::isCombination($relationName, $concept, $concept)){
+	try{
+		$database = Database::singleton();
+		
+		$fullRelationSignature = Relation::isCombination($relationName, $concept, $concept);
 		$table = Relation::getTable($fullRelationSignature);
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
-	}else{
-		Notifications::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
-		return;
+		
+		$query = "SELECT * FROM $table";
+		$result = $database->Exe($query);
+		
+		// initialization of 2-dimensional array
+		foreach($result as $row){
+			$array[$row['src']][$row['tgt']] = true;
+		}
+		
+		return (array)$array;
+	}catch(Exception $e){
+		throw new Exception('RetrievePopulation: ' . $e->getMessage(), 500);
 	}
-	
-	$query = "SELECT * FROM $table";
-	$result = $database->Exe($query);
-	
-	// initialization of 2-dimensional array
-	foreach($result as $row){
-		$array[$row['src']][$row['tgt']] = true;
-	}
-	
-	return (array)$array;
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
 function OverwritePopulation($rArray, $relation, $concept){
-	$database = Database::singleton();
-	
-	if($fullRelationSignature = Relation::isCombination($relationName, $concept, $concept)){
+	try{
+		$database = Database::singleton();
+		
+		$fullRelationSignature = Relation::isCombination($relationName, $concept, $concept);
 		$table = Relation::getTable($fullRelationSignature);
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
-	}else{
-		Notifications::addError("ERROR in RetrievePopulation: Cannot find $relation\[$concept\*$concept\] signature.");
-		return;
-	}
-	
-	$query = "TRUNCATE TABLE $table";
-	$database->Exe($query);
-	
-	foreach($rArray as $src => $tgtArray){
-		foreach($tgtArray as $tgt => $bool){
-			if($bool){
-				$query = "INSERT INTO $table (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
-				$database->Exe($query);
+		
+		$query = "TRUNCATE TABLE $table";
+		$database->Exe($query);
+		
+		foreach($rArray as $src => $tgtArray){
+			foreach($tgtArray as $tgt => $bool){
+				if($bool){
+					$query = "INSERT INTO $table (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
+					$database->Exe($query);
+				}
 			}
 		}
-	} 
+		
+	}catch(Exception $e){
+		throw new Exception('OverwritePopulation: ' . $e->getMessage(), 500);
+	}
 }
 ?>

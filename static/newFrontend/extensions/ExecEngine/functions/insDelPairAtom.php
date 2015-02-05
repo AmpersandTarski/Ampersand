@@ -9,7 +9,7 @@
    Such exceptions may be caught. The syntax for doing this is as follows:
    
    try { <insert code here>;
-         throw new Exception("identification string of the exception");
+         throw new Exception("identification string of the exception", httpStatusCode);
          <insert other code if needed>; 
        }
   catch (Exception $e)
@@ -31,7 +31,6 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	
 	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
 	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
-	if (!$relation) throw new Exception('Cannot find relation with signature' . $relationName . '[' . $srcConcept . '*' . $tgtConcept.']');
 		
 	// if srcAtom is specified as NULL, a new atom of srcConcept is created
     if($srcAtom == "NULL"){
@@ -65,7 +64,6 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	
 	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
 	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
-	if (!$relation) throw new Exception('Cannot find relation with signature' . $relationName . '[' . $srcConcept . '*' . $tgtConcept.']');
 	
 	$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
 	
@@ -101,7 +99,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 	if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
 		$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
 	}elseif(func_num_args() % 5 != 1){       // check for valid number of arguments
-		throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments");
+		throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
 	}
 	
 	// Then, we create a new atom of type $ConceptC
@@ -119,12 +117,12 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		// populate relation r1, first checking for allowed syntax:		
 		if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')){ // Note: when populating a [PROP] relation, both atoms can be NULL
 			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL
-			throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL");
+			throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL", 500);
 		}
 	
 		if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){ // Note: when populating a [PROP] relation, both atoms can be NULL
 			// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
-			throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC");
+			throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC", 500);
 		}
 	
 		if ($srcConcept == $ConceptC){
@@ -132,7 +130,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 				$srcAtom = $AtomC;
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
 				// NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+				throw new Exception("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500);
 			}
 		}
 	
@@ -141,7 +139,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 				$tgtAtom = $AtomC;
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
 				// NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+				throw new Exception("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500);
 			}
 		}
 		

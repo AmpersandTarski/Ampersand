@@ -197,7 +197,7 @@ Class Atom {
 	public function delete(){
 		$database = Database::singleton();
 		
-		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided');
+		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
 		
 		$database->deleteAtom($this->id, $this->concept);
 		

@@ -18,7 +18,7 @@ class Role {
 		}
 		
 		// Check if role exists
-		if(!key_exists($id, $allRoles)) throw new Exception ('Role with roleId \''.$id.'\' does not exists');
+		if(!key_exists($id, $allRoles)) throw new Exception ("Role with roleId \'$id\' does not exists", 404);
 		
 		// Name of role
 		$this->id = $id;

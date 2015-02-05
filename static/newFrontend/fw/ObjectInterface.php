@@ -33,7 +33,7 @@ class ObjectInterface {
 		if(empty($interface)) $interface = $allInterfaceObjects[$name]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
 		
 		// Check if interface exists
-		if(empty($interface['name'])) throw new Exception ('Specified interface \''.$name.'\' does not exists');
+		if(empty($interface['name'])) throw new Exception ("Interface \'$name\' does not exists", 500);
 		
 		// Set attributes of interface
 		$this->id = $interface['name'];

@@ -7,14 +7,6 @@ class RuleEngine {
 	 */
 	static $conjunctViolations = array();
 	
-	public static function checkRules($roleId){
-		
-		RuleEngine::checkProcessRules($roleId);
-		
-		RuleEngine::checkInvariantRules();
-		
-	}
-	
 	/* 
 	 * $cacheConjuncts
 	 * 		true: chache conjuncts
@@ -215,7 +207,7 @@ class RuleEngine {
 		// from Generics.php
 		global $allRules;
 
-		if(!array_key_exists($ruleName, $allRules)) throw new Exception("Rule $ruleName does not exists in allRules");
+		if(!array_key_exists($ruleName, $allRules)) throw new Exception("Rule \'$ruleName\' does not exists in allRules", 500);
 		
 		return $rule = $allRules[$ruleName];
 		
@@ -246,13 +238,13 @@ class RuleEngine {
 				$rows = $database->Exe($query);
 	
 				// returning the result
-				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom');
+				if(count($row) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
 				$pairStrs[] = $rows[0]['tgt'];
 	
 			// unknown segment
 			}else{
 				$errorMessage = "Unknown segmentType '" . $segment['segmentType'] . "' in pairview";
-				throw new Exception($errorMessage);
+				throw new Exception($errorMessage, 501); // 501: Not implemented
 			}
 		}
 		return array('violationMessage' => implode($pairStrs)
@@ -263,7 +255,7 @@ class RuleEngine {
 		// from Generics.php
 		global $allConjuncts;
 		
-		if(!array_key_exists($conjunctId, $allConjuncts)) throw new Exception("Conjunct $conjunctId does not exists in allConjuncts");
+		if(!array_key_exists($conjunctId, $allConjuncts)) throw new Exception("Conjunct \'$conjunctId\' does not exists in allConjuncts", 500);
 		
 		return $conjunct = $allConjuncts[$conjunctId];
 		

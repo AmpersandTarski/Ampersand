@@ -50,9 +50,7 @@ class Session {
 				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 				
 			}else{
-				Notifications::addError('Script does not contain SESSION concept!');
-				throw new Exception('Script does not contain SESSION concept!');
-				return;
+				throw new Exception('Script does not contain SESSION concept!', 500);
 			}
 			
 		} catch (Exception $e){
@@ -62,13 +60,9 @@ class Session {
 	}
 	
 	// Prevent any copy of this object
-	private function __clone()
-	{
-		
-	}
+	private function __clone(){}
 	
-	public static function singleton($sessionId = null)
-	{
+	public static function singleton($sessionId = null){
 		if(is_null (self::$_instance) ) self::$_instance = new Session($sessionId);
 		return self::$_instance;
 	}
@@ -98,38 +92,17 @@ class Session {
 		}
 	}
 	
-	public function setInterface($interfaceName = null){
+	public function setInterface($interfaceName){
 		
-		try{
-			if(isset($interfaceName)) {
-				$this->interface = new ObjectInterface($interfaceName);
-				Notifications::addLog("Interface $interfaceName selected");
-			}else{
-				$this->interface = null;
-				Notifications::addInfo("No interface selected");
-			}
-		}catch (Exception $e){
-			throw $e;
-		}
-		
-		return $interfaceName;
-	}
-	
-	public function setAtom($atomId = null){
-		
-		if(isset($atomId)){
-			$this->atom = $atomId;
-		}elseif(is_null($atomId)){
-			$this->atom = session_id();
-			$atomId = session_id();
+		if(isset($interfaceName)) {
+			if(!$this->role->isInterfaceForRole($interfaceName)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
+			
+			$this->interface = new ObjectInterface($interfaceName);
+			Notifications::addLog("Interface $interfaceName selected");
+				
 		}else{
-			$this->atom = session_id();
-			$atomId = session_id();
+			throw new Exception('No interfaceName specified', 404);
 		}
-		Notifications::addLog("Atom $atomId selected");
-		
-		return $atomId;
 	}
 }
-
 ?>

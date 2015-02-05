@@ -2,24 +2,24 @@
 
 class Relation {
 
+	/*
+	 * $relationName may be specified as fullRelationSignature (as provided in Generics) or as Ampersand relation name (as specified in Ampersand script)
+	 */
 	public static function isCombination($relationName, $srcConcept, $tgtConcept){
-		/*
-		$allRelations from Generics.php 
-		contains array with all relations, for each relation the following is specified: 
-		 - srcConcept : srcConcept of relation
-		 - tgtConcept : tgtConcept of relation
-		*/
-		global $allRelations;
+		global $allRelations; // from Generics.php
 		
 		foreach($allRelations as $key => $relationInfo){
+			// Match relationName with relation name as specified in Ampersand script.
 			if($relationInfo['name'] == $relationName && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
-				return $key; // relation signature: 'rel_<relation>_<srcConcept>_<tgtConcept>'
-			
+				return $key; // return fullRelationSignature
+						
+			// Match relationName with fullRelationSignature (format: 'rel_<relationName>_<srcConcept>_<tgtConcept>')
 			if($key == $relationName && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
-				return $key;
+				return $key; // return fullRelationSignature
 		}
 		
-		return false;
+		// If relation not found in $allRelations
+		throw new Exception("Cannot find relation with signature '" . $relationName . "[" . $srcConcept . "*" . $tgtConcept . "]'", 500);
 	}
 	
 	public static function getTable($fullRelationSignature){
@@ -43,8 +43,8 @@ class Relation {
 	public static function getTableColumnInfo($table, $column){
 		global $tableColumnInfo;
 		
-		if(!array_key_exists($table, $tableColumnInfo)) throw new Exception('Table $table does not exists in tableColumnInfo');
-		if(!array_key_exists($column, $tableColumnInfo[$table])) throw new Exception('Column $column does not exists in table $table');
+		if(!array_key_exists($table, $tableColumnInfo)) throw new Exception("Table \'$table\' does not exists in tableColumnInfo", 500);
+		if(!array_key_exists($column, $tableColumnInfo[$table])) throw new Exception("Column \'$column\' does not exists in table \'$table\'", 500);
 		
 		return $tableColumnInfo[$table][$column];
 	}
@@ -52,7 +52,7 @@ class Relation {
 	public static function getAffectedSigConjunctIds($fullRelationSignature){
 		global $allRelations; // from Generics.php
 	
-		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation $fullRelationSignature does not exists in allRelations");
+		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation \'$fullRelationSignature\' does not exists in allRelations", 500);
 	
 		return (array)$allRelations[$fullRelationSignature]['affectedSigConjunctIds'];
 	}
@@ -60,7 +60,7 @@ class Relation {
 	public static function getAffectedInvConjunctIds($fullRelationSignature){
 		global $allRelations; // from Generics.php
 	
-		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation $fullRelationSignature does not exists in allRelations");
+		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation \'$fullRelationSignature\' does not exists in allRelations", 500);
 	
 		return (array)$allRelations[$fullRelationSignature]['affectedInvConjunctIds'];
 	}

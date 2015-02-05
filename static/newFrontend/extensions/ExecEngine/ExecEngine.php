@@ -68,7 +68,7 @@ class ExecEngine {
 						
 					}else{
 						$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";
-						throw new Exception($errorMessage);
+						throw new Exception($errorMessage, 500);
 					}
 				}
 			}
@@ -96,13 +96,13 @@ class ExecEngine {
 				$rows = $database->Exe($query);
 				
 				// returning the result
-				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom');
+				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
 				$pairStrs[] = $rows[0]['tgt'];
 
 			// unknown segment
 			}else{
 				$errorMessage = "Unknown segmentType '" . $segment['segmentType'] . "' in pairview";
-				throw new Exception($errorMessage);
+				throw new Exception($errorMessage, 501); // 501: Not implemented
 			}
 		}
 		return implode($pairStrs);
