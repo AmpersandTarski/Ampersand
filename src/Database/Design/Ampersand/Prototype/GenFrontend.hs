@@ -56,32 +56,35 @@ data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
                          , _objIsEditable :: Bool } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
-buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
-
-buildInterface :: FSpec -> Interface -> FEInterface
-buildInterface fSpec interface =
-  let editableRels = ifcParams interface
-      obj = buildObject fSpec editableRels (ifcObj interface)
-  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles interface) editableRels obj
-  -- NOTE: due to Amperand's interface data structure, name, expression, source, and target are taken from the root object 
-  
-buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
-buildObject fSpec editableRels object =
-  let iExp = conjNF (getOpts fSpec) $ objctx object
-      (isEditable, src, tgt) = 
-        case getExpressionRelation iExp of
-          Nothing                          -> (False, source iExp, target iExp)
-          Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
-                                           -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation 
-   in  case objmsub object of
-        Nothing                  -> FEAtomic (name object) iExp src tgt isEditable
-        Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface ref
-                                      []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                                      (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-                                      [i]     -> let editableRels' = editableRels `intersect` ifcParams i
-                                                 in  buildObject fSpec editableRels' (ifcObj i)
-        Just (Box _ mCl objects) ->FEBox (name object) mCl iExp src tgt isEditable $
-                                          map (buildObject fSpec editableRels) objects
+buildInterfaces fSpec = map buildInterface allIfcs
+  where
+    allIfcs :: [Interface]
+    allIfcs = interfaceS fSpec
+    
+    buildInterface :: Interface -> FEInterface
+    buildInterface ifc =
+      let editableRels = ifcParams ifc
+          obj = buildObject editableRels (ifcObj ifc)
+      in  FEInterface  (objName obj) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
+      -- NOTE: due to Amperand's interface data structure, name, expression, source, and target are taken from the root object 
+      
+    buildObject :: [Expression] -> ObjectDef -> FEObject
+    buildObject editableRels object =
+      let iExp = conjNF (getOpts fSpec) $ objctx object
+          (isEditable, src, tgt) = 
+            case getExpressionRelation iExp of
+              Nothing                          -> (False, source iExp, target iExp)
+              Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
+                                               -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation 
+       in  case objmsub object of
+            Nothing                  -> FEAtomic (name object) iExp src tgt isEditable
+            Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ allIfcs of -- Follow interface ref
+                                          []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
+                                          (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
+                                          [i]     -> let editableRels' = editableRels `intersect` ifcParams i
+                                                     in  buildObject editableRels' (ifcObj i)
+            Just (Box _ mCl objects) ->FEBox (name object) mCl iExp src tgt isEditable $
+                                              map (buildObject editableRels) objects
     
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
