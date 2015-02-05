@@ -45,14 +45,14 @@ doGenFrontend fSpec =
 
 
 data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String -- _ disables 'not used' warning for fields
-                               , _ifcExp :: Expression, _ifcEditableRels :: [Expression]
-                               , _ifcObj :: FEObject }
+                               , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
+                               , _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
-                         , objExp :: Expression, _objSource :: A_Concept, _objTarget :: A_Concept
+                         , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
                          , _objIsEditable :: Bool, _ifcSubIfcs :: [FEObject] }
               | FEAtomic { objName :: String
-                         , objExp :: Expression, _objSource :: A_Concept, _objTarget :: A_Concept
+                         , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
                          , _objIsEditable :: Bool } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
@@ -62,8 +62,8 @@ buildInterface :: FSpec -> Interface -> FEInterface
 buildInterface fSpec interface =
   let editableRels = ifcParams interface
       obj = buildObject fSpec editableRels (ifcObj interface)
-  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) editableRels obj
-  -- NOTE: due to Amperand's interface object structure, the name and expression are taken from the root object 
+  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) (objSource obj) (objTarget obj) editableRels obj
+  -- NOTE: due to Amperand's interface data structure, name, expression, source, and target are taken from the root object 
   
 buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
 buildObject fSpec editableRels object =
@@ -91,14 +91,16 @@ traverseInterfaces fSpec ifcs =
     }
 
 traverseInterface :: FSpec -> FEInterface -> IO ()
-traverseInterface fSpec (FEInterface interfaceName _ iExp _ obj) =
- do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ interfaceName
+traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt _ obj) =
+ do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show interfaceName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- traverseObject fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
                        setAttribute "isRoot"                   (source iExp `elem` [ONE, PlainConcept "SESSION"]) .
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
+                                     , ("source",              name iSrc) -- TODO: escape
+                                     , ("target",              name iTgt) -- TODO: escape
                                      , ("contents",            intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
                                      ]
 
