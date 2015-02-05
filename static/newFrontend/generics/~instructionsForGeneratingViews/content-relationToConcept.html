@@ -13,8 +13,8 @@ pl :: Project * Person
 -->
 <div ng-repeat="row in val['Projectleader']">	
 	<!-- If INTERFACE exists for ROLE that takes TgtConcept of relation as SrcConcept -->
-	<a ng-href="#/<INTERFACE>/{{row['id']}}">{{row['label']}}</a>
+	<a ng-href="#/<INTERFACE>/{{row['id']}}">{{row['@label']}}</a>
 	
 	<!-- If no INTERFACE is available -->
-	{{val['label']}}
+	{{val['@label']}}
 </div>

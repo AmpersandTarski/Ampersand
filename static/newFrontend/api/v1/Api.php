@@ -206,6 +206,22 @@ class Api{
 		}
 	}
 	
+	/**************************** CONTEXT ****************************/
+	
+	/**
+	 * @url GET context/{interfaceName}
+	 */
+	public function getInterface($interfaceName){
+		throw new RestException(501);
+		try{			
+			$interface = new ObjectInterface($interfaceName);
+			
+			return $interface;
+		}catch(Exception $e){
+       		throw new RestException($e->getCode(), $e->getMessage());
+       	}
+	}
+	
 
 	/**************************** CONCEPTS ****************************/
     /**

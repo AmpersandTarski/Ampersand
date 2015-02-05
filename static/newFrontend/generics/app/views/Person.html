@@ -1,7 +1,7 @@
 <div class="container-fluid interface">
 	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
 		<legend>
-			<a ng-href="#/Person/{{Resource.id}}">{{Resource.label}}</a>
+			<a ng-href="#/Person/{{Resource.id}}">{{Resource['@label']}}</a>
 			<a ng-href="#/Person/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
 			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"></span></a>
 		</legend>
@@ -43,7 +43,7 @@
 						</thead>
 						<tbody>
 							<tr ng-repeat="(key, val) in Resource['Works with']">
-								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+								<td><a ng-href="#/Person/{{val.id}}">{{val['@label']}}</a></td>
 							</tr>
 						</tbody>
 	   				</table>

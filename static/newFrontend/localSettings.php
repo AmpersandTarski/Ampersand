@@ -2,9 +2,13 @@
 
 /************ CONFIG ********************/
 define ('DEFAULT_ROLEID', '0');
-define ('JSONLD_CONCEPT_PATH', 'http://localhost/CB/api/v1/concept/');
-define ('JSONLD_RESOURCE_PATH', 'http://localhost/CB/api/v1/resource/');
-define ('API_INTERFACES_PATH', 'http://localhost/CB/api/v1/interface/');
+
+define ('API_PATH', 'http://localhost/' . $contextName . '/api/v1/'); // $contextName from Generics.php
+
+define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
+define ('JSONLD_ID_PATH', API_PATH . 'resource/');
+define ('JSONLD_CONTEXT_PATH', API_PATH . 'context/');
+define ('API_INTERFACES_PATH', API_PATH . 'interface/');
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';

@@ -22,7 +22,7 @@
 							<!-- Projects --> 
 							<td>
 								<div>
-									<a ng-href="#/Project/{{val['id']}}">{{val['label']}}</a>
+									<a ng-href="#/Project/{{val['id']}}">{{val['@label']}}</a>
 								</div>
 							</td>
 							
@@ -44,7 +44,7 @@
 							<td>
 								<div ng-repeat="row in val['Projectleider']">
 									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'], ResourceId)"></span>
-									<a ng-href="#/Person/{{row['id']}}">{{row['label']}}</a>
+									<a ng-href="#/Person/{{row['id']}}">{{row['@label']}}</a>
 								</div>
 								<div my-showonhovertr class="pointer" ng-click="popUp(val, 'Projectleider', ResourceId)">
 									<span class="glyphicon glyphicon-plus"></span>
@@ -88,7 +88,7 @@
 							<!-- Projects -->
 							<td>
 								<div>
-									<a ng-href="#/Project/{{val['id']}}">{{val['label']}}</a>
+									<a ng-href="#/Project/{{val['id']}}">{{val['@label']}}</a>
 								</div>
 							</td>
 							
@@ -110,7 +110,7 @@
 							<td>
 								<div ng-repeat="row in val['Projectleider']">
 									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['Projectleider'], row['id'], ResourceId)"></span>
-									<a ng-href="#/Person/{{row['id']}}">{{row['label']}}</a>
+									<a ng-href="#/Person/{{row['id']}}">{{row['@label']}}</a>
 								</div>
 								<div my-showonhovertr class="pointer" ng-click="popUp(val, 'Projectleider', ResourceId)">
 									<span class="glyphicon glyphicon-plus"></span>

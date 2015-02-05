@@ -22,7 +22,7 @@
 		</thead>
 		<tbody>
 			<tr ng-repeat="(ResourceId, Resource) in ResourceList | filter:search" class="pointer" ng-click="select(Resource.id)">
-				<td>{{Resource.label}}</td>
+				<td>{{Resource['@label']}}</td>
 				<td>{{Resource.Status}}</td>
 				<td>{{Resource.Email}}</td>
 			</tr>

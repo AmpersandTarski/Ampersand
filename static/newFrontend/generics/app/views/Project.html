@@ -2,7 +2,7 @@
 	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
 		<!-- I[Project] -->
 		<legend>
-			<a ng-href="#/Project/{{Resource.id}}">{{Resource.label}}</a>
+			<a ng-href="#/Project/{{Resource.id}}">{{Resource['@label']}}</a>
 			<a ng-href="#/Project/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
 			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"></span></a>
 		</legend>
@@ -12,7 +12,7 @@
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Project</label>
 	   			<div class="col-md-11">
-	   				<input disabled ng-model="Resource.label" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
+	   				<input disabled ng-model="Resource['@label']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 	   			</div>
 	 		</div>
 	 		
@@ -46,7 +46,7 @@
 						<tbody>
 							<tr ng-repeat="(key, val) in Resource['Theme']">
 								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Theme'], val.id, ResourceId)"></span></td>
-								<td><span>{{val.label}}</span></td>								
+								<td><span>{{val['@label']}}</span></td>								
 							</tr>
 							<tr my-showonhovertable>
 								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Theme', selected, ResourceId)"></span></td>
@@ -92,7 +92,7 @@
 								<tbody>
 									<tr ng-repeat="(key, val) in val1['Projectleider']">
 										<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val1['Projectleider'], val.id, ResourceId)"></span></td>
-										<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+										<td><a ng-href="#/Person/{{val.id}}">{{val['@label']}}</a></td>
 										<td>{{val.Status}}</td>
 										<td>{{val.Email}}</td>										
 									</tr>
@@ -114,7 +114,7 @@
 								<tbody>
 									<tr ng-repeat="(key, val) in val1['Project members']">
 										<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val1['Project members'], val.id, ResourceId)"></span></td>
-										<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+										<td><a ng-href="#/Person/{{val.id}}">{{val['@label']}}</a></td>
 									</tr>
 									<tr my-showonhovertable class="pointer" ng-click="popUp(val1, 'Project members', ResourceId)">
 										<td><span class="glyphicon glyphicon-plus"></span></td>
@@ -189,7 +189,7 @@
 						<tbody>
 							<tr ng-repeat="(key, val) in Resource['Project members']">
 								<td><span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['Project members'], val.id, ResourceId)"></span></td>
-								<td><a ng-href="#/Person/{{val.id}}">{{val.label}}</a></td>
+								<td><a ng-href="#/Person/{{val.id}}">{{val['@label']}}</a></td>
 							</tr>
 							<tr my-showonhovertable>
 								<td><span class="glyphicon glyphicon-plus" ng-click="addObject(Resource, 'Project members', selected, ResourceId)"></span></td>

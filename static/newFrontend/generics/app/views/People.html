@@ -19,7 +19,7 @@
 							<!-- Person --> 
 							<td>
 								<div>
-									<a ng-href="#/Person/{{val['id']}}">{{val['label']}}</a>
+									<a ng-href="#/Person/{{val['id']}}">{{val['@label']}}</a>
 								</div>
 							</td>
 							
@@ -37,7 +37,7 @@
 							<td>
 								<div ng-repeat="row in val.Projects">
 									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projects, row.id, ResourceId)"></span>
-									<a ng-href="#/Project/{{row.id}}">{{row.label}}</a>
+									<a ng-href="#/Project/{{row.id}}">{{row['@label']}}</a>
 								</div>
 								<div my-showonhovertr>
 									<input ng-model="selected.id" type="text" class="form-control input-sm" placeholder="Add new Project" typeahead="Project.id as Project.label for Project in typeahead.Project | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, 'Projects', selected, ResourceId)">

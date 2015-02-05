@@ -90,6 +90,8 @@ class Concept {
 	public static function getAllInterfaces($concept){
 		global $allInterfaceObjects; // from Generics.php
 		
+		$interfaces = array();
+		
 		foreach ($allInterfaceObjects as $interfaceName => $interface){
 			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceName;
 		}

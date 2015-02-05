@@ -13,8 +13,8 @@ e.g. INTERFACE "<name of interface>" (<editable relations>) FOR "<role>" : exp
 		<legend>[Interface name]</legend>
 		
 		<!-- Else use Label of atom. -->
-		<legend>{{Resource.label}}
-			<a ng-href="#/<interface>/{{Resource.id}}">{{Resource.label}}</a>
+		<legend>{{Resource['@label']}}
+			<a ng-href="#/<interface>/{{Resource.id}}">{{Resource['@label']}}</a>
 			<a href="#/<interface>/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
 			<a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"></span></a>
 		</legend>
