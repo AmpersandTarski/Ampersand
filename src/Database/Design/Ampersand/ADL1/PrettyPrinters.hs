@@ -185,12 +185,6 @@ instance Pretty a => Pretty (PairViewSegment a) where
     pretty p = case p of PairViewText str -> "TXT" <+> quote str
                          PairViewExp srcTgt term -> pretty srcTgt <~> term
 
-instance Pretty a => Pretty (PairViewTerm a) where
-    pretty _ = "not_implemented(PairViewTerm)" -- = PairViewTerm (PairView (Term a))
-
-instance Pretty a => Pretty (PairViewSegmentTerm a) where
-    pretty _ = "not_implemented(PairViewSegmentTerm)"
-
 instance Pretty SrcOrTgt where
     pretty p = case p of
                     Src -> "SRC"
@@ -219,7 +213,7 @@ instance Pretty P_Population where
                 P_TRelPop nm tp _ cs -> "POPULATION" <+> maybeQuote nm <~> tp <+> "CONTAINS" <+> contents cs
                 P_CptPopu nm    _ ps -> "POPULATION" <+> maybeQuote nm        <+> "CONTAINS" <+> "[" ++ commas (quoteAll ps) ++ "]"
                where contents cs = "[" ++ intercalate ",\n" (map prettyPair cs) ++ "]"
-                
+
 instance Pretty P_Interface where
     pretty p = "INTERFACE" <+> maybeQuote (ifc_Name p) <+> class_
                <+> params <+> args <+> roles -- ifc_Prp

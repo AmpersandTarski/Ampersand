@@ -281,6 +281,7 @@ instance Traced TermPrim where
    Pfull orig _ _ -> orig
    Prel orig _    -> orig
    PTrel orig _ _ -> orig
+
 instance Identified TermPrim where
  name e = case e of
    PI _        -> "I"

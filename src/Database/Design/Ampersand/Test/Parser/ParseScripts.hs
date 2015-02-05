@@ -1,7 +1,6 @@
 {-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving, Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 
 module Database.Design.Ampersand.Test.Parser.ParseScripts (testScripts, scripts) where
-
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseFile)
 import System.Directory
 import Control.Monad
