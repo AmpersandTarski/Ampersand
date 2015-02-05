@@ -92,7 +92,7 @@ class Notifications {
 	}
 	
 	public static function addLog($message, $type = 'LOG'){
-		self::$logs[] = $type . ': ' . $message;
+		self::$logs[] = array('type' => $type, 'message' => $message);
 	}
 	
 	public static function getErrors(){
