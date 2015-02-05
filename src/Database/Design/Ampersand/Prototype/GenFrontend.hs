@@ -38,7 +38,6 @@ doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
     ; let feInterfaces = buildInterfaces fSpec
     ; traverseInterfaces fSpec feInterfaces
-    ; return ()
     }
 
 -- TODO: interface ref, editable relations are intersected, referenced interface expression is not regarded for view generation
@@ -50,24 +49,27 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String 
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , _objIsEditable :: Bool, _ifcSubIfcs :: [FEObject] }
+                         , _objIsEditable :: Bool, _objNavInterfaces :: [NavInterface] -- though unused, NavInterfaces could also make sense for Box 
+                         , _ifcSubIfcs :: [FEObject] }
               | FEAtomic { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , _objIsEditable :: Bool } deriving Show
+                         , _objIsEditable :: Bool, _objNavInterfaces :: [NavInterface] } deriving Show
+
+data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [String] } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
-buildInterfaces fSpec = map buildInterface allIfcs
+buildInterfaces fSpec = map (buildInterface fSpec allIfcs) allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
     
-    buildInterface :: Interface -> FEInterface
-    buildInterface ifc =
-      let editableRels = ifcParams ifc
-          obj = buildObject editableRels (ifcObj ifc)
-      in  FEInterface  (objName obj) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
-      -- NOTE: due to Amperand's interface data structure, name, expression, source, and target are taken from the root object 
-      
+buildInterface :: FSpec -> [Interface] -> Interface -> FEInterface
+buildInterface fSpec allIfcs ifc =
+  let editableRels = ifcParams ifc
+      obj = buildObject editableRels (ifcObj ifc)
+  in  FEInterface  (objName obj) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
+  -- NOTE: due to Amperand's interface data structure, name, expression, source, and target are taken from the root object 
+  where    
     buildObject :: [Expression] -> ObjectDef -> FEObject
     buildObject editableRels object =
       let iExp = conjNF (getOpts fSpec) $ objctx object
@@ -75,15 +77,21 @@ buildInterfaces fSpec = map buildInterface allIfcs
             case getExpressionRelation iExp of
               Nothing                          -> (False, source iExp, target iExp)
               Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
-                                               -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation 
+                                               -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+          navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 
+                    | nIfc <- allIfcs
+                    ,  (source . objctx . ifcObj $ nIfc) == tgt
+                    , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
+                    , not . null $ nRoles
+                    ]
        in  case objmsub object of
-            Nothing                  -> FEAtomic (name object) iExp src tgt isEditable
-            Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ allIfcs of -- Follow interface ref
+            Nothing                  -> FEAtomic (name object) iExp src tgt isEditable navIfcs
+            Just (InterfaceRef nm)   -> case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                                           []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                                           (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                                           [i]     -> let editableRels' = editableRels `intersect` ifcParams i
                                                      in  buildObject editableRels' (ifcObj i)
-            Just (Box _ mCl objects) ->FEBox (name object) mCl iExp src tgt isEditable $
+            Just (Box _ mCl objects) ->FEBox (name object) mCl iExp src tgt isEditable navIfcs $
                                               map (buildObject editableRels) objects
     
   
@@ -115,32 +123,39 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt roles editab
 
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving (Show, Data, Typeable)
- 
+
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
 traverseObject fSpec depth obj =
   case obj of
-    FEAtomic nm _ src tgt isEditable ->
+    FEAtomic nm _ src tgt isEditable navInterfaces ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                         " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
         
-        -- For now, we choose specific template based on target. This will probably be too weak. 
+        -- For now, we choose specific template based on target concept. This will probably be too weak. 
         -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
         ; let specificTemplatePth = "views/Atomic-" ++ name tgt ++ ".html" -- TODO: escape
         ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
         ; template <- if hasSpecificTemplate 
                       then readTemplate fSpec $ specificTemplatePth
                       else readTemplate fSpec $ "views/Atomic.html" -- default template
-                      
+                
+        ; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
+                                              | NavInterface n rs <- navInterfaces ]
+        ; let mNavInterface = case navInterfaces of -- TODO: do something with roles here. For now, simply use the first interface, if any.
+                                []                        -> Nothing
+                                NavInterface ifcName _ :_ -> Just ifcName
+                                                                              
         ; return $ lines $ renderTemplate template $ 
                              setAttribute "isEditable" isEditable .
+                             setAttribute "navInterface" mNavInterface . -- TODO: escape
                              setManyAttrib [ ("name",   nm)       -- TODO: escape
                                            , ("source", name src) -- TODO: escape
                                            , ("target", name tgt) -- TODO: escape
                                            ]
         
         }
-    FEBox nm mClass _ src tgt isEditable subObjs ->
+    FEBox nm mClass _ src tgt isEditable _ subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
                                         " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
@@ -153,8 +168,8 @@ traverseObject fSpec depth obj =
         ; let wrappedChildrenContent = intercalate "\n" $ indent 6 $ concat childLnss
         -- Indentation is not context sensitive, so some templates will be indented a bit too much (we take the maximum necessary value now)
         
-        ; let subObjAttrs = [ SubObjAttr{subObjName = objName subObj
-                            , isBLOB = name (target $ objExp subObj) == "BLOB" } 
+        ; let subObjAttrs = [ SubObjAttr{ subObjName = objName subObj -- TODO: escape
+                                        , isBLOB = name (target $ objExp subObj) == "BLOB" } 
                             | subObj <- subObjs ]
 
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"

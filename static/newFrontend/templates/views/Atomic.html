@@ -1,6 +1,14 @@
 <!-- Atomic[] "$name$" : [$source$*$target$] ($if(!isEditable)$not $endif$editable) -->
-$if(isEditable)$<div class="input-group">
-  <input ng-model="val['$name$']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
-</div>$else$<div>
-  {{val['$name$']}}
+$if(isEditable)$<div ng-repeat="row in val['$name$']">
+  <span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row['id'], ResourceId)"></span>
+
+  $if(navInterface)$<a ng-href="#/$navInterface$/{{row['id']}}">{{row['label']}}</a>$else${{val['label']}}$endif$
+  
+</div>
+<div my-showonhovertr>
+  <input ng-model="selected[$name$]" type="text" class="form-control input-sm" placeholder="Add new" typeahead="X.id as X.label for X in typeahead.X | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected$name$, ResourceId)">
+</div>$else$<div ng-repeat="row in val['$name$']"> 
+
+  $if(navInterface)$<a ng-href="#/$navInterface$/{{row['id']}}">{{row['label']}}</a>$else${{val['label']}}$endif$
+
 </div>$endif$
