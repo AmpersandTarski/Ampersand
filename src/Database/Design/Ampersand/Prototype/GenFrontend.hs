@@ -46,7 +46,7 @@ doGenFrontend fSpec =
 
 data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String -- _ disables 'not used' warning for fields
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
+                               , _ifcRoles :: [String], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
@@ -62,7 +62,7 @@ buildInterface :: FSpec -> Interface -> FEInterface
 buildInterface fSpec interface =
   let editableRels = ifcParams interface
       obj = buildObject fSpec editableRels (ifcObj interface)
-  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) (objSource obj) (objTarget obj) editableRels obj
+  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles interface) editableRels obj
   -- NOTE: due to Amperand's interface data structure, name, expression, source, and target are taken from the root object 
   
 buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
@@ -91,12 +91,13 @@ traverseInterfaces fSpec ifcs =
     }
 
 traverseInterface :: FSpec -> FEInterface -> IO ()
-traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt editableRels obj) =
+traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt roles editableRels obj) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show interfaceName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- traverseObject fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
                        setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"]) .
+                       setAttribute "roles"                    [ show r | r <- roles ] . -- show string, since StringTemplate does not elegantly allow to quote and separate
                        setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
