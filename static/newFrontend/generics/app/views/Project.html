@@ -8,7 +8,7 @@
 		</legend>
 		
 		<form class="form-horizontal" role="form">		
-			<!-- I[Project] disabled, because label of object is never editable-->
+			<!-- Project - disabled, because label of object is never editable-->
 			<div class="form-group">
 	   			<label class="col-md-1 control-label">Project</label>
 	   			<div class="col-md-11">
@@ -142,12 +142,25 @@
 						</thead>
 						<tbody>
 							<tr ng-repeat="(key, val) in Resource.Projectleider">
-								<td><span ng-repeat="row in val['Name']">{{row.label}}</span></td>
-								<td>{{val['Status']}}</td>
+								<!-- Name -->
+								<td>
+									<!-- ng-repeat, because TEXT is datatype and the expr. 'pplPerson;personName' is not specified as univalent (see ticket MIN/MAX attributes)  -->
+									<span ng-repeat="val in val['Name']">{{val}}</span>
+								</td>
+								
+								<!-- Status -->
+								<td>
+									<!-- ng-repeat, because TEXT is datatype and the expr. 'pplPerson;personStatus' is not specified as univalent (see ticket MIN/MAX attributes)  -->
+									<span ng-repeat="val in val['Status']">{{val}}</span>
+								</td>
+								
+								<!-- Email -->
 								<td>
 									<!-- ng-repeat, because EMAIL is datatype and the expr. 'pplPerson;personEmail' is not specified as univalent (see ticket MIN/MAX attributes)  -->
 									<span ng-repeat="val in val['Email']">{{val}}</span>
 								</td>
+								
+								<!-- Pl from -->
 								<td>
 									<div class="input-group">
 										<input ng-model="val['Pl from']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-Pl from'].open" ng-blur="patch(ResourceId)"/>
