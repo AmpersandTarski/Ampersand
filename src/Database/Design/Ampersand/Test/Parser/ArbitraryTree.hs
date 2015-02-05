@@ -1,9 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
 
-import Test.QuickCheck hiding (Prop)
+import Test.QuickCheck
 import Data.Char
 import Control.Applicative
+import Debug.Trace
 
 import Database.Design.Ampersand.Core.ParseTree
 
@@ -36,7 +37,7 @@ instance Arbitrary Origin where
     arbitrary = return OriginUnknown
 
 instance Arbitrary P_Context where
-    arbitrary = PCtx <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = PCtx <$> upper_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> listOf upper_id
                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
@@ -71,34 +72,46 @@ instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = sized genTerm
 
 genTerm :: Arbitrary a => Int -> Gen (Term a)
-genTerm 0 = Prim <$> arbitrary
-genTerm n = oneof [
-           PEqu <$> arbitrary <*> gen <*> gen,
-           PImp <$> arbitrary <*> gen <*> gen,
-           PIsc <$> arbitrary <*> gen <*> gen,
-           PUni <$> arbitrary <*> gen <*> gen,
-           PDif <$> arbitrary <*> gen <*> gen,
-           PLrs <$> arbitrary <*> gen <*> gen,
-           PRrs <$> arbitrary <*> gen <*> gen,
-           PDia <$> arbitrary <*> gen <*> gen,
-           PCps <$> arbitrary <*> gen <*> gen,
-           PRad <$> arbitrary <*> gen <*> gen,
-           PPrd <$> arbitrary <*> gen <*> gen,
-           PKl0 <$> arbitrary <*> gen,
-           PKl1 <$> arbitrary <*> gen,
-           PFlp <$> arbitrary <*> gen,
-           PCpl <$> arbitrary <*> gen,
-           PBrk <$> arbitrary <*> gen
-        ]
-        where gen = genTerm (n `div` 2)
+genTerm n = trace ("Choosing level "++show idx) $ oneof (options!!idx)
+        where idx = 6-(n`div`7)
+              gen = genTerm (n `div` 2)
+              options = [
+                -- level 0
+                [PEqu <$> arbitrary <*> gen <*> gen,
+                 PImp <$> arbitrary <*> gen <*> gen],
+                -- level 1
+                [PIsc <$> arbitrary <*> gen <*> gen,
+                 PUni <$> arbitrary <*> gen <*> gen],
+                -- level 2
+                [PDif <$> arbitrary <*> gen <*> gen],
+                -- level 3
+                [PLrs <$> arbitrary <*> gen <*> gen,
+                 PRrs <$> arbitrary <*> gen <*> gen,
+                 PDia <$> arbitrary <*> gen <*> gen],
+                -- level 4
+                [PCps <$> arbitrary <*> gen <*> gen,
+                 PRad <$> arbitrary <*> gen <*> gen,
+                 PPrd <$> arbitrary <*> gen <*> gen],
+                -- level 5
+                [PKl0 <$> arbitrary <*> gen,
+                 PKl1 <$> arbitrary <*> gen,
+                 PFlp <$> arbitrary <*> gen,
+                 PCpl <$> arbitrary <*> gen],
+                -- level 6
+                [PBrk <$> arbitrary <*> gen,
+                 trace "Prim" Prim <$> oneof [
+                    -- The following generators are only used here, but we cannot compile this, the compiler doesn't know that this is a TermPrim!
+                    -- PI    <$> arbitrary,
+                    -- Pid   <$> arbitrary <*> arbitrary,
+                    -- Patm  <$> arbitrary <*> arbitrary <*> arbitrary,
+                    -- PVee  <$> arbitrary,
+                    -- Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
+                    arbitrary
+                 ]]
+                ]
 
 instance Arbitrary TermPrim where
     arbitrary = oneof [
-           PI    <$> arbitrary,
-           Pid   <$> arbitrary <*> arbitrary,
-           Patm  <$> arbitrary <*> arbitrary <*> arbitrary,
-           PVee  <$> arbitrary,
-           Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
            Prel  <$> arbitrary <*> lower_id,
            PTrel <$> arbitrary <*> lower_id <*> arbitrary
         ]
@@ -122,8 +135,12 @@ instance Arbitrary SrcOrTgt where
     arbitrary = elements[Src, Tgt]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Ru <$> arbitrary <*> ruleTerm  <*> arbitrary <*> arbitrary <*> arbitrary
                      <*> arbitrary
+              where ruleTerm = sized genTerm `suchThat` isRuleTerm
+                    isRuleTerm (PEqu _ _ _) = True
+                    isRuleTerm (PImp _ _ _) = True
+                    isRuleTerm _            = False
 
 instance Arbitrary ConceptDef where
     arbitrary = Cd <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
@@ -190,7 +207,7 @@ instance Arbitrary PMessage where
 
 instance Arbitrary P_Concept where
     arbitrary = oneof [
-            PCpt <$> arbitrary,
+            PCpt <$> upper_id,
             return P_Singleton
         ]
 
@@ -200,8 +217,9 @@ instance Arbitrary P_Sign where
 instance Arbitrary P_Gen where
     arbitrary = oneof [
             P_Cy <$> arbitrary <*> arbitrary <*> arbitrary,
-            PGen <$> arbitrary <*> arbitrary <*> arbitrary
+            PGen <$> concept   <*> concept   <*> arbitrary
         ]
+        where concept = PCpt <$> upper_id
 
 instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]

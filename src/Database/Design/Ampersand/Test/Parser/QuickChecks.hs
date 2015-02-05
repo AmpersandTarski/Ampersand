@@ -16,7 +16,7 @@ testParse text check = if success then check ctx else False
 
 -- Tests whether the parsed context is equal to the original one
 prop_pretty :: P_Context -> Bool
-prop_pretty ctx = testParse (pretty ctx) (\p -> ctx == p)
+prop_pretty ctx = testParse (pretty ctx) (\p -> pretty ctx == pretty p)
 
 parserQuickChecks :: IO Bool
 parserQuickChecks =
