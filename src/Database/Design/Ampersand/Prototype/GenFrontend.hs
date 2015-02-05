@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend) where
 import Prelude hiding (putStrLn,readFile)
 import Data.Data
 import Data.List
+import System.Directory
 import System.FilePath
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
@@ -115,7 +116,15 @@ traverseObject fSpec depth obj =
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                         " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
-        ; template <- readTemplate fSpec $ "views/Atomic.html"
+        
+        -- For now, we choose specific template based on target. This will probably be too weak. 
+        -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
+        ; let specificTemplatePth = "views/Atomic-" ++ name tgt ++ ".html" -- TODO: escape
+        ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
+        ; template <- if hasSpecificTemplate 
+                      then readTemplate fSpec $ specificTemplatePth
+                      else readTemplate fSpec $ "views/Atomic.html" -- default template
+                      
         ; return $ lines $ renderTemplate template $ 
                              setAttribute "isEditable" isEditable .
                              setManyAttrib [ ("name",   nm)       -- TODO: escape
@@ -130,7 +139,7 @@ traverseObject fSpec depth obj =
                                         (if isEditable then "" else "not ") ++ "editable"
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
-        ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html"
+        ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html" -- TODO: escape
         
         ; childLnss <- mapM (traverseSubObject childTemplate) subObjs
         
@@ -164,6 +173,13 @@ traverseObject fSpec depth obj =
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
 
+-- TODO: better abstraction for specific template and fallback to default
+doesTemplateExist :: FSpec -> String -> IO Bool
+doesTemplateExist fSpec templatePath =
+ do { let absPath = getTemplateDir fSpec </> templatePath
+    ; doesFileExist absPath
+    }
+ 
 readTemplate :: FSpec -> String -> IO Template
 readTemplate fSpec templatePath =
  do { let absPath = getTemplateDir fSpec </> templatePath
