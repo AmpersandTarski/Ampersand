@@ -96,7 +96,7 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt editableRels
     ; lns <- traverseObject fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"                   (source iExp `elem` [ONE, PlainConcept "SESSION"]) .
+                       setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"]) .
                        setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
@@ -150,7 +150,7 @@ traverseObject fSpec depth obj =
         -- Indentation is not context sensitive, so some templates will be indented a bit too much (we take the maximum necessary value now)
         
         ; let subObjAttrs = [ SubObjAttr{subObjName = objName subObj
-                            , isBLOB = target (objExp subObj) == PlainConcept "BLOB" } 
+                            , isBLOB = name (target $ objExp subObj) == "BLOB" } 
                             | subObj <- subObjs ]
 
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
