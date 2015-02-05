@@ -18,13 +18,17 @@ import Database.Design.Ampersand.Prototype.ProtoUtil
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
--- TODO: stringtemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
---       Maybe factorize common parts for FEObject?
---       atoms
---       isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
 
--- TODO: Keeping templates as statics requires that the static files are written before templates are used.
---       Maybe we should keep them as cabal data files instead. (file extensions and directory structure are predictable)
+{- TODO
+- HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
+- Factorize common parts for FEObject
+- isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
+- Escape everything
+
+- Keeping templates as statics requires that the static files are written before templates are used.
+  Maybe we should keep them as cabal data-files instead. (file extensions and directory structure are predictable)
+-}
+
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> 
                          "templates"
@@ -39,8 +43,6 @@ doGenFrontend fSpec =
     ; let feInterfaces = buildInterfaces fSpec
     ; traverseInterfaces fSpec feInterfaces
     }
-
--- TODO: interface ref, editable relations are intersected, referenced interface expression is not regarded for view generation
 
 
 data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String -- _ disables 'not used' warning for fields
@@ -152,8 +154,7 @@ traverseObject fSpec depth obj =
                              setManyAttrib [ ("name",   nm)       -- TODO: escape
                                            , ("source", name src) -- TODO: escape
                                            , ("target", name tgt) -- TODO: escape
-                                           ]
-        
+                                           ]        
         }
     FEBox nm mClass _ src tgt isEditable _ subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
