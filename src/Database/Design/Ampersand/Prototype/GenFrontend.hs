@@ -11,13 +11,14 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 import Database.Design.Ampersand.Prototype.ProtoUtil
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
 -- TODO: stringtemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
---       correct isEditable for COLS
+--       Maybe factorize common parts for FEObject?
 --       atoms
 --       isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
 
@@ -47,8 +48,10 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String 
                                , _ifcObj :: FEObject }
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
-                         , objExp :: Expression, _objEditableRels :: [Expression], _ifcSubIfcs :: [FEObject] }
-              | FEAtomic { objName :: String, objExp :: Expression } deriving Show
+                         , objExp :: Expression
+                         , _objIsEditable :: Bool, _ifcSubIfcs :: [FEObject] }
+              | FEAtomic { objName :: String, objExp :: Expression
+                         , _objIsEditable :: Bool } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
 buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
@@ -57,21 +60,25 @@ buildInterface :: FSpec -> Interface -> FEInterface
 buildInterface fSpec interface =
   let editableRels = ifcParams interface
       obj = buildObject fSpec editableRels (ifcObj interface)
-  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj)  editableRels obj
+  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) editableRels obj
   -- NOTE: due to Amperand's interface object structure, the name and expression are taken from the root object 
   -- TODO: handle editable rels here
 
 buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
 buildObject fSpec editableRels object =
-  case objmsub object of
-    Nothing               -> FEAtomic (name object) (objctx object)
-    Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
-                                  []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                                  (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-                                  [i]     -> let editableRels' = editableRels `intersect` ifcParams i
-                                             in  buildObject fSpec editableRels' (ifcObj i)
-    Just (Box _ mCl objects) -> FEBox (name object) mCl (objctx object) editableRels $
-                                   map (buildObject fSpec editableRels) objects
+  let iExp = conjNF (getOpts fSpec) $ objctx object
+      isEditable = case getExpressionRelation iExp of
+                     Nothing              -> False
+                     Just (_, decl, _, _) -> EDcD decl `elem` editableRels
+   in  case objmsub object of
+        Nothing                  -> FEAtomic (name object) iExp isEditable
+        Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
+                                      []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
+                                      (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
+                                      [i]     -> let editableRels' = editableRels `intersect` ifcParams i
+                                                 in  buildObject fSpec editableRels' (ifcObj i)
+        Just (Box _ mCl objects) ->FEBox (name object) mCl iExp isEditable $
+                                          map (buildObject fSpec editableRels) objects
     
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
@@ -101,12 +108,15 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
 traverseObject fSpec depth obj =
   case obj of
-    FEAtomic _ _ ->
-     do { template <- readTemplate fSpec $ "views/Atomic.html"
+    FEAtomic _ _ isEditable ->
+     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC" ++
+                                      (if isEditable then "" else "not") ++ " editable"
+        ; template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template id
         }
-    FEBox _ mClass _ editableRels subObjs ->
-     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass
+    FEBox _ mClass _ isEditable subObjs ->
+     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
+                                      (if isEditable then "" else "not") ++ " editable"
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
         ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html"
@@ -122,7 +132,7 @@ traverseObject fSpec depth obj =
 
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
         ; return $ lines $ renderTemplate parentTemplate $ 
-                             setAttribute "isEditable" True .
+                             setAttribute "isEditable" isEditable .
                              setAttribute "subObjects" subObjAttrs .
                              setManyAttrib [ ("class",    clss)
                                            , ("contents", wrappedChildrenContent)
