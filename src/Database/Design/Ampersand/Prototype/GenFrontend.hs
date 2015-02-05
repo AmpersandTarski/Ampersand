@@ -91,12 +91,13 @@ traverseInterfaces fSpec ifcs =
     }
 
 traverseInterface :: FSpec -> FEInterface -> IO ()
-traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt _ obj) =
+traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt editableRels obj) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show interfaceName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- traverseObject fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
                        setAttribute "isRoot"                   (source iExp `elem` [ONE, PlainConcept "SESSION"]) .
+                       setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
                                      , ("source",              name iSrc) -- TODO: escape
