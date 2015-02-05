@@ -2,8 +2,9 @@
 
 /************ CONFIG ********************/
 define ('DEFAULT_ROLEID', '0');
-define ('JSONLD_CONTEXT_PATH', 'http://localhost/CB/api/v1/contexts/');
-define ('JSONLD_RESOURCE_PATH', 'http://localhost/CB/api/v1/concept/');
+define ('JSONLD_CONCEPT_PATH', 'http://localhost/CB/api/v1/concept/');
+define ('JSONLD_RESOURCE_PATH', 'http://localhost/CB/api/v1/resource/');
+define ('API_INTERFACES_PATH', 'http://localhost/CB/api/v1/interface/');
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';

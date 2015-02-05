@@ -101,7 +101,7 @@ class Api{
 	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function getAtom($interfaceName, $sessionId, $atomId = null, $roleId = null){
+	public function getAtom($interfaceName, $sessionId = null, $atomId = null, $roleId = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -207,21 +207,30 @@ class Api{
 	}
 	
 
-	/**************************** CONCEPTS AND ATOMS ****************************/
+	/**************************** CONCEPTS ****************************/
     /**
-     * @url GET concepts
+     * @url GET concept
+     * @url GET concept/{concept}
      */
-    public function getConcepts(){
+    public function getConcepts($concept = null){
     	try{
-        	return Concept::getAllConcepts(); // "Return list of all concepts"
+    		if(isset($concept)){
+        		// return Concept::getConcept(); // Return specific concept
+        		throw new RestException(501); // 501: not implemented
+    		}else{
+    			return Concept::getAllConcepts(); // Return list of all concepts
+    		}
         	
         }catch(Exception $e){
        		throw new RestException($e->getCode(), $e->getMessage());
        	}
     }
+    
+    
+    /**************************** ATOMS ********************************/
 	
 	/**
-     * @url GET concept/{concept}
+     * @url GET resource/{concept}
      */
     public function getConceptAtoms($concept){
     	try{
@@ -233,12 +242,12 @@ class Api{
     }
     
     /**
-     * @url GET concept/{concept}/{atomId}
+     * @url GET resource/{concept}/{atomId}
      */
     public function getConceptAtom($concept, $atomId){
     	try{
     		$atom = new Atom($atomId, $concept);
-    		return $atom;
+    		return $atom->getAtom();
     		
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
@@ -246,7 +255,7 @@ class Api{
     }    
     
 	/**
-     * @url POST concept/{concept}
+     * @url POST resource/{concept}
 	 * @status 201
      */
 	function postConceptAtom($concept){ 
@@ -260,7 +269,7 @@ class Api{
 	}
 
 	/**
-	 * @url DELETE concept/{concept}/{atom}
+	 * @url DELETE resource/{concept}/{atom}
 	 * @status 204
 	 */
 	function deleteConceptAtom($concept, $atom){ 

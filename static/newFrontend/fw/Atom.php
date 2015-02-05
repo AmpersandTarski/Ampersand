@@ -2,20 +2,38 @@
 
 Class Atom {
 	
+	// Ampersand attributes
 	public $id;
 	public $label;
 	public $concept;
-	public $context;
-	public $atId;
 	
+	// JSON-LD attributes
+	private $jsonld_id;
+	private $jsonld_type;
+		
 	public function __construct($id, $concept = null){
 		
+		// Ampersand attributes
 		$this->id = $id;
 		$this->concept = $concept;
 		$this->label = $this->getLabel();
 		
-		$this->context = JSONLD_CONTEXT_PATH . $concept . '.jsonld';
-		$this->atId = JSONLD_RESOURCE_PATH . $concept . '/' . $this->id;
+		// JSON-LD attributes
+		$this->jsonld_id = JSONLD_RESOURCE_PATH . $concept . '/' . $this->id;
+		$this->jsonld_type = JSONLD_CONCEPT_PATH . $concept;
+
+	}
+	
+	public function getAtom(){
+		foreach(Concept::getAllInterfaces($this->concept) as $interfaceName) $interfaces[] = API_INTERFACES_PATH . $interfaceName . '/' . $this->id;
+		
+		return array('@id' => $this->jsonld_id
+					,'@type' => $this->jsonld_type
+					,'id' => $this->id
+					,'label' => $this->label
+					,'concept' => $this->concept
+					,'interfaces' => $interfaces
+					);
 	}
 	
 	public function getContent($interface){
@@ -29,10 +47,10 @@ Class Atom {
 				
 			// determine value atom 
 			if($interface->tgtDataType == "concept"){ // subinterface refers to other concept (i.e. not datatype).
-				$content = array ( '@context' => $tgtAtom->context
-								 , '@id' => $tgtAtom->atId
+				$content = array ( '@id' => $tgtAtom->jsonld_id
+								 , '@type' => $tgtAtom->jsonld_type
 								 , 'id' => $tgtAtom->id
-								 , 'label' => $tgtAtom->label); 
+								 , 'label' => $tgtAtom->label);
 
 			}else{
 				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true

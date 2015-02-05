@@ -19,7 +19,7 @@ class Concept {
 		
 		foreach (Concept::getAllAtomIds($concept) as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $concept);
-			$arr[] = $tgtAtom;
+			$arr[] = $tgtAtom->getAtom();
 		}
 		return $arr;
 	}
@@ -85,6 +85,16 @@ class Concept {
 		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
 	
 		return (array)$allConcepts[$concept]['affectedInvConjunctIds'];
+	}
+	
+	public static function getAllInterfaces($concept){
+		global $allInterfaceObjects; // from Generics.php
+		
+		foreach ($allInterfaceObjects as $interfaceName => $interface){
+			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceName;
+		}
+		
+		return $interfaces;
 	}
 
 }

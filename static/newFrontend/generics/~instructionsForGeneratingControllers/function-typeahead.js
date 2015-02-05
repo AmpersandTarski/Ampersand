@@ -8,5 +8,5 @@ $scope.selected = {}; // an empty object for temporary storing typeahead selecti
 $scope.typeahead = {}; // an empty object for typeahead
 
 // An property for every editable relation to another concept (i.e. not primitive datatypes)
-$scope.typeahead['<name in interface>'] = Restangular.all('concept/<tgtConcept>/atoms').getList().$object;
-// e.g. $scope.typeahead['Theme'] = Restangular.all('concept/Theme/atoms').getList().$object;
+$scope.typeahead['<name in interface>'] = Restangular.all('resource/<tgtConcept>').getList().$object;
+// e.g. $scope.typeahead['Theme'] = Restangular.all('resource/Theme').getList().$object;

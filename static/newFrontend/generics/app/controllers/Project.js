@@ -72,8 +72,8 @@ AmpersandApp.controller('ProjectController', function ($scope, $rootScope, $rout
 	// Typeahead functionality
 	$scope.selected = {}; // an empty object for temporary storing typeahead selections
 	$scope.typeahead = {}; // an empty object for typeahead
-	$scope.typeahead.Theme = Restangular.all('concept/Theme').getList().$object;
-	$scope.typeahead.Person = Restangular.all('concept/Person').getList().$object;
+	$scope.typeahead.Theme = Restangular.all('resource/Theme').getList().$object;
+	$scope.typeahead.Person = Restangular.all('resource/Person').getList().$object;
 	
 	// PopUp function
 	$scope.popUp = function(obj, property, ResourceId){
