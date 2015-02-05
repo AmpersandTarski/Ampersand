@@ -117,7 +117,11 @@ traverseObject fSpec depth obj =
                                         (if isEditable then "" else "not ") ++ "editable"
         ; template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template $ 
-                             setAttribute "isEditable" isEditable
+                             setAttribute "isEditable" isEditable .
+                             setManyAttrib [ ("name",   nm)       -- TODO: escape
+                                           , ("source", name src) -- TODO: escape
+                                           , ("target", name tgt) -- TODO: escape
+                                           ]
         
         }
     FEBox nm mClass _ src tgt isEditable subObjs ->
@@ -141,7 +145,10 @@ traverseObject fSpec depth obj =
         ; return $ lines $ renderTemplate parentTemplate $ 
                              setAttribute "isEditable" isEditable .
                              setAttribute "subObjects" subObjAttrs .
-                             setManyAttrib [ ("class",    clss)
+                             setManyAttrib [ ("name",     nm) -- TODO: escape
+                                           , ("class",    clss) -- TODO: escape
+                                           , ("source",   name src) -- TODO: escape
+                                           , ("target",   name tgt) -- TODO: escape
                                            , ("contents", wrappedChildrenContent)
                                            ]
         }
