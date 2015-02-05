@@ -60,7 +60,7 @@ AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $rou
 	// PopUp function
 	$scope.popUp = function(obj, property, ResourceId){
 		var modalInstance = $modal.open({
-			templateUrl		: 'generics/app/views/Projects_addProjectleider.html',
+			templateUrl		: 'generics/app/views/addPerson.html',
 			controller		: 'static_addModalController',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'

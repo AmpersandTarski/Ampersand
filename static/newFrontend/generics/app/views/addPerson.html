@@ -8,7 +8,7 @@
 			<button class="btn btn-sm btn-warning" ng-click="cancel()">Cancel</button>
 		</div>
 	</form>
-	<h3 class="modal-title">Select a projectleider</h3>	
+	<h3 class="modal-title">Select a person</h3>	
 </div>
 
 <div class="modal-body interface">
@@ -18,13 +18,19 @@
 				<th width="100px">Name</th> 
 				<th>Status</th>
 				<th>Email</th>
+				<th>Works with</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr ng-repeat="(ResourceId, Resource) in ResourceList | filter:search" class="pointer" ng-click="select(Resource.id)">
 				<td>{{Resource['@label']}}</td>
-				<td>{{Resource.Status}}</td>
-				<td>{{Resource.Email}}</td>
+				<td>{{Resource['Status']}}</td>
+				<td>{{Resource['Email']}}</td>
+				<td>
+					<ul>
+						<li ng-repeat="(key, val) in Resource['Works with']"><span>{{val['@label']}}</span></li>
+					</ul>
+				</td>
 			</tr>
         </tbody>
 	</table>
