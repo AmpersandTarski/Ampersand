@@ -38,17 +38,16 @@ doGenFrontend fSpec =
     ; traverseInterfaces fSpec feInterfaces
     ; return ()
     }
--- TODO: maybe introduce specific node for top-level interfaces and call the other ones objects
 
--- TODO: interface ref: Editable relations from interface def of ref, or origin?
---       both may result in unexpected editability. Maybe take intersection?
+-- TODO: interface ref, editable relations are intersected, referenced interface expression is not regarded for view generation
 
 
 data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String -- _ disables 'not used' warning for fields
-                               , _ifcExp :: Expression, _ifcObj :: FEObject }
+                               , _ifcExp :: Expression, _ifcEditableRels :: [Expression]
+                               , _ifcObj :: FEObject }
 
 data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
-                         , objExp :: Expression, _ifcSubIfcs :: [FEObject] }
+                         , objExp :: Expression, _objEditableRels :: [Expression], _ifcSubIfcs :: [FEObject] }
               | FEAtomic { objName :: String, objExp :: Expression } deriving Show
 
 buildInterfaces :: FSpec -> [FEInterface]
@@ -56,21 +55,23 @@ buildInterfaces fSpec = map (buildInterface fSpec) $ interfaceS fSpec
 
 buildInterface :: FSpec -> Interface -> FEInterface
 buildInterface fSpec interface =
-  let obj = buildObject fSpec (ifcObj interface)
-  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj) obj
+  let editableRels = ifcParams interface
+      obj = buildObject fSpec editableRels (ifcObj interface)
+  in  FEInterface  (objName obj) (ifcClass interface) (objExp obj)  editableRels obj
   -- NOTE: due to Amperand's interface object structure, the name and expression are taken from the root object 
   -- TODO: handle editable rels here
 
-buildObject :: FSpec -> ObjectDef -> FEObject
-buildObject fSpec object =
+buildObject :: FSpec -> [Expression] -> ObjectDef -> FEObject
+buildObject fSpec editableRels object =
   case objmsub object of
     Nothing               -> FEAtomic (name object) (objctx object)
     Just (InterfaceRef nm)   -> case filter (\ifc -> name ifc == nm) $ interfaceS fSpec of -- Follow interface refs
-                                  [i] -> buildObject fSpec (ifcObj i) -- TODO: skip interface root object, what about exp and editable rels?
-                                  []  -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                                  _   -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-    Just (Box _ mCl objects) -> FEBox (name object) mCl (objctx object) $
-                                   map (buildObject fSpec) objects
+                                  []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
+                                  (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
+                                  [i]     -> let editableRels' = editableRels `intersect` ifcParams i
+                                             in  buildObject fSpec editableRels' (ifcObj i)
+    Just (Box _ mCl objects) -> FEBox (name object) mCl (objctx object) editableRels $
+                                   map (buildObject fSpec editableRels) objects
     
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
@@ -80,7 +81,7 @@ traverseInterfaces fSpec ifcs =
     }
 
 traverseInterface :: FSpec -> FEInterface -> IO ()
-traverseInterface fSpec (FEInterface interfaceName _ iExp obj) =
+traverseInterface fSpec (FEInterface interfaceName _ iExp _ obj) =
  do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ interfaceName
     ; lns <- traverseObject fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
@@ -104,7 +105,7 @@ traverseObject fSpec depth obj =
      do { template <- readTemplate fSpec $ "views/Atomic.html"
         ; return $ lines $ renderTemplate template id
         }
-    FEBox _ mClass _ subObjs ->
+    FEBox _ mClass _ editableRels subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass
 
         ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
