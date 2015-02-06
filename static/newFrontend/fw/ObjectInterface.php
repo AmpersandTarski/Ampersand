@@ -27,7 +27,10 @@ class ObjectInterface {
 	
 	public $expressionSQL;
 
-	public function __construct($name, $interface = array()){
+	/*
+	 * $refInterfacesArr is used to determine infinite loops in refInterface
+	 */
+	public function __construct($name, $interface = array(), $refInterfacesArr = array()){
 		global $allInterfaceObjects; // from Generics.php
 		
 		if(empty($interface)) $interface = $allInterfaceObjects[$name]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
@@ -88,18 +91,22 @@ class ObjectInterface {
 		
 		// Information about subinterfaces
 		$this->refInterface = $interface['refSubInterface'];
+		$refInterfacesArr[] = $this->name;
+		if(in_array($this->refInterface, $refInterfacesArr)) throw new Exception("Infinite loop in interface '$this->name' by referencing '$this->refInterface'", 500);
+		
 		$this->boxSubInterfaces = $interface['boxSubInterfaces'];
 		$this->expressionSQL = $interface['expressionSQL'];
 		
 		// Determine subInterfaces
 		if(!empty($this->refInterface)){
-			$refInterface = new ObjectInterface($this->refInterface);
+					
+			$refInterface = new ObjectInterface($this->refInterface, null, $refInterfacesArr);
 			foreach($refInterface->subInterfaces as $subInterface){
 				$this->subInterfaces[] = $subInterface;
 			}
 		}else{
 			foreach ((array)$this->boxSubInterfaces as $subInterface){
-				$this->subInterfaces[] = new ObjectInterface($subInterface['name'], $subInterface);
+				$this->subInterfaces[] = new ObjectInterface($subInterface['name'], $subInterface, $refInterfacesArr);
 			}
 		}
 	}
