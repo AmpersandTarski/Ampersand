@@ -166,7 +166,7 @@ traverseObject fSpec depth obj =
         ; subObjAttrs <- mapM traverseSubObject subObjs
                 
         ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
-        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ "-parent.html"
+        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
         
         ; return $ lines $ renderTemplate parentTemplate $ 
                              setAttribute "isEditable" isEditable .
