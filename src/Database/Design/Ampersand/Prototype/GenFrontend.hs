@@ -20,6 +20,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
 
 {- TODO
+- Get rid of -parent/child templates?
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
 - Factorize common parts for FEObject
 - isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
@@ -124,8 +125,9 @@ traverseInterface fSpec (FEInterface interfaceName _ iExp iSrc iTgt roles editab
     }
 
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool } deriving (Show, Data, Typeable)
-
+data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool
+                                , subObjContents :: String } deriving (Show, Data, Typeable)
+ 
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
 traverseObject fSpec depth obj =
   case obj of
@@ -161,37 +163,28 @@ traverseObject fSpec depth obj =
                                         " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
 
-        ; let clss = maybe "" (\cl -> "-" ++ cl) mClass
-        ; childTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-child.html" -- TODO: escape
+        ; subObjAttrs <- mapM traverseSubObject subObjs
+                
+        ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
+        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ "-parent.html"
         
-        ; childLnss <- mapM (traverseSubObject childTemplate) subObjs
-        
-        ; let wrappedChildrenContent = intercalate "\n" $ indent 6 $ concat childLnss
-        -- Indentation is not context sensitive, so some templates will be indented a bit too much (we take the maximum necessary value now)
-        
-        ; let subObjAttrs = [ SubObjAttr{ subObjName = objName subObj -- TODO: escape
-                                        , isBLOB = name (target $ objExp subObj) == "BLOB" } 
-                            | subObj <- subObjs ]
-
-        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clss ++ "-parent.html"
         ; return $ lines $ renderTemplate parentTemplate $ 
                              setAttribute "isEditable" isEditable .
                              setAttribute "subObjects" subObjAttrs .
                              setManyAttrib [ ("name",     nm) -- TODO: escape
-                                           , ("class",    clss) -- TODO: escape
                                            , ("source",   name src) -- TODO: escape
                                            , ("target",   name tgt) -- TODO: escape
-                                           , ("contents", wrappedChildrenContent)
                                            ]
         }
-      where traverseSubObject :: Template -> FEObject -> IO [String]
-            traverseSubObject childTemplate subObj =
-             do { subObjLns <- traverseObject fSpec (depth + 1) subObj
-                ; return $ lines $ renderTemplate childTemplate $ 
-                    setManyAttrib [ ("subObjectName", objName subObj)
-                                  , ("contents",      intercalate "\n" $ indent 4 subObjLns)
-                                  ]
-                }
+  where traverseSubObject subObj = 
+         do { lns <- traverseObject fSpec (depth + 1) subObj
+            ; return SubObjAttr{ subObjName = objName subObj -- TODO: escape
+                               , isBLOB = name (target $ objExp subObj) == "BLOB"
+                               , subObjContents = intercalate "\n" $ indent 8 lns
+                               -- Indentation is not context sensitive, so some templates will
+                               -- be indented a bit too much (we take the maximum necessary value now)
+                               } 
+            }
       
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String

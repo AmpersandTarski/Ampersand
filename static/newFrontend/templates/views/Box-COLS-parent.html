@@ -11,7 +11,11 @@ $endif$$subObjects:{subObj|      <th$if(subObj.isBLOB)$ class="table-header-text
 $if(isEditable)$      <td>
         <span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['$name$'], key)"></span>
       </td>
-$endif$$contents$
+$endif$$subObjects:{subObj|
+      <!-- BOX<COLS> CHILD: "$subObj.subObjName$" -->
+      <td>
+$subObj.subObjContents$
+      </td>}$
     </tr>
   </tbody>
 </table>
