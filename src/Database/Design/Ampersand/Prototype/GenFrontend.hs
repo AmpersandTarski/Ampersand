@@ -151,9 +151,8 @@ genRouteProvider fSpec ifcs =
     ; let routeAttrs = [ RouteAttr { interfaceName = ifcName ifc, interfaceIdent = ifcIdent ifc } | ifc <- ifcs ]
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
-                       setAttribute "routes"  routeAttrs .
-                       setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
-                                     ]
+                       setAttribute "routes"              routeAttrs
+                     . setAttribute "ampersandVersionStr" ampersandVersionStr
 
     ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
     }
@@ -172,16 +171,15 @@ genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editabl
     ; lns <- genView_Object fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"]) .
-                       setAttribute "roles"                    [ show r | r <- roles ] . -- show string, since StringTemplate does not elegantly allow to quote and separate
-                       setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
-                       setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
-                                     , ("interfaceName",       iName)
-                                     , ("expAdl",              showADL iExp)
-                                     , ("source",              name iSrc) -- TODO: escape
-                                     , ("target",              name iTgt) -- TODO: escape
-                                     , ("contents",            intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
-                                     ]
+                       setAttribute "isRoot"              (name (source iExp) `elem` ["ONE", "SESSION"])
+                     . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"   [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "ampersandVersionStr" ampersandVersionStr
+                     . setAttribute "interfaceName"       iName           -- TODO: escape
+                     . setAttribute "expAdl"              (showADL iExp)
+                     . setAttribute "source"              (name iSrc)     -- TODO: escape
+                     . setAttribute "target"              (name iTgt)     -- TODO: escape
+                     . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
 
     ; let filename = iIdent ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
@@ -214,13 +212,12 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
                                 NavInterface iName _ :_ -> Just iName
                                                                               
         ; return $ lines $ renderTemplate template $ 
-                             setAttribute "isEditable" isEditable .
-                             setAttribute "navInterface" mNavInterface . -- TODO: escape
-                             setManyAttrib [ ("name",   nm)       -- TODO: escape
-                                           , ("expAdl", showADL oExp)
-                                           , ("source", name src) -- TODO: escape
-                                           , ("target", name tgt) -- TODO: escape
-                                           ]        
+                             setAttribute "isEditable"   isEditable
+                           . setAttribute "navInterface" mNavInterface  -- TODO: escape
+                           . setAttribute "name"         nm             -- TODO: escape
+                           . setAttribute "expAdl"       (showADL oExp) 
+                           . setAttribute "source"       (name src)     -- TODO: escape
+                           . setAttribute "target"       (name tgt)     -- TODO: escape
         }
     FEBox mClass subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
@@ -233,13 +230,12 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
         
         ; return $ lines $ renderTemplate parentTemplate $ 
-                             setAttribute "isEditable" isEditable .
-                             setAttribute "subObjects" subObjAttrs .
-                             setManyAttrib [ ("name",     nm) -- TODO: escape
-                                           , ("expAdl", showADL oExp)
-                                           , ("source",   name src) -- TODO: escape
-                                           , ("target",   name tgt) -- TODO: escape
-                                           ]
+                             setAttribute "isEditable" isEditable
+                           . setAttribute "subObjects" subObjAttrs
+                           . setAttribute "name"       nm             -- TODO: escape
+                           . setAttribute "expAdl"     (showADL oExp)
+                           . setAttribute "source"     (name src)     -- TODO: escape
+                           . setAttribute "target"     (name tgt)     -- TODO: escape
         }
   where genView_SubObject subObj = 
          do { lns <- genView_Object fSpec (depth + 1) subObj
@@ -274,20 +270,19 @@ genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles e
           
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"]) .
-                       setAttribute "roles"                    [ show r | r <- roles ] . -- show string, since StringTemplate does not elegantly allow to quote and separate
-                       setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
-                       setAttribute "allEditableNonPrims"      allEditableNonPrims .
-                       setAttribute "containsDATE"             containsDATE .
-                       setAttribute "containsEditable"         containsEditable .
-                       setAttribute "containsEditableNonPrim"  containsEditableNonPrim .
-                       setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
-                                     , ("interfaceName",       iName)
-                                     , ("interfaceIdent",      iIdent)
-                                     , ("expAdl",              showADL iExp)
-                                     , ("source",              name iSrc) -- TODO: escape
-                                     , ("target",              name iTgt) -- TODO: escape
-                                     ]
+                       setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
+                     . setAttribute "roles"                    [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "allEditableNonPrims"      allEditableNonPrims
+                     . setAttribute "containsDATE"             containsDATE
+                     . setAttribute "containsEditable"         containsEditable
+                     . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
+                     . setAttribute "ampersandVersionStr"      ampersandVersionStr
+                     . setAttribute "interfaceName"            iName          -- TODO: escape
+                     . setAttribute "interfaceIdent"           iIdent
+                     . setAttribute "expAdl"                   (showADL iExp)
+                     . setAttribute "source"                   (name iSrc)    -- TODO: escape
+                     . setAttribute "target"                   (name iTgt)    -- TODO: escape
 
     ; let filename = iIdent ++ ".js" -- TODO: escape
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
