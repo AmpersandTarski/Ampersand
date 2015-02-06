@@ -1,0 +1,244 @@
+CONTEXT Generics IN ENGLISH LATEX
+PURPOSE CONTEXT Generics
+{+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP-}
+
+RELATION ctxContextName[CONTEXT*ContextName] [UNI,TOT]   -- e.g. 'GRCengine';
+RELATION ctxDBName[CONTEXT*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
+RELATION ctxAmpersandVersion[CONTEXT*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
+
+--! To be done !--
+RELATION generics_allSpecializations = // transitive, so including specializations of specializations
+  array
+    ();
+
+--[Relations]--
+IDENT Relations: Relation(relName) -- the name of the relation must be unique; it is therefor not the same as a RAP:Declaration.
+RELATION relContext[Relation*Context] [TOT] -- generics.php:$allRelations
+MEANING "Every relation belongs to a Context" -- For now, we assume there is one Context. 
+RELATION relName[Relation*RelationName] [UNI,TOT]
+MEANING "Every relation has a name by which it can be referenced within its Context(s)."
+RELATION relSrcConcept[Relation*Concept] [UNI,TOT]
+MEANING "Every relation has one source Concept"
+RELATION relTgtConcept[Relation*Concept] [UNI,TOT]
+MEANING "Every relation has one target Concept"
+RELATION relTable[Relation*DBTable] [UNI,TOT]
+MEANING "The population of a relation is stored in one database-table."
+RELATION relSrcColumn[Relation*DBTableColumn] [UNI,TOT]
+MEANING "The source atoms of the population of a relation are stored in a database column"
+RELATION relTgtColumn[Relation*DBTableColumn] [UNI,TOT]
+MEANING "The target atoms of the population of a relation are stored in a database column"
+RELATION relInvConjunctIds[Relation*ConjunctID]
+MEANING "When a pair in a relation is edited (created, updated or deleted), an (invariant) conjunct may be affected"
+RELATION relSigConjunctIds[Relation*ConjunctID]
+MEANING "When a pair in a relation is edited (created, updated or deleted), a (signal) conjunct may be affected"
+
+--[ConceptTables]--
+RELATION ctblTable[ConceptTable*DBTable] [UNI,TOT]
+MEANING "A ConceptTable is associated with a database-table"
+RELATION ctblCols[ConceptTable*DBTableColumn] [TOT]
+MEANING "A ConceptTable is associated with at least one database-table column"
+
+--[Concepts]--
+RELATION conceptInvConjunctIds[Concept*ConjunctID]
+MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
+RELATION conceptSigConjunctIds[Concept*ConjunctID]
+MEANING "When an atom in a concept is edited (created, updated or deleted), a (signal) conjunct may be affected"
+RELATION conceptTables[Concept*ConceptTable] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
+MEANING "Every concept has a ConceptTable"
+
+--[TableColumnInfo]--
+RELATION tciConcept[TableColumnInfo*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
+RELATION tciUnique[TableColumnInfo*BOOLEAN] [UNI,TOT] -- is this column unique? ('true' or 'false')
+RELATION tciNull[TableColumnInfo*BOOLEAN] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
+
+RELATION generics_tableColumnInfo[TCL*TableColumnInfo]
+  array
+    ( 'Norm' =>
+        array
+          ( 'Norm' => array ( 'concept' => 'Norm', 'unique' => true, 'null' => false)
+          , 'tgt_normNH' => array ( 'concept' => 'NormHierarchy', 'unique' => false, 'null' => true)
+          , 'tgt_normID' => array ( 'concept' => 'NormID', 'unique' => false, 'null' => true)
+          )
+    , 'UserID' =>
+        array
+          ( 'UserID' => array ( 'concept' => 'UserID', 'unique' => true, 'null' => false)
+          , 'src_accUserid' => array ( 'concept' => 'Account', 'unique' => true, 'null' => true)
+          )
+    , 'hoogsteRiskTypeOf' =>
+        array
+          ( 'Risk' => array ( 'concept' => 'Risk', 'unique' => false, 'null' => false)
+          , 'RLIType' => array ( 'concept' => 'RLIType', 'unique' => false, 'null' => false)
+          )
+    );
+
+--[Rules]--
+IDENT Rules: Rule(ruleContext,ruleID)
+RELATION ruleContext[Rule*Context] [TOT] -- Rule is part of context
+RELATION ruleID[Rule*RuleID] [UNI,TOT] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
+RELATION ruleADL[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
+RELATION ruleOrigin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
+RELATION ruleMeaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
+RELATION ruleMessage[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
+RELATION ruleSrcConcept[Rule*Concept] -- e.g. 'BusinessFunction'
+RELATION ruleTgtConcept[Rule*Concept] -- e.g. 'BusinessFunction'
+RELATION ruleConjunctIds[Rule*ConjunctID] -- e.g. 'conj_159'
+RELATION rulePairView[Rule*PairView] -- e.g. 
+                  array
+                    ( array ( 'segmentType' => 'Text', 'Text' => '{EX} DelPair;rliAcceptableRiskLevel;RLI;')
+                    , array ( 'segmentType' => 'Exp'
+                            , 'srcOrTgt' => 'Src'
+                            , 'expTgt' => 'RLI'
+                            , 'expSQL' =>
+                                '/* I[RLI] */
+                                   SELECT `RLI` AS `src`, `RLI` AS `tgt`
+                                   FROM `RLI`
+                                   WHERE `RLI` IS NOT NULL'
+                            )
+                    , array ( 'segmentType' => 'Text', 'Text' => ';Risk;')
+                    , array ( 'segmentType' => 'Exp'
+                            , 'srcOrTgt' => 'Tgt'
+                            , 'expTgt' => 'Risk'
+                            , 'expSQL' =>
+                                '/* I[Risk] */
+                                   SELECT `Risk` AS `src`, `Risk` AS `tgt`
+                                   FROM `Risk`
+                                   WHERE `Risk` IS NOT NULL'
+                            )
+                    )
+              )
+
+--[Conjuncts]--
+RELATION conjID[Conjunct*ConjunctID] [UNI,TOT] -- e.g. 'conj_0'
+RELATION conjSignalRuleNames[Conjunct*Rule] -- e.g. 'Activation of Managed BFControls' -- this is a signal rule
+RELATION conjInvariantRuleNames[Conjunct*Rule] -- similar, for invariant rules.
+RELATION conjMySQLViolationsQuery[Conjunct*MySQLQuery] -- e.g. '/* case: (EIsc lst\\\'@(_:_:_))
+                                       nhIsDashboard /\\\\ -I[NormHierarchy] ([NormHierarchy*NormHierarchy]) */
+                                    SELECT DISTINCT isect0.`NormHierarchy` AS `src`, isect0.`tgt_nhIsDashboard` AS `tgt`
+                                    FROM ( SELECT `NormHierarchy`, `tgt_nhIsDashboard`
+                                           FROM `NormHierarchy` WHERE `NormHierarchy` IS NOT NULL  AND  `tgt_nhIsDashboard` IS NOT NULL) AS isect0
+                                    WHERE isect0.NormHierarchy <> isect0.`tgt_nhIsDashboard` AND isect0.NormHierarchy IS NOT NULL AND isect0.`tgt_nhIsDashboard` IS NOT NULL'
+
+--[Roles]--
+
+RELATION roleRules[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen")
+
+--[
+//RELATION generics_allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView()).
+RELATION generics_allViews =
+  array
+    (   array ( 'label' => 'OrgUnits'
+              , 'concept' => 'OrgUnit'
+              , 'segments' =>
+                  array
+                    ( array ( 'segmentType' => 'Exp'
+                            , 'label' => '1' // view exp: ouID
+                            , 'expSQL' =>
+                                'SELECT DISTINCT `OrgUnit` AS `src`, `tgt_ouID` AS `tgt`
+                                 FROM `OrgUnit`
+                                 WHERE `OrgUnit` IS NOT NULL AND `tgt_ouID` IS NOT NULL'
+                            )
+                    )
+              )
+    ,   array ( 'label' => 'Person'
+              , 'concept' => 'Person'
+              , 'segments' =>
+                  array
+                    ( array ( 'segmentType' => 'Exp'
+                            , 'label' => '1' // view exp: personFirstName
+                            , 'expSQL' =>
+                                'SELECT DISTINCT `Person` AS `src`, `tgt_personFirstName` AS `tgt`
+                                 FROM `Person`
+                                 WHERE `Person` IS NOT NULL AND `tgt_personFirstName` IS NOT NULL'
+                            )
+                    , array ( 'segmentType' => 'Text', 'Text' => ' ')
+                    , array ( 'segmentType' => 'Exp'
+                            , 'label' => '3' // view exp: personLastName
+                            , 'expSQL' =>
+                                'SELECT DISTINCT `Person` AS `src`, `tgt_personLastName` AS `tgt`
+                                 FROM `Person`
+                                 WHERE `Person` IS NOT NULL AND `tgt_personLastName` IS NOT NULL'
+                            )
+                    )
+              )
+
+--[InterfaceObjects]--
+RELATION generics_allInterfaceObjects =
+  array
+    ( // Top-level interface RLI for all roles:
+      'RLI' => 
+        array ( 'name' => 'RLI'
+              // Normalized interface expression (== expressionSQL): I[RLI]
+              , 'interfaceRoles' => array ()
+              , 'invConjunctIds' => array ()
+              , 'sigConjunctIds' => array ()
+              , 'relation' => '' // this interface expression does not represent a declared relation
+              , 'relationIsFlipped' => ''
+              , 'srcConcept' => 'RLI'
+              , 'tgtConcept' => 'RLI'
+              , 'expressionSQL' => '/* I[RLI] */
+                                      SELECT `RLI` AS `src`, `RLI` AS `tgt`
+                                      FROM `RLI`
+                                      WHERE `RLI` IS NOT NULL'
+              // Box
+              , 'boxSubInterfaces' =>
+                  array
+                    ( array ( 'name' => 'Risk'
+                            // Normalized interface expression (== expressionSQL): rliRisk
+                            , 'relation' => 'rel_rliRisk_RLI_Risk' // this interface represents a declared relation
+                            , 'relationIsEditable' => false
+                            , 'relationIsFlipped' => False
+                            , 'min' => 'Zero'
+                            , 'max' => 'One'
+                            , 'srcConcept' => 'RLI'
+                            , 'tgtConcept' => 'Risk'
+                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliRisk` AS `tgt`
+                                                  FROM `RLI`
+                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliRisk` IS NOT NULL'
+                            // No subinterfaces
+                            )
+                    , array ( 'name' => 'Kans'
+                            // Normalized interface expression (== expressionSQL): rliLikelihood
+                            , 'relation' => 'rel_rliLikelihood_RLI_Likelihood' // this interface represents a declared relation
+                            , 'relationIsEditable' => false
+                            , 'relationIsFlipped' => False
+                            , 'min' => 'Zero'
+                            , 'max' => 'One'
+                            , 'srcConcept' => 'RLI'
+                            , 'tgtConcept' => 'Likelihood'
+                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliLikelihood` AS `tgt`
+                                                  FROM `RLI`
+                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliLikelihood` IS NOT NULL'
+                            // No subinterfaces
+                            )
+                    , array ( 'name' => 'Impact'
+                            // Normalized interface expression (== expressionSQL): rliImpact
+                            , 'relation' => 'rel_rliImpact_RLI_Impact' // this interface represents a declared relation
+                            , 'relationIsEditable' => false
+                            , 'relationIsFlipped' => False
+                            , 'min' => 'Zero'
+                            , 'max' => 'One'
+                            , 'srcConcept' => 'RLI'
+                            , 'tgtConcept' => 'Impact'
+                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliImpact` AS `tgt`
+                                                  FROM `RLI`
+                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliImpact` IS NOT NULL'
+                            // No subinterfaces
+                            )
+                    , array ( 'name' => 'A-lvl'
+                            // Normalized interface expression (== expressionSQL): rliAcceptableRiskLevel
+                            , 'relation' => 'rel_rliAcceptableRiskLevel_RLI_Risk' // this interface represents a declared relation
+                            , 'relationIsEditable' => false
+                            , 'relationIsFlipped' => False
+                            , 'min' => 'Zero'
+                            , 'max' => 'One'
+                            , 'srcConcept' => 'RLI'
+                            , 'tgtConcept' => 'Risk'
+                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliAcceptableRiskLevel` AS `tgt`
+                                                  FROM `RLI`
+                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliAcceptableRiskLevel` IS NOT NULL'
+                            // No subinterfaces
+                            )
+                    )
+              )
+
+ENDCONTEXT

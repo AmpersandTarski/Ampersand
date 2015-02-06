@@ -1,5 +1,12 @@
 CONTEXT RAP IN ENGLISH
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "ASTdocumentation.adl"
+
+{-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
+1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als ctxnm, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
+2) VIEWs (zoals 'VIEW Gen') horen m.i. niet in dit bestand thuis, maar daar waar de UI wordt gespecificeerd. IDENTs horen wel in dit bestand thuis.
+3) Van "RELATION decprps[Declaration*PropertyRule]" zou ik denken dat hij niet alleen INJ, maar ook SUR moet zijn.
+-}
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
@@ -35,15 +42,15 @@ RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
 RELATION gengen[Gen*PlainConcept] [UNI,TOT]
-MEANING "A generalization rule refers to a more generic concept."
+MEANING "A generalization rule refers to one more generic concept."
 RELATION genspc[Gen*PlainConcept] [UNI,TOT]
-MEANING "A generalization rule refers to a more specific concept."
+MEANING "A generalization rule refers to one more specific concept."
 
 PURPOSE RULE specialization
 {+Specialization has the consequence that an atom does not necessarily have one concept only.
 If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 -}
-RULE specialization : gengen~;genspc;in~ |- in~
+RULE specialization : in;genspc~;gengen |- in
 MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
