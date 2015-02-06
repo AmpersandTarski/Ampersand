@@ -43,9 +43,8 @@ AmpersandApp.controller('$interfaceIdent$Controller', function (\$scope, \$rootS
         });
     }
   }
-  //
-    
-$if(containsDATE)$  // The interface contains an editable relation to the primitive datatype DATE
+   
+$if(containsDATE)$  // The interface contains an editable relation to the primitive concept DATE
   // Function for Datepicker
   \$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
   \$scope.openDatepicker = function(\$event, datepicker) {
@@ -54,9 +53,9 @@ $if(containsDATE)$  // The interface contains an editable relation to the primit
     
     \$scope.datepicker[datepicker] = {'open' : true};
   }
+$else$  // The interface does not contain editable relations to primitive concept DATE
 $endif$
-
-$if(containsEditable)$  // The interface has at least 1 editable relation
+$if(containsEditable)$  // The interface contains at least 1 editable relation
   // Patch function to update a Resource
   \$scope.patch = function(ResourceId){
     \$scope.ResourceList[ResourceId]
@@ -66,9 +65,9 @@ $if(containsEditable)$  // The interface has at least 1 editable relation
         \$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, url);
       });
   }
+$else$  // The interface does not contain any editable relations
 $endif$
-
-$if(containsEditableNonPrim)$  // The interface has at least 1 editable relation to a non-primitive concept
+$if(containsEditableNonPrim)$  // The interface contains at least 1 editable relation to a non-primitive concept
   // AddObject function to add a new item (val) to a certain property (property) of an object (obj)
   // Also needed by addModal function.
   \$scope.addObject = function(obj, property, selected, ResourceId){
@@ -91,10 +90,11 @@ $if(containsEditableNonPrim)$  // The interface has at least 1 editable relation
   // Typeahead functionality
   \$scope.selected = {}; // an empty object for temporary storing typeahead selections
   \$scope.typeahead = {}; // an empty object for typeahead
-  
-  // A property for every editable relation to another concept (i.e. not primitive datatypes)
-  \$scope.typeahead['<name in interface>'] = Restangular.all('resource/<tgtConcept>').getList().\$object;
-  // e.g. \$scope.typeahead['Theme'] = Restangular.all('resource/Theme').getList().\$object;
-$endif$
 
+
+  // A property for every editable relation to another concept (i.e. non-primitive datatypes)
+$allEditableNonPrims:{editableNonPrim|
+  \$scope.typeahead['$editableNonPrim.labelName$'] = Restangular.all(encodeURIComponent('resource/$editableNonPrim.targetConcept$')).getList().\$object;}$
+$else$  // The interface does not contain editable relations to non-primitive concepts
+$endif$
 });

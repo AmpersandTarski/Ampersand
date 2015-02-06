@@ -236,12 +236,17 @@ genController_Interfaces fSpec ifcs =
     ; mapM_ (genController_Interface fSpec) $ ifcs
     }
 
+-- Helper data structure to pass attribute values to HStringTemplate
+data NonPrimEditableAttr = NPEAttr { labelName :: String, targetConcept :: String } deriving (Show, Data, Typeable)
+
 genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp iSrc iTgt roles editableRels obj) =
  do { verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show interfaceName
     ; let allObjs = flatten obj
+          allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = name $ objTarget o } -- TODO: escape 
+                                    |  o <- allObjs, objIsEditable o ] -- TODO: figure out how to represent non-primitiveness (to prevent double admin, probably want to use template dir)
           containsEditable        = any objIsEditable allObjs
-          containsEditableNonPrim = True -- TODO: figure out how to represent non-primitiveness (to prevent double admin, probably want to use template dir)
+          containsEditableNonPrim = not $ null allEditableNonPrims
           containsDATE            = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
           
     ; template <- readTemplate fSpec "controllers/controller.js"
@@ -249,6 +254,7 @@ genController_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp i
                        setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"]) .
                        setAttribute "roles"                    [ show r | r <- roles ] . -- show string, since StringTemplate does not elegantly allow to quote and separate
                        setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
+                       setAttribute "allEditableNonPrims"      allEditableNonPrims .
                        setAttribute "containsDATE"             containsDATE .
                        setAttribute "containsEditable"         containsEditable .
                        setAttribute "containsEditableNonPrim"  containsEditableNonPrim .
