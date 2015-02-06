@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend) where
 import Prelude hiding (putStrLn,readFile)
 import Data.Data
 import Data.List
+import Data.Maybe
 import System.Directory
 import System.FilePath
 import Text.StringTemplate
@@ -67,7 +68,7 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </>
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
-    ; let feInterfaces = buildInterfaces fSpec
+    ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
@@ -88,7 +89,7 @@ data FEObject = FEObject { objName :: String
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic
+data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe String }
                    | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
 
 data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [String] } deriving Show
@@ -96,48 +97,61 @@ data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [Strin
 flatten :: FEObject -> [FEObject]
 flatten obj = obj : concatMap flatten subObjs
   where subObjs = case atomicOrBox obj of
-                    FEAtomic                   -> []
+                    FEAtomic{}                 -> []
                     FEBox{ ifcSubObjs = objs } -> objs 
 
-buildInterfaces :: FSpec -> [FEInterface]
-buildInterfaces fSpec = map (buildInterface fSpec allIfcs) allIfcs
+buildInterfaces :: FSpec -> IO [FEInterface]
+buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
 
-buildInterface :: FSpec -> [Interface] -> Interface -> FEInterface
+buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
-  let editableRels = ifcParams ifc
-      obj = buildObject editableRels (ifcObj ifc)
-  in  FEInterface  (name ifc) (phpIdentifier $ name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
-  -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
-  --       (name comes from interface, but is equal to object name) 
+ do { let editableRels = ifcParams ifc
+    ; obj <- buildObject editableRels (ifcObj ifc)
+    ; return $
+        FEInterface  (name ifc) (phpIdentifier $ name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
+    -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
+    --       (name comes from interface, but is equal to object name)
+    } 
   where    
-    buildObject :: [Expression] -> ObjectDef -> FEObject
+    buildObject :: [Expression] -> ObjectDef -> IO FEObject
     buildObject editableRels object =
-      let iExp = conjNF (getOpts fSpec) $ objctx object
-          (isEditable, src, tgt) = 
-            case getExpressionRelation iExp of
-              Nothing                          -> (False, source iExp, target iExp)
-              Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
-                                               -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
-          navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 
-                    | nIfc <- allIfcs
-                    , (source . objctx . ifcObj $ nIfc) == tgt
-                    , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
-                    ]
-          (atomicOrBox', iExp', isEditable', tgt') =
+     do { let iExp = conjNF (getOpts fSpec) $ objctx object
+              (isEditable, src, tgt) = 
+                case getExpressionRelation iExp of
+                  Nothing                          -> (False, source iExp, target iExp)
+                  Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
+                                                   -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
+              navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 
+                        | nIfc <- allIfcs
+                        , (source . objctx . ifcObj $ nIfc) == tgt
+                        , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
+                        ]
+        ; (atomicOrBox', iExp', isEditable', tgt') <-
             case objmsub object of
-              Nothing                  -> (FEAtomic,                                           iExp, isEditable, tgt)
-              Just (Box _ mCl objects) -> (FEBox mCl $ map (buildObject editableRels) objects, iExp, isEditable, tgt)
-              Just (InterfaceRef nm)   -> case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
-                                            []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                                            (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-                                            [i]     -> let editableRels' = editableRels `intersect` ifcParams i
-                                                           refObj = buildObject editableRels' (ifcObj i)
-                                                       in  (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
-                                                       -- TODO: interface ref basically skips a relation, so we make it not editable for now
-       in  FEObject (name object) iExp' src tgt' isEditable' navIfcs atomicOrBox'
+              Nothing                  ->
+               do { let specificTemplatePth = "views/Atomic-" ++ name tgt ++ ".html" -- TODO: escape
+                  ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
+                  ; let atomic = FEAtomic $ if hasSpecificTemplate then Just specificTemplatePth else Nothing
+                  ; return (atomic, iExp, isEditable, tgt)
+                  }
+              Just (Box _ mCl objects) -> 
+               do { subObjs <- mapM (buildObject editableRels) objects
+                  ; return (FEBox mCl subObjs, iExp, isEditable, tgt)
+                  }
+              Just (InterfaceRef nm)   -> 
+                case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
+                  []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
+                  (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
+                  [i]     -> do { let editableRels' = editableRels `intersect` ifcParams i
+                                ; refObj <- buildObject editableRels' (ifcObj i)
+                                ; return (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
+                                } -- TODO: interface ref basically skips a relation, so we make it not editable for now
+
+        ; return $ FEObject (name object) iExp' src tgt' isEditable' navIfcs atomicOrBox'
+        }
 
 
 ------ Generate RouteProvider.js
@@ -192,18 +206,14 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterfaces _) =
   case atomicOrBox obj of
-    FEAtomic  ->
+    FEAtomic mPrimTemplate ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                         " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
         
         -- For now, we choose specific template based on target concept. This will probably be too weak. 
         -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-        ; let specificTemplatePth = "views/Atomic-" ++ name tgt ++ ".html" -- TODO: escape
-        ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
-        ; template <- if hasSpecificTemplate 
-                      then readTemplate fSpec $ specificTemplatePth
-                      else readTemplate fSpec $ "views/Atomic.html" -- default template
+        ; template <- readTemplate fSpec $ fromMaybe "views/Atomic.html" mPrimTemplate -- Atomic is the default template
                 
         ; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
                                               | NavInterface n rs <- navInterfaces ]
