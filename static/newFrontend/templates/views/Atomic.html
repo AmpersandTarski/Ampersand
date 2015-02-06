@@ -1,4 +1,4 @@
-<!-- Atomic[] "$name$" : [$source$*$target$] ($if(!isEditable)$not $endif$editable) -->
+<!-- Atomic[] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
 $if(isEditable)$<div ng-repeat="row in val['$name$']">
   <span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row['id'], ResourceId)"></span>
 

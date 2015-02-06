@@ -1,4 +1,4 @@
-<!-- Atomic[TEXT] "$name$" : [$source$*$target$] ($if(!isEditable)$not $endif$editable) -->
+<!-- Atomic[TEXT] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
 $if(isEditable)$<div class="input-group">
   <input ng-model="val['$name$']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
 </div>$else$<div>
