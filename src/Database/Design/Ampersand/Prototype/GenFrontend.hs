@@ -9,10 +9,11 @@ import System.FilePath
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
+import Database.Design.Ampersand.Misc
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 import Database.Design.Ampersand.Prototype.ProtoUtil
 
@@ -156,6 +157,7 @@ genView_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp iSrc iT
                        setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
+                                     , ("expAdl",              showADL iExp)
                                      , ("source",              name iSrc) -- TODO: escape
                                      , ("target",              name iTgt) -- TODO: escape
                                      , ("contents",            intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
@@ -170,7 +172,7 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool
                                 , subObjContents :: String } deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
-genView_Object fSpec depth obj@(FEObject nm _ src tgt isEditable navInterfaces _) =
+genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterfaces _) =
   case atomicOrBox obj of
     FEAtomic  ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
@@ -195,6 +197,7 @@ genView_Object fSpec depth obj@(FEObject nm _ src tgt isEditable navInterfaces _
                              setAttribute "isEditable" isEditable .
                              setAttribute "navInterface" mNavInterface . -- TODO: escape
                              setManyAttrib [ ("name",   nm)       -- TODO: escape
+                                           , ("expAdl", showADL oExp)
                                            , ("source", name src) -- TODO: escape
                                            , ("target", name tgt) -- TODO: escape
                                            ]        
@@ -213,6 +216,7 @@ genView_Object fSpec depth obj@(FEObject nm _ src tgt isEditable navInterfaces _
                              setAttribute "isEditable" isEditable .
                              setAttribute "subObjects" subObjAttrs .
                              setManyAttrib [ ("name",     nm) -- TODO: escape
+                                           , ("expAdl", showADL oExp)
                                            , ("source",   name src) -- TODO: escape
                                            , ("target",   name tgt) -- TODO: escape
                                            ]
@@ -261,6 +265,7 @@ genController_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp i
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
                                      , ("interfaceIdent",      interfaceIdent)
+                                     , ("expAdl",              showADL iExp)
                                      , ("source",              name iSrc) -- TODO: escape
                                      , ("target",              name iTgt) -- TODO: escape
                                      ]
