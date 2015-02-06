@@ -13,6 +13,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Core.ParseTree
 --import Data.Hashable
 import Data.Maybe
@@ -56,12 +57,12 @@ instance MetaPopulations FSpec where
   ++[ Pop "ctxpats" "Context" "Pattern"
            [(uri fSpec,uri pat) | pat <- vpatterns fSpec]]
   ++[ Pop "ctxcs" "Context" "PlainConcept"
-           [(uri fSpec,uri cpt) | cpt <- allConcepts fSpec]]
+           [(uri fSpec,uri cpt) | cpt <- allConcepts fSpec, cpt /= ONE]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.vgens) fSpec++")"]
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.allConcepts) fSpec++")***"]
+  ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.allConcepts) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) allAtoms++")"]
   ++   concatMap (metaPops fSpec) allAtoms
@@ -71,14 +72,10 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) fSpec++")***"]
+  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allRules)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.allRules) fSpec++")***"]
+  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
-
-
-
-
   )
    where
     allAtoms :: [AtomID]
@@ -98,7 +95,7 @@ instance MetaPopulations FSpec where
 instance MetaPopulations Pattern where
  metaPops _ pat =
    [ Comment " "
-   , Comment $ "*** Pattern `"++name pat++"` ***"
+   , Comment $ " Pattern `"++name pat++"` "
    , Pop "ptnm"    "Pattern" "Conid"
           [(uri pat, ptnm pat)]
    , Pop "ptrls"   "Pattern" "Rule"
@@ -126,7 +123,7 @@ instance MetaPopulations A_Concept where
    case cpt of
      PlainConcept{} ->
       [ Comment " "
-      , Comment $ "*** Concept `"++name cpt++"` ***"
+      , Comment $ " Concept `"++name cpt++"` "
       , Pop "cptnm" "PlainConcept" "Conid"
              [(uri cpt, name cpt)]
       , Pop "cptdf" "PlainConcept" "Blob"
@@ -168,7 +165,7 @@ instance MetaPopulations Declaration where
    case dcl of
      Sgn{} ->
       [ Comment " "
-      , Comment $ "*** Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` ***"
+      , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "decnm" "Declaration" "Varid"
              [(uri dcl, name dcl)]
       , Pop "decsgn" "Declaration" "Sign"
@@ -219,25 +216,34 @@ instance MetaPopulations Expression where
 
 instance MetaPopulations Rule where
  metaPops _ rul =
-   [ Comment " "
-   , Comment $ "*** Rule `"++name rul++"` ***"
-   , Pop "rrnm"  "Rule" "ADLid"
-          [(uri rul,rrnm rul)]
-   , Pop "rrexp"  "Rule" "ExpressionID"
-          [(uri rul,uri (rrexp rul))]
-   , Pop "rrmean"  "Rule" "Blob"
-          [(uri rul,show(rrmean rul))]
-   , Pop "rrpurpose"  "Rule" "Blob"
-          [(uri rul,showADL x) | x <- explanations rul]
-   ]
+      [ Comment " "
+      , Comment $ " Rule `"++name rul++"` "
+      , Pop "rrnm"  "Rule" "ADLid"
+             [(uri rul,rrnm rul)]
+      , Pop "rrexp"  "Rule" "ExpressionID"
+             [(uri rul,uri (rrexp rul))]
+      , Pop "rrmean"  "Rule" "Blob"
+             [(uri rul,show(rrmean rul))]
+      , Pop "rrpurpose"  "Rule" "Blob"
+             [(uri rul,showADL x) | x <- explanations rul]
+      , -- The next population is from the adl pattern 'Plugs':
+        Pop "sign" "Rule" "Sign"
+             [(uri rul,uri (rrtyp rul))]
+      ]
 
 instance MetaPopulations PlugInfo where
- metaPops _ _ = 
-      [ Comment $ "TODO:  PlugInfo"
---      , Pop "in" "PlainConcept" "Plug"
---             [(uri cpt, uri plug) | plug <- nub $ map fst (lookupCpt fSpec cpt)]
+ metaPops _ plug = 
+      [ Comment $ " Plug `"++name plug++"` "
+      , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
+      , Pop "in" "PlainConcept" "Plug"                 
+             [(uri cpt,uri plug)| cpt <- concs plug, isRelevant plug] -- TODO @Stef: Dit levert mogelijk meerdere plugs op, omdat we hier naar plugs kijken, en niet filteren op alleen brede tabellen. Waardoor weten we dat we niet naar BinSQL moeten kijken, maar alleen naar TblSQL? En hoe zit dat voor andere typen plugs (PHP plugs?)  
+      , Pop "in" "Declaration" "Plug"
+             [(uri dcl,uri plug)| dcl <- relsMentionedIn plug, isRelevant plug]  --Idem
       ]      
-
+-- TIJDELIJKE FUNCTIE: Moet worden overlegd met Stef:
+isRelevant :: PlugInfo -> Bool
+isRelevant (InternalPlug TblSQL{}) = True
+isRelevant _ = False
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
  
@@ -288,6 +294,7 @@ instance AdlId Expression
 instance AdlId FSpec
 instance AdlId PairID
 instance AdlId Pattern
+instance AdlId PlugInfo
 instance AdlId PlugSQL
 instance AdlId Purpose
 instance AdlId Rule
