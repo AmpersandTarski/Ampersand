@@ -12,7 +12,6 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowHS
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 import Database.Design.Ampersand.Prototype.ProtoUtil
@@ -82,14 +81,20 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcIdent :: String -- _ifc
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , _objIsEditable :: Bool, _objNavInterfaces :: [NavInterface]
+                         , objIsEditable :: Bool, _objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic {}
-                   | FEBox    {  _objMClass :: Maybe String, _ifcSubIfcs :: [FEObject] } deriving Show
+data FEAtomicOrBox = FEAtomic
+                   | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
 
 data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [String] } deriving Show
+
+flatten :: FEObject -> [FEObject]
+flatten obj = obj : concatMap flatten subObjs
+  where subObjs = case atomicOrBox obj of
+                    FEAtomic                   -> []
+                    FEBox{ ifcSubObjs = objs } -> objs 
 
 buildInterfaces :: FSpec -> [FEInterface]
 buildInterfaces fSpec = map (buildInterface fSpec allIfcs) allIfcs
@@ -234,14 +239,19 @@ genController_Interfaces fSpec ifcs =
 genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp iSrc iTgt roles editableRels obj) =
  do { verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show interfaceName
+    ; let allObjs = flatten obj
+          containsEditable        = any objIsEditable allObjs
+          containsEditableNonPrim = True -- TODO: figure out how to represent non-primitiveness (to prevent double admin, probably want to use template dir)
+          containsDATE            = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
+          
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
                        setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"]) .
                        setAttribute "roles"                    [ show r | r <- roles ] . -- show string, since StringTemplate does not elegantly allow to quote and separate
                        setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
-                       setAttribute "containsDATE"             True .
-                       setAttribute "containsEditable"         True .
-                       setAttribute "containsEditableNonPrim"  True .
+                       setAttribute "containsDATE"             containsDATE .
+                       setAttribute "containsEditable"         containsEditable .
+                       setAttribute "containsEditableNonPrim"  containsEditableNonPrim .
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
                                      , ("interfaceName",       interfaceName)
                                      , ("interfaceIdent",      interfaceIdent)
