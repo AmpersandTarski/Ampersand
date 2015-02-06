@@ -273,7 +273,10 @@ genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles e
  do { verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
           allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = name $ objTarget o } -- TODO: escape 
-                                    |  o <- allObjs, objIsEditable o ] -- TODO: figure out how to represent non-primitiveness (to prevent double admin, probably want to use template dir)
+                                    | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
+                                    , objIsEditable o
+                                    , not . isJust $ objMPrimTemplate a
+                                    ]
           containsEditable        = any objIsEditable allObjs
           containsEditableNonPrim = not $ null allEditableNonPrims
           containsDATE            = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
