@@ -141,7 +141,7 @@ instance MetaPopulations AtomID where
  metaPops _ atm = 
    [ Pop "atmRoot" "AtomID" "PlainConcept" 
           [(uri atm, uri cpt) | cpt <- atmRoots atm]
-   , Pop "in" "AtomID" "PlainConcept" 
+   , Pop "instanceOf" "AtomID" "PlainConcept" 
           [(uri atm, uri cpt) | cpt <- atmIn atm]
    , Pop "atomvalue"  "AtomID" "AtomValue"
           [(uri atm,(show.atmVal) atm)]

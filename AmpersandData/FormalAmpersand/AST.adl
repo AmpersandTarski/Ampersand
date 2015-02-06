@@ -50,7 +50,7 @@ RELATION genspc[Gen*PlainConcept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
 
 PURPOSE RULE specialization
-{+Specialization has the consequence that an atom does not necessarily have one concept only.
+{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
 If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 -}
 RULE specialization : in;genspc~;gengen |- in
@@ -65,7 +65,7 @@ CLASSIFY PlainConcept ISA Concept
 
 RELATION cptnm[PlainConcept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
---RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door in~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
+--RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door instanceOf~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
 --MEANING "The population of a concept."
 RELATION cptdf[PlainConcept*Blob]
 MEANING "The definitions of a concept."
@@ -96,11 +96,11 @@ ENDPATTERN
 
 PATTERN Atoms
 {-TODO: Documenteren! Het idee is grofweg als volgt:
-Een AtomID is een element in een Concept. Elk element heeft een waarde. Een element kan echter voorkomen in verschillende concepten, namelijk indien de een een generalisatie is van de ander.
-Als René in de verzameling Man zit, Man is een specialisatie van Persoon, dan zit diezelfde René ook in de verzameling Persoon. Er kan echter ook een René bestaan in de verzameling Hond. De hond René is echter iets anders dan de Persoon René. 
+Een AtomID is een instantie van een Concept. Elk AtomId heeft een waarde. Één AtomId kan voorkomen als instantie van verschillende concepten, namelijk indien de een een generalisatie is van de ander.
+Als René instantie is van Man, Man is een specialisatie van Persoon, dan is diezelfde René ook instantie van Persoon. Er kan echter ook een René bestaan als instantie van Hond. De hond René is echter iets anders dan de Persoon René. 
 -}
 RELATION atmRoot [AtomID*PlainConcept] [TOT]  -- most generic concept(s) where the AtomID is in. 
-RELATION in[AtomID*PlainConcept] [TOT]
+RELATION instanceOf[AtomID*PlainConcept] [TOT]
 RELATION atomvalue[AtomID*AtomValue] [UNI,TOT]
 
 MEANING "The value of an atom."
@@ -108,7 +108,7 @@ MEANING "The value of an atom."
 --MEANING "An atom of a concept has a unique value within the class of that concept."
 --MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
 --VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
-
+RULE "atomID is instance of root" : atmRoot |- instanceOf
 ENDPATTERN
 
 PATTERN Sign
