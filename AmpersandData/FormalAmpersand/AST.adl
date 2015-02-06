@@ -4,8 +4,11 @@ INCLUDE "ASTdocumentation.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
 1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als ctxnm, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
+      Reactie HJO/20150207: Die snap ik niet. Twee Concepten met dezelfde naam zijn hetzelfde Concept. Een Pattern mag dezelfde naam hebben als een Concept. Daarmee zijn de uiteraard niet identiek. Een Pattern is nou een maal geen Concept. Dit is nu zo geregeld in RAP. Als je punt is, dat twee verschillende Concepten best dezelfde naam zouden mogen hebben, dan hebben we een issue. Maar ik denk niet dat je dit bedoelt.
 2) VIEWs (zoals 'VIEW Gen') horen m.i. niet in dit bestand thuis, maar daar waar de UI wordt gespecificeerd. IDENTs horen wel in dit bestand thuis.
+      Reactie HJO/20150207: Helemaal mee eens. Gaan we doen. 
 3) Van "RELATION decprps[Declaration*PropertyRule]" zou ik denken dat hij niet alleen INJ, maar ook SUR moet zijn.
+      Reactie HJO/20150207: Dat denk ik ook. Leuk is, dat dit geen invloed heeft op de meatgrinder. Immers, die zorgt alleen maar voor de juiste populatie van Declarations. Als blijkt dat we dan overtredingen krijgen, dan gaan we dat meemaken...
 -}
 
 PATTERN Context
