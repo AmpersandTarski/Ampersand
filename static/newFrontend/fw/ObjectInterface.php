@@ -68,8 +68,8 @@ class ObjectInterface {
 			case "DATE":
 				$this->tgtDataType = "date";		// relation to DATE concept
 				break;
-			case "BOOLEAN":
-				$this->tgtDataType = "checkbox";	// relation to BOOLEAN concept
+			case "BOOL":
+				$this->tgtDataType = "checkbox";	// relation to BOOL concept
 				break;
 			case "EMAIL":
 				$this->tgtDataType = "email";		// relation to EMAIL concept
