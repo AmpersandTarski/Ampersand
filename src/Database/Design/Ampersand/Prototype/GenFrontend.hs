@@ -85,7 +85,6 @@ buildInterface fSpec allIfcs ifc =
                     | nIfc <- allIfcs
                     ,  (source . objctx . ifcObj $ nIfc) == tgt
                     , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
-                    , not . null $ nRoles
                     ]
        in  case objmsub object of
             Nothing                  -> FEAtomic (name object) iExp src tgt isEditable navIfcs
