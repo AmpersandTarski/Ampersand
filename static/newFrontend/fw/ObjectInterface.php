@@ -71,20 +71,12 @@ class ObjectInterface {
 			case "BOOL":
 				$this->tgtDataType = "checkbox";	// relation to BOOL concept
 				break;
-			case "EMAIL":
-				$this->tgtDataType = "email";		// relation to EMAIL concept
-				break;
 			case "PASSWORD":
 				$this->tgtDataType = "password"; 	// relation to PASSWORD concept
 				break;
-			case "COLOR":
-				$this->tgtDataType = "color";		// relation to STATUS concept
-				break;
-			// <textarea>
 			case "BLOB":
 				$this->tgtDataType = "textarea"; 	// relation to BLOB concept
 				break;
-			// <select>
 			default:
 				$this->tgtDataType = "concept"; 	// relation to other concept
 		}
