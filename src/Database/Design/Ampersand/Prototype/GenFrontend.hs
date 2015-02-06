@@ -20,7 +20,9 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
 
 {- TODO
-- Get rid of -parent/child templates?
+- Follow interface ref, check factorization (use FEObject from followed ref?)
+- Converse navInterfaces?
+- Be more consistent with record selectors/pattern matching
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
 - Factorize common parts for FEObject
 - isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
@@ -50,13 +52,14 @@ data FEInterface = FEInterface { _ifcName :: String, _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
                                , _ifcRoles :: [String], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
 
-data FEObject = FEBox    { objName :: String, _objMClass :: Maybe String
+data FEObject = FEObject { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , _objIsEditable :: Bool, _objNavInterfaces :: [NavInterface] -- though unused, NavInterfaces could also make sense for Box 
-                         , _ifcSubIfcs :: [FEObject] }
-              | FEAtomic { objName :: String
-                         , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , _objIsEditable :: Bool, _objNavInterfaces :: [NavInterface] } deriving Show
+                         , _objIsEditable :: Bool, _objNavInterfaces :: [NavInterface]
+                         , atomicOrBox :: FEAtomicOrBox } deriving Show
+
+-- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
+data FEAtomicOrBox = FEAtomic {}
+                   | FEBox    {  _objMClass :: Maybe String, _ifcSubIfcs :: [FEObject] } deriving Show
 
 data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [String] } deriving Show
 
@@ -86,15 +89,15 @@ buildInterface fSpec allIfcs ifc =
                     ,  (source . objctx . ifcObj $ nIfc) == tgt
                     , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
                     ]
-       in  case objmsub object of
-            Nothing                  -> FEAtomic (name object) iExp src tgt isEditable navIfcs
-            Just (InterfaceRef nm)   -> case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
-                                          []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                                          (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-                                          [i]     -> let editableRels' = editableRels `intersect` ifcParams i
-                                                     in  buildObject editableRels' (ifcObj i)
-            Just (Box _ mCl objects) ->FEBox (name object) mCl iExp src tgt isEditable navIfcs $
-                                              map (buildObject editableRels) objects
+       in   case objmsub object of
+              Nothing                  -> FEObject (name object) iExp src tgt isEditable navIfcs $ FEAtomic
+              Just (InterfaceRef nm)   -> case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
+                                            []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
+                                            (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
+                                            [i]     -> let editableRels' = editableRels `intersect` ifcParams i
+                                                       in  buildObject editableRels' (ifcObj i)
+              Just (Box _ mCl objects) -> FEObject (name object) iExp src tgt isEditable navIfcs $ FEBox mCl $
+                                            map (buildObject editableRels) objects
     
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
@@ -128,9 +131,9 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool
                                 , subObjContents :: String } deriving (Show, Data, Typeable)
  
 traverseObject :: FSpec -> Int -> FEObject -> IO [String]
-traverseObject fSpec depth obj =
-  case obj of
-    FEAtomic nm _ src tgt isEditable navInterfaces ->
+traverseObject fSpec depth obj@(FEObject nm _ src tgt isEditable navInterfaces _) =
+  case atomicOrBox obj of
+    FEAtomic  ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                         " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
@@ -157,7 +160,7 @@ traverseObject fSpec depth obj =
                                            , ("target", name tgt) -- TODO: escape
                                            ]        
         }
-    FEBox nm mClass _ src tgt isEditable _ subObjs ->
+    FEBox mClass subObjs ->
      do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
                                         " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
