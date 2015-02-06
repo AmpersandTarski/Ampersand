@@ -6,7 +6,7 @@ $if(isEditable)$<div ng-repeat="row in val['$name$']">
   
 </div>
 <div my-showonhovertr>
-  <input ng-model="selected[$name$]" type="text" class="form-control input-sm" placeholder="Add new" typeahead="X.id as X.label for X in typeahead.X | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected$name$, ResourceId)">
+  <input ng-model="selected.id" type="text" class="form-control input-sm" placeholder="Add new" typeahead="item.id as item.label for item in typeahead['$name$'] | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected, ResourceId)">
 </div>$else$<div ng-repeat="row in val['$name$']"> 
 
   $if(navInterface)$<a ng-href="#/$navInterface$/{{row['id']}}">{{row['@label']}}</a>$else${{val['@label']}}$endif$
