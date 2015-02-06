@@ -91,11 +91,9 @@ phpIndent i
 
 -- | guarantees a valid identifier name. The function is NOT injective!
 phpIdentifier :: String -> String
-phpIdentifier [] = []
-phpIdentifier (s:str)
- | isDigit s = 'I':s:g str
- | otherwise = g (s:str)
-   where g xs = [c | c<-xs, isAlphaNum c]
+phpIdentifier str = prefix ++ [ if isAlphaNum c then c else '_' | c <- str ]
+  where prefix | (c:_) <- str, isDigit c = "n"
+               | otherwise               = ""
 
 addSlashes :: String -> String
 addSlashes ('\'': cs) = "\\'"++addSlashes cs
