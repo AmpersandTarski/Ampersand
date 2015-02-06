@@ -238,10 +238,13 @@ dnf2expr (Dnf antcs conss)
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
-                deriving (Show, Eq)
+                deriving (Show, Eq,Typeable)
 instance Named PlugInfo where
   name (InternalPlug psql) = name psql
   name (ExternalPlug obj)  = name obj
+instance Unique PlugInfo where
+  showUnique (InternalPlug psql) = "SQLTable "++name psql
+  showUnique (ExternalPlug obj ) = "Object "++name obj++show (origin obj)
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
   concs   (ExternalPlug obj)  = concs   obj
