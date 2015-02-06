@@ -23,14 +23,17 @@ fatal = fatalMsg "Parsing"
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
-  do userCtx <- parseADL opts (fileName opts)
+  do userCtx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let userFspec = pCtx2Fspec userCtx
      if includeRap opts
-     then do rapCtx <- getRap
-             let populatedRapCtx = 
-                   (merge.sequenceA) [grind <?> userFspec, rapCtx]
-             return $ pCtx2Fspec populatedRapCtx
-     else return userFspec
+     then do rapCtx <- getRap  -- the P_Context of RAP
+             let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
+                                   -- P_Context, that contains all 'things' specified in the user's file 
+                                   -- as populations in RAP. These populations are the only contents of 
+                                   -- the returned P_Context. 
+                   (merge.sequenceA) [grind <?> userFspec, rapCtx] -- Both p_Contexts are merged into a single P_Context
+             return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
+     else return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.  
   where
     getRap :: IO (Guarded P_Context)
     getRap 
