@@ -20,16 +20,38 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
 
 {- TODO
-- Follow interface ref, check factorization (use FEObject from followed ref?)
 - Converse navInterfaces?
 - Be more consistent with record selectors/pattern matching
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
-- Factorize common parts for FEObject
 - isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
 - Escape everything
-
 - Keeping templates as statics requires that the static files are written before templates are used.
   Maybe we should keep them as cabal data-files instead. (file extensions and directory structure are predictable)
+
+
+PROBLEM: Interface refs are not handled correctly at the moment. Consider:
+
+INTERFACE MyInterface 
+  BOX [ ref : rel[$a*$b]
+        INTERFACE RefInterface
+      ]
+      
+INTERFACE RefInterface relRef[$b*$c]
+  BOX [ .. : ..[$c*$d]
+      ]
+
+This is basically mapped onto:
+
+INTERFACE MyInterface 
+  BOX [ ref : (rel;relRef)[$a*$c]
+        BOX [ .. : ..[$c*$d]
+            ]
+      ]
+
+When do we allow this to be editable? If relRef is I, we can use editability of rel, but relRef may be anything
+(and does not even have to be an endorelation [$b*$b].)
+
+Until this is sorted out, we disallow editing on interface refs
 -}
 
 getTemplateDir :: FSpec -> String
@@ -89,16 +111,18 @@ buildInterface fSpec allIfcs ifc =
                     ,  (source . objctx . ifcObj $ nIfc) == tgt
                     , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
                     ]
-       in   case objmsub object of
-              Nothing                  -> FEObject (name object) iExp src tgt isEditable navIfcs $ FEAtomic
+          (atomicOrBox', iExp', isEditable', tgt') =
+            case objmsub object of
+              Nothing                  -> (FEAtomic,                                           iExp, isEditable, tgt)
+              Just (Box _ mCl objects) -> (FEBox mCl $ map (buildObject editableRels) objects, iExp, isEditable, tgt)
               Just (InterfaceRef nm)   -> case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                                             []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                                             (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                                             [i]     -> let editableRels' = editableRels `intersect` ifcParams i
-                                                       in  buildObject editableRels' (ifcObj i)
-              Just (Box _ mCl objects) -> FEObject (name object) iExp src tgt isEditable navIfcs $ FEBox mCl $
-                                            map (buildObject editableRels) objects
-    
+                                                           refObj = buildObject editableRels' (ifcObj i)
+                                                       in  (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
+                                                       -- TODO: interface ref basically skips a relation, so we make it not editable for now
+       in  FEObject (name object) iExp' src tgt' isEditable' navIfcs atomicOrBox'
   
 traverseInterfaces :: FSpec -> [FEInterface] -> IO ()
 traverseInterfaces fSpec ifcs =
