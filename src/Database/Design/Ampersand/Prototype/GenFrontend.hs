@@ -21,6 +21,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
 
 {- TODO
+- Mention context name in generated files
 - Converse navInterfaces?
 - Be more consistent with record selectors/pattern matching
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
@@ -69,13 +70,14 @@ doGenFrontend fSpec =
     ; let feInterfaces = buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
+    ; genRouteProvider fSpec feInterfaces
     }
 
 
 ------ Build intermediate data structure
 
 -- NOTE: _ disables 'not used' warning for fields
-data FEInterface = FEInterface { _ifcName :: String, _ifcIdent :: String -- _ifcIdent is a version of ifcName that can be used as (part of) an identifier or file name
+data FEInterface = FEInterface { ifcName :: String, ifcIdent :: String -- _ifcIdent is a version of ifcName that can be used as (part of) an identifier or file name
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
                                , _ifcRoles :: [String], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
@@ -138,17 +140,35 @@ buildInterface fSpec allIfcs ifc =
        in  FEObject (name object) iExp' src tgt' isEditable' navIfcs atomicOrBox'
 
 
------- Generate view code
+------ Generate RouteProvider.js
+
+-- Helper data structure to pass attribute values to HStringTemplate
+data RouteAttr = RouteAttr { interfaceName :: String, interfaceIdent:: String } deriving (Show, Data, Typeable)
+
+genRouteProvider :: FSpec -> [FEInterface] -> IO ()
+genRouteProvider fSpec ifcs =
+ do { verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
+    ; let routeAttrs = [ RouteAttr { interfaceName = ifcName ifc, interfaceIdent = ifcIdent ifc } | ifc <- ifcs ]
+    ; template <- readTemplate fSpec "RouteProvider.js"
+    ; let contents = renderTemplate template $
+                       setAttribute "routes"  routeAttrs .
+                       setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
+                                     ]
+
+    ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
+    }
+    
+    
+------ Generate view html code
 
 genView_Interfaces :: FSpec -> [FEInterface] -> IO ()
 genView_Interfaces fSpec ifcs =
- do { verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
-    ; mapM_ (genView_Interface fSpec) $ ifcs
+ do { mapM_ (genView_Interface fSpec) $ ifcs
     }
 
 genView_Interface :: FSpec -> FEInterface -> IO ()
-genView_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp iSrc iTgt roles editableRels obj) =
- do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show interfaceName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
+genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
+ do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show iName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- genView_Object fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
@@ -156,14 +176,14 @@ genView_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp iSrc iT
                        setAttribute "roles"                    [ show r | r <- roles ] . -- show string, since StringTemplate does not elegantly allow to quote and separate
                        setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] . -- show name, since StringTemplate does not elegantly allow to quote and separate
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
-                                     , ("interfaceName",       interfaceName)
+                                     , ("interfaceName",       iName)
                                      , ("expAdl",              showADL iExp)
                                      , ("source",              name iSrc) -- TODO: escape
                                      , ("target",              name iTgt) -- TODO: escape
                                      , ("contents",            intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
                                      ]
 
-    ; let filename = interfaceIdent ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
+    ; let filename = iIdent ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
     }
 
@@ -191,7 +211,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
                                               | NavInterface n rs <- navInterfaces ]
         ; let mNavInterface = case navInterfaces of -- TODO: do something with roles here. For now, simply use the first interface, if any.
                                 []                        -> Nothing
-                                NavInterface ifcName _ :_ -> Just ifcName
+                                NavInterface iName _ :_ -> Just iName
                                                                               
         ; return $ lines $ renderTemplate template $ 
                              setAttribute "isEditable" isEditable .
@@ -232,20 +252,19 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
             }
 
             
------- Generate controller code
+------ Generate controller JavaScript code
 
 genController_Interfaces :: FSpec -> [FEInterface] -> IO ()
 genController_Interfaces fSpec ifcs =
- do { verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
-    ; mapM_ (genController_Interface fSpec) $ ifcs
+ do { mapM_ (genController_Interface fSpec) $ ifcs
     }
 
 -- Helper data structure to pass attribute values to HStringTemplate
 data NonPrimEditableAttr = NPEAttr { labelName :: String, targetConcept :: String } deriving (Show, Data, Typeable)
 
 genController_Interface :: FSpec -> FEInterface -> IO ()
-genController_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp iSrc iTgt roles editableRels obj) =
- do { verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show interfaceName
+genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
+ do { verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
           allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = name $ objTarget o } -- TODO: escape 
                                     |  o <- allObjs, objIsEditable o ] -- TODO: figure out how to represent non-primitiveness (to prevent double admin, probably want to use template dir)
@@ -263,14 +282,14 @@ genController_Interface fSpec (FEInterface interfaceName interfaceIdent _ iExp i
                        setAttribute "containsEditable"         containsEditable .
                        setAttribute "containsEditableNonPrim"  containsEditableNonPrim .
                        setManyAttrib [ ("ampersandVersionStr", ampersandVersionStr)
-                                     , ("interfaceName",       interfaceName)
-                                     , ("interfaceIdent",      interfaceIdent)
+                                     , ("interfaceName",       iName)
+                                     , ("interfaceIdent",      iIdent)
                                      , ("expAdl",              showADL iExp)
                                      , ("source",              name iSrc) -- TODO: escape
                                      , ("target",              name iTgt) -- TODO: escape
                                      ]
 
-    ; let filename = interfaceIdent ++ ".js" -- TODO: escape
+    ; let filename = iIdent ++ ".js" -- TODO: escape
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
