@@ -4,9 +4,9 @@ module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
 import Test.QuickCheck
 import Data.Char
 import Control.Applicative
-import Debug.Trace
 
 import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Input.ADL1.Parser (keywordstxt)
 
 -- Useful functions to build on the quick check ones
 none :: Gen [a]
@@ -24,12 +24,16 @@ str1 = listOf1 ascii
 str2 :: Gen String
 str2 = suchThat str1 (\s -> length s > 1)
 
+identifier :: Gen String
+identifier = suchThat str2 noKeyword
+    where noKeyword x = x `notElem` keywordstxt
+
 upper_id :: Gen String
-upper_id = suchThat str2 startUpper
+upper_id = suchThat identifier startUpper
     where startUpper = isUpper . head
 
 lower_id :: Gen String
-lower_id = suchThat str2 startLower
+lower_id = suchThat identifier startLower
     where startLower = isLower . head
 
 --- Now the arbitrary instances
@@ -54,10 +58,10 @@ instance Arbitrary P_Process where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_RR <$> listOf1 arbitrary <*> listOf1 arbitrary <*> arbitrary
 
 instance Arbitrary RoleRule where
-    arbitrary = Maintain <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = Maintain <$> listOf1 arbitrary <*> listOf1 arbitrary <*> arbitrary
 
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
@@ -72,8 +76,8 @@ instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = sized genTerm
 
 genTerm :: Arbitrary a => Int -> Gen (Term a)
-genTerm n = trace ("Choosing level "++show idx) $ oneof (options!!idx)
-        where idx = 6-(n`div`7)
+genTerm n = oneof (options!!idx)
+        where idx = 6 - (n`div`7)
               gen = genTerm (n `div` 2)
               options = [
                 -- level 0
@@ -99,7 +103,7 @@ genTerm n = trace ("Choosing level "++show idx) $ oneof (options!!idx)
                  PCpl <$> arbitrary <*> gen],
                 -- level 6
                 [PBrk <$> arbitrary <*> gen,
-                 trace "Prim" Prim <$> oneof [
+                 Prim <$> oneof [
                     -- The following generators are only used here, but we cannot compile this, the compiler doesn't know that this is a TermPrim!
                     -- PI    <$> arbitrary,
                     -- Pid   <$> arbitrary <*> arbitrary,
@@ -117,7 +121,7 @@ instance Arbitrary TermPrim where
         ]
 
 instance Arbitrary a => Arbitrary (PairView a) where
-    arbitrary = PairView <$> arbitrary
+    arbitrary = PairView <$> listOf1 arbitrary
 
 instance Arbitrary a => Arbitrary (PairViewSegment a) where
     arbitrary = oneof [
@@ -148,9 +152,9 @@ instance Arbitrary ConceptDef where
 
 instance Arbitrary P_Population where
     arbitrary = oneof [
-          P_RelPopu <$> arbitrary <*> arbitrary <*> arbitrary,
-          P_TRelPop <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary,
-          P_CptPopu <$> arbitrary <*> arbitrary <*> arbitrary
+          P_RelPopu <$> str1 <*> arbitrary <*> arbitrary,
+          P_TRelPop <$> str1 <*> arbitrary <*> arbitrary <*> arbitrary,
+          P_CptPopu <$> str1 <*> arbitrary <*> arbitrary
         ]
 
 instance Arbitrary P_Interface where
@@ -167,13 +171,13 @@ instance Arbitrary a => Arbitrary (P_SubIfc a) where
         ]
 
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Id <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> arbitrary
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Vd <$> arbitrary <*> identifier <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary = oneof [
@@ -189,14 +193,14 @@ instance Arbitrary PRef2Obj where
     arbitrary = oneof [
             PRef2ConceptDef <$> arbitrary,
             PRef2Declaration <$> arbitrary,
-            PRef2Rule <$> arbitrary,
-            PRef2IdentityDef <$> arbitrary,
-            PRef2ViewDef <$> arbitrary,
-            PRef2Pattern <$> arbitrary,
-            PRef2Process <$> arbitrary,
-            PRef2Interface <$> arbitrary,
-            PRef2Context <$> arbitrary,
-            PRef2Fspc <$> arbitrary
+            PRef2Rule <$> upper_id,
+            PRef2IdentityDef <$> upper_id,
+            PRef2ViewDef <$> upper_id,
+            PRef2Pattern <$> upper_id,
+            PRef2Process <$> upper_id,
+            PRef2Interface <$> upper_id,
+            PRef2Context <$> upper_id,
+            PRef2Fspc <$> upper_id
         ]
 
 instance Arbitrary PMeaning where
@@ -207,8 +211,8 @@ instance Arbitrary PMessage where
 
 instance Arbitrary P_Concept where
     arbitrary = oneof [
-            PCpt <$> upper_id,
-            return P_Singleton
+            PCpt <$> upper_id --,
+            -- return P_Singleton
         ]
 
 instance Arbitrary P_Sign where
@@ -216,8 +220,8 @@ instance Arbitrary P_Sign where
 
 instance Arbitrary P_Gen where
     arbitrary = oneof [
-            P_Cy <$> arbitrary <*> arbitrary <*> arbitrary,
-            PGen <$> concept   <*> concept   <*> arbitrary
+            P_Cy <$> concept <*> listOf1 arbitrary <*> arbitrary,
+            PGen <$> concept <*> concept <*> arbitrary
         ]
         where concept = PCpt <$> upper_id
 

@@ -132,7 +132,6 @@ instance Pretty P_Pattern where
            where patElem pe = unlines(map pretty $ pe p)
 
 instance Pretty P_Declaration where
-    -- pretty p = dec_nm p <+> "::" <~> dec_sign p <~> pFun <~> pConceptRef
     pretty p = "RELATION" <+> dec_nm p <~> dec_sign p <+> props <+> byplug <+\> pragma <+\> meanings <+\> content
         where props = if dec_prps p == [Sym, Asy] then "[PROP]"
                       else "[" ++ (listOf $ dec_prps p) ++ "]"
