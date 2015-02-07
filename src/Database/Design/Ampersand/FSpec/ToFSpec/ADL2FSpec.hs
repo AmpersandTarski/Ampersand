@@ -15,9 +15,9 @@ import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Text.Pandoc
-import Data.Maybe
-import Data.List
 import Data.Char
+import Data.List
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -57,6 +57,8 @@ makeFSpec opts context = fSpec
               , allRules     = allrules
               , vconjs       = allConjs
               , allConjsPerRule = allConjsPerRule'
+              , allConjsPerDecl = allConjsPerDecl'
+              , allConjsPerConcept = allConjsPerConcept'
               , vquads       = allQuads
               , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
@@ -79,6 +81,7 @@ makeFSpec opts context = fSpec
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
                                  , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+              , allExprs     = expressionsIn context
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations (gens context) initialpops conj
                                          , not $ null viols
@@ -112,7 +115,9 @@ makeFSpec opts context = fSpec
        where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
-     allConjsPerRule' = converse [(conj, rc_orgRules conj) | conj <- allConjs ]
+     allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
+     allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
      allQuads = makeAllQuads allConjsPerRule'
 
      allrules = vRules ++ gRules
@@ -247,8 +252,8 @@ makeFSpec opts context = fSpec
              , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
                                , objctx  = EDcI c
-                               , objmsub = Just . Box c $
-                                           Obj { objnm   = "I["++name c++"]"
+                               , objmsub = Just . Box c Nothing $
+                                            Obj { objnm   = "I["++name c++"]"
                                                 , objpos  = Origin "generated object: step 4a - default theme"
                                                 , objctx  = EDcI c
                                                 , objmsub = Nothing
@@ -280,7 +285,7 @@ makeFSpec opts context = fSpec
              = [ Obj { objnm   = showADL t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
-                     , objmsub = Just . Box (target t) $ recur [ pth | (_:pth)<-cl, not (null pth) ]
+                     , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      , objstrs = [] }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
@@ -298,7 +303,7 @@ makeFSpec opts context = fSpec
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
-                                 , objmsub = Just . Box c $ objattributes
+                                 , objmsub = Just . Box c Nothing $ objattributes
                                  , objstrs = [] }
              , ifcEcas     = fst (assembleECAs fSpec editables)
              , ifcControls = makeIfcControls params allConjs
@@ -326,7 +331,7 @@ makeFSpec opts context = fSpec
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
-                                 , objmsub = Just . Box ONE $ [att]
+                                 , objmsub = Just . Box ONE Nothing $ [att]
                                  , objstrs = [] }
              , ifcEcas     = ifcEcas     ifcc
              , ifcControls = ifcControls ifcc
@@ -650,7 +655,7 @@ switchboard fSpec
      eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
      eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]
 
-class Identified a => Rename a where
+class Named a => Rename a where
  rename :: a->String->a
  -- | the function uniqueNames ensures case-insensitive unique names like sql plug names
  uniqueNames :: [String]->[a]->[a]

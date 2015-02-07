@@ -1,12 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Classes.ConceptStructure (ConceptStructure(..), prim2rel) where      
+module Database.Design.Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.ParseTree (ConceptDef(..))
+import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Basics
 import Data.List
 import Data.Maybe
-import Database.Design.Ampersand.ADL1.Expression
+import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpression)
+import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ConceptStructure"
@@ -20,17 +21,18 @@ class ConceptStructure a where
   primsMentionedIn :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
   expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a
-  mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
-  mp1Exprs = filter isMp1.primsMentionedIn
+  
   -- | mp1Pops draws the population from singleton expressions.
   mp1Pops :: a -> [Population]
   mp1Pops struc
-   = [ PCptPopu{ popcpt = cpt (head cl), popas = map atm cl } | cl<-eqCl cpt (mp1Exprs struc)]
+   = [ PCptPopu{ popcpt = cpt (head cl)
+               , popas = map atm cl } 
+     | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
      where cpt (EMp1 _ c) = c
            cpt _          = fatal 31 "cpt error"
            atm (EMp1 a _) = a
            atm _          = fatal 31 "atm error"
-
+           
 prim2rel :: Expression -> Declaration
 prim2rel e
  = case e of
@@ -78,6 +80,8 @@ instance ConceptStructure A_Context where
                       , (expressionsIn.ctxvs) ctx
                       , (expressionsIn.ctxsql) ctx
                       , (expressionsIn.ctxphp) ctx
+                      , (expressionsIn.multrules) ctx
+                      , (expressionsIn.identityRules) ctx
                       ]
 
 instance ConceptStructure IdentityDef where
@@ -101,7 +105,10 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = []
 
 instance ConceptStructure ConceptDef where
-  concs        cd = [PlainConcept (cdcpt cd)]
+  concs        cd = [PlainConcept { cptnm = name cd
+                                  , cpttp = cdtyp cd
+                                  }
+                    ]
   expressionsIn _ = []
 
 instance ConceptStructure Sign where
@@ -117,9 +124,9 @@ instance ConceptStructure ObjectDef where
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
-  concs (Box _ objs)         = concs objs
-  concs (InterfaceRef _)   = []
-  expressionsIn (Box _ objs)       = expressionsIn objs
+  concs (Box _ _ objs)           = concs objs
+  concs (InterfaceRef _)         = []
+  expressionsIn (Box _ _ objs)   = expressionsIn objs
   expressionsIn (InterfaceRef _) = []
 
 instance ConceptStructure Pattern where

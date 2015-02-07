@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
 
 import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop)
-import Database.Design.Ampersand.Prototype.RelBinGenBasics     (addSlashes)
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.Apps
 import Database.Design.Ampersand.Prototype.Generate            (generateAll)
 import Control.Monad
@@ -11,12 +11,13 @@ import System.Directory
 import qualified Data.ByteString.Char8 as BS
 import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
-
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
-#ifdef MIN_VERSION_MissingH
-import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file
-import Data.Time.Format
-import System.Locale
+
+#ifdef MIN_VERSION_unix
+import System.Posix.Files (setFileTimes) -- If unix is not available, we are on windows and cannot set file timestamps 
+
+import Data.Time.Format -- not unix specific, but only needed if we set file timestamps
+import System.Locale    -- 
 #endif
 
 phpObjInterfaces :: FSpec -> IO()
@@ -25,17 +26,17 @@ phpObjInterfaces fSpec =
     ; verboseLn (getOpts fSpec) "---------------------------"
     ; verboseLn (getOpts fSpec) "Generating php Object files with Ampersand"
     ; verboseLn (getOpts fSpec) "---------------------------"
-    ; write "InstallerDBstruct.php"     (installerDBstruct fSpec)
---    ; write "InstallerTriggers.php"     (installerTriggers fSpec)
-    ; write "InstallerDefPop.php"       (installerDefPop fSpec)
+    ; writePrototypeFile fSpec "InstallerDBstruct.php"     (installerDBstruct fSpec)
+--    ; writePrototypeFile fSpec "InstallerTriggers.php"     (installerTriggers fSpec)
+    ; writePrototypeFile fSpec "InstallerDefPop.php"       (installerDefPop fSpec)
 
-    ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
+    ; let dbSettingsFilePath = getGenericsDir fSpec </> "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php only if it does not exist already.
     ; if dbSettingsExists
       then verboseLn (getOpts fSpec) "  Using existing dbSettings.php."
       else do { verboseLn (getOpts fSpec) "  Writing dbSettings.php."
-              ; writeFile dbSettingsFilePath dbsettings
+              ; writePrototypeFile fSpec dbSettingsFilePath dbsettings
               }
 
     ; generateAll fSpec
@@ -43,10 +44,6 @@ phpObjInterfaces fSpec =
     ; verboseLn (getOpts fSpec) "\n"
     }
    where
-    write fname content =
-     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
-        ; writeFile (combine targetDir fname) content
-        }
     dbsettings = unlines
        [ "<?php"
        , ""
@@ -60,7 +57,6 @@ phpObjInterfaces fSpec =
        , ""
        , "?>"
        ]
-    targetDir = dirPrototype (getOpts fSpec)
 
 doGenAtlas :: FSpec -> IO()
 doGenAtlas fSpec =
@@ -75,23 +71,25 @@ writeStaticFiles opts =
   if genStaticFiles opts
   then
  do {
-#ifdef MIN_VERSION_MissingH
+#ifdef MIN_VERSION_unix
       verboseLn opts "Updating static files"
 #else
       verboseLn opts "Writing static files"
 #endif
-    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) | sf <- allStaticFiles ]
+    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) 
+                | sf@SF{isNewFrontend=isNew} <- allStaticFiles, isNew == newFrontend opts
+                ]
     }
   else
       verboseLn opts "Skipping static files (because of command line argument)"
 
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
 writeWhenMissingOrOutdated opts staticFile writeFileAction =
-#ifdef MIN_VERSION_MissingH
+#ifdef MIN_VERSION_unix
 -- On Mac/Linux we set the modification time for generated static files to the modification time of the compiled versions
 -- in StaticFiles_Generated.hs. This allows us to only replace those static files that are outdated (or missing.) 
  do { exists <- doesFileExist $ absFilePath opts staticFile
-    ; verboseLn opts $ "  Processing static file "++ filePath staticFile
+    --; verboseLn opts $ "  Processing static file "++ filePath staticFile
     ; if exists then
        do { oldTimeStampUTC <- getModificationTime $ absFilePath opts staticFile
           ; let oldTimeStamp = read $ formatTime defaultTimeLocale "%s" oldTimeStampUTC -- convert to epoch seconds
@@ -119,7 +117,7 @@ writeStaticFile :: Options -> StaticFile -> IO()
 writeStaticFile opts sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
      ; write (absFilePath opts sf) (contentString sf)
-#ifdef MIN_VERSION_MissingH
+#ifdef MIN_VERSION_unix
      ; let t = (fromIntegral $ timeStamp sf)
      ; setFileTimes (absFilePath opts sf) t t
 #endif

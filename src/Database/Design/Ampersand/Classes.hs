@@ -7,7 +7,7 @@ module Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Classes.Populated
        (fullContents,atomsOf)
 import Database.Design.Ampersand.Classes.ConceptStructure
-       (ConceptStructure(..),prim2rel)
+       (ConceptStructure(..))
 import Database.Design.Ampersand.Classes.Relational
        (Relational(..))
 import Database.Design.Ampersand.Classes.ViewPoint

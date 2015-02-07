@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.ADL1.P2A_Converters ( pCtx2aCtx, showErr, Guarded(..), pCpt2aCpt )
+module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
 import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
@@ -29,12 +29,6 @@ instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
 instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
-
-pCpt2aCpt :: P_Concept -> A_Concept
-pCpt2aCpt pc
-    = case pc of
-        PCpt{} -> PlainConcept { cptnm = p_cptnm pc}
-        P_Singleton -> ONE
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
@@ -97,7 +91,7 @@ checkInterfaceRefs gCtx =
   where getInterfaceRefs :: ObjectDef -> [(ObjectDef, String)]
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
-        getInterfaceRefs Obj{objmsub=Just (Box _ objs)}              = concatMap getInterfaceRefs objs
+        getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}              = concatMap getInterfaceRefs objs
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
@@ -262,7 +256,8 @@ pCtx2aCtx' _
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x
-     = PlainConcept {cptnm = x}
+     = PlainConcept { cptnm = x
+                    , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "}
 
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
@@ -301,7 +296,7 @@ pCtx2aCtx' _
     typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
      = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
                       [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                      r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft c r (name (source (objctx obj))) (objctx obj)})
+                      r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
                             else mustBeBound (origin obj) [(Tgt,objctx obj)]
        ) <?> typecheckObjDef ojd
      where c = name (vd_cpt o)
@@ -319,7 +314,7 @@ pCtx2aCtx' _
         -> case subi of
             Nothing -> pure (obj expr Nothing)
             Just (InterfaceRef s) -> pure (obj expr (Just$InterfaceRef s)) --TODO: check type!
-            Just b@(Box c _)
+            Just b@(Box c _ _)
               -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
                     r  -> pure (obj (addEpsilonRight' (head r) (fst expr), snd expr) (Just$ b))
@@ -332,11 +327,6 @@ pCtx2aCtx' _
                , objmsub = s
                , objstrs = ostrs
                }, sr)
-    addEpsilonLeft :: String -> [String] -> String -> Expression -> Expression
-    addEpsilonLeft a b c e
-     = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
-               else if c/=name (source e) then fatal 202 ("addEpsilonLeft glues erroneously: c="++show c++"  and e="++show e++".")
-                    else EEps (castConcept (head b)) (castSign a c) .:. e
     addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
     addEpsilonLeft' a e
      = if a==name (source e) then e else EEps (leastConcept (source e) a) (castSign a (name (source e))) .:. e
@@ -344,20 +334,19 @@ pCtx2aCtx' _
      = if a==name (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (name (target e)) a)
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
-     = (if s==name (source e) then id else (EEps (leastConcept (source e) s) (castSign s (name (source e))) .:.)) $
-       (if t==name (target e) then id else (.:. EEps (leastConcept (target e) t) (castSign (name (target e)) t))) e
+     = addEpsilonLeft' s (addEpsilonRight' t e)
 
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
-    pSubi2aSubi o@(P_Box _ []) = hasNone [] o
-    pSubi2aSubi o@(P_Box _ l)
+    pSubi2aSubi o@(P_Box _ _ []) = hasNone [] o
+    pSubi2aSubi o@(P_Box _ cl l)
      = (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
                   [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
                   r -> case [ objctx a
                             | (a,False) <- lst
                             , not ((name . source . objctx $ a) `elem` r)
                             ] of
-                            [] -> pure (Box (castConcept (head r)) (map fst lst))
+                            [] -> pure (Box (castConcept (head r)) cl (map fst lst))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
        ) <?> (traverse typecheckObjDef l <* uniqueNames l)
 

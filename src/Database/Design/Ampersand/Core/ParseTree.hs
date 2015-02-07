@@ -1,5 +1,6 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Core.ParseTree (
-     P_Context(..)
+     P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
    , P_Process(..)
@@ -14,7 +15,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , P_Population(..)
 
-   , P_ObjectDef, P_SubInterface, P_Interface(..), P_ObjDef(..), P_SubIfc(..)
+   , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef(..) , P_IdentSegment(..)
    , P_ViewDef , P_ViewSegment
@@ -46,6 +47,7 @@ import Data.Traversable
 import Data.Foldable
 import Prelude hiding (foldr, sequence)
 import Control.Applicative
+import Data.Typeable
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -75,7 +77,7 @@ data P_Context
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
 
-instance Identified P_Context where
+instance Named P_Context where
   name = ctx_nm
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
@@ -112,7 +114,7 @@ data P_Process
            , procPop :: [P_Population]     -- ^ The populations that are local to this process
            } deriving Show
 
-instance Identified P_Process where
+instance Named P_Process where
  name = procNm
 
 instance Traced P_Process where
@@ -143,7 +145,7 @@ data P_Pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            }   deriving (Show)       -- for debugging purposes
 
-instance Identified P_Pattern where
+instance Named P_Pattern where
  name = pt_nm
 
 instance Traced P_Pattern where
@@ -157,11 +159,13 @@ data ConceptDef
          , cdtyp :: String   -- ^ The (SQL) type of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
-         }   deriving (Show,Eq)
+         }   deriving (Show,Eq,Typeable)
 
+instance Unique ConceptDef where
+  showUnique cd = cdcpt cd++"At"++uniqueShow True (cdpos cd)
 instance Traced ConceptDef where
  origin = cdpos
-instance Identified ConceptDef where
+instance Named ConceptDef where
  name = cdcpt
 
 data P_Declaration =
@@ -180,7 +184,7 @@ instance Eq P_Declaration where
  decl==decl' = origin decl==origin decl'
 instance Prelude.Ord P_Declaration where
  decl `compare` decl' = origin decl `compare` origin decl'
-instance Identified P_Declaration where
+instance Named P_Declaration where
  name = dec_nm
 instance Traced P_Declaration where
  origin = dec_fpos
@@ -260,7 +264,7 @@ instance Functor P_SubIfc where fmap = fmapDefault
 instance Foldable P_SubIfc where foldMap = foldMapDefault
 instance Traversable P_SubIfc where
   traverse _ (P_InterfaceRef a b) = pure (P_InterfaceRef a b)
-  traverse f (P_Box b lst) = P_Box b <$> (traverse (traverse f) lst)
+  traverse f (P_Box o c lst) = P_Box o c <$> (traverse (traverse f) lst)
 
 instance Traced (P_SubIfc a) where
  origin = si_ori
@@ -281,8 +285,7 @@ instance Traced TermPrim where
    Pfull orig _ _ -> orig
    Prel orig _    -> orig
    PTrel orig _ _ -> orig
-
-instance Identified TermPrim where
+instance Named TermPrim where
  name e = case e of
    PI _        -> "I"
    Pid _ _     -> "I"
@@ -364,7 +367,7 @@ instance Traversable P_Rule where
  traverse f (P_Ru nm expr fps mean msg viol)
   = (\e v -> P_Ru nm e fps mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
-instance Identified (P_Rule a) where
+instance Named (P_Rule a) where
  name = rr_nm
 
 newtype PMeaning = PMeaning P_Markup
@@ -393,7 +396,7 @@ data P_Population
               }
     deriving Show
 
-instance Identified P_Population where
+instance Named P_Population where
  name P_RelPopu{p_rnme = nm} = nm
  name P_TRelPop{p_rnme = nm} = nm
  name P_CptPopu{p_cnme = nm} = nm
@@ -414,15 +417,18 @@ data P_Interface =
            , ifc_Prp :: String
            } deriving Show
 
-instance Identified P_Interface where
+instance Named P_Interface where
  name = ifc_Name
 
 instance Traced P_Interface where
  origin = ifc_Pos
 
+data P_IClass = P_IClass { iclass_name :: String } deriving (Eq, Show)
+
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
               = P_Box          { si_ori :: Origin
+                               , si_class :: Maybe String
                                , si_box :: [P_ObjDef a] }
               | P_InterfaceRef { si_ori :: Origin
                                , si_str :: String }
@@ -437,7 +443,7 @@ data P_ObjDef a =
            , obj_strs :: [[String]]     -- ^ directives that specify the interface.
            }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
-instance Identified (P_ObjDef a) where
+instance Named (P_ObjDef a) where
  name = obj_nm
 instance Traced (P_ObjDef a) where
  origin = obj_pos
@@ -448,7 +454,7 @@ data P_IdentDef =
               , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
               , ix_ats :: [P_IdentSegment] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
               } deriving (Show)
-instance Identified P_IdentDef where
+instance Named P_IdentDef where
  name = ix_lbl
 instance Eq P_IdentDef where identity==identity' = origin identity==origin identity'
 
@@ -465,7 +471,7 @@ data P_ViewD a =
               , vd_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
               , vd_ats :: [P_ViewSegmt a] -- ^ the constituent segments of this view.
               } deriving (Show)
-instance Identified (P_ViewD a) where
+instance Named (P_ViewD a) where
  name = vd_lbl
 instance Functor P_ViewD where fmap = fmapDefault
 instance Foldable P_ViewD where foldMap = foldMapDefault
@@ -505,7 +511,7 @@ data PRef2Obj = PRef2ConceptDef String
               | PRef2Fspc String
               deriving Show -- only for fatal error messages
 
-instance Identified PRef2Obj where
+instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
      PRef2Declaration (PTrel _ nm sgn) -> nm++show sgn
@@ -526,7 +532,7 @@ data PPurpose = PRef2 { pexPos :: Origin      -- the position in the Ampersand s
                       , pexRefIDs :: [String] -- the references (for traceability)
                       } deriving Show
 
-instance Identified PPurpose where
+instance Named PPurpose where
  name pe = name (pexObj pe)
 
 instance Traced PPurpose where
@@ -539,7 +545,7 @@ data P_Concept
 -- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 -- (Sebastiaan 11 okt 2013) Removed this again, I thought it would be more clean to use newtype for this instead
 
-instance Identified P_Concept where
+instance Named P_Concept where
  name (PCpt {p_cptnm = nm}) = nm
  name P_Singleton = "ONE"
 
@@ -613,4 +619,34 @@ data Label = Lbl { lblnm :: String
                  } deriving Show
 instance Eq Label where
  l==l' = lblnm l==lblnm l'
+
+mergeContexts :: P_Context -> P_Context -> P_Context
+mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
+              (PCtx nm2 pos2 _     markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
+  PCtx{ ctx_nm     = if null nm1 then nm2 else nm1
+      , ctx_pos    = pos1 ++ pos2
+      , ctx_lang   = lang1 -- By taking the first, we end up with the language of the top-level context
+      , ctx_markup = markup1 `orElse` markup2 `orElse` Nothing
+      , ctx_thms   = thms1 ++ thms2
+      , ctx_pats   = pats1 ++ pats2
+      , ctx_PPrcs  = pprcs1 ++ pprcs2
+      , ctx_rs     = rs1 ++ rs2
+      , ctx_ds     = ds1 ++ ds2
+      , ctx_cs     = cs1 ++ cs2
+      , ctx_ks     = ks1 ++ ks2
+      , ctx_vs     = vs1 ++ vs2
+      , ctx_gs     = gs1 ++ gs2
+      , ctx_ifcs   = ifcs1 ++ ifcs2
+      , ctx_ps     = ps1 ++ ps2
+      , ctx_pops   = pops1 ++ pops2
+      , ctx_sql    = sql1 ++ sql2
+      , ctx_php    = php1 ++ php2
+      , ctx_metas  = metas1 ++ metas2
+      }
+
+-- | Left-biased choice on maybes
+orElse :: Maybe a -> Maybe a -> Maybe a
+x `orElse` y = case x of
+                 Just _  -> x
+                 Nothing -> y
 

@@ -1,0 +1,64 @@
+<div class="navbar navbar-default navbar-fixed-top" ng-controller="static_navigationBarController">
+	<div id="tno-header">
+		<div id="tno-timeline" class="container"></div>
+	</div>
+		
+	<div class="container">
+		<ul class="nav nav-pills">
+			<li>
+				<a href="#">
+					<span class="glyphicon glyphicon-home"></span>
+				</a>
+			</li>
+			
+			<li id="{{interface.label}}" ng-repeat="interface in interfaces.top"> <!-- the interface id is there so we can style specific menu items with css -->
+				<a href="#/{{interface.id}}">
+					<span class="glyphicon glyphicon-list-alt"></span> {{interface.label}}</a>
+			</li>
+					
+			<li class="dropdown pull-right">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown">
+					<span class="glyphicon glyphicon-plus"></span>
+				</a>
+				<ul class="dropdown-menu" role="menu">
+						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in interfaces.new">New {{interface.label | lowercase}}</a></li>
+				</ul>
+			</li>
+	
+			<li class="dropdown pull-right" tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a href="#" ng-repeat="role in roles" ng-click="selectRole(role.id)">{{role.label}}</a></li>
+				</ul>
+			</li>
+		
+			<li class="dropdown pull-right" tooltip="Select application extensions" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-th"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li ng-repeat="extension in extensions"><a href="{{extension.link}}"><span class="{{extension.icon}}"></span> {{extension.name}}</a></li>
+					<!-- <li class="divider" role="presentation"></li>-->					
+				</ul>
+			</li>
+			
+			<li class="dropdown pull-right" tooltip="Refresh/reset options" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-refresh"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
+					<li><a href="#" ng-click="destroySession()"><span class="glyphicon glyphicon-repeat"></span> Reset session</a></li>
+					<li><a href="#/installer"><span class="glyphicon glyphicon-trash"></span> Reset database</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown pull-right" tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-eye-open"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a href="" ng-click="toggleShowViolations()"><switch ng-model="$root.switchShowViolations"></switch> Show violation messages</a></li>
+					<li><a href="" ng-click="toggleShowInfos()"><switch ng-model="$root.switchShowInfos"></switch> Show info messages</a></li>
+					<li class="divider" role="presentation"></li>
+					<li><a href="" ng-click="toggleShowLogWindow()"><switch ng-model="$root.switchShowLogWindow"></switch> Show log window</a></li>
+				</ul>
+			</li>
+	 
+		</ul>
+	</div>
+</div>

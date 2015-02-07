@@ -6,6 +6,7 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Ass
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
+import Data.Char
 import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
@@ -118,7 +119,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                 0 -> text "There are no entity types."
                                 1 -> text "There is only one entity type:"
                                 _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
-                                  <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
+                                  <> text "The details of each entity type are described (in alphabetical order) in the following paragraphs:"
                              )
      <> conceptTable
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
@@ -135,16 +136,18 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
   oocd = cdAnalysis fSpec
 
   conceptTable :: Blocks
-  conceptTable = simpleTable [ (plain.text.l) (NL "Type"          , EN "Type")
-                             , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-                             , (plain.text.l) (NL "Technisch type", EN "Technical type") 
-                             ] 
-                             [ [ (plain.text.name) c
-                               , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
-                               , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
-                               ]
-                             | c <- allConcepts fSpec
-                             ]
+  conceptTable = table mempty
+                 [(AlignLeft,1/6),(AlignCenter,4/6),(AlignLeft,1/6)]
+                 [ (plain.text.l) (NL "Type"          , EN "Type")
+                 , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
+                 , (plain.text.l) (NL "Technisch type", EN "Technical type") 
+                 ] 
+                 [ [ (plain.text.name) c
+                   , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
+                   , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
+                   ]
+                 | c <- allConcepts fSpec
+                 ]
 
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
@@ -163,15 +166,14 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                        ( [[ (plain.text) "Id"
                           , (plain.text.name) cl
                           , (plain.text.l) (NL "Sleutel" , EN "Primary key")
-                         ]]
-                    <> [ [ (plain.text.name) attr
-                         , (plain.text.attTyp) attr
-                         , (plain.text.l) (if attOptional attr 
-                                           then (NL "Optioneel", EN "Optional")
-                                           else (NL "Verplicht", EN "Mandatory")
-                                          )
-                         ]
-                         | attr <- clAtts cl]
+                         ]] 
+                         <>
+                         [[ (plain.text.name) attr
+                          , (plain.text.attTyp) attr
+                          , (plain.text.l) (if attOptional attr 
+                                            then (NL "Optioneel", EN "Optional")
+                                            else (NL "Verplicht", EN "Mandatory")
+                                           )] | attr <- clAtts cl]
                        )
         <> let attrNames = map name (clAtts cl)
                asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
@@ -245,9 +247,9 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
              in
              case fsLang fSpec of
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
-        English -> text ("The technical datamodel consists of the following "++show nrOfTables++"tables:")
+        English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
             )
-    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` name) (plugInfos fSpec), isTable p]
+    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
     where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
@@ -383,7 +385,7 @@ daRulesSection lev fSpec = theBlocks
             in  if format == Frtf then
                    plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                 else
-                  fromList $ pandocEqnArrayOnelabel (symDefLabel rule) (showLatex predicate)
+                  pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
        else if format == FLatex
             then fromList $ pandocEquation (showMath rule)
             else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>

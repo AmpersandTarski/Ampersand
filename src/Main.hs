@@ -9,13 +9,11 @@ import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand.Prototype.ObjBinGen    (phpObjInterfaces)
 import Database.Design.Ampersand.Prototype.Apps.RAP   (atlas2context, atlas2populations)
-import Database.Design.Ampersand.Prototype.CoreImporter
-import Database.Design.Ampersand.InputProcessing
+import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht (doGenBericht)
+import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Database.Design.Ampersand.Prototype.ValidateEdit
--- import Database.Design.Ampersand.Input.ADL1.CtxError (showErr)
--- import qualified Database.Design.Ampersand.Basics as Basics
 
 main :: IO ()
 main =
@@ -65,6 +63,7 @@ generateProtoStuff opts fSpec
   | otherwise =
       do { verboseLn (getOpts fSpec) "Generating prototype artifacts..."
          ; when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
+         ; when (newFrontend (getOpts fSpec))  $ doGenFrontend fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
          ; case testRule (getOpts fSpec) of
              Just ruleName -> ruleTest fSpec ruleName
@@ -90,7 +89,7 @@ doGenProto fSpec =
     }
  where reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
        reportViolations viols =
-         let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
+         let ruleNamesAndViolStrings = [ (name r, showADL p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
@@ -99,7 +98,7 @@ doGenProto fSpec =
        reportSignals []        =  verboseLn (getOpts fSpec) "No signals for the initial population."
        reportSignals conjViols = putStrLn $ "Signals for initial population:\n" ++ intercalate "\n"
          [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
-             show viols
+             showADL viols
          | (conj, viols) <- conjViols
          ]
 

@@ -12,7 +12,7 @@ module Database.Design.Ampersand.FSpec.ShowADL
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
+import Database.Design.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Named(..))
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
@@ -38,7 +38,7 @@ class ShowADL a where
 -- LanguageDependent is part of ShowAdl because the only application at time of writing is to disambiguate expressions for the purpose of printing
 -- SJ 31-12-2012: Since 'disambiguate' has become obsolete, do we still need this?
 class LanguageDependent a where
-  mapexprs :: (Language l, ConceptStructure l, Identified l) => (l -> Expression -> Expression) -> l -> a -> a
+  mapexprs :: (Language l, ConceptStructure l, Named l) => (l -> Expression -> Expression) -> l -> a -> a
   mapexprs _ _ = id
 
 instance LanguageDependent a => LanguageDependent (Maybe a) where
@@ -55,7 +55,7 @@ instance LanguageDependent ObjectDef where
   mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
 instance LanguageDependent SubInterface where
   mapexprs _ _ iref@(InterfaceRef _) = iref
-  mapexprs f l (Box o objs) = Box o $ map (mapexprs f l) objs
+  mapexprs f l (Box o cl objs) = Box o cl $ map (mapexprs f l) objs
 instance LanguageDependent Declaration where
   mapexprs _ _ = id
 instance LanguageDependent ECArule where
@@ -79,8 +79,8 @@ instance ShowADL ObjectDef where
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
         recur ind (Just (InterfaceRef nm)) = ind++" INTERFACE "++showstr nm
-        recur ind (Just (Box _ objs))
-         = ind++" BOX [ "++
+        recur ind (Just (Box _ cl objs))
+         = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
                                [ showstr (name o)++
                                   (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
@@ -89,6 +89,8 @@ instance ShowADL ObjectDef where
                                | o<-objs
                                ]++
            ind++"     ]"
+        showClass Nothing = ""
+        showClass (Just cl) = "<" ++ cl ++ ">" -- TODO: parser cannot handle these class annotations yet
 
 instance ShowADL Meta where
  showADL (Meta _ metaObj nm val) =
@@ -391,8 +393,12 @@ instance ShowADL P_Population where
                           P_TRelPop{} -> map showPaire (p_popps pop)
                           P_CptPopu{} -> map showAtom  (p_popas pop)
 showPaire :: Paire -> String
-showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
-
+showPaire p = showAtom (srcPaire p)++", "++ showAtom (trgPaire p)
+instance ShowADL Paire where
+ showADL p = "("++showAtom (srcPaire p)++","++ showAtom (trgPaire p)++")"
+instance ShowADL Pairs where
+ showADL ps = "["++intercalate ", " (map showADL ps)++"]"
+  
 instance ShowADL Population where
  showADL pop
   = "POPULATION "

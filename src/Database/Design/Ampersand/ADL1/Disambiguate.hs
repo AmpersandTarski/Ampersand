@@ -1,7 +1,7 @@
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..)) where
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (Identified(name), fatalMsg)
+import Database.Design.Ampersand.Basics (Named(name), fatalMsg)
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
 import Data.Traversable
@@ -29,7 +29,12 @@ findConcept :: String -> A_Concept
 -- (1) made a programming error in the call of findConcept (in which case you should call findConceptOrONE instead)
 -- (2) made an error in the tokenizer/parser
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
-findConcept x = PlainConcept {cptnm = x}
+findConcept x = 
+   PlainConcept { cptnm = x
+                , cpttp = [ -- TODO: Fix this, by getting all conceptDefs along with this call.  
+                            --  fatal 260 "the technical type should be derived from the conceptdefs of this concept. "
+                          ]
+                }
 
 class Disambiguatable d where
   disambInfo :: d (TermPrim,DisambPrim)
@@ -73,11 +78,11 @@ instance Disambiguatable P_ViewSegmt where
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef a b) _   = (P_InterfaceRef a b,([],[]))
-  disambInfo (P_Box o []   ) _        = (P_Box o [],([],[]))
-  disambInfo (P_Box o (a:lst)) (x,_)  = (P_Box o (a':lst'),(r++nxt,[]))
-   where (a', (r,_))            = disambInfo a (nxt++x,[])
-         (P_Box _ lst',(nxt,_)) = disambInfo (P_Box o lst) (x++r,[])
+  disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,([],[]))
+  disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],([],[]))
+  disambInfo (P_Box o cl (a:lst)) (x,_)  = (P_Box o cl' (a':lst'),(r++nxt,[]))
+   where (a', (r,_))                = disambInfo a (nxt++x,[])
+         (P_Box _ cl' lst',(nxt,_)) = disambInfo (P_Box o cl lst) (x++r,[])
 
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression

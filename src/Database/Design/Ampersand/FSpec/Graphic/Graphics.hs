@@ -292,7 +292,7 @@ instance ReferableFromPandoc Picture where
      (if genAtlas opts then dirPrototype opts </> "images" else dirOutput opts)
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
 
-class Identified a => Navigatable a where
+class Named a => Navigatable a where
    interfacename :: a -> String
    itemstring :: a -> String
    theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file

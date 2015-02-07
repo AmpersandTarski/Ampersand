@@ -29,7 +29,7 @@ keywordstxt       = [ "INCLUDE"
                     , "META"
                     , "PATTERN", "ENDPATTERN"
                     , "PROCESS", "ENDPROCESS"
-                    , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
+                    , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
                     , "POPULATION", "CONTAINS"
                     , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
@@ -506,10 +506,13 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
 
 --- SubInterface ::= ('BOX' | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = P_Box <$> (pKey_pos "BOX" <|> pKey_pos "ROWS" <|> pKey_pos "COLS" ) <*> pBox
-                <|> rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos
-   where
-     rebuild (n,p) = P_InterfaceRef p n
+pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
+            <|> (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos
+  where pBoxKey :: AmpParser (Origin, Maybe String)
+        pBoxKey = (\o -> (o,Nothing))     <$> pKey_pos "BOX"
+              <|> (\o -> (o,Just "ROWS")) <$> pKey_pos "ROWS"
+              <|> (\o -> (o,Just "COLS")) <$> pKey_pos "COLS"
+              <|> (\o -> (o,Just "TABS")) <$> pKey_pos "TABS"
 
 --- ObjDef ::= LabelProps Term SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*

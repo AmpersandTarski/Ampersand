@@ -4,7 +4,7 @@ module Database.Design.Ampersand.FSpec.Switchboard
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
 import Data.List
-import Database.Design.Ampersand.Basics        (fatalMsg,Identified(..), flp)
+import Database.Design.Ampersand.Basics        (fatalMsg,Named(..), flp)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -21,7 +21,7 @@ data SwitchBdDiagram
  = SBdgrm { sbName :: String
           , sbdotGraph :: DotGraph String
           }
-instance Identified SwitchBdDiagram where
+instance Named SwitchBdDiagram where
    name = sbName
 
 processModel :: FProcess -> DotGraph String

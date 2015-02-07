@@ -3,9 +3,8 @@ module Database.Design.Ampersand.Prototype.ValidateEdit where
 import Prelude hiding (putStr, putStrLn)
 import Data.List
 import Data.Maybe
+import Database.Design.Ampersand
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Prototype.PHP
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Misc.Options as Opts
@@ -99,13 +98,13 @@ getSqlConceptTable fSpec c =
     ; return (c, map fst atomsDummies)
     }
 
-getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String, String)])
+getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [Paire])
 getSqlRelationTable fSpec d =
  do { let query = selectExprRelation fSpec (-1) "src" "tgt" d
  
     --; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
     ; pairs <- performQuery (getOpts fSpec) tempDbName query
-    ; return (d, pairs)
+    ; return (d, [mkPair src tgt | (src,tgt) <-pairs])
     }
 -- TODO: are we going to use this data type?
 

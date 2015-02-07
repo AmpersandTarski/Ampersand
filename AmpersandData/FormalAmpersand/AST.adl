@@ -1,5 +1,15 @@
 CONTEXT RAP IN ENGLISH
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "ASTdocumentation.adl"
+
+{-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
+1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als ctxnm, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
+      Reactie HJO/20150207: Die snap ik niet. Twee Concepten met dezelfde naam zijn hetzelfde Concept. Een Pattern mag dezelfde naam hebben als een Concept. Daarmee zijn de uiteraard niet identiek. Een Pattern is nou een maal geen Concept. Dit is nu zo geregeld in RAP. Als je punt is, dat twee verschillende Concepten best dezelfde naam zouden mogen hebben, dan hebben we een issue. Maar ik denk niet dat je dit bedoelt.
+2) VIEWs (zoals 'VIEW Gen') horen m.i. niet in dit bestand thuis, maar daar waar de UI wordt gespecificeerd. IDENTs horen wel in dit bestand thuis.
+      Reactie HJO/20150207: Helemaal mee eens. Gaan we doen. 
+3) Van "RELATION decprps[Declaration*PropertyRule]" zou ik denken dat hij niet alleen INJ, maar ook SUR moet zijn.
+      Reactie HJO/20150207: Dat denk ik ook. Leuk is, dat dit geen invloed heeft op de meatgrinder. Immers, die zorgt alleen maar voor de juiste populatie van Declarations. Als blijkt dat we dan overtredingen krijgen, dan gaan we dat meemaken...
+-}
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
@@ -35,28 +45,28 @@ RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
 RELATION gengen[Gen*PlainConcept] [UNI,TOT]
-MEANING "A generalization rule refers to a more generic concept."
+MEANING "A generalization rule refers to one more generic concept."
 RELATION genspc[Gen*PlainConcept] [UNI,TOT]
-MEANING "A generalization rule refers to a more specific concept."
+MEANING "A generalization rule refers to one more specific concept."
 
 PURPOSE RULE specialization
-{+Specialization has the consequence that an atom does not necessarily have one concept only.
+{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
 If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 -}
-RULE specialization : gengen~;genspc;cptos |- cptos
+RULE specialization : in;genspc~;gengen |- in
 MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
 
 PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
-IDENT Concept: Concept(cptnm)
+IDENT PlainConcept: PlainConcept(cptnm)
 CLASSIFY PlainConcept ISA Concept
 
-RELATION cptnm[Concept*Conid] [UNI,TOT,INJ]
+RELATION cptnm[PlainConcept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
-RELATION cptos[Concept*AtomID]
-MEANING "The population of a concept."
+--RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door instanceOf~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
+--MEANING "The population of a concept."
 RELATION cptdf[PlainConcept*Blob]
 MEANING "The definitions of a concept."
 RELATION cptpurpose[PlainConcept*Blob]
@@ -82,23 +92,30 @@ MEANING "The (technical) type of a concept"
 --MEANING "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
 --MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
+ENDPATTERN
 
+PATTERN Atoms
+{-TODO: Documenteren! Het idee is grofweg als volgt:
+Een AtomID is een instantie van een Concept. Elk AtomId heeft een waarde. Één AtomId kan voorkomen als instantie van verschillende concepten, namelijk indien de een een generalisatie is van de ander.
+Als René instantie is van Man, Man is een specialisatie van Persoon, dan is diezelfde René ook instantie van Persoon. Er kan echter ook een René bestaan als instantie van Hond. De hond René is echter iets anders dan de Persoon René. 
+-}
+RELATION atmRoot [AtomID*PlainConcept] [TOT]  -- most generic concept(s) where the AtomID is in. 
+RELATION instanceOf[AtomID*PlainConcept] [TOT]
+RELATION atomvalue[AtomID*AtomValue] [UNI,TOT]
 
-RELATION atomvalue[AtomID*Atom] [UNI,TOT]
 MEANING "The value of an atom."
 --RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
 --MEANING "An atom of a concept has a unique value within the class of that concept."
 --MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
 --VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
-
+RULE "atomID is instance of root" : atmRoot |- instanceOf
 ENDPATTERN
 
 PATTERN Sign
 VIEW Sign: Sign( TXT "[" , src;cptnm , TXT "*" , trg;cptnm , TXT "]" )
 
-RELATION sign[Relation*Sign] [UNI,TOT]
-RELATION sign[PairID*Sign] [UNI,TOT]
-RELATION in[PairID*Relation] [UNI,TOT]
+RELATION sign[Declaration*Sign] [UNI,TOT]
+RELATION in[PairID*Declaration] [UNI,TOT]
 
 RELATION src[Sign*Concept] [UNI,TOT]
 MEANING "The source of a sign."
@@ -106,6 +123,8 @@ RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
 VIEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
+RELATION sign[PairID*Sign] [UNI,TOT]
+MEANING "The sign of a relationship"
 RELATION left[PairID*AtomID] [UNI,TOT]
 MEANING "The source of a relationship."
 RELATION right[PairID*AtomID] [UNI,TOT]
@@ -125,7 +144,7 @@ In a compiler, type consistency is ensured by a type system.
 In a repository, the type of any expression does not depend on the contents of the relations in it.
 As a consequence, the type of an expression can be computed based on the types of its constituent relations only.
 -}
-RULE "type consistency" : sign=in[PairID*Relation];sign
+RULE "type consistency" : sign=in[PairID*Declaration];sign
 MEANING "Type consistency means that all pairs in a relation have the same signature."
 ENDPATTERN
 
@@ -184,7 +203,7 @@ IDENT ExpressionID : ExpressionID(exprvalue)
 
 RELATION exprvalue[ExpressionID*Expression] [UNI,TOT]
 MEANING "The value of an expression."
-RELATION relsMentionedIn[ExpressionID*Relation]
+RELATION relsMentionedIn[ExpressionID*Declaration]
 MEANING "The user-declared relations in an expression."
 
 CLASSIFY RelationRef ISA Expression
@@ -221,7 +240,7 @@ PATTERN Plugs -- This pattern documents the semantics of plugs as of november 20
 RELATION sign[Rule*Sign] [UNI,TOT]
 RELATION maintains[Plug*Rule]
 RELATION in[PlainConcept*Plug] [UNI,TOT]
-RELATION in[Relation*Plug] [UNI,TOT]
+RELATION in[Declaration*Plug] [UNI,TOT]
 
 -- Rules
 RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
@@ -231,6 +250,9 @@ RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPATTERN
 
+PATTERN ToDo -- This pattern contains stuff still to be done.
+RELATION rrviols[Rule*Violation]
+ENDPATTERN
 ENDCONTEXT
 
 

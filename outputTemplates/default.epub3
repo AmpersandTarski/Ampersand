@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"$if(lang)$ xml:lang="$lang$"$endif$>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <title>$pagetitle$</title>
+$if(quotes)$
+  <style type="text/css">
+    q { quotes: "“" "”" "‘" "’"; }
+  </style>
+$endif$
+$if(highlighting-css)$
+  <style type="text/css">
+$highlighting-css$
+  </style>
+$endif$
+$for(css)$
+  <link rel="stylesheet" type="text/css" href="$css$" />
+$endfor$
+</head>
+<body$if(coverpage)$ id="cover"$endif$>
+$if(titlepage)$
+<section epub:type="titlepage">
+$for(title)$
+$if(title.type)$
+  <h1 class="$title.type$">$title.text$</h1>
+$else$
+  <h1 class="title">$title$</h1>
+$endif$
+$endfor$
+$if(subtitle)$
+  <h1 class="subtitle">$subtitle$</h1>
+$endif$
+$for(author)$
+  <h2 class="author">$author$</h2>
+$endfor$
+$for(creator)$
+  <h2 class="$creator.type$">$creator.text$</h2>
+$endfor$
+$if(publisher)$
+  <p class="publisher">$publisher$</p>
+$endif$
+$if(date)$
+  <p class="date">$date$</p>
+$endif$
+$if(rights)$
+  <p class="rights">$rights$</p>
+$endif$
+</section>
+$else$
+$body$
+$endif$
+</body>
+</html>
+

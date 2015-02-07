@@ -29,7 +29,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
-     =  (labeledThing (getOpts fSpec) (lev) ("chapIfc_"++name ifc) ("Interface: " ++ quoteName (name ifc)))  <>
+     =  headerWithLabel (XRefInterfacesInterface ifc) (lev+1) (text ("Interface: " ++ quoteName (name ifc))) <>
         ifcIntro ifc <>
         docInterface ifc
       
@@ -128,7 +128,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       case subIfc of
         Nothing                -> []
         Just (InterfaceRef nm) -> [ plainText $ "REF "++nm ] -- TODO: handle InterfaceRef
-        Just (Box _ objects)   -> [ docInterfaceObjects editableRels roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
+        Just (Box _ _ objects) -> [ docInterfaceObjects editableRels roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
 
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
@@ -136,7 +136,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 
     messagesChap :: [Interface] -> Blocks
     messagesChap ifcs = mconcat
-      [ labeledThing (getOpts fSpec) (lev) "chapMessages" $ l (NL "Berichten", EN "Messages")
+      [ header (lev+1) (text $ l (NL "Berichten", EN "Messages"))
       , para . text $ l ( NL "Dit hoofdstuk geeft een overzicht van alle berichten."
                         , EN "This chapter lists all messages." )
       , simpleTable [ plainText $ l (NL "Eigenschap term (TODO: naam ok?)", EN "Property term"), plainText $ l (NL "Card.", EN "Card.")
@@ -154,7 +154,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 -- TODO: copied from prototype GenBericht.hs, if that module is kept, we should move this to a shared module.  
 data Entity = Entity { entName ::     String
                      , depth ::       Int
-                     , expr ::         String
+                     , expr ::        String
                      , cardinality :: String
                      , definition ::  String
                      , refType ::     String
@@ -178,7 +178,7 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
                   , properties  =
                       case objmsub objDef of
                         Nothing -> []
-                        Just (Box _ objs)      -> map (genEntity_ObjDef (dpth+1)) objs
+                        Just (Box _ _ objs)    -> map (genEntity_ObjDef (dpth+1)) objs
                         Just (InterfaceRef nm) -> map (genEntity_ObjDef (dpth+1)) $ objsForInterfaceNamed nm
                   }
         where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
@@ -190,8 +190,8 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
               objsForInterfaceNamed :: String -> [ObjectDef]
               objsForInterfaceNamed nm =
                 case objmsub $ ifcObj $ getInterfaceByName (interfaceS fSpec) nm of
-                  Just (Box _ objs) -> objs
-                  _               -> fatal 81 "Bericht interfaces have wrong format"
+                  Just (Box _ _ objs) -> objs
+                  _                   -> fatal 81 "Bericht interfaces have wrong format"
 
 -- TODO: Maybe we should create a more general version of this function (might already exist, but I couldn't find it)
 showRoles :: [String] -> String

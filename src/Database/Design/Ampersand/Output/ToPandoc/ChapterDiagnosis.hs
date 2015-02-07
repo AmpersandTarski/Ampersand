@@ -186,8 +186,10 @@ chpDiagnosis fSpec
                      ] ]
       (Dutch,rs)  -> [Para $
                        [ Str "Relaties "]++commaNLPandoc (Str "en") rs++
-                       [ Str " zijn niet voorzien van een reden van bestaan (purpose)."
-                     ] ]
+                       [ Str " zijn niet voorzien van een reden van bestaan (purpose), en daardoor niet opgenomen als afspraak in hoofdstuk "]++
+                       (toList $ xRefReference (getOpts fSpec) SharedLang)++
+                       [ Str "."]
+                     ] 
       (English,[])  -> [Para
                          [Str "All relations in this document have been provided with a purpose."]
                        | (not.null.relsMentionedIn.udefrules) fSpec]
@@ -197,8 +199,10 @@ chpDiagnosis fSpec
                        ] ]
       (English,rs)  -> [Para $
                          [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
-                         [ Str " is not documented."
-                       ] ]
+                         [ Str " is not documented. Hence, they are not contained as agreement in chapter "]++
+                       (toList $ xRefReference (getOpts fSpec) SharedLang)++
+                       [ Str "."]
+                     ] 
      where missing = [(Math InlineMath . showMath) (EDcD d)
                      | d@Sgn{} <- relsInThemes fSpec
                      , null (purposesDefinedIn fSpec (fsLang fSpec) d)
@@ -583,10 +587,10 @@ chpDiagnosis fSpec
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                toList(if xrefSupported (getOpts fSpec) then "(" <> symReqRef (getOpts fSpec) r <> ") " else mempty )++
+                toList(xRefTo (XRefNaturalLanguageRule r) )++
                 (case fsLang fSpec of
-                  Dutch   -> [ Str "luidt: " ]
-                  English -> [ Str "says: "  ]
+                  Dutch   -> [ Str " luidt: " ]
+                  English -> [ Str " says: "  ]
                 )
               )]  ++meaning2Blocks (fsLang fSpec) r++
        [Plain ( case fsLang fSpec of

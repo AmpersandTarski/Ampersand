@@ -54,8 +54,8 @@ instance PredLogicShow Expression where
 -- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
 -- It circumvents the PanDoc structure and goes straight to LaTeX source code.
 -- TODO when PanDoc is up to the job.
-showLatex :: PredLogic -> [(String,String,String)]
-showLatex x
+showLatex :: PredLogic -> [[String]]
+showLatex x 
  = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\ \\wedge\t", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
    where rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
            = if isIdent r then lhs++"\\ =\\ "++rhs else
@@ -81,13 +81,13 @@ showLatex x
             q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
             where
              vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
-         chop :: String -> [(String,String,String)]
+         chop :: String -> [[String]]
          chop str = (map chops.lins) str
           where
             lins ""        = []
             lins ('\n':cs) = "": lins cs
             lins (c:cs)    = (c:r):rs where r:rs = case lins cs of  [] -> [""] ; e -> e
-            chops cs = let [a,b,c] = take 3 (tabs cs) in (a,b,c)
+            chops cs = let [a,b,c] = take 3 (tabs cs) in [a,b,c]
             tabs "" = ["","","",""]
             tabs ('\t':cs) = "": tabs cs
             tabs (c:cs) = (c:r):rs where r:rs = tabs cs
@@ -136,7 +136,7 @@ showRtf  p = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P,
 
 -- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
 -- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
-natLangOps :: Identified a => Lang -> (String,
+natLangOps :: Named a => Lang -> (String,
                                        String,
                                        String -> String -> String,
                                        String,

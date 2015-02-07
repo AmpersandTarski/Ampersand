@@ -426,7 +426,7 @@ data ClassDiag = OOclassdiagram {cdName :: String
                                 ,geners :: [Generalization]   --
                                 ,ooCpts :: [A_Concept]}
                          deriving Show
-instance Identified ClassDiag where
+instance Named ClassDiag where
    name = cdName
 
 data Class          = OOClass  { clName :: String          -- ^ name of the class
@@ -434,13 +434,13 @@ data Class          = OOClass  { clName :: String          -- ^ name of the clas
                                , clAtts :: [CdAttribute]   -- ^ Attributes of the class
                                , clMths :: [Method]        -- ^ Methods of the class
                                } deriving Show
-instance Identified Class where
+instance Named Class where
    name = clName
 data CdAttribute    = OOAttr   { attNm :: String            -- ^ name of the attribute
                                , attTyp :: String           -- ^ type of the attribute (Concept name or built-in type)
                                , attOptional :: Bool        -- ^ says whether the attribute is optional
                                } deriving Show
-instance Identified CdAttribute where
+instance Named CdAttribute where
    name = attNm
 data MinValue = MinZero | MinOne deriving (Show, Eq)
 

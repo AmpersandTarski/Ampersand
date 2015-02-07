@@ -1,0 +1,52 @@
+<div class="container-fluid interface">	
+	<fieldset ng-repeat="(ResourceId, Resource) in ResourceList">
+		<!-- For top level interfaces, use: interface name -->
+		<legend>People</legend>
+		
+		<tabset>
+			<tab heading="People">
+				<table class="table table-striped table-hover table-condensed">
+					<thead>
+						<tr>
+							<th>Person</th>
+							<th>Name</th> 
+							<th>Email</th>
+							<th>Projects</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="(key, val) in Resource.People">							
+							<!-- Person --> 
+							<td>
+								<div>
+									<a ng-href="#/Person/{{val['id']}}">{{val['@label']}}</a>
+								</div>
+							</td>
+							
+							<!-- Name -->
+							<td>{{val['Name']}}</td>
+							
+							<!-- Email -->
+							<td>
+								<div class="input-group">
+									<input ng-model="val.Email" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
+								</div>
+							</td>							 
+							
+							<!-- Projects -->
+							<td>
+								<div ng-repeat="row in val.Projects">
+									<span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val.Projects, row.id, ResourceId)"></span>
+									<a ng-href="#/Project/{{row.id}}">{{row['@label']}}</a>
+								</div>
+								<div my-showonhovertr>
+									<input ng-model="selected.id" type="text" class="form-control input-sm" placeholder="Add new Project" typeahead="Project.id as Project.label for Project in typeahead.Project | filter:$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, 'Projects', selected, ResourceId)">
+								</div>
+							</td>
+						</tr>
+			        </tbody>
+				</table>
+			</tab>
+		</tabset>
+	</fieldset>
+</div>

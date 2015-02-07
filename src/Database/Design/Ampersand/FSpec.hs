@@ -11,6 +11,7 @@ module Database.Design.Ampersand.FSpec
    , module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
    , module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
    , module Database.Design.Ampersand.FSpec.Motivations
+   , module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
@@ -36,4 +37,6 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
        (conjNF, disjNF, cfProof, simplify)
 import Database.Design.Ampersand.FSpec.Motivations
        (Meaning(..),Motivated(..))
+import Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
+       (createFSpec,getPopulationsFrom)
        

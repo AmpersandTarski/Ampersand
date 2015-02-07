@@ -10,48 +10,50 @@ import Control.Monad
 import System.FilePath
 import System.Directory
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Prototype.RelBinGenBasics(showPhpStr,escapePhpStr,showPhpBool)
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
+import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
 
-customCssPath :: String
-customCssPath = "css/Custom.css"
 
+-- Generate Generics.php and static files
 generateAll :: FSpec -> IO ()
 generateAll fSpec =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
 --  ; verboseLn (getOpts fSpec) filecontent
-    ; writePrototypeFile "Generics.php" filecontent
-    ; when (genStaticFiles (getOpts fSpec))(
-       case customCssFile (getOpts fSpec) of
-        Just customCssFilePath ->
-         do { customCssContents <- readCustomCssFile customCssFilePath
-            ; writePrototypeFile customCssPath customCssContents
-            }
-        Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-         do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
-            ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
-            ; if dedicatedCSSExists then
-               do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
-                  ; customCssContents <- readCustomCssFile dedicatedCSSPath
-                  ; writePrototypeFile customCssPath customCssContents
-                  }
-              else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-               do { customExists <- doesFileExist (combine (dirPrototype (getOpts fSpec)) customCssPath)
-                  ; if customExists
-                    then verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " already exists."
-                    else do { verboseLn (getOpts fSpec) $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
-                            ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
-                            }
-                  }
-            }
-      )
+    ; writePrototypeFile fSpec "Generics.php" filecontent
+    ; when (genStaticFiles (getOpts fSpec)) $
+           case customCssFile (getOpts fSpec) of
+             Just customCssFilePath ->
+              do { customCssContents <- readCustomCssFile customCssFilePath
+                 ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
+                 }
+             Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
+              do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
+                 ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
+                 ; if dedicatedCSSExists then
+                    do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
+                       ; customCssContents <- readCustomCssFile dedicatedCSSPath
+                       ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
+                       }
+                   else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
+                    do { customExists <- doesFileExist $ getGenericsDir fSpec </> generatedCustomCssPath
+                       ; if customExists
+                         then verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ " already exists."
+                         else do { verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ 
+                                                               " does not exist, creating default for Oblomilan style."
+                                 ; writePrototypeFile fSpec generatedCustomCssPath "@import url(\"Oblomilan.css\");"
+                                 }
+                       }
+                 }
     }
   where
+    generatedCustomCssPath = "css/Custom.css"
+    
     genericsPhpContent :: [String]
     genericsPhpContent =
       intercalate [""]
@@ -64,15 +66,12 @@ generateAll fSpec =
         , generateViews fSpec
         , generateInterfaces fSpec
         ]
+        
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
                       _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
-    writePrototypeFile fname content =
-     do { verboseLn (getOpts fSpec) ("  Generating "++fname)
-        ; writeFile (combine (dirPrototype (getOpts fSpec)) fname) content
-        }
 
 generateConstants :: FSpec -> [String]
 generateConstants fSpec =
@@ -82,6 +81,8 @@ generateConstants fSpec =
   , ""
   , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
   , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
+  , ""
+  , "$signalTableName = "++showPhpStr (getTableName signalTableSpec)++";"
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
@@ -101,7 +102,7 @@ generateSpecializations fSpec =
 
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
-  [ "$relationTableInfo ="
+  [ "$allRelations ="
   , "  array" ] ++
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
@@ -110,32 +111,49 @@ generateTableInfos fSpec =
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
                                                  ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
-                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)++")"]
+                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)
+                                                 ++ ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
+                                                 ++ ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
+                                                 ++ ")"]
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
          , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
+         , let affConjs = case lookup decl $ allConjsPerDecl fSpec of
+                 Nothing    -> []
+                 Just conjs -> conjs
+               affInvConjs = filterFrontEndInvConjuncts affConjs
+               affSigConjs = filterFrontEndSigConjuncts affConjs 
          ])) ++
   [ ""
-  , "$conceptTableInfo ="
-  , "  array"
+  , "$allConcepts = array"
   ] ++
   addToLastLine ";"
-    (indent 4
-       (blockParenthesize "(" ")" ","
-         [ ( (showPhpStr.name) c++" => array "
-           ) :
-           indent 4
-              (blockParenthesize "(" ")" ","
-                [ [ "array ( 'table' => "++(showPhpStr.name) table
-                  , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")"
-                  , "      )"
-                  ]
-                -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
-                ]
-              )
+    (indent 2 $
+       blockParenthesize "(" ")" ","
+         [ [ (showPhpStr.name) c++" => array"] ++
+           (indent 2 $
+              [ "( 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
+              , ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
+              , ", 'conceptTables' => array" ] ++
+              (indent 3
+                (blockParenthesize "(" ")" ","
+                  [ [ "array ( 'table' => "++(showPhpStr.name) table ++
+                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" ++
+                           " )"
+                    ]
+                  -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
+                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
+                  ])) ++
+              [ ")" ]
+           )
          | c <- concs fSpec
+         , let affConjs = case lookup c $ allConjsPerConcept fSpec of
+                 Nothing    -> []
+                 Just conjs -> conjs
+               affInvConjs = filterFrontEndInvConjuncts affConjs
+               affSigConjs = filterFrontEndSigConjuncts affConjs 
+
          ]
-    )  ) ++
+    ) ++
   [ ""
   , "$tableColumnInfo ="
   , "  array"
@@ -246,13 +264,30 @@ generateConjuncts fSpec =
            ]
          | conj<-vconjs fSpec
          , let rExpr=rc_conjunct conj
-         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isSignal r ] 
-         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, not $ isSignal r, not $ ruleIsInvariantUniOrInj r ]
+         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isFrontEndSignal r ] 
+         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, isFrontEndInvariant  r ]
          , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF (getOpts fSpec) violExpr
          ]
      ) )
-    
+
+-- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
+-- two abstractions to guarantee the same implementation.
+isFrontEndInvariant :: Rule -> Bool
+isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
+
+isFrontEndSignal :: Rule -> Bool
+isFrontEndSignal r = isSignal r
+
+-- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
+-- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
+-- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
+filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
+filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_orgRules c) conjs
+
+filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
+filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs
+  
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="
@@ -317,8 +352,11 @@ generateInterface fSpec interface =
   indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
-          , "      , 'conjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ ifcControls interface) ++")"
+          , "      , 'invConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ invConjuncts) ++")"
+          , "      , 'sigConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ sigConjuncts) ++")"
           ]
+        invConjuncts = [ c | c <- ifcControls interface, any isFrontEndInvariant $ rc_orgRules c ] -- NOTE: these two
+        sigConjuncts = [ c | c <- ifcControls interface, any isFrontEndSignal    $ rc_orgRules c ] --       may overlap
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
@@ -367,13 +405,13 @@ generateMSubInterface fSpec editableRels depth subIntf =
     Just (InterfaceRef nm) -> [ "      // InterfaceRef"
                               , "      , 'refSubInterface' => "++ showPhpStr nm
                               ]
-    Just (Box _ objects)     -> [ "      // Box"
-                              , "      , 'boxSubInterfaces' =>"
-                              , "          array"
-                              ] ++
-                              indent 12
-                                (blockParenthesize "(" ")" ","
-                                  (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
+    Just (Box _ cl objects) -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
+                               , "      , 'boxSubInterfaces' =>"
+                               , "          array"
+                               ] ++
+                               indent 12
+                                 (blockParenthesize "(" ")" ","
+                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
 
 -- utils
 

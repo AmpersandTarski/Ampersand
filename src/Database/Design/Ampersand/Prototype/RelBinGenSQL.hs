@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Prototype.RelBinGenSQL
  ) where
 import Database.Design.Ampersand.Prototype.CoreImporter
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Prototype.RelBinGenBasics (quote,sqlAtomQuote,addSlashes,phpIndent)
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Meta(..)
@@ -53,6 +54,8 @@ import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
 import Data.List (intercalate,nub,delete)
+import Data.Typeable
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
 
@@ -77,17 +80,19 @@ data A_Context
          , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
-         }               --deriving (Show) -- voor debugging
+         } deriving (Typeable)              --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
-instance Identified A_Context where
+instance Unique A_Context where
+  showUnique = name
+instance Named A_Context where
   name  = ctxnm
 
 data Theme = PatternTheme Pattern | ProcessTheme Process
 
-instance Identified Theme where
+instance Named Theme where
   name (PatternTheme pat) = name pat
   name (ProcessTheme prc) = name prc
 
@@ -108,7 +113,7 @@ data Process = Proc { prcNm :: String
                     , prcVds :: [ViewDef]            -- ^ The view definitions defined in this process
                     , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
                     }
-instance Identified Process where
+instance Named Process where
   name = prcNm
 
 instance Traced Process where
@@ -133,8 +138,13 @@ data Pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           } deriving Show    -- for debugging purposes
-instance Identified Pattern where
+           } deriving (Typeable, Show)    -- Show for debugging purposes
+instance Eq Pattern where
+  p==p' = ptnm p==ptnm p'
+instance Unique Pattern where
+  showUnique = name
+
+instance Named Pattern where
  name = ptnm
 instance Traced Pattern where
  origin = ptpos
@@ -161,9 +171,11 @@ data Rule =
         , r_env :: String                  -- ^ Name of pattern in which it was defined.
         , r_usr :: RuleOrigin              -- ^ Where does this rule come from?
         , isSignal :: Bool                    -- ^ True if this is a signal; False if it is an invariant
-        }
+        } deriving Typeable 
 instance Eq Rule where
   r==r' = rrnm r==rrnm r'
+instance Unique Rule where
+  showUnique = rrnm 
 instance Prelude.Ord Rule where
   compare = Prelude.compare `on` rrnm
 instance Show Rule where
@@ -171,7 +183,7 @@ instance Show Rule where
    = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (rrexp x)
 instance Traced Rule where
   origin = rrfps
-instance Identified Rule where
+instance Named Rule where
   name   = rrnm
 instance Association Rule where
   sign   = rrtyp
@@ -221,13 +233,19 @@ data Declaration =
       } |
   Vs
       { decsgn :: Sign
-      } deriving Prelude.Ord
+      } deriving (Prelude.Ord, Typeable)
 
 instance Eq Declaration where
   d@Sgn{}     == d'@Sgn{}     = decnm d==decnm d' && decsgn d==decsgn d'
   d@Isn{}     == d'@Isn{}     = detyp d==detyp d'
   d@Vs{}      == d'@Vs{}      = decsgn d==decsgn d'
   _           == _            = False
+instance Unique Declaration where
+  showUnique d = 
+    case d of
+      Sgn{} -> name d++uniqueShow False (decsgn d)
+      Isn{} -> "I["++uniqueShow False (detyp d)++"]"
+      Vs{}  -> "V"++uniqueShow False (decsgn d)
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
   showsPrec _ decl@Sgn{}
    = showString (case decl of
@@ -254,7 +272,7 @@ aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
 
 data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord)
 
-instance Identified Declaration where
+instance Named Declaration where
   name d@Sgn{}   = decnm d
   name Isn{}     = "I"
   name Vs{}      = "V"
@@ -273,7 +291,7 @@ data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition 
                       , idCpt :: A_Concept     -- ^ this expression describes the instances of this object, related to their context
                       , identityAts :: [IdentitySegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this identity.
                       } deriving (Eq,Show)
-instance Identified IdentityDef where
+instance Named IdentityDef where
   name = idLbl
 instance Traced IdentityDef where
   origin = idPos
@@ -285,7 +303,7 @@ data ViewDef = Vd { vdpos :: Origin         -- ^ position of this definition in 
                   , vdcpt :: A_Concept      -- ^ this expression describes the instances of this object, related to their context
                   , vdats :: [ViewSegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Eq,Show)
-instance Identified ViewDef where
+instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
@@ -300,7 +318,12 @@ data A_Gen = Isa { genspc :: A_Concept      -- ^ specific concept
                  }
            | IsE { genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
-                 }
+                 } deriving (Typeable, Eq)
+instance Unique A_Gen where
+  showUnique a =
+    case a of 
+      Isa{} -> uniqueShow False (genspc a)++" ISA "++uniqueShow False (gengen a)
+      IsE{} -> uniqueShow False (genspc a)++" IS "++intercalate " /\\ " (map (uniqueShow False) (genrhs a))
 instance Show A_Gen where
   -- This show is used in error messages. It should therefore not display the term's type
   showsPrec _ g =
@@ -339,7 +362,7 @@ data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions
 
 instance Eq Interface where
   s==s' = name s==name s'
-instance Identified Interface where
+instance Named Interface where
   name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
@@ -356,7 +379,7 @@ objAts obj
   = case objmsub obj of
      Nothing       -> []
      Just (InterfaceRef _) -> []
-     Just (Box _ objs)     -> objs
+     Just (Box _ _ objs)     -> objs
 
 class Object a where
  concept :: a -> A_Concept        -- the type of the object
@@ -374,12 +397,12 @@ data ObjectDef = Obj { objnm ::   String         -- ^ view name of the object de
                      , objmsub :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
-instance Identified ObjectDef where
+instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
 
-data SubInterface = Box A_Concept [ObjectDef] | InterfaceRef String deriving (Eq, Show)
+data SubInterface = Box A_Concept (Maybe String)[ObjectDef] | InterfaceRef String deriving (Eq, Show)
 
 data InsDel   = Ins | Del
                  deriving (Show,Eq)
@@ -450,10 +473,14 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
                      , explRefIds :: [String]     -- ^ The references of the explaination
-                     } deriving Show
+                     } deriving (Show, Typeable)
 instance Eq Purpose where
-  x0 == x1  =  explObj x0 == explObj x1 &&
+  x0 == x1  =  explObj x0 == explObj x1 &&  -- TODO: check if this definition is right. 
+                                            -- I(Han) suspect that the Origin should be part of it. 
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
+instance Unique Purpose where
+  showUnique p = uniqueShow True (explObj p)++" in "++(show.amLang.explMarkup) p
+                   ++ uniqueShow True (explPos p)
 instance Traced Purpose where
   origin = explPos
 
@@ -474,8 +501,20 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplProcess String
              | ExplInterface String
              | ExplContext String
-          deriving (Show ,Eq)
-
+          deriving (Show ,Eq, Typeable)
+instance Unique ExplObj where
+  showUnique e = "Explanation of "++
+    case e of 
+     (ExplConceptDef cd) -> uniqueShow True cd
+     (ExplDeclaration d) -> uniqueShow True d
+     (ExplRule s)        -> "a Rule named "++s
+     (ExplIdentityDef s) -> "an Ident named "++s
+     (ExplViewDef s)     -> "a View named "++s
+     (ExplPattern s)     -> "a Pattern named "++s
+     (ExplProcess s)     -> "a Process named "++s
+     (ExplInterface s)   -> "an Interface named "++s
+     (ExplContext s)     -> "a Context named "++s
+     
 data Expression
       = EEqu (Expression,Expression)   -- ^ equivalence             =
       | EImp (Expression,Expression)   -- ^ implication             |-
@@ -498,8 +537,9 @@ data Expression
       | EEps A_Concept Sign            -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Sign                      -- ^ Cartesian product relation
       | EMp1 String A_Concept          -- ^ constant (string between single quotes)
-      deriving (Eq, Prelude.Ord, Show)
-
+      deriving (Eq, Prelude.Ord, Show, Typeable)
+instance Unique Expression where
+  showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
 infixl 1 .==.   -- equivalence
@@ -597,28 +637,33 @@ showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 -- It is called Concept, meaning "type checking concept"
 
 data A_Concept
-   = PlainConcept { cptnm :: String }  -- ^PlainConcept nm represents the set of instances cs by name nm.
+   = PlainConcept { cptnm :: String  -- ^PlainConcept nm represents the set of instances cs by name nm.
+                  , cpttp :: String  -- HJO, 20150204 TODO: add sqlTypeOf. It is required for the meatgrinder. (zit nu ver weg gestopt bij het maken van plugs. 
+                  }
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
-    deriving Prelude.Ord
+    deriving (Prelude.Ord,Typeable)
 
 instance Eq A_Concept where
    PlainConcept{cptnm=a} == PlainConcept{cptnm=b} = a==b
    ONE == ONE = True
    _ == _ = False
+instance Unique A_Concept where
+  showUnique = name
 
-instance Identified A_Concept where
+instance Named A_Concept where
   name PlainConcept{cptnm = nm} = nm
   name ONE = "ONE"
 
 instance Show A_Concept where
   showsPrec _ c = showString (name c)
 
-data Sign = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord)
+data Sign = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable)
 
 instance Show Sign where
   showsPrec _ (Sign s t) =
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )
-
+instance Unique Sign where
+  showUnique (Sign s t) = "[" ++ uniqueShow False s ++ "*" ++ uniqueShow False t ++ "]"
 instance Association Sign where
   source (Sign s _) = s
   target (Sign _ t) = t
@@ -660,3 +705,5 @@ showOrder :: A_Concept -> String
 showOrder x = "\nComparability classes:"++ind++intercalate ind (map show classes)
  where (_,classes,_,_,_) = cptgE x; ind = "\n   "
 -}
+
+  

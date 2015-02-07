@@ -1,0 +1,87 @@
+/********* WRAPPERS **************/
+#mainview {
+	display: block;
+ 	margin-left: auto;
+  	margin-right: auto;
+  	padding: 100px 15px 0px 15px;
+}
+
+/********* INTERFACES *****************/
+.interface table {
+	width	: auto;
+}
+.interface .CRUDbuttons {
+	font-size	: 14px;
+	margin-top	: 5px;
+	padding 	: 5px;
+}
+.interface .glyphicon-plus {
+	color	: green; 
+}
+
+/********* FORMS, INPUTS, ETC **************/
+input .ng-invalid .ng-dirty {
+	border	: 2px solid red;
+}
+.table-header-textarea {
+	width	: 250px;
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+/********* GLYPHICONS **************/
+.glyphicon {
+	cursor	: pointer;
+}
+
+.glyphicon-remove {
+	color	: red; 
+}
+
+.glyphicon-ok {
+	color	: green; 
+}
+
+.glyphicon-orange {
+	color	: orange;
+}
+
+.glyphicon-blue {
+	color	: #428bca;
+}
+
+/********* NOTIFICATION CENTRE **************/
+#notificationCenter {
+	position		: relative; // fixed;
+	margin-bottom	: 15px;
+	// right		: 0px;
+	// z-index		: 999;
+}
+
+#successes {
+	position		: absolute;
+	width			: 100%;
+	z-index			: 999;
+}
+
+.alert {
+	margin-bottom :	2px;
+	padding-top : 5px;
+	padding-bottom : 5px;
+}
+
+.panel {
+	margin-bottom :	2px;
+}
+
+.panel-heading {
+	padding-top : 5px;
+	padding-bottom : 5px;
+}
+
+.panel .list-group-item {
+	padding-top : 5px;
+	padding-bottom : 5px;
+}

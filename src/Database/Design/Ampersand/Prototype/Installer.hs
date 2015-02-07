@@ -3,7 +3,7 @@ module Database.Design.Ampersand.Prototype.Installer
    createTablesPHP,populateTablesPHP) where
 
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Prototype.RelBinGenBasics
+import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.PHP
 
 --fatal :: Int -> String -> a

@@ -1,27 +1,20 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Input.ADL1.FilePos
          (FilePos(..), Origin(..), Pos(Pos) , Traced(..)) where
 
-import Database.Design.Ampersand.Input.ADL1.ParsingLib -- New Stub to convert UULib to Parsec
---import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))  -- Old UU Lib
---import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
+import Database.Design.Ampersand.Basics
+import Data.Typeable
 
 --fatal :: Int -> String -> a
 --fatal = fatalMsg "Input.ADL1.FilePos"
 
 --Traced a have an origin, which may be unknown.
 data FilePos = FilePos (String, Pos, String) deriving (Eq, Ord)
-data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord)
+data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord, Typeable)
+instance Unique Origin where
+  showUnique = show
 
-{- SJ20140216: made obsolete. This was used to tell which concept definitions are declared within a pattern or within a process.
-   posIn :: Traced a => Origin -> a -> Origin -> Bool
-   posIn (FileLoc (FilePos (f , Pos bl bc, _)))
-         x
-         (FileLoc (FilePos (f', Pos el ec, _)))
-         | f/=f' = False
-         | bl==el = bc < colnr x && colnr x < ec
-         | otherwise = bl < linenr x && linenr x < el
-   posIn _ _ _ = False
--}
 
 instance Show FilePos where
   show (FilePos (fn,Pos l c,_))
