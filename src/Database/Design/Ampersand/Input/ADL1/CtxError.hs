@@ -24,9 +24,7 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.ParsingLib -- New Stub to convert UULib to Parsec
---import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token) Old_UU Lib
---import UU.Parsing (Message(..),Action(..))
+import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Database.Design.Ampersand.Core.ParseTree
 
 fatal,_notUsed :: Int -> String -> a

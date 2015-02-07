@@ -4,10 +4,6 @@ module Database.Design.Ampersand.Input.ADL1.Parser
   (AmpParser, pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
 
 import Database.Design.Ampersand.Input.ADL1.ParsingLib -- New Stub to convert UULib to Parsec
--- Old UULib import statements
---import Database.Design.Ampersand.Input.ADL1.UU_Scanner
---         ( pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi)
---import UU.Parsing hiding (Parser, pSym, pSucceed, (<$>), (<*>), (<|>), (<$), (<*), (*>), (<??>), pList, pList1, opt, pList1Sep)
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
 import Data.List
