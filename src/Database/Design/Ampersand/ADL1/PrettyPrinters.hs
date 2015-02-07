@@ -3,6 +3,7 @@ where
 
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser(keywordstxt)
+import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 import Data.Char
 import Data.List (intercalate)
 import Data.List.Utils (replace)
@@ -56,7 +57,7 @@ listOf :: Pretty a => [a] -> String
 listOf = commas . map pretty
 
 prettyPair :: Paire -> String
-prettyPair (a,b) = quote a <+> "*" <+> quote b
+prettyPair (Paire src trg) = quote src <+> "*" <+> quote trg
 
 listOfLists :: [[String]] -> String
 listOfLists xs = commas $ map (unwords.quoteAll) xs
@@ -236,9 +237,10 @@ instance Pretty a => Pretty (P_ObjDef a) where
 
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
-                P_Box _ bs -> type_ <+> "[" ++ listOf bs ++ "]"
+                P_Box _ c bs         -> type_ c <+> "[" ++ listOf bs ++ "]"
                 P_InterfaceRef _ str -> "INTERFACE" <+> maybeQuote str
-            where type_ = "BOX" -- "ROWS" or "COLS" too?
+            where type_ Nothing  = "BOX"
+                  type_ (Just x) = x -- ROWS, COLS, TABS
 
 instance Pretty P_IdentDef where
     pretty (P_Id _ lbl cpt ats) =

@@ -7,6 +7,7 @@ import Control.Applicative
 
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser (keywordstxt)
+import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
 -- Useful functions to build on the quick check ones
 none :: Gen [a]
@@ -150,6 +151,9 @@ instance Arbitrary ConceptDef where
     arbitrary = Cd <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                    <*> arbitrary <*> arbitrary
 
+instance Arbitrary Paire where
+    arbitrary = Paire <$> arbitrary <*> arbitrary
+
 instance Arbitrary P_Population where
     arbitrary = oneof [
           P_RelPopu <$> str1 <*> arbitrary <*> arbitrary,
@@ -166,9 +170,10 @@ instance Arbitrary a => Arbitrary (P_ObjDef a) where
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = oneof [
-            P_Box          <$> arbitrary <*> arbitrary,
+            P_Box          <$> arbitrary <*> boxKey <*> arbitrary,
             P_InterfaceRef <$> arbitrary <*> arbitrary
         ]
+        where boxKey = elements [Nothing,Just "ROWS",Just "COLS",Just "TABS"]
 
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf1 arbitrary

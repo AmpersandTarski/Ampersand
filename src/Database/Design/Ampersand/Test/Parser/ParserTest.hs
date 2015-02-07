@@ -2,11 +2,11 @@
 
 module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse, parseReparse) where
 
-import Database.Design.Ampersand.ADL1.P2A_Converters(Guarded(..))
+import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..))
 import Database.Design.Ampersand.ADL1.PrettyPrinters(pretty)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser
-import Database.Design.Ampersand.InputProcessing
+import Database.Design.Ampersand.Input.Parsing
 import Debug.Trace
 
 unguard :: FilePath -> String -> Guarded (P_Context, [String]) -> (P_Context, Bool)

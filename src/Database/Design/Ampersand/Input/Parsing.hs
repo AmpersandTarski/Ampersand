@@ -3,7 +3,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Database.Design.Ampersand.Input.Parsing 
-  ( parseADL, parseADL1pExpr, parseRule, parseCtx
+  ( parseADL, parseADL1pExpr, parseRule, parseCtx, runParser
   )
 where
 
