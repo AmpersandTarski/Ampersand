@@ -36,15 +36,23 @@ createFSpec opts =
      else return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.  
   where
     getRap :: IO (Guarded P_Context)
-    getRap 
-     = do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> "FormalAmpersand.adl"
+    getRap = getFormalFile "FormalAmpersand.adl"
+    getGenerics :: IO (Guarded P_Context)
+    getGenerics getFormalFile "Generics.adl"
+    getFormalFile :: String -> IO(Guarded P_Context)
+    getFormalFile file
+     = do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> file
           exists <- doesFileExist rapFile
           if exists then parseADL opts rapFile
           else fatal 98 $ unlines
-                 [ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
+                 [ "Ampersand isn't installed properly. Couldn't read:"
                  , "  "++show rapFile
-                 , "  (You might need to re-install ampersand...)"
+                 , "  (Make sure you have the latest content of Ampersand data. You might need to re-install ampersand...)"
                  ]
+    getGenerics :: IO (Guarded P_Context)
+    getGenerics
+    
+    
     toFspec :: A_Context -> Guarded FSpec
     toFspec = pure . makeFSpec opts
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec

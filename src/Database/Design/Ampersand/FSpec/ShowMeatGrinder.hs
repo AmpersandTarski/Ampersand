@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.FSpec.ShowMeatGrinder
-  (meatGrinder)
+  (meatGrinder,makeGenerics)
 where
 
 import Data.List
@@ -21,37 +21,45 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ShowMeatGrinder"
 
-meatGrinder :: FSpec -> (FilePath, String)
-meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content)
- where
-  content = unlines
-     ([ "{- Do not edit manually. This code has been generated!!!"
-      , "    Generated with "++ampersandVersionStr
-      , "    Generated at "++show (genTime (getOpts fSpec))
-      , "-}"
-      , ""
-      , "CONTEXT RapPopulations IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-      ++ (concat.intersperse  []) (map (lines.showADL) (metaPops fSpec fSpec))
-      ++
-      [ ""
-      , "ENDCONTEXT"
-      ])
 
+makeGenerics :: FSpec -> (FilePath,String)
+makeGenerics fSpec = ("TemporaryPopulationsFileOfGenerics" ,content (generics fSpec) "Generics" fSpec )
+meatGrinder :: FSpec -> (FilePath, String)
+meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content (metaPops fSpec) "AST" fSpec)
+
+content :: (FSpec -> [Pop]) -> String -> FSpec -> String
+content popKind cName fSpec = unlines
+   ([ "{- Do not edit manually. This code has been generated!!!"
+    , "    Generated with "++ampersandVersionStr
+    , "    Generated at "++show (genTime (getOpts fSpec))
+    , " "
+    , "The populations defined in this file are the populations from the user's"
+    , "model named '"++name fSpec++"'."
+    , ""
+    , "The order in which these populations are defined correspond with the order "
+    , "in which Ampersand is defined in itself. Currently (Feb. 2015), this is hard-"
+    , "coded. This means, that whenever Formal Ampersand changes, it might have "
+    , "impact on the generator of this file. "
+    , ""
+    , "-}"
+    , ""
+    , "CONTEXT "++cName++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
+    ++ (concat.intersperse  []) (map (lines.showADL) (popKind fSpec))
+    ++
+    [ ""
+    , "ENDCONTEXT"
+    ])
+instance GenericPopulations FSpec where
+ generics _ _ =
+   filter (not.nullContent)
+    (
+    [Comment "TODO: Fill in the population of Generics..."]
+    )
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
     (
-    [ Comment " "
-    , Comment "The populations defined in this file are the populations from the user's"
-    , Comment $ "model named '"++name fSpec++"'."
-    , Comment ""
-    , Comment "The order in which these populations are defined correspond with the order "
-    , Comment "in which Ampersand is defined in itself. Currently (Feb. 2015), this is hard-"
-    , Comment "coded. This means, that whenever Formal Ampersand changes, it might have "
-    , Comment "impact on the generator of this file. "
-    , Comment ""
-    ]
-  ++[Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
+    [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
   ++[ Pop "ctxnm"   "Context" "Conid"
            [(uri fSpec,name fSpec)]]
   ++[ Pop "ctxpats" "Context" "Pattern"
@@ -88,9 +96,6 @@ instance MetaPopulations FSpec where
           PCptPopu{} ->  map (mkAtom fSpec (        popcpt  udp)         ) (popas udp)
     allSigns :: [Sign]
     allSigns = [] --TODO. 
-    nullContent :: Pop -> Bool
-    nullContent (Pop _ _ _ []) = True
-    nullContent _ = False
 
 instance MetaPopulations Pattern where
  metaPops _ pat =
@@ -325,7 +330,12 @@ camelCase str = concatMap capitalize (words str)
   where
     capitalize [] = []
     capitalize (s:ss) = toUpper s : ss
+
+nullContent :: Pop -> Bool
+nullContent (Pop _ _ _ []) = True
+nullContent _ = False
     
 class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
-   
+class GenericPopulations a where
+ generics :: FSpec -> a -> [Pop]   
