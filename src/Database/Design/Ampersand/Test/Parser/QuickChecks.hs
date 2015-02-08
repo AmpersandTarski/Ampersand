@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks) whe
 
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseReparse)
 import Database.Design.Ampersand.Test.Parser.ArbitraryTree()
-import Database.Design.Ampersand.ADL1.PrettyPrinters(pretty)
+import Database.Design.Ampersand.ADL1.PrettyPrinters(pretty_print)
 import Database.Design.Ampersand.Core.ParseTree (P_Context)
 
 import Test.QuickCheck
@@ -16,7 +16,7 @@ testParse text check = if success then check ctx else False
 
 -- Tests whether the parsed context is equal to the original one
 prop_pretty :: P_Context -> Bool
-prop_pretty ctx = testParse (pretty ctx) (\p -> pretty ctx == pretty p)
+prop_pretty ctx = testParse (pretty_print ctx) (\p -> pretty_print ctx == pretty_print p)
 
 parserQuickChecks :: IO Bool
 parserQuickChecks =
