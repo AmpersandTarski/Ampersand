@@ -9,6 +9,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
+  , mkNonMatchingInterfaceError
   )
 -- SJC: I consider it ill practice to export CTXE
 -- Reason: CtxError should obtain all error messages
@@ -92,6 +93,10 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
+
+mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
+mkNonMatchingInterfaceError objDef t s ref
+ = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
 
 mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
 mkUndeclaredInterfaceError objDef containingIfcName ref = 
