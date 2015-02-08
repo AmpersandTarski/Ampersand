@@ -7,7 +7,7 @@ import Prelude hiding (lookup)
 import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Identified(..))
+import Database.Design.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Named(..))
 import Data.Map (Map, (!), lookup, keys, assocs, elems, fromList, fromListWith, unionWith, unionsWith, differenceWith, mergeWithKey, empty)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)

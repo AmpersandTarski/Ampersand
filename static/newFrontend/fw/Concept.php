@@ -19,7 +19,7 @@ class Concept {
 		
 		foreach (Concept::getAllAtomIds($concept) as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $concept);
-			$arr[] = $tgtAtom;
+			$arr[] = $tgtAtom->getAtom();
 		}
 		return $arr;
 	}
@@ -66,7 +66,7 @@ class Concept {
 		// (we have an array rather than a single column because of generalizations) 
 		// TODO: still the right solution?, because generalizations/specializations are in one table
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts");
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
 		
 		return (array)$allConcepts[$concept]['conceptTables'];
 	}
@@ -74,7 +74,7 @@ class Concept {
 	public static function getAffectedSigConjuncts($concept){
 		global $allConcepts; // from Generics.php
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts");
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
 		
 		return (array)$allConcepts[$concept]['affectedSigConjunctIds'];
 	}
@@ -82,9 +82,21 @@ class Concept {
 	public static function getAffectedInvConjuncts($concept){
 		global $allConcepts; // from Generics.php
 	
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts");
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
 	
 		return (array)$allConcepts[$concept]['affectedInvConjunctIds'];
+	}
+	
+	public static function getAllInterfaces($concept){
+		global $allInterfaceObjects; // from Generics.php
+		
+		$interfaces = array();
+		
+		foreach ($allInterfaceObjects as $interfaceName => $interface){
+			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceName;
+		}
+		
+		return $interfaces;
 	}
 
 }

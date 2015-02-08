@@ -67,6 +67,7 @@ class Viewer {
 		
 		// AmpersandApp
 		$this->addHtmlLine('<script src="app/AmpersandApp.js"></script>');
+		$this->addHtmlLine('<script src="generics/app/RouteProvider.js"></script>');
 		
 		// AngularApp static controler files
 		$files = getDirectoryList(__DIR__ . '/../app/controllers');

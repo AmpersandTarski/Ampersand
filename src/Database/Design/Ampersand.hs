@@ -33,7 +33,7 @@ module Database.Design.Ampersand
    -- * Classes:
    , Association(..), flp
    , Collection(..)
-   , Identified(..)
+   , Named(..)
    , ProcessStructure(..)
    , ObjectDef(..)
    , Relational(..)

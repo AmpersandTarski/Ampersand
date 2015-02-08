@@ -1,0 +1,11 @@
+<!-- BOX<ROWS> "$name$" $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
+<form class="form-horizontal" role="form">
+$subObjects:{subObj|
+  <!-- BOX<ROWS> CHILD: "$subObj.subObjName$" -->
+  <div class="form-group">
+    <label class="col-md-1 control-label">$subObj.subObjName$</label>
+    <div class="col-md-11">
+$subObj.subObjContents$
+    </div>
+  </div>}$
+</form>

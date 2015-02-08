@@ -27,13 +27,16 @@ class ObjectInterface {
 	
 	public $expressionSQL;
 
-	public function __construct($name, $interface = array()){
+	/*
+	 * $refInterfacesArr is used to determine infinite loops in refInterface
+	 */
+	public function __construct($name, $interface = array(), $refInterfacesArr = array()){
 		global $allInterfaceObjects; // from Generics.php
 		
 		if(empty($interface)) $interface = $allInterfaceObjects[$name]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
 		
 		// Check if interface exists
-		if(empty($interface['name'])) throw new Exception ('Specified interface \''.$name.'\' does not exists');
+		if(empty($interface['name'])) throw new Exception ("Interface \'$name\' does not exists", 500);
 		
 		// Set attributes of interface
 		$this->id = $interface['name'];
@@ -65,41 +68,37 @@ class ObjectInterface {
 			case "DATE":
 				$this->tgtDataType = "date";		// relation to DATE concept
 				break;
-			case "BOOLEAN":
-				$this->tgtDataType = "checkbox";	// relation to BOOLEAN concept
-				break;
-			case "EMAIL":
-				$this->tgtDataType = "email";		// relation to EMAIL concept
+			case "BOOL":
+				$this->tgtDataType = "checkbox";	// relation to BOOL concept
 				break;
 			case "PASSWORD":
 				$this->tgtDataType = "password"; 	// relation to PASSWORD concept
 				break;
-			case "COLOR":
-				$this->tgtDataType = "color";		// relation to STATUS concept
-				break;
-			// <textarea>
 			case "BLOB":
 				$this->tgtDataType = "textarea"; 	// relation to BLOB concept
 				break;
-			// <select>
 			default:
 				$this->tgtDataType = "concept"; 	// relation to other concept
 		}
 		
 		// Information about subinterfaces
 		$this->refInterface = $interface['refSubInterface'];
+		$refInterfacesArr[] = $this->name;
+		if(in_array($this->refInterface, $refInterfacesArr)) throw new Exception("Infinite loop in interface '$this->name' by referencing '$this->refInterface'", 500);
+		
 		$this->boxSubInterfaces = $interface['boxSubInterfaces'];
 		$this->expressionSQL = $interface['expressionSQL'];
 		
 		// Determine subInterfaces
 		if(!empty($this->refInterface)){
-			$refInterface = new ObjectInterface($this->refInterface);
+					
+			$refInterface = new ObjectInterface($this->refInterface, null, $refInterfacesArr);
 			foreach($refInterface->subInterfaces as $subInterface){
 				$this->subInterfaces[] = $subInterface;
 			}
 		}else{
 			foreach ((array)$this->boxSubInterfaces as $subInterface){
-				$this->subInterfaces[] = new ObjectInterface($subInterface['name'], $subInterface);
+				$this->subInterfaces[] = new ObjectInterface($subInterface['name'], $subInterface, $refInterfacesArr);
 			}
 		}
 	}

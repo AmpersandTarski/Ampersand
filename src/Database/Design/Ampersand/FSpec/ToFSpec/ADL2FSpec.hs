@@ -655,7 +655,7 @@ switchboard fSpec
      eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
      eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]
 
-class Identified a => Rename a where
+class Named a => Rename a where
  rename :: a->String->a
  -- | the function uniqueNames ensures case-insensitive unique names like sql plug names
  uniqueNames :: [String]->[a]->[a]

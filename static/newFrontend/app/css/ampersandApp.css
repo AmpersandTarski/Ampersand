@@ -55,6 +55,7 @@ input .ng-invalid .ng-dirty {
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
 	position		: relative; // fixed;
+	margin-bottom	: 15px;
 	// right		: 0px;
 	// z-index		: 999;
 }

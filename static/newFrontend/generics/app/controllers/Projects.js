@@ -1,7 +1,7 @@
 AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $routeParams, Restangular, $location, $modal) {
 	
 	// URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
-	url = 'interface/Projects/atom';
+	url = 'interface/Projects';
 	
 	// Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
 	if($routeParams['new']){
@@ -60,11 +60,11 @@ AmpersandApp.controller('ProjectsController', function ($scope, $rootScope, $rou
 	// PopUp function
 	$scope.popUp = function(obj, property, ResourceId){
 		var modalInstance = $modal.open({
-			templateUrl		: 'generics/app/views/Projects_addProjectleider.html',
+			templateUrl		: 'generics/app/views/addPerson.html',
 			controller		: 'static_addModalController',
 			size			: 'lg', 			// optional 'sm' (small), 'lg' (large)
 			backdrop		: true,				// true, false or 'static'
-			resolve			: { restUrl: function () { return 'interface/Person/atom'; } }	// an optional map of dependencies which should be injected into the controller			
+			resolve			: { restUrl: function () { return 'interface/Person'; } }	// an optional map of dependencies which should be injected into the controller			
 		});
 		
 		modalInstance.result // a promise that is resolved when a modal is closed and rejected when a modal is dismissed

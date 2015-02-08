@@ -2,19 +2,45 @@
 
 Class Atom {
 	
+	// Ampersand attributes
 	public $id;
 	public $label;
 	public $concept;
 	
+	// JSON-LD attributes
+	private $jsonld_id;
+	private $jsonld_type;
+		
 	public function __construct($id, $concept = null){
 		
+		// Ampersand attributes
 		$this->id = $id;
 		$this->concept = $concept;
 		$this->label = $this->getLabel();
 		
+		// JSON-LD attributes
+		$this->jsonld_id = JSONLD_ID_PATH . $concept . '/' . $this->id;
+		$this->jsonld_type = JSONLD_TYPE_PATH . $concept;
+
 	}
 	
-	public function getContent($interface){
+	public function getAtom($interface = null){
+		foreach(Concept::getAllInterfaces($this->concept) as $interfaceName) $interfaces[] = API_INTERFACES_PATH . $interfaceName . '/' . $this->id;
+		
+		$result =  array('@id' => $this->jsonld_id
+						,'@label' => $this->label
+						,'@type' => $this->jsonld_type
+						,'@interfaces' => $interfaces
+						,'id' => $this->id
+						);
+
+		return $result;
+	}
+	
+	/*
+	 * var $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
+	 */
+	public function getContent($interface, $rootElement = true){
 		$database = Database::singleton();
 		
 		$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
@@ -25,8 +51,17 @@ Class Atom {
 				
 			// determine value atom 
 			if($interface->tgtDataType == "concept"){ // subinterface refers to other concept (i.e. not datatype).
-				$content = array ('id' => $tgtAtom->id, 'label' => $tgtAtom->label); 
-
+				$content = array();
+				
+				// Add @context for JSON-LD to rootElement
+				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->name;
+				
+				// Add other elements
+				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
+														, '@label' => $tgtAtom->label
+													 	, '@type' => $tgtAtom->jsonld_type
+													 	, 'id' => $tgtAtom->id));
+				
 			}else{
 				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
 				if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
@@ -39,7 +74,7 @@ Class Atom {
 			// subinterfaces
 			foreach($interface->subInterfaces as $subinterface){
 			
-				$otherAtom = $tgtAtom->getContent($subinterface);
+				$otherAtom = $tgtAtom->getContent($subinterface, false);
 				$content[$subinterface->name] = $otherAtom;
 				
 			}
@@ -65,7 +100,8 @@ Class Atom {
 		$database = Database::singleton();
 		
 		// Check if new Atom
-		if(empty($before = $this->getContent($interface))){
+		$before = $this->getContent($interface);
+		if($before == false){ // was empty($before = $this->getContent($interface)), but prior to PHP 5.5, empty() only supports variables, not expressions.
 			$database->addAtomToConcept($this->id, $this->concept);
 			$before = $this->getContent($interface);
 		}
@@ -86,8 +122,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
-												
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						$interfaceName = array_shift($pathArr);
+						
+						// if path starts with '@' skip
+						if(substr($interfaceName, 0, 1) == '@') break 2; // break while and switch
+						
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 
@@ -110,7 +150,7 @@ Class Atom {
 							 
 						}					
 					}else{
-						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
 					
 					break;
@@ -125,8 +165,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
+						$interfaceName = array_shift($pathArr);
+						
+						// if path starts with '@' skip
+						if(substr($interfaceName, 0, 1) == '@') break 2; // break while and switch
 					
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
 					
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
@@ -138,12 +182,12 @@ Class Atom {
 						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
 					
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
-						if(is_null($tgtAtom)) ErrorHandling::addError($tgtInterface->name . ": add operation without value '");
+						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->name . ": add operation without value '");
 						
 						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						
 					}else{
-						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
 					
 					break;
@@ -158,8 +202,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
+						$interfaceName = array_shift($pathArr);
 						
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, array_shift($pathArr));
+						// if path starts with '@' skip
+						if(substr($interfaceName, 0, 1) == '@') break 2; // break while and switch
+						
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 
@@ -172,7 +220,7 @@ Class Atom {
 						if(is_null($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
 						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
-						ErrorHandling::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
 					}
 					
 					break;
@@ -189,7 +237,7 @@ Class Atom {
 	public function delete(){
 		$database = Database::singleton();
 		
-		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided');
+		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
 		
 		$database->deleteAtom($this->id, $this->concept);
 		

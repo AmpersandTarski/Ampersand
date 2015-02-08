@@ -17,12 +17,21 @@
 			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 					<div class="text-left">
-						<strong>Violation!</strong> {{val.violationMessage}}
+						<strong>Violation!</strong> {{val.ruleMessage}}
 						<span class="badge pull-right">{{val.tuples.length}}</span>					
 					</div>
 				</div>
 				<ul class="list-group collapse" id="violation-{{key}}">
-					<li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">{{tuple}}</li>
+					<li class="dropdown list-group-item" ng-repeat="tuple in val.tuples track by $index">
+						<a ng-if="tuple.links.length > 1" href="" class="dropdown-toggle" data-toggle="dropdown">{{tuple.violationMessage}}</a>
+						<ul ng-if="tuple.links.length > 1" class="dropdown-menu" role="menu">
+							<li ng-repeat="link in tuple.links">
+								<a ng-href="{{link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{link}}</a>
+							</li>
+						</ul>
+						<a ng-if="tuple.links.length == 1" ng-href="{{tuple.links[0]}}" data-toggle="collapse" data-target="#violation-{{key}}">{{tuple.violationMessage}}</a>
+						<span ng-if="tuple.links.length == 0">{{tuple.violationMessage}}</span>
+					</li>
 				</ul>
 			</div>
 		</div>

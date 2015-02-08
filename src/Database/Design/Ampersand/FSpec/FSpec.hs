@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {- | The intentions behind FSpec (SJ 30 dec 2008):
 Generation of functional specifications is the core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.
@@ -7,7 +8,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Database.Design.Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..)
+          ( FSpec(..), concDefs, AtomID(..), PairID(..)
           , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
 --        , InsDel(..)
@@ -33,6 +34,9 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Options (Options)
 import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
+import Data.List
+import Data.Typeable
+
 --import Debug.Trace
 
 fatal :: Int -> String -> a
@@ -89,14 +93,32 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
-                   }
+                   } deriving Typeable
+instance Eq FSpec where
+ f == f' = name f == name f'
+instance Unique FSpec where
+ showUnique = name
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
-data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
-                 , atmVal :: String
-                 } deriving Eq
-
+data AtomID = AtomID { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
+                     , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
+                     , atmVal   :: String
+                     } deriving (Typeable,Eq)
+instance Unique AtomID where
+  showUnique a = atmVal a++" in "
+         ++case atmRoots a of
+             []  -> fatal 110 "an atom must have at least one root concept"
+             [x] -> uniqueShow True x
+             xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
+data PairID = PairID { lnkSgn :: Sign
+                     , lnkLeft :: AtomID
+                     , lnkRight :: AtomID
+                     } deriving (Typeable,Eq)
+instance Unique PairID where
+  showUnique x = uniqueShow False (lnkSgn x)
+              ++ uniqueShow False (lnkLeft x)
+              ++ uniqueShow False (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
@@ -124,7 +146,7 @@ data FProcess
   = FProc { fpProc :: Process
           , fpActivities :: [Activity]
           }
-instance Identified FProcess where
+instance Named FProcess where
   name = name . fpProc
 
 instance Language FProcess where
@@ -170,10 +192,10 @@ data Fswitchboard
 
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
-instance Identified FSpec where
+instance Named FSpec where
   name = fsName
 
-instance Identified FSid where
+instance Named FSid where
   name (FS_id nm) = nm
 
 data Activity = Act { actRule ::   Rule
@@ -184,7 +206,7 @@ data Activity = Act { actRule ::   Rule
                     , actPurp ::   [Purpose]
                     } deriving Show
 
-instance Identified Activity where
+instance Named Activity where
   name act = name (actRule act)
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
 --   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qConjuncts.
@@ -216,10 +238,13 @@ dnf2expr (Dnf antcs conss)
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
-                deriving (Show, Eq)
-instance Identified PlugInfo where
+                deriving (Show, Eq,Typeable)
+instance Named PlugInfo where
   name (InternalPlug psql) = name psql
   name (ExternalPlug obj)  = name obj
+instance Unique PlugInfo where
+  showUnique (InternalPlug psql) = "SQLTable "++name psql
+  showUnique (ExternalPlug obj ) = "Object "++name obj++show (origin obj)
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
   concs   (ExternalPlug obj)  = concs   obj
@@ -267,11 +292,13 @@ data PlugSQL
            , sqlColumn :: SqlField
            , cLkp :: A_Concept -- the concept implemented by this plug
            }
-   deriving (Show)
-instance Identified PlugSQL where
+   deriving (Show, Typeable)
+instance Named PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
   x==y = name x==name y
+instance Unique PlugSQL where
+  showUnique = name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 

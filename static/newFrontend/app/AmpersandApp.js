@@ -14,28 +14,6 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'static_installerController',
 				templateUrl: 'app/views/static_installer.html'
 			})
-		// atom parameter is optional
-		.when('/Projects/:resourceId?',
-			{
-				controller: 'ProjectsController',
-				templateUrl: 'generics/app/views/Projects.html'
-			})
-		.when('/People/:resourceId?',
-			{
-				controller: 'PeopleController',
-				templateUrl: 'generics/app/views/People.html'
-			})
-		.when('/Project/:resourceId?',
-			{
-				controller: 'ProjectController',
-				templateUrl: 'generics/app/views/Project.html'
-			})
-		.when('/Person/:resourceId?',
-			{
-				controller: 'PersonController',
-				templateUrl: 'generics/app/views/Person.html'
-			})
-		.otherwise({redirectTo: '/'});
 });
 
 AmpersandApp.config(function(RestangularProvider) {
@@ -52,7 +30,11 @@ AmpersandApp.config(function(RestangularProvider) {
 
 AmpersandApp.run(function(Restangular, $rootScope){
 	
-	$rootScope.session = {}; // empty object
+	// Declare $rootScope objects
+	$rootScope.session = {};
+	$rootScope.notifications = {'errors' : []};
+	
+	
 	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
 	
 	Restangular.restangularizeElement('', $rootScope.session, 'session');
@@ -66,6 +48,13 @@ AmpersandApp.run(function(Restangular, $rootScope){
 		params['sessionId'] = $rootScope.session.id;
 		return params;
 	});
+	
+    Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
+    	
+    	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
+    	
+    	return false; // error handled
+    });
 	
 });
 

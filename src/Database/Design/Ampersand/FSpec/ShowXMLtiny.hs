@@ -31,7 +31,7 @@ showXML fSpec now
            showXTree ( mkXmlTree fSpec) ++
            "</tns:ADL>"
 
-nameToAttr :: Identified x => x -> XAtt
+nameToAttr :: Named x => x -> XAtt
 nameToAttr x = mkAttr "name" (name x)
 
 ----------------------------------------------------------------------

@@ -19,7 +19,7 @@ where
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes (fullContents,atomsOf,Relational(..))
 import Database.Design.Ampersand.Basics
-import Data.List(nub,transpose)
+import Data.List
 import GHC.Exts (sortWith)
 import Database.Design.Ampersand.FSpec.FSpec
 import Prelude hiding (Ordering(..))
@@ -44,7 +44,7 @@ fatal = fatalMsg "FSpec.Plug"
 --type Plugs = [Plug]
 --data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
 
-class (Identified p, Eq p, Show p) => Plugable p where
+class (Named p, Eq p, Show p) => Plugable p where
   makePlug :: PlugInfo -> p
 
 instance Plugable PlugSQL where
@@ -395,4 +395,8 @@ tblcontents gens udp plug@TblSQL{}
                     = case [ p | p<-pairs, a==srcPaire p ] of
                        [] -> Nothing
                        [p] -> Just (trgPaire p)
-                       ps -> fatal 428 ("Multiple values in one field: "++show ps)
+                       ps -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++a++"'.\n"++
+                               "Multiple values in one field: \n"++
+                               "  [ "++intercalate "\n  , " (map show ps)++"\n  ]")
+                       

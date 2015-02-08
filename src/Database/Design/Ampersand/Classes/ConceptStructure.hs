@@ -2,6 +2,7 @@
 module Database.Design.Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Basics
 import Data.List
 import Data.Maybe
@@ -104,7 +105,10 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = []
 
 instance ConceptStructure ConceptDef where
-  concs        cd = [PlainConcept (name cd)]
+  concs        cd = [PlainConcept { cptnm = name cd
+                                  , cpttp = cdtyp cd
+                                  }
+                    ]
   expressionsIn _ = []
 
 instance ConceptStructure Sign where

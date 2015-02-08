@@ -20,7 +20,7 @@ class Session {
 			
 		// PHP SESSION : Start a new, or resume the existing, PHP session
 		session_start();
-		ErrorHandling::addLog('Session id: ' . session_id(), 'SESSION');
+		Notifications::addLog('Session id: ' . session_id(), 'SESSION');
 		
 		// Database connection for within this class
 		try {
@@ -33,7 +33,7 @@ class Session {
 				try {
 					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
 				} catch (Exception $e) {
-					ErrorHandling::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
+					Notifications::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
 					return;
 				}
 				
@@ -50,9 +50,7 @@ class Session {
 				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 				
 			}else{
-				ErrorHandling::addError('Script does not contain SESSION concept!');
-				throw new Exception('Script does not contain SESSION concept!');
-				return;
+				throw new Exception('Script does not contain SESSION concept!', 500);
 			}
 			
 		} catch (Exception $e){
@@ -62,13 +60,9 @@ class Session {
 	}
 	
 	// Prevent any copy of this object
-	private function __clone()
-	{
-		
-	}
+	private function __clone(){}
 	
-	public static function singleton($sessionId = null)
-	{
+	public static function singleton($sessionId = null){
 		if(is_null (self::$_instance) ) self::$_instance = new Session($sessionId);
 		return self::$_instance;
 	}
@@ -90,7 +84,7 @@ class Session {
 				$this->role = new Role();
 			}
 			
-			ErrorHandling::addLog("Role " . $this->role->name . " selected");
+			Notifications::addLog("Role " . $this->role->name . " selected");
 
 			return $this->role->id;
 		}catch(Exception $e){
@@ -98,38 +92,17 @@ class Session {
 		}
 	}
 	
-	public function setInterface($interfaceName = null){
+	public function setInterface($interfaceName){
 		
-		try{
-			if(isset($interfaceName)) {
-				$this->interface = new ObjectInterface($interfaceName);
-				ErrorHandling::addLog("Interface $interfaceName selected");
-			}else{
-				$this->interface = null;
-				ErrorHandling::addInfo("No interface selected");
-			}
-		}catch (Exception $e){
-			throw $e;
-		}
-		
-		return $interfaceName;
-	}
-	
-	public function setAtom($atomId = null){
-		
-		if(isset($atomId)){
-			$this->atom = $atomId;
-		}elseif(is_null($atomId)){
-			$this->atom = session_id();
-			$atomId = session_id();
+		if(isset($interfaceName)) {
+			if(!$this->role->isInterfaceForRole($interfaceName)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
+			
+			$this->interface = new ObjectInterface($interfaceName);
+			Notifications::addLog("Interface $interfaceName selected");
+				
 		}else{
-			$this->atom = session_id();
-			$atomId = session_id();
+			throw new Exception('No interfaceName specified', 404);
 		}
-		ErrorHandling::addLog("Atom $atomId selected");
-		
-		return $atomId;
 	}
 }
-
 ?>

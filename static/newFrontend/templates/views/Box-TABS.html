@@ -1,0 +1,8 @@
+<!-- BOX<TABS> "$name$" $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
+<tabset>
+$subObjects:{subObj|
+  <!-- BOX<TABS> CHILD: "$subObj.subObjName$" -->
+  <tab heading="$subObj.subObjName$">
+$subObj.subObjContents$
+  </tab>}$
+</tabset>

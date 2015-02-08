@@ -14,11 +14,11 @@ class Role {
 		
 		if(is_null($id)){ 
 			$id = DEFAULT_ROLEID; // localSettings.php
-			ErrorHandling::addLog("Default role selected");
+			Notifications::addLog("Default role selected");
 		}
 		
 		// Check if role exists
-		if(!key_exists($id, $allRoles)) throw new Exception ('Role with roleId \''.$id.'\' does not exists');
+		if(!key_exists($id, $allRoles)) throw new Exception ("Role with roleId \'$id\' does not exists", 404);
 		
 		// Name of role
 		$this->id = $id;
@@ -54,19 +54,20 @@ class Role {
 		return false; // when $roleName is not found in $allRoles
 	}
 	
-	public function getInterfaces($srcConceptSESSION = null, $srcConcept = null){ // $srcConceptSESSION: true, false, null (=all), $srcConcept: <concept> or null (=all)
+	public function getInterfaces($topLevel = null, $srcConcept = null){ // $topLevel: true, false, null (=all), $srcConcept: <concept> or null (=all)
 		$interfaces = array();
 		
 		foreach($this->interfaces as $interfaceName){
 			$interface = new ObjectInterface($interfaceName);
 			
-			if(isset($srcConceptSESSION)){
-				switch ($srcConceptSESSION){
+			if(isset($topLevel)){
+				switch ($topLevel){
 					case true :
-						if($interface->srcConcept == 'SESSION') $interfaces[] = $interface;
+						if($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') 
+							$interfaces[] = $interface;
 						break;
 					case false :
-						if($interface->srcConcept != 'SESSION') $interfaces[] = $interface;
+						if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
 						break;
 				}
 			}else{
@@ -105,7 +106,7 @@ class Role {
 		 */
 		foreach ($signals as $signal){
 			foreach($conjunctRuleMap[$signal['conjId']] as $ruleName){
-				ErrorHandling::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
+				Notifications::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
 			}			
 		}
 		

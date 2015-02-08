@@ -89,7 +89,7 @@ doGenProto fSpec =
     }
  where reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
        reportViolations viols =
-         let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
+         let ruleNamesAndViolStrings = [ (name r, showADL p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
@@ -98,7 +98,7 @@ doGenProto fSpec =
        reportSignals []        =  verboseLn (getOpts fSpec) "No signals for the initial population."
        reportSignals conjViols = putStrLn $ "Signals for initial population:\n" ++ intercalate "\n"
          [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
-             show viols
+             showADL viols
          | (conj, viols) <- conjViols
          ]
 

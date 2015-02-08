@@ -2,6 +2,8 @@
 
 // Define hooks
 $hooks['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
+$apps[] = array('name' => 'Execution engine', 'link' => '#/ext/ExecEngine/', 'icon' => 'glyphicon glyphicon-flash'); // activeer app extension in framework
+$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
 class ExecEngine {
 	
@@ -9,7 +11,7 @@ class ExecEngine {
 	
 	public static function run(){
 		
-		ErrorHandling::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
+		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
 		
 		$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : $this->defaultRoleName;
 		
@@ -18,7 +20,7 @@ class ExecEngine {
 		foreach ($files as $file){
 			if (substr($file,-3) !== 'php') continue;
 			require_once __DIR__.'/functions/'.$file;
-			ErrorHandling::addLog('Included file: '.__DIR__ .'/functions/'.$file);
+			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file);
 		}
 		
 		$role = Role::getRole($roleName);
@@ -31,16 +33,16 @@ class ExecEngine {
 				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 			}
 		}else{
-			ErrorHandling::addError("ExecEngine role '" . $roleName . "'not found.");
+			Notifications::addError("ExecEngine role '" . $roleName . "'not found.");
 		}
 		
-		ErrorHandling::addLog('------------------------- END OF EXEC ENGINE -------------------------');
+		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------');
 				
 	}
 	
 	public static function fixViolations($rule, $violations){
 		if(count($violations)){
-			ErrorHandling::addLog('ExecEngine fixing rule ' . $rule['name']);
+			Notifications::addLog('ExecEngine fixing rule ' . $rule['name']);
 			
 			foreach ($violations as $violation){
 				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
@@ -62,15 +64,15 @@ class ExecEngine {
 					
 					if (function_exists($function)){
 						$successMessage = call_user_func_array($function,$params);
-						ErrorHandling::addLog($successMessage);
+						Notifications::addLog($successMessage);
 						
 					}else{
 						$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";
-						throw new Exception($errorMessage);
+						throw new Exception($errorMessage, 500);
 					}
 				}
 			}
-			ErrorHandling::addSuccess('ExecEngine fixed rule ' . $rule['name']);
+			Notifications::addSuccess('ExecEngine fixed rule ' . $rule['name']);
 		}
 	}
 
@@ -94,13 +96,13 @@ class ExecEngine {
 				$rows = $database->Exe($query);
 				
 				// returning the result
-				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom');
+				if(count($row) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
 				$pairStrs[] = $rows[0]['tgt'];
 
 			// unknown segment
 			}else{
 				$errorMessage = "Unknown segmentType '" . $segment['segmentType'] . "' in pairview";
-				throw new Exception($errorMessage);
+				throw new Exception($errorMessage, 501); // 501: Not implemented
 			}
 		}
 		return implode($pairStrs);

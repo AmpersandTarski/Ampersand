@@ -3,8 +3,8 @@ var app = angular.module('AmpersandApp');
 AmpersandApp.controller('DndTreeController', function ($scope, $rootScope, $routeParams, Restangular) {
 	
 	// Get JSON data
-	url = 'interface/Root/atom';
-	Restangular.one(url, $routeParams.atom).get().then(function(data){
+	url = 'interface/Root';
+	Restangular.one(url, $routeParams.resourceId).get().then(function(data){
 		//******* Steps to transform to usable data for dndTree ******
 		
 		// Take only first resource of resourcelist

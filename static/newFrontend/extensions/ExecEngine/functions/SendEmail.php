@@ -17,7 +17,7 @@ function SendEmail($to,$subject,$message){
 	$username = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['username'];
 	$password = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['password'];
 
-	ErrorHandling::addLog('Username = '.$username);
+	Notifications::addLog('Username = '.$username);
 	
 	$mail = new PHPMailer;
 
@@ -41,9 +41,9 @@ function SendEmail($to,$subject,$message){
 	$mail->WordWrap = 50;			// Set word wrap to 50 characters
 	
 	if(!$mail->Send()){
-		ErrorHandling::addError('Mailer Error: ' . $mail->ErrorInfo);
+		Notifications::addError('Mailer Error: ' . $mail->ErrorInfo);
 	}else{
-		ErrorHandling::addSuccess('Email message sent.');
+		Notifications::addSuccess('Email message sent.');
 	}
 }
 ?>

@@ -11,7 +11,7 @@
 				</a>
 			</li>
 			
-			<li id="{{interface.label}}" ng-repeat="interface in interfaces"> <!-- the interface id is there so we can style specific menu items with css -->
+			<li id="{{interface.label}}" ng-repeat="interface in interfaces.top"> <!-- the interface id is there so we can style specific menu items with css -->
 				<a href="#/{{interface.id}}">
 					<span class="glyphicon glyphicon-list-alt"></span> {{interface.label}}</a>
 			</li>
@@ -21,7 +21,7 @@
 					<span class="glyphicon glyphicon-plus"></span>
 				</a>
 				<ul class="dropdown-menu" role="menu">
-						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in interfaces">New {{interface.label | lowercase}}</a></li>
+						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in interfaces.new">New {{interface.label | lowercase}}</a></li>
 				</ul>
 			</li>
 	

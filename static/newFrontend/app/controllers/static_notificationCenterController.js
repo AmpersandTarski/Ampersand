@@ -1,6 +1,8 @@
 AmpersandApp.controller('static_notificationCenterController', function ($scope, $rootScope, $routeParams, $timeout, Restangular) {
-	
-	$rootScope.notifications = Restangular.one('notifications/all').get().$object;
+		
+	Restangular.one('notifications/all').get().then(function(data){
+		$rootScope.notifications = data;
+	});
 	
 	$rootScope.updateNotifications = function(notifications){
 		$rootScope.notifications = notifications;

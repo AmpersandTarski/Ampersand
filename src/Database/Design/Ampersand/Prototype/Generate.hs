@@ -112,13 +112,16 @@ generateTableInfos fSpec =
                                                  ++ ", 'table'      => "++showPhpStr (name table)
                                                  ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
                                                  ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)
-                                                 ++ ", 'affectedConjuncts' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affConjs) ++")"
+                                                 ++ ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
+                                                 ++ ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
                                                  ++ ")"]
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
          , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
          , let affConjs = case lookup decl $ allConjsPerDecl fSpec of
                  Nothing    -> []
-                 Just conjs -> conjs                 
+                 Just conjs -> conjs
+               affInvConjs = filterFrontEndInvConjuncts affConjs
+               affSigConjs = filterFrontEndSigConjuncts affConjs 
          ])) ++
   [ ""
   , "$allConcepts = array"
@@ -128,7 +131,8 @@ generateTableInfos fSpec =
        blockParenthesize "(" ")" ","
          [ [ (showPhpStr.name) c++" => array"] ++
            (indent 2 $
-              [ "( 'affectedConjuncts' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affConjs) ++")"
+              [ "( 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
+              , ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
               , ", 'conceptTables' => array" ] ++
               (indent 3
                 (blockParenthesize "(" ")" ","
@@ -144,7 +148,10 @@ generateTableInfos fSpec =
          | c <- concs fSpec
          , let affConjs = case lookup c $ allConjsPerConcept fSpec of
                  Nothing    -> []
-                 Just conjs -> conjs                 
+                 Just conjs -> conjs
+               affInvConjs = filterFrontEndInvConjuncts affConjs
+               affSigConjs = filterFrontEndSigConjuncts affConjs 
+
          ]
     ) ++
   [ ""
@@ -272,6 +279,15 @@ isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
 isFrontEndSignal :: Rule -> Bool
 isFrontEndSignal r = isSignal r
 
+-- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
+-- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
+-- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
+filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
+filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_orgRules c) conjs
+
+filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
+filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs
+  
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
   [ "$allRoles ="

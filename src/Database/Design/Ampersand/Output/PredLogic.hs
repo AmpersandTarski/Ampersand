@@ -136,7 +136,7 @@ showRtf  p = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P,
 
 -- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
 -- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
-natLangOps :: Identified a => Lang -> (String,
+natLangOps :: Named a => Lang -> (String,
                                        String,
                                        String -> String -> String,
                                        String,

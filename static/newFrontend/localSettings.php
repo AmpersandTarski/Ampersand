@@ -3,6 +3,13 @@
 /************ CONFIG ********************/
 define ('DEFAULT_ROLEID', '0');
 
+define ('API_PATH', 'http://localhost/' . $contextName . '/api/v1/'); // $contextName from Generics.php
+
+define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
+define ('JSONLD_ID_PATH', API_PATH . 'resource/');
+define ('JSONLD_CONTEXT_PATH', API_PATH . 'context/');
+define ('API_INTERFACES_PATH', API_PATH . 'interface/');
+
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
 $DB_user = 'ampersand';

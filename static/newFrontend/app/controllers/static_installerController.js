@@ -9,7 +9,7 @@ AmpersandApp.controller('static_installerController', ['$scope', '$rootScope', '
 				$rootScope.session = Restangular.one('session').get().$object;
 				
 				// refresh interfaces list
-				$rootScope.interfaces = Restangular.all('interfaces/top').getList().$object;
+				$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 			});
 		}
 	}

@@ -13,7 +13,7 @@ function SendSMS ($phonenumber,$message){
 	$password = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['password'];
 	$sender = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['sender'];
 
-	ErrorHandling::addLog('Username = '.$username);
+	Notifications::addLog('Username = '.$username);
 	
 	// Set the Messabeird username and password, and create an instance of the MessageBird class
 	$sms = new MessageBird($username, $password);
@@ -43,9 +43,9 @@ function SendSMS ($phonenumber,$message){
 	// Send the message to the destination(s)
 	$sms->sendSms($message);
 	
-	ErrorHandling::addLog("ResponseCode: " . $sms->getResponseCode());
-	ErrorHandling::addLog("ResponseMessage: " . $sms->getResponseMessage());
-	ErrorHandling::addLog("Balance: " . $sms->getCreditBalance());
+	Notifications::addLog("ResponseCode: " . $sms->getResponseCode());
+	Notifications::addLog("ResponseMessage: " . $sms->getResponseMessage());
+	Notifications::addLog("Balance: " . $sms->getCreditBalance());
 }
 
 ?>
