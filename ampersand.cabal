@@ -129,6 +129,7 @@ executable ampersand
                      Database.Design.Ampersand.Core.Poset,
                      Database.Design.Ampersand.Core.Poset.Instances,
                      Database.Design.Ampersand.Core.Poset.Internal,
+                     Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec,
                      Database.Design.Ampersand.FSpec.FPA,
                      Database.Design.Ampersand.FSpec.FSpec,
