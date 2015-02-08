@@ -155,7 +155,7 @@ instance Pretty a => Pretty (Term a) where
        PKl1 _ t -> pos t "+"
        PFlp _ t -> pos t "~"
        PCpl _ t -> pre t "-"
-       PBrk _ t -> lparen <+> pretty t <+> rparen
+       PBrk _ t -> parens $ pretty t
        where pos t op     = pretty t <> text op
              pre t op     = text op <> pretty t
              two t1 t2 op = pretty t1 <> text op <> pretty t2
@@ -173,7 +173,7 @@ instance Pretty TermPrim where
       where singleQuote = squotes . text
 
 instance Pretty a => Pretty (PairView a) where
-    pretty (PairView ss) = text "VIOLATION" <+> lparen <> listOf ss <> rparen
+    pretty (PairView ss) = text "VIOLATION" <+> parens (listOf ss)
 
 instance Pretty a => Pretty (PairViewSegment a) where
     pretty p = case p of PairViewText str -> text "TXT" <+> quote str
@@ -216,7 +216,7 @@ instance Pretty P_Interface where
                                      Nothing  -> empty
                                      Just str -> text "CLASS" <+> maybeQuote str
                        params = if null $ ifc_Params p then empty
-                                else lparen <+> listOf (ifc_Params p) <+> rparen
+                                else parens $ listOf (ifc_Params p)
                        args = if null $ ifc_Args p then empty
                               else braces(listOfLists $ ifc_Args p)
                        roles = if null $ ifc_Roles p then empty
@@ -238,7 +238,7 @@ instance Pretty a => Pretty (P_SubIfc a) where
 
 instance Pretty P_IdentDef where
     pretty (P_Id _ lbl cpt ats) =
-        text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> lparen <+> listOf ats <+> rparen
+        text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty P_IdentSegment where
     pretty (P_IdentExp p) =
@@ -246,7 +246,7 @@ instance Pretty P_IdentSegment where
               else text(obj_nm p) <+> listOfLists(obj_strs p) <> text ":" <~> obj_ctx p
 
 instance Pretty a => Pretty (P_ViewD a) where
-    pretty p = text "VIEW" <+> maybeQuote (vd_lbl p) <+> text ":" <~> vd_cpt p <+> lparen <+> listOf (vd_ats p) <+> rparen
+    pretty p = text "VIEW" <+> maybeQuote (vd_lbl p) <+> text ":" <~> vd_cpt p <+> parens (listOf (vd_ats p))
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
     pretty p = case p of
