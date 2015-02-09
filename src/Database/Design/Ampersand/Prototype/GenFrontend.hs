@@ -22,7 +22,6 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "GenFrontend"
 
 {- TODO
-- Mention context name in generated files
 - Converse navInterfaces?
 - Be more consistent with record selectors/pattern matching
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
@@ -165,7 +164,8 @@ genRouteProvider fSpec ifcs =
     ; let routeAttrs = [ RouteAttr { interfaceName = ifcName ifc, interfaceIdent = ifcIdent ifc } | ifc <- ifcs ]
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
-                       setAttribute "routes"              routeAttrs
+                       setAttribute "contextName"         (fsName fSpec)
+                     . setAttribute "routes"              routeAttrs
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
 
     ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
@@ -185,7 +185,8 @@ genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editabl
     ; lns <- genView_Object fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"              (name (source iExp) `elem` ["ONE", "SESSION"])
+                       setAttribute "contextName"         (fsName fSpec)
+                     . setAttribute "isRoot"              (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"   [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
@@ -283,7 +284,8 @@ genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles e
           
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
-                       setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
+                       setAttribute "contextName"              (fsName fSpec)
+                     . setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "allEditableNonPrims"      allEditableNonPrims
