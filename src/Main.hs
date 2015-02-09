@@ -95,8 +95,8 @@ doGenProto fSpec =
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
                           
-       reportSignals []        =  verboseLn (getOpts fSpec) "No signals for the initial population."
-       reportSignals conjViols = putStrLn $ "Signals for initial population:\n" ++ intercalate "\n"
+       reportSignals []        = verboseLn (getOpts fSpec) "No signals for the initial population."
+       reportSignals conjViols = verboseLn (getOpts fSpec) $ "Signals for initial population:\n" ++ intercalate "\n"
          [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
              showADL viols
          | (conj, viols) <- conjViols

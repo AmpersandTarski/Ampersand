@@ -36,7 +36,7 @@ pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to
                . checkUnique udefrules    -- Check uniquene names of: rules,
                . checkUnique patterns     --                          patterns,
                . checkUnique ctxprocs     --                          processes.
-               . checkUnique ctxifcs     --                          and interfaces.
+               . checkUnique ctxifcs      --                          and interfaces.
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -81,17 +81,26 @@ checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
 checkInterfaceRefs gCtx =
   case gCtx of
     Errors err -> Errors err
-    Checked ctx -> let allInterfaceNames = map name $ ctxifcs ctx
-                       undefinedInterfaceRefErrs = [ mkUndeclaredInterfaceError objDef (name ifc) ref 
-                                                   | ifc <- ctxifcs ctx, (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
-                                                   , ref `notElem` allInterfaceNames
-                                                   ]
+    Checked ctx -> let allInterfaceLookup = Map.fromList (map (\c -> (name c,c)) (ctxifcs ctx))
+                       undefinedInterfaceRefErrs
+                         = [ err
+                           | ifc <- ctxifcs ctx
+                           , (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
+                           , err <-
+                               case Map.lookup ref allInterfaceLookup of
+                                 Nothing -> [mkUndeclaredInterfaceError objDef (name ifc) ref ]
+                                 Just refIfc
+                                  -> let t = target (objctx objDef)
+                                         s = source (objctx (ifcObj refIfc))
+                                         isEq = name t == name s
+                                     in if isEq then [] else [mkNonMatchingInterfaceError objDef t s ref]
+                           ]
                    in  if null undefinedInterfaceRefErrs then gCtx else Errors undefinedInterfaceRefErrs
                    
   where getInterfaceRefs :: ObjectDef -> [(ObjectDef, String)]
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
-        getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}              = concatMap getInterfaceRefs objs
+        getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}            = concatMap getInterfaceRefs objs
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
@@ -313,7 +322,8 @@ pCtx2aCtx' _
      = (\(expr,subi)
         -> case subi of
             Nothing -> pure (obj expr Nothing)
-            Just (InterfaceRef s) -> pure (obj expr (Just$InterfaceRef s)) --TODO: check type!
+            Just (InterfaceRef s)
+              -> pure (obj expr (Just$InterfaceRef s)) -- type is checked later
             Just b@(Box c _ _)
               -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))

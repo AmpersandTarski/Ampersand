@@ -79,7 +79,7 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
       selected.id = ''; // reset input field
       \$scope.patch(ResourceId);
     }
-  }}
+  }
   
   // RemoveObject function to remove an item (key) from list (obj).
   \$scope.removeObject = function(obj, key, ResourceId){
