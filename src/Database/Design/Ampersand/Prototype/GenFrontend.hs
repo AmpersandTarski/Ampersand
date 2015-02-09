@@ -63,7 +63,10 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </>
 
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
-                         
+-- NOTE: due to a bug in HStringTemplate's checkTemplateDeep, non-existent attribute names on
+--       composite attributes in anonymous templates will hang the generator :-(
+--       Eg.  "$subObjects:{subObj| .. $subObj.nonExistentField$ .. }$"
+
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
