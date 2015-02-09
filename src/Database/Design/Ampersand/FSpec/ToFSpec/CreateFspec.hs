@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
-  (createFSpec,getPopulationsFrom)
+  (createFSpec,getPopulationsFrom,createFSpecForGenerics)
   
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -15,33 +15,50 @@ import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
 import Control.Applicative
+import Database.Design.Ampersand.Core.ToMeta
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Parsing"
+fatal = fatalMsg "CreateFspec"
+
+data FSpecType = Plain | Generics | Rap deriving(Eq)
+
+createFSpec :: Options -> IO (Guarded FSpec)
+createFSpec opts = createFSpec' (if includeRap opts then Rap else Plain) opts
+
+createFSpecForGenerics :: Options -> IO (Guarded FSpec)
+createFSpecForGenerics = createFSpec' Generics
 
 -- | create an FSpec, based on the provided command-line options.
-createFSpec :: Options  -- ^The options derived from the command line
+createFSpec' :: FSpecType -- The requested type of FSpec?
+            -> Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
-createFSpec opts =
+createFSpec' fType opts =
   do userCtx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let userFspec = pCtx2Fspec userCtx
-     if includeRap opts
-     then do rapCtx <- getRap  -- the P_Context of RAP
-             let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
-                                   -- P_Context, that contains all 'things' specified in the user's file 
-                                   -- as populations in RAP. These populations are the only contents of 
-                                   -- the returned P_Context. 
-                   (merge.sequenceA) [grind <?> userFspec, rapCtx] -- Both p_Contexts are merged into a single P_Context
-             return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
-     else return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.  
-  where
-    getRap :: IO (Guarded P_Context)
-    getRap = getFormalFile "FormalAmpersand.adl"
-    getGenerics :: IO (Guarded P_Context)
-    getGenerics getFormalFile "Generics.adl"
-    getFormalFile :: String -> IO(Guarded P_Context)
-    getFormalFile file
-     = do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> file
+     case fType of
+       Plain 
+         -> return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
+       _ 
+         -> do rapCtx <- getFormalFile -- the P_Context of the 
+               let rapCtxMeta = (pure . toMeta) <?> rapCtx
+                   grindedUserCtx = (pure . toMeta) <?> (grind <?> userFspec)
+               let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
+                                     -- P_Context, that contains all 'things' specified in the user's file 
+                                     -- as populations in RAP. These populations are the only contents of 
+                                     -- the returned P_Context. 
+                     (merge.sequenceA) [grindedUserCtx, rapCtxMeta] -- Both p_Contexts are merged into a single P_Context
+               return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
+     where
+    
+      
+    getFormalFile :: IO(Guarded P_Context)
+    getFormalFile 
+     = do let rapFile = ampersandDataDir opts 
+                    </> "FormalAmpersand" 
+                    </> (case fType of
+                           Plain  -> fatal 57 "Plain does not need to read anything."
+                           Generics -> "Generics.adl"
+                           Rap -> "FormalAmpersand.adl")
           exists <- doesFileExist rapFile
           if exists then parseADL opts rapFile
           else fatal 98 $ unlines
@@ -49,8 +66,6 @@ createFSpec opts =
                  , "  "++show rapFile
                  , "  (Make sure you have the latest content of Ampersand data. You might need to re-install ampersand...)"
                  ]
-    getGenerics :: IO (Guarded P_Context)
-    getGenerics
     
     
     toFspec :: A_Context -> Guarded FSpec
