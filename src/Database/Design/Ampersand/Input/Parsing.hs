@@ -11,8 +11,9 @@ import Database.Design.Ampersand.ADL1
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner (scan,initPos, Token)
-import UU.Parsing (parse, evalSteps, getMsgs, Pair(..), Message, Parser)
+import Database.Design.Ampersand.Input.ADL1.ParsingLib
+-- import Database.Design.Ampersand.Input.ADL1.UU_Scanner (scan,initPos, Token) -- Old UU lib replaced by Parsec 
+-- import UU.Parsing (parse, evalSteps, getMsgs, Pair(..), Message, Parser) -- Old UU lib replaced by Parsec 
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Data.List
@@ -67,7 +68,7 @@ runParser parser filename input =
                   in  Checked res
          msg:_ -> Errors [PE msg]
 
-runParser' :: forall res . Parser Token res -> String -> String -> Either ParseError res
+runParser' :: forall res . AmpParser res -> String -> String -> Either ParseError res
 runParser' parser filename input =
   let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
       steps = parse parser (scanner input)
