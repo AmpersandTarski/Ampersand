@@ -134,6 +134,7 @@ executable ampersand
                      Database.Design.Ampersand.FSpec,
                      Database.Design.Ampersand.FSpec.FPA,
                      Database.Design.Ampersand.FSpec.FSpec,
+                     Database.Design.Ampersand.FSpec.FSpecAux,
                      Database.Design.Ampersand.FSpec.GenerateUML,
                      Database.Design.Ampersand.FSpec.Graphic.ClassDiagram,
                      Database.Design.Ampersand.FSpec.Graphic.Graphics,
