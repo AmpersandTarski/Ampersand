@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
+         , copyDirRecursively
          , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
@@ -8,7 +9,8 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
          , phpIndent,showPhpStr,escapePhpStr,showPhpBool
          ) where
  
-import Prelude hiding (writeFile)
+import Prelude hiding (putStrLn, readFile, writeFile)
+import Control.Monad
 import Data.Char(isAlphaNum,isDigit)
 import Data.List
 import System.Directory
@@ -33,6 +35,32 @@ getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
   let protoDir = Opts.dirPrototype (getOpts fSpec)
   in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generics" else protoDir
+
+-- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
+copyDirRecursively :: FSpec -> FilePath -> FilePath -> IO ()
+copyDirRecursively fSpec srcBase tgtBase = copy ""
+  where copy fileOrDirPth = 
+         do { let srcPath = srcBase </> fileOrDirPth
+                  tgtPath = tgtBase </> fileOrDirPth
+            ; isDir <- doesDirectoryExist srcPath
+            ; if isDir then 
+               do { tgtExists <- doesDirectoryExist tgtPath
+                  ; when (not tgtExists) $
+                      createDirectory tgtPath
+                  ; fOrDs <- getProperDirectoryContents srcPath
+                  ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
+                  }
+              else
+               do { fileContents <- readFile srcPath 
+                  ; verboseLn (getOpts fSpec) $ "Copying: " ++ srcPath
+                  ; writeFile tgtPath fileContents
+                  }
+            }
+
+getProperDirectoryContents :: FilePath -> IO [String]
+getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $
+                                   getDirectoryContents pth
+
 
 quote :: String->String
 quote [] = []
