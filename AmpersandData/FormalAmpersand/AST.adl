@@ -53,7 +53,7 @@ PURPOSE RULE specialization
 {+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
 If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 -}
-RULE specialization : in;genspc~;gengen |- in
+RULE specialization : instanceOf;genspc~;gengen |- instanceOf
 MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN

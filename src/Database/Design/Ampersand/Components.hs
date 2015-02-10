@@ -87,7 +87,7 @@ doGenHaskell fSpec =
 doGenMeatGrinder :: FSpec -> IO()
 doGenMeatGrinder fSpec =
  do verboseLn (getOpts fSpec) $ "Generating meta-population for "++name fSpec
-    let (nm,content) = meatGrinder fSpec
+    let (nm,content) = makeGenerics fSpec
         outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension nm ".adl"
     writeFile outputFile content
     verboseLn (getOpts fSpec) $ "Meta population written into " ++ outputFile ++ "."

@@ -112,7 +112,7 @@ class RuleEngine {
 			}
 			return $violations;
 		}catch (Exception $e){
-			Notifications::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage);
+			Notifications::addError("While evaluating rule '".$rule['name']."': ".$e->getMessage());
 		}
 	}
 	
@@ -144,8 +144,8 @@ class RuleEngine {
 			
 			// Otherwise evaluate conjunct, cache and return violations
 			}else{
-			
 				$db = Database::singleton();
+				$violations = array();
 				
 				// Evaluate conjunct
 				$conjunct = RuleEngine::getConjunct($conjunctId);
@@ -182,7 +182,7 @@ class RuleEngine {
 			}	
 			
 		}catch (Exception $e){
-			Notifications::addError("While checking conjunct '".$conjunctId."': ".$e->getMessage);
+			Notifications::addError("While checking conjunct '" . $conjunctId . "': " . $e->getMessage());
 		}
 	}
 	

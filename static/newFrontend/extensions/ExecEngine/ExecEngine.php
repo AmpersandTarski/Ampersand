@@ -55,7 +55,9 @@ class ExecEngine {
 				
 				// Execute actions/functions
 				foreach ($functionsToBeCalled as $functionToBeCalled) { 
-				
+					
+					if(empty($functionToBeCalled)) continue; // skips to the next iteration if $functionToBeCalled is empty. This is the case when violation text starts with delimiter {EX}
+					
 					$params = explode(';', $functionToBeCalled); // Split off variables
 					$params = array_map('trim', $params); // Trim all params
 					$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function

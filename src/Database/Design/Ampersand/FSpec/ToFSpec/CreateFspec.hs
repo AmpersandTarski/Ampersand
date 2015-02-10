@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
-  (createFSpec,getPopulationsFrom)
+  (createFSpec,getPopulationsFrom,createFSpecForGenerics)
   
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -15,33 +15,59 @@ import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
 import Control.Applicative
+import Database.Design.Ampersand.Core.ToMeta
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Parsing"
+fatal = fatalMsg "CreateFspec"
+
+data FSpecType = Plain | Generics | Rap deriving(Eq)
+
+createFSpec :: Options -> IO (Guarded FSpec)
+createFSpec opts = createFSpec' (if includeRap opts then Generics else Plain) opts
+
+createFSpecForGenerics :: Options -> IO (Guarded FSpec)
+createFSpecForGenerics = createFSpec' Generics
 
 -- | create an FSpec, based on the provided command-line options.
-createFSpec :: Options  -- ^The options derived from the command line
+createFSpec' :: FSpecType -- The requested type of FSpec?
+            -> Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
-createFSpec opts =
-  do userCtx <- parseADL opts (fileName opts)
+createFSpec' fType opts =
+  do userCtx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let userFspec = pCtx2Fspec userCtx
-     if includeRap opts
-     then do rapCtx <- getRap
-             let populatedRapCtx = 
-                   (merge.sequenceA) [grind <?> userFspec, rapCtx]
-             return $ pCtx2Fspec populatedRapCtx
-     else return userFspec
-  where
-    getRap :: IO (Guarded P_Context)
-    getRap 
-     = do let rapFile = ampersandDataDir opts </> "FormalAmpersand" </> "FormalAmpersand.adl"
-          exists <- doesFileExist rapFile
-          if exists then parseADL opts rapFile
+     case fType of
+       Plain 
+         -> return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
+       _ 
+         -> do rapCtx <- getFormalFile -- the P_Context of the 
+               let rapCtxMeta = (pure . toMeta) <?> rapCtx
+                   grindedUserCtx = (pure . toMeta) <?> (grind <?> userFspec)
+               let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
+                                     -- P_Context, that contains all 'things' specified in the user's file 
+                                     -- as populations in RAP. These populations are the only contents of 
+                                     -- the returned P_Context. 
+                     (merge.sequenceA) [grindedUserCtx, rapCtxMeta] -- Both p_Contexts are merged into a single P_Context
+               return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
+     where
+    
+      
+    getFormalFile :: IO(Guarded P_Context)
+    getFormalFile 
+     = do let file = ampersandDataDir opts 
+                    </> "FormalAmpersand" 
+                    </> (case fType of
+                           Plain  -> fatal 57 "Plain does not need to read anything."
+                           Generics -> "Generics.adl"
+                           Rap -> "FormalAmpersand.adl")
+          exists <- doesFileExist file
+          if exists then parseADL opts file
           else fatal 98 $ unlines
-                 [ "Ampersand isn't installed properly. Formal specification of Ampersand expected at:"
-                 , "  "++show rapFile
-                 , "  (You might need to re-install ampersand...)"
+                 [ "Ampersand isn't installed properly. Couldn't read:"
+                 , "  "++show file
+                 , "  (Make sure you have the latest content of Ampersand data. You might need to re-install ampersand...)"
                  ]
+    
+    
     toFspec :: A_Context -> Guarded FSpec
     toFspec = pure . makeFSpec opts
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
@@ -54,7 +80,10 @@ createFSpec opts =
     grind :: FSpec -> Guarded P_Context
     grind fSpec
       = fmap fstIfNoIncludes $ parseCtx f c
-      where (f,c) = meatGrinder fSpec 
+      where (f,c) = case fType of
+                      Plain  -> fatal 84 "Plain does not need to grind anything."
+                      Generics -> makeGenerics fSpec
+                      Rap -> meatGrinder fSpec 
             fstIfNoIncludes (a,includes)
              = case includes of 
                [] -> a
