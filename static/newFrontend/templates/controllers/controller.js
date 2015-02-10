@@ -10,7 +10,7 @@ Editable relations: [$editableRelations;separator=", "$]
 AmpersandApp.controller('$interfaceIdent$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
   
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
-  url = encodeURIComponent('interface/$interfaceName$');
+  url = 'interface/$interfaceName$';
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
@@ -94,7 +94,7 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
 
   // A property for every editable relation to another concept (i.e. non-primitive datatypes)
 $allEditableNonPrims:{editableNonPrim|
-  \$scope.typeahead['$editableNonPrim.labelName$'] = Restangular.all(encodeURIComponent('resource/$editableNonPrim.targetConcept$')).getList().\$object;}$
+  \$scope.typeahead['$editableNonPrim.labelName$'] = Restangular.all('resource/$editableNonPrim.targetConcept$').getList().\$object;}$
 $else$  // The interface does not contain editable relations to non-primitive concepts
 $endif$
 });
