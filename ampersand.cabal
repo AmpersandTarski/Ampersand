@@ -24,6 +24,7 @@ data-files:
                 AmpersandData/FormalAmpersand/ASTdocumentation.adl, 
                 AmpersandData/FormalAmpersand/FormalAmpersand.adl, 
                 AmpersandData/FormalAmpersand/FSpec.adl, 
+                AmpersandData/FormalAmpersand/Generics.adl, 
                 AmpersandData/FormalAmpersand/IS.adl, 
                 AmpersandData/FormalAmpersand/IS.ifc, 
                 AmpersandData/FormalAmpersand/IS.pop, 
