@@ -163,7 +163,7 @@ data RouteAttr = RouteAttr { interfaceName :: String, interfaceIdent:: String } 
 
 genRouteProvider :: FSpec -> [FEInterface] -> IO ()
 genRouteProvider fSpec ifcs =
- do { verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
+ do { --verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
     ; let routeAttrs = [ RouteAttr { interfaceName = ifcName ifc, interfaceIdent = ifcIdent ifc } | ifc <- ifcs ]
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
@@ -184,7 +184,7 @@ genView_Interfaces fSpec ifcs =
 
 genView_Interface :: FSpec -> FEInterface -> IO ()
 genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
- do { verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show iName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
+ do { --verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show iName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- genView_Object fSpec 0 obj
     ; template <- readTemplate fSpec "views/TopLevelInterface.html"
     ; let contents = renderTemplate template $
@@ -211,16 +211,17 @@ genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterfaces _) =
   case atomicOrBox obj of
     FEAtomic mPrimTemplate ->
-     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
+     do { {-
+          verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                         " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
-        
+          -}
         -- For now, we choose specific template based on target concept. This will probably be too weak. 
         -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
         ; template <- readTemplate fSpec $ fromMaybe "views/Atomic.html" mPrimTemplate -- Atomic is the default template
                 
-        ; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
-                                              | NavInterface n rs <- navInterfaces ]
+        --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
+        --                                      | NavInterface n rs <- navInterfaces ]
         ; let mNavInterface = case navInterfaces of -- TODO: do something with roles here. For now, simply use the first interface, if any.
                                 []                        -> Nothing
                                 NavInterface iName _ :_ -> Just iName
@@ -234,10 +235,11 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
                            . setAttribute "target"       (name tgt)     -- TODO: escape
         }
     FEBox mClass subObjs ->
-     do { verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
+     do { {-
+          verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
                                         " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
                                         (if isEditable then "" else "not ") ++ "editable"
-
+          -}
         ; subObjAttrs <- mapM genView_SubObject subObjs
                 
         ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
@@ -274,7 +276,7 @@ data NonPrimEditableAttr = NPEAttr { labelName :: String, targetConcept :: Strin
 
 genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
- do { verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
+ do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
           allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = name $ objTarget o } -- TODO: escape 
                                     | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
