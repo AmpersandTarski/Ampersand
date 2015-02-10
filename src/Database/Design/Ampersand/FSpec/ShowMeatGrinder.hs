@@ -399,10 +399,11 @@ instance ShowADL Pop where
               if null (popPairs pop)
               then "[]"
               else "\n"++indentA++"[ "++intercalate ("\n"++indentA++"; ") showContent++indentA++"]"
-      Comment{} -> "-- "++comment pop
+      Comment{} -> intercalate "\n" (map prepend (lines (comment pop)))
     where indentA = "   "
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
+          prepend str = "-- " ++ str
 
 class Unique a => AdlId a where
  uri :: a -> String
