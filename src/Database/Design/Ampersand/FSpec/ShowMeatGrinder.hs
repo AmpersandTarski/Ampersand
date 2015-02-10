@@ -8,6 +8,7 @@ import Data.List
 import Data.Char
 import Data.Ord
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.Motivations
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
@@ -15,12 +16,12 @@ import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Core.ParseTree
+
 --import Data.Hashable
 import Data.Maybe
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.ShowMeatGrinder"
-
+fatal = fatalMsg "ShowMeatGrinder"
 
 makeGenerics :: FSpec -> (FilePath,String)
 makeGenerics fSpec = ("TemporaryPopulationsFileOfGenerics" ,content (generics fSpec) "Generics" fSpec )
@@ -50,11 +51,32 @@ content popKind cName fSpec = unlines
     , "ENDCONTEXT"
     ])
 instance GenericPopulations FSpec where
- generics _ _ =
+ generics _ fSpec =
    filter (not.nullContent)
     (
-    [Comment "TODO: Fill in the population of Generics..."]
+    [ Pop "versionInfo" "Context"  "AmpersandVersion"
+           [(uri fSpec, ampersandVersionStr)]
+    , Pop "contextName" "Context" "ContextName"
+           [(uri fSpec, name fSpec)]
+    , Pop "dbName" "Context" "DatabaseName"
+           [(uri fSpec, dbName (getOpts fSpec))]
+    ]
+  ++[ Comment " ", Comment $ "[Relations]--: (count="++(show.length.allDecls) fSpec++")"]
+  ++   concatMap (generics fSpec) (allDecls fSpec)
+  ++[ Comment " ", Comment $ "[Concepts]--: (count="++(show.length) [c | c <- allConcepts fSpec, c /= ONE]++")"]
+  ++   concatMap (generics fSpec) [c | c <- allConcepts fSpec, c /= ONE]
+  ++[ Comment " ", Comment $ "[TableColumnInfo]--: (count="++(show.length) allSqlPlugs++")"]
+  ++   concatMap (generics fSpec) allSqlPlugs
+  ++[ Comment " ", Comment $ "[Rules]--: (count="++(show.length.allRules) fSpec++")"]
+  ++   concatMap (generics fSpec) (allRules fSpec)
+--  ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.allConjuncts) fSpec++")"]
+--  ++   concatMap (generics fSpec) (allConjuncts fSpec)
+--  ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.allRoles) fSpec++")"]
+--  ++   concatMap (generics fSpec) (allRoles fSpec)
     )
+  where
+    allSqlPlugs = [plug | InternalPlug plug <- plugInfos fSpec]
+
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
@@ -123,6 +145,28 @@ instance MetaPopulations A_Gen where
           ]
   ]
 
+instance GenericPopulations A_Concept where
+ generics fSpec cpt =
+   case cpt of
+     PlainConcept{} ->
+      [ Comment " "
+      , Comment $ " Concept `"++name cpt++"` "
+      , Pop "allConcepts" "Context" "Concept"
+             [(uri fSpec,uri cpt)]
+      , Pop "cptnm" "Concept" "ConceptName"
+             [(uri cpt, name cpt)]
+      , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
+             [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
+      , Pop "affectedSigConjunctIds" "Concept" "ConjunctID"
+             [(uri cpt, uri conj) | conj <- filterFrontEndSigConjuncts affConjs]
+      , Pop "conceptTableFields" "Concept" "TableColumn"
+             [(uri cpt, uri fld) | fld <- tablesAndFields]
+      ]
+     ONE -> [
+            ]
+  where
+   affConjs = fromMaybe [] (lookup cpt $ allConjsPerConcept fSpec)
+   tablesAndFields = nub . concatMap (lookupCpt fSpec) $ cpt : largerConcepts (gens fSpec) cpt
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
    case cpt of
@@ -141,7 +185,26 @@ instance MetaPopulations A_Concept where
       ]
      ONE -> [
             ]
+instance GenericPopulations PlugSQL where
+  generics fSpec plug =
+      [ Comment " "
+      , Comment $ "Plug: '"++name plug++"'"
+      , Pop "tableInfo" "Context" "DBTable"
+               [(uri fSpec, uri plug)]
+      ] ++ concatMap (generics fSpec) [(plug,fld) | fld <- plugFields plug]
 
+instance GenericPopulations (PlugSQL,SqlField) where
+  generics _ (plug,fld) =
+      [ Pop "columninfo" "DBTable" "TableColumn"
+                 [(uri plug, uri (plug,fld)) ]
+      , Pop "concept" "TableColumn" "Concept"
+                 [(uri (plug,fld), uri.target.fldexpr $ fld)]
+      , Pop "unique" "TableColumn" "BOOLEAN"
+                 [(uri (plug,fld), uri.flduniq $ fld)]
+      , Pop "null" "TableColumn" "BOOLEAN"
+                 [(uri (plug,fld), uri.fldnull $ fld)]
+      ]
+     
 instance MetaPopulations AtomID where
  metaPops _ atm = 
    [ Pop "atmRoot" "AtomID" "PlainConcept" 
@@ -165,6 +228,36 @@ instance MetaPopulations Sign where
              [(uri sgn, uri (target sgn))]
       ]
 
+instance GenericPopulations Declaration where
+ generics fSpec dcl =
+   case dcl of 
+     Sgn{} ->
+      [ Comment " "
+      , Comment $ " Relation '"++showADL dcl++"'"
+      , Pop "allRelations" "Context" "Relation"
+             [(uri fSpec, uri dcl)]
+      , Pop "name" "Relation" "RelationName"
+             [(uri dcl,name dcl)]
+      , Pop "srcConcept" "Relation" "Concept"
+             [(uri dcl,uri (source dcl))]
+      , Pop "tgtConcept" "Relation" "Concept"
+             [(uri dcl,uri (target dcl))]
+      , Pop "table" "Relation" "DBTable"
+             [(uri dcl,uri table)]
+      , Pop "srcCol" "Relation" "DBTableColumn"
+             [(uri dcl,uri (table,srcCol))]
+      , Pop "tgtCol" "Relation" "DBTableColumn"
+             [(uri dcl,uri (table,tgtCol))]
+      , Pop "affectedInvConjunctIds" "Relation" "ConjunctID"
+             [(uri dcl,uri conj) | conj <- filterFrontEndInvConjuncts affConjs ]
+      , Pop "affectedSigConjunctIds" "Relation" "ConjunctID"
+             [(uri dcl,uri conj) | conj <- filterFrontEndSigConjuncts affConjs ]
+      ]
+     Isn{} -> fatal 157 "Isn is not implemented yet"
+     Vs{}  -> fatal 158 "Vs is not implemented yet"
+   where
+     (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl
+     affConjs = fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
 instance MetaPopulations Declaration where
  metaPops fSpec dcl =
    case dcl of
@@ -219,6 +312,32 @@ instance MetaPopulations Expression where
              [(uri e, showADL e)]
       ]
 
+instance GenericPopulations Rule where
+ generics fSpec rul =
+      [ Comment " "
+      , Comment $ " Rule `"++name rul++"` "
+      , Pop "allRules" "Context" "Rule"
+             [(uri fSpec, uri rul)]
+      , Pop "name"  "Rule" "RuleID"
+             [(uri rul,name rul)]
+      , Pop "ruleAdl"  "Rule" "Adl"
+             [(uri rul,(showADL.rrexp) rul)]
+      , Pop "origin"  "Rule" "Origin"
+             [(uri rul,(show.origin) rul)]
+      , Pop "meaning"  "Rule" "Meaning"
+             [(uri rul,aMarkup2String m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+      , Pop "message"  "Rule" "Message"
+             [(uri rul,aMarkup2String m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+      , Pop "srcConcept"  "Rule" "Concept"
+             [(uri rul,(uri.source.rrexp) rul)]
+      , Pop "tgtConcept"  "Rule" "Concept"
+             [(uri rul,(uri.target.rrexp) rul)]
+      , Pop "conjunctIds"  "Rule" "ConjunctID"
+             [(uri rul,uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+--      , Pop "pairView"  "Rule" "PairView"
+--             [(uri rul,()]
+      ]
+       
 instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
@@ -301,19 +420,24 @@ instance AdlId PairID
 instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
+instance AdlId (PlugSQL,SqlField)
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Sign
+instance AdlId Conjunct
+ 
+instance AdlId Bool where
+ uri = showUnique
 instance AdlId a => AdlId [a] where
 
 mkAtom :: FSpec  -> A_Concept -> String -> AtomID
 mkAtom fSpec cpt value = 
-   AtomID { atmRoots = rootConcepts gens [cpt]
-          , atmIn   = largerConcepts gens cpt `uni` [cpt]
+   AtomID { atmRoots = rootConcepts gs [cpt]
+          , atmIn   = largerConcepts gs cpt `uni` [cpt]
           , atmVal  = value
           }
   where
-    gens = vgens fSpec
+    gs = vgens fSpec
 mkLink :: FSpec -> Sign -> Paire -> PairID
 mkLink fSpec sgn p 
   = PairID { lnkSgn = sgn
@@ -339,3 +463,22 @@ class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
 class GenericPopulations a where
  generics :: FSpec -> a -> [Pop]   
+
+
+--------- Below here are some functions copied from Generate.hs TODO: Clean up.
+-- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
+-- two abstractions to guarantee the same implementation.
+isFrontEndInvariant :: Rule -> Bool
+isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
+
+isFrontEndSignal :: Rule -> Bool
+isFrontEndSignal r = isSignal r
+
+-- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
+-- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
+-- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
+filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
+filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_orgRules c) conjs
+
+filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
+filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs

@@ -37,25 +37,25 @@ MEANING "When a pair in a relation is edited (created, updated or deleted), a (s
 --[Concepts]--
 RELATION allConcepts[Context*Concept] [SUR,INJ]
 -- Aanname: De smerige id van een Concept is gelijk aan de naam van dat Concept.
+RELATION cptnm[Concept*ConceptName][TOT,UNI] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
 RELATION affectedInvConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (signal) conjunct may be affected"
-RELATION conceptTables[Concept*ConceptTable] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
-MEANING "Every concept has a ConceptTable"
+RELATION conceptTableFields[Concept*TableColumn] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
+MEANING "the database-table column of the concept"
 --[ConceptTables]--
-RELATION table[ConceptTable*DBTable] [UNI,TOT]
-MEANING "A ConceptTable is associated with a database-table"
-RELATION cols[ConceptTable*DBTableColumn] [TOT]
-MEANING "A ConceptTable is associated with at least one database-table column"
+--MEANING "A ConceptTable is associated with a database-table"
+-- cols[ConceptTable*DBTableColumn] [TOT]
+--MEANING "A ConceptTable is associated with at least one database-table column"
 
 
 --[TableColumnInfo]--  -- HJO: Ik heb hier bewust moeten afwijken van huidige Generics.php, omdat er een concept tussen zit
-RELATION tableInfo[Context*Plug] [SUR,INJ]  
-RELATION columninfo[Plug*ColumnInfo] [SUR,INJ]
-RELATION concept[ColumnInfo*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
-RELATION unique[ColumnInfo*BOOLEAN] [UNI,TOT] -- is this column unique? ('true' or 'false')
-RELATION null[ColumnInfo*BOOLEAN] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
+RELATION tableInfo[Context*DBTable] [SUR,INJ]  
+RELATION columninfo[DBTable*TableColumn] [SUR,INJ]
+RELATION concept[TableColumn*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
+RELATION unique[TableColumn*BOOLEAN] [UNI,TOT] -- is this column unique? ('true' or 'false')
+RELATION null[TableColumn*BOOLEAN] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
 
 
 --[Rules]--
@@ -66,8 +66,8 @@ RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[Busine
 RELATION origin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
 RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
 RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
-RELATION srcConcept[Rule*Concept] -- e.g. 'BusinessFunction'
-RELATION tgtConcept[Rule*Concept] -- e.g. 'BusinessFunction'
+RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
+RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 RELATION conjunctIds[Rule*ConjunctID] -- e.g. 'conj_159'
 RELATION pairView[Rule*PairView] -- e.g. 
 --                  array

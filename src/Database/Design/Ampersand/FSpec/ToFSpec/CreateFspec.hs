@@ -23,7 +23,7 @@ fatal = fatalMsg "CreateFspec"
 data FSpecType = Plain | Generics | Rap deriving(Eq)
 
 createFSpec :: Options -> IO (Guarded FSpec)
-createFSpec opts = createFSpec' (if includeRap opts then Rap else Plain) opts
+createFSpec opts = createFSpec' (if includeRap opts then Generics else Plain) opts
 
 createFSpecForGenerics :: Options -> IO (Guarded FSpec)
 createFSpecForGenerics = createFSpec' Generics
@@ -53,17 +53,17 @@ createFSpec' fType opts =
       
     getFormalFile :: IO(Guarded P_Context)
     getFormalFile 
-     = do let rapFile = ampersandDataDir opts 
+     = do let file = ampersandDataDir opts 
                     </> "FormalAmpersand" 
                     </> (case fType of
                            Plain  -> fatal 57 "Plain does not need to read anything."
                            Generics -> "Generics.adl"
                            Rap -> "FormalAmpersand.adl")
-          exists <- doesFileExist rapFile
-          if exists then parseADL opts rapFile
+          exists <- doesFileExist file
+          if exists then parseADL opts file
           else fatal 98 $ unlines
                  [ "Ampersand isn't installed properly. Couldn't read:"
-                 , "  "++show rapFile
+                 , "  "++show file
                  , "  (Make sure you have the latest content of Ampersand data. You might need to re-install ampersand...)"
                  ]
     
@@ -80,7 +80,10 @@ createFSpec' fType opts =
     grind :: FSpec -> Guarded P_Context
     grind fSpec
       = fmap fstIfNoIncludes $ parseCtx f c
-      where (f,c) = meatGrinder fSpec 
+      where (f,c) = case fType of
+                      Plain  -> fatal 84 "Plain does not need to grind anything."
+                      Generics -> makeGenerics fSpec
+                      Rap -> meatGrinder fSpec 
             fstIfNoIncludes (a,includes)
              = case includes of 
                [] -> a

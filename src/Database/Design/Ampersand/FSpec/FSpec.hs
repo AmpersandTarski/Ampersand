@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 {- | The intentions behind FSpec (SJ 30 dec 2008):
 Generation of functional specifications is the core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.
@@ -26,6 +27,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations, getExpressionRelation
           , Conjunct(..),DnfClause(..), dnf2expr
+          , Language(..)
           )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -332,8 +334,10 @@ data SqlField = Fld { fldname :: String
                     , flduse ::  SqlFieldUsage
                     , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
                     , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
-                    } deriving (Eq, Show)
+                    } deriving (Eq, Show,Typeable)
 
+instance Unique (PlugSQL,SqlField) where
+  showUnique (p,f) = showUnique p++"."++fldname f
 instance Ord SqlField where
   compare x y = compare (fldname x) (fldname y)
 instance ConceptStructure SqlField where

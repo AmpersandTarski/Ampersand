@@ -203,12 +203,14 @@ data Conjunct = Cjct { rc_id         :: String -- string that identifies this co
                      , rc_orgRules   :: [Rule] -- All rules this conjunct originates from
                      , rc_conjunct   :: Expression
                      , rc_dnfClauses :: [DnfClause]
-                     } deriving Show
+                     } deriving (Show,Typeable)
 
 data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
 
 instance Eq Conjunct where
   rc==rc' = rc_id rc==rc_id rc'
+instance Unique Conjunct where
+  showUnique = rc_id
 instance Prelude.Ord Conjunct where
   compare = Prelude.compare `on` rc_id
 

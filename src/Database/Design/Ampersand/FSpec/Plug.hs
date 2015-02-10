@@ -370,11 +370,11 @@ clusterBy f cs xs
 --   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.
 type TblRecord = [Maybe String]
 tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
-tblcontents gens udp plug@ScalarSQL{}
-   = [[Just x] | x<-atomsOf gens udp (cLkp plug)]
-tblcontents gens udp plug@BinSQL{}
-   = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gens udp (mLkp plug)]
-tblcontents gens udp plug@TblSQL{}
+tblcontents gs udp plug@ScalarSQL{}
+   = [[Just x] | x<-atomsOf gs udp (cLkp plug)]
+tblcontents gs udp plug@BinSQL{}
+   = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gs udp (mLkp plug)]
+tblcontents gs udp plug@TblSQL{}
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other,
  --where NULL in a kernel field implies NULL in the following kernel fields
@@ -384,13 +384,13 @@ tblcontents gens udp plug@TblSQL{}
  | otherwise = transpose
                  ( map Just cAtoms
                  : [case fExp of
-                       EDcI c -> [ if a `elem` atomsOf gens udp c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents gens udp) fExp | a<-cAtoms ]
+                       EDcI c -> [ if a `elem` atomsOf gs udp c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents gs udp) fExp | a<-cAtoms ]
                    | fld<-tail (fields plug), let fExp=fldexpr fld
                    ]
                  )
                  where
-                   cAtoms = (atomsOf gens udp . source . fldexpr . head . fields) plug
+                   cAtoms = (atomsOf gs udp . source . fldexpr . head . fields) plug
                    lkp a pairs
                     = case [ p | p<-pairs, a==srcPaire p ] of
                        [] -> Nothing

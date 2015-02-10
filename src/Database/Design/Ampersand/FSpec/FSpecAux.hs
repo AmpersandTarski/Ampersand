@@ -6,7 +6,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms(disjNF)
 import Database.Design.Ampersand.Classes.Relational(isTrue)
 import Database.Design.Ampersand.ADL1.Expression(notCpl)
-import Database.Design.Ampersand.FSpec.Plug
+import Database.Design.Ampersand.FSpec.Plug(plugpath)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 

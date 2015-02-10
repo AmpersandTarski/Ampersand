@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Basics.Unique
 where
 import Data.Typeable
 import Data.List
+import Data.Char
 import Database.Design.Ampersand.Basics.Version
 
 fatal :: Int -> String -> a
@@ -45,3 +46,5 @@ instance Unique a => Unique [a] where
    showUnique [] = fatal 74 $ "empty list is not unique"
    showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
 
+instance Unique Bool where
+ showUnique = map toLower . show 
