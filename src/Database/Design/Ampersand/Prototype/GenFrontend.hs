@@ -70,6 +70,17 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </>
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
+
+    ; let contextDir = takeDirectory $ fileName (getOpts fSpec)
+          localTemplateDir = contextDir </> "templates"
+    ; localTemplatesExist <- doesDirectoryExist $ localTemplateDir
+    ; if localTemplatesExist then
+       do { putStrLn $ "Copying used-defined templates from " ++ localTemplateDir
+          ; copyDirRecursively fSpec localTemplateDir (getTemplateDir fSpec)
+          }
+      else
+        putStrLn $ "No user-defined templates declared (there is no directory " ++ localTemplateDir ++ ")"
+
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
