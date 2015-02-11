@@ -116,7 +116,7 @@ RELATION violationsSQL[Conjunct*MySQLQuery] -- e.g. '/* case: (EIsc lst\\\'@(_:_
 
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
-RELATION roleRules[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen")
+RELATION ruleNames[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen")
 
 --[
 --//RELATION generics_allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView()).

@@ -69,10 +69,11 @@ instance GenericPopulations FSpec where
   ++   concatMap (generics fSpec) allSqlPlugs
   ++[ Comment " ", Comment $ "[Rules]--: (count="++(show.length.allRules) fSpec++")"]
   ++   concatMap (generics fSpec) (allRules fSpec)
---  ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.allConjuncts) fSpec++")"]
---  ++   concatMap (generics fSpec) (allConjuncts fSpec)
---  ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.allRoles) fSpec++")"]
---  ++   concatMap (generics fSpec) (allRoles fSpec)
+  ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.vconjs) fSpec++")"]
+  ++   concatMap (generics fSpec) (vconjs fSpec)
+-- TODO: Roles
+--  ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.fRoles) fSpec++")"]
+--  ++   concatMap (generics fSpec) (fRoles fSpec)
     )
   where
     allSqlPlugs = [plug | InternalPlug plug <- plugInfos fSpec]
@@ -233,7 +234,7 @@ instance GenericPopulations Declaration where
    case dcl of 
      Sgn{} ->
       [ Comment " "
-      , Comment $ " Relation '"++showADL dcl++"'"
+      , Comment $ " Relation '"++name dcl++showSign (sign dcl)++"'"
       , Pop "allRelations" "Context" "Relation"
              [(uri fSpec, uri dcl)]
       , Pop "name" "Relation" "RelationName"
@@ -334,6 +335,7 @@ instance GenericPopulations Rule where
              [(uri rul,(uri.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
              [(uri rul,uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+--TODO: Add pairView:
 --      , Pop "pairView"  "Rule" "PairView"
 --             [(uri rul,()]
       ]
@@ -354,6 +356,8 @@ instance MetaPopulations Rule where
         Pop "sign" "Rule" "Sign"
              [(uri rul,uri (rrtyp rul))]
       ]
+
+
 
 instance MetaPopulations PlugInfo where
  metaPops _ plug = 
@@ -380,6 +384,22 @@ instance MetaPopulations PairID where
   , Pop "right" "PairID" "AtomID"
          [(uri p, uri(lnkRight p))]
   ]
+
+instance GenericPopulations Conjunct where
+ generics fSpec conj =
+  [ Comment $ "Conjunct: '"++rc_id conj++"'."
+  , Pop "allConjuncts" "Context" "Conjunct" 
+         [(uri fSpec, uri conj)]
+  , Pop "signalRuleNames" "Conjunct" "Rule" 
+         [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndSignal r]
+  , Pop "invariantRuleNames" "Conjunct" "Rule" 
+         [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
+--TODO: ViolationsSQL
+--  , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
+--         [(uri conj
+--             ,selectExpr fSpec 0 "src" "tgt" (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
+--          )]
+  ] 
 
 
 -----------------------------------------------------

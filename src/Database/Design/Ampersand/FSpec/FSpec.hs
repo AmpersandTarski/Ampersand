@@ -26,7 +26,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations, getExpressionRelation
-          , Conjunct(..),DnfClause(..), dnf2expr
+          , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
           )
 where
