@@ -129,9 +129,11 @@ data RoleRule
      , mPos :: Origin      -- ^ position in the Ampersand script
      } deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
 
-data Role = Role String deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
+data Role = Role String deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
 instance Named Role where
  name (Role nm) = nm
+instance Unique Role where
+ showUnique = name
 instance Traced RoleRule where
  origin = mPos
 

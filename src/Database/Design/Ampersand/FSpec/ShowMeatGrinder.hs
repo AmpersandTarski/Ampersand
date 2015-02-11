@@ -71,9 +71,8 @@ instance GenericPopulations FSpec where
   ++   concatMap (generics fSpec) (allRules fSpec)
   ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.vconjs) fSpec++")"]
   ++   concatMap (generics fSpec) (vconjs fSpec)
--- TODO: Roles
---  ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.fRoles) fSpec++")"]
---  ++   concatMap (generics fSpec) (fRoles fSpec)
+  ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.fRoles) fSpec++")"]
+  ++   concatMap (generics fSpec) (fRoles fSpec)
     )
   where
     allSqlPlugs = [plug | InternalPlug plug <- plugInfos fSpec]
@@ -206,6 +205,17 @@ instance GenericPopulations (PlugSQL,SqlField) where
                  [(uri (plug,fld), uri.fldnull $ fld)]
       ]
      
+instance GenericPopulations Role where
+  generics fSpec rol =
+      [ Comment $ "Role: '"++name rol++"'"
+      , Pop "allRoles" "Context" "Role"
+                 [(uri fSpec, uri rol) ]
+      , Pop "name" "Role" "RoleName"
+                 [(uri rol, name rol) ]
+      , Pop "ruleNames" "Role" "Rule"
+                 [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
+      ]
+
 instance MetaPopulations AtomID where
  metaPops _ atm = 
    [ Pop "atmRoot" "AtomID" "PlainConcept" 
@@ -444,6 +454,7 @@ instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlField)
 instance AdlId Purpose
 instance AdlId Rule
+instance AdlId Role
 instance AdlId Sign
 instance AdlId Conjunct
  
