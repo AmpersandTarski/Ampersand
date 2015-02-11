@@ -48,7 +48,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
+import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
@@ -107,8 +107,8 @@ data Process = Proc { prcNm :: String
                     , prcGens :: [A_Gen]
                     , prcDcls :: [Declaration]
                     , prcUps :: [Population]  -- ^ The user defined populations in this process
-                    , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
-                    , prcRRels :: [(String,Declaration)] -- ^ The assignment of roles to Relations.
+                    , prcRRuls :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
+                    , prcRRels :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
                     , prcIds :: [IdentityDef]            -- ^ The identity definitions defined in this process
                     , prcVds :: [ViewDef]            -- ^ The view definitions defined in this process
                     , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
@@ -354,7 +354,7 @@ rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts
 data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions are allowed!
                      , ifcClass ::    Maybe String
                      , ifcArgs ::     [[String]]
-                     , ifcRoles ::    [String]
+                     , ifcRoles ::    [Role]
                      , ifcObj ::      ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcEcas ::     [ECArule]
                      , ifcControls :: [Conjunct]

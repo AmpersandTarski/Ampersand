@@ -296,7 +296,7 @@ generateRoles fSpec =
   addToLastLine ";"
     (indent 4
       (blockParenthesize  "(" ")" ","
-         [ [ "array ( 'name' => "++showPhpStr role
+         [ [ "array ( 'name' => "++showPhpStr (name role)
            , "      , 'ruleNames' => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
            , "      )" ]
          | role <- fRoles fSpec ]
@@ -346,12 +346,12 @@ generateInterfaces fSpec =
 generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"
-                                             rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
+                                             rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
   , showPhpStr (name interface) ++ " => " ] ++
   indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
-          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
+          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map (showPhpStr.name) $ ifcRoles interface) ++")" 
           , "      , 'invConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ invConjuncts) ++")"
           , "      , 'sigConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ sigConjuncts) ++")"
           ]

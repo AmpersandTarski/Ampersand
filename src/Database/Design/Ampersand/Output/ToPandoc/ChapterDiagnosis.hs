@@ -73,7 +73,7 @@ chpDiagnosis fSpec
         (( case fsLang fSpec of
           Dutch   -> [Plain [Str "regel"]]
           English -> [Plain [Str "rule" ]]
-        ) :    [ [Plain [Str r]] | r <- fRoles fSpec ]
+        ) :    [ [Plain [Str (name r)]] | r <- fRoles fSpec ]
         )
         [ [Plain [Str (name rul)]]:[f r rul | r<-fRoles fSpec] | rul<-ruls ]
         ]
@@ -91,7 +91,7 @@ chpDiagnosis fSpec
           | (role,rul)<-fRoleRuls fSpec
           , and (map (mayedit role) (relsUsedIn rul))
           ]
-      mayedit :: String -> Declaration -> Bool
+      mayedit :: Role -> Declaration -> Bool
       mayedit role decl = decl `elem` ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec)))
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role,rul)
@@ -468,11 +468,11 @@ chpDiagnosis fSpec
         (English,_,[])    -> Para [ Str "The role-rule assignments in any of the described processes have been assigned to rules within that same process." ]
         (Dutch,  _,[(p,rol,rul)])
                           -> Para [ Str "Er is één koppeling tussen een rol en een regel van buiten het proces: "
-                                  , Str "Rol ", Quoted SingleQuote [Str rol], Str " uit proces ", Quoted SingleQuote [Str (name p)], Str " is gebonden aan regel ", Quoted SingleQuote [Str (name rul)], Str " uit ", Quoted SingleQuote [Str (r_env rul)], Str "."
+                                  , Str "Rol ", Quoted SingleQuote [Str (name rol)], Str " uit proces ", Quoted SingleQuote [Str (name p)], Str " is gebonden aan regel ", Quoted SingleQuote [Str (name rul)], Str " uit ", Quoted SingleQuote [Str (r_env rul)], Str "."
                                   ]
         (English,_,[(p,rol,rul)])
                           -> Para [ Str "There is one role that is assigned to a rule outside the process: "
-                                  , Str "Role ", Quoted SingleQuote [Str rol], Str ", defined in process ", Quoted SingleQuote [Str (name p)], Str ", is assigned to rule ", Quoted SingleQuote [Str (name rul)], Str " from ", Quoted SingleQuote [Str (r_env rul)], Str "."
+                                  , Str "Role ", Quoted SingleQuote [Str (name rol)], Str ", defined in process ", Quoted SingleQuote [Str (name p)], Str ", is assigned to rule ", Quoted SingleQuote [Str (name rul)], Str " from ", Quoted SingleQuote [Str (r_env rul)], Str "."
                                   ]
         (Dutch,  [p],_)   -> Para [ Str "De volgende tabel toont welke regels in welke patterns aan een rol gekoppeld zijn. "
                                   , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) in proces ", Quoted SingleQuote [Str (name p)], Str " zal handhaven. "
@@ -500,7 +500,7 @@ chpDiagnosis fSpec
           English ->
               [[Plain [Str "role"]]]++[[Plain [Str "in process"]] | multProcs]++[[Plain [Str "rule" ]], [Plain [Str "from" ]] ]
        )
-       [ [[Plain [Str rol]]]++[[Plain [Str (name p)]] | multProcs]++[[Plain [Str (name rul)]], [Plain [Str (r_env rul)]]]
+       [ [[Plain [Str (name rol)]]]++[[Plain [Str (name p)]] | multProcs]++[[Plain [Str (name rul)]], [Plain [Str (r_env rul)]]]
        | (p,rol,rul)<-prs
        ]
      | length prs>1]
@@ -596,13 +596,13 @@ chpDiagnosis fSpec
        [Plain ( case fsLang fSpec of
                   Dutch  ->
                      [ Str "Deze regel bevat nog werk (voor "]++
-                     commaNLPandoc (Str "of") (nub [Str rol | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
+                     commaNLPandoc (Str "of") (nub [Str (name rol) | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
                      (if length ps == 1 then [Str ", te weten "]++oneviol r ps++[Str ". "] else
                       [ Str (". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen.")]
                      )
                   English ->
                      [ Str "This rule contains work"]++
-                     commaEngPandoc (Str "or") (nub [Str rol | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
+                     commaEngPandoc (Str "or") (nub [Str (name rol) | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
                      if length ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
                       [ Str ("The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")]
 
@@ -643,8 +643,8 @@ chpDiagnosis fSpec
              = let capt = case (fsLang fSpec,isSignal r) of
                                (Dutch  , False) -> text "Overtredingen van regel "<>  text (name r)
                                (English, False) -> text "Violations of rule "<>  text (name r)
-                               (Dutch  , True ) -> text "Openstaande taken voor " <> text (commaNL  "of" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
-                               (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                               (Dutch  , True ) -> text "Openstaande taken voor "        <> text (commaNL  "of" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
+                               (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
 
                    showRow :: Paire -> [Blocks]
                    showRow p = [(para.text.srcPaire) p,(para.text.trgPaire) p]

@@ -527,7 +527,7 @@ pCtx2aCtx' _
                      , prcVds = viewdefs'
                      , prcXps = purposes'
                      }
-       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, rul <- mRules rr, name x == rul, rol <- mRoles rr] nm x) ruls
+       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
          <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
          <*> traverse pPop2aPop pops
          <*> traverse pIdentity2aIdentity idefs
@@ -558,15 +558,15 @@ pCtx2aCtx' _
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
 
-    pRul2aRul':: [String] -- list of roles for this rule
+    pRul2aRul':: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
-              -> (P_Rule TermPrim) -> Guarded ([String],Rule)  -- roles in the lhs
+              -> (P_Rule TermPrim) -> Guarded ([Role],Rule)  -- roles in the lhs
     pRul2aRul' a b c = fmap ((,) a) (pRul2aRul a b c)
-    pRul2aRul :: [String] -- list of roles for this rule
+    pRul2aRul :: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
               -> (P_Rule TermPrim) -> Guarded Rule
     pRul2aRul rol env = typeCheckRul rol env . disambiguate termPrimDisAmb
-    typeCheckRul :: [String] -- list of roles for this rule
+    typeCheckRul :: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
               -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
     typeCheckRul sgl env P_Ru { rr_nm = nm

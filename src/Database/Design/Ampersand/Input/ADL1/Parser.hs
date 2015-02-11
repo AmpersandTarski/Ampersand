@@ -436,7 +436,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pRoles  `opt` [])                   <*>
                      (pKey ":" *> pTerm)                  <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [String] -> (Term TermPrim) -> P_SubInterface -> P_Interface
+    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
           lbl (nm,p) iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
@@ -454,7 +454,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      }
           pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')'
           pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
-          pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
+          pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pRole
 
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
@@ -539,17 +539,19 @@ pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAI
 
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
-                            pList1Sep (pSpec ',') pADLid <*
+                            pList1Sep (pSpec ',') pRole <*
                             pKey "EDITS"                 <*>
                             pList1Sep (pSpec ',') pRelSign
                      where rr p roles rels = P_RR roles rels p
 
 pRoleRule :: AmpParser RoleRule
 pRoleRule         = rr <$> pKey_pos "ROLE"               <*>
-                           pList1Sep (pSpec ',') pADLid  <*
+                           pList1Sep (pSpec ',') pRole  <*
                            pKey "MAINTAINS"              <*>
                            pList1Sep (pSpec ',') pADLid
                     where rr p roles rulIds = Maintain roles rulIds p
+pRole :: AmpParser Role
+pRole =  Role <$> pADLid
 
 pPrintThemes :: AmpParser [String]
 pPrintThemes = pKey "THEMES"

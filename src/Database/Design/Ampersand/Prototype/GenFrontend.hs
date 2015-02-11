@@ -94,7 +94,7 @@ doGenFrontend fSpec =
 data FEInterface = FEInterface { ifcName :: String, ifcIdent :: String -- _ifcIdent is a version of ifcName that can be used as (part of) an identifier or file name
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcRoles :: [String], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
+                               , _ifcRoles :: [Role], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
@@ -105,7 +105,7 @@ data FEObject = FEObject { objName :: String
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe String }
                    | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
 
-data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [String] } deriving Show
+data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [Role] } deriving Show
 
 flatten :: FEObject -> [FEObject]
 flatten obj = obj : concatMap flatten subObjs

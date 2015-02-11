@@ -6,6 +6,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
+   , Role(..)
    , P_Pattern(..)
    , P_Declaration(..)
    , Term(..), TermPrim(..)
@@ -90,7 +91,7 @@ data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for 
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
-   = P_RR { rr_Roles :: [String]  -- ^ name of a role
+   = P_RR { rr_Roles :: [Role]  -- ^ name of a role
           , rr_Rels :: [TermPrim] -- ^ Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
           , rr_Pos :: Origin      -- ^ position in the Ampersand script
           } deriving (Show)       -- deriving Show is just for debugging
@@ -123,11 +124,14 @@ instance Traced P_Process where
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data RoleRule
    = Maintain
-     { mRoles :: [String]    -- ^ name of a role
+     { mRoles :: [Role]    -- ^ name of a role
      , mRules :: [String]    -- ^ name of a Rule
      , mPos :: Origin      -- ^ position in the Ampersand script
      } deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
 
+data Role = Role String deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
+instance Named Role where
+ name (Role nm) = nm
 instance Traced RoleRule where
  origin = mPos
 
@@ -411,7 +415,7 @@ data P_Interface =
                                           --   either   Prel o nm
                                           --       or   PTrel o nm sgn
            , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
-           , ifc_Roles :: [String]        -- ^ a list of roles that may use this interface
+           , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
            , ifc_Pos :: Origin
            , ifc_Prp :: String
