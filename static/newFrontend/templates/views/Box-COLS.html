@@ -7,9 +7,9 @@ $endif$$subObjects:{subObj|      <th$if(subObj.isBLOB)$ class="table-header-text
 }$    </tr>
   </thead>
   <tbody>
-    <tr ng-repeat="(key, val) in Resource['$name$']">
+    <tr ng-repeat="(key, val) in val['$name$'] track by val.id">
 $if(isEditable)$      <td>
-        <span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(Resource['$name$'], key)"></span>
+        <span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], key)"></span>
       </td>
 $endif$$subObjects:{subObj|
       <!-- BOX<COLS> CHILD: "$subObj.subObjName$" -->
