@@ -1,5 +1,5 @@
 <!-- BOX<TABS> "$name$" $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-<tabset>
+<tabset ng-repeat="(key, val) in val['$name$'] track by val.id">
 $subObjects:{subObj|
   <!-- BOX<TABS> CHILD: "$subObj.subObjName$" -->
   <tab heading="$subObj.subObjName$">
