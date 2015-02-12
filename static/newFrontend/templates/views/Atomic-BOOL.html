@@ -1,6 +1,6 @@
 <!-- Atomic[BOOL] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
 <div class="checkbox">
   <label>
-    <input ng-model="val[$name$]" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="patch(ResourceId)"/>
+    <input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="patch(ResourceId)"/>
   </label>
 </div>
