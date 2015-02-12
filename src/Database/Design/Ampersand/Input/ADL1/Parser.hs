@@ -3,7 +3,8 @@
 module Database.Design.Ampersand.Input.ADL1.Parser
   (AmpParser, pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
 
-import Database.Design.Ampersand.Input.ADL1.ParsingLib -- New Stub to convert UULib to Parsec
+import Database.Design.Ampersand.Input.ADL1.ParsingLib
+import qualified Database.Design.Ampersand.Input.ADL1.Lexer as L
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
 import Data.List
@@ -20,31 +21,14 @@ fatal = fatalMsg "Input.ADL1.Parser"
 --   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
 
 keywordstxt :: [String]
-keywordstxt       = [ "INCLUDE"
-                    , "CONTEXT", "ENDCONTEXT", "EXTENDS", "THEMES"
-                    , "META"
-                    , "PATTERN", "ENDPATTERN"
-                    , "PROCESS", "ENDPROCESS"
-                    , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
-                    , "POPULATION", "CONTAINS"
-                    , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
-                    , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                    , "RELATION", "MEANING", "CONCEPT", "IDENT"
-                    , "VIEW", "TXT", "PRIMHTML"
-                    , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
-                    , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
-                    , "CLASSIFY"
-                    , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
-                    , "REST", "HTML", "LATEX", "MARKDOWN"
-                    , "ONE"
-                    , "BYPLUG"
-                    , "ROLE", "EDITS", "MAINTAINS"
-                    ]
+keywordstxt       = L.keywords
+
 keywordsops :: [String]
-keywordsops       = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
-                    , "..", "." , "0", "1"]
+keywordsops       = L.operators
+
 specialchars :: [Char]
-specialchars      = "()[],{}"
+specialchars      = L.special_chars
+
 opchars :: [Char]
 opchars           = nub (sort (concat keywordsops))
 

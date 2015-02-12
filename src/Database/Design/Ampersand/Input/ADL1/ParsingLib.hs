@@ -11,7 +11,6 @@ infixl 4 <$, <*, *>
 		 
 type AmpParser a = UU.AnaParser [UU.Token] UU.Pair UU.Token (Maybe UU.Token) a
 
-
 --Operators from UU.Parsing
 (<$>) :: UU.IsParser p s => (a->b)   -> p a -> p b
 (<$>) =  (UU.<$>)
