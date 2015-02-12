@@ -1,10 +1,8 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Input.ADL1.FilePos
-         (FilePos(..), Origin(..), Pos(Pos) , Traced(..)) where
+         (FilePos(..), Origin(..), SourcePos, Traced(..)) where
 
--- import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))  -- Old UU Lib imports, replaced by Parsec functions
--- import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))  -- Old UU Lib imports, replaced by Parsec functions
-import Database.Design.Ampersand.Input.ADL1.ParsingLib
+import Text.Parsec.Pos
 import Database.Design.Ampersand.Basics
 import Data.Typeable
 
@@ -12,16 +10,15 @@ import Data.Typeable
 --fatal = fatalMsg "Input.ADL1.FilePos"
 
 --Traced a have an origin, which may be unknown.
-data FilePos = FilePos (String, Pos, String) deriving (Eq, Ord)
+data FilePos = FilePos (String, SourcePos, String) deriving (Eq, Ord)
 data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord, Typeable)
 instance Unique Origin where
   showUnique = show
 
-
 instance Show FilePos where
-  show (FilePos (fn,Pos l c,_))
-    = "line " ++ show l++":"++show c
-         ++ ", file " ++ show fn
+  show (FilePos (fn, src, _))
+    = "line " ++ show (sourceLine src)++":"++show (sourceColumn src)
+         ++ ", file " ++ fn
 
 instance Show Origin where
   show (FileLoc pos) = show pos
@@ -37,10 +34,10 @@ class Traced a where
                FileLoc (FilePos (nm, _, _)) -> nm
                _ -> ""
   linenr x = case origin x of
-               FileLoc (FilePos (_,Pos l _,_)) -> l
+               FileLoc (FilePos (_,src,_)) -> sourceLine src
                _ -> 0
   colnr x  = case origin x of
-               FileLoc (FilePos (_,Pos _ c,_)) -> c
+               FileLoc (FilePos (_,src,_)) -> sourceColumn src
                _ -> 0
 
 instance Traced Origin where

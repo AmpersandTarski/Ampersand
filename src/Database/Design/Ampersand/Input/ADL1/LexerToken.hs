@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken
-(Token, Tok, SourcePos)
+(Token, Tok)
 where
 
 import Text.Parsec.Pos(SourcePos)
@@ -19,4 +19,4 @@ data Tok = TkSymbol String
          | TkTextName String
          | TkTextLine String
          | TkSpace
-    deriving Show
+    deriving (Show, Eq)

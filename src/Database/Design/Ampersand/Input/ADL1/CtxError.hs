@@ -25,8 +25,10 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.ParsingLib
+import Database.Design.Ampersand.Input.ADL1.ParsingLib(SourcePos, sourceLine, sourceColumn)
+import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Core.ParseTree
+import Text.Parsec.Error (Message(..), messageString)
 
 fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
@@ -38,8 +40,11 @@ infixl 4 <?>
 (<?>) f (Checked a) = f a
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE (Message Token (Maybe Token))
-              deriving Show
+              | PE Message
+
+instance Show CtxError where
+    show (CTXE o s) = "CTXE " ++ show o ++ " " ++ show s
+    show (PE msg)   = "PE " ++ messageString msg
 
 errors :: Guarded t -> [CtxError]
 errors (Checked _) = []
@@ -215,23 +220,12 @@ whenCheckedIO ioGA fIOGB =
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
-showErr (PE msg)   = showMessage msg
- where showMessage (Msg expecting token action) =  
-         let pos = case token of
-                     Nothing -> "at end of file"
-                     Just s  -> case action of 
-                                  Insert _ -> "before " ++ show s
-                                  Delete t -> "at " ++ show t  
-                                  Other str -> str -- Probably never used, UU.Parsing.parseIO ignores this case
-         in  "\nParse error " ++ pos ++
-             "\nExpecting " ++ show expecting ++
-             "\nTry " ++ show action ++ "\n"                
- 
+showErr (PE msg)   = messageString msg
 
 showFullOrig :: Origin -> String
-showFullOrig (FileLoc (FilePos (filename,Database.Design.Ampersand.ADL1.Pos l c,t)))
-              = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show l++" : "++show c
+showFullOrig (FileLoc (FilePos (filename,src,t)))
+              = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show (sourceLine src)++" : "++show (sourceColumn src)
 showFullOrig x = show x
 showMinorOrigin :: Origin -> String
-showMinorOrigin (FileLoc (FilePos (_,Database.Design.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++" : "++show c
+showMinorOrigin (FileLoc (FilePos (_,src,_))) = "line " ++ show (sourceLine src)++" : "++show (sourceColumn src)
 showMinorOrigin v = show v

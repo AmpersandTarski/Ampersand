@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
 )
 where
 
-import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Tok, SourcePos)
+import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Tok)
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Pos
@@ -103,7 +103,7 @@ pExpl = do { try $ string "{+"
            ; inExpl
            }
         where inExpl
-                =   do{ try $ string "+}"            ; return "explanation" }
+                =   do{ try (string "+}")            ; return "explanation" }
                 <|> do{ skipMany1 (noneOf "+}")      ; inExpl } -- TODO: We shouldn't skip them of course
                 <?> "end of comment"
 

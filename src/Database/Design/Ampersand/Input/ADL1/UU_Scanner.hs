@@ -11,54 +11,9 @@ import Data.Maybe
 import Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
 import UU.Parsing(Symbol(..),IsParser,pSym,(<$>))
 import Database.Design.Ampersand.Basics (fatalMsg)
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "UU_Scanner"
-
-data TokenType
-  = TkSymbol
-  | TkVarid
-  | TkConid
-  | TkKeyword
-  | TkOp
-  | TkString
-  | TkExpl
-  | TkAtom
-  | TkChar
-  | TkInteger8
-  | TkInteger10
-  | TkInteger16
-  | TkTextnm
-  | TkTextln
-  | TkSpace
-  | TkError
-  deriving (Eq, Ord)
-
-type Line = Int
-type Column = Int
-
-data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord, Show)
-type Filename   = String
-
-data Token = Tok { tp' :: TokenType
-                 , val1 :: String
-                 , val2 :: String
-                 , pos :: !Pos
-                 , file :: !Filename
-                 }
-
-instance Eq Token where
-  --(Tok TkOp       ""      l _ _) ==  (Tok TkOp       ""      r _ _) =  l == r
-  --(Tok TkOp       ""      l _ _) ==  (Tok TkOp       r       _ _ _) =  l == r
-  --(Tok TkOp       l       _ _ _) ==  (Tok TkOp       ""      r _ _) =  l == r
-  (Tok ttypel     stringl _ _ _) ==  (Tok ttyper     stringr _ _ _) =  ttypel == ttyper && stringl == stringr
-
-instance   Ord Token where
-  compare x y | x==y      = EQ
-              | x<=y      = LT
-              | otherwise = GT
-  (Tok ttypel     stringl _ _ _ ) <= (Tok ttyper    stringr _ _  _ )
-      =     ttypel <  ttyper
-        || (ttypel == ttyper && stringl <= stringr)
 
 maybeshow :: Pos -> Filename -> String
 maybeshow (Pos 0 0) _  =  ""

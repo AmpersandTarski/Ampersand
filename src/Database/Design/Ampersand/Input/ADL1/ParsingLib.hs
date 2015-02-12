@@ -1,8 +1,15 @@
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash #-}
-module Database.Design.Ampersand.Input.ADL1.ParsingLib ( UU.getMsgs,UU.parse,UU.evalSteps,UU.Pair(..),UU.Message(..),UU.Action(..),UU.Pos(..), scan, initPos, pSym, pSucceed, AmpParser, UU.noPos, (<$>), (<*>), (<|>), (<$), (<*), (*>), (<??>), pList, pList1, opt, pListSep, pList1Sep,pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi ) where
+{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
+module Database.Design.Ampersand.Input.ADL1.ParsingLib(
+    UU.getMsgs,UU.parse,UU.evalSteps,UU.Pair(..),UU.Message(..),UU.Action(..),
+    pSym, pSucceed, AmpParser,
+    (<$>), (<*>), (<|>), (<$), (<*), (*>), (<??>),
+    pList, pList1, opt, pListSep, pList1Sep,pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
+    SourcePos, sourceLine, sourceColumn
+) where
 
 import qualified UU.Parsing as UU
-import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..), SourcePos)
+import Text.Parsec.Pos (SourcePos, sourceLine, sourceColumn)
+import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..), Tok(..))
 import Database.Design.Ampersand.Input.ADL1.Lexer
 
 infixl 3 <|>
@@ -35,7 +42,6 @@ f <*> g  = f UU.<*> g
 (<??>) = (UU.<??>) 
 
 --Functions from UU.Parsing
-
 pSym :: Token -> AmpParser Token
 pSym = pSym
 
@@ -56,3 +62,11 @@ pList1Sep = UU.pList1Sep
 
 opt ::  AmpParser a -> a -> AmpParser a
 opt = UU.opt
+
+instance UU.Symbol Token where
+    deleteCost t = 0#
+    symBefore t = t
+    symAfter t = t
+
+instance Ord Tok where
+    (<=) a b = show a <= show b
