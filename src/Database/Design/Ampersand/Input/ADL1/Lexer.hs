@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Database.Design.Ampersand.Input.ADL1.Lexer (
     keywords, operators, special_chars,
-    pKey, pConid, pString, pSpec, pExpl, pVarid, pComma, pSemi,
+    pKey, pConid, pString, pSpec, pExpl, pVarid, pAtom, pComma, pSemi,
     SourceName
 )
 where
@@ -99,13 +99,11 @@ pSpec x = do { y <- char x; return [y] }
 
 --- Expl ::= '{+' Any* '-}'
 pExpl :: AmpT String
-pExpl = do { try $ string "{+"
-           ; inExpl
-           }
-        where inExpl
-                =   do{ try (string "+}")            ; return "explanation" }
-                <|> do{ skipMany1 (noneOf "+}")      ; inExpl } -- TODO: We shouldn't skip them of course
-                <?> "end of comment"
+pExpl = do try (string "{+")
+           inExpl
+        where inExpl =  do{ try (string "+}")            ; return "explanation" }
+                    <|> do{ skipMany1 (noneOf "+}")      ; inExpl } -- TODO: We shouldn't skip them of course
+                    <?> "end of comment"
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpT String
@@ -114,6 +112,15 @@ pVarid = lexeme lexer $ try $
            if isUpper $ head name
            then unexpected ("Expected lower case identifier but got " ++ show name)
            else return name
+
+-- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
+pAtom :: AmpT String
+pAtom   = lexeme lexer (
+             do between (char '\'')
+                        (char '\'' <?> "end of atom")
+                        (many $ satisfy isLetter)
+                <?> "atom")
+            where isLetter c = (c /= '\'') && (c /= '\\') && (c > '\026')
 
 --- Comma ::= ','
 pComma :: AmpT String

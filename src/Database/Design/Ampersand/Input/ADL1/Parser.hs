@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser
   (AmpParser, pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
 
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
+import Database.Design.Ampersand.Input.ADL1.LexerToken
 import qualified Database.Design.Ampersand.Input.ADL1.Lexer as L
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
@@ -12,13 +13,6 @@ import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
-
---type AmpParser a = AnaParser [Token] Pair Token (Maybe Token) a
-
-
---  The Ampersand scanner takes the file name (String) for documentation and error messaging.
---   scanner :: String -> String -> [Token]
---   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
 
 keywordstxt :: [String]
 keywordstxt       = L.keywords
@@ -257,7 +251,7 @@ pRuleDef =  rebuild <$> pKey_pos "RULE"
                           , rr_msg  = msg
                           , rr_viol = mViolation
                           }
-                 rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
+                 rulid (FileLoc(FilePos (_,src,_))) = "rule@line" ++ show (sourceLine src)
                  rulid _ = fatal 226 "pRuleDef is expecting a file location."
                  
                  --- Violation ::= 'VIOLATION' PairView
@@ -824,31 +818,28 @@ pMaybe p = Just <$> p <|> pSucceed Nothing
 
 -- Gets the location of the token in the file
 get_tok_pos :: Token -> Origin
-get_tok_pos     (Tok _ _ s l f) = FileLoc(FilePos (f,l,s))
+get_tok_pos (src,tok) = FileLoc(FilePos (sourceName src,src,show tok))
 
 -- Gets the location of the token in the file and it's value
 get_tok_val_pos :: Token -> (String, Origin)
-get_tok_val_pos (Tok _ _ s l f) = (s,FileLoc(FilePos (f,l,s)))
-
-gsym_pos :: TokenType -> String -> String -> AmpParser Origin
-gsym_pos kind val' val2' = get_tok_pos <$> pSym (Tok kind val' val2' noPos "")
-
-gsym_val_pos :: TokenType -> String -> String -> AmpParser (String,Origin)
-gsym_val_pos kind val' val2' = get_tok_val_pos <$> pSym (Tok kind val' val2' noPos "")
+get_tok_val_pos tok = (show tok, get_tok_pos tok)
 
 -- Key has no EBNF because in EBNF it's just the given keyword.
 pKey_pos :: String -> AmpParser Origin
-pKey_pos keyword  =   gsym_pos TkKeyword   keyword   keyword
+pKey_pos = pKey
+
 -- Spec just matches the given character so it has no EBNF
 pSpec_pos :: Char -> AmpParser Origin
-pSpec_pos s       =   gsym_pos TkSymbol    [s]       [s]
+pSpec_pos = pSpec
 
 pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
-pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
-pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
-pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"
-pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""    -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
+pString_val_pos    =   pString
+pVarid_val_pos     =   pVarid
+pConid_val_pos     =   pConid
+pAtom_val_pos      =   L.pAtom
+
 pKey_val_pos ::  String -> AmpParser (String,Origin)
-pKey_val_pos keyword = gsym_val_pos TkKeyword   keyword   keyword
+pKey_val_pos keyword = pKey
+
 --   pSpec_val_pos ::  IsParser p Token => Char -> p (String,Origin)
 --   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]

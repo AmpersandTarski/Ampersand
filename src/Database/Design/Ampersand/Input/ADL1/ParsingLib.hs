@@ -4,11 +4,11 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pSym, pSucceed, AmpParser,
     (<$>), (<*>), (<|>), (<$), (<*), (*>), (<??>),
     pList, pList1, opt, pListSep, pList1Sep,pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
-    SourcePos, sourceLine, sourceColumn
+    SourcePos, sourceName, sourceLine, sourceColumn
 ) where
 
 import qualified UU.Parsing as UU
-import Text.Parsec.Pos (SourcePos, sourceLine, sourceColumn)
+import Text.Parsec.Pos (SourcePos, sourceName, sourceLine, sourceColumn)
 import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..), Tok(..))
 import Database.Design.Ampersand.Input.ADL1.Lexer
 
