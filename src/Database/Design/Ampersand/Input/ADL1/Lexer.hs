@@ -1,10 +1,21 @@
-module Database.Design.Ampersand.Input.ADL1.Lexer (keywords, operators, special_chars)
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+module Database.Design.Ampersand.Input.ADL1.Lexer (
+    keywords, operators, special_chars,
+    pKey, pConid, pString, pSpec, pExpl, pVarid, pComma, pSemi,
+    SourceName
+)
 where
 
 import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Tok, SourcePos)
 import Text.Parsec.Char
-import Text.Parsec.Token
+import Text.Parsec.Combinator
+import Text.Parsec.Pos
 import Text.Parsec.Prim
+import Text.Parsec.Token
+import Control.Monad.Identity (Identity)
+import Data.Char (isUpper)
+
+type AmpT a = ParsecT String [Token] Identity a
 
 lexer :: TokenParser [Token]
 lexer = makeTokenParser langDef
@@ -56,3 +67,58 @@ operators = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#",
 
 special_chars :: [Char]
 special_chars = "()[],{}"
+
+--Remark: description is different from the type check in GHCI!
+-- scan :: [String] -> [String] -> String -> String -> String -> SourcePos -> String -> [Token]
+-- scan = 
+
+--Remark: description is different from the type check in GHCI!
+initPos :: SourceName -> SourcePos
+initPos = initialPos
+
+-- The lexing
+pKey :: String -> AmpT ()
+pKey = reserved lexer
+
+--- Conid ::= UpperChar (Char | '_')*
+pConid :: AmpT String
+pConid = lexeme lexer $ try $
+        do name <- identifier lexer
+           if isUpper $ head name
+           then return name
+           else unexpected ("Expected upper case identifier but got " ++ show name)
+
+--- String ::= '"' Any* '"'
+--- StringListSemi ::= String (';' String)*
+pString :: AmpT String
+pString = stringLiteral lexer
+
+-- Spec just matches the given character so it has no EBNF
+pSpec :: Char -> AmpT String
+pSpec x = do { y <- char x; return [y] }
+
+--- Expl ::= '{+' Any* '-}'
+pExpl :: AmpT String
+pExpl = do { try $ string "{+"
+           ; inExpl
+           }
+        where inExpl
+                =   do{ try $ string "+}"            ; return "explanation" }
+                <|> do{ skipMany1 (noneOf "+}")      ; inExpl } -- TODO: We shouldn't skip them of course
+                <?> "end of comment"
+
+--- Varid ::= (LowerChar | '_') (Char | '_')*
+pVarid :: AmpT String
+pVarid = lexeme lexer $ try $
+        do name <- identifier lexer
+           if isUpper $ head name
+           then unexpected ("Expected lower case identifier but got " ++ show name)
+           else return name
+
+--- Comma ::= ','
+pComma :: AmpT String
+pComma  = pSpec ','
+
+--- Semi ::= ';'
+pSemi :: AmpT String
+pSemi = pSpec ';'

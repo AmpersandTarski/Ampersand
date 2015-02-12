@@ -12,10 +12,8 @@ data Tok = TkSymbol String
          | TkString String
          | TkExpl String
          | TkAtom String
-         | TkChar String
-         | TkInteger8 String
-         | TkInteger10 String
-         | TkInteger16 String
+         | TkChar Char
+         | TkInteger Int
          | TkUpperId String
          | TkLowerId String
          | TkTextName String

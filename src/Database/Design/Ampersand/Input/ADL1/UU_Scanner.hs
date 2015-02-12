@@ -319,39 +319,14 @@ gsym kind val val2' = get_tok_val <$> pSym (Tok kind val val2' noPos "")
 -- Key has no EBNF because in EBNF it's just the given keyword.
 pKey :: IsParser p Token => String -> p String
 pKey  keyword  =   gsym TkKeyword   keyword   keyword
--- Spec just matches the given character so it has no EBNF
-pSpec :: IsParser p Token => Char -> p String
-pSpec s        =   gsym TkSymbol    [s]       [s]
 
-pString, pExpl, pInteger10, pVarid, pConid,
-  pInteger :: IsParser p Token => p String
---- String ::= '"' Any* '"'
---- StringListSemi ::= String (';' String)*
-pString        =   gsym TkString    ""        ""
---- Expl ::= '{+' Any* '-}'
-pExpl          =   gsym TkExpl      ""        ""
+pExpl, pInteger10, pVarid, pConid, pInteger :: IsParser p Token => p String
 
 --- Digit ::= ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9')
 --- Integer10 ::= ('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') Digit*
 --- Integer8 ::= ('00' | '0o') Digit+
 --- Integer16 ::= ('0x' | '0X') Digit+
 pInteger10     =   gsym TkInteger10 ""        "1"
---- Varid ::= (LowerChar | '_') (Char | '_')*
-pVarid         =   gsym TkVarid     ""        "?lc?"
---- Conid ::= UpperChar (Char | '_')*
-pConid         =   gsym TkConid     ""        "?uc?"
 
 --- Integer ::= Integer10 | Integer8 | Integer16
 pInteger       =   pInteger10
-
-pComma, pSemi :: IsParser p Token => p String
---- Comma ::= ','
-pComma  = pSpec ','
---- Semi ::= ';'
-pSemi   = pSpec ';'
-
---- UpperChar ::= 'A'
---- LowerChar ::= 'A'
---- Char ::= 'A'
---- Lower ::= 'A'
---- Any ::= 'a'
