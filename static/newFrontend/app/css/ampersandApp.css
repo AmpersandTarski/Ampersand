@@ -19,6 +19,18 @@
 	color	: green; 
 }
 
+fieldset {
+	padding		: 10px;
+}
+
+.tab-pane {
+	padding		: 15px;
+}
+
+.box .row {
+	margin-bottom	: 15px;
+}
+
 /********* FORMS, INPUTS, ETC **************/
 input .ng-invalid .ng-dirty {
 	border	: 2px solid red;
