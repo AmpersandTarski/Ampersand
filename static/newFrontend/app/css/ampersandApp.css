@@ -6,6 +6,14 @@
   	padding: 100px 15px 0px 15px;
 }
 
+/********* LOG WINDOW *****************/
+#logWindow {
+	height: 400px;
+	width: 100%;
+	overflow-y: scroll;
+}
+
+
 /********* INTERFACES *****************/
 .interface table {
 	width	: auto;
