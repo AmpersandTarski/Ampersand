@@ -1,6 +1,5 @@
 <!-- Atomic[BLOB] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-$if(isEditable)$<div class="input-group">
-  <textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="2" ng-blur="patch(ResourceId)"></textarea>
-</div>$else$<div style="max-width: 200px;">
-  {{val['$name$'] | limitTo:50}}...
-</div>$endif$
+<div class="input-group">
+$if(isEditable)$  <textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="2" cols="40" ng-blur="patch(ResourceId)"></textarea>$else$<div style="max-width: 200px;">
+  {{val['$name$'] | limitTo:50}}...$endif$
+</div>
