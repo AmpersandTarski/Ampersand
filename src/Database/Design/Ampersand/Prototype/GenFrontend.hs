@@ -197,7 +197,7 @@ genView_Interface :: FSpec -> FEInterface -> IO ()
 genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
  do { --verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show iName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- genView_Object fSpec 0 obj
-    ; template <- readTemplate fSpec "views/TopLevelInterface.html"
+    ; template <- readTemplate fSpec "views/Interface.html"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
                      . setAttribute "isRoot"              (name (source iExp) `elem` ["ONE", "SESSION"])
