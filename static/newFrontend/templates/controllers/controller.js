@@ -36,7 +36,7 @@ AmpersandApp.controller('$interfaceIdent$Controller', function (\$scope, \$rootS
   // Delete function to delete a complete Resource
   \$scope.deleteResource = function (ResourceId){
     if(confirm('Are you sure?')){
-      \$scope.ResourceList[ResourceId]
+      \$scope.val['$interfaceName$'][ResourceId]
         .remove()
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
@@ -59,11 +59,11 @@ $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
   // Patch function to update a Resource
   \$scope.patch = function(ResourceId){
-    \$scope.ResourceList[ResourceId]
+    \$scope.val['$interfaceName$'][ResourceId]
       .patch()
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
-        \$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, url);
+        \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
       });
   }
 $else$  // The interface does not contain any editable relations

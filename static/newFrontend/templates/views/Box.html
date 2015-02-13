@@ -1,5 +1,5 @@
 <!-- BOX<> "$name$" $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-<form class="form-horizontal" role="form">
+<form class="form-horizontal" role="form" ng-repeat="(key, val) in val['$name$'] track by val.id" ng-init="ResourceId = \$index">
 $subObjects:{subObj|
   <!-- BOX<> CHILD: "$subObj.subObjName$" -->
   <div class="form-group">
