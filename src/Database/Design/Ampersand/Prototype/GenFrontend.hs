@@ -200,7 +200,7 @@ genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editabl
     ; template <- readTemplate fSpec "views/Interface.html"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
-                     . setAttribute "isRoot"              (name (source iExp) `elem` ["ONE", "SESSION"])
+                     . setAttribute "isTopLevel"          (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"   [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
