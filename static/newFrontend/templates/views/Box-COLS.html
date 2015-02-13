@@ -7,7 +7,7 @@ $endif$$subObjects:{subObj|      <th>$subObj.subObjName$</th>
 }$    </tr>
   </thead>
   <tbody>
-    <tr ng-repeat="(key, val) in val['$name$'] track by val.id" ng-init="ResourceId = \$index">
+    <tr ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
 $if(isEditable)$      <td>
         <span my-showonhovertr class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], key)"></span>
       </td>
