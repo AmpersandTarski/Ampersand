@@ -257,7 +257,8 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
         ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
         
         ; return $ lines $ renderTemplate parentTemplate $ 
-                             setAttribute "isEditable" isEditable
+                             setAttribute "isRoot"     (depth == 0)
+                           . setAttribute "isEditable" isEditable
                            . setAttribute "subObjects" subObjAttrs
                            . setAttribute "name"       nm             -- TODO: escape
                            . setAttribute "expAdl"     (showADL oExp)
