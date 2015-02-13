@@ -1,11 +1,9 @@
 <!-- BOX<ROWS> "$name$" $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-<form class="form-horizontal" role="form" ng-repeat="(key, val) in val['$name$'] track by val.id" ng-init="ResourceId = \$index">
+<div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" ng-init="ResourceId = \$index">
 $subObjects:{subObj|
   <!-- BOX<ROWS> CHILD: "$subObj.subObjName$" -->
-  <div class="form-group">
-    <label class="col-md-1 control-label">$subObj.subObjName$</label>
-    <div class="col-md-11">
-$subObj.subObjContents$
-    </div>
+  <div class="row">
+    <div class="row-label col-md-1"><strong>$subObj.subObjName$</strong></div>
+    <div class="row-content col-md-11">$subObj.subObjContents$</div>
   </div>}$
-</form>
+</div>
