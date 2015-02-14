@@ -9,8 +9,8 @@
 	<div ng-view></div>
 	
 	<!-- Log -->
-	<div class="row" id="logWindow" ng-controller="static_logWindowController">
-		<div ng-if="switchShowLogWindow" class="col-md-12">
+	<div class="row" ng-controller="static_logWindowController">
+		<div ng-if="switchShowLogWindow" id="logWindow" class="col-md-12">
 			<h4>Log</h4>
 			<table style="font-size : 10px;" class="table table-striped table-hover table-condensed">
 				<thead>
