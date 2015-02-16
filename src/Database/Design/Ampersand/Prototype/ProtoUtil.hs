@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
-         , copyDirRecursively
+         , copyDirRecursively, getProperDirectoryContents
          , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
