@@ -141,11 +141,42 @@ selectExpr fSpec src trg expr
                     WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
                       AND NOT EXISTS (SELECT bar)            representing neven
 -}
-                  (_:_:_) -> selectGeneric (Iden [Name "isect0",src'],Just src)
+                  (_:_:_) -> sqlcomment ("case: (EIsc lst'@(_:_:_))"++showADL expr++" ("++show sgn++")") $
+                             selectGeneric (Iden [Name "isect0",src'],Just src)
                                            (Iden [Name "isect0",trg'],Just trg)            
                                            exprbracs
                                            wherecl
---                    _       -> fatal 69 "TODO"
+                  _       -> fatal 123 "A list shorter than 2 cannot occur in the query at all! If it does, we have made a mistake earlier."
+    EUni{} -> sqlcomment ("case: EUni (l,r)"++showADL expr++" ("++show (sign expr)++")") $
+              combineQueryExprs Union [selectExpr fSpec src trg e | e<-exprUni2list expr]
+    ECps (EDcV (Sign ONE _), ECpl expr')
+     -> case target expr' of
+         ONE -> fatal 137 "sqlConcept not defined for ONE"
+         _   -> let src'  = sqlAttConcept fSpec (source expr')
+                    trg'  = sqlAttConcept fSpec (target expr')
+                    trg2  = noCollide' [src'] (sqlAttConcept fSpec (target expr'))
+                in sqlcomment ("case:  ECps (EDcV (Sign ONE _), ECpl expr') "++showADL expr) $
+                   selectGeneric (Iden [Name "1"], Just src)
+                                 (Iden [trg'    ], Just trg)
+                                 [TRAlias (TRSimple [sqlConcept fSpec (target expr')]
+                                          ) (Alias (Name "allAtoms") Nothing) ]
+                                 (Just $ PrefixOp [Name "NOT"] 
+                                    ( SubQueryExpr SqExists
+                                       ( selectExists' 
+                                           [TRAlias 
+                                              (TRQueryExpr (selectExprInFROM fSpec src' trg' expr')
+                                              ) (Alias (Name "complemented") Nothing)
+                                           ] (Just (BinOp (Iden [Name "complemented",trg2])
+                                                          [Name "="]
+                                                          (Iden [Name "allAtoms",trg'])
+                                                   )
+                                             )
+                                       )
+                                    )
+                                 )
+
+
+
 
 
 -- | selectExprInFROM is meant for SELECT expressions inside a FROM clause.
@@ -251,6 +282,10 @@ sqlExprTgt fSpec expr@EDcD{}         = toQName $     --  quotes are added just i
                                         _  -> fatal 630 ("Multiple plugs for relation "++showADL expr)
 sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
 
+-- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
+-- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
+sqlConcept :: FSpec -> A_Concept -> Name
+sqlConcept fSpec = QName . name . sqlConceptPlug fSpec
 
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
@@ -286,4 +321,21 @@ sqlAtomQuote s = Iden [QName $ "'"++sAQ s++"'"]
        sAQ ('\\':s') = "\\\\" ++ sAQ s'
        sAQ (c:s')    = c: sAQ s'
        sAQ []       = []
+
+-- | for the time untill comment is supported, we use a dummy function 
+sqlcomment :: String -> a -> a 
+sqlcomment _ a = a 
+
+
+combineQueryExprs :: CombineOp -> [QueryExpr] -> QueryExpr
+combineQueryExprs op exprs
+ = case exprs of
+    []     -> fatal 300 "Nothing to combine!"
+    [e]    -> e
+    (e:es) -> CombineQueryExpr { qe0 = e
+                               , qeCombOp = op
+                               , qeSetQuantifier = SQDefault
+                               , qeCorresponding = Respectively
+                               , qe1 = combineQueryExprs op es
+                               }
 
