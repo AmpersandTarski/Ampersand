@@ -13,8 +13,8 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.ShowADL
 
-import Data.Maybe
 import Data.Char
+import Data.List
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -37,6 +37,8 @@ selectExpr fSpec src trg expr
  = case expr of
     EIsc{} -> let lst'       = exprIsc2list expr
                   sgn        = sign expr
+                  src'       = sqlExprSrc fSpec firstTerm
+                  trg'       = sqlExprTgt fSpec firstTerm
                   firstTerm  = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
                   mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},EDcV _,EMp1{}] <- [exprCps2list t]]
                   lst        = [t |t<-lst', t `notElem` mp1Tm]
@@ -50,18 +52,78 @@ selectExpr fSpec src trg expr
                                , let trg'' =noCollide' [src''] (sqlExprTgt fSpec l)
                                ]
                   wherecl :: Maybe ValueExpr
-                  wherecl   = if isIdent l
-                              then Just (BinOp
-                                           (BinOp (Iden (Name "isect0")) (Name ".") (Iden src'))
-                                           (Name "=")
-                                           (BinOp (Iden (Name "isect0")) (Name ".") (Iden trg'))
+                  wherecl   = Just . conjunctSQL . concat $
+                               ([if isIdent l
+                                 then -- this is the code to calculate ../\I. The code below will work, but is longer
+                                      [BinOp (Iden [Name "isect0", src'])
+                                             [Name "="]
+                                             (Iden [Name "isect0", trg'])
+                                      ]
+                                 else [BinOp (Iden [Name "isect0", src'])
+                                             [Name "="]
+                                             (Iden [Name $ "isect"++show n, src''])
+                                      ,BinOp (Iden [Name "isect0",trg'])
+                                             [Name "="]
+                                             (Iden [Name $ "isect"++show n, trg''])
+                                      ]
+                                | (n,l)<-tail (zip [(0::Int)..] posTms) -- not empty because of definition of posTms
+                                , let src''=sqlExprSrc fSpec l
+                                , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
+                                ]++
+                                [ [ BinOp (Iden [Name "isect0",src'])
+                                          [Name "="]
+                                          (sqlAtomQuote atom)
+                                  , BinOp (Iden [Name "isect0",trg'])
+                                          [Name "="]
+                                          (sqlAtomQuote atom)
+                                  ]
+                                | EMp1 atom _ <- mp1Tm
+                                ]++
+                                [ [ BinOp (Iden [Name "isect0",src'])
+                                          [Name "="]
+                                          (sqlAtomQuote atom1) -- source and target are unequal
+                                  , BinOp (Iden [Name "isect0",trg'])
+                                          [Name "="]
+                                          (sqlAtomQuote atom2) -- source and target are unequal
+                                  ]
+                                | t@ECps{} <- mp1Tm, [EMp1 atom1 _, EDcV _, EMp1 atom2 _]<-[exprCps2list t]
+                                ]++
+                                [if isIdent l
+                                 then -- this is the code to calculate ../\I. The code below will work, but is longer
+                                      [BinOp (Iden [Name "isect0", src'])
+                                             [Name "="]
+                                             (Iden [Name "isect0", trg'])
+                                      ]
+                                 else [PrefixOp [Name "NOT"] 
+                                        ( SubQueryExpr SqExists
+                                            ( selectExists' 
+                                                 [TRAlias 
+                                                    (TRQueryExpr (selectExprInFROM fSpec src'' trg'' l)
+                                                    ) (Alias (Name "cp") Nothing)]
+                                                 (Just . conjunctSQL $
+                                                   [ BinOp (Iden [Name "isect0",src'])
+                                                           [Name "="]
+                                                           (Iden [Name "cp",src''])
+                                                   , BinOp (Iden [Name "isect0",trg'])
+                                                           [Name "="]
+                                                           (Iden [Name "cp",trg''])
+                                                   ]
+                                                 )
+                                            )
                                         )
-                              else Nothing
-                  conjunct :: [ValueExpr] -> ValueExpr
-                  conjunct [] = fatal 57 "nothing to `AND`."
-                  conjunct [ve] = ve
-                  conjunct (ve:ves) = BinOp ve (Name "and") (conjunct ves)
-                                            
+                                      ]
+                                | (_,l)<-zip [(0::Int)..] negTms
+                                , let src''=sqlExprSrc fSpec l
+                                , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
+                                ]++
+                                [nub (map notNull [src',trg'])]
+                               )
+                  conjunctSQL :: [ValueExpr] -> ValueExpr
+                  conjunctSQL [] = fatal 57 "nothing to `AND`."
+                  conjunctSQL [ve] = ve
+                  conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
+                  notNull :: Name -> ValueExpr
+                  notNull tm = PostfixOp [Name "IS", Name "NOT", Name "NULL"] (Iden [tm])                         
 
               in case lst' of
 {- The story:
@@ -79,8 +141,8 @@ selectExpr fSpec src trg expr
                     WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
                       AND NOT EXISTS (SELECT bar)            representing neven
 -}
-                  (_:_:_) -> selectGeneric (Iden [Name "isect0",src'],src)
-                                           (Iden [Name "isect0",trg'],trg)            
+                  (_:_:_) -> selectGeneric (Iden [Name "isect0",src'],Just src)
+                                           (Iden [Name "isect0",trg'],Just trg)            
                                            exprbracs
                                            wherecl
 --                    _       -> fatal 69 "TODO"
@@ -141,14 +203,14 @@ selectExists' tbl whr
             , qeOffset = Nothing
             , qeFetchFirst = Nothing
             }
-selectGeneric :: Maybe (ValueExpr, Maybe Name) -- ^ (source field and table, alias)
-              -> Maybe (ValueExpr, Maybe Name) -- ^ (target field and table, alias)
+selectGeneric :: (ValueExpr, Maybe Name) -- ^ (source field and table, alias)
+              -> (ValueExpr, Maybe Name) -- ^ (target field and table, alias)
               -> [TableRef]              -- ^ tables
               -> Maybe ValueExpr         -- ^ the WHERE clause
               -> QueryExpr
 selectGeneric src tgt tbl whr 
   =  Select { qeSetQuantifier = Distinct
-            , qeSelectList    = catMaybes  [src,tgt]
+            , qeSelectList    = [src,tgt]
             , qeFrom = tbl
             , qeWhere = whr
             , qeGroupBy = []
@@ -217,4 +279,11 @@ stringOfName :: Name -> String
 stringOfName (Name s)   =  s
 stringOfName (QName s)  =  s
 stringOfName (UQName s) =  s
+
+sqlAtomQuote :: String -> ValueExpr
+sqlAtomQuote s = Iden [QName $ "'"++sAQ s++"'"]
+ where sAQ ('\'':s') = "\\'" ++ sAQ s'
+       sAQ ('\\':s') = "\\\\" ++ sAQ s'
+       sAQ (c:s')    = c: sAQ s'
+       sAQ []       = []
 
