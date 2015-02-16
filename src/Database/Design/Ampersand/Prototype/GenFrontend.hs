@@ -76,25 +76,15 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </>
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
-    ; copyIncludes fSpec
-{-    ; let contextDir = takeDirectory $ fileName (getOpts fSpec)
-          localTemplateDir = contextDir </> "templates"
-    ; localTemplatesExist <- doesDirectoryExist $ localTemplateDir
-    ; if localTemplatesExist then
-       do { putStrLn $ "Copying used-defined templates from " ++ localTemplateDir
-          ; copyDirRecursively fSpec localTemplateDir (getTemplateDir fSpec)
-          }
-      else
-        putStrLn $ "No user-defined templates declared (there is no directory " ++ localTemplateDir ++ ")"
--}
+    ; copyIncludeDirs fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
     }
 
-copyIncludes :: FSpec -> IO ()
-copyIncludes fSpec =
+copyIncludeDirs :: FSpec -> IO ()
+copyIncludeDirs fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
           includeDir = adlSourceDir </> "include"
           protoDir = Opts.dirPrototype (getOpts fSpec)
@@ -115,7 +105,7 @@ copyIncludes fSpec =
           ; let ignoredPaths = includeDirContents \\ map fst includeDirs
           ; when (not $ null ignoredPaths) $
              do { putStrLn $ "WARNING: only the following include subdirectories are allowed:\n  " ++ show (map fst allowedIncludeSubDirs)
-                ; mapM_ (\d -> putStrLn $ "  - Ignoring " ++ d) $ ignoredPaths
+                ; mapM_ (\d -> putStrLn $ "  - Ignored " ++ d) $ ignoredPaths
                 }
           }
       else
