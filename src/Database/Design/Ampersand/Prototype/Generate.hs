@@ -26,7 +26,7 @@ generateAll fSpec =
  do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
 --  ; verboseLn (getOpts fSpec) filecontent
     ; writePrototypeFile fSpec "Generics.php" filecontent
-    ; when (genStaticFiles (getOpts fSpec)) $
+    ; when (genStaticFiles (getOpts fSpec) && not (newFrontend $ getOpts fSpec)) $
            case customCssFile (getOpts fSpec) of
              Just customCssFilePath ->
               do { customCssContents <- readCustomCssFile customCssFilePath
