@@ -2,6 +2,7 @@
 module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend) where
 
 import Prelude hiding (putStrLn,readFile)
+import Control.Monad
 import Data.Data
 import Data.List
 import Data.Maybe
@@ -57,10 +58,14 @@ When do we allow this to be editable? If relRef is I, we can use editability of 
 Until this is sorted out, we disallow editing on interface refs
 -}
 
+-- Directories that will be copied to the prototype, if present in $adlSourceDir/includes/
+-- Format: (directory name in include/, path in prototype directory)
+allowedIncludeSubDirs :: [(String, String)]
+allowedIncludeSubDirs = [("templates", "templates"), ("css", "app/css"), ("js", "app/js"), ("images", "app/images")]
+
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> 
                          "templates"
---                         "debugTemplates"
 
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
@@ -71,8 +76,8 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </>
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
-
-    ; let contextDir = takeDirectory $ fileName (getOpts fSpec)
+    ; copyIncludes fSpec
+{-    ; let contextDir = takeDirectory $ fileName (getOpts fSpec)
           localTemplateDir = contextDir </> "templates"
     ; localTemplatesExist <- doesDirectoryExist $ localTemplateDir
     ; if localTemplatesExist then
@@ -81,13 +86,41 @@ doGenFrontend fSpec =
           }
       else
         putStrLn $ "No user-defined templates declared (there is no directory " ++ localTemplateDir ++ ")"
-
+-}
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
     }
 
+copyIncludes :: FSpec -> IO ()
+copyIncludes fSpec =
+ do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
+          includeDir = adlSourceDir </> "include"
+          protoDir = Opts.dirPrototype (getOpts fSpec)
+    ; includeDirExists <- doesDirectoryExist $ includeDir
+    ; if includeDirExists then
+       do { putStrLn $ "Copying user include directories from " ++ includeDir 
+          ; includeDirContents <- fmap (map (includeDir </>)) $ getProperDirectoryContents includeDir
+          ; includeDirSubDirs <- filterM doesDirectoryExist $ includeDirContents
+          
+          ; let includeDirs = [ (absSd, protoDir </> td)
+                              | (sd,td) <- allowedIncludeSubDirs, let absSd = includeDir </> sd, absSd `elem` includeDirSubDirs ]
+          ; sequence_ [ do { putStrLn $ "- Copying " ++ sd ++ " -> " ++ td
+                           ; copyDirRecursively fSpec sd td
+                           }
+                      | (sd, td) <- includeDirs
+                      ]
+                      
+          ; let ignoredPaths = includeDirContents \\ map fst includeDirs
+          ; when (not $ null ignoredPaths) $
+             do { putStrLn $ "WARNING: only the following include subdirectories are allowed:\n  " ++ show (map fst allowedIncludeSubDirs)
+                ; mapM_ (\d -> putStrLn $ "  - Ignoring " ++ d) $ ignoredPaths
+                }
+          }
+      else
+        putStrLn $ "No user includes (there is no directory " ++ includeDir ++ ")"
+    } 
 
 ------ Build intermediate data structure
 
