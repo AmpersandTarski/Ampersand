@@ -232,55 +232,52 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot navInterfaces _) =
-  case atomicOrBox obj of
-    FEAtomic mPrimTemplate ->
-     do { {-
-          verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
-                                        " [" ++ name src ++ "*"++ name tgt ++ "], " ++
-                                        (if isEditable then "" else "not ") ++ "editable"
-          -}
-        -- For now, we choose specific template based on target concept. This will probably be too weak. 
-        -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-        ; template <- readTemplate fSpec $ fromMaybe "views/Atomic.html" mPrimTemplate -- Atomic is the default template
-                
-        --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
-        --                                      | NavInterface n rs <- navInterfaces ]
-        ; let mNavInterface = case navInterfaces of -- TODO: do something with roles here. For now, simply use the first interface, if any.
-                                []                        -> Nothing
-                                NavInterface iName _ :_ -> Just iName
-                                                                              
-        ; return $ lines $ renderTemplate template $ 
-                             setAttribute "isEditable"   isEditable
-                           . setAttribute "exprIsUni"    exprIsUni
-                           . setAttribute "exprIsTot"    exprIsTot
-                           . setAttribute "navInterface" mNavInterface  -- TODO: escape
-                           . setAttribute "name"         nm             -- TODO: escape
-                           . setAttribute "expAdl"       (showADL oExp) 
-                           . setAttribute "source"       (name src)     -- TODO: escape
-                           . setAttribute "target"       (name tgt)     -- TODO: escape
-        }
-    FEBox mClass subObjs ->
-     do { {-
-          verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
-                                        " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
-                                        (if isEditable then "" else "not ") ++ "editable"
-          -}
-        ; subObjAttrs <- mapM genView_SubObject subObjs
-                
-        ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
-        ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
-        
-        ; return $ lines $ renderTemplate parentTemplate $ 
-                             setAttribute "isRoot"     (depth == 0)
-                           . setAttribute "isEditable" isEditable
-                           . setAttribute "exprIsUni"  exprIsUni
-                           . setAttribute "exprIsTot"  exprIsTot
-                           . setAttribute "subObjects" subObjAttrs
-                           . setAttribute "name"       nm             -- TODO: escape
-                           . setAttribute "expAdl"     (showADL oExp)
-                           . setAttribute "source"     (name src)     -- TODO: escape
-                           . setAttribute "target"     (name tgt)     -- TODO: escape
-        }
+  let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
+      atomicAndBoxAttrs = setAttribute "isEditable" isEditable
+                        . setAttribute "exprIsUni"  exprIsUni
+                        . setAttribute "exprIsTot"  exprIsTot
+                        . setAttribute "name"       nm             -- TODO: escape
+                        . setAttribute "expAdl"     (showADL oExp) 
+                        . setAttribute "source"     (name src)     -- TODO: escape
+                        . setAttribute "target"     (name tgt)     -- TODO: escape
+                    
+  in  case atomicOrBox obj of
+        FEAtomic mPrimTemplate ->
+         do { {-
+              verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
+                                            " [" ++ name src ++ "*"++ name tgt ++ "], " ++
+                                            (if isEditable then "" else "not ") ++ "editable"
+              -}
+            -- For now, we choose specific template based on target concept. This will probably be too weak. 
+            -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
+            ; template <- readTemplate fSpec $ fromMaybe "views/Atomic.html" mPrimTemplate -- Atomic is the default template
+                    
+            --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
+            --                                      | NavInterface n rs <- navInterfaces ]
+            ; let mNavInterface = case navInterfaces of -- TODO: do something with roles here. For now, simply use the first interface, if any.
+                                    []                      -> Nothing
+                                    NavInterface iName _ :_ -> Just iName
+                                                                                  
+            ; return $ lines $ renderTemplate template $ 
+                                 atomicAndBoxAttrs
+                               . setAttribute "navInterface" mNavInterface  -- TODO: escape
+            }
+        FEBox mClass subObjs ->
+         do { {-
+              verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
+                                            " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
+                                            (if isEditable then "" else "not ") ++ "editable"
+              -}
+            ; subObjAttrs <- mapM genView_SubObject subObjs
+                    
+            ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
+            ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
+            
+            ; return $ lines $ renderTemplate parentTemplate $ 
+                                 atomicAndBoxAttrs
+                               . setAttribute "isRoot"     (depth == 0)
+                               . setAttribute "subObjects" subObjAttrs
+            }
   where genView_SubObject subObj = 
          do { lns <- genView_Object fSpec (depth + 1) subObj
             ; return SubObjAttr{ subObjName = objName subObj -- TODO: escape
