@@ -82,9 +82,7 @@ doGenFrontend fSpec =
       else
         putStrLn $ "No user-defined templates declared (there is no directory " ++ localTemplateDir ++ ")"
 
-    ; putStrLn "buildInterfaces"
     ; feInterfaces <- buildInterfaces fSpec
-    ; putStrLn "genView_Interfaces"
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
@@ -126,7 +124,6 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
-    ; putStrLn $ "Interface " ++ name ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return $
         FEInterface  (name ifc) (phpIdentifier $ name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
@@ -136,8 +133,7 @@ buildInterface fSpec allIfcs ifc =
   where    
     buildObject :: [Expression] -> ObjectDef -> IO FEObject
     buildObject editableRels object =
-     do { --putStrLn $ "Object" ++ name object
-        ; let iExp = conjNF (getOpts fSpec) $ objctx object
+     do { let iExp = conjNF (getOpts fSpec) $ objctx object
               (isEditable, src, tgt) = 
                 case getExpressionRelation iExp of
                   Nothing                          -> (False, source iExp, target iExp)
@@ -166,12 +162,6 @@ buildInterface fSpec allIfcs ifc =
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                   [i]     -> do { let editableRels' = editableRels `intersect` ifcParams i
                                 ; refObj <- buildObject editableRels' (ifcObj i)
-                                ; let comp = ECps (iExp, objExp refObj)
-                                ; putStrLn $ showADL $ conjNF (getOpts fSpec) comp
-                                ; putStrLn $ show $ conjNF (getOpts fSpec) comp
-                                ; case getExpressionRelation $ comp of
-                                    Nothing                          -> putStrLn $ "Ref "++nm++": no relation"
-                                    Just (declSrc, decl, declTgt, _) -> putStrLn $ "Ref "++nm++": "++show (name decl) ++" :: "++name declSrc++"*"++name declTgt
                                 ; return (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
                                 } -- TODO: interface ref basically skips a relation, so we make it not editable for now
 
