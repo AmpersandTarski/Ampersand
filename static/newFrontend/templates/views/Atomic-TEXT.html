@@ -1,4 +1,4 @@
-<!-- Atomic[TEXT] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
+<!-- Atomic[TEXT] "$name$" : $expAdl$ :: $source$ * $target$ $if(!exprIsUni)$[UNI]$endif$$if(!exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) $if(!exprIsUni)$[UNI]$endif$$if(!exprIsTot)$[TOT]$endif$ -->
 <div class="input-group">
   $if(isEditable)$<input ng-model="val['$name$']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
   $else$<div ng-repeat="row in val['$name$'] track by \$index">

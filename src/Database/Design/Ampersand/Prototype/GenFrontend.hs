@@ -10,6 +10,7 @@ import System.FilePath
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
 import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowADL
@@ -81,7 +82,9 @@ doGenFrontend fSpec =
       else
         putStrLn $ "No user-defined templates declared (there is no directory " ++ localTemplateDir ++ ")"
 
+    ; putStrLn "buildInterfaces"
     ; feInterfaces <- buildInterfaces fSpec
+    ; putStrLn "genView_Interfaces"
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
@@ -98,7 +101,8 @@ data FEInterface = FEInterface { ifcName :: String, ifcIdent :: String -- _ifcId
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , objIsEditable :: Bool, _objNavInterfaces :: [NavInterface]
+                         , objIsEditable :: Bool, _exprIsUni :: Bool, _exprIsTot :: Bool
+                         , _objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
@@ -122,6 +126,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
+    ; putStrLn $ "Interface " ++ name ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return $
         FEInterface  (name ifc) (phpIdentifier $ name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
@@ -131,7 +136,8 @@ buildInterface fSpec allIfcs ifc =
   where    
     buildObject :: [Expression] -> ObjectDef -> IO FEObject
     buildObject editableRels object =
-     do { let iExp = conjNF (getOpts fSpec) $ objctx object
+     do { --putStrLn $ "Object" ++ name object
+        ; let iExp = conjNF (getOpts fSpec) $ objctx object
               (isEditable, src, tgt) = 
                 case getExpressionRelation iExp of
                   Nothing                          -> (False, source iExp, target iExp)
@@ -160,10 +166,16 @@ buildInterface fSpec allIfcs ifc =
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                   [i]     -> do { let editableRels' = editableRels `intersect` ifcParams i
                                 ; refObj <- buildObject editableRels' (ifcObj i)
+                                ; let comp = ECps (iExp, objExp refObj)
+                                ; putStrLn $ showADL $ conjNF (getOpts fSpec) comp
+                                ; putStrLn $ show $ conjNF (getOpts fSpec) comp
+                                ; case getExpressionRelation $ comp of
+                                    Nothing                          -> putStrLn $ "Ref "++nm++": no relation"
+                                    Just (declSrc, decl, declTgt, _) -> putStrLn $ "Ref "++nm++": "++show (name decl) ++" :: "++name declSrc++"*"++name declTgt
                                 ; return (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
                                 } -- TODO: interface ref basically skips a relation, so we make it not editable for now
 
-        ; return $ FEObject (name object) iExp' src tgt' isEditable' navIfcs atomicOrBox'
+        ; return $ FEObject (name object) iExp' src tgt' (isUni iExp') (isTot iExp') isEditable' navIfcs atomicOrBox'
         }
 
 
@@ -219,7 +231,7 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, isBLOB ::Bool
                                 , subObjContents :: String } deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
-genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterfaces _) =
+genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot navInterfaces _) =
   case atomicOrBox obj of
     FEAtomic mPrimTemplate ->
      do { {-
@@ -239,6 +251,8 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
                                                                               
         ; return $ lines $ renderTemplate template $ 
                              setAttribute "isEditable"   isEditable
+                           . setAttribute "exprIsUni"    exprIsUni
+                           . setAttribute "exprIsTot"    exprIsTot
                            . setAttribute "navInterface" mNavInterface  -- TODO: escape
                            . setAttribute "name"         nm             -- TODO: escape
                            . setAttribute "expAdl"       (showADL oExp) 
@@ -259,6 +273,8 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable navInterface
         ; return $ lines $ renderTemplate parentTemplate $ 
                              setAttribute "isRoot"     (depth == 0)
                            . setAttribute "isEditable" isEditable
+                           . setAttribute "exprIsUni"  exprIsUni
+                           . setAttribute "exprIsTot"  exprIsTot
                            . setAttribute "subObjects" subObjAttrs
                            . setAttribute "name"       nm             -- TODO: escape
                            . setAttribute "expAdl"     (showADL oExp)

@@ -1,4 +1,4 @@
-<!-- Atomic[DATE] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
+<!-- Atomic[DATE] "$name$" : $expAdl$ :: $source$ * $target$ $if(!exprIsUni)$[UNI]$endif$$if(!exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 <div class="input-group">$if(isEditable)$
   <input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="patch(ResourceId)"/>
   <span class="input-group-btn">
