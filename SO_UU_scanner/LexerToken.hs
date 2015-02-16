@@ -6,7 +6,7 @@ import Text.Parsec.Pos(SourcePos)
 
 --type Token = (SourcePos,Tok,String)
 
-data Token = Tok { tokenT  :: Tok
+data Token = Tokv { tokenT  :: Tok
                  , sp      :: SourcePos
                  , val     :: String
                  }
@@ -30,17 +30,17 @@ instance Show Token where
   showsPrec _ token'
     = showString
        (case token' of
-        (Tok TkSymbol    tval sp val)  -> "symbol "                ++ tval         ++ sp ++ val
-        (Tok TkOp        sp val)  -> "operator "              ++ val         ++ sp
-        (Tok TkKeyword   sp val)  ->                        show val         ++ sp
-        (Tok TkString    sp val)  -> "string \""              ++ val ++ "\"" ++ sp
-        (Tok TkExpl      sp val)  -> "explanation {+"         ++ val ++ "-}" ++ sp
-        (Tok TkAtom      sp val)  -> "atom '"                 ++ val ++ "'"  ++ sp
-        (Tok TkChar      sp val)  -> "character '"            ++ val ++ "'"  ++ sp
-        (Tok TkInteger   sp val)  -> "decimal Integer "       ++ val         ++ sp
-        (Tok TkLowerId   sp val)  -> "lower case identifier " ++ val         ++ sp
-        (Tok TkUpperId   sp val)  -> "upper case identifier " ++ val         ++ sp
-        (Tok TkTextName  sp val)  -> "text name "             ++ val         ++ sp
-        (Tok TkTextLine  sp val)  -> "text line "             ++ val         ++ sp
-        (Tok TkSpace     sp val)  -> "spaces "                               ++ sp
+        (Tokv (TkSymbol val)    sp tval)  -> "symbol "                ++ val         ++ show sp ++ tval
+        (Tokv (TkOp val)        sp tval)  -> "operator "              ++ val         ++ show sp ++ tval
+        (Tokv (TkKeyword val)   sp tval)  ->                        show val         ++ show sp ++ tval
+        (Tokv (TkString val)    sp tval)  -> "string \""              ++ val ++ "\"" ++ show sp ++ tval
+        (Tokv (TkExpl val)      sp tval)  -> "explanation {+"         ++ val ++ "-}" ++ show sp ++ tval
+        (Tokv (TkAtom val)      sp tval)  -> "atom '"                 ++ val ++ "'"  ++ show sp ++ tval
+        (Tokv (TkChar val)      sp tval)  -> "character '"            ++ show val ++ "'"  ++ show sp ++ tval
+        (Tokv (TkInteger val)   sp tval)  -> "decimal Integer "       ++ show val    ++ show sp ++ tval
+        (Tokv (TkLowerId val)   sp tval)  -> "lower case identifier " ++ val         ++ show sp ++ tval
+        (Tokv (TkUpperId val)   sp tval)  -> "upper case identifier " ++ val         ++ show sp ++ tval
+        (Tokv (TkTextName val)  sp tval)  -> "text name "             ++ val         ++ show sp ++ tval
+        (Tokv (TkTextLine val)  sp tval)  -> "text line "             ++ val         ++ show sp ++ tval
+        (Tokv (TkSpace)         sp tval)  -> "spaces "                               ++ show sp ++ tval
        )
