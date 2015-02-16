@@ -72,7 +72,8 @@ executable ampersand
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall -O2
-  build-depends:     ConfigFile == 1.1.*,
+  build-depends:     
+                     ConfigFile == 1.1.*,
                      HDBC == 2.4.*,
                      HDBC-odbc == 2.3.*,
                      HStringTemplate == 0.7.*,
@@ -95,8 +96,8 @@ executable ampersand
                      text == 1.1.*,
                      time == 1.4.*,
                      utf8-string == 0.3.*,
-                     uulib == 0.9.*
-
+                     uulib == 0.9.*,
+                     simple-sql-parser >=0.4 && <0.5
   -- Unfortunately, unix package is not available on windows (so we can't set static-file timestamps)
   if !os(windows)
     build-depends:   unix == 2.7.*
@@ -145,6 +146,7 @@ executable ampersand
                      Database.Design.Ampersand.FSpec.ShowHS,
                      Database.Design.Ampersand.FSpec.ShowMeatGrinder,
                      Database.Design.Ampersand.FSpec.ShowXMLtiny,
+                     Database.Design.Ampersand.FSpec.SQL,
                      Database.Design.Ampersand.FSpec.Switchboard,
                      Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec,
                      Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug,
