@@ -44,10 +44,10 @@ keywordstxt       = [ "INCLUDE"
                     , "ROLE", "EDITS", "MAINTAINS"
                     ]
 keywordsops :: [String]
-keywordsops       = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
+keywordsops       = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
                     , "..", "." , "0", "1"]
 specialchars :: String
-specialchars      = "()[],{}"
+specialchars      = "()[],{}<>"
 opchars :: String
 opchars           = nub (sort (concat keywordsops))
 
@@ -460,7 +460,7 @@ pSubInterface :: AmpParser P_SubInterface
 pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
             <|> (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos
   where pBoxKey :: AmpParser (Origin, Maybe String)
-        pBoxKey = (\o -> (o,Nothing))     <$> pKey_pos "BOX"
+        pBoxKey = (\o mCl -> (o,mCl))     <$> pKey_pos "BOX" <*> pMaybe (pSpec '<' *> pConid <* pSpec '>')
               <|> (\o -> (o,Just "ROWS")) <$> pKey_pos "ROWS"
               <|> (\o -> (o,Just "COLS")) <$> pKey_pos "COLS"
               <|> (\o -> (o,Just "TABS")) <$> pKey_pos "TABS"
