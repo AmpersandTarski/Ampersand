@@ -66,6 +66,24 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
       });
   }
+  
+  // Function to add item to array of primitieve datatypes
+  \$scope.addItem = function(obj, property, selected, ResourceId){
+    if(selected.value != ''){
+      if(obj[property] === null) obj[property] = [];
+      obj[property].push(selected.value);
+      selected.value = '';
+      \$scope.patch(ResourceId);
+    }else{
+    	console.log('Empty value selected');
+    }
+  }
+  
+  //Function to remove item from array of primitieve datatypes
+  \$scope.removeItem = function(obj, key, ResourceId){
+    obj.splice(key, 1);
+    \$scope.patch(ResourceId);
+  }
 $else$  // The interface does not contain any editable relations
 $endif$
 $if(containsEditableNonPrim)$  // The interface contains at least 1 editable relation to a non-primitive concept

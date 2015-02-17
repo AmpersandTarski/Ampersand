@@ -46,6 +46,9 @@ Class Atom {
 		$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
 		$tgtAtoms = array_column($database->Exe($query), 'tgt');
 		
+		// define $arr as array if $interface is not univalent and its tgtDataType a primitive datatype (i.e. not concept) 
+		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array();
+		
 		foreach ($tgtAtoms as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept);
 				
@@ -131,23 +134,29 @@ Class Atom {
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 
-						if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
-						elseif (is_null($tgtAtom)) $tgtAtom = $patch['value'];
+						
+						//if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
+						//elseif (is_null($tgtAtom)) $tgtAtom = $patch['value'];
+						
+						// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+						if($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
 						
 					}
+					
+					if($tgtInterface->tgtDataType == "concept") throw new Exception('Replace on non-primitive datatype', 501);
 					
 					// perform editUpdate
 					if($tgtInterface->editable){
 						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
 						
 						// in case $tgtAtom is empty string -> perform remove instead of replace.
-						if(!$tgtAtom == ''){ 
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+						if($tgtAtom !== ''){
+							$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
+							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
 						}else{
 							// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 							$tgtAtom = JsonPatch::get($before, $patch['path']);
 							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-							 
 						}					
 					}else{
 						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
@@ -174,6 +183,9 @@ Class Atom {
 					
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
+						
+						// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+						if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
 					
 					}
 					
@@ -210,14 +222,15 @@ Class Atom {
 						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-						$tgtAtom = array_shift($pathArr); // set tgtAtom 
+						$tgtAtom = array_shift($pathArr); // set tgtAtom
 
 					}
 					
 					// perform editDelete
 					if($tgtInterface->editable){
-						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
-						if(is_null($tgtAtom)) $tgtAtom = JsonPatch::get($before, $patch['path']);
+						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom value is not provided, so we have to get this value to perform the editDelete function
+						// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
+						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
 						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
 						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
