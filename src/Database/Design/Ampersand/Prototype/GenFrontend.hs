@@ -188,7 +188,7 @@ buildInterface fSpec allIfcs ifc =
                                 ; return (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
                                 } -- TODO: interface ref basically skips a relation, so we make it not editable for now
 
-        ; return $ FEObject (name object) iExp' src tgt' (isUni iExp') (isTot iExp') isEditable' navIfcs atomicOrBox'
+        ; return $ FEObject (name object) iExp' src tgt' isEditable' (isUni iExp') (isTot iExp') navIfcs atomicOrBox'
         }
 
 
