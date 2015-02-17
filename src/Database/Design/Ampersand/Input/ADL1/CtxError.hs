@@ -5,11 +5,11 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError, mkUndeclaredInterfaceError, mkMultipleInterfaceError
+  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
+  , mkUndeclaredInterfaceError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingInterfaceError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
-  , mkNonMatchingInterfaceError
   )
 -- SJC: I consider it ill practice to export CTXE
 -- Reason: CtxError should obtain all error messages
@@ -94,10 +94,6 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
-mkNonMatchingInterfaceError objDef t s ref
- = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
-
 mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
 mkUndeclaredInterfaceError objDef containingIfcName ref = 
   CTXE (origin objDef) $ "Undeclared interface " ++ show ref ++ " referenced at field " ++ 
@@ -107,6 +103,16 @@ mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
   CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++ 
                       concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)       
+
+mkInterfaceRefCycleError :: [Interface] -> CtxError
+mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
+mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least two) as the origin of the error
+  CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
+                      unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
+                              
+mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
+mkNonMatchingInterfaceError objDef t s ref
+ = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
 
 class ErrorConcept a where
   showEC :: a -> String
