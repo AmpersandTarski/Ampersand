@@ -106,7 +106,7 @@ mkMultipleInterfaceError role ifc duplicateIfcs =
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
-mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least two) as the origin of the error
+mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
