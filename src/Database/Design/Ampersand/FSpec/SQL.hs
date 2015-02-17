@@ -118,12 +118,8 @@ selectExpr fSpec src trg expr
                                 ]++
                                 [nub (map notNull [src',trg'])]
                                )
-                  conjunctSQL :: [ValueExpr] -> ValueExpr
-                  conjunctSQL [] = fatal 57 "nothing to `AND`."
-                  conjunctSQL [ve] = ve
-                  conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
                   notNull :: Name -> ValueExpr
-                  notNull tm = PostfixOp [Name "IS", Name "NOT", Name "NULL"] (Iden [tm])                         
+                  notNull tm = PostfixOp [Name "IS NOT NULL"] (Iden [tm])                         
 
               in case lst' of
 {- The story:
@@ -158,7 +154,7 @@ selectExpr fSpec src trg expr
                 in sqlcomment ("case:  ECps (EDcV (Sign ONE _), ECpl expr') "++showADL expr) $
                    selectGeneric (Iden [Name "1"], Just src)
                                  (Iden [trg'    ], Just trg)
-                                 [TRAlias (TRSimple [sqlConcept fSpec (target expr')]
+                                 [TRAlias (TRQueryExpr (sqlConcept fSpec (target expr'))
                                           ) (Alias (Name "allAtoms") Nothing) ]
                                  (Just $ PrefixOp [Name "NOT"] 
                                     ( SubQueryExpr SqExists
@@ -174,6 +170,171 @@ selectExpr fSpec src trg expr
                                        )
                                     )
                                  )
+    ECps{}  ->
+       case exprCps2list expr of
+          (EDcV (Sign ONE _):fs@(_:_))
+             -> let expr' = foldr1 (.:.) fs
+                    src'  = noCollide' [trg'] (sqlExprSrc fSpec expr')
+                    trg'  = sqlExprTgt fSpec expr'
+                in sqlcomment ("case:  (EDcV (Sign ONE _): fs@(_:_))"++showADL expr) $
+                   selectGeneric (Iden [Name "1"], Just src)
+                                 (Iden [Name "fst",trg'    ], Just trg)
+                                 [TRAlias
+                                    (TRQueryExpr (selectExprInFROM fSpec src' trg' expr')
+                                    ) (Alias (Name "fst") Nothing)
+                                 ] 
+                                 (Just (PostfixOp [Name "is not null"] (Iden [Name "fst", trg'])))
+          (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
+             -> sqlcomment ("case:  (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_))"
+                            ++showADL expr)
+                (selectExpr fSpec src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
+          [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]-- this will occur quite often because of doSubsExpr
+             -> sqlcomment ("case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]"++showADL expr) $
+                Select { qeSetQuantifier = SQDefault
+                       , qeSelectList    = [ (sqlAtomQuote atomSrc, Just src)
+                                           , (sqlAtomQuote atomTgt, Just trg)
+                                           ]
+                       , qeFrom          = []
+                       , qeWhere         = Nothing
+                       , qeGroupBy       = []
+                       , qeHaving        = Nothing
+                       , qeOrderBy       = []
+                       , qeOffset        = Nothing
+                       , qeFetchFirst    = Nothing
+                       }
+          (e@(EMp1 atom _):f:fx)
+             -> let expr' = foldr1 (.:.) (f:fx)
+                    src' = sqlExprSrc fSpec e
+                    trg' = noCollide' [src'] (sqlExprTgt fSpec expr')
+                in sqlcomment ("case:  (EMp1{}: f: fx)"++showADL expr) $
+                   selectGeneric (Iden [Name "fst",src'], Just src)
+                                 (Iden [Name "fst",trg'], Just trg)
+                                 [TRAlias
+                                    (TRQueryExpr (selectExprInFROM fSpec src' trg' expr')
+                                    ) (Alias (Name "fst") Nothing)
+                                 ]
+                                 (Just (BinOp (Iden [Name "fst",src'])
+                                              [Name "="]
+                                              (sqlAtomQuote atom)))
+          (e:EDcV _:f:fx) -- prevent calculating V in this case
+             | src==trg && not (isProp e) -> fatal 172 $ "selectExpr 2 src and trg are equal ("++stringOfName src++") in "++showADL e
+             | otherwise -> let expr' = foldr1 (.:.) (f:fx)
+                                src' = sqlExprSrc fSpec e
+                                mid' = noCollide' [src'] (sqlExprTgt fSpec e)
+                                mid2'= sqlExprSrc fSpec f
+                                trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
+                            in sqlcomment ("case:  (e:ERel (EDcV _) _:f:fx)"++showADL expr) $
+                               selectGeneric (Iden [Name "fst",src'], Just src)
+                                             (Iden [Name "snd",trg'], Just trg)
+                                             [TRAlias
+                                                (TRQueryExpr (selectExprInFROM fSpec src' mid' e)
+                                                ) (Alias (Name "fst") Nothing)
+                                             ,TRAlias
+                                                (TRQueryExpr (selectExprInFROM fSpec mid2' trg' expr')
+                                                ) (Alias (Name "snd") Nothing)
+                                             ]
+                                             Nothing
+          [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
+          [e]-> selectExpr fSpec src trg e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
+{-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
+    Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
+    In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
+    The "outer poles" correspond to the source and target of the entire expression.
+    To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
+SELECT DISTINCT ECps0.`C` AS `SrcC`, ECps0.`A` AS `TgtA`
+FROM `r` AS ECps0, `A`AS ECps2
+WHERE ECps0.`A`<>ECps2.`A
+-}
+          es -> let selects = [mainSrc,mainTgt]
+                      where
+                        mainSrc = (Iden [Name ("ECps"++show n),sqlSrc], Just src)
+                                  where
+                                    (n,_,sqlSrc,_) = head fenceExprs
+                        mainTgt = (Iden [Name ("ECps"++show n),sqlTgt], Just trg)
+                                  where
+                                    (n,_,_,sqlTgt) = last fenceExprs
+                    froms = [ TRAlias
+                               (TRQueryExpr lSQLexp
+                               ) (Alias (Name ("ECps"++show n)) Nothing) 
+                           | (n,lSQLexp,_,_) <- fenceExprs ]
+                    wheres = Just . conjunctSQL $
+                                [ BinOp (Iden [Name ("ECps"++show n), lSQLtrg])
+                                        [Name (if m==n+1 then "=" else "<>")]
+                                        (Iden [Name ("ECps"++show m), rSQLsrc])
+                                | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
+                                ]++
+                                [notNull mainSrc,notNull mainTgt]
+                      where
+                        mainSrc = Iden [Name ("ECps"++show n), sqlSrc]
+                                  where (n,_,sqlSrc,_) = head fenceExprs
+                        mainTgt = Iden [Name ("ECps"++show n), sqlTgt]
+                                  where (n,_,_,sqlTgt) = last fenceExprs
+                        notNull :: ValueExpr -> ValueExpr
+                        notNull ve = PostfixOp [Name "IS NOT NULL"] ve                         
+                    -- fenceExprs lists the expressions and their SQL-fragments.
+                    -- In the poles-and-fences metaphor, they serve as the fences between the poles.
+                    fenceExprs :: [(Int,QueryExpr,Name,Name)]
+                    fenceExprs = -- the first part introduces a 'pole' that consists of the source concept.
+                                 [ ( length es
+                                   , sqlConcept fSpec c
+                                   , cAtt
+                                   , cAtt
+                                   )
+                                 | length es>1, e@(ECpl (EDcI c)) <- [head es]
+                                 , let cAtt = (sqlAttConcept fSpec.source) e
+                                 ]++
+                                 -- the second part is the main part, which does most of the work (parts 1 and 3 are rarely used)
+                                 [ ( n                              -- the serial number of this fence (in between poles n and n+1)
+                                   , selectExprInFROM fSpec srcAtt tgtAtt e
+                                   , srcAtt
+                                   , tgtAtt
+                                   )
+                                 | (n, e) <- zip [(0::Int)..] es
+                                 , case e of
+                                    ECpl (EDcI _) -> False
+                                    EDcI _        -> False  -- if the normalizer works correctly, this case will never be visited.
+                                    _             -> True
+                                 , let srcAtt = sqlExprSrc fSpec e
+                                 , let tgtAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
+                                 ]++
+                                 -- the third part introduces a 'pole' that consists of the target concept.
+                                 [ ( length es
+                                   , sqlConcept fSpec c
+                                   , cAtt
+                                   , cAtt
+                                   )
+                                 | length es>1, e@(ECpl (EDcI c)) <- [last es]
+                                 , let cAtt = (sqlAttConcept fSpec.target) e
+                                 ]
+                in sqlcomment ("case: (ECps es), with two or more elements in es."++showADL expr) $
+                   Select { qeSetQuantifier = Distinct
+                          , qeSelectList    = selects
+                          , qeFrom          = froms
+                          , qeWhere         = wheres
+                          , qeGroupBy       = []
+                          , qeHaving        = Nothing
+                          , qeOrderBy       = []
+                          , qeOffset        = Nothing
+                          , qeFetchFirst    = Nothing
+                          }
+    (EFlp x) -> sqlcomment "case: EFlp x." $
+                 selectExpr fSpec trg src x
+    (EMp1 atom _) -> sqlcomment "case: EMp1 atom."
+                   Select { qeSetQuantifier = Distinct
+                          , qeSelectList    = [ (sqlAtomQuote atom , Just src)
+                                              , (sqlAtomQuote atom , Just trg)
+                                              ]
+                          , qeFrom          = []
+                          , qeWhere         = Nothing
+                          , qeGroupBy       = []
+                          , qeHaving        = Nothing
+                          , qeOrderBy       = []
+                          , qeOffset        = Nothing
+                          , qeFetchFirst    = Nothing
+                          }
+
+
+
 
 
 
@@ -226,13 +387,13 @@ selectExists' :: [TableRef]              -- ^ tables
 selectExists' tbl whr
   =  Select { qeSetQuantifier = Distinct
             , qeSelectList    = [(Star,Nothing)]
-            , qeFrom = tbl
-            , qeWhere = whr
-            , qeGroupBy = []
-            , qeHaving = Nothing
-            , qeOrderBy = []
-            , qeOffset = Nothing
-            , qeFetchFirst = Nothing
+            , qeFrom          = tbl
+            , qeWhere         = whr
+            , qeGroupBy       = []
+            , qeHaving        = Nothing
+            , qeOrderBy       = []
+            , qeOffset        = Nothing
+            , qeFetchFirst    = Nothing
             }
 selectGeneric :: (ValueExpr, Maybe Name) -- ^ (source field and table, alias)
               -> (ValueExpr, Maybe Name) -- ^ (target field and table, alias)
@@ -242,14 +403,23 @@ selectGeneric :: (ValueExpr, Maybe Name) -- ^ (source field and table, alias)
 selectGeneric src tgt tbl whr 
   =  Select { qeSetQuantifier = Distinct
             , qeSelectList    = [src,tgt]
-            , qeFrom = tbl
-            , qeWhere = whr
-            , qeGroupBy = []
-            , qeHaving = Nothing
-            , qeOrderBy = []
-            , qeOffset = Nothing
-            , qeFetchFirst = Nothing
+            , qeFrom          = tbl
+            , qeWhere         = whr
+            , qeGroupBy       = []
+            , qeHaving        = Nothing
+            , qeOrderBy       = []
+            , qeOffset        = Nothing
+            , qeFetchFirst    = Nothing
             }
+
+selectSelItem :: (Name, Name) -> TableRef
+selectSelItem (att,alias)
+  = TRAlias (TRSimple [if stringOfName att == "1"
+                       then UQName "1"
+                       else toQName att
+                      ]
+            ) (Alias alias Nothing)
+
 
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
@@ -284,8 +454,8 @@ sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
-sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = QName . name . sqlConceptPlug fSpec
+sqlConcept :: FSpec -> A_Concept -> QueryExpr
+sqlConcept fSpec a = Table [(QName . name . sqlConceptPlug fSpec) a]
 
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
@@ -316,11 +486,7 @@ stringOfName (QName s)  =  s
 stringOfName (UQName s) =  s
 
 sqlAtomQuote :: String -> ValueExpr
-sqlAtomQuote s = Iden [QName $ "'"++sAQ s++"'"]
- where sAQ ('\'':s') = "\\'" ++ sAQ s'
-       sAQ ('\\':s') = "\\\\" ++ sAQ s'
-       sAQ (c:s')    = c: sAQ s'
-       sAQ []       = []
+sqlAtomQuote s = StringLit s
 
 -- | for the time untill comment is supported, we use a dummy function 
 sqlcomment :: String -> a -> a 
@@ -339,3 +505,7 @@ combineQueryExprs op exprs
                                , qe1 = combineQueryExprs op es
                                }
 
+conjunctSQL :: [ValueExpr] -> ValueExpr
+conjunctSQL [] = fatal 57 "nothing to `AND`."
+conjunctSQL [ve] = ve
+conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
