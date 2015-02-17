@@ -15,6 +15,7 @@ import Database.Design.Ampersand.FSpec.ShowADL
 
 import Data.Char
 import Data.List
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -332,7 +333,51 @@ WHERE ECps0.`A`<>ECps2.`A
                           , qeOffset        = Nothing
                           , qeFetchFirst    = Nothing
                           }
-
+    (EDcV (Sign s t))    -> let concNames ::  String -> A_Concept -> Maybe ( Name --Name of the plug
+                                                                           , Name --Name of the alias of the plug
+                                                                           , Name --Name of the field in the plug
+                                                                           )
+                                concNames pfx c 
+                                  = case c of
+                                     PlainConcept{}
+                                         -> case sqlRelPlugs fSpec (EDcI c) of
+                                              []         -> fatal 344 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
+                                                                      ++"\nNo plug relations found."
+                                              [(p,s',_)] -> Just ( QName (name p)
+                                                                 , QName pfx
+                                                                 , QName (fldname s')
+                                                                 )  
+                                              xs         -> fatal 349 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
+                                                                      ++"\nMultiple plug relations found: "++show xs
+                                     ONE -> Nothing
+                                (src1, tgt1, tbl1) =
+                                 case ( concNames (if name s==name t then "cfst0" else  (name s)) s
+                                      , concNames (if name s==name t then "cfst1" else  (name t)) t
+                                      ) of
+                                 (Nothing        , Nothing        ) 
+                                          -> ( (NumLit "1", Just src)
+                                             , (NumLit "1", Just trg)
+                                             , []
+                                             )
+                                 (Just (s1,s2,s3), Nothing        )
+                                          -> ( (Iden [s2,s3] , Just src)
+                                             , (NumLit "1", Just trg)
+                                             , [TRAlias (TRSimple [s1]) (Alias s2 Nothing)]
+                                              )
+                                 (Nothing        , Just (t1,t2,t3)) 
+                                          -> ( (NumLit "1", Just src)
+                                             , (Iden [t2,t3] , Just trg)
+                                             , [TRAlias (TRSimple [t1]) (Alias t2 Nothing)]
+                                              )
+                                 (Just (s1,s2,s3), Just (t1,t2,t3)) 
+                                          -> ( (Iden [s2,s3] , Just src)
+                                             , (Iden [t2,t3] , Just trg)
+                                             , [TRAlias (TRSimple [s1]) (Alias s2 Nothing)
+                                               ,TRAlias (TRSimple [t1]) (Alias t2 Nothing)
+                                               ]
+                                              )
+                            in sqlcomment ("case: (EDcV (Sign s t))"++"V[ \""++show (Sign s t)++"\" ]") $
+                               selectGeneric src1 tgt1 tbl1 Nothing
 
 
 
