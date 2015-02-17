@@ -19,7 +19,7 @@ class Viewer {
 		
 		// Meta tags
 		$this->addHtmlLine('<meta name="viewport" content="width=device-width, initial-scale=1.0"/>');
-		$this->addHtmlLine('<meta name="Content-Type" content="text/html; charset=UTF-8"/>');
+		$this->addHtmlLine('<meta charset="UTF-8">');
 		
 		// TODO: onderstaande caching meta tags nodig?		
 		$this->addHtmlLine('<meta name="Pragma" content="no-cache"/>');
