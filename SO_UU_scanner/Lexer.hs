@@ -9,8 +9,7 @@ where
 import LexerToken(Token, Lexeme)
 import Text.Parsec.Char
 import Text.Parsec.Combinator
---import Text.Parsec.Pos
-import Text.ParserCombinators.Parsec.Pos
+import Text.Parsec.Pos
 import Text.Parsec.Prim
 import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
@@ -19,6 +18,7 @@ import Data.Char (isUpper)
 
 type AmpT a = ParsecT String [Token] Identity a
 
+{--
 lexer :: TokenParser [Token]
 lexer = makeTokenParser langDef
 
@@ -36,6 +36,7 @@ langDef = LanguageDef {
         reservedOpNames = operators,
         caseSensitive = True
     }
+--}
 
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
@@ -71,14 +72,41 @@ operators = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#",
 special_chars :: [Char]
 special_chars = "()[],{}"
 
---Remark: description is different from the type check in GHCI!
--- scan :: [String] -> [String] -> String -> String -> String -> SourcePos -> String -> [Token]
--- scan = 
+-- Main Lexer function
+-- Steps:
+--       * mainLexer fitlers input string to remove all irrelevant data such as comments, spaces,...
+--       * runLexerMonad takes the
+lexer :: String -> [Char] -> Either LexerError ([Token], [LexerWarning])
+lexer fileName input = runLexerMonad fileName (mainLexer input)
 
---Remark: description is different from the type check in GHCI!
-initPos :: SourceName -> SourcePos
-initPos = initialPos
 
+type Lexer = [Char] -> LexerMonad [Token]
+
+mainLexer :: Lexer
+mainLexer [] = do
+    checkBracketsAtEOF
+    pos <- getPos
+    return [(incSourceLine (setSourceColumn pos 0) 1, LexEOF)]
+
+mainLexer ('-':'-':cs) 
+    | not (nextCharSatisfy isSymbol rest) = do
+        incPos (2 + length minuses)
+        lexOneLineComment rest
+    where
+        (minuses, rest) = span (== '-') cs
+        
+mainLexer ('{':'-':cs) = do 
+    pos <- getPos 
+    incPos 2
+    lexMultiLineComment [pos] 0 cs 
+
+
+
+
+
+
+
+--Funtions to be resued in Lexer and/or scanner
 -- The lexing
 pKey :: String -> AmpT ()
 pKey = reserved lexer
