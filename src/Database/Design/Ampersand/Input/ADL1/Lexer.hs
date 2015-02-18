@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
 )
 where
 
-import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Tok)
+import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Lexeme)
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Pos
@@ -34,6 +34,7 @@ langDef = LanguageDef {
         reservedOpNames = operators,
         caseSensitive = True
     }
+
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
@@ -129,3 +130,5 @@ pComma  = pSpec ','
 --- Semi ::= ';'
 pSemi :: AmpT String
 pSemi = pSpec ';'
+
+

@@ -1,13 +1,11 @@
 module LexerToken
-(Token, Tok)
+(Token, Lexeme)
 where
 
 import Text.Parsec.Pos(SourcePos)
 
---type Token = (SourcePos,Tok,String)
-
 -- Original Token structure that will be replaced with the new ParsecT structure 
--- 
+-- Functions based on the old Token structure are beneath the data and type declarations
 
 type Line = Int
 type Column = Int
@@ -63,7 +61,11 @@ instance Show Token where
         (Tok TkError     _  s2 i fn)  -> "error in scanner: "     ++ s2         ++ maybeshow i fn
        )
 
-	   
+maybeshow :: Pos -> Filename -> String
+maybeshow (Pos 0 0) _  =  ""
+maybeshow (Pos l c) fn =  " at line " ++ show l
+                       ++ ", column " ++ show c
+                       ++ " of file " ++ show fn	   
 
 -- Parsec Token structure is introduced as a replacement of the original Token structure
 -- 
@@ -78,57 +80,49 @@ instance Show TokenP where
   showsPrec _ token'
     = showString
        (case token' of
-        (Tokv (TkSymbol val)    sp tval)  -> "symbol "                ++ val         ++ show sp ++ tval
-        (Tokv (TkOp val)        sp tval)  -> "operator "              ++ val         ++ show sp ++ tval
-        (Tokv (TkKeyword val)   sp tval)  ->                        show val         ++ show sp ++ tval
-        (Tokv (TkString val)    sp tval)  -> "string \""              ++ val ++ "\"" ++ show sp ++ tval
-        (Tokv (TkExpl val)      sp tval)  -> "explanation {+"         ++ val ++ "-}" ++ show sp ++ tval
-        (Tokv (TkAtom val)      sp tval)  -> "atom '"                 ++ val ++ "'"  ++ show sp ++ tval
-        (Tokv (TkChar val)      sp tval)  -> "character '"            ++ show val ++ "'"  ++ show sp ++ tval
-        (Tokv (TkInteger val)   sp tval)  -> "decimal Integer "       ++ show val    ++ show sp ++ tval
-        (Tokv (TkLowerId val)   sp tval)  -> "lower case identifier " ++ val         ++ show sp ++ tval
-        (Tokv (TkUpperId val)   sp tval)  -> "upper case identifier " ++ val         ++ show sp ++ tval
-        (Tokv (TkTextName val)  sp tval)  -> "text name "             ++ val         ++ show sp ++ tval
-        (Tokv (TkTextLine val)  sp tval)  -> "text line "             ++ val         ++ show sp ++ tval
-        (Tokv (TkSpace)         sp tval)  -> "spaces "                               ++ show sp ++ tval
+        (Tokv (LexSymbol val)    sp tval)  -> "symbol "                ++      val             ++ show sp ++ tval
+        (Tokv (LexOp val)        sp tval)  -> "operator "              ++      val             ++ show sp ++ tval
+        (Tokv (LexKeyword val)   sp tval)  ->                             show val             ++ show sp ++ tval
+        (Tokv (LexString val)    sp tval)  -> "string \""              ++      val     ++ "\"" ++ show sp ++ tval
+        (Tokv (LexExpl val)      sp tval)  -> "explanation {+"         ++      val     ++ "-}" ++ show sp ++ tval
+        (Tokv (LexAtom val)      sp tval)  -> "atom '"                 ++      val     ++ "'"  ++ show sp ++ tval
+        (Tokv (LexChar val)      sp tval)  -> "character '"            ++ show val     ++ "'"  ++ show sp ++ tval
+        (Tokv (LexInteger val)   sp tval)  -> "decimal Integer "       ++ show val             ++ show sp ++ tval
+        (Tokv (LexLowerId val)   sp tval)  -> "lower case identifier " ++      val             ++ show sp ++ tval
+        (Tokv (LexUpperId val)   sp tval)  -> "upper case identifier " ++      val             ++ show sp ++ tval
+        (Tokv (LexTextName val)  sp tval)  -> "text name "             ++      val             ++ show sp ++ tval
+        (Tokv (LexTextLine val)  sp tval)  -> "text line "             ++      val             ++ show sp ++ tval
+        (Tokv (LexSpace)         sp tval)  -> "spaces "                                        ++ show sp ++ tval
        )
 
-data Lexeme  = TkSymbol String
-             | TkOp String
-             | TkKeyword String
-             | TkString String
-             | TkExpl String
-             | TkAtom String
-             | TkChar Char
-             | TkInteger Int
-             | TkUpperId String
-             | TkLowerId String
-             | TkTextName String
-             | TkTextLine String
-             | TkSpace
-        deriving (Show, Eq)
+data Lexeme  = LexSymbol      String
+             | LexOp          String
+             | LexKeyword     String
+             | LexString      String
+             | LexExpl        String
+             | LexAtom        String
+             | LexChar        Char
+             | LexInteger     Int
+             | LexUpperId     String
+             | LexLowerId     String
+             | LexTextName    String
+             | LexTextLine    String
+             | LexSpace
+        deriving (Eq)
 	
 	
-instance Show lexeme where 
+instance Show Lexeme where 
     show x = case x of 
-         LexChar    c        -> Texts.parserCharacterLiteral      ++ " '" ++ c      ++ "'" 
-         LexString  s        -> Texts.parserStringLiteral         ++ " \""++ s      ++ "\"" 
-         LexInt     i        -> Texts.parserIntegerLiteral        ++ " '" ++ i      ++ "'" 
-         LexFloat   f        -> Texts.parserFloatLiteral          ++ " '" ++ f      ++ "'" 
- 
- 
-         LexVar     n        -> Texts.parserVariable              ++ " '" ++ n      ++ "'" 
-         LexVarSym  o        -> Texts.parserOperator              ++ " '" ++ o      ++ "'" 
-         LexCon     c        -> Texts.parserConstructor           ++ " '" ++ c      ++ "'" 
-         LexConSym  o        -> Texts.parserConstructorOperator   ++ " '" ++ o      ++ "'" 
-          
-         LexKeyword kwd      -> Texts.parserKeyword ++ " '" ++ kwd ++ "'" 
-         LexResVarSym s      -> "'" ++ s ++ "'" 
-         LexResConSym s      -> "'" ++ s ++ "'" 
-         LexSpecial c        -> "'" ++ [c] ++ "'" 
-          
-         LexInsertedOpenBrace  -> Texts.parserInsertedLBrace  
-         LexInsertedCloseBrace -> Texts.parserEndOfBlock 
-         LexInsertedSemicolon  -> Texts.parserNextInBlock 
-                          
-         LexEOF              -> Texts.parserEndOfFile 
+ 		 LexSymbol    val        -> "symbol "                           ++ " '"  ++      val      ++ "'"         
+ 		 LexOp        val        -> "operator "                         ++ " '"  ++      val      ++ "'"
+		 LexKeyword   val        -> "keyword"                           ++          show val   
+		 LexString    val        -> "string "                           ++ " \"" ++      val      ++ "\"" 
+		 LexExpl      val        -> "Explanation  "                     ++ " {+" ++      val      ++ "+}" 		 
+		 LexAtom      val        -> "Atom  "                            ++ " '"  ++      val      ++ "'"		 
+		 LexChar      val        -> "character "                        ++ " '"  ++ show val      ++ "'" 		 
+		 LexInteger   val        -> "decimal Integer "                  ++          show val
+		 LexUpperId   val        -> "upper case identifier "            ++               val      
+		 LexLowerId   val        -> "lower case identifier "            ++               val       
+		 LexTextName  val        -> "text name "                        ++ " '" ++       val      ++ "'" 
+		 LexTextLine  val        -> "text name "                        ++ " '" ++       val      ++ "'" 
+		 LexSpace                -> "spaces "

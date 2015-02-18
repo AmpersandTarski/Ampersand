@@ -6,14 +6,16 @@ module Lexer (
 )
 where
 
-import LexerToken(Token, Tok)
+import LexerToken(Token, Lexeme)
 import Text.Parsec.Char
 import Text.Parsec.Combinator
-import Text.Parsec.Pos
+--import Text.Parsec.Pos
+import Text.ParserCombinators.Parsec.Pos
 import Text.Parsec.Prim
 import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
 import Data.Char (isUpper)
+
 
 type AmpT a = ParsecT String [Token] Identity a
 
@@ -35,15 +37,7 @@ langDef = LanguageDef {
         caseSensitive = True
     }
 
---Temprary function to test the parser in ghci - to be removed before deploy
-runP :: Show a => AmpT a -> String -> IO ()
-runP p input 
-        = case (runParserT p [] a0 input ) of
-                Left err -> do{ putStr "parse error at "
-                              ; print err
-                              }
-                Right x -> print x --}
-	
+
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
 --   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
