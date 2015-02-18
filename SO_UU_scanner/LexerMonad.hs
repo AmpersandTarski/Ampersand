@@ -15,8 +15,8 @@ module LexerMonad
     , getOpts
     ) where
 
-import Helium.Main.Args
-import LexerMessage
+--import Helium.Main.Args
+--import LexerMessage
 import Text.ParserCombinators.Parsec.Pos
 
 type Bracket = (SourcePos, Char)
