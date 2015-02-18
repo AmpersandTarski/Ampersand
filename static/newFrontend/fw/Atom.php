@@ -39,12 +39,20 @@ Class Atom {
 	
 	/*
 	 * var $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
+	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
 	 */
-	public function getContent($interface, $rootElement = true){
+	public function getContent($interface, $rootElement = true, $tgtAtom = null){
 		$database = Database::singleton();
 		
-		$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
-		$tgtAtoms = array_column($database->Exe($query), 'tgt');
+		if(is_null($tgtAtom)){
+			$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
+			$tgtAtoms = array_column($database->Exe($query), 'tgt');
+		}else{
+			// Make sure that atom is in db (not necessarily the case: e.g. new atom)
+			$database->addAtomToConcept($this->id, $this->concept);
+			
+			$tgtAtoms[] = $tgtAtom;
+		}
 		
 		// define $arr as array if $interface is not univalent and its tgtDataType a primitive datatype (i.e. not concept) 
 		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array();
@@ -102,16 +110,14 @@ Class Atom {
 	public function patch(&$interface, $request_data){
 		$database = Database::singleton();
 		
-		// Check if new Atom
-		$before = $this->getContent($interface);
-		if($before == false){ // was empty($before = $this->getContent($interface)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-			$database->addAtomToConcept($this->id, $this->concept);
-			$before = $this->getContent($interface);
-		}
-		$before = current($before);
+		// Get current state of atom
+		$before = $this->getContent($interface, true, $this->id);
+		$before = current($before); // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
 		
+		// Determine differences between current state ($before) and requested state ($request_data)
 		$patches = JsonPatch::diff($before, $request_data);
 		
+		// Patch current state based on differences
 		foreach ((array)$patches as $key => $patch){
 			switch($patch['op']){ // operations
 				case "replace" :
@@ -133,17 +139,16 @@ Class Atom {
 						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-						$tgtAtom = array_shift($pathArr); // set tgtAtom 
-						
-						//if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
-						//elseif (is_null($tgtAtom)) $tgtAtom = $patch['value'];
-						
-						// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
-						if($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
+						$tgtAtom = array_shift($pathArr); // set tgtAtom 	
 						
 					}
 					
-					if($tgtInterface->tgtDataType == "concept") throw new Exception('Replace on non-primitive datatype', 501);
+					// if tgtDataType is a concept (i.e. ! prim. datatype), use key of object in $patch['value']
+					if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
+					// elseif tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+					elseif ($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
+					// else
+					else throw new Exception('Unknown variant of patch replace: ' . $patch['op'] . ' on ' . $patch['path'], 501);
 					
 					// perform editUpdate
 					if($tgtInterface->editable){
@@ -183,11 +188,11 @@ Class Atom {
 					
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
-						
-						// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
-						if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
 					
 					}
+					
+					// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+					if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
 					
 					// perform editUpdate
 					if($tgtInterface->editable){

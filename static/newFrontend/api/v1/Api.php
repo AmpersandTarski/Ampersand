@@ -142,10 +142,10 @@ class Api{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceName);
 			
-			$atom = new Atom($atomId, $session->interface->srcConcept);		
+			$atom = new Atom($atomId, $session->interface->tgtConcept);	
 			
 			return array_merge(array('patches' => $atom->patch($session->interface, $request_data))
-							  ,array('content' => current((array)$atom->getContent($session->interface)))
+							  ,array('content' => current((array)$atom->getContent($session->interface, true, $atom->id))) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
 							  ,array('notifications' => Notifications::getAll())
 							  );
 		
