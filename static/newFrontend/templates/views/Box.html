@@ -1,4 +1,4 @@
-<!-- BOX<> "$name$" $expAdl$ :: $source$ * $target$ $if(!exprIsUni)$[UNI]$endif$$if(!exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root) -->
+<!-- BOX<> "$name$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root) -->
 <div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" ng-init="ResourceId = \$index">
 $subObjects:{subObj|
   <!-- BOX<> CHILD: "$subObj.subObjName$" -->
