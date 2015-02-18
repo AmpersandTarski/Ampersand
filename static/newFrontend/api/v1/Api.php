@@ -169,7 +169,7 @@ class Api{
 		
 			// TODO: insert check if Atom may be deleted with this interface
 			
-			$atom = new Atom($atomId, $session->interface->srcConcept);
+			$atom = new Atom($atomId, $session->interface->tgtConcept);
 			$atom->delete();
 			
 			return array('notifications' => Notifications::getAll());
