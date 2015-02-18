@@ -35,6 +35,15 @@ langDef = LanguageDef {
         caseSensitive = True
     }
 
+--Temprary function to test the parser in ghci - to be removed before deploy
+runP :: Show a => AmpT a -> String -> IO ()
+runP p input 
+        = case (runParserT p [] a0 input ) of
+                Left err -> do{ putStr "parse error at "
+                              ; print err
+                              }
+                Right x -> print x --}
+	
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
 --   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
@@ -129,3 +138,5 @@ pComma  = pSpec ','
 --- Semi ::= ';'
 pSemi :: AmpT String
 pSemi = pSpec ';'
+
+
