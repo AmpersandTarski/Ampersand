@@ -7,6 +7,7 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
 where
 
 import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Lexeme)
+import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Pos
@@ -30,7 +31,7 @@ langDef = LanguageDef {
         identLetter = alphaNum <|> char '_',
         opStart = oneOf $ map head operators,
         opLetter = oneOf $ concat $ map tail operators,
-        reservedNames = keywords,
+        reservedNames = ke ywords,
         reservedOpNames = operators,
         caseSensitive = True
     }

@@ -7,6 +7,7 @@ module Lexer (
 where
 
 import LexerToken(Token, Lexeme)
+import LexerMonad
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Pos
@@ -18,7 +19,9 @@ import Data.Char (isUpper)
 
 type AmpT a = ParsecT String [Token] Identity a
 
-{--
+{-- 
+
+This parts is to be used when both the lexer as the parser are executed in a single run 
 lexer :: TokenParser [Token]
 lexer = makeTokenParser langDef
 
