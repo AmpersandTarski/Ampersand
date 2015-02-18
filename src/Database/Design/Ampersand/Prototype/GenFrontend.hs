@@ -61,7 +61,7 @@ Until this is sorted out, we disallow editing on interface refs
 -- Directories that will be copied to the prototype, if present in $adlSourceDir/includes/
 -- Format: (directory name in include/, path in prototype directory)
 allowedIncludeSubDirs :: [(String, String)]
-allowedIncludeSubDirs = [("templates", "templates"), ("css", "app/css"), ("js", "app/js"), ("images", "app/images")]
+allowedIncludeSubDirs = [("templates", "templates"), ("css", "app/css"), ("js", "app/js"), ("images", "app/images"), ("extensions", "extensions")]
 
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> 
