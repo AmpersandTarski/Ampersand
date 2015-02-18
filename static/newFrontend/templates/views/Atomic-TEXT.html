@@ -11,14 +11,10 @@ $if(isEditable)$
   <div my-showonhover-box>
     <input ng-model="selected.value" type="text" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(val, '$name$', selected, ResourceId)">
   </div>
-  $endif$
-$else$
-  $if(exprIsUni)$
+  $endif$$else$$if(exprIsUni)$
   <div>{{val['$name$']}}</div>
   $else$
   <div ng-repeat="row in val['$name$'] track by \$index">
     {{row}}
-  </div>
-  $endif$
-$endif$
+  </div>$endif$$endif$
 </div>

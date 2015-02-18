@@ -7,17 +7,10 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 -->
 <div class="container-fluid interface">
-
-  <!-- This is the fieldset that provides the header of the interface -->
-  <fieldset>
-  
-    $if(isTopLevel)$<legend>$interfaceName$</legend>$else$<legend>
-      <a ng-href="#/$interfaceName$/{{val.id}}">{{val['@label']}}</a>
-      <a href="#/$interfaceName$/?new"><span class="glyphicon glyphicon-plus pull-right CRUDbuttons"></span></a>
-      <a href=""><span class="glyphicon glyphicon-trash pull-right CRUDbuttons" ng-click="deleteResource(val.id)"></span></a>
-    </legend>$endif$
-    
+  $if(isTopLevel)$<!-- This is the fieldset that provides the header of the interface -->
+  <fieldset>  
+    <legend>$interfaceName$</legend>
+  $endif$  
 $contents$
-    
-  </fieldset>
+  $if(isTopLevel)$</fieldset>$endif$
 </div>
