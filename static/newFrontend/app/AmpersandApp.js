@@ -64,20 +64,7 @@ AmpersandApp.run(function(Restangular, $rootScope){
 	
 });
 
-AmpersandApp.directive('myShowonhovertr', function (){
-	return {
-		link : function(scope, element, attrs) {
-			element.hide(); // default hide
-			
-			element.closest('tr').bind('mouseenter', function() {
-				element.show();
-			});
-			element.closest('tr').bind('mouseleave', function() {
-				element.hide();
-			});
-		}
-	}
-}).directive('myShowonhoverRowContent', function (){
+AmpersandApp.directive('myShowonhoverRow', function (){
 	return {
 		link : function(scope, element, attrs) {
 			element.hide(); // default hide
@@ -86,6 +73,19 @@ AmpersandApp.directive('myShowonhovertr', function (){
 				element.show();
 			});
 			element.closest('.row-content').bind('mouseleave', function() {
+				element.hide();
+			});
+		}
+	}
+}).directive('myShowonhoverBox', function (){
+	return {
+		link : function(scope, element, attrs) {
+			element.hide(); // default hide
+			
+			element.closest('.box').bind('mouseenter', function() {
+				element.show();
+			});
+			element.closest('.box').bind('mouseleave', function() {
 				element.hide();
 			});
 		}

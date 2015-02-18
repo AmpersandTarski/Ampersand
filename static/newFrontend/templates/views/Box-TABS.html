@@ -1,5 +1,5 @@
 <!-- BOX<TABS> "$name$" $expAdl$ :: $source$ * $target$ $if(!exprIsUni)$[UNI]$endif$$if(!exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<tabset ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
+<tabset class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
 $subObjects:{subObj|
   <!-- BOX<TABS> CHILD: "$subObj.subObjName$" -->
   <tab heading="$subObj.subObjName$">
