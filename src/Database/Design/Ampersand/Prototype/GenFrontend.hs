@@ -60,8 +60,19 @@ Until this is sorted out, we disallow editing on interface refs
 
 -- Directories that will be copied to the prototype, if present in $adlSourceDir/includes/
 -- Format: (directory name in include/, path in prototype directory)
-allowedIncludeSubDirs :: [(String, String)]
-allowedIncludeSubDirs = [("templates", "templates"), ("css", "app/css"), ("js", "app/js"), ("images", "app/images"), ("extensions", "extensions")]
+
+data Include = Include { _fileOrDir :: FileOrDir, includeSrc :: String, _includeTgt :: String } deriving Show
+
+data FileOrDir = File | Dir deriving Show
+
+allowedIncludeSubDirs :: [Include]
+allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
+                        , Include Dir  "css"               "app/css"
+                        , Include Dir  "js"                "app/js"
+                        , Include Dir  "images"            "app/images"
+                        , Include Dir  "extensions"        "extensions"
+                        , Include File "localSettings.php" "localSettings.php"
+                        ]
 
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> 
@@ -76,42 +87,49 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </>
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
  do { putStrLn "Generating new frontend.." 
-    ; copyIncludeDirs fSpec
+    ; copyIncludes fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
     }
 
-copyIncludeDirs :: FSpec -> IO ()
-copyIncludeDirs fSpec =
+copyIncludes :: FSpec -> IO ()
+copyIncludes fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
           includeDir = adlSourceDir </> "include"
           protoDir = Opts.dirPrototype (getOpts fSpec)
     ; includeDirExists <- doesDirectoryExist $ includeDir
     ; if includeDirExists then
-       do { putStrLn $ "Copying user include directories from " ++ includeDir 
+       do { putStrLn $ "Copying user includes from " ++ includeDir 
           ; includeDirContents <- fmap (map (includeDir </>)) $ getProperDirectoryContents includeDir
-          ; includeDirSubDirs <- filterM doesDirectoryExist $ includeDirContents
           
-          ; let includeDirs = [ (absSd, protoDir </> td)
-                              | (sd,td) <- allowedIncludeSubDirs, let absSd = includeDir </> sd, absSd `elem` includeDirSubDirs ]
-          ; sequence_ [ do { putStrLn $ "- Copying " ++ sd ++ " -> " ++ td
-                           ; copyDirRecursively fSpec sd td
+          ; let absIncludes = [ Include fOrD absSd (protoDir </> tgtPth)
+                              | Include fOrD srcPth tgtPth <- allowedIncludeSubDirs
+                              , let absSd = includeDir </> srcPth
+                              , absSd `elem` includeDirContents
+                              ]
+                              
+          ; sequence_ [ do { putStrLn $ "  Copying " ++ toFOrDStr fOrD ++ " " ++ srcPth ++ "\n    -> " ++ tgtPth
+                           ; case fOrD of
+                               File -> copyDeepFile srcPth tgtPth
+                               Dir  -> copyDirRecursively srcPth tgtPth
                            }
-                      | (sd, td) <- includeDirs
+                      | Include fOrD srcPth tgtPth <- absIncludes
                       ]
                       
-          ; let ignoredPaths = includeDirContents \\ map fst includeDirs
+          ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
           ; when (not $ null ignoredPaths) $
-             do { putStrLn $ "WARNING: only the following include subdirectories are allowed:\n  " ++ show (map fst allowedIncludeSubDirs)
-                ; mapM_ (\d -> putStrLn $ "  - Ignored " ++ d) $ ignoredPaths
+             do { putStrLn $ "\nWARNING: only the following include/ paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
+                ; mapM_ (\d -> putStrLn $ "  Ignored " ++ d) $ ignoredPaths
                 }
           }
       else
         putStrLn $ "No user includes (there is no directory " ++ includeDir ++ ")"
     } 
-
+  where toFOrDStr File = "file"
+        toFOrDStr Dir  = "directory"
+        
 ------ Build intermediate data structure
 
 -- NOTE: _ disables 'not used' warning for fields
