@@ -375,7 +375,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
        Just (srcConcept, decl, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
          , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
-         , "      , 'relationIsFlipped' => "++show isFlipped ] ++
+         , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
          (if isFlipped 
           then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
                , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
