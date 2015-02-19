@@ -54,8 +54,8 @@ class ObjectInterface {
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
 		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
-		$this->totaal = ($interface['min'] == "One") ? true : false;
-		$this->univalent = ($interface['max'] == "One") ? true : false; 
+		$this->totaal = $interface['exprIsTot'];
+		$this->univalent = $interface['exprIsUni'];
 		$this->srcConcept = $interface['srcConcept'];
 		$this->tgtConcept = $interface['tgtConcept'];
 		
