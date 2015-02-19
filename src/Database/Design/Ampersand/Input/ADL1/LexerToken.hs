@@ -4,6 +4,9 @@ where
 
 import Text.Parsec.Pos(SourcePos)
 
+--Generic types used in all token types
+--
+
 type Line = Int
 type Column = Int
 
@@ -12,7 +15,7 @@ type Filename   = String
 
 -- GenToken out of which different token formats can be generated
 -- The generic token abtracts from the main lexer logic and the output format to make the scanner easy maintainable when another TokenType is needed
-data GTokenTypeTokenType
+data GenTokenType
   = GtkSymbol
   | GtkVarid
   | GtkConid
@@ -31,10 +34,10 @@ data GTokenTypeTokenType
   | GtkError
   deriving (Eq, Ord)
 
-data GenToken = GenTok { tp'    :: TokenType
-                       , val    :: String
-                       , pos    :: !Pos
-                       , file   :: !Filename
+data GenToken = GenTok { gtokt       ::  GenTokenType
+                       , gvalue      ::  String
+                       , gpos        :: !Pos
+                       , gfilen      :: !Filename
                        }
 
 instance Show GenToken where
@@ -63,7 +66,10 @@ maybeshow :: Pos -> Filename -> String
 maybeshow (Pos 0 0) _  =  ""
 maybeshow (Pos l c) fn =  " at line " ++ show l
                        ++ ", column " ++ show c
-                       ++ " of file " ++ show fn	
+                       ++ " of file " ++ show fn
+
+makeGenToken :: GenTokenType -> String -> Pos -> Filename -> GenToken
+makeGenToken tokt val pos filen = GenTok tokt val pos filen
 					   
 -- Original Token structure that will be replaced with the new ParsecT structure 
 -- Functions based on the old Token structure are beneath the data and type declarations
@@ -127,7 +133,7 @@ data TokenL = TokL { lexeme  :: Lexeme
                    }
 
 	
-instance Show TokenP where
+instance Show TokenL where
   showsPrec _ token'
     = showString
        (case token' of
