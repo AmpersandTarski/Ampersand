@@ -28,7 +28,6 @@ fatal = fatalMsg "GenFrontend"
 - Be more consistent with record selectors/pattern matching
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
 - isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
-- Escape everything
 - Keeping templates as statics requires that the static files are written before templates are used.
   Maybe we should keep them as cabal data-files instead. (file extensions and directory structure are predictable)
 
@@ -58,13 +57,11 @@ When do we allow this to be editable? If relRef is I, we can use editability of 
 Until this is sorted out, we disallow editing on interface refs
 -}
 
--- Directories that will be copied to the prototype, if present in $adlSourceDir/includes/
--- Format: (directory name in include/, path in prototype directory)
-
 data Include = Include { _fileOrDir :: FileOrDir, includeSrc :: String, _includeTgt :: String } deriving Show
 
 data FileOrDir = File | Dir deriving Show
 
+-- Files/directories that will be copied to the prototype, if present in $adlSourceDir/includes/
 allowedIncludeSubDirs :: [Include]
 allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
                         , Include Dir  "css"               "app/css"
@@ -75,8 +72,7 @@ allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
                         ]
 
 getTemplateDir :: FSpec -> String
-getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> 
-                         "templates"
+getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> "templates"
 
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
@@ -188,7 +184,7 @@ buildInterface fSpec allIfcs ifc =
         ; (atomicOrBox', iExp', isEditable', tgt') <-
             case objmsub object of
               Nothing                  ->
-               do { let specificTemplatePth = "views/Atomic-" ++ name tgt ++ ".html" -- TODO: escape
+               do { let specificTemplatePth = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
                   ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
                   ; let atomic = FEAtomic $ if hasSpecificTemplate then Just specificTemplatePth else Nothing
                   ; return (atomic, iExp, isEditable, tgt)
@@ -247,10 +243,10 @@ genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editabl
                      . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"   [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
-                     . setAttribute "interfaceName"       iName           -- TODO: escape
+                     . setAttribute "interfaceName"       (escapeIdentifier iName)
                      . setAttribute "expAdl"              (showADL iExp)
-                     . setAttribute "source"              (name iSrc)     -- TODO: escape
-                     . setAttribute "target"              (name iTgt)     -- TODO: escape
+                     . setAttribute "source"              (escapeIdentifier $ name iSrc)
+                     . setAttribute "target"              (escapeIdentifier $ name iTgt)
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
 
     ; let filename = iIdent ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
@@ -267,10 +263,10 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
       atomicAndBoxAttrs = setAttribute "isEditable" isEditable
                         . setAttribute "exprIsUni"  exprIsUni
                         . setAttribute "exprIsTot"  exprIsTot
-                        . setAttribute "name"       nm             -- TODO: escape
+                        . setAttribute "name"       (escapeIdentifier nm)
                         . setAttribute "expAdl"     (showADL oExp) 
-                        . setAttribute "source"     (name src)     -- TODO: escape
-                        . setAttribute "target"     (name tgt)     -- TODO: escape
+                        . setAttribute "source"     (escapeIdentifier $ name src)
+                        . setAttribute "target"     (escapeIdentifier $ name tgt)
                     
   in  case atomicOrBox obj of
         FEAtomic mPrimTemplate ->
@@ -291,7 +287,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
-                               . setAttribute "navInterface" mNavInterface  -- TODO: escape
+                               . setAttribute "navInterface" (fmap escapeIdentifier mNavInterface)
             }
         FEBox mClass subObjs ->
          do { {-
@@ -311,7 +307,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
             }
   where genView_SubObject subObj = 
          do { lns <- genView_Object fSpec (depth + 1) subObj
-            ; return SubObjAttr{ subObjName = objName subObj -- TODO: escape
+            ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                                , isBLOB = name (target $ objExp subObj) == "BLOB"
                                , subObjContents = intercalate "\n" $ indent 8 lns
                                -- Indentation is not context sensitive, so some templates will
@@ -334,7 +330,7 @@ genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
-          allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = name $ objTarget o } -- TODO: escape 
+          allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = escapeIdentifier $ name (objTarget o) } 
                                     | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
                                     , objIsEditable o
                                     , not . isJust $ objMPrimTemplate a
@@ -354,13 +350,13 @@ genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles e
                      . setAttribute "containsEditable"         containsEditable
                      . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
-                     . setAttribute "interfaceName"            iName          -- TODO: escape
+                     . setAttribute "interfaceName"            (escapeIdentifier iName)
                      . setAttribute "interfaceIdent"           iIdent
                      . setAttribute "expAdl"                   (showADL iExp)
-                     . setAttribute "source"                   (name iSrc)    -- TODO: escape
-                     . setAttribute "target"                   (name iTgt)    -- TODO: escape
+                     . setAttribute "source"                   (escapeIdentifier $ name iSrc)
+                     . setAttribute "target"                   (escapeIdentifier $ name iTgt)
 
-    ; let filename = iIdent ++ ".js" -- TODO: escape
+    ; let filename = (escapeIdentifier iIdent) ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
