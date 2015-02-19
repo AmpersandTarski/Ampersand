@@ -15,27 +15,7 @@ import Text.Parsec.Prim
 import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
 import Data.Char (isUpper)
-{--
-type AmpT a = ParsecT String [Token] Identity a
 
-lexer :: TokenParser [Token]
-lexer = makeTokenParser langDef
-
-langDef :: LanguageDef [Token]
-langDef = LanguageDef {
-        commentStart = "{-",
-        commentEnd = "-}",
-        commentLine = "--",
-        nestedComments = True,
-        identStart = letter <|> char '_',
-        identLetter = alphaNum <|> char '_',
-        opStart = oneOf $ map head operators,
-        opLetter = oneOf $ concat $ map tail operators,
-        reservedNames = ke ywords,
-        reservedOpNames = operators,
-        caseSensitive = True
-    }
---}
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
