@@ -7,7 +7,7 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceIdent$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
   
   \$scope.val = {};
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.

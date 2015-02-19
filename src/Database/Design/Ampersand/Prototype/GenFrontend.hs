@@ -129,7 +129,7 @@ copyIncludes fSpec =
 ------ Build intermediate data structure
 
 -- NOTE: _ disables 'not used' warning for fields
-data FEInterface = FEInterface { ifcName :: String, ifcIdent :: String -- _ifcIdent is a version of ifcName that can be used as (part of) an identifier or file name
+data FEInterface = FEInterface { ifcName :: String
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
                                , _ifcRoles :: [Role], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
@@ -163,7 +163,7 @@ buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return $
-        FEInterface  (name ifc) (escapeIdentifier $ name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
+        FEInterface (name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
     -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
     --       (name comes from interface, but is equal to object name)
     } 
@@ -208,17 +208,13 @@ buildInterface fSpec allIfcs ifc =
 
 ------ Generate RouteProvider.js
 
--- Helper data structure to pass attribute values to HStringTemplate
-data RouteAttr = RouteAttr { interfaceName :: String, interfaceIdent:: String } deriving (Show, Data, Typeable)
-
 genRouteProvider :: FSpec -> [FEInterface] -> IO ()
 genRouteProvider fSpec ifcs =
  do { --verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
-    ; let routeAttrs = [ RouteAttr { interfaceName = ifcName ifc, interfaceIdent = ifcIdent ifc } | ifc <- ifcs ]
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
-                     . setAttribute "routes"              routeAttrs
+                     . setAttribute "interfaceNames"      (map (escapeIdentifier . ifcName) ifcs)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
 
     ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
@@ -233,7 +229,7 @@ genView_Interfaces fSpec ifcs =
     }
 
 genView_Interface :: FSpec -> FEInterface -> IO ()
-genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
+genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels obj) =
  do { --verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show iName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
     ; lns <- genView_Object fSpec 0 obj
     ; template <- readTemplate fSpec "views/Interface.html"
@@ -249,7 +245,7 @@ genView_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editabl
                      . setAttribute "target"              (escapeIdentifier $ name iTgt)
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
 
-    ; let filename = iIdent ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
+    ; let filename = escapeIdentifier iName ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
     }
 
@@ -327,7 +323,7 @@ genController_Interfaces fSpec ifcs =
 data NonPrimEditableAttr = NPEAttr { labelName :: String, targetConcept :: String } deriving (Show, Data, Typeable)
 
 genController_Interface :: FSpec -> FEInterface -> IO ()
-genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles editableRels obj) =
+genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels obj) =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
           allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = escapeIdentifier $ name (objTarget o) } 
@@ -351,12 +347,11 @@ genController_Interface fSpec (FEInterface iName iIdent _ iExp iSrc iTgt roles e
                      . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (escapeIdentifier iName)
-                     . setAttribute "interfaceIdent"           iIdent
                      . setAttribute "expAdl"                   (showADL iExp)
                      . setAttribute "source"                   (escapeIdentifier $ name iSrc)
                      . setAttribute "target"                   (escapeIdentifier $ name iTgt)
 
-    ; let filename = (escapeIdentifier iIdent) ++ ".js"
+    ; let filename = (escapeIdentifier iName) ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
