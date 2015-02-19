@@ -237,7 +237,7 @@ genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels o
                        setAttribute "contextName"         (addSlashes $ fsName fSpec)
                      . setAttribute "isTopLevel"          (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"   [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"   [ show $ escapeIdentifier (name r) | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (escapeIdentifier iName)
                      . setAttribute "interfaceFullName"   (addSlashes $ iName)
@@ -343,7 +343,7 @@ genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editable
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"        [ show $ name r | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"        [ show $ escapeIdentifier (name r) | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "allEditableNonPrims"      allEditableNonPrims
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable
