@@ -7,7 +7,7 @@
 			<div class="form-group">
 				<label class="col-md-2 control-label">Exec engine on/off</label>
 				<div class="col-md-10">
-					<switch ng-model="iets" class="form-control"></switch>
+					<switch ng-model="iets"></switch>
 				</div>
 			</div>
 			
@@ -15,7 +15,7 @@
 				<label class="col-md-2 control-label">Rules to maintain</label>
 				<div class="col-md-10">
 					<ol>
-						<li ng-repeat="rule in role.maintains"><switch ng-model="iets" class="form-control"></switch> {{rule}}</li>
+						<li ng-repeat="rule in role.maintains"><switch ng-model="iets"> {{rule}}</switch></li>
 					</ol>
 				</div>
 			</div>
