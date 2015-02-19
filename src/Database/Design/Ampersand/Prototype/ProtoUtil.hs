@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
-         , copyDirRecursively, getProperDirectoryContents
+         , copyDirRecursively, copyDeepFile, getProperDirectoryContents
          , phpIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
@@ -37,25 +37,28 @@ getGenericsDir fSpec =
   in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generics" else protoDir
 
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
-copyDirRecursively :: FSpec -> FilePath -> FilePath -> IO ()
-copyDirRecursively fSpec srcBase tgtBase = copy ""
+-- NOTE: tgtBase specifies the copied directory target, not its parent
+copyDirRecursively :: FilePath -> FilePath -> IO ()
+copyDirRecursively srcBase tgtBase = copy ""
   where copy fileOrDirPth = 
          do { let srcPath = srcBase </> fileOrDirPth
                   tgtPath = tgtBase </> fileOrDirPth
             ; isDir <- doesDirectoryExist srcPath
             ; if isDir then 
-               do { tgtExists <- doesDirectoryExist tgtPath
-                  ; when (not tgtExists) $
-                      createDirectory tgtPath
+               do { createDirectoryIfMissing True tgtPath
                   ; fOrDs <- getProperDirectoryContents srcPath
                   ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
                   }
               else
-               do { fileContents <- readFile srcPath 
-                  ; verboseLn (getOpts fSpec) $ "Copying: " ++ srcPath
-                  ; writeFile tgtPath fileContents
-                  }
+                copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
             }
+            
+-- Copy file while creating all subdirectories on the target path (if non-existent)
+copyDeepFile :: FilePath -> FilePath -> IO ()
+copyDeepFile srcPath tgtPath =
+ do { createDirectoryIfMissing True (takeDirectory tgtPath)
+    ; copyFile srcPath tgtPath
+    }
 
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $
