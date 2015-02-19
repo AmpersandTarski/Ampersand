@@ -96,10 +96,6 @@ executable ampersand
                      time == 1.4.*,
                      utf8-string == 0.3.*,
                      uulib == 0.9.*
-
-  -- Unfortunately, unix package is not available on windows (so we can't set static-file timestamps)
-  if !os(windows)
-    build-depends:   unix == 2.7.*
         
   other-modules:     
                      Database.Design.Ampersand,
