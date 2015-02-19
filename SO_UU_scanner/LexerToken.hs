@@ -1,5 +1,5 @@
 module LexerToken
-(Token, Lexeme)
+(Token, Lexeme, makeGenToken, GenToken)
 where
 
 import Text.Parsec.Pos(SourcePos)
