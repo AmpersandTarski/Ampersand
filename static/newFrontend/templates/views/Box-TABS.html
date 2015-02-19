@@ -1,7 +1,7 @@
-<!-- BOX<TABS> "$name$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+<!-- BOX<TABS> "$fullName$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 <tabset class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
-  $subObjects:{subObj|<!-- BOX<TABS> CHILD: "$subObj.subObjName$" -->
-  <tab heading="$subObj.subObjName$">
+  $subObjects:{subObj|<!-- BOX<TABS> CHILD: "$subObj.subObjFullName$" -->
+  <tab heading="$subObj.subObjFullName$">
 $subObj.subObjContents$
   </tab>}$
 </tabset>

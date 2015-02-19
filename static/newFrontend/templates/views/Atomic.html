@@ -1,4 +1,4 @@
-<!-- Atomic[] "$name$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+<!-- Atomic[] "$fullName$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $if(isEditable)$<div ng-repeat="row in val['$name$'] track by \$index">
   <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row['id'], ResourceId)"></span>
   <span>$if(navInterface)$<a ng-href="#/$navInterface$/{{row['id']}}">{{row['@label']}}</a>$else${{row['@label']}}$endif$</span>

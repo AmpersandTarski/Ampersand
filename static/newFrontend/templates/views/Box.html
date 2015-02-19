@@ -1,4 +1,4 @@
-<!-- BOX<> "$name$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+<!-- BOX<> "$fullName$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 <div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" ng-init="ResourceId = \$index">
     $if(isRoot)$<fieldset>
     <legend>
@@ -6,9 +6,9 @@
       <a href="" class="pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>
     </legend>
   $endif$
-    $subObjects:{subObj|<!-- BOX<> CHILD: "$subObj.subObjName$" -->
+    $subObjects:{subObj|<!-- BOX<> CHILD: "$subObj.subObjFullName$" -->
     <div class="row">
-      <div class="row-label col-md-1"><strong>$subObj.subObjName$</strong></div>
+      <div class="row-label col-md-1"><strong>$subObj.subObjFullName$</strong></div>
       <div class="row-content col-md-11">
 $subObj.subObjContents$
       </div>
