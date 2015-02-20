@@ -92,8 +92,8 @@ class Concept {
 		
 		$interfaces = array();
 		
-		foreach ($allInterfaceObjects as $interfaceName => $interface){
-			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceName;
+		foreach ($allInterfaceObjects as $interfaceId => $interface){
+			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
 		}
 		
 		return $interfaces;

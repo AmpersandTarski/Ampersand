@@ -29,8 +29,8 @@ class Role {
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];
 		
 		// Interfaces that are accessible by this role
-		foreach ($allInterfaceObjects as $interfaceName => $interface){
-			if (ObjectInterface::isInterfaceForRole($this->name, $interfaceName)) $this->interfaces[] = $interfaceName;
+		foreach ($allInterfaceObjects as $interfaceId => $interface){
+			if (ObjectInterface::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = $interfaceId;
 		}		
 	}
 		
@@ -57,8 +57,8 @@ class Role {
 	public function getInterfaces($topLevel = null, $srcConcept = null){ // $topLevel: true, false, null (=all), $srcConcept: <concept> or null (=all)
 		$interfaces = array();
 		
-		foreach($this->interfaces as $interfaceName){
-			$interface = new ObjectInterface($interfaceName);
+		foreach($this->interfaces as $interfaceId){
+			$interface = new ObjectInterface($interfaceId);
 			
 			if(isset($topLevel)){
 				switch ($topLevel){
@@ -86,8 +86,8 @@ class Role {
 		return $interfaces;
 	}
 	
-	public function isInterfaceForRole($interfaceName){
-		return in_array($interfaceName, $this->interfaces);
+	public function isInterfaceForRole($interfaceId){
+		return in_array($interfaceId, $this->interfaces);
 	}
 	
 	public function getViolations(){

@@ -15,7 +15,7 @@ AmpersandApp.config(function($routeProvider) {
 				templateUrl: 'app/views/static_installer.html'
 			})
 		// here, you can add other stuff (e.g. DndTree)
-		//.when('/<interfacename>/:resourceId?',
+		//.when('/<interfaceId>/:resourceId?',
  		//	{
 		//		controller: 'DndTreeController',
 		//		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'

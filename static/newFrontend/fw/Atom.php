@@ -25,7 +25,7 @@ Class Atom {
 	}
 	
 	public function getAtom($interface = null){
-		foreach(Concept::getAllInterfaces($this->concept) as $interfaceName) $interfaces[] = API_INTERFACES_PATH . $interfaceName . '/' . $this->id;
+		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = API_INTERFACES_PATH . $interfaceId . '/' . $this->id;
 		
 		$result =  array('@id' => $this->jsonld_id
 						,'@label' => $this->label
@@ -65,7 +65,7 @@ Class Atom {
 				$content = array();
 				
 				// Add @context for JSON-LD to rootElement
-				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->name;
+				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
 				
 				// Add other elements
 				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
@@ -81,11 +81,11 @@ Class Atom {
 			}
 			
 			// subinterfaces
-			if(!empty($interface->subInterfaces) && $interface->tgtDataType != "concept") throw new Exception("TgtConcept of interface: '" . $interface->name . "' is primitive datatype and can not have subinterfaces", 501);
+			if(!empty($interface->subInterfaces) && $interface->tgtDataType != "concept") throw new Exception("TgtConcept of interface: '" . $interface->label . "' is primitive datatype and can not have subinterfaces", 501);
 			foreach($interface->subInterfaces as $subinterface){
 			
 				$otherAtom = $tgtAtom->getContent($subinterface, false);
-				$content[$subinterface->name] = $otherAtom;
+				$content[$subinterface->id] = $otherAtom;
 				
 			}
 			
@@ -130,12 +130,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
-						$interfaceName = array_shift($pathArr);
+						$interfaceId = array_shift($pathArr);
 						
 						// if path starts with '@' skip
-						if(substr($interfaceName, 0, 1) == '@') break 2; // break while and switch
+						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
 						
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceId);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 	
@@ -163,7 +163,7 @@ Class Atom {
 							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						}					
 					}else{
-						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
 					}
 					
 					break;
@@ -178,12 +178,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
-						$interfaceName = array_shift($pathArr);
+						$interfaceId = array_shift($pathArr);
 						
 						// if path starts with '@' skip
-						if(substr($interfaceName, 0, 1) == '@') break 2; // break while and switch
+						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
 					
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceId);
 					
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
@@ -198,12 +198,12 @@ Class Atom {
 						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
 					
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
-						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->name . ": add operation without value '");
+						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
 						
 						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						
 					}else{
-						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
 					}
 					
 					break;
@@ -218,12 +218,12 @@ Class Atom {
 					
 					// find the right subinterface
 					while (count($pathArr)){
-						$interfaceName = array_shift($pathArr);
+						$interfaceId = array_shift($pathArr);
 						
 						// if path starts with '@' skip
-						if(substr($interfaceName, 0, 1) == '@') break 2; // break while and switch
+						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
 						
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceName);
+						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceId);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
@@ -237,7 +237,7 @@ Class Atom {
 						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
 						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
-						Notifications::addError($tgtInterface->name . " is not editable in interface '" . $interface->name . "'");
+						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
 					}
 					
 					break;

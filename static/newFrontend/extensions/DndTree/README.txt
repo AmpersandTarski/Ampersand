@@ -1,5 +1,5 @@
 // Define interface in ADL
-INTERFACE "<interfacename>" FOR "Viewer" : '__MYSESSION__'
+INTERFACE "<interface name with special chars>" FOR "Viewer" : '__MYSESSION__'
 	BOX [ "children"	: V[SESSION*Rootconcept]
 			BOX [ "children"	: expression[RootConcept*SomeOtherConcept])
 					BOX [ "children" 	: expression[SomeOtherConcept*AnotherSomeConcept]
@@ -7,7 +7,7 @@ INTERFACE "<interfacename>" FOR "Viewer" : '__MYSESSION__'
 		]
 		
 // Add view-controller to $routeProvider in file "<HTDOCSROOT>\<APPLICATIONDIR>\App\AmpersandApp.js"
-.when('/<interfacename>/:resourceId?',
+.when('/<interfaceId (i.e. safe name)>/:resourceId?',
 	{
 		controller: 'DndTreeController',
 		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'

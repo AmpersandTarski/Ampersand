@@ -92,16 +92,16 @@ class Session {
 		}
 	}
 	
-	public function setInterface($interfaceName){
+	public function setInterface($interfaceId){
 		
-		if(isset($interfaceName)) {
-			if(!$this->role->isInterfaceForRole($interfaceName)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
+		if(isset($interfaceId)) {
+			if(!$this->role->isInterfaceForRole($interfaceId)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
 			
-			$this->interface = new ObjectInterface($interfaceName);
-			Notifications::addLog("Interface $interfaceName selected");
+			$this->interface = new ObjectInterface($interfaceId);
+			Notifications::addLog("Interface '". $this->interface->label . "' selected");
 				
 		}else{
-			throw new Exception('No interfaceName specified', 404);
+			throw new Exception('No interface specified', 404);
 		}
 	}
 }
