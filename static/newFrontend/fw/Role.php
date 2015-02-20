@@ -10,7 +10,6 @@ class Role {
 
 	public function __construct($id = null){
 		global $allRoles; // from Generics.php
-		global $allInterfaceObjects; // from Generics.php
 		
 		if(is_null($id)){ 
 			$id = DEFAULT_ROLEID; // localSettings.php
@@ -29,7 +28,7 @@ class Role {
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];
 		
 		// Interfaces that are accessible by this role
-		foreach ($allInterfaceObjects as $interfaceId => $interface){
+		foreach (ObjectInterface::getAllInterfaceObjects as $interfaceId => $interface){
 			if (ObjectInterface::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = $interfaceId;
 		}		
 	}

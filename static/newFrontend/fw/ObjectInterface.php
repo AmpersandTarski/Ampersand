@@ -129,6 +129,12 @@ class ObjectInterface {
 		}
 		return empty($result) ? false : $result;
 	}
+	
+	public static function getAllInterfaceObjects(){
+		global $allInterfaceObjects; // from Generics.php
+		
+		return (array)$allInterfaceObjects;
+	}
 }
 
 ?>
