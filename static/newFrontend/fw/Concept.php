@@ -90,7 +90,7 @@ class Concept {
 	public static function getAllInterfaces($concept){		
 		$interfaces = array();
 		
-		foreach (ObjectInterface::getAllInterfaceObjects() as $interfaceId => $interface){
+		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
 			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
 		}
 		

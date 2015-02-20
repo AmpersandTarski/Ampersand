@@ -214,7 +214,7 @@ class Api{
 	public function getInterface($interfaceId){
 		throw new RestException(501);
 		try{			
-			$interface = new ObjectInterface($interfaceId);
+			$interface = new InterfaceObject($interfaceId);
 			
 			return $interface;
 		}catch(Exception $e){

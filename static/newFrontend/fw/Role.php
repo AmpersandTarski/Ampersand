@@ -28,8 +28,8 @@ class Role {
 		$this->maintains = (array)$allRoles[$id]['ruleNames'];
 		
 		// Interfaces that are accessible by this role
-		foreach (ObjectInterface::getAllInterfaceObjects as $interfaceId => $interface){
-			if (ObjectInterface::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = $interfaceId;
+		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
+			if (InterfaceObject::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = $interfaceId;
 		}		
 	}
 		
@@ -57,7 +57,7 @@ class Role {
 		$interfaces = array();
 		
 		foreach($this->interfaces as $interfaceId){
-			$interface = new ObjectInterface($interfaceId);
+			$interface = new InterfaceObject($interfaceId);
 			
 			if(isset($topLevel)){
 				switch ($topLevel){

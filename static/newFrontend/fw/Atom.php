@@ -135,7 +135,7 @@ Class Atom {
 						// if path starts with '@' skip
 						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
 						
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceId);
+						$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom 	
@@ -183,7 +183,7 @@ Class Atom {
 						// if path starts with '@' skip
 						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
 					
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceId);
+						$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
 					
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom
@@ -223,7 +223,7 @@ Class Atom {
 						// if path starts with '@' skip
 						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
 						
-						$tgtInterface = ObjectInterface::getSubinterface($tgtInterface, $interfaceId);
+						$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
 						
 						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 						$tgtAtom = array_shift($pathArr); // set tgtAtom

@@ -1,6 +1,6 @@
 <?php
 
-class ObjectInterface {
+class InterfaceObject {
 	
 	public $id;			// Interface id (i.e. safe name) to use in framework
 	public $label;		// Interface name to show in UI
@@ -93,13 +93,13 @@ class ObjectInterface {
 		// Determine subInterfaces
 		if(!empty($this->refInterfaceId)){
 					
-			$refInterface = new ObjectInterface($this->refInterfaceId, null, $refInterfacesArr);
+			$refInterface = new InterfaceObject($this->refInterfaceId, null, $refInterfacesArr);
 			foreach($refInterface->subInterfaces as $subInterface){
 				$this->subInterfaces[] = $subInterface;
 			}
 		}else{
 			foreach ((array)$this->boxSubInterfaces as $subInterface){
-				$this->subInterfaces[] = new ObjectInterface($subInterface['id'], $subInterface, $refInterfacesArr);
+				$this->subInterfaces[] = new InterfaceObject($subInterface['id'], $subInterface, $refInterfacesArr);
 			}
 		}
 	}
@@ -113,7 +113,7 @@ class ObjectInterface {
 	
 	public static function isInterfaceForRole($roleName, $interfaceId = null){
 		if(isset($interfaceId)){
-			$interface = new ObjectInterface($interfaceId);
+			$interface = new InterfaceObject($interfaceId);
 			return (in_array($roleName, $interface->interfaceRoles) or empty($interface->interfaceRoles));
 		}		
 		
