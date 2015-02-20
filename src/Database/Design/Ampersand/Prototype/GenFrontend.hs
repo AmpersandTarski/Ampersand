@@ -32,7 +32,7 @@ fatal = fatalMsg "GenFrontend"
   Maybe we should keep them as cabal data-files instead. (file extensions and directory structure are predictable)
 
 
-PROBLEM: Interface refs are not handled correctly at the moment. Consider:
+NOTE: interface refs are handled as follows:
 
 INTERFACE MyInterface 
   BOX [ ref : rel[$a*$b]
@@ -43,7 +43,7 @@ INTERFACE RefInterface relRef[$b*$c]
   BOX [ .. : ..[$c*$d]
       ]
 
-This is basically mapped onto:
+is basically mapped onto:
 
 INTERFACE MyInterface 
   BOX [ ref : (rel;relRef)[$a*$c]
@@ -51,10 +51,8 @@ INTERFACE MyInterface
             ]
       ]
 
-When do we allow this to be editable? If relRef is I, we can use editability of rel, but relRef may be anything
-(and does not even have to be an endorelation [$b*$b].)
+This is considered editable iff the composition rel;relRef yields an editable declaration (e.g. for editableR;I).
 
-Until this is sorted out, we disallow editing on interface refs
 -}
 
 data Include = Include { _fileOrDir :: FileOrDir, includeSrc :: String, _includeTgt :: String } deriving Show
@@ -171,27 +169,20 @@ buildInterface fSpec allIfcs ifc =
     buildObject :: [Expression] -> ObjectDef -> IO FEObject
     buildObject editableRels object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
-              (isEditable, src, tgt) = 
-                case getExpressionRelation iExp of
-                  Nothing                          -> (False, source iExp, target iExp)
-                  Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc, declTgt) 
-                                                   -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
-              navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 
-                        | nIfc <- allIfcs
-                        , (source . objctx . ifcObj $ nIfc) == tgt
-                        , let nRoles =  ifcRoles nIfc `intersect` ifcRoles ifc
-                        ]
-        ; (atomicOrBox', iExp', isEditable', tgt') <-
+              
+        ; (aOrB, iExp', isEditable, src, tgt) <-
             case objmsub object of
               Nothing                  ->
-               do { let specificTemplatePth = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
+               do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
+                  ; let specificTemplatePth = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
                   ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
                   ; let atomic = FEAtomic $ if hasSpecificTemplate then Just specificTemplatePth else Nothing
-                  ; return (atomic, iExp, isEditable, tgt)
+                  ; return (atomic, iExp, isEditable, src, tgt)
                   }
               Just (Box _ mCl objects) -> 
-               do { subObjs <- mapM (buildObject editableRels) objects
-                  ; return (FEBox mCl subObjs, iExp, isEditable, tgt)
+               do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
+                  ; subObjs <- mapM (buildObject editableRels) objects
+                  ; return (FEBox mCl subObjs, iExp, isEditable, src, tgt)
                   }
               Just (InterfaceRef nm)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
@@ -199,12 +190,25 @@ buildInterface fSpec allIfcs ifc =
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                   [i]     -> do { let editableRels' = editableRels `intersect` ifcParams i
                                 ; refObj <- buildObject editableRels' (ifcObj i)
-                                ; return (atomicOrBox refObj, ECps (iExp, objExp refObj), False, (objTarget refObj))
-                                } -- TODO: interface ref basically skips a relation, so we make it not editable for now
+                                ; let comp = ECps (iExp, objExp refObj) 
+                                      -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
+                                      (isEditable, src, tgt) = getIsEditableSrcTgt comp
+                                ; return (atomicOrBox refObj, comp, isEditable, src, tgt)
+                                } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
-        ; return $ FEObject (name object) iExp' src tgt' isEditable' (isUni iExp') (isTot iExp') navIfcs atomicOrBox'
+        ; let navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 
+                        | nIfc <- allIfcs
+                        , (source . objctx . ifcObj $ nIfc) == tgt
+                        , let nRoles = ifcRoles nIfc `intersect` ifcRoles ifc
+                        ]
+
+        ; return $ FEObject (name object) iExp' src tgt isEditable (isUni iExp') (isTot iExp') navIfcs aOrB
         }
-
+      where getIsEditableSrcTgt expr = 
+              case getExpressionRelation expr of
+                Nothing                          -> (False,                         source expr, target expr)
+                Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc,     declTgt    ) 
+                                                   -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
 
 ------ Generate RouteProvider.js
 
