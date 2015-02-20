@@ -61,7 +61,7 @@ Class Atom {
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept);
 				
 			// determine value atom 
-			if($interface->tgtDataType == "concept"){ // subinterface refers to other concept (i.e. not datatype).
+			if($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
 				$content = array();
 				
 				// Add @context for JSON-LD to rootElement
@@ -73,16 +73,15 @@ Class Atom {
 													 	, '@type' => $tgtAtom->jsonld_type
 													 	, 'id' => $tgtAtom->id));
 				
-			}else{
+			}else{ // TgtConcept of interface is primitive datatype
 				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
 				if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
 				
 				$content = $tgtAtom->id;
-				
-				
 			}
 			
 			// subinterfaces
+			if(!empty($interface->subInterfaces) && $interface->tgtDataType != "concept") throw new Exception("TgtConcept of interface: '" . $interface->name . "' is primitive datatype and can not have subinterfaces", 501);
 			foreach($interface->subInterfaces as $subinterface){
 			
 				$otherAtom = $tgtAtom->getContent($subinterface, false);
