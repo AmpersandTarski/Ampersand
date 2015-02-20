@@ -122,7 +122,7 @@ phpIndent i
 -- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
 -- This function is injective.
 escapeIdentifier :: String -> String
-escapeIdentifier ""      = fatal 130 "Cannot escape empty identifier" -- Actually, we can, but we don't want to
+escapeIdentifier ""      = "_EMPTY_"
 escapeIdentifier (c0:cs) = encode False c0 ++ concatMap (encode True) cs
   where encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = [c]
                           | c == '_'  = "__" -- shorthand for '_' to improve readability
