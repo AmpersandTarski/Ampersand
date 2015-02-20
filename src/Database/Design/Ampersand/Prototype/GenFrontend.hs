@@ -240,7 +240,7 @@ genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels o
                      . setAttribute "editableRelations"   [ show $ escapeIdentifier (name r) | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (escapeIdentifier iName)
-                     . setAttribute "interfaceLabel"      (addSlashes $ iName)
+                     . setAttribute "interfaceLabel"      iName -- no escaping for labels in templates needed
                      . setAttribute "expAdl"              (showADL iExp)
                      . setAttribute "source"              (escapeIdentifier $ name iSrc)
                      . setAttribute "target"              (escapeIdentifier $ name iTgt)
@@ -261,7 +261,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
                         . setAttribute "exprIsUni"  exprIsUni
                         . setAttribute "exprIsTot"  exprIsTot
                         . setAttribute "name"       (escapeIdentifier nm)
-                        . setAttribute "label"      (addSlashes $ nm)
+                        . setAttribute "label"      nm -- no escaping for labels in templates needed
                         . setAttribute "expAdl"     (showADL oExp) 
                         . setAttribute "source"     (escapeIdentifier $ name src)
                         . setAttribute "target"     (escapeIdentifier $ name tgt)
@@ -306,7 +306,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
   where genView_SubObject subObj = 
          do { lns <- genView_Object fSpec (depth + 1) subObj
             ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
-                               , subObjLabel = addSlashes $ objName subObj
+                               , subObjLabel = objName subObj -- no escaping for labels in templates needed
                                , isBLOB = name (target $ objExp subObj) == "BLOB"
                                , subObjContents = intercalate "\n" $ indent 8 lns
                                -- Indentation is not context sensitive, so some templates will
