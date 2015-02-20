@@ -6,8 +6,9 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
 )
 where
 
-import Database.Design.Ampersand.Input.ADL1.LexerToken(Token, Lexeme)
+import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
+import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Pos
@@ -15,6 +16,7 @@ import Text.Parsec.Prim
 import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
 import Data.Char (isUpper)
+import Data.Maybe
 
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.

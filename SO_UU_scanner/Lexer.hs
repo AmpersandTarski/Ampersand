@@ -5,7 +5,7 @@ module Lexer (
 )
 where
 
-import LexerToken(GenToken, Lexeme)
+import LexerToken
 --import LexerMonad
 import Text.Parsec.Char
 import Text.Parsec.Combinator
@@ -14,6 +14,9 @@ import Text.Parsec.Prim
 import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
 import Data.Char (isUpper)
+import Data.Maybe
+import LexerBinaryTrees
+
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
@@ -59,11 +62,19 @@ type Lexer = Pos -> [Char] -> [GenToken]
 mainLexer :: Lexer
 mainLexer p [] = []
 
-mainLexer p ('-':'-':s) = do
-        mainLexer (dropWhile (/= '\n') s)
+mainLexer p ('-':'-':s) = mainLexer p (dropWhile (/= '\n') s)
+
+-----------------------------------------------------------
+-- Check on keywords - operators - special chars
+-----------------------------------------------------------
 
 
-doScan p ('-':'-':s)  = doScan p (dropWhile (/= '\n') s)
+locatein :: Ord a => [a] -> a -> Bool
+locatein es = isJust . btLocateIn compare (tab2tree (sort es))
+iskw     = locatein keywords
+isop     = locatein operators
+isSymbol = locatein special_chars
+
 		
 {--       
 mainLexer ('{':'-':cs) = do 

@@ -1,5 +1,5 @@
---module Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees
-module UU_BinaryTrees
+--module Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
+module LexerBinaryTrees
    ( BinSearchTree(..)
    , tab2tree
    , btFind
