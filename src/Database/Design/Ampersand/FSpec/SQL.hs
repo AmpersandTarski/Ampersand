@@ -1,9 +1,13 @@
 module Database.Design.Ampersand.FSpec.SQL 
-  (selectExpr,QueryExpr)
+  (selectExpr,QueryExpr
+  , selectExprRelation  --exported to be able to validate the generated SQL for infividual relations
+  )
+  
 where
 
 
 import Language.SQL.SimpleSQL.Syntax
+import Language.SQL.SimpleSQL.Pretty
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -15,7 +19,6 @@ import Database.Design.Ampersand.FSpec.ShowADL
 
 import Data.Char
 import Data.List
-import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -378,6 +381,90 @@ WHERE ECps0.`A`<>ECps2.`A
                                               )
                             in sqlcomment ("case: (EDcV (Sign s t))"++"V[ \""++show (Sign s t)++"\" ]") $
                                selectGeneric src1 tgt1 tbl1 Nothing
+    (EDcI c)             -> sqlcomment ("I["++name c++"]")
+                                ( case c of
+                                    ONE            -> selectGeneric (NumLit "1", Just src)
+                                                                    (NumLit "1", Just trg)
+                                                                     [] Nothing
+                                    PlainConcept{} -> let cAtt = sqlAttConcept fSpec c in
+                                                      selectGeneric (selectSelItem (cAtt, src))
+                                                                    (selectSelItem (cAtt, trg))
+                                                                    [TRQueryExpr (sqlConcept fSpec c)]
+                                                                    (Just (PostfixOp [Name "IS NOT NULL"] (Iden [cAtt])))
+                                )
+    -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
+    (EEps inter sgn)     -> sqlcomment ("epsilon "++name inter++" "++showSign sgn)  -- showSign yields:   "["++(name.source) sgn++"*"++(name.target) sgn++"]"
+                                ( case inter of -- select the population of the most specific concept, which is the source.
+                                    ONE            -> selectGeneric (NumLit "1", Just src)
+                                                                    (NumLit "1", Just trg)
+                                                                     [] Nothing
+                                    PlainConcept{} -> let cAtt = sqlAttConcept fSpec inter in
+                                                      selectGeneric (selectSelItem (cAtt, src))
+                                                                    (selectSelItem (cAtt, trg))
+                                                                    [TRQueryExpr (sqlConcept fSpec inter)]
+                                                                    (Just (PostfixOp [Name "IS NOT NULL"] (Iden [cAtt])))
+                                )
+    (EDcD d)             -> selectExprRelationNew fSpec src trg d
+
+    (EBrk e)             -> selectExpr fSpec src trg e
+
+    (ECpl e)
+      -> case e of
+           EDcV _        -> sqlcomment ("case: ECpl (EDcV _)  with signature "++show (sign expr)) $  -- yields empty
+                            selectGeneric (NumLit "1", Just src)
+                                          (NumLit "1", Just trg)
+                                          []
+                                          Nothing
+           EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
+           EDcI c        -> sqlcomment ("case: ECpl (EDcI "++name c++")") $
+                            selectGeneric (Iden [Name "concept0", concpt], Just src)
+                                          (Iden [Name "concept1", concpt], Just trg)
+                                          [TRAlias (TRQueryExpr (sqlConcept fSpec c)) (Alias (Name "concept0") Nothing)
+                                          ,TRAlias (TRQueryExpr (sqlConcept fSpec c)) (Alias (Name "concept1") Nothing)
+                                          ]
+                                          (Just (BinOp (Iden [Name "concept0", concpt])
+                                                       [Name "<>"]
+                                                       (Iden [Name "concept1", concpt])
+                                                )
+                                          )
+                             where concpt = sqlAttConcept fSpec c
+           _ | source e == ONE -> sqlcomment i ("case: source e == ONE"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+                                  selectGeneric i ("",src',src) ("",trg',trg)
+                                                  (sqlConcept fSpec (target e))
+                                                  ("NOT EXISTS"++phpIndent i++" ("++
+                                                      selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
+                                                                          ("TRUE")
+                                                       ++ ")"
+                                                  )
+                                  where src' = "1"
+                                        trg' = sqlAttConcept fSpec (target e)
+                                        src2 = sqlExprSrc fSpec e
+                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+--           _ | target e == ONE -> sqlcomment i ("case: target e == ONE"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+--                                  selectGeneric i ("",src',src) ("",trg',trg)
+--                                                  (sqlConcept fSpec (source e))
+--                                                  ("NOT EXISTS"++phpIndent i++" ("++
+--                                                      selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
+--                                                                          ("TRUE")
+--                                                       ++ ")"
+--                                                  )
+--                                  where src' = sqlAttConcept fSpec (source e)
+--                                        trg' = "1"
+--                                        src2 = sqlExprSrc fSpec e
+--                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+--           _ | otherwise       -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
+--                                  selectGeneric i ("cfst",src',src) ("csnd",trg',trg)
+--                                                  (sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)++sqlConcept fSpec (target e)++" AS csnd")
+--                                                  ("NOT EXISTS"++phpIndent i++" ("++
+--                                                      selectExists' (i+2) (selectExprInFROM fSpec (i + 2) src2 trg2 e ++ " AS cp")
+--                                                                          ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
+--                                                       ++ ")"
+--                                                  )
+--                                  where src' = sqlAttConcept fSpec (source e)
+--                                        trg' = sqlAttConcept fSpec (target e)
+--                                        src2 = sqlExprSrc fSpec e
+--                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+
 
 
 
@@ -424,7 +511,56 @@ noCollide' nms nm = toQName (noCollide (map toUqName nms) (toUqName nm))
       int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10) |n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
 
 
+-- | This function returns a (multy-lines) prettyprinted SQL qurey of a declaration. 
+selectExprRelation :: FSpec
+                   -> Declaration
+                   -> [String]
+selectExprRelation fSpec dcl
+ = lines . prettyQueryExpr $ selectExprRelationNew fSpec s t dcl
+     where s = Name "src"
+           t = Name "trg"
+     
+selectExprRelationNew :: FSpec
+                   -> Name -- ^ Alias of source
+                   -> Name -- ^ Alias of target
+                   -> Declaration
+                   -> QueryExpr
 
+
+selectExprRelationNew fSpec srcAS trgAS dcl =
+  case dcl of
+    Sgn{}  -> leafCode (EDcD dcl)
+    Isn{}  -> leafCode (EDcI (source dcl))
+    Vs sgn
+     | source sgn == ONE -> fatal 468 "ONE is not expected at this place"
+     | target sgn == ONE -> fatal 469 "ONE is not expected at this place"
+     | otherwise
+           -> let src,trg :: [Name]
+                  src=[Name "vfst", sqlAttConcept fSpec (source sgn)]
+                  trg=[Name "vsnd", sqlAttConcept fSpec (target sgn)]
+              in selectGeneric (Iden src, Just srcAS)
+                               (Iden trg, Just trgAS)
+                               [ TRAlias (TRQueryExpr (sqlConcept fSpec (source sgn))) (Alias (Name "vfst") Nothing)
+                               , TRAlias (TRQueryExpr (sqlConcept fSpec (target sgn))) (Alias (Name "vsnd") Nothing)
+                               ]
+                               (Just (conjunctSQL (map notNull [src,trg]))) 
+
+
+                  
+   where
+     notNull :: [Name] -> ValueExpr
+     notNull tm = PostfixOp [Name "IS NOT NULL"] (Iden tm)                         
+     leafCode :: Expression -> QueryExpr
+     leafCode expr =  -- made for both Rel and I
+       case sqlRelPlugs fSpec expr of
+         []           -> fatal 344 $ "No plug for expression "++show expr
+         (plug,s,t):_ -> selectGeneric (Iden [Name (fldname s)], Just srcAS)
+                                       (Iden [Name (fldname t)], Just trgAS)
+                                       [TRSimple [QName (name plug)]]
+                                       (Just . conjunctSQL . map notNull $
+                                          [ [QName (fldname c)] | c<-nub [s,t]])
+  -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
+  -- code for computing table properties is currently unreliable.
 
 selectExists' :: [TableRef]              -- ^ tables
               -> Maybe ValueExpr         -- ^ the WHERE clause
@@ -457,13 +593,11 @@ selectGeneric src tgt tbl whr
             , qeFetchFirst    = Nothing
             }
 
-selectSelItem :: (Name, Name) -> TableRef
+selectSelItem :: (Name, Name) -> (ValueExpr,Maybe Name)
 selectSelItem (att,alias)
-  = TRAlias (TRSimple [if stringOfName att == "1"
-                       then UQName "1"
-                       else toQName att
-                      ]
-            ) (Alias alias Nothing)
+  = ( Iden [if stringOfName att == "1" then UQName "1" else toQName att]
+    , Just alias
+    )
 
 
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
