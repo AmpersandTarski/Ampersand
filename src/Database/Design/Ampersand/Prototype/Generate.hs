@@ -345,10 +345,13 @@ generateInterfaces fSpec =
 
 generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
-  [ let roleStr = case ifcRoles interface of []    -> " for all roles"
-                                             rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
-    in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
-  , showPhpStr (name interface) ++ " => " ] ++
+  let roleStr = case ifcRoles interface of []    -> " for all roles"
+                                           rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
+      arrayKey | newFrontend $ getOpts fSpec = escapeIdentifier $ name interface -- For new front-end only, index on escaped name (id)
+               | otherwise                   = name interface                    -- otherwise, use normal name to prevent breakage on old prototypes
+  in  ["// Top-level interface " ++ name interface ++ roleStr  ++ ":"
+      , showPhpStr arrayKey ++ " => " 
+      ] ++
   indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map (showPhpStr.name) $ ifcRoles interface) ++")" 
@@ -360,7 +363,10 @@ generateInterface fSpec interface =
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
-  [ "array ( 'name' => "++showPhpStr (name object)]
+  [ "array ( 'name'  => "++ showPhpStr (name object)
+  , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
+  , "      , 'label' => " ++ showPhpStr (name object)           -- only for new front-end
+  ]
   ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
            ++["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
@@ -405,7 +411,8 @@ generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ]
     Just (InterfaceRef nm) -> [ "      // InterfaceRef"
-                              , "      , 'refSubInterface' => "++ showPhpStr nm
+                              , "      , 'refSubInterface' => " ++ showPhpStr nm
+                              , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end
                               ]
     Just (Box _ cl objects) -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
                                , "      , 'boxSubInterfaces' =>"
