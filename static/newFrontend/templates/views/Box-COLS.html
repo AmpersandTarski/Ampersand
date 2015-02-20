@@ -1,9 +1,9 @@
-<!-- BOX<COLS> "$fullName$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+<!-- BOX<COLS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 <table class="table table-striped table-hover table-condensed">
   <thead>
     <tr>
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
-      $subObjects:{subObj|<th>$subObj.subObjFullName$</th>}$
+      $subObjects:{subObj|<th>$subObj.subObjLabel$</th>}$
       $if(isRoot)$<th></th><!-- delete resource-->$endif$
     </tr>
   </thead>
@@ -12,7 +12,7 @@
       $if(isEditable)$<td>
         <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
       </td>$endif$
-      $subObjects:{subObj|<!-- BOX<COLS> CHILD: "$subObj.subObjFullName$" -->
+      $subObjects:{subObj|<!-- BOX<COLS> CHILD: "$subObj.subObjLabel$" -->
       <td class="row-content">
 $subObj.subObjContents$
       </td>
