@@ -13,7 +13,7 @@ import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 --import Text.Parsec.Prim
 --import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
-import Data.Char (isUpper)
+import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
 import Data.List (sort)
 
@@ -51,13 +51,16 @@ operators = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#",
 special_chars :: [Char]
 special_chars = "()[],{}"
 
+runLexer :: [Char] -> Filename -> [GenToken]
+runLexer fn input = mainLexer noPos fn input
+
 -- Main Lexer function
 -- Steps:
 --       * mainLexer fitlers input string to remove all irrelevant data such as comments, spaces,...
 --       * runLexerMonad takes the
 
 
-type Lexer = Pos -> [Char] -> [GenToken]
+type Lexer = Pos -> [Char] -> Filename -> [GenToken]
 
 mainLexer :: Lexer
 
@@ -66,11 +69,11 @@ mainLexer :: Lexer
 -----------------------------------------------------------
 
 
-mainLexer p [] = []
-mainLexer p ('-':'-':s) = mainLexer p (dropWhile (/= '\n') s)
+mainLexer p fn [] = []
+mainLexer p fn ('-':'-':s) = mainLexer p fn (dropWhile (/= '\n') s)
 
-mainLexer p (c:s) | isSpace c = let (sp,next) = span isSpace s
-                                in  mainLexer (foldl adv p (c:sp)) next
+mainLexer p fn (c:s) | isSpace c = let (sp,next) = span isSpace s
+                                in  mainLexer (foldl adv p (c:sp)) fn next
 								
 								
 {-}
@@ -83,25 +86,25 @@ todo:
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
 
-mainLexer p cs@(c:s)
-     | isSymbol c = keyToken TkSymbol [c] p fn
-                  : doScan(advc 1 p) s
+mainLexer p fn cs@(c:s)
+ --    | isSymbol c = keyToken TkSymbol [c] p fn
+ --                 : doScan(advc 1 p) s
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (advc 1 p) s
                name               = c:name'
-               tok    | iskw name = keyToken TkKeyword name p fn
+               tok    | iskw name = makeGenToken GtkKeyword name p fn
                       | null name' && isSymbol c
-                                  = keyToken TkSymbol [c] p fn
-                      | otherwise = token (if isIdStart c then TkVarid else TkConid) name p fn
-           in tok :  doScan p' s'
-     | isOpsym c = let (name, s') = getOp cs   -- was:      span isOpsym cs
-                       tok | isop name = keyToken TkKeyword name p fn
-                           | otherwise = keyToken TkOp name p fn
-                   in tok : doScan (foldl adv p name) s'
-     | isDigit c = let (tktype,number,width,s') = getNumber cs
-                   in  token tktype number p fn : doScan (advc width p) s'
-     | otherwise = errToken ("Unexpected character " ++ show c) p fn
-                 : doScan (adv p c) s
+                                  = makeGenToken GtkSymbol [c] p fn
+                      | otherwise = makeGenToken (if isIdStart c then GtkVarid else GtkConid) name p fn
+           in tok :  mainLexer p' fn s'
+ --    | isOpsym c = let (name, s') = getOp cs   -- was:      span isOpsym cs
+ --                      tok | isop name = keyToken TkKeyword name p fn
+ --                          | otherwise = keyToken TkOp name p fn
+ --                  in tok : doScan (foldl adv p name) s'
+ --    | isDigit c = let (tktype,number,width,s') = getNumber cs
+ --                  in  token tktype number p fn : doScan (advc width p) s'
+ --    | otherwise = errToken ("Unexpected character " ++ show c) p fn
+ --                : doScan (adv p c) s
 
 
 	
@@ -122,10 +125,11 @@ iskw     = locatein keywords
 isop     = locatein operators
 isSymbol = locatein special_chars
 
+isIdStart c = isLower c || c == '_'
+isIdChar c =  isAlphaNum c
 
---scanIdent p s = let (name,rest) = span isIdChar s
---                in (name,advc (length name) p,rest)
-
+scanIdent p s = let (name,rest) = span isIdChar s
+                in (name,advc (length name) p,rest)
 -----------------------------------------------------------
 -- String clean-up functions
 -----------------------------------------------------------

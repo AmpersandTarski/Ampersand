@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken
-(Token, Lexeme, makeGenToken, GenToken, Pos (..), Line, Column, Filename)
+(Token, Lexeme, makeGenToken, GenToken, Pos (..), Line, Column, Filename, GenTokenType (..), noPos, initPos)
 where
 
 import Text.Parsec.Pos(SourcePos)
@@ -11,6 +11,12 @@ type Line = Int
 type Column = Int
 
 data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord, Show)
+
+initPos :: Pos
+initPos = Pos 1 1
+
+noPos :: Pos
+noPos = Pos 0 0
 
 type Filename   = String
 
