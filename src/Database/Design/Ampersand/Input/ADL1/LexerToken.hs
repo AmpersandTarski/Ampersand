@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken
-(Token, Tok)
+(Token, Lexeme, makeGenToken, GenToken, Pos (..), Line, Column, Filename)
 where
 
 import Text.Parsec.Pos(SourcePos)
@@ -11,6 +11,7 @@ type Line = Int
 type Column = Int
 
 data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord, Show)
+
 type Filename   = String
 
 -- GenToken out of which different token formats can be generated
