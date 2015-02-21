@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken
-(Token, Lexeme, makeGenToken, GenToken, Pos (..), Line, Column, Filename, GenTokenType (..), noPos, initPos)
+(Token, Lexeme, makeGenToken, GenToken, Pos (..), Line, Column, Filename, GenTokenType (..), noPos, initPos, errGenToken)
 where
 
 import Text.Parsec.Pos(SourcePos)
@@ -77,6 +77,9 @@ maybeshow (Pos l c) fn =  " at line " ++ show l
 
 makeGenToken :: GenTokenType -> String -> Pos -> Filename -> GenToken
 makeGenToken tokt val pos filen = GenTok tokt val pos filen
+					
+errGenToken :: String -> Pos -> Filename -> GenToken
+errGenToken errorstr pos filen = GenTok GtkError errorstr pos filen
 					   
 -- Original Token structure that will be replaced with the new ParsecT structure 
 -- Functions based on the old Token structure are beneath the data and type declarations

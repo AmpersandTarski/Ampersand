@@ -86,8 +86,8 @@ todo:
 -----------------------------------------------------------
 
 mainLexer p fn cs@(c:s)
- --    | isSymbol c = keyToken TkSymbol [c] p fn
- --                 : doScan(advc 1 p) s
+     | isSymbol c = makeGenToken GtkSymbol [c] p fn
+                  : mainLexer (advc 1 p) fn s
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (advc 1 p) s
                name               = c:name'
@@ -96,14 +96,14 @@ mainLexer p fn cs@(c:s)
                                   = makeGenToken GtkSymbol [c] p fn
                       | otherwise = makeGenToken (if isIdStart c then GtkVarid else GtkConid) name p fn
            in tok :  mainLexer p' fn s'
- --    | isOpsym c = let (name, s') = getOp cs   -- was:      span isOpsym cs
- --                      tok | isop name = keyToken TkKeyword name p fn
- --                          | otherwise = keyToken TkOp name p fn
- --                  in tok : doScan (foldl adv p name) s'
- --    | isDigit c = let (tktype,number,width,s') = getNumber cs
- --                  in  token tktype number p fn : doScan (advc width p) s'
- --    | otherwise = errToken ("Unexpected character " ++ show c) p fn
- --                : doScan (adv p c) s
+     | isOpsym c = let (name, s') = getOp cs   -- was:      span isOpsym cs
+                       tok | isop name = makeGenToken GtkKeyword name p fn
+                           | otherwise = makeGenToken GtkOp name p fn
+                   in tok : doScan (foldl adv p name) s'
+     | isDigit c = let (tktype,number,width,s') = getNumber cs
+                   in  makeGenToken tktype number p fn : mainLexer (advc width p) fn s'
+     | otherwise = errGenToken ("Unexpected character " ++ show c) p fn
+                 : mainLexer (adv p c) fn s
 
 
 	
