@@ -111,9 +111,9 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   \$scope.typeahead = {}; // an empty object for typeahead
 
 
-  // A property for every editable relation to another concept (i.e. non-primitive datatypes)
-$allEditableNonPrims:{editableNonPrim|
-  \$scope.typeahead['$editableNonPrim.labelName$'] = Restangular.all('resource/$editableNonPrim.targetConcept$').getList().\$object;}$
+  // A property for every (non-primitive) tgtConcept of the editable relations in this interface
+  $allEditableNonPrims:{editableNonPrim|\$scope.typeahead['$editableNonPrim.targetConcept$'] = Restangular.all('resource/$editableNonPrim.targetConcept$').getList().\$object;
+  }$
 $else$  // The interface does not contain editable relations to non-primitive concepts
 $endif$
 });

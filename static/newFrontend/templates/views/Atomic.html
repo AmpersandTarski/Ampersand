@@ -5,7 +5,7 @@ $if(isEditable)$<div ng-repeat="row in val['$name$'] track by \$index">
 </div>
 
 <div my-showonhover-box>
-  <input ng-model="selected.id" type="text" class="input-sm" placeholder="Add new" typeahead="item['id'] as item['@label'] for item in typeahead['$name$'] | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected, ResourceId)">
+  <input ng-model="selected.id" type="text" class="input-sm" placeholder="Add new" typeahead="item['id'] as item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected, ResourceId)">
 </div>
 $else$<div ng-repeat="row in val['$name$'] track by \$index">
   <span>$if(navInterface)$<a ng-href="#/$navInterface$/{{row['id']}}">{{row['@label']}}</a>$else${{row['@label']}}$endif$</span>

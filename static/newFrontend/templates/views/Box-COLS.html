@@ -3,7 +3,8 @@
   <thead>
     <tr>
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
-      $subObjects:{subObj|<th>$subObj.subObjLabel$</th>}$
+      $subObjects:{subObj|<th>$subObj.subObjLabel$</th>
+      }$
       $if(isRoot)$<th></th><!-- delete resource-->$endif$
     </tr>
   </thead>
