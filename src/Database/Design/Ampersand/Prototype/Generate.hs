@@ -11,7 +11,8 @@ import System.FilePath
 import System.Directory
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import Database.Design.Ampersand.FSpec.SQL
+import Database.Design.Ampersand.FSpec.FSpecAux
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
@@ -201,7 +202,7 @@ generateRules fSpec =
              then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
                   , "        , 'contentsSQL'   => " ++
                                   let contentsExpr = conjNF (getOpts fSpec) rExpr
-                                  in  showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+                                  in  showPhpStrSQL 26 (selectSrcTgt fSpec contentsExpr)
                     -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                     -- php/Database.php?testRule=RULENAME
                   ]
@@ -232,7 +233,7 @@ generateRules fSpec =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" exp)
+         , "          " ++ showPhpStrSQL 33 (selectSrcTgt fSpec exp)
          , "      )"
          ]
 
@@ -259,7 +260,7 @@ generateConjuncts fSpec =
                   [ "        // Normalized complement (== violationsSQL): " ] ++
                   (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
+           [ "        , 'violationsSQL' => "++ showPhpStrSQL 36 (selectSrcTgt fSpec violationsExpr)
            , "        )"
            ]
          | conj<-vconjs fSpec
@@ -327,7 +328,7 @@ generateViews fSpec =
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                      , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
-                                     , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" (objctx objDef))
+                                     , "          " ++ showPhpStrSQL 33 (selectSrcTgt fSpec (objctx objDef))
                                      , "      )"
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
@@ -391,7 +392,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
          ]
   ++
-  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (22+14*depth) "src" "tgt" normalizedInterfaceExp)
+  [ "      , 'expressionSQL' => " ++ showPhpStrSQL (22+14*depth) (selectSrcTgt fSpec normalizedInterfaceExp)
   ]
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"

@@ -6,7 +6,7 @@ import Data.Maybe
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Prototype.PHP
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import Database.Design.Ampersand.FSpec.SQL
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 
 fatal :: Int -> String -> a
@@ -100,7 +100,7 @@ getSqlConceptTable fSpec c =
 
 getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [Paire])
 getSqlRelationTable fSpec d =
- do { let query = selectExprRelation fSpec (-1) "src" "tgt" d
+ do { let query = selectExprRelation fSpec d
  
     --; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
     ; pairs <- performQuery (getOpts fSpec) tempDbName query

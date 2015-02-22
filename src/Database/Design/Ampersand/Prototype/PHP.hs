@@ -13,7 +13,7 @@ import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
 import Database.Design.Ampersand hiding (putStr, origin)
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import Database.Design.Ampersand.FSpec.SQL
 
 
 fatal :: Int -> String -> a
@@ -196,7 +196,7 @@ evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
   fmap sort (performQuery (getOpts fSpec) dbNm violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = selectExpr fSpec 26 "src" "tgt" violationsExpr
+       violationsQuery = showPhpStrSQL 26 (selectSrcTgt fSpec violationsExpr)
 
 performQuery :: Options -> String -> String -> IO [(String,String)]
 performQuery opts dbNm queryStr =

@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.FSpec.SQL 
-  (selectExpr,QueryExpr
-  , selectExprRelation  --exported to be able to validate the generated SQL for infividual relations
+  (selectSrcTgt,QueryExpr
+  ,showPhpStrSQL
+  , selectExprRelation  --exported to be able to validate the generated SQL for individual relations
   )
   
 where
@@ -22,6 +23,16 @@ import Data.List
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
+
+-- | prettyprint ValueExpr and indent it with spaces
+showPhpStrSQL :: Int -> QueryExpr -> String
+showPhpStrSQL i = unlines . map (replicate i ' '++) . lines . prettyQueryExpr
+
+selectSrcTgt :: 
+           FSpec       -- current context
+        -> Expression  -- expression to be translated
+        -> QueryExpr   -- resulting SQL expression
+selectSrcTgt fSpec expr = selectExpr fSpec (QName "src") (QName "tgt") expr
 
 
 selectExpr :: FSpec    -- current context
@@ -50,7 +61,7 @@ selectExpr fSpec src trg expr
                   negTms     = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
                   posTms'    = [t | t<-lst, isPos t && not (isIdent t)]++[t | t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
                   negTms'    = [notCpl t | t<-lst, isNeg t && isIdent t]++[notCpl t | t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
-                  exprbracs  = [ TRQueryExpr (selectExprInFROM fSpec src'' trg'' l) `as` (Name ("isect"++show n)) 
+                  exprbracs  = [ selectExprInFROM fSpec src'' trg'' l `as` (Name ("isect"++show n)) 
                                | (n,l)<-zip [(0::Int)..] posTms
                                , let src'' = sqlExprSrc fSpec l
                                , let trg'' =noCollide' [src''] (sqlExprTgt fSpec l)
@@ -99,7 +110,7 @@ selectExpr fSpec src trg expr
                                              (Iden [Name "isect0", trg'])
                                       ]
                                  else [selectNotExists 
-                                         [TRQueryExpr (selectExprInFROM fSpec src'' trg'' l) `as` Name "cp"]
+                                         [selectExprInFROM fSpec src'' trg'' l `as` Name "cp"]
                                          (Just . conjunctSQL $
                                            [ BinOp (Iden [Name "isect0",src'])
                                                    [Name "="]
@@ -154,7 +165,7 @@ selectExpr fSpec src trg expr
                                  (Iden [trg'    ], Just trg)
                                  [TRQueryExpr (sqlConcept fSpec (target expr')) `as` Name "allAtoms"]
                                  (Just $ selectNotExists 
-                                           [TRQueryExpr (selectExprInFROM fSpec src' trg' expr') `as` Name "complemented"]
+                                           [selectExprInFROM fSpec src' trg' expr' `as` Name "complemented"]
                                            (Just (BinOp (Iden [Name "complemented",trg2])
                                                           [Name "="]
                                                         (Iden [Name "allAtoms",trg'])
@@ -170,7 +181,7 @@ selectExpr fSpec src trg expr
                 in sqlcomment ("case:  (EDcV (Sign ONE _): fs@(_:_))"++showADL expr) $
                    selectGeneric (Iden [Name "1"], Just src)
                                  (Iden [Name "fst",trg'    ], Just trg)
-                                 [TRQueryExpr (selectExprInFROM fSpec src' trg' expr') `as` Name "fst"] 
+                                 [selectExprInFROM fSpec src' trg' expr' `as` Name "fst"] 
                                  (Just (PostfixOp [Name "is not null"] (Iden [Name "fst", trg'])))
           (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
              -> sqlcomment ("case:  (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_))"
@@ -197,7 +208,7 @@ selectExpr fSpec src trg expr
                 in sqlcomment ("case:  (EMp1{}: f: fx)"++showADL expr) $
                    selectGeneric (Iden [Name "fst",src'], Just src)
                                  (Iden [Name "fst",trg'], Just trg)
-                                 [TRQueryExpr (selectExprInFROM fSpec src' trg' expr') `as` Name "fst"]
+                                 [selectExprInFROM fSpec src' trg' expr' `as` Name "fst"]
                                  (Just (BinOp (Iden [Name "fst",src'])
                                               [Name "="]
                                               (sqlAtomQuote atom)))
@@ -211,8 +222,8 @@ selectExpr fSpec src trg expr
                             in sqlcomment ("case:  (e:ERel (EDcV _) _:f:fx)"++showADL expr) $
                                selectGeneric (Iden [Name "fst",src'], Just src)
                                              (Iden [Name "snd",trg'], Just trg)
-                                             [TRQueryExpr (selectExprInFROM fSpec src' mid' e)      `as` Name "fst"
-                                             ,TRQueryExpr (selectExprInFROM fSpec mid2' trg' expr') `as` Name "snd"
+                                             [selectExprInFROM fSpec src' mid' e      `as` Name "fst"
+                                             ,selectExprInFROM fSpec mid2' trg' expr' `as` Name "snd"
                                              ]
                                              Nothing
           [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
@@ -264,7 +275,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                  ]++
                                  -- the second part is the main part, which does most of the work (parts 1 and 3 are rarely used)
                                  [ ( n                              -- the serial number of this fence (in between poles n and n+1)
-                                   , TRQueryExpr (selectExprInFROM fSpec srcAtt tgtAtt e)
+                                   , selectExprInFROM fSpec srcAtt tgtAtt e
                                    , srcAtt
                                    , tgtAtt
                                    )
@@ -408,7 +419,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                                 (trg', Just trg)
                                                 [TRQueryExpr (sqlConcept fSpec (target e))]
                                                 (Just $ selectNotExists 
-                                                          [TRQueryExpr (selectExprInFROM fSpec src2 trg2 e) `as` Name "cp"]
+                                                          [selectExprInFROM fSpec src2 trg2 e `as` Name "cp"]
                                                           Nothing
                                                 )
                                     where src' = NumLit "1"
@@ -420,7 +431,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                                 (trg', Just trg)
                                                 [TRQueryExpr (sqlConcept fSpec (source e))]
                                                 (Just $ selectNotExists 
-                                                          [TRQueryExpr (selectExprInFROM fSpec src2 trg2 e) `as`Name "cp"]
+                                                          [selectExprInFROM fSpec src2 trg2 e `as`Name "cp"]
                                                           Nothing
                                                 )
                                   where src' = Iden [sqlAttConcept fSpec (source e)]
@@ -433,7 +444,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                                 [TRQueryExpr (sqlConcept fSpec (source e)) `as` Name "cfst"
                                                 ,TRQueryExpr (sqlConcept fSpec (target e)) `as` Name "csnd"]
                                                 (Just $ selectNotExists 
-                                                          [TRQueryExpr (selectExprInFROM fSpec src2 trg2 e) `as` Name "cp"]
+                                                          [selectExprInFROM fSpec src2 trg2 e `as` Name "cp"]
                                                           (Just . conjunctSQL $
                                                              [ BinOp src'
                                                                      [Name "="]
@@ -526,10 +537,23 @@ Based on this derivation:
              ltrg = sqlExprTgt fSpec l  -- shouldn't this be a noCollide? Apparently not. Introducing noCollide here has produced ticket #389
              rsrc = sqlExprSrc fSpec r
              rtrg = sqlExprTgt fSpec r  -- shouldn't this be a noCollide? (idem)
-             lCode = TRQueryExpr (selectExprInFROM fSpec lsrc ltrg l)
-             rCode = TRQueryExpr (selectExprInFROM fSpec rsrc rtrg r)
+             lCode = selectExprInFROM fSpec lsrc ltrg l
+             rCode = selectExprInFROM fSpec rsrc rtrg r
          in sqlcomment ("case: ERrs (l,r)"++showADL expr++" ("++show (sign expr)++")")
                          rResiduClause
+    ELrs (l,r)
+      -> sqlcomment ("case: ELrs (l,r)"++showADL expr++" ("++show (sign expr)++")") $
+         selectExpr fSpec trg src (EFlp (flp r .\. flp l))
+    EDia (l,r)
+      -> sqlcomment ("case: EDia (l,r)"++showADL expr++" ("++show (sign expr)++")") $
+         selectExpr fSpec trg src ((flp l .\. r) ./\. (l ./. flp r))
+    ERad{}
+      -> sqlcomment ("case: ERad (l,r)"++showADL expr++" ("++show (sign expr)++")") $
+        selectExpr fSpec src trg (deMorganERad expr)
+    EPrd (l,r)
+     -> let v = EDcV (Sign (target l) (source r))
+        in sqlcomment ("case: EPrd (l,r)"++showADL expr++" ("++show (sign expr)++")") $
+           selectExpr fSpec src trg (foldr1 (.:.) [l,v,r])
 
 
 
@@ -542,13 +566,75 @@ Based on this derivation:
 --   It generates a simple table reference for primitive expressions (EDcD, EDcI, and EDcV) and a bracketed SQL expression in more complicated situations.
 --   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
 --   Note that the resulting pairs do not contain any NULL values.
+
 selectExprInFROM :: FSpec
                  -> Name      -- ^ source name (preferably quoted)
                  -> Name      -- ^ target name (preferably quoted)
                  -> Expression  -- ^ Whatever expression to generate an SQL query for
-                 -> QueryExpr
-selectExprInFROM fSpec src trg expr = undefined --TODO
+                 -> TableRef
+selectExprInFROM fSpec src trg expr 
+   | src == trg && (not.isIdent) expr = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
+   | unquoted src = selectExprInFROM fSpec (toQName src) trg         expr
+   | unquoted trg = selectExprInFROM fSpec src         (toQName trg) expr
+   | otherwise    =
+      case expr of
+        EFlp e -> selectExprInFROM fSpec trg src e
+        EBrk e -> selectExprInFROM fSpec src trg e
+        EDcD{} -> if sqlExprSrc fSpec expr === src && sqlExprTgt fSpec expr === trg
+                  then ( if not mayContainNulls 
+                         then TRSimple [declName]
+                         else TRParens . TRQueryExpr $
+                              selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
+                                            (selectSelItem (sqlExprTgt fSpec expr, trg))
+                                            [TRSimple [declName]]
+                                            (Just $ conjunctSQL
+                                               [notNull src, notNull trg])
+                       )
+                  else TRParens . TRQueryExpr $
+                       selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
+                                     (selectSelItem (sqlExprTgt fSpec expr, trg))
+                                     [TRSimple [declName]]
+                                     (if mayContainNulls
+                                      then (Just $ conjunctSQL
+                                              [notNull src, notNull trg])
+                                      else Nothing
+                                     )
+                  where
+                   declName:: Name
+                   mayContainNulls:: Bool
+                   (declName,mayContainNulls)
+                     = case sqlRelPlugs fSpec expr of
+                         []           -> fatal 371 ("No plug found for expression "++showADL expr)
+                         [(plug@TblSQL{},_,_)] -> (QName (name plug), True)
+                         [(plug,_,_)]          -> (QName (name plug), False )
+                         [(plug,s,t),(plug',s',t')]  --This can be the case for a Prop -relation.
+                                      -> if plug == plug' && s == t' && t == s'
+                                         then (QName (name plug), True)
+                                         else fatal 390 ("Multiple plugs found for expression "++showADL expr)
+                         _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
+        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
+--        EDcI c -> if cpt == cptAlias
+--                  then cpt
+--                  else sqlcomment ("case: EDcI " ++ name c) $
+--                       selectGeneric (cptAlias)
+--                                     (cpt,Nothing)
+--                                     [TRQueryExpr cpt]
+--                                     Nothing
+--                  where
+--                   cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
+--                   cpt = sqlConcept fSpec c
+        _  -> fatal 615 "Still TODO"
 
+   where
+     unquoted :: Name -> Bool
+     unquoted (Name _ )   = True
+     unquoted (QName _)   = False
+     unquoted (UQName  _) = True
+     (===) :: Name -> Name -> Bool
+     n === n' = stringOfName n == stringOfName n'
+     notNull :: Name -> ValueExpr
+     notNull tm = PostfixOp [Name "IS NOT NULL"] (Iden [tm])
+     
 
 -- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
 noCollide' :: [Name] -> Name -> Name
@@ -580,11 +666,11 @@ noCollide' nms nm = toQName (noCollide (map toUqName nms) (toUqName nm))
 -- | This function returns a (multy-lines) prettyprinted SQL qurey of a declaration. 
 selectExprRelation :: FSpec
                    -> Declaration
-                   -> [String]
+                   -> String
 selectExprRelation fSpec dcl
- = lines . prettyQueryExpr $ selectExprRelationNew fSpec s t dcl
-     where s = Name "src"
-           t = Name "trg"
+ = prettyQueryExpr $ selectExprRelationNew fSpec s t dcl
+     where s = QName "src"
+           t = QName "trg"
      
 selectExprRelationNew :: FSpec
                    -> Name -- ^ Alias of source
@@ -708,7 +794,7 @@ sqlConcept fSpec a = Table [(QName . name . sqlConceptPlug fSpec) a]
 sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
 sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
                        | otherwise
-             = if null ps then fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module Database.Design.Ampersand.Prototype.RelBinGenSQL)" else
+             = if null ps then fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec." else
                head ps
                where ps = [plug |InternalPlug plug<-plugInfos fSpec
                                 , not (null (case plug of ScalarSQL{} -> [c |c==cLkp plug]; _ -> [c' |(c',_)<-cLkpTbl plug, c'==c]))]
@@ -716,7 +802,7 @@ sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represente
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c | c==ONE = Name "ONE"
                       | otherwise
-             = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\" (sqlAttConcept in module Database.Design.Ampersand.Prototype.RelBinGenSQL)" else
+             = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"" else
                QName (head cs)
                where cs = [fldname f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
 
