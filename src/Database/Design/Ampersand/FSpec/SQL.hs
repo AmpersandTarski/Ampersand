@@ -22,11 +22,11 @@ import Data.Char
 import Data.List
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "RelBinGenSQL"
+fatal = fatalMsg "FSpec.SQL"
 
 -- | prettyprint ValueExpr and indent it with spaces
 showPhpStrSQL :: Int -> QueryExpr -> String
-showPhpStrSQL i = unlines . map (replicate i ' '++) . lines . prettyQueryExpr
+showPhpStrSQL i =  intercalate (replicate i ' ') .  lines . prettyQueryExpr
 
 selectSrcTgt :: 
            FSpec       -- current context
