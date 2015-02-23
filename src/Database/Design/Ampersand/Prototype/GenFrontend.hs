@@ -326,21 +326,18 @@ genController_Interfaces fSpec ifcs =
  do { mapM_ (genController_Interface fSpec) $ ifcs
     }
 
--- Helper data structure to pass attribute values to HStringTemplate
-data NonPrimEditableAttr = NPEAttr { labelName :: String, targetConcept :: String } deriving (Show, Data, Typeable)
-
 genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels obj) =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
-          allEditableNonPrims     = [ NPEAttr { labelName = objName o, targetConcept = escapeIdentifier $ name (objTarget o) } 
-                                    | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
-                                    , objIsEditable o
-                                    , not . isJust $ objMPrimTemplate a
-                                    ]
-          containsEditable        = any objIsEditable allObjs
-          containsEditableNonPrim = not $ null allEditableNonPrims
-          containsDATE            = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
+          allEditableNonPrimTargets = nub [ escapeIdentifier $ name (objTarget o) 
+                                        | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
+                                        , objIsEditable o
+                                        , not . isJust $ objMPrimTemplate a
+                                        ]
+          containsEditable          = any objIsEditable allObjs
+          containsEditableNonPrim   = not $ null allEditableNonPrimTargets
+          containsDATE              = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
           
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
@@ -348,7 +345,7 @@ genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editable
                      . setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"        [ show $ escapeIdentifier (name r) | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "allEditableNonPrims"      allEditableNonPrims
+                     . setAttribute "editableNonPrimTargets"   allEditableNonPrimTargets
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable
                      . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
