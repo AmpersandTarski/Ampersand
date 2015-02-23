@@ -1,0 +1,127 @@
+CONTEXT RAP IN ENGLISH LATEX
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
+
+PURPOSE PATTERN Interfaces
+{+
+This pattern defines the structure of interfaces.
+-}
+
+PURPOSE CONCEPT Interface
+{+An interface is used by persons or by computers to execute transactions on a data set.
+Interfaces are needed to communicate with persons or other computer programs.
+-}
+PURPOSE CONCEPT ObjectDef
+{+ In essence, an interface is a hierarchical structure containing attributes.
+It describes the structure of objects upon which transactions can be executed.
+The interface may also contain information related to such objects.
+-}
+
+PURPOSE RELATION attributes[ObjectDef*ObjectDef]
+{+In order to obtain a recursive structure of object definitions, the notion of attribute is used to define object definitions within an object definition.
+-}
+
+PURPOSE RELATION ifcObj[Interface*ObjectDef]
+{+In order to link an object definition to an interface, the two must be related.
+Each interface has precisely one object definition.
+-}
+
+PURPOSE RELATION objnm[ObjectDef*String]
+{+The name of an object definition serves as attribute name, if used inside some other object definition.
+Otherwise, this name is the name of the interface.
+The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+-}
+
+PURPOSE RELATION objctx[ObjectDef*Expression]
+{+Every object definition is associated with an expression.
+If the object definition is an attribute, this expression yields the pairs that are used to ``walk'' through the population of the system.
+It works the same way if the object definition is related to an interface.
+In that case, the expression characterizes the atoms on which it can be used.-}
+
+PURPOSE RELATION getExpressionRelation[Expression*Relation]
+{+Some expressions are equivalent to a relation.
+Such expressions can be used to change the content of (i.e. to edit) a relation.
+We say that the expression allows editing in that relation.
+That is relevant, because such expressions allow the system to open a relation for editing during a transaction.
+So in order to be edited, a relation must occur in this relation.
+-}
+
+PURPOSE RULE "accessible relations"
+{+The population of every relation may need to change every now and then.
+Changing relations, however, requires an interface.
+The following rule signals the developer if no such interface exists.
+It is meant to guard completeness, i.e. that every relation can be edited by at least one interface.
+-}
+
+PURPOSE PATTERN InterfaceSemantics
+{+In order to design meaningful business processes, a designer must assign meaning to interfaces.
+The semantics (meaning) of an interface affect the transactions that are carried out when users (or other computer programs) use the interface to change data (i.e. the state of the system).
+For this purpose we define how transactions are affected by the way an interface is defined.
+-}
+PURPOSE CONCEPT Transaction
+{+The purpose of a transaction is to bring brings an information system from one state to another, whilst keeping all invariants true.
+-}
+PURPOSE CONCEPT Object
+{+By viewing a database as a collection of pairs, it is desirable to navigate over pairs from one atom to another.
+Starting on a particular atom (in the database), users may follow the links to browse through the data.
+However, the amount of data to navigate in is limited when using an interface.
+That amount of data is called "object".
+Roughly speaking, an object consists of one atom (the root of the object) and all data that can be reached by following the links as defined in the attributes of that objects.
+Since objects are defined recursively, interfaces can involve a substantial amount of data.
+-}
+
+PURPOSE RELATION transactionObject[Transaction*Object]
+{+Because every transaction operates on one object, we must specify a relation that defines the object on which a transaction operates.
+-}
+
+PURPOSE RELATION inst[Transaction*Interface]
+{+In order to restrict state changes caused by a transaction, each transaction is governed by restrictions imposed by an interface.
+For that purpose, a transaction is treated as an instance of an interface.
+This makes interfaces useful as a description of communication with the information system.
+-}
+
+PURPOSE RELATION root[Object*Atom]
+{+In order to identify the root atom of every object, we define a relation {\em root}.
+-}
+
+PURPOSE RELATION inst[Object*ObjectDef]
+{+Being an instance of an object definition, every object must be in the instance-relation to identify the object definition of which it is an instance.
+-}
+
+PURPOSE RELATION left[Pair*Atom]
+{+The relation ``left'' is needed to identify one of the atoms in a pair.
+-}
+
+PURPOSE RELATION right[Pair*Atom]
+{+The relation ``right'' is needed to identify the other atom in a pair.
+-}
+
+PURPOSE RELATION in[Pair*Expression]
+{+The relation ``in'' is needed to establish whether a pair is in an expression.
+This can be computed by taking the populations of all relations that are used in the expression, and by computing the result of applying the relational operators in the expression on those relations.
+-}
+
+PURPOSE CONCEPT Act
+{+The basic unit of action in a transaction is the act. It is defined for the purpose of defining precisely what a transaction can and cannot do, as it is constrained by an interface.
+-}
+
+PURPOSE RELATION delta[Act*Pair]
+{+If an act can insert or delete a number of pairs in a relation, those pairs are identified through the relation ``delta''.
+-}
+
+PURPOSE RELATION changes[Act*Relation]
+{+Since every act operates on precisely one relation, that relation is known through the relation ``changes''.
+-}
+
+PURPOSE RULE "left atom in Interface"
+{+Navigation through the links in an object follows the attributes from left to right.
+Since an object is a recursive structure, every atom in the object is the root to some object, which is reachable by navigating through the attributes.
+The following rule states that the root atom of an object is at the left of every attribute in that object.
+-}
+PURPOSE RULE "right atom in Interface"
+{+At the right of every link in an attribute are atoms too.
+-}
+
+
+ENDCONTEXT
+
+

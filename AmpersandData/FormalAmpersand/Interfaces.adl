@@ -1,0 +1,54 @@
+CONTEXT RAP IN ENGLISH
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
+INCLUDE "Interfaces.doc"
+
+PATTERN Interfaces
+CONCEPT Interface "An interface is an input/output mechanism that presents a restricted view of the data to a limited number of roles in the world outside the system." 
+IDENT Interface: Interface(ifcObj;objnm)
+CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
+
+RELATION attributes[ObjectDef*ObjectDef] [INJ,SUR]
+MEANING "Every object definition has a number of object definitions, each of which serves as an attribute."
+RELATION ifcObj[Interface*ObjectDef] [UNI,TOT,INJ]
+MEANING "Every interface has precisely one object definition, which defines the structure of objects to be changed by transactions of this interface."
+RELATION objnm[ObjectDef*String] [UNI,TOT]
+MEANING "Every object definition has a name."
+RELATION objctx[ObjectDef*Expression] [UNI,TOT]
+MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
+RELATION getExpressionRelation[Expression*Relation] [UNI]
+MEANING "An Expression that is equivalent to a Relation, allows that relation to be edited."
+RULE "accessible relations" : V[Context*Interface];ifcObj;objctx;getExpressionRelation
+MEANING "For every relation that is potentially editable, there exists an interface through which it can be accessed."
+ENDPATTERN
+
+PATTERN InterfaceSemantics
+CONCEPT Transaction "A transaction is an instance of an interface, which is being used (by a user or a program) to interact with the system."   -- Transactions reside in the front end.
+CONCEPT Object "An object is an instance of an ObjectDef."  -- Objects reside in the front end.
+CONCEPT Act "An act is an event that inserts or deletes a set of pairs in a relation."   -- Acts occur in the front end.
+
+RELATION transactionObject[Transaction*Object] [UNI,TOT]
+MEANING "Each Ampersand transaction has a transaction object, in which the front end administers the progress of a transaction."
+RELATION inst[Transaction*Interface] [UNI,TOT]
+MEANING "Because each transaction is an instance of an interface, we need to know that interface."
+RELATION root[Object*Atom] [UNI,TOT]
+MEANING "Each object has a root atom, from which all data in the interface is accessible by walking over pairs."
+RELATION inst[Object*ObjectDef] [UNI,TOT]
+MEANING "Because each object is an instance of an ObjectDef, we need to know that ObjectDef."
+RELATION left[Pair*Atom] [UNI,TOT]
+RELATION right[Pair*Atom] [UNI,TOT]
+RELATION in[Pair*Expression]
+MEANING "The combination of a pair and an expression yields a statement, which makes sense to users."
+RELATION delta[Act*Pair]
+MEANING "The pairs that are inserted or deleted by an act are known as the delta."
+RELATION changes[Act*Relation] [UNI,TOT]
+MEANING "The relation affected by an act."
+RULE "left atom in Interface" : root~;inst;attributes;objctx;in~;left |- I[Atom]
+MEANING "The root atom of an object is the left atom of the attribute pairs in that object."
+RULE "right atom in Interface" : root~;inst;objctx;in~;right |- I[Atom]
+MEANING "The root atom of an object is the right atom of a pair in the object expression."
+ENDPATTERN
+
+
+ENDCONTEXT
+
+
