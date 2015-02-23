@@ -15,8 +15,11 @@ import LexerBinaryTrees
 import Control.Monad.Identity (Identity)
 import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
-import Data.List (sort)
+import Data.List (sort, nub)
+import  Basics (fatalMsg)
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Lexer"
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
@@ -51,6 +54,9 @@ operators = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#",
 special_chars :: [Char]
 special_chars = "()[],{}"
 
+opchars :: String
+opchars           = nub (sort (concat operators))
+
 runLexer :: [Char] -> Filename -> [GenToken]
 runLexer fn input = mainLexer noPos fn input
 -- Main Lexer function
@@ -59,7 +65,7 @@ runLexer fn input = mainLexer noPos fn input
 --       * runLexerMonad takes the
 
 
-type Lexer = Pos -> [Char] -> Filename -> [GenToken]
+type Lexer = Pos ->Filename  -> [Char]  -> [GenToken]
 
 mainLexer :: Lexer
 
@@ -74,12 +80,44 @@ mainLexer p fn ('-':'-':s) = mainLexer p fn (dropWhile (/= '\n') s)
 mainLexer p fn (c:s) | isSpace c = let (sp,next) = span isSpace s
                                 in  mainLexer (foldl adv p (c:sp)) fn next
 								
-								
-{-}
-todo:
-   mainLexer p ('-':'+':s)  = 
-   mainLexer p ('{':'-':s)  = 
--}
+mainLexer p fn ('-':'+':s)  = makeGenToken GtkExpl (dropWhile isSpace (takeWhile (/= '\n') s)) p fn
+                           : mainLexer p fn (dropWhile (/= '\n') s)
+mainLexer p fn ('{':'-':s)  = lexNest mainLexer (advc 2 p) fn s
+mainLexer p fn ('{':'+':s)  = lexExpl mainLexer (advc 2 p) fn s
+mainLexer p fn ('"':ss) =  let (s,swidth,rest) = scanString ss
+                           in if null rest || head rest /= '"'
+                              then errGenToken "Unterminated string literal" p fn : mainLexer (advc swidth p) fn rest
+                              else makeGenToken GtkString s p fn : mainLexer (advc (swidth+2) p) fn (tail rest)
+{- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
+   single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
+mainLexer p fn ('\'':ss)
+     = let (s,swidth,rest) = scanAtom ss
+       in if null rest || head rest /= '\''
+             then errGenToken "Unterminated atom literal" p fn : mainLexer (advc swidth p) fn rest
+             else makeGenToken GtkAtom s p fn : mainLexer (advc (swidth+2) p) fn (tail rest)
+
+
+-----------------------------------------------------------
+-- Handling infix operators
+-----------------------------------------------------------
+
+mainLexer p fn ('`':ss)
+     = case ss of
+         []    -> [errGenToken "Unterminated infix identifier" p fn]
+         (c:s) -> let res | isIdStart c || isUpper c =
+                                   let (name,p1,rest) = scanIdent (advc 2 p) s
+                                       ident = c:name
+                                       tokens | null rest ||
+                                                head rest /= '`' = errGenToken "Unterminated infix identifier" p fn
+                                                                 : mainLexer p1 fn rest
+                                              | iskw ident       = errGenToken ("Keyword used as infix identifier: " ++ ident) p fn
+                                                                 : mainLexer (advc 1 p1) fn (tail rest)
+                                              | otherwise        = makeGenToken GtkOp ident p fn
+                                                                 : mainLexer (advc 1 p1) fn (tail rest)
+                                   in tokens
+                          | otherwise = errGenToken ("Unexpected character in infix identifier: " ++ show c) p fn
+                                      : mainLexer (adv p c) fn s
+                  in res
 
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
@@ -99,7 +137,7 @@ mainLexer p fn cs@(c:s)
      | isOpsym c = let (name, s') = getOp cs   -- was:      span isOpsym cs
                        tok | isop name = makeGenToken GtkKeyword name p fn
                            | otherwise = makeGenToken GtkOp name p fn
-                   in tok : doScan (foldl adv p name) s'
+                   in tok : mainLexer (foldl adv p name) fn s'
      | isDigit c = let (tktype,number,width,s') = getNumber cs
                    in  makeGenToken tktype number p fn : mainLexer (advc width p) fn s'
      | otherwise = errGenToken ("Unexpected character " ++ show c) p fn
@@ -123,21 +161,56 @@ locatein es = isJust . btLocateIn compare (tab2tree (sort es))
 iskw     = locatein keywords
 isop     = locatein operators
 isSymbol = locatein special_chars
+isOpsym  = locatein opchars
 
 isIdStart c = isLower c || c == '_'
 isIdChar c =  isAlphaNum c
 
+getOp cs -- the longest prefix of cs occurring in keywordsops
+    = f operators cs ""
+      where
+       f ops (e:s) op = if null [s' | o:s'<-ops, e==o] then (op,e:s) --was: f ops (e:s) op = if and (map null ops) then (op,e:s) --b.joosten
+                        else f [s' | o:s'<-ops, e==o] s (op++[e])
+       f []  _     _  = ("",cs)
+       f _   []    op = (op,[])
+
+
 scanIdent p s = let (name,rest) = span isIdChar s
                 in (name,advc (length name) p,rest)
+				
+				
+scanAtom :: [Char] -> ([Char],Int,[Char])
+scanAtom []              = ("",0,[])
+scanAtom ('\\':'&':xs)   = let (str,w,r) = scanAtom xs
+                           in (str,w+2,r)
+scanAtom ('"':xs)        = let (str,w,r) = scanAtom xs
+                           in ('"': str,w+1,r)
+scanAtom xs   = let (ch,cw,cr) = getchar xs
+                    (str,w,r)  = scanAtom cr
+--                    str' = maybe "" (:str) ch
+                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
 -----------------------------------------------------------
--- String clean-up functions
+-- String clean-up functions / comments
 -----------------------------------------------------------
 
 isSpace :: Char -> Bool
 isSpace c = c == ' ' || c == '\n' || c == '\t' || c == '\r'
 				
-				
+lexNest :: (Pos -> Filename -> [Char] -> [GenToken]) -> Pos -> Filename -> [Char] -> [GenToken]
+lexNest cont pos' fn inp = lexNest' cont pos' fn inp
+ where lexNest' c p fn ('-':'}':s) = c (advc 2 p) fn s
+       lexNest' c p fn ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) fn s
+       lexNest' c p fn (x:s)       = lexNest' c (adv p x) fn s
+       lexNest' _ _ _ []          = [ errGenToken "Unterminated nested comment" pos' fn ]		
+
+lexExpl :: (Pos -> Filename -> [Char] -> [GenToken]) -> Pos -> Filename ->  [Char] -> [GenToken]
+lexExpl cont pos' fn inp = lexExpl' "" cont pos' fn inp
+ where lexExpl' str c p fn ('-':'}':s) = makeGenToken GtkExpl str p fn: c (advc 2 p) fn s
+       lexExpl' str c p fn ('{':'-':s) = lexNest (lexExpl' str c) (advc 2 p) fn s
+       lexExpl' str c p fn ('-':'-':s) = lexExpl' str c  p fn (dropWhile (/= '\n') s)
+       lexExpl' str c p fn (x:s)       = lexExpl' (str++[x]) c (adv p x) fn s
+       lexExpl' _   _ _ _  []          = [ errGenToken "Unterminated PURPOSE section" pos' fn ]
 -----------------------------------------------------------
 -- position handling
 -----------------------------------------------------------
@@ -158,3 +231,86 @@ adv pos' c = case c of
   '\n' -> advl 1 pos'
   '\r' -> advl 1 pos'
   _    -> advc 1 pos'
+
+-----------------------------------------------------------
+-- Numbers
+-----------------------------------------------------------
+  
+getNumber :: [Char] -> (GenTokenType, [Char], Int, [Char])
+getNumber [] = fatal 294 "getNumber" 
+getNumber cs@(c:s)
+  | c /= '0'         = num10
+  | null s           = const0
+  | hs `elem` "xX"   = num16
+  | hs `elem` "oO"   = num8
+  | otherwise        = num10
+  where (hs:ts) = s
+        const0 = (GtkInteger10, "0",1,s)
+        num10  = let (n,r) = span isDigit cs
+                 in (GtkInteger10,n,length n,r)
+        num16   = readNum isHexaDigit  ts GtkInteger16
+        num8    = readNum isOctalDigit ts GtkInteger8
+        readNum p ts' tk
+          = let (n,rs) = span p ts'
+            in  if null n then const0
+                          else (tk         , n, 2+length n,rs)
+						  
+						  
+isHexaDigit :: Char -> Bool
+isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
+isOctalDigit :: Char -> Bool
+isOctalDigit d = d >= '0' && d <= '7'
+
+value :: Char -> Int
+value c | isDigit c = ord c - ord '0'
+        | isUpper c = ord c - ord 'A' + 10
+        | isLower c = ord c - ord 'a' + 10
+        | otherwise = fatal 321 ("value undefined for '"++ show c++"'")
+
+-----------------------------------------------------------
+-- characters / strings
+-----------------------------------------------------------
+
+scanString :: [Char] -> ([Char],Int,[Char])
+scanString []            = ("",0,[])
+scanString ('\\':'&':xs) = let (str,w,r) = scanString xs  -- TODO: why do we ignore \& ?  
+                           in (str,w+2,r)
+scanString ('\\':'\'':xs) = let (str,w,r) = scanString xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)    
+                           in ('\'': str,w+2,r)
+scanString ('\'':xs)     = let (str,w,r) = scanString xs  -- single quote: '
+                           in ('\'': str,w+1,r)
+scanString xs = let (ch,cw,cr) = getchar xs
+                    (str,w,r)  = scanString cr
+--                    str' = maybe "" (:str) ch
+                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
+
+getchar :: [Char] -> (Maybe Char, Int, [Char])
+getchar []          = (Nothing,0,[])
+getchar s@('\n':_ ) = (Nothing,0,s)
+getchar s@('\t':_ ) = (Nothing,0,s)
+getchar s@('\'':_ ) = (Nothing,0,s)
+getchar s@('"' :_ ) = (Nothing,0,s)
+getchar   ('\\':xs) = let (c,l,r) = getEscChar xs
+                      in (c,l+1,r)
+getchar (x:xs)      = (Just x,1,xs)
+
+getEscChar :: [Char] -> (Maybe Char, Int, [Char])
+getEscChar [] = (Nothing,0,[])
+getEscChar s@(x:xs) | isDigit x = let (tp,n,len,rest) = getNumber s
+                                      val = case tp of
+                                              GtkInteger8  -> readn 8  n
+                                              GtkInteger16 -> readn 16 n
+                                              GtkInteger10 -> readn 10 n
+                                              _           -> fatal 279 "getExcChar: unknown tokentype."
+                                  in  if val >= 0 && val <= 255
+                                         then (Just (chr val),len, rest)
+                                         else (Nothing,1,rest)
+                    | otherwise = case x `lookup` cntrChars of
+                                 Nothing -> (Nothing,0,s)
+                                 Just c  -> (Just c,1,xs)
+  where cntrChars = [('a','\a'),('b','\b'),('f','\f'),('n','\n'),('r','\r'),('t','\t')
+                    ,('v','\v'),('\\','\\'),('"','\"')]
+					
+					
+readn :: Int -> [Char] -> Int
+readn base = foldl (\r x  -> value x + base * r) 0
