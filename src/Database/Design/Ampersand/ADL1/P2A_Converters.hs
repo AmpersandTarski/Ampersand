@@ -306,15 +306,17 @@ pCtx2aCtx' _
     typecheckViewDef :: P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
     typecheckViewDef
        o@(P_Vd { vd_pos = orig
-            , vd_lbl = lbl -- String
-            , vd_cpt = cpt -- Concept
-            , vd_ats = pvs -- view segment
+            , vd_lbl  = lbl   -- String
+            , vd_cpt  = cpt   -- Concept
+            , vd_html = mHtml -- Html template
+            , vd_ats  = pvs   -- view segment
             })
      = (\vdts
-        -> Vd { vdpos = orig
-              , vdlbl = lbl
-              , vdcpt = pCpt2aCpt cpt
-              , vdats = vdts
+        -> Vd { vdpos  = orig
+              , vdlbl  = lbl
+              , vdcpt  = pCpt2aCpt cpt
+              , vdhtml = mHtml
+              , vdats  = vdts
               })
        <$> traverse (typeCheckViewSegment o) pvs
 
