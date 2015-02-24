@@ -300,10 +300,12 @@ instance Traced IdentityDef where
 
 data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
-data ViewDef = Vd { vdpos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                  , vdlbl :: String         -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-                  , vdcpt :: A_Concept      -- ^ this expression describes the instances of this object, related to their context
-                  , vdats :: [ViewSegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
+data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+                  , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+                  , vdcpt :: A_Concept       -- ^ this expression describes the instances of this object, related to their context
+                  , vdhtml :: Maybe ViewHtml -- ^ the html for this view (is not required since we may have other kinds of views as well in the future)
+--                  , vdtext :: Maybe ViewText -- Future extension
+                  , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Eq,Show)
 instance Named ViewDef where
   name = vdlbl
@@ -311,6 +313,16 @@ instance Traced ViewDef where
   origin = vdpos
 
 data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
+
+data ViewHtml = ViewHtmlTemplate String
+--              | ViewHtmlInline String -- Future extension 
+                deriving (Eq, Show)
+
+{- Future extension: 
+data ViewText = ViewTextTemplate String
+              | ViewTextInline String 
+                deriving (Eq, Show)
+-}
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
