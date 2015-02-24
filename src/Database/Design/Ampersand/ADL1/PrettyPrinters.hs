@@ -40,10 +40,19 @@ quote str = dquotes.text
 quoteAll :: [String] -> [Doc]
 quoteAll = map quote
 
+isId :: String -> Bool
+isId a = all isIdChar a && length a > 0 && a `notElem` keywordstxt
+       where isIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']++['0'..'9']
+
+isUpperId :: String -> Bool
+isUpperId xs = isId xs && (head xs) `elem` ['A'..'Z']
+
 maybeQuote :: String -> Doc
-maybeQuote a = if all isIdChar a && length a > 0 && a `notElem` keywordstxt then text a
-               else quote $ a
-               where isIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']++['0'..'9']
+maybeQuote a = if isId a then text a else quote a
+
+-- adds quotes unless it's an upper identifier
+quoteConcept :: String -> Doc
+quoteConcept a = if isUpperId a then text a else quote a
 
 prettyhsep :: Pretty a => [a] -> Doc
 prettyhsep = hsep . map pretty
@@ -64,7 +73,7 @@ separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
 instance Pretty P_Context where
-    pretty p = text "CONTEXT" <+> maybeQuote(ctx_nm p) <~> ctx_lang p
+    pretty p = text "CONTEXT" <+> quoteConcept(ctx_nm p) <~> ctx_lang p
                <~> ctx_markup p
                <+\> perline (ctx_metas p)
                <+\> themes
@@ -83,7 +92,7 @@ instance Pretty P_Context where
                <+\> perline (ctx_php p)
                <+\> text "ENDCONTEXT"
              where themes = if null $ ctx_thms p then empty
-                            else text "THEMES " <+> commas (map maybeQuote $ ctx_thms p)
+                            else text "THEMES" <+> commas (map quoteConcept $ ctx_thms p)
 
 instance Pretty Meta where
     pretty p = text "META" <~> mtObj p <+> quote (mtName p) <+> quote (mtVal p)
@@ -92,7 +101,7 @@ instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
 
 instance Pretty P_Process where
-    pretty p = text "PROCESS" <+> maybeQuote (procNm p) <+\>
+    pretty p = text "PROCESS" <+> quoteConcept (procNm p) <+\>
                perline (procRules p) <+\>
                perline (procGens p) <+\>
                perline (procDcls p) <+\>
@@ -114,7 +123,7 @@ instance Pretty RoleRule where
         where id_list prop = commas (map maybeQuote $ prop p)
 
 instance Pretty P_Pattern where
-    pretty p = text "PATTERN" <+> maybeQuote(pt_nm p)
+    pretty p = text "PATTERN" <+> quoteConcept(pt_nm p)
                   <+\> patElem pt_rls
                   <+\> patElem pt_gns
                   <+\> patElem pt_dcs
@@ -194,7 +203,7 @@ instance Pretty a => Pretty (P_Rule a) where
                           else (maybeQuote $ rr_nm p) <> text ":"
 
 instance Pretty ConceptDef where
-    pretty p = text "CONCEPT" <+> maybeQuote (cdcpt p) <+> (if cdplug p then text "BYPLUG" else empty)
+    pretty p = text "CONCEPT" <+> quoteConcept (cdcpt p) <+> (if cdplug p then text "BYPLUG" else empty)
                <+> quote (cddef p) <+> type_ <+> ref -- cdfrom p
         where type_ = if null $ cdtyp p then empty
                       else text "TYPE" <+> quote(cdtyp p)
@@ -205,7 +214,7 @@ instance Pretty P_Population where
     pretty p = case p of
                 P_RelPopu nm    _ cs -> text "POPULATION" <+> maybeQuote nm        <+> text "CONTAINS" <+> contents cs
                 P_TRelPop nm tp _ cs -> text "POPULATION" <+> maybeQuote nm <~> tp <+> text "CONTAINS" <+> contents cs
-                P_CptPopu nm    _ ps -> text "POPULATION" <+> maybeQuote nm        <+> text "CONTAINS" <+> list (quoteAll ps)
+                P_CptPopu nm    _ ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> list (quoteAll ps)
                where contents = list . map prettyPair
 
 instance Pretty P_Interface where
@@ -214,7 +223,7 @@ instance Pretty P_Interface where
                <+> text ":" <~\> obj_ctx (ifc_Obj p) <~> obj_msub (ifc_Obj p)
                  where class_ = case ifc_Class p of
                                      Nothing  -> empty
-                                     Just str -> text "CLASS" <+> maybeQuote str
+                                     Just str -> text "CLASS" <+> quoteConcept str
                        params = if null $ ifc_Params p then empty
                                 else parens $ listOf (ifc_Params p)
                        args = if null $ ifc_Args p then empty
@@ -246,7 +255,9 @@ instance Pretty P_IdentSegment where
               else text(obj_nm p) <+> listOfLists(obj_strs p) <> text ":" <~> obj_ctx p
 
 instance Pretty a => Pretty (P_ViewD a) where
-    pretty p = text "VIEW" <+> maybeQuote (vd_lbl p) <+> text ":" <~> vd_cpt p <+> parens (listOf (vd_ats p))
+    pretty (P_Vd _ lbl cpt ats) =
+        text "VIEW" <+> maybeQuote lbl   <+> text ":"
+                    <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
     pretty p = case p of
@@ -268,7 +279,7 @@ instance Pretty PPurpose where
 
 instance Pretty PRef2Obj where
     pretty p = case p of
-        PRef2ConceptDef str       -> text "CONCEPT"   <+> maybeQuote str
+        PRef2ConceptDef str       -> text "CONCEPT"   <+> quoteConcept str
         PRef2Declaration termPrim -> text "RELATION"  <~> termPrim
         PRef2Rule str             -> text "RULE"      <+> maybeQuote str
         PRef2IdentityDef str      -> text "IDENT"     <+> maybeQuote str
@@ -287,14 +298,13 @@ instance Pretty PMessage where
 
 instance Pretty P_Concept where
     pretty p = case p of
-        PCpt _      -> maybeQuote$ p_cptnm p
+        PCpt _      -> quoteConcept$ p_cptnm p
         P_Singleton -> text "ONE"
 
 instance Pretty P_Sign where
-    pretty p = brackets (src <> tgt)
-        where src = pretty $ pSrc p
-              tgt = if pSrc p `equal` pTgt p then empty
-                    else text "*" <> pretty(pTgt p)
+    pretty (P_Sign src tgt) = brackets (pretty src <> maybeTgt)
+        where maybeTgt = if src `equal` tgt then empty
+                         else text "*" <> pretty tgt
               equal (PCpt x) (PCpt y) = x == y
               equal P_Singleton P_Singleton = True
               equal _ _ = False
