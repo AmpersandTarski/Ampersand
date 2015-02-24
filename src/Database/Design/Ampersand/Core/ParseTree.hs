@@ -19,7 +19,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef(..) , P_IdentSegment(..)
-   , P_ViewDef , P_ViewSegment, P_ViewHtml(..)
+   , P_ViewDef , P_ViewSegment, ViewHtmlTemplate(..) {-, ViewTextTemplate-}
    , P_ViewD(..) , P_ViewSegmt(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
@@ -476,7 +476,7 @@ data P_ViewD a =
          P_Vd { vd_pos :: Origin            -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , vd_lbl :: String            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , vd_cpt :: P_Concept         -- ^ this expression describes the instances of this object, related to their context
-              , vd_html :: Maybe P_ViewHtml -- ^ the html for this view (is not required since we may have other kinds of views as well in the future)
+              , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
               , vd_ats :: [P_ViewSegmt a]   -- ^ the constituent segments of this view.
               } deriving (Show)
@@ -494,13 +494,13 @@ data P_ViewSegmt a  = P_ViewExp  { vs_obj :: P_ObjDef a }
                     | P_ViewHtml { vs_htm :: String }
                       deriving (Eq, Show)
 
-data P_ViewHtml = P_ViewHtmlTemplate String
---                | P_ViewHtmlInline String -- Future extension 
+data ViewHtmlTemplate = ViewHtmlTemplateFile String
+--              | ViewHtmlTemplateInline String -- Future extension 
                   deriving (Eq, Show)
 
 {- Future extension:
-data P_ViewText = P_ViewTextTemplate String
-                | P_ViewTextInline String 
+data ViewText = ViewTextTemplateFile String
+              | ViewTextTemplateInline String 
                   deriving (Eq, Show)
 -}
 

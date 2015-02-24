@@ -389,7 +389,7 @@ pFancyViewDef :: AmpParser P_ViewDef
 pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabelProps <*> pConceptOneRefPos <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
                            <*> pMaybe pHtmlView 
                            <*  pKey "ENDVIEW"
-    where mkViewDef :: Label -> (P_Concept, Origin) -> [P_ObjectDef] -> Maybe P_ViewHtml -> P_ViewDef
+    where mkViewDef :: Label -> (P_Concept, Origin) -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
           mkViewDef (Lbl nm _ _) (c, orig) objs mHtml =
             P_Vd { vd_pos = orig
                  , vd_lbl = nm
@@ -408,8 +408,8 @@ pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabelProps <*> pConceptOneRefPos
                           , obj_strs = strs
                           }
           
-          pHtmlView :: AmpParser P_ViewHtml                 
-          pHtmlView = P_ViewHtmlTemplate <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
+          pHtmlView :: AmpParser ViewHtmlTemplate                 
+          pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
           
 
 -- | A view definition looks like:

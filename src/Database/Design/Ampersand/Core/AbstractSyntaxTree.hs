@@ -48,7 +48,9 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
+import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
+                                                , PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..)
+                                                , SrcOrTgt(..), isSrc)
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
@@ -303,7 +305,7 @@ data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refac
 data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                   , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                   , vdcpt :: A_Concept       -- ^ this expression describes the instances of this object, related to their context
-                  , vdhtml :: Maybe ViewHtml -- ^ the html for this view (is not required since we may have other kinds of views as well in the future)
+                  , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --                  , vdtext :: Maybe ViewText -- Future extension
                   , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Eq,Show)
@@ -314,15 +316,6 @@ instance Traced ViewDef where
 
 data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
 
-data ViewHtml = ViewHtmlTemplate String
---              | ViewHtmlInline String -- Future extension 
-                deriving (Eq, Show)
-
-{- Future extension: 
-data ViewText = ViewTextTemplate String
-              | ViewTextInline String 
-                deriving (Eq, Show)
--}
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")

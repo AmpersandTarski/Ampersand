@@ -98,6 +98,9 @@ doGenFrontend fSpec =
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
+    
+    ; putStrLn "All views"
+    ; sequence_ $ map (putStrLn . show) $ vviews fSpec
     }
 
 copyIncludes :: FSpec -> IO ()
