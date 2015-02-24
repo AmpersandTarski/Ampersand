@@ -386,7 +386,7 @@ pViewDef :: AmpParser P_ViewDef
 pViewDef  = pFancyViewDef <|> pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
 pFancyViewDef :: AmpParser P_ViewDef
-pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabelProps <*> pConceptOneRefPos <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
+pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
                            <*> pMaybe pHtmlView 
                            <*  pKey "ENDVIEW"
     where mkViewDef :: Label -> (P_Concept, Origin) -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
@@ -399,13 +399,13 @@ pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabelProps <*> pConceptOneRefPos
                  }
 
           pViewObj :: AmpParser P_ObjectDef
-          pViewObj = mkObj <$> pLabelProps <*> pTerm
+          pViewObj = mkObj <$> pLabel <*> pTerm
             where mkObj (Lbl nm p strs) attexpr = 
                     P_Obj { obj_nm   = nm
                           , obj_pos  = p
                           , obj_ctx  = attexpr
                           , obj_msub = Nothing
-                          , obj_strs = strs
+                          , obj_strs = strs -- will be []
                           }
           
           pHtmlView :: AmpParser ViewHtmlTemplate                 
