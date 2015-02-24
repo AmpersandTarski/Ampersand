@@ -19,7 +19,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef(..) , P_IdentSegment(..)
-   , P_ViewDef , P_ViewSegment
+   , P_ViewDef , P_ViewSegment, P_ViewHtml(..)
    , P_ViewD(..) , P_ViewSegmt(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
@@ -470,19 +470,39 @@ instance Traced P_IdentDef where
 data P_IdentSegment
               = P_IdentExp  { ks_obj :: P_ObjectDef }
                 deriving (Eq, Show)
+                
 type P_ViewDef = P_ViewD TermPrim
 data P_ViewD a =
-         P_Vd { vd_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-              , vd_lbl :: String         -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-              , vd_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-              , vd_ats :: [P_ViewSegmt a] -- ^ the constituent segments of this view.
+         P_Vd { vd_pos :: Origin            -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+              , vd_lbl :: String            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+              , vd_cpt :: P_Concept         -- ^ this expression describes the instances of this object, related to their context
+              , vd_html :: Maybe P_ViewHtml -- ^ the html for this view (is not required since we may have other kinds of views as well in the future)
+--              , vd_text :: Maybe P_ViewText -- Future extension
+              , vd_ats :: [P_ViewSegmt a]   -- ^ the constituent segments of this view.
               } deriving (Show)
+              
 instance Named (P_ViewD a) where
  name = vd_lbl
 instance Functor P_ViewD where fmap = fmapDefault
 instance Foldable P_ViewD where foldMap = foldMapDefault
 instance Traversable P_ViewD where
- traverse f (P_Vd a b c d) = P_Vd a b c <$> traverse (traverse f) d
+ traverse f (P_Vd a b c d e) = P_Vd a b c d <$> traverse (traverse f) e
+
+type P_ViewSegment = P_ViewSegmt TermPrim
+data P_ViewSegmt a  = P_ViewExp  { vs_obj :: P_ObjDef a }
+                    | P_ViewText { vs_txt :: String }
+                    | P_ViewHtml { vs_htm :: String }
+                      deriving (Eq, Show)
+
+data P_ViewHtml = P_ViewHtmlTemplate String
+--                | P_ViewHtmlInline String -- Future extension 
+                  deriving (Eq, Show)
+
+{- Future extension:
+data P_ViewText = P_ViewTextTemplate String
+                | P_ViewTextInline String 
+                  deriving (Eq, Show)
+-}
 
 instance Functor P_ViewSegmt where fmap = fmapDefault
 instance Foldable P_ViewSegmt where foldMap = foldMapDefault
@@ -494,12 +514,6 @@ instance Traversable P_ViewSegmt where
 instance Traced (P_ViewD a) where
  origin = vd_pos
 
-type P_ViewSegment = P_ViewSegmt TermPrim
-data P_ViewSegmt a
-              = P_ViewExp  { vs_obj :: P_ObjDef a }
-              | P_ViewText { vs_txt :: String }
-              | P_ViewHtml { vs_htm :: String }
-                deriving (Eq, Show)
 
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.

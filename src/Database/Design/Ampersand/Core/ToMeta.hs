@@ -155,8 +155,9 @@ instance MakeMeta P_IdentSegment where
 instance MakeMeta a => MakeMeta (P_ViewD a) where
   makeMeta f vd
    = P_Vd { vd_pos = makeMeta f (vd_pos vd) 
-          , vd_lbl =          f (vd_lbl vd) -- TODO: HJO20150209: Not sure if it is wise to 'f' the label. Check with Michiel.
+          , vd_lbl =            (vd_lbl vd) -- No need to meta these labels (only used as template variable names)
           , vd_cpt = makeMeta f (vd_cpt vd)
+          , vd_html =           (vd_html vd) -- No need to meta the html template filename or inline html code
           , vd_ats = makeMeta f (vd_ats vd)
           }
 

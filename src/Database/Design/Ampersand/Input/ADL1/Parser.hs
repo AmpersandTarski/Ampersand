@@ -33,7 +33,7 @@ keywordstxt       = [ "INCLUDE"
                     , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                     , "RELATION", "MEANING", "CONCEPT", "IDENT"
-                    , "VIEW", "TXT", "PRIMHTML"
+                    , "VIEW", "ENDVIEW", "TXT", "PRIMHTML", "TEMPLATE"
                     , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
                     , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                     , "CLASSIFY"
@@ -382,6 +382,36 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
                               , obj_strs = []
                               }
 
+pViewDef :: AmpParser P_ViewDef
+pViewDef  = pFancyViewDef <|> pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
+
+pFancyViewDef :: AmpParser P_ViewDef
+pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabelProps <*> pConceptOneRefPos <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
+                           <*> pMaybe pHtmlView 
+                           <*  pKey "ENDVIEW"
+    where mkViewDef :: Label -> (P_Concept, Origin) -> [P_ObjectDef] -> Maybe P_ViewHtml -> P_ViewDef
+          mkViewDef (Lbl nm _ _) (c, orig) objs mHtml =
+            P_Vd { vd_pos = orig
+                 , vd_lbl = nm
+                 , vd_cpt = c
+                 , vd_html = mHtml
+                 , vd_ats = map P_ViewExp objs
+                 }
+
+          pViewObj :: AmpParser P_ObjectDef
+          pViewObj = mkObj <$> pLabelProps <*> pTerm
+            where mkObj (Lbl nm p strs) attexpr = 
+                    P_Obj { obj_nm   = nm
+                          , obj_pos  = p
+                          , obj_ctx  = attexpr
+                          , obj_msub = Nothing
+                          , obj_strs = strs
+                          }
+          
+          pHtmlView :: AmpParser P_ViewHtml                 
+          pHtmlView = P_ViewHtmlTemplate <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
+          
+
 -- | A view definition looks like:
 --      VIEW onSSN: Person("social security number":ssn)
 -- or
@@ -389,19 +419,20 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
 --      ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded~;userrole
 --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
 -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
-pViewDef :: AmpParser P_ViewDef
-pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+pViewDefLegacy :: AmpParser P_ViewDef
+pViewDefLegacy  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
     where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef
           vd (Lbl nm _ _) (c, orig) ats
               = P_Vd { vd_pos = orig
                      , vd_lbl = nm
                      , vd_cpt = c
+                     , vd_html = Nothing
                      , vd_ats = [ case viewSeg of
-                                     P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm=show i} else P_ViewExp x
+                                     P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else P_ViewExp x
                                      P_ViewText _ -> viewSeg
                                      P_ViewHtml _ -> viewSeg
-                                | (i,viewSeg)<-zip [(1::Integer)..] ats]
-                     } -- nrs also count text segments but they're are not important anyway
+                                | (i,viewSeg) <- zip [(1::Integer)..] ats]
+                     }  -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  <$> pViewAtt <|>
                          P_ViewText <$ pKey "TXT" <*> pString <|>
