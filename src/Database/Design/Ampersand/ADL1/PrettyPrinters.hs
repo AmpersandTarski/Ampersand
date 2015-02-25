@@ -31,18 +31,20 @@ quoteWith :: String -> String -> String -> Doc
 quoteWith l r x = enclose (text l) (text r) (text x)
 
 quote :: String -> Doc
-quote str = dquotes.text
-                $ escape  "\""
-                $ replace "\n" "\\n"
-                $ escape  "\\" str
-        where escape x = replace x ("\\" ++ x)
+quote = dquotes.text.escapeAll
+        where escapeAll = escapeQuote.escapeBreaklines.escapeSlash
+              escapeQuote = escape "\""
+              escapeBreaklines = replace "\n" "\\n"
+              escapeSlash = escape "\\"
+              escape x = replace x ("\\" ++ x)
 
 quoteAll :: [String] -> [Doc]
 quoteAll = map quote
 
 isId :: String -> Bool
-isId a = all isIdChar a && length a > 0 && a `notElem` keywordstxt
-       where isIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']++['0'..'9']
+isId a = length a > 0 && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywordstxt
+       where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
+             isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
 isUpperId :: String -> Bool
 isUpperId xs = isId xs && (head xs) `elem` ['A'..'Z']
@@ -119,8 +121,9 @@ instance Pretty P_RoleRelation where
         text "ROLE" <+> commas (map maybeQuote roles) <+> text "EDITS" <+> listOf rels
 
 instance Pretty RoleRule where
-    pretty p = text "ROLE" <+> id_list mRoles <+> text "MAINTAINS" <+> id_list mRules
-        where id_list prop = commas (map maybeQuote $ prop p)
+    pretty (Maintain roles rules _) =
+        text "ROLE" <+> id_list roles <+> text "MAINTAINS" <+> id_list rules
+        where id_list prop = commas (map maybeQuote prop)
 
 instance Pretty P_Pattern where
     pretty p = text "PATTERN" <+> quoteConcept(pt_nm p)
@@ -227,6 +230,7 @@ instance Pretty P_Interface where
                        params = if null $ ifc_Params p then empty
                                 else parens $ listOf (ifc_Params p)
                        args = if null $ ifc_Args p then empty
+                              else if all null (ifc_Args p) then empty
                               else braces(listOfLists $ ifc_Args p)
                        roles = if null $ ifc_Roles p then empty
                                else text "FOR" <+> (commas . quoteAll $ ifc_Roles p)
@@ -311,7 +315,7 @@ instance Pretty P_Sign where
 
 instance Pretty P_Gen where
     pretty p = case p of
-            PGen spc gen _ -> text "SPEC"     <~> spc <+> text "ISA" <~> gen
+            PGen spc gen _ -> text "CLASSIFY" <~> spc <+> text "ISA" <~> gen
             P_Cy spc rhs _ -> text "CLASSIFY" <~> spc <+> text "IS"  <+> separate "/\\" rhs
 
 instance Pretty Lang where

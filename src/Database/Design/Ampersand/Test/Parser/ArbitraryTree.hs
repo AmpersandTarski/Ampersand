@@ -9,15 +9,9 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser (keywordstxt)
 import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
--- Useful functions to build on the quick check ones
-none :: Gen [a]
-none = return []
-
+-- Useful functions to build on the quick check functions
 ascii :: Gen Char
 ascii = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
-
-str :: Gen String
-str = listOf ascii
 
 str1 :: Gen String
 str1 = listOf1 ascii
@@ -65,7 +59,7 @@ instance Arbitrary RoleRule where
     arbitrary = Maintain <$> listOf1 arbitrary <*> listOf1 arbitrary <*> arbitrary
 
 instance Arbitrary P_Pattern where
-    arbitrary = P_Pat <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Pat <$> str1      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary
 
@@ -104,15 +98,7 @@ genTerm n = oneof (options!!idx)
                  PCpl <$> arbitrary <*> gen],
                 -- level 6
                 [PBrk <$> arbitrary <*> gen,
-                 Prim <$> oneof [
-                    -- The following generators are only used here, but we cannot compile this, the compiler doesn't know that this is a TermPrim!
-                    -- PI    <$> arbitrary,
-                    -- Pid   <$> arbitrary <*> arbitrary,
-                    -- Patm  <$> arbitrary <*> arbitrary <*> arbitrary,
-                    -- PVee  <$> arbitrary,
-                    -- Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
-                    arbitrary
-                 ]]
+                 Prim <$> arbitrary]
                 ]
 
 instance Arbitrary TermPrim where
@@ -156,13 +142,13 @@ instance Arbitrary Paire where
 
 instance Arbitrary P_Population where
     arbitrary = oneof [
-          P_RelPopu <$> str1 <*> arbitrary <*> arbitrary,
-          P_TRelPop <$> str1 <*> arbitrary <*> arbitrary <*> arbitrary,
-          P_CptPopu <$> str1 <*> arbitrary <*> arbitrary
+          P_RelPopu <$> lower_id <*> arbitrary <*> arbitrary,
+          P_TRelPop <$> lower_id <*> arbitrary <*> arbitrary <*> arbitrary,
+          P_CptPopu <$> lower_id <*> arbitrary <*> arbitrary
         ]
 
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Ifc <$> str1      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
@@ -171,7 +157,7 @@ instance Arbitrary a => Arbitrary (P_ObjDef a) where
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = oneof [
             P_Box          <$> arbitrary <*> boxKey <*> arbitrary,
-            P_InterfaceRef <$> arbitrary <*> arbitrary
+            P_InterfaceRef <$> arbitrary <*> str1
         ]
         where boxKey = elements [Nothing,Just "ROWS",Just "COLS",Just "TABS"]
 
@@ -204,8 +190,9 @@ instance Arbitrary PRef2Obj where
             PRef2Pattern <$> upper_id,
             PRef2Process <$> upper_id,
             PRef2Interface <$> upper_id,
-            PRef2Context <$> upper_id,
-            PRef2Fspc <$> upper_id
+            PRef2Context <$> upper_id
+            -- The PRef2Fspc is not used in the parser.
+            -- PRef2Fspc <$> upper_id
         ]
 
 instance Arbitrary PMeaning where
