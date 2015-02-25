@@ -1,10 +1,9 @@
 {-# LANGUAGE CPP #-}
-module Database.Design.Ampersand.Prototype.ObjBinGen  (phpObjInterfaces) where
+module Database.Design.Ampersand.Prototype.ObjBinGen (generatePhp, doGenAtlas, writeStaticFiles) where
 
 import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop)
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.Apps
-import Database.Design.Ampersand.Prototype.Generate            (generateAll)
 import Control.Monad
 import System.FilePath
 import System.Directory
@@ -13,10 +12,9 @@ import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
-phpObjInterfaces :: FSpec -> IO()
-phpObjInterfaces fSpec =
- do { writeStaticFiles (getOpts fSpec)
-    ; verboseLn (getOpts fSpec) "---------------------------"
+generatePhp :: FSpec -> IO()
+generatePhp fSpec =
+ do { verboseLn (getOpts fSpec) "---------------------------"
     ; verboseLn (getOpts fSpec) "Generating php Object files with Ampersand"
     ; verboseLn (getOpts fSpec) "---------------------------"
     ; writePrototypeFile fSpec "InstallerDBstruct.php"     (installerDBstruct fSpec)
@@ -31,10 +29,6 @@ phpObjInterfaces fSpec =
       else do { verboseLn (getOpts fSpec) "  Writing dbSettings.php."
               ; writePrototypeFile fSpec dbSettingsFilePath dbsettings
               }
-
-    ; generateAll fSpec
-    ; when (genAtlas (getOpts fSpec)) $ doGenAtlas fSpec
-    ; verboseLn (getOpts fSpec) "\n"
     }
    where
     dbsettings = unlines

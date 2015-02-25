@@ -77,8 +77,12 @@ getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> "templates"
 -- TODO: refactor generate, so we can call generation of static files and generics.php from this module.
 clearTemplateDirs :: FSpec -> IO ()
 clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
-  where emptyDir pth = removeAllDirectoryFiles $ getTemplateDir fSpec </> pth
-        -- Only remove files, withouth entering subdirectories, to prevent possible disasters when encountering of symbolic links.
+  where emptyDir path = 
+         do { let absPath = getTemplateDir fSpec </> path
+            ; dirExists <- doesDirectoryExist absPath
+            ; when dirExists $ -- dir may not exist if we haven't generated before
+               removeAllDirectoryFiles absPath
+            } -- Only remove files, withouth entering subdirectories, to prevent possible disasters with symbolic links.
         
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
