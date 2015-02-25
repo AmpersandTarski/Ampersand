@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
-         , copyDirRecursively, copyDeepFile, getProperDirectoryContents
+         , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
@@ -59,6 +59,21 @@ copyDeepFile srcPath tgtPath =
     ; copyFile srcPath tgtPath
     }
 
+-- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
+removeAllDirectoryFiles :: FilePath -> IO ()
+removeAllDirectoryFiles dirPath =
+ do { dirContents <- getProperDirectoryContents dirPath
+    ; mapM_ removeDirectoryFile dirContents 
+    }
+  where removeDirectoryFile path = 
+         do { let absPath = dirPath </> path
+            ; isDir <- doesDirectoryExist absPath
+            ; if isDir then
+                putStrLn $ "WARNING: directory '"++dirPath++"' contains a subdirectory '"++path++"' which is not cleared."
+              else
+                removeFile absPath
+            }
+     
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $
                                    getDirectoryContents pth

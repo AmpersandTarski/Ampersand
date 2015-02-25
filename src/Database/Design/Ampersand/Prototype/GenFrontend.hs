@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend) where
+module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
 
 import Prelude hiding (putStrLn,readFile)
 import Control.Monad
@@ -72,6 +72,14 @@ allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
 getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> "templates"
 
+-- Clear template dirs so the generator won't use lingering template files. 
+-- (Needs to be called before statics are generated, otherwise the templates from statics/newFrontend/templates will get deleted)
+-- TODO: refactor generate, so we can call generation of static files and generics.php from this module.
+clearTemplateDirs :: FSpec -> IO ()
+clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
+  where emptyDir pth = removeAllDirectoryFiles $ getTemplateDir fSpec </> pth
+        -- Only remove files, withouth entering subdirectories, to prevent possible disasters when encountering of symbolic links.
+        
 -- For useful info on the template language, see
 -- https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+cheat+sheet
 -- NOTE: due to a bug in HStringTemplate's checkTemplateDeep, non-existent attribute names on

@@ -11,7 +11,7 @@ import Database.Design.Ampersand.Prototype.ObjBinGen    (phpObjInterfaces)
 import Database.Design.Ampersand.Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht (doGenBericht)
-import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend)
+import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Database.Design.Ampersand.Prototype.ValidateEdit
 
@@ -62,6 +62,7 @@ generateProtoStuff opts fSpec
          }
   | otherwise =
       do { verboseLn (getOpts fSpec) "Generating prototype artifacts..."
+         ; clearTemplateDirs fSpec
          ; when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (newFrontend (getOpts fSpec))  $ doGenFrontend fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
