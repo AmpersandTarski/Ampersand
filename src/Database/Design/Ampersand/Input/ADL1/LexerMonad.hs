@@ -15,19 +15,19 @@ module Database.Design.Ampersand.Input.ADL1.LexerMonad
     , getOpts
     ) where
 
---import Helium.Main.Args
---import Database.Design.Ampersand.Input.ADL1.LexerMessage
+import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Text.ParserCombinators.Parsec.Pos
+import Database.Design.Ampersand.Misc
 
 type Bracket = (SourcePos, Char)
 
 -- Output monad: [LexerWarning]
 -- State monad: SourcePos and [Bracket]
 newtype LexerMonad a = 
-    LM ([Option] -> SourcePos -> [Bracket] -> 
+    LM ([Options] -> SourcePos -> [Bracket] -> 
         Either LexerError (a, [LexerWarning], SourcePos, [Bracket]))
 
-unLM :: LexerMonad t -> [Option] -> SourcePos -> [Bracket]
+unLM :: LexerMonad t -> [Options] -> SourcePos -> [Bracket]
           -> Either LexerError (t, [LexerWarning], SourcePos, [Bracket])
 unLM (LM x) = x
 
@@ -49,13 +49,13 @@ instance Monad LexerMonad where
     (>>=) = bindLM
     return = returnLM
 
-runLexerMonad :: [Option] -> String -> LexerMonad a -> Either LexerError (a, [LexerWarning])
+runLexerMonad :: [Options] -> String -> LexerMonad a -> Either LexerError (a, [LexerWarning])
 runLexerMonad opts fileName (LM f) = 
     case f opts (initialPos fileName) [] of
         Left err -> Left err
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
-getOpts :: LexerMonad [Option]
+getOpts :: LexerMonad [Options]
 getOpts = LM (\opts pos brackets -> Right (opts, [], pos, brackets))
 
 getPos :: LexerMonad SourcePos

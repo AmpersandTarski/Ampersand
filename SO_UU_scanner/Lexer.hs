@@ -93,15 +93,16 @@ mainLexer p fn ('"':ss) =  let (s,swidth,rest) = scanString ss
                            in if null rest || head rest /= '"'
                               then lexerError (NonTerminatedChar (Just(s))) (initialPos fn)
                               else returnGenToken GtkString s p mainLexer (advc (swidth+2) p) fn (tail rest)
-{-
+
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
 mainLexer p fn ('\'':ss)
      = let (s,swidth,rest) = scanAtom ss
        in if null rest || head rest /= '\''
-             then errGenToken "Unterminated atom literal" p fn : mainLexer (advc swidth p) fn rest
-             else return (makeGenToken GtkAtom s p fn : mainLexer (advc (swidth+2) p) fn (tail rest))
+             then lexerError UnterminatedAtom (initialPos fn)
+             else returnGenToken GtkAtom s p mainLexer (advc (swidth+2) p) fn (tail rest)
 
+{-
 
 -----------------------------------------------------------
 -- Handling infix operators
@@ -208,15 +209,15 @@ lexNest cont pos' fn inp = lexNest' cont pos' fn inp
  where lexNest' c p fn ('-':'}':s) = c (advc 2 p) fn s
        lexNest' c p fn ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) fn s
        lexNest' c p fn (x:s)       = lexNest' c (adv p x) fn s
-       lexNest' _ _ _ []          = [ errGenToken "Unterminated nested comment" pos' fn ]		
+       lexNest' _ _ _ []           = lexerError UnterminatedComment (initialPos fn)
 
 lexExpl :: Lexer -> Lexer
 lexExpl cont pos' fn inp = lexExpl' "" cont pos' fn inp
- where lexExpl' str c p fn ('-':'}':s) =  return (makeGenToken GtkExpl str p fn: c (advc 2 p) fn s)
+ where lexExpl' str c p fn ('-':'}':s) = returnGenToken GtkExpl str p mainLexer (advc 2 p)  fn s
        lexExpl' str c p fn ('{':'-':s) = lexNest (lexExpl' str c) (advc 2 p) fn s
        lexExpl' str c p fn ('-':'-':s) = lexExpl' str c  p fn (dropWhile (/= '\n') s)
        lexExpl' str c p fn (x:s)       = lexExpl' (str++[x]) c (adv p x) fn s
-       lexExpl' _   _ _ _  []          = [ errGenToken "Unterminated PURPOSE section" pos' fn ]
+       lexExpl' _   _ _ _  []          = lexerError UnterminatedPurpose (initialPos fn)
 -----------------------------------------------------------
 -- position handling
 -----------------------------------------------------------

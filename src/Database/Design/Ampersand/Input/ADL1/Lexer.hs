@@ -93,15 +93,16 @@ mainLexer p fn ('"':ss) =  let (s,swidth,rest) = scanString ss
                            in if null rest || head rest /= '"'
                               then lexerError (NonTerminatedChar (Just(s))) (initialPos fn)
                               else returnGenToken GtkString s p mainLexer (advc (swidth+2) p) fn (tail rest)
-{-
+
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
 mainLexer p fn ('\'':ss)
      = let (s,swidth,rest) = scanAtom ss
        in if null rest || head rest /= '\''
-             then errGenToken "Unterminated atom literal" p fn : mainLexer (advc swidth p) fn rest
-             else return (makeGenToken GtkAtom s p fn : mainLexer (advc (swidth+2) p) fn (tail rest))
+             then lexerError UnterminatedAtom (initialPos fn)
+             else returnGenToken GtkAtom s p mainLexer (advc (swidth+2) p) fn (tail rest)
 
+{-
 
 -----------------------------------------------------------
 -- Handling infix operators

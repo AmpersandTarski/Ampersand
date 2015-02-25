@@ -189,6 +189,16 @@ lexerUnterminatedComment = select language
     [ English :-> "Unterminated comment"
     , Dutch   :-> "Commentaar niet afgesloten"
     ]
+	
+lexerUnterminatedPurpose= select language
+    [ English :-> "Unterminated PURPOSE section"
+    , Dutch   :-> "PURPOSE sectie niet afgesloten"
+    ]
+	
+lexerUnterminatedAtom = select language
+    [ English :-> "Unterminated Atom literal"
+    , Dutch   :-> "Atom literal niet afgesloten"
+    ]
 
 lexerMissingExponentDigits = select language
     [ English :-> "Missing digits in exponent in floating-point literal"
@@ -216,7 +226,7 @@ lexerIllegalCharInChar = select language
     ]
 
 lexerNonTerminatedChar = select language
-    [ English :-> "Non-terminated character literal"
+    [ English :-> "Unterminated string literal"
     , Dutch   :-> "Niet afgesloten letter constante"
     ]
 
