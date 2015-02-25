@@ -5,11 +5,12 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
 where
 
 import Database.Design.Ampersand.Input.ADL1.LexerToken
---import LexerMonad
+import Database.Design.Ampersand.Input.ADL1.LexerMonad
+import Database.Design.Ampersand.Input.ADL1.LexerMessage
 --import Text.Parsec.Char
 --import Text.Parsec.Combinator
 import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
---import Text.Parsec.Pos
+import Text.Parsec.Pos hiding (Line, Column)
 --import Text.Parsec.Prim
 --import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
@@ -17,7 +18,7 @@ import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
 import Data.List (sort, nub)
 import Basics (fatalMsg)
-
+import Database.Design.Ampersand.Misc
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Lexer"
@@ -56,17 +57,19 @@ special_chars :: [Char]
 special_chars = "()[],{}"
 
 opchars :: String
-opchars           = nub (sort (concat operators))
+opchars = nub (sort (concat operators))
 
-runLexer :: [Char] -> Filename -> [GenToken]
-runLexer fn input = mainLexer noPos fn input
+runLexer :: [Options] -> [Char] -> Filename -> Either LexerError ([GenToken], [LexerWarning])
+runLexer fn input = lexer fn input
 -- Main Lexer function
 -- Steps:
 --       * mainLexer fitlers input string to remove all irrelevant data such as comments, spaces,...
 --       * runLexerMonad takes the
 
+lexer :: [Options] -> String -> [Char] -> Either LexerError ([GenToken], [LexerWarning])
+lexer opt fileName input = runLexerMonad opt fileName (mainLexer noPos fileName input)
 
-type Lexer = Pos ->Filename  -> [Char]  -> [GenToken]
+type Lexer = Pos -> Filename  -> [Char]  -> LexerMonad [GenToken]
 
 mainLexer :: Lexer
 
@@ -75,27 +78,29 @@ mainLexer :: Lexer
 -----------------------------------------------------------
 
 
-mainLexer p fn [] = []
+mainLexer p fn [] =  return []
 mainLexer p fn ('-':'-':s) = mainLexer p fn (dropWhile (/= '\n') s)
 
 mainLexer p fn (c:s) | isSpace c = let (sp,next) = span isSpace s
                                 in  mainLexer (foldl adv p (c:sp)) fn next
 								
-mainLexer p fn ('-':'+':s)  = makeGenToken GtkExpl (dropWhile isSpace (takeWhile (/= '\n') s)) p fn
-                           : mainLexer p fn (dropWhile (/= '\n') s)
+mainLexer p fn ('-':'+':s)  = returnGenToken GtkExpl (dropWhile isSpace (takeWhile (/= '\n') s)) p mainLexer p fn (dropWhile (/= '\n') s)
+
+
 mainLexer p fn ('{':'-':s)  = lexNest mainLexer (advc 2 p) fn s
 mainLexer p fn ('{':'+':s)  = lexExpl mainLexer (advc 2 p) fn s
 mainLexer p fn ('"':ss) =  let (s,swidth,rest) = scanString ss
                            in if null rest || head rest /= '"'
-                              then errGenToken "Unterminated string literal" p fn : mainLexer (advc swidth p) fn rest
-                              else makeGenToken GtkString s p fn : mainLexer (advc (swidth+2) p) fn (tail rest)
+                              then lexerError (NonTerminatedChar (Just(s))) (initialPos fn)
+                              else returnGenToken GtkString s p mainLexer (advc (swidth+2) p) fn (tail rest)
+{-
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
 mainLexer p fn ('\'':ss)
      = let (s,swidth,rest) = scanAtom ss
        in if null rest || head rest /= '\''
              then errGenToken "Unterminated atom literal" p fn : mainLexer (advc swidth p) fn rest
-             else makeGenToken GtkAtom s p fn : mainLexer (advc (swidth+2) p) fn (tail rest)
+             else return (makeGenToken GtkAtom s p fn : mainLexer (advc (swidth+2) p) fn (tail rest))
 
 
 -----------------------------------------------------------
@@ -113,8 +118,8 @@ mainLexer p fn ('`':ss)
                                                                  : mainLexer p1 fn rest
                                               | iskw ident       = errGenToken ("Keyword used as infix identifier: " ++ ident) p fn
                                                                  : mainLexer (advc 1 p1) fn (tail rest)
-                                              | otherwise        = makeGenToken GtkOp ident p fn
-                                                                 : mainLexer (advc 1 p1) fn (tail rest)
+                                              | otherwise        = return (makeGenToken GtkOp ident p fn
+                                                                 : mainLexer (advc 1 p1) fn (tail rest))
                                    in tokens
                           | otherwise = errGenToken ("Unexpected character in infix identifier: " ++ show c) p fn
                                       : mainLexer (adv p c) fn s
@@ -140,12 +145,12 @@ mainLexer p fn cs@(c:s)
                            | otherwise = makeGenToken GtkOp name p fn
                    in tok : mainLexer (foldl adv p name) fn s'
      | isDigit c = let (tktype,number,width,s') = getNumber cs
-                   in  makeGenToken tktype number p fn : mainLexer (advc width p) fn s'
+                   in  return (makeGenToken tktype number p fn : mainLexer (advc width p) fn s')
      | otherwise = errGenToken ("Unexpected character " ++ show c) p fn
                  : mainLexer (adv p c) fn s
 
 
-	
+-}	
 
 -----------------------------------------------------------
 -----------------------------------------------------------
@@ -198,16 +203,16 @@ scanAtom xs   = let (ch,cw,cr) = getchar xs
 isSpace :: Char -> Bool
 isSpace c = c == ' ' || c == '\n' || c == '\t' || c == '\r'
 				
-lexNest :: (Pos -> Filename -> [Char] -> [GenToken]) -> Pos -> Filename -> [Char] -> [GenToken]
+lexNest :: Lexer -> Lexer
 lexNest cont pos' fn inp = lexNest' cont pos' fn inp
  where lexNest' c p fn ('-':'}':s) = c (advc 2 p) fn s
        lexNest' c p fn ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) fn s
        lexNest' c p fn (x:s)       = lexNest' c (adv p x) fn s
        lexNest' _ _ _ []          = [ errGenToken "Unterminated nested comment" pos' fn ]		
 
-lexExpl :: (Pos -> Filename -> [Char] -> [GenToken]) -> Pos -> Filename ->  [Char] -> [GenToken]
+lexExpl :: Lexer -> Lexer
 lexExpl cont pos' fn inp = lexExpl' "" cont pos' fn inp
- where lexExpl' str c p fn ('-':'}':s) = makeGenToken GtkExpl str p fn: c (advc 2 p) fn s
+ where lexExpl' str c p fn ('-':'}':s) =  return (makeGenToken GtkExpl str p fn: c (advc 2 p) fn s)
        lexExpl' str c p fn ('{':'-':s) = lexNest (lexExpl' str c) (advc 2 p) fn s
        lexExpl' str c p fn ('-':'-':s) = lexExpl' str c  p fn (dropWhile (/= '\n') s)
        lexExpl' str c p fn (x:s)       = lexExpl' (str++[x]) c (adv p x) fn s
@@ -315,3 +320,13 @@ getEscChar s@(x:xs) | isDigit x = let (tp,n,len,rest) = getNumber s
 					
 readn :: Int -> [Char] -> Int
 readn base = foldl (\r x  -> value x + base * r) 0
+
+-----------------------------------------------------------
+-- Generic LexerMonad Token Maker
+-----------------------------------------------------------
+
+returnGenToken :: GenTokenType -> String -> Pos -> Lexer -> Lexer
+returnGenToken gtokt val post continue posi fn input = do
+    let token = makeGenToken gtokt val post fn
+    tokens <- continue posi fn input
+    return (token:tokens)
