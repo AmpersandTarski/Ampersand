@@ -12,8 +12,9 @@ import Text.ParserCombinators.Parsec.Pos hiding (Line, Column)
 import Control.Monad.Identity (Identity)
 import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
+import Data.Either
 import Data.List (sort, nub)
-import  Basics (fatalMsg)
+import Basics (fatalMsg)
 import Options
 
 fatal :: Int -> String -> a
@@ -55,13 +56,11 @@ special_chars = "()[],{}"
 opchars :: String
 opchars = nub (sort (concat operators))
 
-runLexer :: [Options] -> [Char] -> Filename -> Either LexerError ([GenToken], [LexerWarning])
-runLexer fn input = lexer fn input
--- Main Lexer function
--- Steps:
---       * mainLexer fitlers input string to remove all irrelevant data such as comments, spaces,...
---       * runLexerMonad takes the
-
+runLexer :: [Options] -> [Char] -> Filename -> [GenToken]
+runLexer opt fn input = case (lexer opt fn input) of
+                          Left error  -> []
+                          Right (x,y) -> x
+                          
 lexer :: [Options] -> String -> [Char] -> Either LexerError ([GenToken], [LexerWarning])
 lexer opt fileName input = runLexerMonad opt fileName (mainLexer noPos fileName input)
 
@@ -159,7 +158,7 @@ isSymbol = locatein special_chars
 isOpsym  = locatein opchars
 
 isIdStart c = isLower c || c == '_'
-isIdChar c =  isAlphaNum c
+isIdChar c =  isAlphaNum c || c == '_'
 
 getOp cs -- the longest prefix of cs occurring in keywordsops
     = f operators cs ""
