@@ -200,11 +200,26 @@ lexerUnterminatedAtom = select language
     , Dutch   :-> "Atom literal niet afgesloten"
     ]
 
+lexerUnterminatedInfix = select language
+    [ English :-> "Unterminated infix identifier"
+    , Dutch   :-> "Infix identifier niet afgesloten"
+    ]
+
 lexerMissingExponentDigits = select language
     [ English :-> "Missing digits in exponent in floating-point literal"
     , Dutch   :-> "Geen cijfers in de exponent van een reeel getal"
     ]
 
+lexerUnexpectedInfixKeyword s = select language
+    [ English :-> "Keyword used as infix identifier:  '"           ++ s ++ "'"
+    , Dutch   :-> "Een Keyword is gebruikt als infix operator '"   ++ s ++ "'"
+    ]
+
+lexerUnexpectedInfixChar c = select language
+    [ English :-> "Unexpected character in infix identifier: "           ++ [c] ++ "'"
+    , Dutch   :-> "Ongekend karakter gebruikt in infix operator '"       ++ [c] ++ "'"
+    ]
+	
 lexerUnexpectedChar c = select language
     [ English :-> "Unexpected character '" ++ [c] ++ "'"
     , Dutch   :-> "Onverwachte letter '" ++ [c] ++ "'"

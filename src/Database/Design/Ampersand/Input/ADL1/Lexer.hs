@@ -102,30 +102,24 @@ mainLexer p fn ('\'':ss)
              then lexerError UnterminatedAtom (initialPos fn)
              else returnGenToken GtkAtom s p mainLexer (advc (swidth+2) p) fn (tail rest)
 
-{-
-
 -----------------------------------------------------------
 -- Handling infix operators
 -----------------------------------------------------------
 
 mainLexer p fn ('`':ss)
      = case ss of
-         []    -> [errGenToken "Unterminated infix identifier" p fn]
+         []    -> lexerError UnterminatedInfix (initialPos fn)
          (c:s) -> let res | isIdStart c || isUpper c =
                                    let (name,p1,rest) = scanIdent (advc 2 p) s
                                        ident = c:name
                                        tokens | null rest ||
-                                                head rest /= '`' = errGenToken "Unterminated infix identifier" p fn
-                                                                 : mainLexer p1 fn rest
-                                              | iskw ident       = errGenToken ("Keyword used as infix identifier: " ++ ident) p fn
-                                                                 : mainLexer (advc 1 p1) fn (tail rest)
-                                              | otherwise        = return (makeGenToken GtkOp ident p fn
-                                                                 : mainLexer (advc 1 p1) fn (tail rest))
+                                                head rest /= '`' = lexerError UnterminatedInfix (initialPos fn)
+                                              | iskw ident       = lexerError (UnexpectedInfixKeyword ident) (initialPos fn)
+                                              | otherwise        = returnGenToken GtkOp ident p mainLexer (advc 1 p1) fn (tail rest)
                                    in tokens
-                          | otherwise = errGenToken ("Unexpected character in infix identifier: " ++ show c) p fn
-                                      : mainLexer (adv p c) fn s
+                          | otherwise =  lexerError (UnexpectedInfixChar c) (initialPos fn)
                   in res
-
+{-
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
