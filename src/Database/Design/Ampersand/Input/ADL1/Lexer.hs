@@ -119,33 +119,31 @@ mainLexer p fn ('`':ss)
                                    in tokens
                           | otherwise =  lexerError (UnexpectedInfixChar c) (initialPos fn)
                   in res
-{-
+
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
 
 mainLexer p fn cs@(c:s)
-     | isSymbol c = makeGenToken GtkSymbol [c] p fn
-                  : mainLexer (advc 1 p) fn s
+     | isSymbol c = returnGenToken GtkSymbol [c] p mainLexer (advc 1 p) fn s
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (advc 1 p) s
                name               = c:name'
-               tok    | iskw name = makeGenToken GtkKeyword name p fn
-                      | null name' && isSymbol c
-                                  = makeGenToken GtkSymbol [c] p fn
-                      | otherwise = makeGenToken (if isIdStart c then GtkVarid else GtkConid) name p fn
-           in tok :  mainLexer p' fn s'
-     | isOpsym c = let (name, s') = getOp cs   -- was:      span isOpsym cs
-                       tok | isop name = makeGenToken GtkKeyword name p fn
-                           | otherwise = makeGenToken GtkOp name p fn
-                   in tok : mainLexer (foldl adv p name) fn s'
+               tokt   | iskw name = GtkKeyword
+                      | null name' && isSymbol c  
+                                  =  GtkSymbol 
+                      | otherwise = if isIdStart c then GtkVarid else GtkConid
+               val    | null name' && isSymbol c 
+                                  = [c]
+                      | otherwise = name				  
+           in returnGenToken tokt val p mainLexer p' fn s'
+     | isOpsym c = let (name, s') = getOp cs
+                       tokt | isop name = GtkKeyword
+                            | otherwise =  GtkOp
+                   in returnGenToken tokt name p mainLexer (foldl adv p name) fn s'
      | isDigit c = let (tktype,number,width,s') = getNumber cs
-                   in  return (makeGenToken tktype number p fn : mainLexer (advc width p) fn s')
-     | otherwise = errGenToken ("Unexpected character " ++ show c) p fn
-                 : mainLexer (adv p c) fn s
-
-
--}	
+                   in  returnGenToken tktype number p mainLexer (advc width p) fn s'
+     | otherwise = lexerError (UnexpectedChar c) (initialPos fn)
 
 -----------------------------------------------------------
 -----------------------------------------------------------
