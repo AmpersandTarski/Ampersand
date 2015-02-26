@@ -78,6 +78,11 @@ listOfLists xs = commas $ map (hsep.quoteAll) xs
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
+labelArgs :: [[String]] -> Doc
+labelArgs args = if null args || all null args
+                 then empty
+                 else braces $ listOfLists args
+
 instance Pretty P_Context where
     pretty p = text "CONTEXT" <+> quoteConcept(ctx_nm p) <~> ctx_lang p
                <~> ctx_markup p
@@ -227,24 +232,20 @@ instance Pretty P_Population where
 instance Pretty P_Interface where
     pretty (P_Ifc name klass prms args roles obj _ _) =
         text "INTERFACE" <+> maybeQuote name <+> class_
-               <+> params <+> argmts <+> iroles
+               <+> params <+> labelArgs args <+> iroles
                <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
                  where class_ = case klass of
                                      Nothing  -> empty
                                      Just str -> text "CLASS" <+> quoteConcept str
                        params = if null prms then empty
                                 else parens $ listOf prms
-                       argmts = if null args || all null args then empty
-                                else braces $ listOfLists args
                        iroles = if null roles then empty
                                 else text "FOR" <+> (commas $ quoteAll roles)
 
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty (P_Obj nm _ ctx msub strs) =
-        quote nm <+> args <+> text ":"
-            <~> ctx <~> msub
-           where args = if null strs || all null strs then empty
-                        else braces $ listOfLists strs
+        quote nm <+> labelArgs strs <+> text ":"
+                 <~> ctx <~> msub
 
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
@@ -258,9 +259,10 @@ instance Pretty P_IdentDef where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty P_IdentSegment where
-    pretty (P_IdentExp p) =
-              if null $ obj_nm p then pretty $ obj_ctx p
-              else text(obj_nm p) <+> listOfLists(obj_strs p) <> text ":" <~> obj_ctx p
+    pretty (P_IdentExp (P_Obj nm _ ctx _ strs)) =
+              if null nm
+              then pretty ctx -- no label
+              else text nm <+> labelArgs strs <> text ":" <~> ctx
 
 instance Pretty a => Pretty (P_ViewD a) where
     pretty (P_Vd _ lbl cpt ats) =
@@ -268,10 +270,9 @@ instance Pretty a => Pretty (P_ViewD a) where
                     <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty p = case p of
-                P_ViewExp o -> pretty $obj_ctx o
-                P_ViewText txt -> text "TXT" <+> quote txt
-                P_ViewHtml htm -> text "PRIMHTML" <+> quote htm
+    pretty (P_ViewExp o)    = pretty $obj_ctx o
+    pretty (P_ViewText txt) = text "TXT" <+> quote txt
+    pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
              --where lbl o = if null $ obj_nm o then empty
             --               else maybeQuote obj_nm o <+> (pArgs `opt` []) ++ ":"
             --       args o = if null $ obj_strs o then empty

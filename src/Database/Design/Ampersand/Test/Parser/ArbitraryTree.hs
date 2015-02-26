@@ -10,26 +10,43 @@ import Database.Design.Ampersand.Input.ADL1.Parser (keywordstxt)
 import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
 -- Useful functions to build on the quick check functions
+
+-- Generates a simple ascii character
 ascii :: Gen Char
 ascii = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
 
+-- Generates a simple string of ascii characters
+str :: Gen String
+str = listOf ascii
+
+-- Generates a simple non-empty string of ascii characters
 str1 :: Gen String
 str1 = listOf1 ascii
 
+-- Generates a string of ascii characters with at least 2 characters
 str2 :: Gen String
 str2 = suchThat str1 (\s -> length s > 1)
 
+-- Genrates a valid ADL identifier
 identifier :: Gen String
 identifier = suchThat str2 noKeyword
     where noKeyword x = x `notElem` keywordstxt
 
+-- Genrates a valid ADL upper-case identifier
 upper_id :: Gen String
 upper_id = suchThat identifier startUpper
     where startUpper = isUpper . head
 
+-- Genrates a valid ADL lower-case identifier
 lower_id :: Gen String
 lower_id = suchThat identifier startLower
     where startLower = isLower . head
+
+-- Generates an object
+objTermPrim :: Gen (P_ObjDef TermPrim)
+objTermPrim = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> subIfc <*> listOf (listOf1 str1)
+    where subIfc :: Gen (Maybe (P_SubIfc TermPrim))
+          subIfc = Just <$> arbitrary
 
 --- Now the arbitrary instances
 instance Arbitrary Origin where
@@ -149,10 +166,10 @@ instance Arbitrary P_Population where
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> str1      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*>objTermPrim<*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> listOf (listOf1 str1)
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = oneof [
@@ -173,8 +190,8 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary = oneof [
             P_ViewExp <$> arbitrary,
-            P_ViewText <$> arbitrary,
-            P_ViewHtml <$> arbitrary
+            P_ViewText <$> str,
+            P_ViewHtml <$> str
         ]
 
 instance Arbitrary PPurpose where
