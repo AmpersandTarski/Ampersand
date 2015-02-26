@@ -17,7 +17,10 @@ testParse text check = if success then check ctx else False
 
 -- Tests whether the parsed context is equal to the original one
 prop_pretty :: P_Context -> Bool
-prop_pretty ctx = testParse (pretty_print ctx) (\p -> pretty_print ctx == pretty_print p)
+prop_pretty ctx = testParse prettyCtx eq
+        where eq p = if ctx == p then True
+                     else trace("Printed versions are different: " ++ prettyCtx ++ "\n\n---------\n\n" ++ pretty_print p) False
+              prettyCtx = pretty_print ctx
 
 checkArgs :: Args
 checkArgs = Args
