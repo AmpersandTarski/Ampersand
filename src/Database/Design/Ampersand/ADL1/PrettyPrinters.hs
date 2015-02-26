@@ -27,6 +27,10 @@ pretty_print x = displayS (renderPretty rfrac col_width doc) ""
 perline :: Pretty a => [a] -> Doc
 perline = vsep . map pretty
 
+perlinePrefix :: Pretty a => String -> [a] -> Doc
+perlinePrefix pref xs = vsep $ map addPrefix xs
+           where addPrefix x = text pref <+> pretty x
+
 quoteWith :: String -> String -> String -> Doc
 quoteWith l r x = enclose (text l) (text r) (text x)
 
@@ -90,8 +94,8 @@ instance Pretty P_Context where
                <+\> perline (ctx_gs p)
                <+\> perline (ctx_ifcs p)
                <+\> perline (ctx_pops p)
-               <+\> perline (ctx_sql p)
-               <+\> perline (ctx_php p)
+               <+\> perlinePrefix "PHPPLUG" (ctx_sql p)
+               <+\> perlinePrefix "SQLPLUG" (ctx_php p)
                <+\> text "ENDCONTEXT"
              where themes = if null $ ctx_thms p then empty
                             else text "THEMES" <+> commas (map quoteConcept $ ctx_thms p)
@@ -221,25 +225,25 @@ instance Pretty P_Population where
                where contents = list . map prettyPair
 
 instance Pretty P_Interface where
-    pretty p = text "INTERFACE" <+> maybeQuote (ifc_Name p) <+> class_
-               <+> params <+> args <+> roles -- ifc_Prp
-               <+> text ":" <~\> obj_ctx (ifc_Obj p) <~> obj_msub (ifc_Obj p)
-                 where class_ = case ifc_Class p of
+    pretty (P_Ifc name klass prms args roles obj _ _) =
+        text "INTERFACE" <+> maybeQuote name <+> class_
+               <+> params <+> argmts <+> iroles
+               <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
+                 where class_ = case klass of
                                      Nothing  -> empty
                                      Just str -> text "CLASS" <+> quoteConcept str
-                       params = if null $ ifc_Params p then empty
-                                else parens $ listOf (ifc_Params p)
-                       args = if null $ ifc_Args p then empty
-                              else if all null (ifc_Args p) then empty
-                              else braces(listOfLists $ ifc_Args p)
-                       roles = if null $ ifc_Roles p then empty
-                               else text "FOR" <+> (commas . quoteAll $ ifc_Roles p)
+                       params = if null prms then empty
+                                else parens $ listOf prms
+                       argmts = if null args || all null args then empty
+                                else braces $ listOfLists args
+                       iroles = if null roles then empty
+                                else text "FOR" <+> (commas $ quoteAll roles)
 
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty (P_Obj nm _ ctx msub strs) =
         quote nm <+> args <+> text ":"
             <~> ctx <~> msub
-           where args = if null strs then empty
+           where args = if null strs || all null strs then empty
                         else braces $ listOfLists strs
 
 instance Pretty a => Pretty (P_SubIfc a) where

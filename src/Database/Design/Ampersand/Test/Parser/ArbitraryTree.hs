@@ -48,7 +48,7 @@ instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
 
 instance Arbitrary P_Process where
-    arbitrary = P_Prc <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Prc <$> identifier<*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
@@ -152,11 +152,11 @@ instance Arbitrary P_Interface where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = P_Obj <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = oneof [
-            P_Box          <$> arbitrary <*> boxKey <*> arbitrary,
+            P_Box          <$> arbitrary <*> boxKey <*> listOf1 arbitrary,
             P_InterfaceRef <$> arbitrary <*> str1
         ]
         where boxKey = elements [Nothing,Just "ROWS",Just "COLS",Just "TABS"]
