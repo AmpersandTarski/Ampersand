@@ -88,10 +88,11 @@ instance Disambiguatable P_SubIfc where
 
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression
+                        v
                         d -- (potential) subobject
                         f)
                         (r,_) -- from the environment, only the source is important
-   = (P_Obj a b c' d' f, (r0,[]) -- only source information should be relevant
+   = (P_Obj a b c' v d' f, (r0,[]) -- only source information should be relevant
      )
     where
      (d', (r1,_))

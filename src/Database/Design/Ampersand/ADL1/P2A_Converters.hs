@@ -348,6 +348,7 @@ pCtx2aCtx' _
     typecheckObjDef o@(P_Obj { obj_nm = nm
                              , obj_pos = orig
                              , obj_ctx = ctx
+                             , obj_mView = mView
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
@@ -366,6 +367,7 @@ pCtx2aCtx' _
        = ( Obj { objnm = nm
                , objpos = orig
                , objctx = e
+               , objmView = mView
                , objmsub = s
                , objstrs = ostrs
                }, sr)

@@ -157,6 +157,7 @@ instance MakeMeta a => MakeMeta (P_ViewD a) where
    = P_Vd { vd_pos = makeMeta f (vd_pos vd) 
           , vd_lbl =            (vd_lbl vd) -- No need to meta these labels (only used as template variable names)
           , vd_cpt = makeMeta f (vd_cpt vd)
+          , vd_isDefault =      (vd_isDefault vd)
           , vd_html =           (vd_html vd) -- No need to meta the html template filename or inline html code
           , vd_ats = makeMeta f (vd_ats vd)
           }
@@ -253,6 +254,7 @@ instance MakeMeta a => MakeMeta (P_ObjDef a) where
    = P_Obj { obj_nm   =            (obj_nm obj)
            , obj_pos  = makeMeta f (obj_pos obj)
            , obj_ctx  = makeMeta f (obj_ctx obj)
+           , obj_mView =           (obj_mView obj)
            , obj_msub = makeMeta f (obj_msub obj)
            , obj_strs =            (obj_strs obj)
            }

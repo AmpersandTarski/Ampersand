@@ -133,6 +133,7 @@ instance Language FSpec where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language FSpec)"
                            , objctx  = EDcI ONE
+                           , objmView = Nothing
                            , objmsub = Just . Box ONE Nothing $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }

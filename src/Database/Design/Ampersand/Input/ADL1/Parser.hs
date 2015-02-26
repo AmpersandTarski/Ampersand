@@ -371,6 +371,7 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
                        P_Obj { obj_nm   = nm
                              , obj_pos  = p
                              , obj_ctx  = attexpr
+                             , obj_mView = Nothing
                              , obj_msub = Nothing
                              , obj_strs = strs
                              }
@@ -378,6 +379,7 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
                         P_Obj { obj_nm   = ""
                               , obj_pos  = Origin "pIndAtt CC664"
                               , obj_ctx  = attexpr
+                              , obj_mView = Nothing
                               , obj_msub = Nothing
                               , obj_strs = []
                               }
@@ -402,11 +404,12 @@ pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> 
           pViewObj :: AmpParser P_ObjectDef
           pViewObj = mkObj <$> pLabel <*> pTerm
             where mkObj (Lbl nm p strs) attexpr = 
-                    P_Obj { obj_nm   = nm
-                          , obj_pos  = p
-                          , obj_ctx  = attexpr
-                          , obj_msub = Nothing
-                          , obj_strs = strs -- will be []
+                    P_Obj { obj_nm    = nm
+                          , obj_pos   = p
+                          , obj_ctx   = attexpr
+                          , obj_mView = Nothing
+                          , obj_msub  = Nothing
+                          , obj_strs  = strs -- will be []
                           }
           
           pHtmlView :: AmpParser ViewHtmlTemplate                 
@@ -448,6 +451,7 @@ pViewDefLegacy  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConcep
                             P_Obj { obj_nm   = nm
                                   , obj_pos  = p
                                   , obj_ctx  = attexpr
+                                  , obj_mView = Nothing
                                   , obj_msub = Nothing
                                   , obj_strs = strs
                                   }
@@ -455,6 +459,7 @@ pViewDefLegacy  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConcep
                             P_Obj { obj_nm   = ""
                                   , obj_pos  = origin attexpr
                                   , obj_ctx  = attexpr
+                                  , obj_mView = Nothing
                                   , obj_msub = Nothing
                                   , obj_strs = []
                                   }
@@ -479,6 +484,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
                                           , obj_ctx  = expr
+                                          , obj_mView = Nothing
                                           , obj_msub = Just sub
                                           , obj_strs = args
                                           }
@@ -501,11 +507,13 @@ pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
 pObjDef :: AmpParser P_ObjectDef
 pObjDef            = obj <$> pLabelProps
                          <*> pTerm            -- the context expression (for example: I[c])
+                         <*> pMaybe (pSpec '<' *> pConid <* pSpec '>')
                          <*> pMaybe pSubInterface  -- the optional subinterface
-                     where obj (Lbl nm pos' strs) expr msub  =
+                     where obj (Lbl nm pos' strs) expr mView msub  =
                              P_Obj { obj_nm   = nm
                                    , obj_pos  = pos'
                                    , obj_ctx  = expr
+                                   , obj_mView = mView
                                    , obj_msub = msub
                                    , obj_strs = strs
                                    }
