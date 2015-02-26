@@ -7,6 +7,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredInterfaceError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingInterfaceError
+  , mkMultipleDefaultError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
@@ -113,6 +114,14 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
 mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
 mkNonMatchingInterfaceError objDef t s ref
  = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
+
+mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
+mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
+mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
+  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++ 
+                      concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
+                             | vd <- viewDefs ]       
+
 
 class ErrorConcept a where
   showEC :: a -> String

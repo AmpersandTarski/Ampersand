@@ -67,9 +67,10 @@ instance Disambiguatable P_ViewD where
   disambInfo (P_Vd { vd_pos  = o
                    , vd_lbl  = s
                    , vd_cpt  = c
+                   , vd_isDefault = d
                    , vd_ats  = a
                    , vd_html = h
-                   }) _ = (P_Vd o s c h (map (\x -> fst (disambInfo x (c',[]))) a), (c',[]))
+                   }) _ = (P_Vd o s c d h (map (\x -> fst (disambInfo x (c',[]))) a), (c',[]))
    where c' = [(Known (EDcI (pCpt2aCpt c)),Src)]
 
 instance Disambiguatable P_ViewSegmt where

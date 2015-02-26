@@ -33,8 +33,8 @@ keywordstxt       = [ "INCLUDE"
                     , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                     , "RELATION", "MEANING", "CONCEPT", "IDENT"
-                    , "VIEW", "ENDVIEW", "TXT", "PRIMHTML", "TEMPLATE"
-                    , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
+                    , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
+                    , "KEY" -- HJO, 20130605: Obsolete. Only useful as long as the old prototype generator is still in use.
                     , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                     , "CLASSIFY"
                     , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
@@ -386,14 +386,15 @@ pViewDef :: AmpParser P_ViewDef
 pViewDef  = pFancyViewDef <|> pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
 pFancyViewDef :: AmpParser P_ViewDef
-pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
+pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> pMaybe (pKey "DEFAULT") <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
                            <*> pMaybe pHtmlView 
                            <*  pKey "ENDVIEW"
-    where mkViewDef :: Label -> (P_Concept, Origin) -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
-          mkViewDef (Lbl nm _ _) (c, orig) objs mHtml =
+    where mkViewDef :: Label -> (P_Concept, Origin) -> Maybe String -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
+          mkViewDef (Lbl nm _ _) (c, orig) mDefault objs mHtml =
             P_Vd { vd_pos = orig
                  , vd_lbl = nm
                  , vd_cpt = c
+                 , vd_isDefault = mDefault /= Nothing
                  , vd_html = mHtml
                  , vd_ats = map P_ViewExp objs
                  }
@@ -426,6 +427,7 @@ pViewDefLegacy  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConcep
               = P_Vd { vd_pos = orig
                      , vd_lbl = nm
                      , vd_cpt = c
+                     , vd_isDefault = True -- Legacy view defs are always assumed to be the default (only one is allowed)
                      , vd_html = Nothing
                      , vd_ats = [ case viewSeg of
                                      P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else P_ViewExp x

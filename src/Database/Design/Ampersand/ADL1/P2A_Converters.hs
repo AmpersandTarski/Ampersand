@@ -14,6 +14,7 @@ import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.Function
 import Data.Maybe
 import Data.List(nub)
 
@@ -31,13 +32,14 @@ instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
-               . checkInterfaceCycles     -- Check that interface references are not cyclic
-               . checkInterfaceRefs       -- Check whether all referenced interfaces exist
-               . checkUnique udefrules    -- Check uniquene names of: rules,
-               . checkUnique patterns     --                          patterns,
-               . checkUnique ctxprocs     --                          processes.
-               . checkUnique ctxifcs      --                          and interfaces.
+pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer to existing objects
+               . checkInterfaceCycles      -- Check that interface references are not cyclic
+               . checkInterfaceRefs        -- Check whether all referenced interfaces exist
+               . checkMultipleDefaultViews -- Check whether each concept has at most one default view
+               . checkUnique udefrules     -- Check uniquene names of: rules,
+               . checkUnique patterns      --                          patterns,
+               . checkUnique ctxprocs      --                          processes.
+               . checkUnique ctxifcs       --                          and interfaces.
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -55,7 +57,7 @@ pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to
 checkPurposes :: Guarded A_Context -> Guarded A_Context
 checkPurposes gCtx =
   case gCtx of
-    Errors err -> Errors err
+    Errors err  -> Errors err
     Checked ctx -> let topLevelPurposes = ctxps ctx
                        purposesInPatterns = concat (map prcXps  (ctxprocs ctx))
                        purposesInProcesses = concat (map ptxps  (ctxpats ctx))
@@ -81,8 +83,8 @@ isDanglingPurpose ctx purp =
 checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
 checkInterfaceCycles gCtx =
   case gCtx of
-    Errors err -> Errors err
-    Checked ctx ->  if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
+    Errors err  -> Errors err
+    Checked ctx -> if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
       where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
@@ -97,7 +99,7 @@ checkInterfaceCycles gCtx =
 checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
 checkInterfaceRefs gCtx =
   case gCtx of
-    Errors err -> Errors err
+    Errors err  -> Errors err
     Checked ctx -> let allInterfaceLookup = Map.fromList (map (\c -> (name c,c)) (ctxifcs ctx))
                        undefinedInterfaceRefErrs
                          = [ err
@@ -118,6 +120,15 @@ checkInterfaceRefs gCtx =
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
         getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}            = concatMap getInterfaceRefs objs
+
+
+-- Check whether each concept has at most one default view
+checkMultipleDefaultViews :: Guarded A_Context -> Guarded A_Context
+checkMultipleDefaultViews gCtx =
+  case gCtx of
+    Errors err  -> Errors err
+    Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ ctxvs ctx ]
+                   in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
@@ -308,6 +319,7 @@ pCtx2aCtx' _
        o@(P_Vd { vd_pos = orig
             , vd_lbl  = lbl   -- String
             , vd_cpt  = cpt   -- Concept
+            , vd_isDefault = isDefault
             , vd_html = mHtml -- Html template
             , vd_ats  = pvs   -- view segment
             })
@@ -315,6 +327,7 @@ pCtx2aCtx' _
         -> Vd { vdpos  = orig
               , vdlbl  = lbl
               , vdcpt  = pCpt2aCpt cpt
+              , vdIsDefault = isDefault
               , vdhtml = mHtml
               , vdats  = vdts
               })

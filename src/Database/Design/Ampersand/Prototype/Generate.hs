@@ -319,12 +319,13 @@ generateViews fSpec =
       (blockParenthesize  "(" ")" ","
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name cpt)
+           , "        , 'isDefault' => "++showPhpBool isDefault
            , "        , 'segments' =>" -- a labeled list of sql queries for the view expressions
            , "            array"
            ] ++
            indent 14 (blockParenthesize "(" ")" "," (map genViewSeg viewSegs)) ++
            [ "        )" ]
-         | Vd _ label cpt _ viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
+         | Vd _ label cpt isDefault  _ viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
          ]
     ) )
  where genViewSeg (ViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]

@@ -475,7 +475,8 @@ type P_ViewDef = P_ViewD TermPrim
 data P_ViewD a =
          P_Vd { vd_pos :: Origin            -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , vd_lbl :: String            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-              , vd_cpt :: P_Concept         -- ^ this expression describes the instances of this object, related to their context
+              , vd_cpt :: P_Concept         -- ^ the concept for which this view is applicable
+              , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept 
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
               , vd_ats :: [P_ViewSegmt a]   -- ^ the constituent segments of this view.
@@ -486,7 +487,7 @@ instance Named (P_ViewD a) where
 instance Functor P_ViewD where fmap = fmapDefault
 instance Foldable P_ViewD where foldMap = foldMapDefault
 instance Traversable P_ViewD where
- traverse f (P_Vd a b c d e) = P_Vd a b c d <$> traverse (traverse f) e
+ traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
 type P_ViewSegment = P_ViewSegmt TermPrim
 data P_ViewSegmt a  = P_ViewExp  { vs_obj :: P_ObjDef a }
