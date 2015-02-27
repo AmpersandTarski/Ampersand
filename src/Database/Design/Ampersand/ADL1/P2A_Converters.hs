@@ -127,7 +127,7 @@ checkMultipleDefaultViews :: Guarded A_Context -> Guarded A_Context
 checkMultipleDefaultViews gCtx =
   case gCtx of
     Errors err  -> Errors err
-    Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c, vdIsDefault=True}:_:_) <- eqClass ((==) `on` vdcpt) $ ctxvs ctx ]
+    Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
                    in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
