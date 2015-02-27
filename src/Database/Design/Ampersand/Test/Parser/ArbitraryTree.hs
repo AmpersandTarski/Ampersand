@@ -12,25 +12,23 @@ import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 -- Useful functions to build on the quick check functions
 
 -- Generates a simple ascii character
-ascii :: Gen Char
-ascii = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
+printable :: Gen Char
+printable = suchThat arbitrary isPrint -- printable ASCII characters
 
 -- Generates a simple string of ascii characters
-str :: Gen String
-str = listOf ascii
+safeStr :: Gen String
+safeStr = listOf printable
 
 -- Generates a simple non-empty string of ascii characters
-str1 :: Gen String
-str1 = listOf1 ascii
-
--- Generates a string of ascii characters with at least 2 characters
-str2 :: Gen String
-str2 = suchThat str1 (\s -> length s > 1)
+safeStr1 :: Gen String
+safeStr1 = listOf1 printable
 
 -- Genrates a valid ADL identifier
 identifier :: Gen String
 identifier = suchThat str2 noKeyword
     where noKeyword x = x `notElem` keywordstxt
+          idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
+          str2   = suchThat (listOf1 idChar) (\s -> length s > 1)
 
 -- Genrates a valid ADL upper-case identifier
 upper_id :: Gen String
@@ -44,7 +42,7 @@ lower_id = suchThat identifier startLower
 
 -- Generates an object
 objTermPrim :: Gen (P_ObjDef TermPrim)
-objTermPrim = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> subIfc <*> listOf (listOf1 str1)
+objTermPrim = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> subIfc <*> listOf (listOf1 safeStr1)
     where subIfc :: Gen (Maybe (P_SubIfc TermPrim))
           subIfc = Just <$> arbitrary
 
@@ -59,7 +57,7 @@ instance Arbitrary P_Context where
                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary Meta where
-    arbitrary = Meta <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr
 
 instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
@@ -70,19 +68,19 @@ instance Arbitrary P_Process where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> listOf1 arbitrary <*> listOf1 arbitrary <*> arbitrary
+    arbitrary = P_RR <$> listOf1 safeStr <*> listOf1 arbitrary <*> arbitrary
 
 instance Arbitrary RoleRule where
-    arbitrary = Maintain <$> listOf1 arbitrary <*> listOf1 arbitrary <*> arbitrary
+    arbitrary = Maintain <$> listOf1 safeStr <*> listOf1 safeStr <*> arbitrary
 
 instance Arbitrary P_Pattern where
-    arbitrary = P_Pat <$> str1      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Pat <$> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary
 
 instance Arbitrary P_Declaration where
-    arbitrary = P_Sgn <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Sgn <$> lower_id  <*> arbitrary <*> arbitrary <*> safeStr1  <*> safeStr1
+                      <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = sized genTerm
@@ -120,6 +118,7 @@ genTerm n = oneof (options!!idx)
 
 instance Arbitrary TermPrim where
     arbitrary = oneof [
+           --TODO: PI, Pid, Patm, PVee, Pfull
            Prel  <$> arbitrary <*> lower_id,
            PTrel <$> arbitrary <*> lower_id <*> arbitrary
         ]
@@ -129,7 +128,7 @@ instance Arbitrary a => Arbitrary (PairView a) where
 
 instance Arbitrary a => Arbitrary (PairViewSegment a) where
     arbitrary = oneof [
-            PairViewText <$> arbitrary,
+            PairViewText <$> safeStr,
             PairViewExp <$> arbitrary <*> arbitrary
         ]
 
@@ -143,7 +142,7 @@ instance Arbitrary SrcOrTgt where
     arbitrary = elements[Src, Tgt]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> arbitrary <*> ruleTerm  <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Ru <$> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary <*> arbitrary
                      <*> arbitrary
               where ruleTerm = sized genTerm `suchThat` isRuleTerm
                     isRuleTerm (PEqu _ _ _) = True
@@ -151,8 +150,8 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
                     isRuleTerm _            = False
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                   <*> arbitrary <*> arbitrary
+    arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr <*> safeStr
+                   <*>  safeStr  <*> safeStr
 
 instance Arbitrary Paire where
     arbitrary = Paire <$> arbitrary <*> arbitrary
@@ -161,45 +160,48 @@ instance Arbitrary P_Population where
     arbitrary = oneof [
           P_RelPopu <$> lower_id <*> arbitrary <*> arbitrary,
           P_TRelPop <$> lower_id <*> arbitrary <*> arbitrary <*> arbitrary,
-          P_CptPopu <$> lower_id <*> arbitrary <*> arbitrary
+          P_CptPopu <$> lower_id <*> arbitrary <*> listOf safeStr
         ]
 
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> str1      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*>objTermPrim<*> arbitrary <*> arbitrary
+    arbitrary = P_Ifc <$> safeStr1   <*> maybeSafeStr  <*> arbitrary <*> args <*> listOf safeStr1
+                      <*>objTermPrim <*> arbitrary     <*> safeStr
+                   where args = listOf $ listOf1 safeStr
+                         maybeSafeStr = oneof[Just <$> safeStr, return Nothing]
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> listOf (listOf1 str1)
+    arbitrary = P_Obj <$> lower_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> args
+              where args = listOf $ listOf1 safeStr1
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = oneof [
-            P_Box          <$> arbitrary <*> boxKey <*> listOf1 arbitrary,
-            P_InterfaceRef <$> arbitrary <*> str1
+            P_Box          <$> arbitrary <*> boxKey   <*> listOf1 arbitrary,
+            P_InterfaceRef <$> arbitrary <*> safeStr1
         ]
         where boxKey = elements [Nothing,Just "ROWS",Just "COLS",Just "TABS"]
 
 instance Arbitrary P_IdentDef where
-    arbitrary = P_Id <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf1 arbitrary
+    arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> arbitrary
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> identifier <*> arbitrary <*> listOf1 arbitrary
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary = oneof [
             P_ViewExp <$> arbitrary,
-            P_ViewText <$> str,
-            P_ViewHtml <$> str
+            P_ViewText <$> safeStr,
+            P_ViewHtml <$> safeStr
         ]
 
 instance Arbitrary PPurpose where
-    arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr1
 
 instance Arbitrary PRef2Obj where
     arbitrary = oneof [
-            PRef2ConceptDef <$> arbitrary,
+            PRef2ConceptDef <$> safeStr,
             PRef2Declaration <$> arbitrary,
             PRef2Rule <$> upper_id,
             PRef2IdentityDef <$> upper_id,
@@ -220,8 +222,8 @@ instance Arbitrary PMessage where
 
 instance Arbitrary P_Concept where
     arbitrary = oneof [
-            PCpt <$> upper_id --,
-            -- return P_Singleton
+            PCpt <$> upper_id
+            -- TODO: return P_Singleton
         ]
 
 instance Arbitrary P_Sign where
@@ -238,13 +240,13 @@ instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]
 
 instance Arbitrary P_Markup where
-    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr
 
 instance Arbitrary PandocFormat where
     arbitrary = elements [HTML, ReST, LaTeX, Markdown]
 
 instance Arbitrary Label where
-    arbitrary = Lbl <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = Lbl <$> safeStr1 <*> arbitrary <*> listOf(listOf1 safeStr1)
 
 instance Arbitrary Prop where
     arbitrary = elements [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut]

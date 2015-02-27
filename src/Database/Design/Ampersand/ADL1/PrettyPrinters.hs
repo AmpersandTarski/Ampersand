@@ -206,13 +206,14 @@ instance Pretty SrcOrTgt where
                     Tgt -> text "TGT"
 
 instance Pretty a => Pretty (P_Rule a) where
-    pretty p = text "RULE" <+> name <~>
-               rr_exp p <+\>
-               perline (rr_mean p) <+\>
-               perline (rr_msg p) <~\>
-               rr_viol p
-             where name = if null (rr_nm p) then empty
-                          else (maybeQuote $ rr_nm p) <> text ":"
+    pretty (P_Ru nm expr fps mean msg viol) =
+                text "RULE" <+> name <~>
+                expr <+\>
+                perline mean <+\>
+                perline msg <~\>
+                viol
+            where name = if null nm then empty
+                         else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
     pretty p = text "CONCEPT" <+> quoteConcept (cdcpt p) <+> (if cdplug p then text "BYPLUG" else empty)
