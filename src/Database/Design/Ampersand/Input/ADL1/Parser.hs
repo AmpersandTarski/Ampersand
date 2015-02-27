@@ -7,7 +7,7 @@ import Database.Design.Ampersand.Input.ADL1.UU_Scanner
          ( Token(..),TokenType(..),noPos
          , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi)
 import UU.Parsing hiding (Parser)
-import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree
 import Data.List
 import Data.Maybe
@@ -396,7 +396,7 @@ pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> 
             P_Vd { vd_pos = orig
                  , vd_lbl = nm
                  , vd_cpt = c
-                 , vd_isDefault = mDefault /= Nothing
+                 , vd_isDefault = isJust mDefault
                  , vd_html = mHtml
                  , vd_ats = map P_ViewExp objs
                  }
