@@ -34,8 +34,9 @@ instance Eq SignOrd where
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer to existing objects
                . checkInterfaceCycles      -- Check that interface references are not cyclic
-               . checkInterfaceRefs        -- Check whether all referenced interfaces exist
+               . checkInterfaceRefs        -- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
                . checkMultipleDefaultViews -- Check whether each concept has at most one default view
+               . checkViewRefs             -- Check whether all referenced views exist and have the right type (currently equality is enforced)
                . checkUnique udefrules     -- Check uniquene names of: rules,
                . checkUnique patterns      --                          patterns,
                . checkUnique ctxprocs      --                          processes.
@@ -95,7 +96,7 @@ checkInterfaceCycles gCtx =
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
--- Check whether all referenced interfaces exist
+-- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
 checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
 checkInterfaceRefs gCtx =
   case gCtx of
@@ -107,12 +108,12 @@ checkInterfaceRefs gCtx =
                            , (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
                            , err <-
                                case Map.lookup ref allInterfaceLookup of
-                                 Nothing -> [mkUndeclaredInterfaceError objDef (name ifc) ref ]
+                                 Nothing -> [mkUndeclaredError "interface" objDef (name ifc) ref ]
                                  Just refIfc
                                   -> let t = target (objctx objDef)
                                          s = source (objctx (ifcObj refIfc))
                                          isEq = name t == name s
-                                     in if isEq then [] else [mkNonMatchingInterfaceError objDef t s ref]
+                                     in if isEq then [] else [mkNonMatchingError "interface" objDef t s ref]
                            ]
                    in  if null undefinedInterfaceRefErrs then gCtx else Errors undefinedInterfaceRefErrs
                    
@@ -129,6 +130,33 @@ checkMultipleDefaultViews gCtx =
     Errors err  -> Errors err
     Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
                    in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
+
+-- Check whether all referenced views exist and have the right type
+checkViewRefs :: Guarded A_Context -> Guarded A_Context
+checkViewRefs gCtx =
+  case gCtx of
+    Errors err  -> Errors err
+    Checked ctx -> let allViewLookup = Map.fromList (map (\c -> (name c,c)) (ctxvs ctx))
+                       undeclaredViewRefErrs
+                         = [ err
+                           | ifc <- ctxifcs ctx
+                           , (objDef, ref) <- getViewRefs $ ifcObj ifc 
+                           , err <-
+                               case Map.lookup ref allViewLookup of
+                                 Nothing -> [mkUndeclaredError "view" objDef (name ifc) ref ]
+                                 Just viewDef -> 
+                                   let rt = target (objctx objDef)
+                                       vt = vdcpt viewDef
+                                       isEq = name rt == name vt -- TODO: use rt `isa` vt 
+                                   in if isEq then [] else [mkNonMatchingError "view" objDef rt vt ref]
+                           ]
+                   in  if null undeclaredViewRefErrs then gCtx else Errors undeclaredViewRefErrs
+  where getViewRefs :: ObjectDef -> [(ObjectDef, String)]
+        getViewRefs objDef@Obj{objmView=mView, objmsub=mSubIfc} =
+           maybe [] (\v -> [(objDef, v)]) mView ++
+             case mSubIfc of
+               Just (Box _ _ objs) -> concatMap getViewRefs objs
+               _                   -> []
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _

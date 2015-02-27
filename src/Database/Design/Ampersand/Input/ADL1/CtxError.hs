@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
-  , mkUndeclaredInterfaceError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingInterfaceError
+  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingError
   , mkMultipleDefaultError
   , Guarded(..)
   , whenCheckedIO
@@ -95,9 +95,11 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
-mkUndeclaredInterfaceError objDef containingIfcName ref = 
-  CTXE (origin objDef) $ "Undeclared interface " ++ show ref ++ " referenced at field " ++ 
+
+-- TODO: Fix, entity  is not the ref'ed entity now
+mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> String -> CtxError
+mkUndeclaredError entity objDef containingIfcName ref = 
+  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ 
                          show (name objDef) ++ " of interface " ++ show containingIfcName ++ "."
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
@@ -111,9 +113,9 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
-mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
-mkNonMatchingInterfaceError objDef t s ref
- = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
+mkNonMatchingError ::  String -> ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
+mkNonMatchingError entity objDef t s ref
+ = CTXE (origin objDef) $ "The referenced "++entity++" "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
 
 mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
