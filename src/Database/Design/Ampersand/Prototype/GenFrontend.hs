@@ -98,9 +98,6 @@ doGenFrontend fSpec =
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
-    
-    ; putStrLn "All views"
-    ; sequence_ $ map (putStrLn . show) $ vviews fSpec
     }
 
 copyIncludes :: FSpec -> IO ()
@@ -154,7 +151,7 @@ data FEObject = FEObject { objName :: String
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe String }
+data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
                    | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
 
 data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [Role] } deriving Show
@@ -171,6 +168,24 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
 
+-- TODO: Move to FSpec (or some other suitable place)
+lookupView :: FSpec -> String -> ViewDef
+lookupView fSpec nm =
+  case filter (\v -> vdlbl v == nm) $ vviews fSpec of
+    []   -> fatal 174 $ "Undeclared view "++show nm++"." -- Will be caught by static analysis
+    [vd] -> vd
+    vds  -> fatal 176 $ "Multiple views named " ++ show nm ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
+
+getDefaultViewForConcept :: FSpec -> A_Concept -> Maybe ViewDef
+getDefaultViewForConcept fSpec concpt =
+  case [ vd 
+       | vd@Vd{vdcpt = c, vdIsDefault = True} <- vviews fSpec
+       ,  c `elem` (concpt : largerConcepts (gens fSpec) concpt) 
+       ] of
+    []     -> Nothing
+    (vd:_) -> Just vd
+--            
+            
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
@@ -189,10 +204,20 @@ buildInterface fSpec allIfcs ifc =
             case objmsub object of
               Nothing                  ->
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
-                  ; let specificTemplatePth = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
-                  ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
-                  ; let atomic = FEAtomic $ if hasSpecificTemplate then Just specificTemplatePth else Nothing
-                  ; return (atomic, iExp, isEditable, src, tgt)
+                  ; let mView = case objmView object of
+                                  Just nm -> Just $ lookupView fSpec nm
+                                  Nothing -> getDefaultViewForConcept fSpec tgt
+                  ; mSpecificTemplatePath <-
+                          case mView of
+                            Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
+                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp Obj{objnm=viewAttr} <- viewSegs])
+                            _ -> -- no view, or no view with an html template, so we fall back to target-concept template
+                                 -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
+                             do { let templatePath = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
+                                ; hasSpecificTemplate <- doesTemplateExist fSpec $ templatePath
+                                ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
+                                }
+                  ; return (FEAtomic mSpecificTemplatePath, iExp, isEditable, src, tgt)
                   }
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -294,7 +319,9 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
               -}
             -- For now, we choose specific template based on target concept. This will probably be too weak. 
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-            ; template <- readTemplate fSpec $ fromMaybe "views/Atomic.html" mPrimTemplate -- Atomic is the default template
+            --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
+            ; let (templateFilename, viewAttrs) = fromMaybe ("views/Atomic.html", []) mPrimTemplate -- Atomic is the default template
+            ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
@@ -304,6 +331,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
+                               . setManyAttrib [(viewAttr, "{{row['@view']['"++viewAttr++"']}}") | viewAttr <- viewAttrs ] -- TODO: escape/protect
                                . setAttribute "navInterface" (fmap escapeIdentifier mNavInterface)
             }
         FEBox mClass subObjs ->
