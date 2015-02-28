@@ -45,6 +45,9 @@ quote = dquotes.text.escapeAll
 quoteAll :: [String] -> [Doc]
 quoteAll = map quote
 
+quotePurpose :: String -> Doc
+quotePurpose x = text "{+" </> text x </> text "-}"
+
 isId :: String -> Bool
 isId a = length a > 0 && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywordstxt
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
@@ -206,7 +209,7 @@ instance Pretty SrcOrTgt where
                     Tgt -> text "TGT"
 
 instance Pretty a => Pretty (P_Rule a) where
-    pretty (P_Ru nm expr fps mean msg viol) =
+    pretty (P_Ru nm expr _ mean msg viol) =
                 text "RULE" <+> name <~>
                 expr <+\>
                 perline mean <+\>
@@ -281,7 +284,7 @@ instance Pretty a => Pretty (P_ViewSegmt a) where
                         
 instance Pretty PPurpose where
     pretty p = text "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
-             <+\> quoteWith "{+" "-}" (mString markup)
+             <+\> quotePurpose (mString markup)
         where markup = pexMarkup p
               lang = mFormat markup
               refs rs = if null rs then empty
@@ -329,7 +332,8 @@ instance Pretty Lang where
     pretty English = text "IN ENGLISH"
 
 instance Pretty P_Markup where
-    pretty p = pretty (mLang p) <~> mFormat p <+\> quoteWith "{+\n" "-}\n" (mString p)
+    pretty (P_Markup lang format str) =
+        pretty lang <~> format <+\> quotePurpose str
 
 instance Pretty PandocFormat where
     pretty p = case p of
