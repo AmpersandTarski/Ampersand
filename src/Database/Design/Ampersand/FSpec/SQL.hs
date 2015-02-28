@@ -163,7 +163,7 @@ selectExpr fSpec src trg expr
                 in sqlcomment ("case:  ECps (EDcV (Sign ONE _), ECpl expr') "++showADL expr) $
                    selectGeneric (Iden [Name "1"], Just src)
                                  (Iden [trg'    ], Just trg)
-                                 [TRQueryExpr (sqlConcept fSpec (target expr')) `as` Name "allAtoms"]
+                                 [sqlConceptTable fSpec (target expr') `as` Name "allAtoms"]
                                  (Just $ selectNotExists 
                                            [selectExprInFROM fSpec src' trg' expr' `as` Name "complemented"]
                                            (Just (BinOp (Iden [Name "complemented",trg2])
@@ -266,7 +266,7 @@ WHERE ECps0.`A`<>ECps2.`A
                     fenceExprs :: [(Int,TableRef,Name,Name)]
                     fenceExprs = -- the first part introduces a 'pole' that consists of the source concept.
                                  [ ( length es
-                                   , TRQueryExpr (sqlConcept fSpec c)
+                                   , sqlConceptTable fSpec c
                                    , cAtt
                                    , cAtt
                                    )
@@ -289,7 +289,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                  ]++
                                  -- the third part introduces a 'pole' that consists of the target concept.
                                  [ ( length es
-                                   , TRQueryExpr (sqlConcept fSpec c)
+                                   , sqlConceptTable fSpec c
                                    , cAtt
                                    , cAtt
                                    )
@@ -375,7 +375,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                     PlainConcept{} -> let cAtt = sqlAttConcept fSpec c in
                                                       selectGeneric (selectSelItem (cAtt, src))
                                                                     (selectSelItem (cAtt, trg))
-                                                                    [TRQueryExpr (sqlConcept fSpec c)]
+                                                                    [sqlConceptTable fSpec c]
                                                                     (Just (PostfixOp [Name "IS NOT NULL"] (Iden [cAtt])))
                                 )
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
@@ -387,7 +387,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                     PlainConcept{} -> let cAtt = sqlAttConcept fSpec inter in
                                                       selectGeneric (selectSelItem (cAtt, src))
                                                                     (selectSelItem (cAtt, trg))
-                                                                    [TRQueryExpr (sqlConcept fSpec inter)]
+                                                                    [sqlConceptTable fSpec inter]
                                                                     (Just (PostfixOp [Name "IS NOT NULL"] (Iden [cAtt])))
                                 )
     (EDcD d)             -> selectExprRelationNew fSpec src trg d
@@ -405,8 +405,8 @@ WHERE ECps0.`A`<>ECps2.`A
            EDcI c        -> sqlcomment ("case: ECpl (EDcI "++name c++")") $
                             selectGeneric (Iden [Name "concept0", concpt], Just src)
                                           (Iden [Name "concept1", concpt], Just trg)
-                                          [TRQueryExpr (sqlConcept fSpec c) `as` Name "concept0"
-                                          ,TRQueryExpr (sqlConcept fSpec c) `as` Name "concept1"
+                                          [sqlConceptTable fSpec c `as` Name "concept0"
+                                          ,sqlConceptTable fSpec c `as` Name "concept1"
                                           ]
                                           (Just (BinOp (Iden [Name "concept0", concpt])
                                                        [Name "<>"]
@@ -417,7 +417,7 @@ WHERE ECps0.`A`<>ECps2.`A
            _ | source e == ONE -> sqlcomment ("case: source e == ONE"++"ECpl ( \""++showADL e++"\" )") $
                                   selectGeneric (src', Just src)
                                                 (trg', Just trg)
-                                                [TRQueryExpr (sqlConcept fSpec (target e))]
+                                                [sqlConceptTable fSpec (target e)]
                                                 (Just $ selectNotExists 
                                                           [selectExprInFROM fSpec src2 trg2 e `as` Name "cp"]
                                                           Nothing
@@ -429,7 +429,7 @@ WHERE ECps0.`A`<>ECps2.`A
            _ | target e == ONE -> sqlcomment ("case: target e == ONE"++"ECpl ( \""++showADL e++"\" )") $
                                   selectGeneric (src', Just src)
                                                 (trg', Just trg)
-                                                [TRQueryExpr (sqlConcept fSpec (source e))]
+                                                [sqlConceptTable fSpec (source e)]
                                                 (Just $ selectNotExists 
                                                           [selectExprInFROM fSpec src2 trg2 e `as`Name "cp"]
                                                           Nothing
@@ -441,8 +441,8 @@ WHERE ECps0.`A`<>ECps2.`A
            _ | otherwise       -> sqlcomment ("case: ECpl e"++"ECpl ( \""++showADL e++"\" )") $
                                   selectGeneric (src', Just src)
                                                 (trg', Just trg)
-                                                [TRQueryExpr (sqlConcept fSpec (source e)) `as` Name "cfst"
-                                                ,TRQueryExpr (sqlConcept fSpec (target e)) `as` Name "csnd"]
+                                                [sqlConceptTable fSpec (source e) `as` Name "cfst"
+                                                ,sqlConceptTable fSpec (target e) `as` Name "csnd"]
                                                 (Just $ selectNotExists 
                                                           [selectExprInFROM fSpec src2 trg2 e `as` Name "cp"]
                                                           (Just . conjunctSQL $
@@ -504,8 +504,8 @@ Based on this derivation:
               | otherwise
                   = selectGeneric (Iden [ srcAlias, mainSrc], Just src)
                                   (Iden [ tgtAlias, mainTgt], Just trg)
-                                  [TRQueryExpr (sqlConcept fSpec (target l)) `as` srcAlias
-                                  ,TRQueryExpr (sqlConcept fSpec (target r)) `as` tgtAlias]
+                                  [sqlConceptTable fSpec (target l) `as` srcAlias
+                                  ,sqlConceptTable fSpec (target r) `as` tgtAlias]
                                   (Just $ selectNotExists 
                                             [lCode `as` lhs]
                                             ( Just $ conjunctSQL
@@ -600,8 +600,6 @@ selectExprInFROM fSpec src trg expr
                                       else Nothing
                                      )
                   where
-                   declName:: Name
-                   mayContainNulls:: Bool
                    (declName,mayContainNulls)
                      = case sqlRelPlugs fSpec expr of
                          []           -> fatal 371 ("No plug found for expression "++showADL expr)
@@ -613,17 +611,44 @@ selectExprInFROM fSpec src trg expr
                                          else fatal 390 ("Multiple plugs found for expression "++showADL expr)
                          _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
---        EDcI c -> if cpt == cptAlias
---                  then cpt
---                  else sqlcomment ("case: EDcI " ++ name c) $
---                       selectGeneric (cptAlias)
---                                     (cpt,Nothing)
---                                     [TRQueryExpr cpt]
---                                     Nothing
---                  where
---                   cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
---                   cpt = sqlConcept fSpec c
-        _  -> fatal 615 "Still TODO"
+        EDcI c -> TRQueryExpr $ 
+                    sqlcomment ("case: EDcI " ++ name c) $
+                    selectGeneric (selectSelItem (sqlAttConcept fSpec c, src))
+                                  (Iden [sqlConcept fSpec c],Nothing)
+                                  [sqlConceptTable fSpec c]
+                                  Nothing
+        EDcV{}
+          | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
+          | source expr == ONE
+               -> TRQueryExpr $ 
+                  selectGeneric (NumLit "1",Nothing)
+                                (selectSelItem (sqlExprTgt fSpec expr, trg))
+                                [rightConceptTable]
+                                Nothing
+          | target expr == ONE
+               -> TRQueryExpr $ 
+                  selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
+                                (NumLit "1",Nothing)
+                                [leftConceptTable]
+                                Nothing
+
+          | otherwise
+               -> TRQueryExpr $ 
+                  selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
+                                (NumLit "1",Nothing)
+                                [leftConceptTable, if rightConcept===rC
+                                                   then rightConceptTable
+                                                   else rightConceptTable `as` rC]
+                                Nothing
+
+
+                  where
+                    leftConceptTable  = sqlConceptTable fSpec (source expr)
+                    rightConcept      = sqlConcept      fSpec (target expr)
+                    rightConceptTable = sqlConceptTable fSpec (target expr)
+                    rC  = noCollide' [sqlConcept fSpec (source expr)] (sqlConcept fSpec (target expr))
+        _      -> TRQueryExpr $ selectExpr fSpec src trg expr
+
 
    where
      unquoted :: Name -> Bool
@@ -692,8 +717,8 @@ selectExprRelationNew fSpec srcAS trgAS dcl =
                   trg=[Name "vsnd", sqlAttConcept fSpec (target sgn)]
               in selectGeneric (Iden src, Just srcAS)
                                (Iden trg, Just trgAS)
-                               [TRQueryExpr (sqlConcept fSpec (source sgn)) `as` Name "vfst"
-                               ,TRQueryExpr (sqlConcept fSpec (target sgn)) `as` Name "vsnd"]
+                               [sqlConceptTable fSpec (source sgn) `as` Name "vfst"
+                               ,sqlConceptTable fSpec (target sgn) `as` Name "vsnd"]
                                (Just (conjunctSQL (map notNull [src,trg]))) 
 
 
@@ -787,9 +812,10 @@ sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
-sqlConcept :: FSpec -> A_Concept -> QueryExpr
-sqlConcept fSpec a = Table [(QName . name . sqlConceptPlug fSpec) a]
-
+sqlConceptTable :: FSpec -> A_Concept -> TableRef
+sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
+sqlConcept :: FSpec -> A_Concept -> Name
+sqlConcept fSpec = QName . name . sqlConceptPlug fSpec
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
 sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
