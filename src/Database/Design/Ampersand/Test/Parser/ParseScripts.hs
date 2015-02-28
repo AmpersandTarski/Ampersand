@@ -278,4 +278,4 @@ scripts :: IO [FilePath]
 scripts =
      do fs <- getFiles ".adl" "ArchitectureAndDesign"
         ds <- getFiles ".adl" "AmpersandData/FormalAmpersand"
-        return $ models ++ fs ++ ds
+        return $ fs ++ ds ++ models

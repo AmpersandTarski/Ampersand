@@ -4,15 +4,22 @@ import Database.Design.Ampersand.Test.Parser.ParseScripts
 import Database.Design.Ampersand.Test.Parser.QuickChecks
 import System.Exit (ExitCode(..))
 
+testFunctions :: IO [(String, IO Bool)]
+testFunctions = do scr <- scripts
+                   return [
+                     ("Parsing " ++ show (length scr) ++ " scripts.", testScripts scr),
+                     ("Running automatic quick checks", parserQuickChecks)]
+
 runTests :: IO Bool
-runTests =
-     do scr <- scripts
-        putStrLn $ "Parsing " ++ show (length scr) ++ " scripts."
-        success <- testScripts scr
-        if success then
-             do putStrLn $ "Running automatic quick checks"
-                parserQuickChecks
-        else return False
+runTests = do funcs <- testFunctions
+              tests funcs
+    where tests :: [(String, IO Bool)] -> IO Bool
+          tests [] = return True
+          tests ((msg,fun):xs) =
+            do putStrLn msg
+               success <- fun
+               if success then tests xs
+               else return False
 
 main :: IO ExitCode
 main = do res <- runTests
