@@ -399,7 +399,7 @@ WHERE ECps0.`A`<>ECps2.`A
            EDcV _        -> sqlcomment ("case: ECpl (EDcV _)  with signature "++show (sign expr)) $  -- yields empty
                             selectGeneric (NumLit "1", Just src)
                                           (NumLit "1", Just trg)
-                                          []
+                                          [TRQueryExpr (Values [[NumLit "1"]]) `as` Name "a" ]
                                           (Just (NumLit "0"))
            EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
            EDcI c        -> sqlcomment ("case: ECpl (EDcI "++name c++")") $
