@@ -26,7 +26,7 @@ fatal = fatalMsg "FSpec.SQL"
 
 -- | prettyprint ValueExpr and indent it with spaces
 showPhpStrSQL :: Int -> QueryExpr -> String
-showPhpStrSQL i =  intercalate (replicate i ' ') .  lines . prettyQueryExpr
+showPhpStrSQL i qe =  "'"++(intercalate ("\n"++replicate i ' ') .  lines . prettyQueryExpr) qe ++"'"
 
 selectSrcTgt :: 
            FSpec       -- current context
