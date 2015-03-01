@@ -621,12 +621,22 @@ selectExprInFROM fSpec src trg expr
                                          else fatal 390 ("Multiple plugs found for expression "++showADL expr)
                          _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
-        EDcI c -> TRQueryExpr $ 
-                    sqlcomment ("case: EDcI " ++ name c) $
-                    selectGeneric (selectSelItem (sqlAttConcept fSpec c, src))
-                                  (Iden [sqlConcept fSpec c],Nothing)
-                                  [sqlConceptTable fSpec c]
-                                  Nothing
+        EDcI c -> sqlcomment ( " case: EDcI " ++ name c ++ " ") $
+                  (
+                  case (cpt, cptAlias) of
+                    (cpt', (Iden [x],Nothing)) -> if cpt'=== x
+                                                  then TRSimple [cpt']
+                                                  else sg
+                    _                          -> sg
+                  )
+                  where  
+                   sg = TRQueryExpr $
+                       selectGeneric (selectSelItem (sqlAttConcept fSpec c, src))
+                                     (Iden [sqlConcept fSpec c],Nothing)
+                                     [sqlConceptTable fSpec c]
+                                     Nothing
+                   cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
+                   cpt = sqlConcept fSpec c
         EDcV{}
           | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
           | source expr == ONE
@@ -665,11 +675,11 @@ selectExprInFROM fSpec src trg expr
      unquoted (Name _ )   = True
      unquoted (QName _)   = False
      unquoted (UQName  _) = True
-     (===) :: Name -> Name -> Bool
-     n === n' = stringOfName n == stringOfName n'
      notNull :: Name -> ValueExpr
      notNull tm = PostfixOp [Name "IS NOT NULL"] (Iden [tm])
      
+(===) :: Name -> Name -> Bool
+n === n' = stringOfName n == stringOfName n'
 
 -- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
 noCollide' :: [Name] -> Name -> Name
@@ -784,9 +794,9 @@ selectGeneric src tgt tbls whr
 
 selectSelItem :: (Name, Name) -> (ValueExpr,Maybe Name)
 selectSelItem (att,alias)
-  = ( Iden [if stringOfName att == "1" then UQName "1" else toQName att]
-    , Just alias
-    )
+  | att === alias           = (Iden [toQName att], Nothing)
+  | stringOfName att == "1" = (Iden [UQName "1" ], Just alias)
+  | otherwise               = (Iden [toQName att], Just alias)
 
 
 -- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
@@ -880,7 +890,14 @@ conjunctSQL [ve] = ve
 conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
 
 as :: TableRef -> Name -> TableRef
-as ve a = TRAlias ve (Alias a Nothing)
+as ve a = -- TRAlias ve (Alias a Nothing)
+  case ve of 
+    TRSimple [n] -> if n === a then withoutAlias else withAlias
+    _            -> withAlias
+ where
+   withoutAlias = ve
+   withAlias = TRAlias ve (Alias a Nothing)
+    
 
 
 
