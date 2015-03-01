@@ -12,6 +12,7 @@ import qualified Data.ByteString.Char8 as BS
 import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
+import Database.Design.Ampersand.Prototype.PHP
 
 #ifdef MIN_VERSION_unix
 import System.Posix.Files (setFileTimes) -- If unix is not available, we are on windows and cannot set file timestamps 
@@ -44,7 +45,7 @@ phpObjInterfaces fSpec =
     ; verboseLn (getOpts fSpec) "\n"
     }
    where
-    dbsettings = unlines
+    dbsettings = unlines $
        [ "<?php"
        , ""
        , "global $DB_host,$DB_user,$DB_pass;"
@@ -55,7 +56,8 @@ phpObjInterfaces fSpec =
        , "$DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass)"
        , "      or exit(\"Error connecting to the database: username / password are probably incorrect.\");"
        , ""
-       , "?>"
+       ]++setSqlModePHP++
+       [ "?>"
        ]
 
 doGenAtlas :: FSpec -> IO()

@@ -7,7 +7,7 @@ import Database.Design.Ampersand.Prototype.CoreImporter
 import Database.Design.Ampersand.Prototype.AutoInstaller (odbcinstall)
 import Database.HDBC.ODBC
 import Database.HDBC
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import Database.Design.Ampersand.FSpec.SQL
 
 -- fatal :: Int -> String -> a
 -- fatal = fatalMsg "Ampersand.Prototype.Apps.RAP"
@@ -41,7 +41,7 @@ selectdecl :: (IConnection conn) => conn
 selectdecl conn fSpec dclName
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where stmt = selectExprRelation fSpec (-1) "fld1" "fld2" dcl
+   where stmt = selectExprRelation fSpec dcl
          dcl = therel dclName "" ""
          therel ::String -> String -> String -> Declaration
          therel relname relsource reltarget
