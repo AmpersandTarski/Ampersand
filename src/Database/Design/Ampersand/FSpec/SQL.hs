@@ -400,7 +400,7 @@ WHERE ECps0.`A`<>ECps2.`A
                             selectGeneric (NumLit "1", Just src)
                                           (NumLit "1", Just trg)
                                           []
-                                          Nothing
+                                          (Just (NumLit "0"))
            EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
            EDcI c        -> sqlcomment ("case: ECpl (EDcI "++name c++")") $
                             selectGeneric (Iden [Name "concept0", concpt], Just src)
@@ -583,14 +583,14 @@ selectExprInFROM fSpec src trg expr
         EDcD{} -> if sqlExprSrc fSpec expr === src && sqlExprTgt fSpec expr === trg
                   then ( if not mayContainNulls 
                          then TRSimple [declName]
-                         else TRParens . TRQueryExpr $
+                         else TRQueryExpr $
                               selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
                                             (selectSelItem (sqlExprTgt fSpec expr, trg))
                                             [TRSimple [declName]]
                                             (Just $ conjunctSQL
                                                [notNull src, notNull trg])
                        )
-                  else TRParens . TRQueryExpr $
+                  else TRQueryExpr $
                        selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
                                      (selectSelItem (sqlExprTgt fSpec expr, trg))
                                      [TRSimple [declName]]
