@@ -1,6 +1,6 @@
-module Database.Design.Ampersand.FSpec.SQL 
+module Database.Design.Ampersand.FSpec.SQL
   (selectSrcTgt,QueryExpr
-  ,showPhpStrSQL
+  ,prettySQLQuery
   , selectExprRelation  --exported to be able to validate the generated SQL for individual relations
   )
   
@@ -25,8 +25,8 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.SQL"
 
 -- | prettyprint ValueExpr and indent it with spaces
-showPhpStrSQL :: Int -> QueryExpr -> String
-showPhpStrSQL i qe =  "'"++(intercalate ("\n"++replicate i ' ') .  lines . prettyQueryExpr) qe ++"'"
+prettySQLQuery :: Int -> QueryExpr -> String
+prettySQLQuery i =  intercalate ("\n"++replicate i ' ') .  lines . prettyQueryExpr
 
 selectSrcTgt :: 
            FSpec       -- current context
