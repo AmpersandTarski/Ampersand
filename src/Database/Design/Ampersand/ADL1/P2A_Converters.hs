@@ -372,6 +372,7 @@ pCtx2aCtx' _
                             []   -> Nothing
                             vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                         
+      typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
       typeCheckViewAnnotation _       Nothing       = pure ()
       typeCheckViewAnnotation objExpr (Just viewId) =
         case lookupView viewId of 
