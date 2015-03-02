@@ -143,13 +143,14 @@ genTerm lv n = if n <= 0 || lv > 6
 instance Arbitrary TermPrim where
     arbitrary = oneof [
            PI <$> arbitrary,
-           Pid <$> arbitrary <*> arbitrary,
-           Patm <$> arbitrary <*> identifier <*> arbitrary,
+           Pid <$> arbitrary <*> genConceptOne,
+           Patm <$> arbitrary <*> identifier <*> maybeConceptOne,
            PVee <$> arbitrary,
-           Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
-           relationRef, -- twice for increasing the chance of the constructors in relationRef.
+           Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
+           relationRef, -- twice for increasing the chance of the 2 constructors in relationRef.
            relationRef
        ]
+      where maybeConceptOne = oneof [return Nothing, Just <$> genConceptOne]
 
 relationRef :: Gen TermPrim
 relationRef = oneof [
@@ -221,7 +222,7 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized objTermPrim
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> arbitrary <*> listOf1 arbitrary
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne <*> listOf1 arbitrary
 
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary = oneof [
@@ -255,10 +256,10 @@ instance Arbitrary PMessage where
     arbitrary = PMessage <$> arbitrary
 
 instance Arbitrary P_Concept where
-    arbitrary = oneof [
-            PCpt <$> upper_id
-            --TODO: return P_Singleton
-        ]
+    arbitrary = PCpt <$> upper_id
+
+genConceptOne :: Gen P_Concept
+genConceptOne = oneof [arbitrary, return P_Singleton]
 
 instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
