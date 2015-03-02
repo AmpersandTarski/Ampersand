@@ -40,6 +40,7 @@ pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer t
                . checkUnique udefrules     -- Check uniquene names of: rules,
                . checkUnique patterns      --                          patterns,
                . checkUnique ctxprocs      --                          processes.
+               . checkUnique ctxvs         --                          view defs,
                . checkUnique ctxifcs       --                          and interfaces.
                . pCtx2aCtx' opts
   where
