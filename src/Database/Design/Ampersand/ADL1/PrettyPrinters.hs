@@ -138,28 +138,29 @@ instance Pretty RoleRule where
         where id_list prop = commas (map maybeQuote prop)
 
 instance Pretty P_Pattern where
-    pretty p = text "PATTERN" <+> quoteConcept(pt_nm p)
-                  <+\> patElem pt_rls
-                  <+\> patElem pt_gns
-                  <+\> patElem pt_dcs
-                  <+\> patElem pt_cds
-                  <+\> patElem pt_ids
-                  <+\> patElem pt_vds
-                  <+\> patElem pt_xps
-                  <+\> patElem pt_pop
-                  <+> text "ENDPATTERN"
-           where patElem pe = perline $ pe p
+    pretty (P_Pat nm _ _ rls gns dcs cds ids vds xps pop) =
+          text "PATTERN"
+          <+>  quoteConcept nm
+          <+\> perline rls
+          <+\> perline gns
+          <+\> perline dcs
+          <+\> perline cds
+          <+\> perline ids
+          <+\> perline vds
+          <+\> perline xps
+          <+\> perline pop
+          <+>  text "ENDPATTERN"
 
 instance Pretty P_Declaration where
-    pretty p = text "RELATION" <+> text (dec_nm p) <~> dec_sign p <+> props <+> byplug <+\> pragma <+\> meanings <+\> content
-        where props = if dec_prps p == [Sym, Asy] then text "[PROP]"
-                      else text "[" <> (listOf $ dec_prps p) <> text "]"
-              byplug = if (dec_plug p) then text "BYPLUG" else empty
-              pragma = if null (concat [dec_prL p, dec_prM p, dec_prR p]) then empty
-                       else text "PRAGMA" <+> quote (dec_prL p) <+> quote (dec_prM p) <+> quote (dec_prR p)
-              meanings = prettyhsep (dec_Mean p)
-              content = if null (dec_popu p) then empty
-                        else text "=\n[" <+> commas (map prettyPair (dec_popu p)) <+> text "]"
+    pretty (P_Sgn nm sign prps prL prM prR mean popu _ plug) =
+        text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragma <+\> prettyhsep mean <+\> content
+        where props   = if prps == [Sym, Asy] then text "[PROP]"
+                        else text "[" <> listOf prps <> text "]"
+              byplug  = if plug then text "BYPLUG" else empty
+              pragma  = if all null [prL, prM, prR] then empty
+                        else text "PRAGMA" <+> quote prL <+> quote prM <+> quote prR
+              content = if null popu then empty
+                        else text "=\n[" <+> commas (map prettyPair popu) <+> text "]"
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -184,7 +185,7 @@ instance Pretty a => Pretty (Term a) where
        PKl0 _ t -> pos t "*"
        PKl1 _ t -> pos t "+"
        PFlp _ t -> pos t "~"
-       PCpl _ t -> pre t "-"
+       PCpl _ t -> pre t " -" -- a double dash can happen when combined with PDif, therefore the extra space
        -- level 6
        PBrk _ t -> parens $ pretty t
        
@@ -208,13 +209,12 @@ instance Pretty a => Pretty (PairView a) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf ss)
 
 instance Pretty a => Pretty (PairViewSegment a) where
-    pretty p = case p of PairViewText str -> text "TXT" <+> quote str
-                         PairViewExp srcTgt term -> pretty srcTgt <~> term
+    pretty (PairViewText str) = text "TXT" <+> quote str
+    pretty (PairViewExp srcTgt term) = pretty srcTgt <~> term
 
 instance Pretty SrcOrTgt where
-    pretty p = case p of
-                    Src -> text "SRC"
-                    Tgt -> text "TGT"
+    pretty Src = text "SRC"
+    pretty Tgt = text "TGT"
 
 instance Pretty a => Pretty (P_Rule a) where
     pretty (P_Ru nm expr _ mean msg viol) =
@@ -227,12 +227,13 @@ instance Pretty a => Pretty (P_Rule a) where
                          else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
-    pretty p = text "CONCEPT" <+> quoteConcept (cdcpt p) <+> (if cdplug p then text "BYPLUG" else empty)
-               <+> quote (cddef p) <+> type_ <+> ref -- cdfrom p
-        where type_ = if null $ cdtyp p then empty
-                      else text "TYPE" <+> quote(cdtyp p)
-              ref = if null $ cdref p then empty
-                    else quote(cdref p)
+    pretty (Cd _ cpt plug def typ ref _) -- from, the last argument, is not used in the parser
+        = text "CONCEPT" <+> quoteConcept cpt <+> (if plug then text "BYPLUG" else empty)
+               <+> quote def <+> type_ <+> maybeText ref
+        where type_ = if null typ then empty
+                      else text "TYPE" <+> quote typ
+              maybeText txt = if null txt then empty
+                              else quote txt
 
 instance Pretty P_Population where
     pretty p = case p of
@@ -285,10 +286,6 @@ instance Pretty a => Pretty (P_ViewSegmt a) where
     pretty (P_ViewExp o)    = pretty $obj_ctx o
     pretty (P_ViewText txt) = text "TXT" <+> quote txt
     pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
-             --where lbl o = if null $ obj_nm o then empty
-            --               else maybeQuote obj_nm o <+> (pArgs `opt` []) ++ ":"
-            --       args o = if null $ obj_strs o then empty
-            --                else "{" <+> listOfLists(obj_strs o) <+> text "}"
                         
 instance Pretty PPurpose where
     pretty p = text "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
@@ -351,11 +348,11 @@ instance Pretty PandocFormat where
         Markdown -> text "MARKDOWN"
 
 instance Pretty Label where
-    pretty p = text "LABEL?" <+> maybeQuote(lblnm p) <+> listOfLists (lblstrs p)
+    pretty (Lbl nm _ strs) =
+        text "LABEL?" <+> maybeQuote nm <+> listOfLists strs
 
 instance Pretty Prop where
-    pretty p = text prop
-        where prop = case p of
+    pretty p = text $ case p of
                 Uni -> "UNI"
                 Inj -> "INJ"
                 Sur -> "SUR"
