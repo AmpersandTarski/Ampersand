@@ -102,8 +102,8 @@ instance Pretty P_Context where
                <+\> perline (ctx_gs p)
                <+\> perline (ctx_ifcs p)
                <+\> perline (ctx_pops p)
-               <+\> perlinePrefix "PHPPLUG" (ctx_sql p)
-               <+\> perlinePrefix "SQLPLUG" (ctx_php p)
+               <+\> perlinePrefix "SQLPLUG" (ctx_sql p)
+               <+\> perlinePrefix "PHPPLUG" (ctx_php p)
                <+\> text "ENDCONTEXT"
              where themes = if null $ ctx_thms p then empty
                             else text "THEMES" <+> commas (map quoteConcept $ ctx_thms p)
@@ -164,22 +164,30 @@ instance Pretty P_Declaration where
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
        Prim a -> pretty a
+       -- level 0 (rule)
        PEqu _ t1 t2 -> two t1 t2 "="
        PImp _ t1 t2 -> two t1 t2 " |- "
+       -- level 1
        PIsc _ t1 t2 -> two t1 t2 "/\\"
        PUni _ t1 t2 -> two t1 t2 "\\/"
+       -- level 2
        PDif _ t1 t2 -> two t1 t2 "-"
+       -- level 3
        PLrs _ t1 t2 -> two t1 t2 "/"
        PRrs _ t1 t2 -> two t1 t2 "\\"
        PDia _ t1 t2 -> two t1 t2 "<>"
+       -- level 4
        PCps _ t1 t2 -> two t1 t2 ";"
        PRad _ t1 t2 -> two t1 t2 "!"
-       PPrd _ t1 t2 -> two t1 t2 "*"
+       PPrd _ t1 t2 -> two t1 t2 "#"
+       -- level 5
        PKl0 _ t -> pos t "*"
        PKl1 _ t -> pos t "+"
        PFlp _ t -> pos t "~"
        PCpl _ t -> pre t "-"
+       -- level 6
        PBrk _ t -> parens $ pretty t
+       
        where pos t op     = pretty t <> text op
              pre t op     = text op <> pretty t
              two t1 t2 op = pretty t1 <> text op <> pretty t2
