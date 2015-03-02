@@ -110,10 +110,10 @@ checkInterfaceRefs gCtx =
                                case Map.lookup ref allInterfaceLookup of
                                  Nothing -> [mkUndeclaredError "interface" (Just $ name ifc) objDef ref]
                                  Just refIfc
-                                  -> let t = target (objctx objDef)
+                                  -> [] {-let t = target (objctx objDef)
                                          s = source (objctx (ifcObj refIfc))
                                          isEq = name t == name s
-                                     in if isEq then [] else [mkNonMatchingError "interface" objDef t s ref]
+                                     in if isEq then [] else [mkNonMatchingError "interface" objDef t s ref] -}
                            ]
                    in  if null undefinedInterfaceRefErrs then gCtx else Errors undefinedInterfaceRefErrs
                    
@@ -357,7 +357,11 @@ pCtx2aCtx' _
         -> case subi of
             Nothing -> obj expr Nothing <$ typeCheckViewAnnotation (fst expr) mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
             Just (InterfaceRef s)
-              -> pure (obj expr (Just$InterfaceRef s)) -- type is checked later
+              -> (\(refIfcExpr,_) -> obj expr (Just $ InterfaceRef s) <$ typeCheckInterfaceRef (fst expr) refIfcExpr)
+                 <?> case lookupIfc s of
+                       Just refIfc -> let trm = disambiguate termPrimDisAmb $ obj_ctx (ifc_Obj refIfc)
+                                      in  typecheckTerm trm -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
+                       Nothing     -> error "interface ref not found"
             Just b@(Box c _ _)
               -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
@@ -382,7 +386,20 @@ pCtx2aCtx' _
                      in  --trace ("CHECK: " ++viewAnnCptStr ++ " `isa` " ++viewDefCptStr ++ " = " ++ show viewIsCompatible) $
                          if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr ]
           Nothing -> Errors [mkUndeclaredError "view" Nothing o viewId] 
-        
+     
+      lookupIfc :: String -> Maybe P_Interface
+      lookupIfc ifcId = case [ vd | vd <- p_interfaces, ifc_Name vd == ifcId ] of
+                            []    -> Nothing
+                            ifc:_ -> Just ifc -- return the first one, if there are more, this is caught later on by uniqueness static check
+      
+      typeCheckInterfaceRef :: Expression -> Expression -> Guarded ()
+      typeCheckInterfaceRef objExpr ifcExpr = 
+        let ifcRefTargetStr = name $ target objExpr
+            ifcSourceStr = name $ source ifcExpr
+            refIsCompatible = ifcRefTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` ifcRefTargetStr
+        in  trace ("CHECK: " ++ifcRefTargetStr ++ " compares to " ++ ifcSourceStr ++ " = " ++ show refIsCompatible) $
+            if refIsCompatible then pure () else Errors [mkIncompatibleViewError o "INTERFACE REF ERROR" ifcRefTargetStr ifcSourceStr ]
+                                                        -- Abuse view error to show interface ref error
       obj (e,(sr,_)) s
        = ( Obj { objnm = nm
                , objpos = orig
