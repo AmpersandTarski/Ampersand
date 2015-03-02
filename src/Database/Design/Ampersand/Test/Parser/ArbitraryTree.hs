@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
 
 import Test.QuickCheck
@@ -53,6 +54,12 @@ makeObj genPrim genIfc =
               where args = listOf $ listOf1 safeStr1
                     term = Prim <$> genPrim
 
+genPairs :: Gen Pairs
+genPairs = listOf genPaire
+
+genPaire :: Gen Paire
+genPaire = Paire <$> safeStr <*> safeStr
+
 --- Now the arbitrary instances
 instance Arbitrary Origin where
     arbitrary = return OriginUnknown
@@ -90,7 +97,7 @@ instance Arbitrary P_Pattern where
 
 instance Arbitrary P_Declaration where
     arbitrary = P_Sgn <$> lower_id  <*> arbitrary <*> arbitrary <*> safeStr1  <*> safeStr1
-                      <*> safeStr1  <*> arbitrary <*> pair <*> arbitrary <*> arbitrary
+                      <*> safeStr1  <*> arbitrary <*> genPairs  <*> arbitrary <*> arbitrary
 
 -- TODO: Delete the following:
 instance Arbitrary a => Arbitrary (Term a) where
@@ -157,13 +164,13 @@ relationRef = oneof [
        PTrel <$> arbitrary <*> lower_id <*> arbitrary
     ]
 
-instance Arbitrary a => Arbitrary (PairView a) where
+instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = PairView <$> listOf1 arbitrary
 
-instance Arbitrary a => Arbitrary (PairViewSegment a) where
+instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
             PairViewText <$> safeStr,
-            PairViewExp <$> arbitrary <*> arbitrary
+            PairViewExp <$> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
         ]
 
 instance Arbitrary a => Arbitrary (PairViewTerm a) where
@@ -189,8 +196,8 @@ instance Arbitrary Paire where
 
 instance Arbitrary P_Population where
     arbitrary = oneof [
-          P_RelPopu <$> lower_id <*> arbitrary <*> arbitrary,
-          P_TRelPop <$> lower_id <*> arbitrary <*> arbitrary <*> arbitrary,
+          P_RelPopu <$> lower_id <*> arbitrary <*> genPairs,
+          P_TRelPop <$> lower_id <*> arbitrary <*> arbitrary <*> genPairs,
           P_CptPopu <$> lower_id <*> arbitrary <*> listOf safeStr
         ]
 
