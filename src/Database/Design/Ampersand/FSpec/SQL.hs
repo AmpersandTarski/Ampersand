@@ -329,7 +329,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                 concNames pfx c 
                                   = case c of
                                      PlainConcept{}
-                                         -> case sqlRelPlugs fSpec (EDcI c) of
+                                         -> case [x | x@(TblSQL{},_,_) <- sqlRelPlugs fSpec (EDcI c)] of
                                               []         -> fatal 344 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
                                                                       ++"\nNo plug relations found."
                                               [(p,s',_)] -> Just ( QName (name p)
@@ -340,7 +340,11 @@ WHERE ECps0.`A`<>ECps2.`A
                                                                       ++"\nMultiple plug relations found: "++concatMap myShow xs
                                                               where
                                                                 myShow :: (PlugSQL, SqlField, SqlField) -> String
-                                                                myShow (p,sf,tf) = "\n   "++show [name p,fldname sf, fldname tf]        
+                                                                myShow (p,sf,tf) = "\n   "++case p of
+                                                                                              TblSQL{} -> "TblSQL: "
+                                                                                              BinSQL{} -> "BinSQL: "
+                                                                                              ScalarSQL{} -> "ScalarSQL: " 
+                                                                                ++show [name p,fldname sf, fldname tf]        
                                      ONE -> Nothing
                                 (src1, tgt1, tbl1) =
                                  case ( concNames (if name s==name t then "cfst0" else  (name s)) s
@@ -368,7 +372,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                                ,TRSimple [t1] `as` t2
                                                ]
                                               )
-                            in sqlcomment ("case: (EDcV (Sign s t))"++"V[ \""++show (Sign s t)++"\" ]") $
+                            in sqlcomment ("case: (EDcV (Sign s t))   V[ \""++show (Sign s t)++"\" ]") $
                                selectGeneric src1 tgt1 tbl1 Nothing
     (EDcI c)             -> sqlcomment ("I["++name c++"]")
                                 ( case c of
