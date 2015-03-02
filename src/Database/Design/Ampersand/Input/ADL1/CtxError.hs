@@ -8,6 +8,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingError
   , mkMultipleDefaultError
+  , mkIncompatibleViewError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
@@ -95,12 +96,10 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-
--- TODO: Fix, entity  is not the ref'ed entity now
-mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> String -> CtxError
-mkUndeclaredError entity objDef containingIfcName ref = 
+mkUndeclaredError :: (Traced e, Named e) => String -> Maybe String -> e -> String -> CtxError
+mkUndeclaredError entity mIfcName objDef ref = 
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ 
-                         show (name objDef) ++ " of interface " ++ show containingIfcName ++ "."
+                         show (name objDef) ++ maybe "" (\nm -> " of interface " ++ show nm) mIfcName ++ "."
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
@@ -124,7 +123,11 @@ mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
                       concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- viewDefs ]       
 
-
+mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
+mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
+  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
+                         ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
+    
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String

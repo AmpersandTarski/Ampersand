@@ -36,7 +36,6 @@ pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer t
                . checkInterfaceCycles      -- Check that interface references are not cyclic
                . checkInterfaceRefs        -- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
                . checkMultipleDefaultViews -- Check whether each concept has at most one default view
-               . checkViewRefs             -- Check whether all referenced views exist and have the right type (currently equality is enforced)
                . checkUnique udefrules     -- Check uniquene names of: rules,
                . checkUnique patterns      --                          patterns,
                . checkUnique ctxprocs      --                          processes.
@@ -109,7 +108,7 @@ checkInterfaceRefs gCtx =
                            , (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
                            , err <-
                                case Map.lookup ref allInterfaceLookup of
-                                 Nothing -> [mkUndeclaredError "interface" objDef (name ifc) ref ]
+                                 Nothing -> [mkUndeclaredError "interface" (Just $ name ifc) objDef ref]
                                  Just refIfc
                                   -> let t = target (objctx objDef)
                                          s = source (objctx (ifcObj refIfc))
@@ -131,33 +130,6 @@ checkMultipleDefaultViews gCtx =
     Errors err  -> Errors err
     Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
                    in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
-
--- Check whether all referenced views exist and have the right type
-checkViewRefs :: Guarded A_Context -> Guarded A_Context
-checkViewRefs gCtx =
-  case gCtx of
-    Errors err  -> Errors err
-    Checked ctx -> let allViewLookup = Map.fromList (map (\c -> (name c,c)) (ctxvs ctx))
-                       undeclaredViewRefErrs
-                         = [ err
-                           | ifc <- ctxifcs ctx
-                           , (objDef, ref) <- getViewRefs $ ifcObj ifc 
-                           , err <-
-                               case Map.lookup ref allViewLookup of
-                                 Nothing -> [mkUndeclaredError "view" objDef (name ifc) ref ]
-                                 Just viewDef -> 
-                                   let rt = target (objctx objDef)
-                                       vt = vdcpt viewDef
-                                       isEq = name rt == name vt -- TODO: use rt `isa` vt 
-                                   in if isEq then [] else [mkNonMatchingError "view" objDef rt vt ref]
-                           ]
-                   in  if null undeclaredViewRefErrs then gCtx else Errors undeclaredViewRefErrs
-  where getViewRefs :: ObjectDef -> [(ObjectDef, String)]
-        getViewRefs objDef@Obj{objmView=mView, objmsub=mSubIfc} =
-           maybe [] (\v -> [(objDef, v)]) mView ++
-             case mSubIfc of
-               Just (Box _ _ objs) -> concatMap getViewRefs objs
-               _                   -> []
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
@@ -383,7 +355,7 @@ pCtx2aCtx' _
                              })
      = (\(expr,subi)
         -> case subi of
-            Nothing -> pure (obj expr Nothing)
+            Nothing -> obj expr Nothing <$ typeCheckViewAnnotation (fst expr) mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
             Just (InterfaceRef s)
               -> pure (obj expr (Just$InterfaceRef s)) -- type is checked later
             Just b@(Box c _ _)
@@ -392,6 +364,24 @@ pCtx2aCtx' _
                     r  -> pure (obj (addEpsilonRight' (head r) (fst expr), snd expr) (Just$ b))
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
+      isa :: String -> String -> Bool
+      isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
+      
+      lookupView :: String -> Maybe P_ViewDef
+      lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
+                            []   -> Nothing
+                            vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
+                        
+      typeCheckViewAnnotation _       Nothing       = pure ()
+      typeCheckViewAnnotation objExpr (Just viewId) =
+        case lookupView viewId of 
+          Just vd -> let viewAnnCptStr = name $ target objExpr
+                         viewDefCptStr = name $ vd_cpt vd
+                         viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
+                     in  --trace ("CHECK: " ++viewAnnCptStr ++ " `isa` " ++viewDefCptStr ++ " = " ++ show viewIsCompatible) $
+                         if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr ]
+          Nothing -> Errors [mkUndeclaredError "view" Nothing o viewId] 
+        
       obj (e,(sr,_)) s
        = ( Obj { objnm = nm
                , objpos = orig
