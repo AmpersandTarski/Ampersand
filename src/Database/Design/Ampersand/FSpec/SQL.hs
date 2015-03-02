@@ -637,36 +637,37 @@ selectExprInFROM fSpec src trg expr
                                      Nothing
                    cptAlias = selectSelItem (sqlAttConcept fSpec c, src)  -- Alias to src if needed.
                    cpt = sqlConcept fSpec c
-        EDcV{}
-          | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
-          | source expr == ONE
-               -> TRQueryExpr $ 
-                  selectGeneric (NumLit "1",Nothing)
-                                (selectSelItem (sqlExprTgt fSpec expr, trg))
-                                [rightConceptTable]
-                                Nothing
-          | target expr == ONE
-               -> TRQueryExpr $ 
-                  selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
-                                (NumLit "1",Nothing)
-                                [leftConceptTable]
-                                Nothing
-
-          | otherwise
-               -> TRQueryExpr $ 
-                  selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
-                                (NumLit "1",Nothing)
-                                [leftConceptTable, if rightConcept===rC
-                                                   then rightConceptTable
-                                                   else rightConceptTable `as` rC]
-                                Nothing
-
-
-                  where
-                    leftConceptTable  = sqlConceptTable fSpec (source expr)
-                    rightConcept      = sqlConcept      fSpec (target expr)
-                    rightConceptTable = sqlConceptTable fSpec (target expr)
-                    rC  = noCollide' [sqlConcept fSpec (source expr)] (sqlConcept fSpec (target expr))
+--        EDcV{}
+--          | source expr == ONE && target expr == ONE -> fatal 410 "The V of WHAT???"
+--          | source expr == ONE
+--               -> TRQueryExpr $ 
+--                  selectGeneric (NumLit "1",Nothing)
+--                                (selectSelItem (sqlExprTgt fSpec expr, trg))
+--                                [rightConceptTable]
+--                                Nothing
+--          | target expr == ONE
+--               -> TRQueryExpr $ 
+--                  selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
+--                                (NumLit "1",Nothing)
+--                                [leftConceptTable]
+--                                Nothing
+--
+--          | otherwise
+--               -> TRQueryExpr $ 
+--                  selectGeneric (selectSelItem (sqlExprSrc fSpec expr, src))
+--                                (NumLit "1",Nothing)
+--                                [leftConceptTable, if rightConcept===rC
+--                                                   then rightConceptTable
+--                                                   else rightConceptTable `as` rC]
+--                                Nothing
+--
+--
+--                  where
+--                    leftConcept       = sqlConcept      fSpec (source expr)
+--                    leftConceptTable  = sqlConceptTable fSpec (source expr)
+--                    rightConcept      = sqlConcept      fSpec (target expr)
+--                    rightConceptTable = sqlConceptTable fSpec (target expr)
+--                    rC  = noCollide' [sqlConcept fSpec (source expr)] (sqlConcept fSpec (target expr))
         _      -> TRQueryExpr $ selectExpr fSpec src trg expr
 
 
