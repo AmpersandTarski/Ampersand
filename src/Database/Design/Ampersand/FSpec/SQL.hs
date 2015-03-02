@@ -322,58 +322,44 @@ WHERE ECps0.`A`<>ECps2.`A
                           , qeOffset        = Nothing
                           , qeFetchFirst    = Nothing
                           }
-    (EDcV (Sign s t))    -> let concNames ::  String -> A_Concept -> Maybe ( Name --Name of the plug
-                                                                           , Name --Name of the alias of the plug
-                                                                           , Name --Name of the field in the plug
-                                                                           )
-                                concNames pfx c 
-                                  = case c of
-                                     PlainConcept{}
-                                         -> case [x | x@(TblSQL{},_,_) <- sqlRelPlugs fSpec (EDcI c)] of
-                                              []         -> fatal 344 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
-                                                                      ++"\nNo plug relations found."
-                                              [(p,s',_)] -> Just ( QName (name p)
-                                                                 , QName pfx
-                                                                 , QName (fldname s')
-                                                                 )  
-                                              xs         -> fatal 349 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
-                                                                      ++"\nMultiple plug relations found: "++concatMap myShow xs
-                                                              where
-                                                                myShow :: (PlugSQL, SqlField, SqlField) -> String
-                                                                myShow (p,sf,tf) = "\n   "++case p of
-                                                                                              TblSQL{} -> "TblSQL: "
-                                                                                              BinSQL{} -> "BinSQL: "
-                                                                                              ScalarSQL{} -> "ScalarSQL: " 
-                                                                                ++show [name p,fldname sf, fldname tf]        
-                                     ONE -> Nothing
-                                (src1, tgt1, tbl1) =
-                                 case ( concNames (if name s==name t then "cfst0" else  (name s)) s
-                                      , concNames (if name s==name t then "cfst1" else  (name t)) t
-                                      ) of
-                                 (Nothing        , Nothing        ) 
-                                          -> ( (NumLit "1", Just src)
-                                             , (NumLit "1", Just trg)
-                                             , []
-                                             )
-                                 (Just (s1,s2,s3), Nothing        )
-                                          -> ( (Iden [s2,s3] , Just src)
-                                             , (NumLit "1", Just trg)
-                                             , [TRSimple [s1] `as` s2]
-                                              )
-                                 (Nothing        , Just (t1,t2,t3)) 
-                                          -> ( (NumLit "1", Just src)
-                                             , (Iden [t2,t3] , Just trg)
-                                             , [TRSimple [t1] `as` t2]
-                                             )
-                                 (Just (s1,s2,s3), Just (t1,t2,t3)) 
-                                          -> ( (Iden [s2,s3] , Just src)
-                                             , (Iden [t2,t3] , Just trg)
-                                             , [TRSimple [s1] `as` s2
-                                               ,TRSimple [t1] `as` t2
-                                               ]
-                                              )
-                            in sqlcomment ("case: (EDcV (Sign s t))   V[ \""++show (Sign s t)++"\" ]") $
-                               selectGeneric src1 tgt1 tbl1 Nothing
+    (EDcV (Sign s t))    -> sqlcomment ("case: (EDcV (Sign s t))   V[ \""++show (Sign s t)++"\" ]") $
+                            let (psrc,fsrc) = getConceptTableInfo fSpec s
+                                (ptgt,ftgt) = getConceptTableInfo fSpec t
+                                (src1,trg1,tbl1) 
+                                  = case (s,t) of
+                                       (ONE, ONE) -> ( NumLit "1"
+                                                     , NumLit "1"
+                                                     , []
+                                                     )
+                                       (_  , ONE) -> ( Iden [QName (name psrc),QName (name fsrc)]
+                                                     , NumLit "1"
+                                                     , [TRSimple [QName (name psrc)]]
+                                                     )
+                                       (ONE, _  ) -> ( NumLit "1"
+                                                     , Iden [QName (name ptgt),QName (name ftgt)]
+                                                     , [TRSimple [QName (name ptgt)]]
+                                                     )
+                                       _     -> if s == t
+                                                then let a0 = QName (name fsrc)
+                                                         a1 = QName (name fsrc++"1")
+                                                     in
+                                                     ( Iden [a0,QName (name fsrc)]
+                                                     , Iden [a1,QName (name ftgt)]
+                                                     , [TRSimple [QName (name psrc)] `as` a0
+                                                       ,TRSimple [QName (name ptgt)] `as` a1]
+                                                     )
+                                                else ( Iden [QName (name psrc),QName (name fsrc)]
+                                                     , Iden [QName (name ptgt),QName (name ftgt)]
+                                                     , [TRSimple [QName (name psrc)]
+                                                       ,TRSimple [QName (name ptgt)]]
+                                                     )
+                            in selectGeneric (src1 , Just src)
+                                             (trg1 , Just trg)
+                                             tbl1
+                                             Nothing
+    
+    
+    
     (EDcI c)             -> sqlcomment ("I["++name c++"]")
                                 ( case c of
                                     ONE            -> selectGeneric (NumLit "1", Just src)
@@ -597,7 +583,7 @@ selectExprInFROM fSpec src trg expr
       case expr of
         EFlp e -> selectExprInFROM fSpec trg src e
         EBrk e -> selectExprInFROM fSpec src trg e
-        EDcD{} -> if sqlExprSrc fSpec expr === src && sqlExprTgt fSpec expr === trg
+        EDcD d -> if sqlExprSrc fSpec expr === src && sqlExprTgt fSpec expr === trg
                   then ( if not mayContainNulls 
                          then TRSimple [declName]
                          else TRQueryExpr $
@@ -617,16 +603,11 @@ selectExprInFROM fSpec src trg expr
                                       else Nothing
                                      )
                   where
+                   (plug,_,_) = getDeclarationTableInfo fSpec d
                    (declName,mayContainNulls)
-                     = case sqlRelPlugs fSpec expr of
-                         []           -> fatal 371 ("No plug found for expression "++showADL expr)
-                         [(plug@TblSQL{},_,_)] -> (QName (name plug), True)
-                         [(plug,_,_)]          -> (QName (name plug), False )
-                         [(plug,s,t),(plug',s',t')]  --This can be the case for a Prop -relation.
-                                      -> if plug == plug' && s == t' && t == s'
-                                         then (QName (name plug), True)
-                                         else fatal 390 ("Multiple plugs found for expression "++showADL expr)
-                         _            -> fatal 371 ("Multiple plugs found for expression "++showADL expr)
+                      = (QName (name plug), case plug of 
+                                              TblSQL{}  ->  True
+                                              _         ->  False)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
         EDcI c -> sqlcomment ( " case: EDcI " ++ name c ++ " ") $
                   (
@@ -734,8 +715,9 @@ selectExprRelationNew :: FSpec
 
 selectExprRelationNew fSpec srcAS trgAS dcl =
   case dcl of
-    Sgn{}  -> leafCode (EDcD dcl)
-    Isn{}  -> leafCode (EDcI (source dcl))
+    Sgn{}  -> leafCode (getDeclarationTableInfo fSpec dcl)
+    Isn{}  -> let (plug, c) = getConceptTableInfo fSpec (detyp dcl)
+              in leafCode (plug, c, c)
     Vs sgn
      | source sgn == ONE -> fatal 468 "ONE is not expected at this place"
      | target sgn == ONE -> fatal 469 "ONE is not expected at this place"
@@ -754,15 +736,13 @@ selectExprRelationNew fSpec srcAS trgAS dcl =
    where
      notNull :: [Name] -> ValueExpr
      notNull tm = PostfixOp [Name "IS NOT NULL"] (Iden tm)                         
-     leafCode :: Expression -> QueryExpr
-     leafCode expr =  -- made for both Rel and I
-       case sqlRelPlugs fSpec expr of
-         []           -> fatal 344 $ "No plug for expression "++show expr
-         (plug,s,t):_ -> selectGeneric (Iden [Name (fldname s)], Just srcAS)
-                                       (Iden [Name (fldname t)], Just trgAS)
-                                       [TRSimple [QName (name plug)]]
-                                       (Just . conjunctSQL . map notNull $
-                                          [ [QName (fldname c)] | c<-nub [s,t]])
+     leafCode :: (PlugSQL,SqlField,SqlField) -> QueryExpr
+     leafCode (plug,s,t) 
+         = selectGeneric (Iden [Name (name s)], Just srcAS)
+                         (Iden [Name (name t)], Just trgAS)
+                         [TRSimple [QName (name plug)]]
+                         (Just . conjunctSQL . map notNull $
+                             [ [QName (name c)] | c<-nub [s,t]])
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
 
@@ -815,12 +795,8 @@ sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
 sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
 sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
-sqlExprSrc fSpec expr@EDcD{}         = toQName $     --  quotes are added just in case the result happens to be an SQL reserved word.
-                                       case sqlRelPlugs fSpec expr of
-                                        [(_,s,_)] -> Name (fldname s)
-                                        []        -> fatal 614 ("No plug for relation "++showADL expr)
-                                        [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> Name (fldname s)
-                                        _  -> fatal 616 ("Multiple plugs for relation "++showADL expr)
+sqlExprSrc fSpec (EDcD d)            = let (_,s,_) = getDeclarationTableInfo fSpec d
+                                       in QName (name s)
 sqlExprSrc _     expr                = QName ("Src"++name (source expr))
 
 
@@ -830,12 +806,8 @@ sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
 sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
 sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
 sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
-sqlExprTgt fSpec expr@EDcD{}         = toQName $     --  quotes are added just in case the result happens to be an SQL reserved word.
-                                       case sqlRelPlugs fSpec expr of
-                                        [(_,_,t)] -> Name (fldname t)
-                                        []        -> fatal 628 ("No plug for relation "++showADL expr)
-                                        [(p,s,t), (p',s',t')] | p==p' && s==t' && t==s'-> Name (fldname t)
-                                        _  -> fatal 630 ("Multiple plugs for relation "++showADL expr)
+sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSpec d
+                                       in QName (name t)
 sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
@@ -858,7 +830,7 @@ sqlAttConcept fSpec c | c==ONE = Name "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"" else
                QName (head cs)
-               where cs = [fldname f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where cs = [name f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
 
 
 toUqName :: Name -> Name

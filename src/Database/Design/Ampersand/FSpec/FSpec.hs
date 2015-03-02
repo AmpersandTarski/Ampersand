@@ -336,7 +336,8 @@ data SqlField = Fld { fldname :: String
                     , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
                     , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
                     } deriving (Eq, Show,Typeable)
-
+instance Named SqlField where
+  name = fldname
 instance Unique (PlugSQL,SqlField) where
   showUnique (p,f) = showUnique p++"."++fldname f
 instance Ord SqlField where
