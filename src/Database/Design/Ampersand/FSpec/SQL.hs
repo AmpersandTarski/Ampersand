@@ -337,7 +337,10 @@ WHERE ECps0.`A`<>ECps2.`A
                                                                  , QName (fldname s')
                                                                  )  
                                               xs         -> fatal 349 $ "Problem in selectExpr (EDcV (Sign \""++show s++"\" \""++show t++"\"))"
-                                                                      ++"\nMultiple plug relations found: "++show xs
+                                                                      ++"\nMultiple plug relations found: "++concatMap myShow xs
+                                                              where
+                                                                myShow :: (PlugSQL, SqlField, SqlField) -> String
+                                                                myShow (p,sf,tf) = "\n   "++show [name p,fldname sf, fldname tf]        
                                      ONE -> Nothing
                                 (src1, tgt1, tbl1) =
                                  case ( concNames (if name s==name t then "cfst0" else  (name s)) s
