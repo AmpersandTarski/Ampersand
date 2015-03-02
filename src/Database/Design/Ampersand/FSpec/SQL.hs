@@ -106,7 +106,7 @@ selectExpr fSpec src trg expr
                                 [if isIdent l
                                  then -- this is the code to calculate ../\I. The code below will work, but is longer
                                       [BinOp (Iden [Name "isect0", src'])
-                                             [Name "="]
+                                             [Name "<>"]
                                              (Iden [Name "isect0", trg'])
                                       ]
                                  else [selectNotExists 
