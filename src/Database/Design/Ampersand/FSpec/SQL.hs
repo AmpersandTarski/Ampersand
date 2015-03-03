@@ -159,7 +159,7 @@ selectExpr fSpec src trg expr
                     trg'  = sqlAttConcept fSpec (target expr')
                     trg2  = noCollide' [src'] (sqlAttConcept fSpec (target expr'))
                 in sqlcomment ("case:  ECps (EDcV (Sign ONE _), ECpl expr') "++showADL expr) $
-                   selectGeneric (Iden [Name "1"], Just src)
+                   selectGeneric (NumLit "1", Just src)
                                  (Iden [trg'    ], Just trg)
                                  [sqlConceptTable fSpec (target expr') `as` QName "allAtoms"]
                                  (Just $ selectNotExists 
@@ -177,7 +177,7 @@ selectExpr fSpec src trg expr
                     src'  = noCollide' [trg'] (sqlExprSrc fSpec expr')
                     trg'  = sqlExprTgt fSpec expr'
                 in sqlcomment ("case:  (EDcV (Sign ONE _): fs@(_:_))"++showADL expr) $
-                   selectGeneric (Iden [QName "1"], Just src)
+                   selectGeneric (NumLit "1", Just src)
                                  (Iden [QName "fst",trg'    ], Just trg)
                                  [selectExprInFROM fSpec src' trg' expr' `as` QName "fst"] 
                                  (Just (notNull (Iden [QName "fst", trg'])))
@@ -775,7 +775,7 @@ selectGeneric src tgt tbls whr
 selectSelItem :: (Name, Name) -> (ValueExpr,Maybe Name)
 selectSelItem (att,alias)
   | att === alias           = (Iden [toQName att], Nothing)
-  | stringOfName att == "1" = (Iden [  QName "1"], Just alias)
+  | stringOfName att == "1" = fatal 778 "ONE should have no named string" -- otherwise use: (NumLit "1", Just alias)
   | otherwise               = (Iden [toQName att], Just alias)
 
 
