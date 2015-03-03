@@ -180,12 +180,13 @@ pCtx2aCtx' _
       <*> traverse (pRul2aRul [] n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
-      <*> traverse pIfc2aIfc p_interfaces          --  The interfaces defined in this context, outside the scope of patterns
+      <*> traverse pIfc2aIfc p_interfaceAndDisambObs   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       <*> traverse pPurp2aPurp p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
   where
+    p_interfaceAndDisambObs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
@@ -308,8 +309,10 @@ pCtx2aCtx' _
             (findDeclTyped orig rnm (pSign2aSign tp))
 
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
-    pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
-     where tpda = disambiguate termPrimDisAmb x
+    pObjDef2aObjDef x = pObjDefDisamb2aObjDef $ disambiguate termPrimDisAmb x
+
+    pObjDefDisamb2aObjDef :: P_ObjDef (TermPrim, DisambPrim) -> Guarded ObjectDef
+    pObjDefDisamb2aObjDef x = fmap fst (typecheckObjDef x)
 
     pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
     pViewDef2aViewDef x = typecheckViewDef tpda
@@ -358,9 +361,8 @@ pCtx2aCtx' _
             Nothing -> obj expr Nothing <$ typeCheckViewAnnotation (fst expr) mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
             Just (InterfaceRef s)
               -> (\(refIfcExpr,_) -> obj expr (Just $ InterfaceRef s) <$ typeCheckInterfaceRef (fst expr) refIfcExpr)
-                 <?> case lookupIfc s of
-                       Just refIfc -> let trm = disambiguate termPrimDisAmb $ obj_ctx (ifc_Obj refIfc)
-                                      in  typecheckTerm trm -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
+                 <?> case lookupDisambIfcObj s of
+                       Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
                        Nothing     -> error "interface ref not found"
             Just b@(Box c _ _)
               -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
@@ -387,10 +389,11 @@ pCtx2aCtx' _
                          if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr ]
           Nothing -> Errors [mkUndeclaredError "view" Nothing o viewId] 
      
-      lookupIfc :: String -> Maybe P_Interface
-      lookupIfc ifcId = case [ vd | vd <- p_interfaces, ifc_Name vd == ifcId ] of
-                            []    -> Nothing
-                            ifc:_ -> Just ifc -- return the first one, if there are more, this is caught later on by uniqueness static check
+      lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
+      lookupDisambIfcObj ifcId =
+        case [ disambObj | (vd,disambObj) <- p_interfaceAndObjDisambs, ifc_Name vd == ifcId ] of
+          []    -> Nothing
+          disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
       
       typeCheckInterfaceRef :: Expression -> Expression -> Guarded ()
       typeCheckInterfaceRef objExpr ifcExpr = 
@@ -545,16 +548,16 @@ pCtx2aCtx' _
     termPrim2Expr :: TermPrim -> Guarded Expression
     termPrim2Expr = pDisAmb2Expr . termPrimDisAmb
 
-    pIfc2aIfc :: P_Interface -> Guarded Interface
-    pIfc2aIfc P_Ifc { ifc_Params = tps
+    pIfc2aIfc :: (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
+    pIfc2aIfc (P_Ifc { ifc_Params = tps
                     , ifc_Class = iclass
                     , ifc_Args = args
                     , ifc_Roles = rols
-                    , ifc_Obj = obj
+                    , ifc_Obj = _
                     , ifc_Pos = orig
                     -- , ifc_Name = nm
                     , ifc_Prp = prp
-                    }
+                    }, objDisamb)
         = (\ tps' obj'
              -> Ifc { ifcParams = tps'
                     , ifcClass = iclass
@@ -566,7 +569,7 @@ pCtx2aCtx' _
                     , ifcPos = orig
                     , ifcPrp = prp
                     }) <$> traverse termPrim2Expr tps
-                       <*> pObjDef2aObjDef obj
+                       <*> pObjDefDisamb2aObjDef objDisamb
 
     pProc2aProc :: P_Process -> Guarded Process
     pProc2aProc P_Prc { procNm = nm
