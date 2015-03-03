@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Test.Parser.ParseScripts (testScripts, scripts)
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseFile)
 import System.Directory
 import Control.Monad
+import Data.List(sort)
 
 -- Tries to parse all the given files
 testScripts :: [FilePath] -> IO Bool
@@ -24,7 +25,7 @@ getDirectory path =
        let paths = map ((++) path) valid
        files <- filterM doesFileExist paths
        subdirs <- filterM doesDirectoryExist paths
-       return (files, subdirs)
+       return (sort files, sort subdirs)
 
 getFiles :: String -> FilePath -> IO [FilePath]
 getFiles ext dir =
@@ -278,4 +279,4 @@ scripts :: IO [FilePath]
 scripts =
      do fs <- getFiles ".adl" "ArchitectureAndDesign"
         ds <- getFiles ".adl" "AmpersandData/FormalAmpersand"
-        return $ models ++ fs ++ ds
+        return $ fs ++ ds ++ models
