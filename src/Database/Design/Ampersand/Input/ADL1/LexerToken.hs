@@ -133,7 +133,17 @@ instance Show Token where
         (Tok TkError     _  s2 i fn)  -> "error in scanner: "     ++ s2         ++ maybeshow i fn
        )
    
-
+instance Eq Token where
+  (Tok ttypel     stringl _ _ _) ==  (Tok ttyper     stringr _ _ _) =  ttypel == ttyper && stringl == stringr
+   
+instance  Ord Token where
+  compare x y | x==y      = EQ
+              | x<=y      = LT
+              | otherwise = GT
+  (Tok ttypel     stringl _ _ _ ) <= (Tok ttyper    stringr _ _  _ )
+      =     ttypel <  ttyper
+        || (ttypel == ttyper && stringl <= stringr)
+   
 -- Parsec Token structure is introduced as a replacement of the original Token structure
 -- 
 
