@@ -50,7 +50,9 @@ selectExpr :: FSpec    -- current context
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec src trg expr
  = case expr of
-    EIsc{} -> let lst'       = exprIsc2list expr
+    EIsc{} -> let isect :: Int -> Name
+                  isect n = Name ("isect"++show n)
+                  lst'       = exprIsc2list expr
                   sgn        = sign expr
                   src'       = sqlExprSrc fSpec firstTerm
                   trg'       = sqlExprTgt fSpec firstTerm
@@ -61,7 +63,7 @@ selectExpr fSpec src trg expr
                   negTms     = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
                   posTms'    = [t | t<-lst, isPos t && not (isIdent t)]++[t | t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
                   negTms'    = [notCpl t | t<-lst, isNeg t && isIdent t]++[notCpl t | t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
-                  exprbracs  = [ selectExprInFROM fSpec src'' trg'' l `as` (QName ("isect"++show n)) 
+                  exprbracs  = [ selectExprInFROM fSpec src'' trg'' l `as` isect n 
                                | (n,l)<-zip [(0::Int)..] posTms
                                , let src'' = sqlExprSrc fSpec l
                                , let trg'' =noCollide' [src''] (sqlExprTgt fSpec l)
@@ -70,34 +72,34 @@ selectExpr fSpec src trg expr
                   wherecl   = Just . conjunctSQL . concat $
                                ([if isIdent l
                                  then -- this is the code to calculate ../\I. The code below will work, but is longer
-                                      [BinOp (Iden [QName "isect0", src'])
+                                      [BinOp (Iden [isect 0, src'])
                                              [Name "="]
-                                             (Iden [QName "isect0", trg'])
+                                             (Iden [isect 0, trg'])
                                       ]
-                                 else [BinOp (Iden [QName "isect0", src'])
+                                 else [BinOp (Iden [isect 0, src'])
                                              [Name "="]
-                                             (Iden [QName $ "isect"++show n, src''])
-                                      ,BinOp (Iden [QName "isect0",trg'])
+                                             (Iden [isect n, src''])
+                                      ,BinOp (Iden [isect 0,trg'])
                                              [Name "="]
-                                             (Iden [QName $ "isect"++show n, trg''])
+                                             (Iden [isect n, trg''])
                                       ]
                                 | (n,l)<-tail (zip [(0::Int)..] posTms) -- not empty because of definition of posTms
                                 , let src''=sqlExprSrc fSpec l
                                 , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                                 ]++
-                                [ [ BinOp (Iden [QName "isect0",src'])
+                                [ [ BinOp (Iden [isect 0,src'])
                                           [Name "="]
                                           (sqlAtomQuote atom)
-                                  , BinOp (Iden [QName "isect0",trg'])
+                                  , BinOp (Iden [isect 0,trg'])
                                           [Name "="]
                                           (sqlAtomQuote atom)
                                   ]
                                 | EMp1 atom _ <- mp1Tm
                                 ]++
-                                [ [ BinOp (Iden [QName "isect0",src'])
+                                [ [ BinOp (Iden [isect 0,src'])
                                           [Name "="]
                                           (sqlAtomQuote atom1) -- source and target are unequal
-                                  , BinOp (Iden [QName "isect0",trg'])
+                                  , BinOp (Iden [isect 0,trg'])
                                           [Name "="]
                                           (sqlAtomQuote atom2) -- source and target are unequal
                                   ]
@@ -105,19 +107,19 @@ selectExpr fSpec src trg expr
                                 ]++
                                 [if isIdent l
                                  then -- this is the code to calculate ../\I. The code below will work, but is longer
-                                      [BinOp (Iden [Name "isect0", src'])
+                                      [BinOp (Iden [isect 0, src'])
                                              [Name "<>"]
-                                             (Iden [QName "isect0", trg'])
+                                             (Iden [isect 0, trg'])
                                       ]
                                  else [selectNotExists 
-                                         [selectExprInFROM fSpec src'' trg'' l `as` QName "cp"]
+                                         [selectExprInFROM fSpec src'' trg'' l `as` Name "cp"]
                                          (Just . conjunctSQL $
-                                           [ BinOp (Iden [QName "isect0",src'])
+                                           [ BinOp (Iden [isect 0,src'])
                                                    [Name "="]
-                                                   (Iden [QName "cp",src''])
-                                           , BinOp (Iden [QName "isect0",trg'])
+                                                   (Iden [Name "cp",src''])
+                                           , BinOp (Iden [isect 0,trg'])
                                                    [Name "="]
-                                                   (Iden [QName "cp",trg''])
+                                                   (Iden [Name "cp",trg''])
                                            ]
                                          )
                                       ]
@@ -125,7 +127,7 @@ selectExpr fSpec src trg expr
                                 , let src''=sqlExprSrc fSpec l
                                 , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                                 ]++
-                                [nub (map notNull [Iden[src'],Iden[trg']])]
+                                [nub (map notNull [Iden[isect 0,src'],Iden[isect 0,trg']])]
                                )
 
               in case lst' of
@@ -145,8 +147,8 @@ selectExpr fSpec src trg expr
                       AND NOT EXISTS (SELECT bar)            representing neven
 -}
                   (_:_:_) -> sqlcomment ("case: (EIsc lst'@(_:_:_))"++showADL expr++" ("++show sgn++")") $
-                             selectGeneric (Iden [QName "isect0",src'],Just src)
-                                           (Iden [QName "isect0",trg'],Just trg)            
+                             selectGeneric (Iden [isect 0,src'],Just src)
+                                           (Iden [isect 0,trg'],Just trg)            
                                            exprbracs
                                            wherecl
                   _       -> fatal 123 "A list shorter than 2 cannot occur in the query at all! If it does, we have made a mistake earlier."
@@ -158,15 +160,17 @@ selectExpr fSpec src trg expr
          _   -> let src'  = sqlAttConcept fSpec (source expr')
                     trg'  = sqlAttConcept fSpec (target expr')
                     trg2  = noCollide' [src'] (sqlAttConcept fSpec (target expr'))
+                    allAtoms = Name "allAtoms"
+                    complemented = Name "complemented"
                 in sqlcomment ("case:  ECps (EDcV (Sign ONE _), ECpl expr') "++showADL expr) $
                    selectGeneric (NumLit "1", Just src)
                                  (Iden [trg'    ], Just trg)
-                                 [sqlConceptTable fSpec (target expr') `as` QName "allAtoms"]
+                                 [sqlConceptTable fSpec (target expr') `as` allAtoms]
                                  (Just $ selectNotExists 
-                                           [selectExprInFROM fSpec src' trg' expr' `as` QName "complemented"]
-                                           (Just (BinOp (Iden [QName "complemented",trg2])
+                                           [selectExprInFROM fSpec src' trg' expr' `as` complemented]
+                                           (Just (BinOp (Iden [complemented,trg2])
                                                           [Name "="]
-                                                        (Iden [QName "allAtoms",trg'])
+                                                        (Iden [allAtoms,trg'])
                                                  )
                                            )
                                  )
