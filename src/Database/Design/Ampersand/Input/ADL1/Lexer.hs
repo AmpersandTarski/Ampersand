@@ -7,18 +7,14 @@ where
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
---import Text.Parsec.Char
---import Text.Parsec.Combinator
 import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 import Text.Parsec.Pos hiding (Line, Column)
---import Text.Parsec.Prim
---import Text.Parsec.Token
 import Control.Monad.Identity (Identity)
 import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
 import Data.Either
 import Data.List (sort, nub)
-import Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Misc
 
 fatal :: Int -> String -> a
@@ -64,7 +60,7 @@ runLexer :: [Options] -> [Char] -> Filename -> [GenToken]
 runLexer opt fn input = case (lexer opt fn input) of
                           Left error  -> []
                           Right (x,y) -> x
-
+                          
 lexer :: [Options] -> String -> [Char] -> Either LexerError ([GenToken], [LexerWarning])
 lexer opt fileName input = runLexerMonad opt fileName (mainLexer noPos fileName input)
 
@@ -200,15 +196,15 @@ lexNest cont pos' fn inp = lexNest' cont pos' fn inp
  where lexNest' c p fn ('-':'}':s) = c (advc 2 p) fn s
        lexNest' c p fn ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) fn s
        lexNest' c p fn (x:s)       = lexNest' c (adv p x) fn s
-       lexNest' _ _ _ []          = [ errGenToken "Unterminated nested comment" pos' fn ]		
+       lexNest' _ _ _ []           = lexerError UnterminatedComment (initialPos fn)
 
 lexExpl :: Lexer -> Lexer
 lexExpl cont pos' fn inp = lexExpl' "" cont pos' fn inp
- where lexExpl' str c p fn ('-':'}':s) =  return (makeGenToken GtkExpl str p fn: c (advc 2 p) fn s)
+ where lexExpl' str c p fn ('-':'}':s) = returnGenToken GtkExpl str p mainLexer (advc 2 p)  fn s
        lexExpl' str c p fn ('{':'-':s) = lexNest (lexExpl' str c) (advc 2 p) fn s
        lexExpl' str c p fn ('-':'-':s) = lexExpl' str c  p fn (dropWhile (/= '\n') s)
        lexExpl' str c p fn (x:s)       = lexExpl' (str++[x]) c (adv p x) fn s
-       lexExpl' _   _ _ _  []          = [ errGenToken "Unterminated PURPOSE section" pos' fn ]
+       lexExpl' _   _ _ _  []          = lexerError UnterminatedPurpose (initialPos fn)
 -----------------------------------------------------------
 -- position handling
 -----------------------------------------------------------

@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken
-(Token, Lexeme, makeGenToken, GenToken, Pos (..), Line, Column, Filename, GenTokenType (..), noPos, initPos, errGenToken)
+(Token, TokenType(..), makeGenToken, GenToken, Pos (..), Line, Column, Filename, GenTokenType (..), noPos, initPos, errGenToken, returnOutputToken)
 where
 
 import Text.Parsec.Pos(SourcePos)
@@ -133,7 +133,17 @@ instance Show Token where
         (Tok TkError     _  s2 i fn)  -> "error in scanner: "     ++ s2         ++ maybeshow i fn
        )
    
-
+instance Eq Token where
+  (Tok ttypel     stringl _ _ _) ==  (Tok ttyper     stringr _ _ _) =  ttypel == ttyper && stringl == stringr
+   
+instance  Ord Token where
+  compare x y | x==y      = EQ
+              | x<=y      = LT
+              | otherwise = GT
+  (Tok ttypel     stringl _ _ _ ) <= (Tok ttyper    stringr _ _  _ )
+      =     ttypel <  ttyper
+        || (ttypel == ttyper && stringl <= stringr)
+   
 -- Parsec Token structure is introduced as a replacement of the original Token structure
 -- 
 
@@ -193,3 +203,22 @@ instance Show Lexeme where
 		 LexTextName  val        -> "text name "                        ++ " '" ++       val      ++ "'" 
 		 LexTextLine  val        -> "text name "                        ++ " '" ++       val      ++ "'" 
 		 LexSpace                -> "spaces "
+
+
+returnOutputToken :: [GenToken] -> [Token]
+returnOutputToken []                                  = []
+returnOutputToken ((GenTok GtkSymbol    s2 i fn):xs)  = (Tok TkSymbol    ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkOp        s2 i fn):xs)  = (Tok TkOp        ""  s2 i fn):returnOutputToken xs 
+returnOutputToken ((GenTok GtkKeyword   s2 i fn):xs)  = (Tok TkKeyword   ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkString    s2 i fn):xs)  = (Tok TkString    ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkExpl      s2 i fn):xs)  = (Tok TkExpl      ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkAtom      s2 i fn):xs)  = (Tok TkAtom      ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkInteger8  s2 i fn):xs)  = (Tok TkInteger8  ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkInteger10 s2 i fn):xs)  = (Tok TkInteger10 ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkInteger16 s2 i fn):xs)  = (Tok TkInteger16 ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkVarid     s2 i fn):xs)  = (Tok TkVarid     ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkConid     s2 i fn):xs)  = (Tok TkConid     ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkTextnm    s2 i fn):xs)  = (Tok TkTextnm    ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkTextln    s2 i fn):xs)  = (Tok TkTextln    ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkSpace     s2 i fn):xs)  = (Tok TkSpace     ""  s2 i fn):returnOutputToken xs
+returnOutputToken ((GenTok GtkError     s2 i fn):xs)  = (Tok TkError     ""  s2 i fn):returnOutputToken xs

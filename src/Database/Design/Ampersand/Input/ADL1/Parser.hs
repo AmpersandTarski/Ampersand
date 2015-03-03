@@ -836,7 +836,7 @@ pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (St
 pString_val_pos    =   pString
 pVarid_val_pos     =   pVarid
 pConid_val_pos     =   pConid
-pAtom_val_pos      =   L.pAtom
+pAtom_val_pos      =   pAtom
 
 pKey_val_pos ::  String -> AmpParser (String,Origin)
 pKey_val_pos keyword = pKey
