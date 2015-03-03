@@ -1,4 +1,4 @@
-module LexerTexts where
+module Database.Design.Ampersand.Input.ADL1.LexerTexts where
 
 import Data.IORef
 import System.IO.Unsafe

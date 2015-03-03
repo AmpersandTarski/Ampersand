@@ -9,7 +9,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 
 import qualified UU.Parsing as UU
 import Text.Parsec.Pos (SourcePos, sourceName, sourceLine, sourceColumn)
-import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..), Tok(..))
+import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..), TokenType(..))
 import Database.Design.Ampersand.Input.ADL1.Lexer
 
 infixl 3 <|>
@@ -68,5 +68,8 @@ instance UU.Symbol Token where
     symBefore t = t
     symAfter t = t
 
+
+{- temp in comment as not specified in Lexer
 instance Ord Tok where
     (<=) a b = show a <= show b
+-}
