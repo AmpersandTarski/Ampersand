@@ -186,6 +186,7 @@ pCtx2aCtx' _
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
   where
+    p_interfaceAndDisambObs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
@@ -391,7 +392,7 @@ pCtx2aCtx' _
      
       lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
       lookupDisambIfcObj ifcId =
-        case [ disambObj | (vd,disambObj) <- p_interfaceAndObjDisambs, ifc_Name vd == ifcId ] of
+        case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObs, ifc_Name vd == ifcId ] of
           []    -> Nothing
           disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
       
