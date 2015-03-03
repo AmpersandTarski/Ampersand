@@ -516,8 +516,8 @@ Based on this derivation:
                                                    ( Just $ conjunctSQL 
                                                       [BinOp (Iden [rhs,rsrc])
                                                              [Name "="]
-                                                             (Iden [QName "lhs"])
-                                                      ,BinOp (Iden [QName "rhs",rtrg])
+                                                             (Iden [lhs,lsrc])
+                                                      ,BinOp (Iden [rhs,rtrg])
                                                              [Name "="]
                                                              (Iden [tgtAlias,mainTgt])
                                                       ]
