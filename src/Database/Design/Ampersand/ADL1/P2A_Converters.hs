@@ -357,18 +357,18 @@ pCtx2aCtx' _
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
-     = (\(expr,subi)
-        -> case subi of
-            Nothing -> obj expr Nothing <$ typeCheckViewAnnotation (fst expr) mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
-            Just (InterfaceRef s)
-              -> (\(refIfcExpr,_) -> obj expr (Just $ InterfaceRef s) <$ typeCheckInterfaceRef (fst expr) refIfcExpr)
-                 <?> case lookupDisambIfcObj s of
-                       Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
-                       Nothing     -> error "interface ref not found"
-            Just b@(Box c _ _)
-              -> case findExact genLattice (mIsc (name c) (gc Tgt (fst expr))) of
-                    [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
-                    r  -> pure (obj (addEpsilonRight' (head r) (fst expr), snd expr) (Just$ b))
+     = (\((expr,bb), subi) -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
+           case subi of
+             Nothing -> obj (expr,bb) Nothing <$ typeCheckViewAnnotation expr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
+             Just (InterfaceRef s) ->
+               (\(refIfcExpr,_) -> obj (expr,bb) (Just $ InterfaceRef s) <$ typeCheckInterfaceRef expr refIfcExpr)
+               <?> case lookupDisambIfcObj s of
+                     Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
+                     Nothing     -> error "interface ref not found"
+             Just bx@(Box c _ _) ->
+               case findExact genLattice $ name c `mIsc` gc Tgt expr of -- TODO: does this alway return a singleton? (and if so why not a maybe?)
+                 []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target expr, expr)
+                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet expr, bb) (Just bx)
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
       isa :: String -> String -> Bool
