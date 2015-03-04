@@ -357,7 +357,8 @@ pCtx2aCtx' _
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
-     = (\((objExpr,bb), subi) -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
+     = unguard $
+       (\(objExpr,bb) subi -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
            case subi of
              Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
              Just (InterfaceRef s) ->
@@ -370,8 +371,12 @@ pCtx2aCtx' _
                case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
                  cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx)
-       ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
+       ) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
      where
+      unguard :: Guarded (Guarded a) -> Guarded a -- This function is a bit more compositional than <?> as you don't have to tuple all the arguments
+      unguard (Errors errs) = Errors errs
+      unguard (Checked g)   = g  
+      
       isa :: String -> String -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
       
