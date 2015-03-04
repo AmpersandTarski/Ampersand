@@ -374,7 +374,7 @@ pCtx2aCtx' _
        ) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
      where
       unguard :: Guarded (Guarded a) -> Guarded a -- This function is a bit more compositional than <?> as you don't have to tuple all the arguments
-      unguard (Errors errs) = Errors errs
+      unguard (Errors errs) = Errors errs         -- (it will move to CtxError if we will actually use it)
       unguard (Checked g)   = g  
       
       isa :: String -> String -> Bool
