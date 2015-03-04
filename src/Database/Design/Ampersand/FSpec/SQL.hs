@@ -766,24 +766,26 @@ selectSelItem' att = Iden [att]
 --   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
 --   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TGT" would suffice)
 sqlExprSrc :: FSpec -> Expression -> Name
-sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
-sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
-sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
-sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
-sqlExprSrc fSpec (EDcD d)            = let (_,s,_) = getDeclarationTableInfo fSpec d
-                                       in QName (name s)
-sqlExprSrc _     expr                = QName ("Src"++name (source expr))
+sqlExprSrc fSpec expr = sourceAlias
+--sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
+--sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
+--sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
+--sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
+--sqlExprSrc fSpec (EDcD d)            = let (_,s,_) = getDeclarationTableInfo fSpec d
+--                                       in QName (name s)
+--sqlExprSrc _     expr                = QName ("Src"++name (source expr))
 
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: FSpec -> Expression -> Name
-sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
-sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
-sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
-sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
-sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSpec d
-                                       in QName (name t)
-sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
+sqlExprTgt fSpec expr = targetAlias
+--sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
+--sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
+--sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
+--sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
+--sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSpec d
+--                                       in QName (name t)
+--sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
