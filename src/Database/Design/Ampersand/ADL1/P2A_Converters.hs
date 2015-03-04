@@ -357,18 +357,19 @@ pCtx2aCtx' _
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
-     = (\((expr,bb), subi) -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
+     = (\((objExpr,bb), subi) -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
            case subi of
-             Nothing -> obj (expr,bb) Nothing <$ typeCheckViewAnnotation expr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
+             Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
              Just (InterfaceRef s) ->
-               (\(refIfcExpr,_) -> obj (expr,bb) (Just $ InterfaceRef s) <$ typeCheckInterfaceRef expr refIfcExpr)
+               (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef s)) 
+                                   <$> typeCheckInterfaceRef objExpr refIfcExpr)
                <?> case lookupDisambIfcObj s of
                      Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
                      Nothing     -> error "interface ref not found"
              Just bx@(Box c _ _) ->
-               case findExact genLattice $ name c `mIsc` gc Tgt expr of -- TODO: does this alway return a singleton? (and if so why not a maybe?)
-                 []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target expr, expr)
-                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet expr, bb) (Just bx)
+               case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
+                 []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
+                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx)
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
       isa :: String -> String -> Bool
@@ -393,17 +394,19 @@ pCtx2aCtx' _
       lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
       lookupDisambIfcObj ifcId =
         case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObs, ifc_Name vd == ifcId ] of
-          []    -> Nothing
+          []          -> Nothing
           disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
       
-      typeCheckInterfaceRef :: Expression -> Expression -> Guarded ()
+      typeCheckInterfaceRef :: Expression -> Expression -> Guarded Expression
       typeCheckInterfaceRef objExpr ifcExpr = 
         let ifcRefTargetStr = name $ target objExpr
             ifcSourceStr = name $ source ifcExpr
             refIsCompatible = ifcRefTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` ifcRefTargetStr
         in  trace ("CHECK: " ++ifcRefTargetStr ++ " compares to " ++ ifcSourceStr ++ " = " ++ show refIsCompatible) $
-            if refIsCompatible then pure () else Errors [mkIncompatibleViewError o "INTERFACE REF ERROR" ifcRefTargetStr ifcSourceStr ]
-                                                        -- Abuse view error to show interface ref error
+            if refIsCompatible 
+            then pure $ addEpsilonRight' ifcSourceStr objExpr 
+            else Errors [mkIncompatibleViewError o "INTERFACE REF ERROR" ifcRefTargetStr ifcSourceStr ]
+                         -- Abuse view error to show interface ref error
       obj (e,(sr,_)) s
        = ( Obj { objnm = nm
                , objpos = orig
@@ -412,7 +415,7 @@ pCtx2aCtx' _
                , objmsub = s
                , objstrs = ostrs
                }, sr)
-    addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
+    addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression -- TODO: why use primes here?
     addEpsilonLeft' a e
      = if a==name (source e) then e else EEps (leastConcept (source e) a) (castSign a (name (source e))) .:. e
     addEpsilonRight' a e
