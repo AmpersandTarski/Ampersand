@@ -18,45 +18,45 @@ import Text.Parsec.Combinator
 import Text.Parsec.Pos
 import Text.Parsec.Prim as P
 import Text.Parsec.Token
-
+import qualified Data.Functor as DF
+import qualified Control.Applicative as CA
 
 infixl 4 <*>, <$> 
 infixl 4 <$, <*, *>
 
-type AmpParser a = UU.AnaParser [Token] UU.Pair Token (Maybe Token) a
-type AmpT a = ParsecT String [Token] Identity a
+--TODO: TokenMonad?
+type AmpParser a = ParsecT [Token] UU.Pair Identity a
+type AmpT a      = ParsecT String  [Token] Identity a
 
 --Operators from UU.Parsing
-(<$>) :: UU.IsParser p s => (a->b)   -> p a -> p b
-(<$>) =  (UU.<$>)
+(<$>) :: (a -> b) -> AmpParser a -> AmpParser b
+(<$>) =  (DF.<$>)
 
-{- Available within Parsec
-(<|>) :: UU.IsParser p s => p a -> p a -> p a
-(<|>) =  (UU.<|>)
--}
+(<|>) :: AmpParser a -> AmpParser a -> AmpParser a
+(<|>) =  (P.<|>)
 
-(<*>) :: UU.IsParser p s => p (a -> b) -> p a -> p b
-f <*> g  = f UU.<*> g
+(<*>) :: AmpParser (a -> b) -> AmpParser a -> AmpParser b
+(<*>)  = (CA.<*>)
 
+(<*) :: AmpParser a -> AmpParser b -> AmpParser a
+(<*) = (CA.<*)
 
-(<*) :: UU.IsParser p s => p a -> p b -> p a
-(<*) =  (UU.<*)
+(<$) :: AmpParser (a -> b) -> AmpParser a -> AmpParser b
+(<$) = (CA.<$)
 
-(<$) :: UU.IsParser p s => b -> p a -> p b
-(<$) =  (UU.<$)
+(*>) :: AmpParser a -> AmpParser b -> AmpParser b
+(*>) =  (CA.*>)
 
-(*>) :: UU.IsParser p s => p a -> p b -> p b
-(*>) =  (UU.*>)
+(<**>) :: AmpParser a -> AmpParser (a -> b) -> AmpParser b
+p <**> q = (\ x f -> f x) CA.<$> p <*> q
 
-(<??>) :: UU.IsParser p s => p a -> p (a -> a) -> p a
-(<??>) = (UU.<??>) 
+(<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
+p <??> q = p <**> (q `opt` id)
 
 --Functions from UU.Parsing
 ----------------------------------------------------------------------------------
 -- Functions copied from Lexer after decision to split lexer and parser
 ----------------------------------------------------------------------------------
-
-
 
 lexer :: TokenParser [Token]
 lexer = makeTokenParser langDef
@@ -79,7 +79,7 @@ langDef = LanguageDef {
 pSym :: Token -> AmpParser Token
 pSym = pSym
 
-pSucceed ::  a -> AmpParser a
+pSucceed :: a -> AmpParser a
 pSucceed = UU.pSucceed
 
 pList :: AmpParser a -> AmpParser [a]
@@ -155,8 +155,6 @@ pComma  = pSpec ','
 --- Semi ::= ';'
 pSemi :: AmpT String
 pSemi = pSpec ';'
-
-
 
 {- temp in comment as not specified in Lexer
 instance Ord Tok where

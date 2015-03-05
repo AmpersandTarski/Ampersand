@@ -152,7 +152,6 @@ data TokenL = TokL { lexeme  :: Lexeme
                    , val     :: String
                    }
 
-	
 instance Show TokenL where
   showsPrec _ token'
     = showString
