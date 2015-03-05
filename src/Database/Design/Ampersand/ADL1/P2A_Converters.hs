@@ -372,11 +372,7 @@ pCtx2aCtx' _
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
                  cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx)
        ) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
-     where
-      unguard :: Guarded (Guarded a) -> Guarded a -- This function is a bit more compositional than <?> as you don't have to tuple all the arguments
-      unguard (Errors errs) = Errors errs         -- (it will move to CtxError if we will actually use it)
-      unguard (Checked g)   = g  
-      
+     where      
       isa :: String -> String -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
       
@@ -448,24 +444,24 @@ pCtx2aCtx' _
      = case tct of
          Prim (t,v) -> (\x -> (x, case t of
                                    PVee _ -> (False,False)
-                                   _ -> (True,True)
+                                   _      -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
-         PEqu _ a b -> binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PImp _ a b -> binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
-         PIsc _ a b -> binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PUni _ a b -> binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PDif _ a b -> binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PLrs _ a b -> binary' (./.)  (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <?> ((,)<$>tt a<*>tt b)
-         PRrs _ a b -> binary' (.\.)  (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <?> ((,)<$>tt a<*>tt b)
-         PDia _ a b -> binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b) -- MBE would have been correct, but too restrictive
-         PCps _ a b -> binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b)
-         PRad _ a b -> binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <?> ((,)<$>tt a<*>tt b) -- Using MBE instead of ISC allows the programmer to use De Morgan
+         PEqu _ a b -> unguard $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PImp _ a b -> unguard $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
+         PIsc _ a b -> unguard $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PUni _ a b -> unguard $ binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PDif _ a b -> unguard $ binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PLrs _ a b -> unguard $ binary' (./.)  (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
+         PRrs _ a b -> unguard $ binary' (.\.)  (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
+         PDia _ a b -> unguard $ binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
+         PCps _ a b -> unguard $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
+         PRad _ a b -> unguard $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
          PPrd _ a b -> (\(x,(s,_)) (y,(_,t)) -> (x .*. y, (s,t))) <$> tt a <*> tt b
-         PKl0 _ a   -> unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
-         PKl1 _ a   -> unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
+         PKl0 _ a   -> unguard $ unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
+         PKl1 _ a   -> unguard $ unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
          PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x), (t,s))) <$> tt a
          PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
-         PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e
+         PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e 
      where
       o = origin (fmap fst tct)
       tt = typecheckTerm
@@ -497,21 +493,22 @@ pCtx2aCtx' _
                        ) -> (Expression, (Bool, Bool))
                      )
                 ) -- simple instruction on how to derive the type
-             -> ((Expression,(Bool,Bool)), (Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
+             -> (Expression,(Bool,Bool))
+             -> (Expression,(Bool,Bool)) -- expressions to feed into the combinator after translation
              -> Guarded (Expression,(Bool,Bool))
-      binary  cbn     tp (e1,e2) = wrap (fst e1,fst e2) <$> deriv tp (e1,e2)
+      binary  cbn     tp  e1 e2 = wrap (fst e1,fst e2) <$> deriv tp (e1,e2)
         where
          wrap (expr1,expr2) ((src,b1), (tgt,b2)) = (cbn (addEpsilon src tgt expr1) (addEpsilon src tgt expr2), (b1, b2))
       unary   cbn     tp e1      = wrap (fst e1) <$> deriv tp e1
         where
          wrap expr  ((src,b1), (tgt,b2))  = (cbn (addEpsilon src tgt expr), (b1, b2))
-      binary' cbn preConcept tp side1 side2 (e1,e2) = wrap (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) preConcept) <*> deriv' tp (e1,e2)
+      binary' cbn preConcept tp side1 side2 e1 e2 = wrap (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) preConcept) <*> deriv' tp (e1,e2)
         where
          wrap (expr1,expr2) (cpt,_) ((_,b1), (_,b2))
           = (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
             where lrDecide side e = case side of Src -> addEpsilonLeft' cpt e; Tgt -> addEpsilonRight' cpt e
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
-
+ 
     deriv1 o x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
