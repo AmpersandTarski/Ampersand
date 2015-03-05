@@ -7,19 +7,18 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     SourcePos, sourceName, sourceLine, sourceColumn
 ) where
 
-import Database.Design.Ampersand.Input.ADL1.LexerToken (Token)
-import Database.Design.Ampersand.Input.ADL1.Lexer
 import Control.Monad.Identity (Identity)
 import Data.Char (isUpper)
+import Database.Design.Ampersand.Input.ADL1.Lexer
+import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..),Lexeme(..),lexemeLength)
+import qualified Control.Applicative as CA
+import qualified Data.Functor as DF
+import qualified Text.Parsec.Prim as P
+import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Pos
-import qualified Text.Parsec.Prim as P
-import Text.Parsec as P
-import Text.Parsec.Token
-import qualified Data.Functor as DF
-import qualified Control.Applicative as CA
-
+import Text.Parsec.Token as P
 
 --TODO: TokenMonad?
 type AmpParser a = P.ParsecT [Token] SourcePos Identity a
@@ -40,17 +39,17 @@ p <??> q = p <**> (q `opt` id)
 -- Functions copied from Lexer after decision to split lexer and parser
 ----------------------------------------------------------------------------------
 
-lexer :: TokenParser [Token]
+lexer :: GenTokenParser [Token] SourcePos Identity
 lexer = makeTokenParser langDef
 
-langDef :: LanguageDef [Token]
+langDef :: GenLanguageDef [Token] SourcePos Identity
 langDef = LanguageDef {
         commentStart = "{-",
         commentEnd = "-}",
         commentLine = "--",
         nestedComments = True,
-        identStart = letter P.<|> char '_',
-        identLetter = alphaNum P.<|> char '_',
+        identStart = letter <|> char '_',
+        identLetter = alphaNum <|> char '_',
         opStart = oneOf $ map head operators,
         opLetter = oneOf $ concat $ map tail operators,
         reservedNames = keywords,
@@ -79,12 +78,13 @@ pList1Sep = P.sepBy1
 opt ::  AmpParser a -> a -> AmpParser a
 a `opt` b = P.option b a
 
-pKey :: String -> AmpLexer ()
-pKey = reserved lexer
+-- Basic parsers
+pKey :: String -> AmpParser ()
+pKey key = reserved lexer $ key -- match (LexKeyword key)
 
 --- Conid ::= UpperChar (Char | '_')*
-pConid :: AmpLexer String
-pConid = lexeme lexer $ try $
+pConid :: AmpParser String
+pConid = P.lexeme lexer $ try $
         do name <- identifier lexer
            if isUpper $ head name
            then return name
@@ -92,44 +92,45 @@ pConid = lexeme lexer $ try $
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
-pString :: AmpLexer String
+pString :: AmpParser String
 pString = stringLiteral lexer
 
 -- Spec just matches the given character so it has no EBNF
-pSpec :: Char -> AmpLexer String
-pSpec x = do { y <- char x; return [y] }
+pSpec :: Char -> AmpParser String
+pSpec x = P.symbol lexer $ [x]
 
 --- Expl ::= '{+' Any* '-}'
-pExpl :: AmpLexer String
+pExpl :: AmpParser String
 pExpl = do _ <- try (string "{+")
            inExpl
-        where inExpl =  do { _ <- try (string "+}"); return "explanation" }
-                    P.<|> do{ skipMany1 (noneOf "+}"); inExpl } -- TODO: We shouldn't skip them of course
+        where inExpl =    do { _ <- try (str "+}");  return "explanation" }
+                    P.<|> do { skipMany1 (str "+}"); inExpl } -- TODO: We shouldn't skip them of course
                     P.<?> "end of comment"
+              str = reservedOp lexer
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
-pVarid :: AmpLexer String
-pVarid = lexeme lexer $ try $
+pVarid :: AmpParser String
+pVarid = P.lexeme lexer $ try $
         do name <- identifier lexer
            if isUpper $ head name
            then unexpected ("Expected lower case identifier but got " ++ show name)
            else return name
 
 -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
-pAtom :: AmpLexer String
-pAtom   = lexeme lexer (
+pAtom :: AmpParser String
+pAtom   = P.lexeme lexer (
              do between (char '\'')
                         (char '\'' <?> "end of atom")
                         (many $ satisfy isLetter)
                 <?> "atom")
             where isLetter c = (c /= '\'') && (c /= '\\') && (c > '\026')
-	
+
 --- Comma ::= ','
-pComma :: AmpLexer String
+pComma :: AmpParser String
 pComma  = pSpec ','
 
 --- Semi ::= ';'
-pSemi :: AmpLexer String
+pSemi :: AmpParser String
 pSemi = pSpec ';'
 
 {- temp in comment as not specified in Lexer

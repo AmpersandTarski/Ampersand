@@ -1,8 +1,12 @@
-module Database.Design.Ampersand.Input.ADL1.LexerToken
-(Token, TokenType(..), makeGenToken, GenToken, Pos (..), Line, Column, Filename, GenTokenType (..), noPos, initPos, errGenToken, returnOutputToken)
-where
+module Database.Design.Ampersand.Input.ADL1.LexerToken (
+    Token(..), Lexeme(..),
+    makeGenToken, GenToken,
+    Pos(..), Line, Column, Filename,
+    GenTokenType(..), noPos, initPos, errGenToken, lexemeLength
+) where
 
 import Text.Parsec.Pos(SourcePos, newPos)
+import Text.Parsec()
 
 --Generic types used in all token types
 --
@@ -22,6 +26,7 @@ type Filename   = String
 
 -- GenToken out of which different token formats can be generated
 -- The generic token abtracts from the main lexer logic and the output format to make the scanner easy maintainable when another TokenType is needed
+-- TODO: Remove this generic token
 data GenTokenType
   = GtkSymbol
   | GtkVarid
@@ -88,6 +93,7 @@ errGenToken errorstr pos filen = GenTok GtkError errorstr pos filen
 -- Parsec Token structure is introduced as a replacement of the original Token structure
 -- 
 
+--TODO: Rename the functions, the first conflicts with the Parsec function, the second is difficult to understand.
 data Token = Tok  { lexeme  :: Lexeme
                    , sp      :: SourcePos
                    }
@@ -121,14 +127,14 @@ data Lexeme  = LexSymbol      String
              | LexInteger     Int
              | LexUpperId     String
              | LexLowerId     String
+             --TODO: The lexemes below are probably unnecessary
              | LexTextName    String
              | LexTextLine    String
              | LexSpace
   deriving (Eq, Ord)
-	
-	
+
 instance Show Lexeme where 
-    show x = case x of 
+    show x = case x of
  		 LexSymbol    val        -> "symbol "                           ++ " '"  ++      val      ++ "'"         
  		 LexOp        val        -> "operator "                         ++ " '"  ++      val      ++ "'"
 		 LexKeyword   val        -> "keyword"                           ++          show val   
@@ -143,7 +149,30 @@ instance Show Lexeme where
 		 LexTextLine  val        -> "text name "                        ++ " '" ++       val      ++ "'" 
 		 LexSpace                -> "spaces "
 
-	 
+-- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
+-- This is trivial unless you are using the monad in a non-trivial way.
+-- instance (Monad m) => Stream [Token] m Char where
+--  uncons :: (Monad m) => [Token] -> m (Maybe (Char, [Token]))
+--    uncons []     = return $ Nothing
+--    uncons (t:ts) = return $ Just (t,ts)
+
+-- TODO: Check the lenghts. This is taken from Helium, but is it necessary? It can never be precise...
+lexemeLength :: Lexeme -> Int
+lexemeLength l = case l of
+ 		 LexSymbol    val        -> length val
+ 		 LexOp        val        -> length val
+		 LexKeyword   val        -> length val
+		 LexString    val        -> length val + 2 -- including quotes
+		 LexExpl      val        -> length val + 4 -- including quotes
+		 LexAtom      val        -> length val
+		 LexChar      val        -> 3 -- including quotes
+		 LexInteger   val        -> val `div` 10
+		 LexUpperId   val        -> length val
+		 LexLowerId   val        -> length val
+		 LexTextName  val        -> length val
+		 LexTextLine  val        -> length val
+		 LexSpace                -> 0
+
 -- New Lexeme Token format
 returnOutputToken :: [GenToken] -> [Token]
 returnOutputToken []     = []
