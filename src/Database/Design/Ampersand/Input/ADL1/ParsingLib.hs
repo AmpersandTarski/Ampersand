@@ -25,7 +25,7 @@ infixl 4 <*>, <$>
 infixl 4 <$, <*, *>
 
 --TODO: TokenMonad?
-type AmpParser a = ParsecT [Token] UU.Pair Identity a
+type AmpParser a = ParsecT [Token] SourcePos Identity a
 type AmpT a      = ParsecT String  [Token] Identity a
 
 --Operators from UU.Parsing
