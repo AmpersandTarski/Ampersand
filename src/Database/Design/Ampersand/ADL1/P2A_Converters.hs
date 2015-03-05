@@ -340,11 +340,12 @@ pCtx2aCtx' _
 
     typeCheckViewSegment :: (P_ViewD a) -> (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
     typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
-     = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
-                      [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                      r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                            else mustBeBound (origin obj) [(Tgt,objctx obj)]
-       ) <?> typecheckObjDef ojd
+     = unguard $
+         (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
+                        [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
+                        r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
+                              else mustBeBound (origin obj) [(Tgt,objctx obj)])
+         <$> typecheckObjDef ojd
      where c = name (vd_cpt o)
     typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
     typeCheckViewSegment _ P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
@@ -358,20 +359,20 @@ pCtx2aCtx' _
                              , obj_strs = ostrs
                              })
      = unguard $
-       (\(objExpr,bb) subi -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
+         (\(objExpr,bb) subi -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
            case subi of
              Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
              Just (InterfaceRef s) ->
-               (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef s)) 
-                                   <$> typeCheckInterfaceRef objExpr refIfcExpr)
-               <?> case lookupDisambIfcObj s of
-                     Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
-                     Nothing     -> error "interface ref not found"
+               unguard $
+                 (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef s)) <$> typeCheckInterfaceRef objExpr refIfcExpr)
+                 <$> case lookupDisambIfcObj s of
+                       Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
+                       Nothing     -> error "interface ref not found"
              Just bx@(Box c _ _) ->
                case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
-                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx)
-       ) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
+                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
+         <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
      where      
       isa :: String -> String -> Bool
       isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
@@ -429,15 +430,16 @@ pCtx2aCtx' _
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
     pSubi2aSubi o@(P_Box _ _ []) = hasNone [] o
     pSubi2aSubi o@(P_Box _ cl l)
-     = (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
-                  [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
-                  r -> case [ objctx a
-                            | (a,False) <- lst
-                            , not ((name . source . objctx $ a) `elem` r)
-                            ] of
-                            [] -> pure (Box (castConcept (head r)) cl (map fst lst))
-                            lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
-       ) <?> (traverse typecheckObjDef l <* uniqueNames l)
+     = unguard $
+         (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
+                    [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
+                    r -> case [ objctx a
+                              | (a,False) <- lst
+                              , not ((name . source . objctx $ a) `elem` r)
+                              ] of
+                              [] -> pure (Box (castConcept (head r)) cl (map fst lst))
+                              lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst'])
+         <$> traverse typecheckObjDef l <* uniqueNames l
 
     typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
     typecheckTerm tct
@@ -656,22 +658,23 @@ pCtx2aCtx' _
                        , rr_msg = msgs
                        , rr_viol = viols
                        }
-     = (\ (exp',_)
-       -> (\ vls ->
-          Ru { rrnm = nm
-             , rrexp = exp'
-             , rrfps = orig
-             , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
-             , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
-             , rrviol = vls
-             , rrtyp = sign exp'
-             , rrdcl = Nothing
-             , r_env = env
-             , r_usr = UserDefined
-             , isSignal = not (null sgl)
-             }
-             ) <$> maybeOverGuarded (typeCheckPairView orig exp') viols
-          ) <?> typecheckTerm expr
+     = unguard $ 
+         (\ (exp',_) -> 
+           (\ vls ->
+             Ru { rrnm = nm
+                , rrexp = exp'
+                , rrfps = orig
+                , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
+                , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
+                , rrviol = vls
+                , rrtyp = sign exp'
+                , rrdcl = Nothing
+                , r_env = env
+                , r_usr = UserDefined
+                , isSignal = not (null sgl)
+                })
+           <$> maybeOverGuarded (typeCheckPairView orig exp') viols)
+         <$> typecheckTerm expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity
           pidt@(P_Id { ix_pos = orig
@@ -687,11 +690,12 @@ pCtx2aCtx' _
           }) <$> traverse pIdentSegment2IdentSegment isegs
      where conc = pCpt2aCpt pconc
            pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
-           pIdentSegment2IdentSegment (P_IdentExp ojd)
-            = (\o -> case (findExact genLattice (mjoin (name (source (objctx o))) (name conc))) of
-                       [] -> mustBeOrdered orig (Src, (origin ojd), (objctx o)) pidt
-                       _ -> pure (IdentityExp o)
-              ) <?> pObjDef2aObjDef ojd
+           pIdentSegment2IdentSegment (P_IdentExp ojd) =
+              unguard $
+                (\o -> case (findExact genLattice (mjoin (name (source (objctx o))) (name conc))) of
+                         [] -> mustBeOrdered orig (Src, (origin ojd), (objctx o)) pidt
+                         _ -> pure (IdentityExp o)
+                ) <$> pObjDef2aObjDef ojd
 
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
@@ -699,12 +703,13 @@ pCtx2aCtx' _
     typeCheckPairViewSeg :: Origin -> Expression -> (PairViewSegment (Term (TermPrim, DisambPrim))) -> Guarded (PairViewSegment Expression)
     typeCheckPairViewSeg _ _ (PairViewText x) = pure (PairViewText x)
     typeCheckPairViewSeg o t (PairViewExp s x)
-     = (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
-                        [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
-                        lst -> if b || and (map (name (source e) `elem`) lst)
-                               then pure (PairViewExp s e)
-                               else mustBeBound (origin (fmap fst x)) [(Src, e)]
-                        ) <?> typecheckTerm x
+     = unguard $
+         (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
+                          [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
+                          lst -> if b || and (map (name (source e) `elem`) lst)
+                                 then pure (PairViewExp s e)
+                                 else mustBeBound (origin (fmap fst x)) [(Src, e)])
+         <$> typecheckTerm x
 
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp PRef2 { pexPos    = orig     -- :: Origin
