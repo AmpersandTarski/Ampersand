@@ -84,91 +84,31 @@ errGenToken errorstr pos filen = GenTok GtkError errorstr pos filen
 -- Original Token structure that will be replaced with the new ParsecT structure 
 -- Functions based on the old Token structure are beneath the data and type declarations
 
-
-data TokenType
-  = TkSymbol
-  | TkVarid
-  | TkConid
-  | TkKeyword
-  | TkOp
-  | TkString
-  | TkExpl
-  | TkAtom
-  | TkChar
-  | TkInteger8
-  | TkInteger10
-  | TkInteger16
-  | TkTextnm
-  | TkTextln
-  | TkSpace
-  | TkError
-  deriving (Eq, Ord)
-
-data Token = Tok { tp' :: TokenType
-                 , val1 :: String
-                 , val2 :: String
-                 , pos :: !Pos
-                 , file :: !Filename
-                 }
-				 
-instance Show Token where
-  showsPrec _ token'
-    = showString
-       (case token' of
-        (Tok TkSymbol    _  s2 pos fn)  -> "symbol "                ++ s2         ++ maybeshow pos fn
-        (Tok TkOp        _  s2 pos fn)  -> "operator "              ++ s2         ++ maybeshow pos fn
-        (Tok TkKeyword   _  s2 pos fn)  ->                        show s2         ++ maybeshow pos fn
-        (Tok TkString    _  s2 pos fn)  -> "string \""              ++ s2 ++ "\"" ++ maybeshow pos fn
-        (Tok TkExpl      _  s2 pos fn)  -> "explanation {+"         ++ s2 ++ "-}" ++ maybeshow pos fn
-        (Tok TkAtom      _  s2 pos fn)  -> "atom '"                 ++ s2 ++ "'"  ++ maybeshow pos fn
-        (Tok TkChar      _  s2 pos fn)  -> "character '"            ++ s2 ++ "'"  ++ maybeshow pos fn
-        (Tok TkInteger8  _  s2 pos fn)  -> "octal integer "         ++ s2         ++ maybeshow pos fn
-        (Tok TkInteger10 _  s2 pos fn)  -> "decimal Integer "       ++ s2         ++ maybeshow pos fn
-        (Tok TkInteger16 _  s2 pos fn)  -> "hexadecimal integer "   ++ s2         ++ maybeshow pos fn
-        (Tok TkVarid     _  s2 pos fn)  -> "lower case identifier " ++ s2         ++ maybeshow pos fn
-        (Tok TkConid     _  s2 pos fn)  -> "upper case identifier " ++ s2         ++ maybeshow pos fn
-        (Tok TkTextnm    _  s2 pos fn)  -> "text name "             ++ s2         ++ maybeshow pos fn
-        (Tok TkTextln    _  s2 pos fn)  -> "text line "             ++ s2         ++ maybeshow pos fn
-        (Tok TkSpace     _  _  pos fn)  -> "spaces "                              ++ maybeshow pos fn
-        (Tok TkError     _  s2 pos fn)  -> "error in scanner: "     ++ s2         ++ maybeshow pos fn
-       )
-   
-instance Eq Token where
-  (Tok ttypel     stringl _ _ _) ==  (Tok ttyper     stringr _ _ _) =  ttypel == ttyper && stringl == stringr
-   
-instance  Ord Token where
-  compare x y | x==y      = EQ
-              | x<=y      = LT
-              | otherwise = GT
-  (Tok ttypel     stringl _ _ _ ) <= (Tok ttyper    stringr _ _  _ )
-      =     ttypel <  ttyper
-        || (ttypel == ttyper && stringl <= stringr)
    
 -- Parsec Token structure is introduced as a replacement of the original Token structure
 -- 
 
-data TokenL = TokL { lexeme  :: Lexeme
+data Token = Tok  { lexeme  :: Lexeme
                    , sp      :: SourcePos
                    }
 
-	
-instance Show TokenL where
+instance Show Token where
   showsPrec _ token'
     = showString
        (case token' of
-        (TokL (LexSymbol val)    sp )  -> "symbol "                ++      val             ++ show sp 
-        (TokL (LexOp val)        sp )  -> "operator "              ++      val             ++ show sp 
-        (TokL (LexKeyword val)   sp )  ->                             show val             ++ show sp 
-        (TokL (LexString val)    sp )  -> "string \""              ++      val     ++ "\"" ++ show sp 
-        (TokL (LexExpl val)      sp )  -> "explanation {+"         ++      val     ++ "-}" ++ show sp 
-        (TokL (LexAtom val)      sp )  -> "atom '"                 ++      val     ++ "'"  ++ show sp 
-        (TokL (LexChar val)      sp )  -> "character '"            ++ show val     ++ "'"  ++ show sp
-        (TokL (LexInteger val)   sp )  -> "decimal Integer "       ++ show val             ++ show sp
-        (TokL (LexLowerId val)   sp )  -> "lower case identifier " ++      val             ++ show sp 
-        (TokL (LexUpperId val)   sp )  -> "upper case identifier " ++      val             ++ show sp 
-        (TokL (LexTextName val)  sp )  -> "text name "             ++      val             ++ show sp
-        (TokL (LexTextLine val)  sp )  -> "text line "             ++      val             ++ show sp 
-        (TokL (LexSpace)         sp )  -> "spaces "                                        ++ show sp 
+        (Tok (LexSymbol val)    sp )  -> "symbol "                ++      val             ++ show sp 
+        (Tok (LexOp val)        sp )  -> "operator "              ++      val             ++ show sp 
+        (Tok (LexKeyword val)   sp )  ->                             show val             ++ show sp 
+        (Tok (LexString val)    sp )  -> "string \""              ++      val     ++ "\"" ++ show sp 
+        (Tok (LexExpl val)      sp )  -> "explanation {+"         ++      val     ++ "-}" ++ show sp 
+        (Tok (LexAtom val)      sp )  -> "atom '"                 ++      val     ++ "'"  ++ show sp 
+        (Tok (LexChar val)      sp )  -> "character '"            ++ show val     ++ "'"  ++ show sp
+        (Tok (LexInteger val)   sp )  -> "decimal Integer "       ++ show val             ++ show sp
+        (Tok (LexLowerId val)   sp )  -> "lower case identifier " ++      val             ++ show sp 
+        (Tok (LexUpperId val)   sp )  -> "upper case identifier " ++      val             ++ show sp 
+        (Tok (LexTextName val)  sp )  -> "text name "             ++      val             ++ show sp
+        (Tok (LexTextLine val)  sp )  -> "text line "             ++      val             ++ show sp 
+        (Tok (LexSpace)         sp )  -> "spaces "                                        ++ show sp 
        )
 
 data Lexeme  = LexSymbol      String
@@ -184,7 +124,7 @@ data Lexeme  = LexSymbol      String
              | LexTextName    String
              | LexTextLine    String
              | LexSpace
-        deriving (Eq)
+  deriving (Eq, Ord)
 	
 	
 instance Show Lexeme where 
@@ -203,42 +143,22 @@ instance Show Lexeme where
 		 LexTextLine  val        -> "text name "                        ++ " '" ++       val      ++ "'" 
 		 LexSpace                -> "spaces "
 
-{- Old token format
-
-returnOutputToken :: [GenToken] -> [Token]
-returnOutputToken []                                  = []
-returnOutputToken ((GenTok GtkSymbol    s2 i fn):xs)  = (Tok TkSymbol    ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkOp        s2 i fn):xs)  = (Tok TkOp        ""  s2 i fn):returnOutputToken xs 
-returnOutputToken ((GenTok GtkKeyword   s2 i fn):xs)  = (Tok TkKeyword   ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkString    s2 i fn):xs)  = (Tok TkString    ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkExpl      s2 i fn):xs)  = (Tok TkExpl      ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkAtom      s2 i fn):xs)  = (Tok TkAtom      ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger8  s2 i fn):xs)  = (Tok TkInteger8  ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger10 s2 i fn):xs)  = (Tok TkInteger10 ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger16 s2 i fn):xs)  = (Tok TkInteger16 ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkVarid     s2 i fn):xs)  = (Tok TkVarid     ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkConid     s2 i fn):xs)  = (Tok TkConid     ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkTextnm    s2 i fn):xs)  = (Tok TkTextnm    ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkTextln    s2 i fn):xs)  = (Tok TkTextln    ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkSpace     s2 i fn):xs)  = (Tok TkSpace     ""  s2 i fn):returnOutputToken xs
-returnOutputToken ((GenTok GtkError     s2 i fn):xs)  = (Tok TkError     ""  s2 i fn):returnOutputToken xs
--}
-
+	 
 -- New Lexeme Token format
 
-returnOutputToken :: [GenToken] -> [TokenL]
+returnOutputToken :: [GenToken] -> [Token]
 returnOutputToken []                                          = []
-returnOutputToken ((GenTok GtkSymbol    val (Pos l c) fn):xs)  = (TokL (LexSymbol val)               (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkOp        val (Pos l c) fn):xs)  = (TokL (LexOp val)                   (newPos  fn l c)):returnOutputToken xs 
-returnOutputToken ((GenTok GtkKeyword   val (Pos l c) fn):xs)  = (TokL (LexKeyword val)              (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkString    val (Pos l c) fn):xs)  = (TokL (LexString val)               (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkExpl      val (Pos l c) fn):xs)  = (TokL (LexExpl val)                 (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkAtom      val (Pos l c) fn):xs)  = (TokL (LexAtom val)                 (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger8  val (Pos l c) fn):xs)  = (TokL (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger10 val (Pos l c) fn):xs)  = (TokL (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger16 val (Pos l c) fn):xs)  = (TokL (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkVarid     val (Pos l c) fn):xs)  = (TokL (LexLowerId val)              (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkConid     val (Pos l c) fn):xs)  = (TokL (LexUpperId val)              (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkTextnm    val (Pos l c) fn):xs)  = (TokL (LexTextName val)             (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkTextln    val (Pos l c) fn):xs)  = (TokL (LexTextLine val)             (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkSpace     val (Pos l c) fn):xs)  = (TokL LexSpace                      (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkSymbol    val (Pos l c) fn):xs)  = (Tok (LexSymbol val)               (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkOp        val (Pos l c) fn):xs)  = (Tok (LexOp val)                   (newPos  fn l c)):returnOutputToken xs 
+returnOutputToken ((GenTok GtkKeyword   val (Pos l c) fn):xs)  = (Tok (LexKeyword val)              (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkString    val (Pos l c) fn):xs)  = (Tok (LexString val)               (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkExpl      val (Pos l c) fn):xs)  = (Tok (LexExpl val)                 (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkAtom      val (Pos l c) fn):xs)  = (Tok (LexAtom val)                 (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkInteger8  val (Pos l c) fn):xs)  = (Tok (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkInteger10 val (Pos l c) fn):xs)  = (Tok (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkInteger16 val (Pos l c) fn):xs)  = (Tok (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkVarid     val (Pos l c) fn):xs)  = (Tok (LexLowerId val)              (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkConid     val (Pos l c) fn):xs)  = (Tok (LexUpperId val)              (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkTextnm    val (Pos l c) fn):xs)  = (Tok (LexTextName val)             (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkTextln    val (Pos l c) fn):xs)  = (Tok (LexTextLine val)             (newPos  fn l c)):returnOutputToken xs
+returnOutputToken ((GenTok GtkSpace     val (Pos l c) fn):xs)  = (Tok LexSpace                      (newPos  fn l c)):returnOutputToken xs
