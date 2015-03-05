@@ -23,7 +23,7 @@ import qualified Control.Applicative as CA
 
 --TODO: TokenMonad?
 type AmpParser a = P.ParsecT [Token] SourcePos Identity a
-type AmpT a      = P.ParsecT String  [Token] Identity a
+type AmpLexer  a = P.ParsecT String  [Token]   Identity a
 
 --Operators
 infixl 4 <$
@@ -79,11 +79,11 @@ pList1Sep = P.sepBy1
 opt ::  AmpParser a -> a -> AmpParser a
 a `opt` b = P.option b a
 
-pKey :: String -> AmpT ()
+pKey :: String -> AmpLexer ()
 pKey = reserved lexer
 
 --- Conid ::= UpperChar (Char | '_')*
-pConid :: AmpT String
+pConid :: AmpLexer String
 pConid = lexeme lexer $ try $
         do name <- identifier lexer
            if isUpper $ head name
@@ -92,15 +92,15 @@ pConid = lexeme lexer $ try $
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
-pString :: AmpT String
+pString :: AmpLexer String
 pString = stringLiteral lexer
 
 -- Spec just matches the given character so it has no EBNF
-pSpec :: Char -> AmpT String
+pSpec :: Char -> AmpLexer String
 pSpec x = do { y <- char x; return [y] }
 
 --- Expl ::= '{+' Any* '-}'
-pExpl :: AmpT String
+pExpl :: AmpLexer String
 pExpl = do _ <- try (string "{+")
            inExpl
         where inExpl =  do { _ <- try (string "+}"); return "explanation" }
@@ -108,7 +108,7 @@ pExpl = do _ <- try (string "{+")
                     P.<?> "end of comment"
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
-pVarid :: AmpT String
+pVarid :: AmpLexer String
 pVarid = lexeme lexer $ try $
         do name <- identifier lexer
            if isUpper $ head name
@@ -116,7 +116,7 @@ pVarid = lexeme lexer $ try $
            else return name
 
 -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
-pAtom :: AmpT String
+pAtom :: AmpLexer String
 pAtom   = lexeme lexer (
              do between (char '\'')
                         (char '\'' <?> "end of atom")
@@ -125,11 +125,11 @@ pAtom   = lexeme lexer (
             where isLetter c = (c /= '\'') && (c /= '\\') && (c > '\026')
 	
 --- Comma ::= ','
-pComma :: AmpT String
+pComma :: AmpLexer String
 pComma  = pSpec ','
 
 --- Semi ::= ';'
-pSemi :: AmpT String
+pSemi :: AmpLexer String
 pSemi = pSpec ';'
 
 {- temp in comment as not specified in Lexer
