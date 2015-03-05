@@ -145,20 +145,20 @@ instance Show Lexeme where
 
 	 
 -- New Lexeme Token format
-
 returnOutputToken :: [GenToken] -> [Token]
-returnOutputToken []                                          = []
-returnOutputToken ((GenTok GtkSymbol    val (Pos l c) fn):xs)  = (Tok (LexSymbol val)               (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkOp        val (Pos l c) fn):xs)  = (Tok (LexOp val)                   (newPos  fn l c)):returnOutputToken xs 
-returnOutputToken ((GenTok GtkKeyword   val (Pos l c) fn):xs)  = (Tok (LexKeyword val)              (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkString    val (Pos l c) fn):xs)  = (Tok (LexString val)               (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkExpl      val (Pos l c) fn):xs)  = (Tok (LexExpl val)                 (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkAtom      val (Pos l c) fn):xs)  = (Tok (LexAtom val)                 (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger8  val (Pos l c) fn):xs)  = (Tok (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger10 val (Pos l c) fn):xs)  = (Tok (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkInteger16 val (Pos l c) fn):xs)  = (Tok (LexInteger (read val))       (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkVarid     val (Pos l c) fn):xs)  = (Tok (LexLowerId val)              (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkConid     val (Pos l c) fn):xs)  = (Tok (LexUpperId val)              (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkTextnm    val (Pos l c) fn):xs)  = (Tok (LexTextName val)             (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkTextln    val (Pos l c) fn):xs)  = (Tok (LexTextLine val)             (newPos  fn l c)):returnOutputToken xs
-returnOutputToken ((GenTok GtkSpace     val (Pos l c) fn):xs)  = (Tok LexSpace                      (newPos  fn l c)):returnOutputToken xs
+returnOutputToken []     = []
+returnOutputToken (x:xs) =  conv x : returnOutputToken xs
+      where conv (GenTok GtkSymbol    val (Pos l c) fn) = Tok (LexSymbol val)         (newPos  fn l c)
+            conv (GenTok GtkOp        val (Pos l c) fn) = Tok (LexOp val)             (newPos  fn l c)
+            conv (GenTok GtkKeyword   val (Pos l c) fn) = Tok (LexKeyword val)        (newPos  fn l c)
+            conv (GenTok GtkString    val (Pos l c) fn) = Tok (LexString val)         (newPos  fn l c)
+            conv (GenTok GtkExpl      val (Pos l c) fn) = Tok (LexExpl val)           (newPos  fn l c)
+            conv (GenTok GtkAtom      val (Pos l c) fn) = Tok (LexAtom val)           (newPos  fn l c)
+            conv (GenTok GtkInteger8  val (Pos l c) fn) = Tok (LexInteger (read val)) (newPos  fn l c)
+            conv (GenTok GtkInteger10 val (Pos l c) fn) = Tok (LexInteger (read val)) (newPos  fn l c)
+            conv (GenTok GtkInteger16 val (Pos l c) fn) = Tok (LexInteger (read val)) (newPos  fn l c)
+            conv (GenTok GtkVarid     val (Pos l c) fn) = Tok (LexLowerId val)        (newPos  fn l c)
+            conv (GenTok GtkConid     val (Pos l c) fn) = Tok (LexUpperId val)        (newPos  fn l c)
+            conv (GenTok GtkTextnm    val (Pos l c) fn) = Tok (LexTextName val)       (newPos  fn l c)
+            conv (GenTok GtkTextln    val (Pos l c) fn) = Tok (LexTextLine val)       (newPos  fn l c)
+            conv (GenTok GtkSpace     val (Pos l c) fn) = Tok LexSpace                (newPos  fn l c)
