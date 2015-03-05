@@ -36,8 +36,8 @@ selectSrcTgt fSpec expr = toSQL (selectExpr fSpec sourceAlias targetAlias expr)
 
 
 sourceAlias, targetAlias :: Name
-sourceAlias = (QName "src") 
-targetAlias = (QName "tgt")
+sourceAlias = (Name "src") 
+targetAlias = (Name "tgt")
 selectExpr :: FSpec    -- current context
         -> Name        -- SQL name of the source of this expression, as assigned by the environment
         -> Name        -- SQL name of the target of this expression, as assigned by the environment
@@ -57,8 +57,8 @@ selectExpr fSpec src trg expr
                   isect n = Name ("isect"++show n)
                   lst'       = exprIsc2list expr
                   sgn        = sign expr
-                  src'       = sqlExprSrc fSpec firstTerm
-                  trg'       = sqlExprTgt fSpec firstTerm
+                  src'       = sourceAlias --sqlExprSrc fSpec firstTerm
+                  trg'       = targetAlias --sqlExprTgt fSpec firstTerm
                   firstTerm  = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
                   mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},EDcV _,EMp1{}] <- [exprCps2list t]]
                   lst        = [t |t<-lst', t `notElem` mp1Tm]
@@ -66,10 +66,10 @@ selectExpr fSpec src trg expr
                   negTms     = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
                   posTms'    = [t | t<-lst, isPos t && not (isIdent t)]++[t | t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
                   negTms'    = [notCpl t | t<-lst, isNeg t && isIdent t]++[notCpl t | t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
-                  exprbracs  = [ selectExprInFROM fSpec src'' trg'' l `as` isect n 
+                  exprbracs  = [ selectExprInFROM fSpec sourceAlias targetAlias l `as` isect n 
                                | (n,l)<-zip [(0::Int)..] posTms
-                               , let src'' = sqlExprSrc fSpec l
-                               , let trg'' =noCollide' [src''] (sqlExprTgt fSpec l)
+                     --          , let src'' = sqlExprSrc fSpec l
+                     --          , let trg'' =noCollide' [src''] (sqlExprTgt fSpec l)
                                ]
                   wherecl :: Maybe ValueExpr
                   wherecl   = Just . conjunctSQL . concat $
@@ -81,14 +81,14 @@ selectExpr fSpec src trg expr
                                       ]
                                  else [BinOp (Iden [isect 0, src'])
                                              [Name "="]
-                                             (Iden [isect n, src''])
+                                             (Iden [isect n, sourceAlias])
                                       ,BinOp (Iden [isect 0,trg'])
                                              [Name "="]
-                                             (Iden [isect n, trg''])
+                                             (Iden [isect n, targetAlias])
                                       ]
                                 | (n,l)<-tail (zip [(0::Int)..] posTms) -- not empty because of definition of posTms
-                                , let src''=sqlExprSrc fSpec l
-                                , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
+                           --     , let src''=sqlExprSrc fSpec l
+                           --     , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                                 ]++
                                 [ [ BinOp (Iden [isect 0,src'])
                                           [Name "="]
@@ -115,20 +115,18 @@ selectExpr fSpec src trg expr
                                              (Iden [isect 0, trg'])
                                       ]
                                  else [selectNotExists 
-                                         [selectExprInFROM fSpec src'' trg'' l `as` Name "cp"]
+                                         [selectExprInFROM fSpec sourceAlias targetAlias l `as` Name "cp"]
                                          (Just . conjunctSQL $
                                            [ BinOp (Iden [isect 0,src'])
                                                    [Name "="]
-                                                   (Iden [Name "cp",src''])
+                                                   (Iden [Name "cp",sourceAlias])
                                            , BinOp (Iden [isect 0,trg'])
                                                    [Name "="]
-                                                   (Iden [Name "cp",trg''])
+                                                   (Iden [Name "cp",targetAlias])
                                            ]
                                          )
                                       ]
                                 | (_,l)<-zip [(0::Int)..] negTms
-                                , let src''=sqlExprSrc fSpec l
-                                , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                                 ]++
                                 [nub (map notNull [Iden[isect 0,src'],Iden[isect 0,trg']])]
                                )
@@ -708,7 +706,7 @@ selectExists, selectNotExists
 selectNotExists tbls whr = PrefixOp [Name "NOT"] $ selectExists tbls whr
 selectExists tbls whr = 
   SubQueryExpr SqExists
-     Select { qeSetQuantifier = Distinct
+     Select { qeSetQuantifier = SQDefault
             , qeSelectList    = [(Star,Nothing)]
             , qeFrom          = tbls
             , qeWhere         = whr
@@ -766,26 +764,26 @@ selectSelItem' att = Iden [att]
 --   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
 --   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TGT" would suffice)
 sqlExprSrc :: FSpec -> Expression -> Name
-sqlExprSrc fSpec expr = sourceAlias
---sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
---sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
---sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
---sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
---sqlExprSrc fSpec (EDcD d)            = let (_,s,_) = getDeclarationTableInfo fSpec d
---                                       in QName (name s)
---sqlExprSrc _     expr                = QName ("Src"++name (source expr))
+--sqlExprSrc fSpec expr = sourceAlias
+sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
+sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
+sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
+sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
+sqlExprSrc fSpec (EDcD d)            = let (_,s,_) = getDeclarationTableInfo fSpec d
+                                       in QName (name s)
+sqlExprSrc _     expr                = QName (name (source expr))
 
 
 -- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTgt :: FSpec -> Expression -> Name
-sqlExprTgt fSpec expr = targetAlias
---sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
---sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
---sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
---sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
---sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSpec d
---                                       in QName (name t)
---sqlExprTgt _     expr                = QName ("Tgt"++name (target expr))
+--sqlExprTgt fSpec expr = targetAlias
+sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
+sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
+sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
+sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
+sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSpec d
+                                       in QName (name t)
+sqlExprTgt _     expr                = QName (name (target expr))
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 -- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
