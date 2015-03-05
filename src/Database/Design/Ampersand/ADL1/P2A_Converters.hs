@@ -180,14 +180,14 @@ pCtx2aCtx' _
       <*> traverse (pRul2aRul [] n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
-      <*> traverse pIfc2aIfc p_interfaceAndDisambObs   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
+      <*> traverse pIfc2aIfc p_interfaceAndDisambObjs   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
       <*> traverse pPurp2aPurp p_purposes          --  The purposes of objects defined in this context, outside the scope of patterns
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
   where
-    p_interfaceAndDisambObs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
-    p_interfaceAndDisambObs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
+    p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
+    p_interfaceAndDisambObjs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
@@ -395,7 +395,7 @@ pCtx2aCtx' _
      
       lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
       lookupDisambIfcObj ifcId =
-        case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObs, ifc_Name vd == ifcId ] of
+        case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs, ifc_Name vd == ifcId ] of
           []          -> Nothing
           disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
       
