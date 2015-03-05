@@ -57,9 +57,6 @@ selectExpr fSpec src trg expr
                   isect n = Name ("isect"++show n)
                   lst'       = exprIsc2list expr
                   sgn        = sign expr
-                  src'       = sourceAlias --sqlExprSrc fSpec firstTerm
-                  trg'       = targetAlias --sqlExprTgt fSpec firstTerm
-                  firstTerm  = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
                   mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},EDcV _,EMp1{}] <- [exprCps2list t]]
                   lst        = [t |t<-lst', t `notElem` mp1Tm]
                   posTms     = if null posTms' then map notCpl (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
@@ -75,14 +72,14 @@ selectExpr fSpec src trg expr
                   wherecl   = Just . conjunctSQL . concat $
                                ([if isIdent l
                                  then -- this is the code to calculate ../\I. The code below will work, but is longer
-                                      [BinOp (Iden [isect 0, src'])
+                                      [BinOp (Iden [isect 0, sourceAlias])
                                              [Name "="]
-                                             (Iden [isect 0, trg'])
+                                             (Iden [isect 0, targetAlias])
                                       ]
-                                 else [BinOp (Iden [isect 0, src'])
+                                 else [BinOp (Iden [isect 0, sourceAlias])
                                              [Name "="]
                                              (Iden [isect n, sourceAlias])
-                                      ,BinOp (Iden [isect 0,trg'])
+                                      ,BinOp (Iden [isect 0, targetAlias])
                                              [Name "="]
                                              (Iden [isect n, targetAlias])
                                       ]
@@ -90,19 +87,19 @@ selectExpr fSpec src trg expr
                            --     , let src''=sqlExprSrc fSpec l
                            --     , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
                                 ]++
-                                [ [ BinOp (Iden [isect 0,src'])
+                                [ [ BinOp (Iden [isect 0,sourceAlias])
                                           [Name "="]
                                           (sqlAtomQuote atom)
-                                  , BinOp (Iden [isect 0,trg'])
+                                  , BinOp (Iden [isect 0,targetAlias])
                                           [Name "="]
                                           (sqlAtomQuote atom)
                                   ]
                                 | EMp1 atom _ <- mp1Tm
                                 ]++
-                                [ [ BinOp (Iden [isect 0,src'])
+                                [ [ BinOp (Iden [isect 0,sourceAlias])
                                           [Name "="]
                                           (sqlAtomQuote atom1) -- source and target are unequal
-                                  , BinOp (Iden [isect 0,trg'])
+                                  , BinOp (Iden [isect 0,targetAlias])
                                           [Name "="]
                                           (sqlAtomQuote atom2) -- source and target are unequal
                                   ]
@@ -110,17 +107,17 @@ selectExpr fSpec src trg expr
                                 ]++
                                 [if isIdent l
                                  then -- this is the code to calculate ../\I. The code below will work, but is longer
-                                      [BinOp (Iden [isect 0, src'])
+                                      [BinOp (Iden [isect 0, sourceAlias])
                                              [Name "<>"]
-                                             (Iden [isect 0, trg'])
+                                             (Iden [isect 0, targetAlias])
                                       ]
                                  else [selectNotExists 
                                          [selectExprInFROM fSpec sourceAlias targetAlias l `as` Name "cp"]
                                          (Just . conjunctSQL $
-                                           [ BinOp (Iden [isect 0,src'])
+                                           [ BinOp (Iden [isect 0,sourceAlias])
                                                    [Name "="]
                                                    (Iden [Name "cp",sourceAlias])
-                                           , BinOp (Iden [isect 0,trg'])
+                                           , BinOp (Iden [isect 0,targetAlias])
                                                    [Name "="]
                                                    (Iden [Name "cp",targetAlias])
                                            ]
@@ -128,7 +125,7 @@ selectExpr fSpec src trg expr
                                       ]
                                 | (_,l)<-zip [(0::Int)..] negTms
                                 ]++
-                                [nub (map notNull [Iden[isect 0,src'],Iden[isect 0,trg']])]
+                                [nub (map notNull [Iden[isect 0,sourceAlias],Iden[isect 0,targetAlias]])]
                                )
 
               in case lst' of
@@ -148,8 +145,8 @@ selectExpr fSpec src trg expr
                       AND NOT EXISTS (SELECT bar)            representing neven
 -}
                   (_:_:_) -> BSE { bseCmt = "case: (EIsc lst'@(_:_:_))"++showADL expr++" ("++show sgn++")"
-                                 , bseSrc = Iden [isect 0,src']
-                                 , bseTrg = Iden [isect 0,trg']
+                                 , bseSrc = Iden [isect 0,sourceAlias]
+                                 , bseTrg = Iden [isect 0,targetAlias]
                                  , bseTbl = exprbracs
                                  , bseWhr = wherecl
                                  }
@@ -246,19 +243,20 @@ SELECT DISTINCT ECps0.`C` AS `SrcC`, ECps0.`A` AS `TgtA`
 FROM `r` AS ECps0, `A`AS ECps2
 WHERE ECps0.`A`<>ECps2.`A
 -}
-          es -> let mainSrc = Iden [QName ("ECps"++show n),sqlSrc]
+          es -> let eCps n = Name ("ECps"++show n)
+                    mainSrc = Iden [eCps n,sourceAlias]
                               where
-                                (n,_,sqlSrc,_) = head fenceExprs
-                    mainTgt = Iden [QName ("ECps"++show n),sqlTgt]
+                                (n,_,_,_) = head fenceExprs
+                    mainTgt = Iden [eCps n,targetAlias]
                               where
-                                    (n,_,_,sqlTgt) = last fenceExprs
-                    froms = [ lSQLexp `as` QName ("ECps"++show n) 
+                                    (n,_,_,_) = last fenceExprs
+                    froms = [ lSQLexp `as` eCps n 
                             | (n,lSQLexp,_,_) <- fenceExprs ]
                     wheres = Just . conjunctSQL $
-                                [ BinOp (Iden [QName ("ECps"++show n), lSQLtrg])
+                                [ BinOp (Iden [eCps n, targetAlias])
                                         [Name (if m==n+1 then "=" else "<>")]
-                                        (Iden [QName ("ECps"++show m), rSQLsrc])
-                                | ((n,_,_,lSQLtrg),(m,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
+                                        (Iden [eCps m, sourceAlias])
+                                | ((n,_,_,_),(m,_,_,_))<-zip (init fenceExprs) (tail fenceExprs)
                                 ]++
                                 [notNull mainSrc,notNull mainTgt]
                     -- fenceExprs lists the expressions and their SQL-fragments.
