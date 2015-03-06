@@ -127,23 +127,26 @@ pComma  = pSpec ','
 pSemi :: AmpParser String
 pSemi = pSpec ';'
 
-posOf :: AmpParser a -> AmpParser Origin
-posOf parser = checkTok (\t -> get_tok_pos t)
+posOrigin :: Show a => a -> SourcePos -> Origin
+posOrigin sym p = FileLoc (FilePos (sourceName p, p, show sym))
 
-valPosOf :: AmpParser a -> AmpParser (a, Origin)
-valPosOf parser = checkTok (\t -> (get_tok_val t,get_tok_pos t))
+posOf :: Show a => AmpParser a -> AmpParser Origin
+posOf parser = do { pos <- getPosition; a <- parser; return (posOrigin a pos) }
+
+valPosOf :: Show a => AmpParser a -> AmpParser (String, Origin)
+valPosOf parser = do { pos <- getPosition; a <- parser; return (show a, posOrigin a pos) }
+
+pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
+pString_val_pos = valPosOf pString
+pVarid_val_pos  = valPosOf pVarid
+pConid_val_pos  = valPosOf pConid
+pAtom_val_pos   = valPosOf pAtom
+
+pKey_val_pos ::  String -> AmpParser (String,Origin)
+pKey_val_pos = valPosOf.pKey
 
 pKey_pos :: String -> AmpParser Origin
 pKey_pos = posOf.pKey
 
 pSpec_pos :: Char -> AmpParser Origin
 pSpec_pos = posOf.pSpec
-
-pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
-pString_val_pos = posOf.pString
-pVarid_val_pos  = posOf.pVarid
-pConid_val_pos  = posOf.pConid
-pAtom_val_pos   = posOf.pAtom
-
-pKey_val_pos ::  String -> AmpParser (String,Origin)
-pKey_val_pos keyword = posOf.pKey
