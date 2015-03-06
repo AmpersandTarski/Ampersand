@@ -29,7 +29,7 @@ type Filename   = String
 
 -- GenToken out of which different token formats can be generated
 -- The generic token abtracts from the main lexer logic and the output format to make the scanner easy maintainable when another TokenType is needed
--- TODO: Remove this generic token
+-- TODO: Remove this generic token, generate the definite tokens
 data GenTokenType
   = GtkSymbol
   | GtkVarid

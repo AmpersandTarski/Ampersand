@@ -28,7 +28,7 @@ module Database.Design.Ampersand
    , DnfClause(..)
    , Options(..), DocTheme(..)
    , Picture(..), writePicture , PictureReq(..), makePicture
-   , FilePos(..), Origin(..), SourcePos(..)
+   , FilePos(..), Origin(..), SourcePos
    , mkPair
    -- * Classes:
    , Association(..), flp

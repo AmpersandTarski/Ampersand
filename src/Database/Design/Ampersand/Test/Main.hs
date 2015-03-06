@@ -7,8 +7,8 @@ import System.Exit (ExitCode(..))
 testFunctions :: IO [(String, IO Bool)]
 testFunctions = do scr <- scripts
                    return [
-                     ("Running automatic quick checks", parserQuickChecks),
-                     ("Parsing " ++ show (length scr) ++ " scripts.", testScripts scr)]
+                     ("Parsing " ++ show (length scr) ++ " scripts.", testScripts scr),
+                     ("Running automatic quick checks", parserQuickChecks)]
 
 runTests :: IO Bool
 runTests = do funcs <- testFunctions
