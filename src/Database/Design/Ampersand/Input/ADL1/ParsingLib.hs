@@ -41,19 +41,20 @@ p <??> q = p <**> (q `opt` id)
 
 --TODO: The patters here are not always necessary
 --TODO: This function is hard to understand.
-checkTok :: (Token -> Maybe a) -> AmpParser a
-checkTok pred
-  = tokenPrimEx
-        showtok 
-        nextpos 
-        (Just (\oldpos (Tok lex pos) lexemes old -> incSourceColumn pos (lexemeLength lex)))
-        pred
-  where  showtok (Tok lex pos)   = show lex
-         nextpos _ _ ((Tok lex pos):_) = pos
-         nextpos pos _ [] = pos
-
 check :: (Lexeme -> Maybe a) -> AmpParser a
-check pred = checkTok (\(Tok l _) -> pred l)
+check pred
+  = tokenPrimEx
+        showTok -- Token pretty-printing function.
+        nextPos -- Next position calculating function.
+        (Just nextState) -- The next user state
+        (\(Tok l _) -> pred l) -- ^ Matching function for the token to parse.
+  where  showTok :: Token -> String
+         showTok (Tok lex pos)   = show lex
+         nextPos :: SourcePos -> Token -> [Token] -> SourcePos
+         nextPos pos _ [] = pos
+         nextPos _ _ ((Tok lex pos):_) = pos
+         nextState :: SourcePos -> Token -> [Token] -> SourcePos -> SourcePos
+         nextState oldpos (Tok lex pos) lexemes old = incSourceColumn pos (lexemeLength lex)
 
 match :: Lexeme -> AmpParser String
 match lex = check (\lex' -> if (lex == lex') then Just (get_lex_val lex) else Nothing) <?> show lex
@@ -127,10 +128,10 @@ pSemi :: AmpParser String
 pSemi = pSpec ';'
 
 posOf :: AmpParser a -> AmpParser Origin
-posOf parse = do { t <- parse; return (get_tok_pos t) }
+posOf parser = checkTok (\t -> get_tok_pos t)
 
 valPosOf :: AmpParser a -> AmpParser (a, Origin)
-valPosOf parse = do { t <- parse; return (get_tok_val t,get_tok_pos t) }
+valPosOf parser = checkTok (\t -> (get_tok_val t,get_tok_pos t))
 
 pKey_pos :: String -> AmpParser Origin
 pKey_pos = posOf.pKey
