@@ -8,6 +8,7 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Data.List
 import System.FilePath
+import Text.Parsec.Pos(sourceLine)
 
 
 fatal :: Int -> String -> a
@@ -425,7 +426,7 @@ chpDiagnosis fSpec
   locnm (FileLoc(FilePos(filename,_,_))) = filename
   locnm (DBLoc str') = str'
   locnm _ = "NO FILENAME"
-  locln (FileLoc(FilePos(_,Pos l _,_))) = show l
+  locln (FileLoc(FilePos(_,pos,_))) = show $ sourceLine pos
   locln (DBLoc str') = str'
   locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
 

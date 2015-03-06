@@ -11,7 +11,6 @@ import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceabi
 --import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
 import Database.Design.Ampersand.Classes
-import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner
 import Database.Design.Ampersand.Misc
 import Data.Hashable
 import Data.Ord
@@ -769,8 +768,8 @@ instance ShowHS Prop where
  showHS _ _ = showHSName
 
 instance ShowHS FilePos where
- showHS _ _ (FilePos (fn,Database.Design.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
-   = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
+ showHS _ _ (FilePos (fn,pos,sym))
+   = "FilePos ("++show fn++","++show pos++","++show sym++")"
 
 instance ShowHSName Origin where
  showHSName ori = "Orig"++show x++show (hash x)
