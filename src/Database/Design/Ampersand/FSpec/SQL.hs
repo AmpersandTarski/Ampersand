@@ -243,62 +243,27 @@ SELECT DISTINCT ECps0.`C` AS `SrcC`, ECps0.`A` AS `TgtA`
 FROM `r` AS ECps0, `A`AS ECps2
 WHERE ECps0.`A`<>ECps2.`A
 -}
-          es -> let eCps n = Name ("ECps"++show n)
-                    mainSrc = Iden [eCps n,sourceAlias]
-                              where
-                                (n,_,_,_) = head fenceExprs
-                    mainTgt = Iden [eCps n,targetAlias]
-                              where
-                                    (n,_,_,_) = last fenceExprs
-                    froms = [ lSQLexp `as` eCps n 
-                            | (n,lSQLexp,_,_) <- fenceExprs ]
-                    wheres = Just . conjunctSQL $
-                                [ BinOp (Iden [eCps n, targetAlias])
-                                        [Name (if m==n+1 then "=" else "<>")]
-                                        (Iden [eCps m, sourceAlias])
-                                | ((n,_,_,_),(m,_,_,_))<-zip (init fenceExprs) (tail fenceExprs)
-                                ]++
-                                [notNull mainSrc,notNull mainTgt]
-                    -- fenceExprs lists the expressions and their SQL-fragments.
-                    -- In the poles-and-fences metaphor, they serve as the fences between the poles.
-                    fenceExprs :: [(Int,TableRef,Name,Name)]
-                    fenceExprs = -- the first part introduces a 'pole' that consists of the source concept.
-                                 [ ( length es
-                                   , sqlConceptTable fSpec c
-                                   , cAtt
-                                   , cAtt
-                                   )
-                                 | length es>1, e@(ECpl (EDcI c)) <- [head es]
-                                 , let cAtt = (sqlAttConcept fSpec.source) e
-                                 ]++
-                                 -- the second part is the main part, which does most of the work (parts 1 and 3 are rarely used)
-                                 [ ( n                              -- the serial number of this fence (in between poles n and n+1)
-                                   , selectExprInFROM fSpec srcAtt tgtAtt e
-                                   , srcAtt
-                                   , tgtAtt
-                                   )
-                                 | (n, e) <- zip [(0::Int)..] es
-                                 , case e of
-                                    ECpl (EDcI _) -> False
-                                    EDcI _        -> False  -- if the normalizer works correctly, this case will never be visited.
-                                    _             -> True
-                                 , let srcAtt = sqlExprSrc fSpec e
-                                 , let tgtAtt = noCollide' [srcAtt] (sqlExprTgt fSpec e)
-                                 ]++
-                                 -- the third part introduces a 'pole' that consists of the target concept.
-                                 [ ( length es
-                                   , sqlConceptTable fSpec c
-                                   , cAtt
-                                   , cAtt
-                                   )
-                                 | length es>1, e@(ECpl (EDcI c)) <- [last es]
-                                 , let cAtt = (sqlAttConcept fSpec.target) e
-                                 ]
+          es -> let fenceName :: Int -> Name
+                    fenceName n = Name ("Fence"++show n)
+                    firstNr, lastNr :: Int
+                    firstNr = 0
+                    lastNr = firstNr + length es - 1
+                    fences :: [(Int, TableRef)]
+                    fences = map makeFence (zip [firstNr..lastNr] es)
+                      where makeFence :: (Int, Expression) -> (Int, TableRef)
+                            makeFence (i,e) = (i, (TRQueryExpr . toSQL) (selectExpr fSpec sourceAlias targetAlias e) `as` fenceName i)
+                    -- | the equivalence expression between fence n-1 and fence n (both must exist, which holds for n in [firstNr + 1 .. lastNr] ) 
+                    poleEquivalence :: Int -> ValueExpr
+                    poleEquivalence n = BinOp (Iden [fenceName (n-1),targetAlias])
+                                              [Name "="]
+                                              (Iden [fenceName n    ,sourceAlias])
                 in BSE { bseCmt = "case: (ECps es), with two or more elements in es."++showADL expr
-                       , bseSrc = mainSrc
-                       , bseTrg = mainTgt
-                       , bseTbl = froms
-                       , bseWhr = wheres
+                       , bseSrc = Iden [fenceName firstNr,sourceAlias]
+                       , bseTrg = Iden [fenceName lastNr, targetAlias]
+                       , bseTbl = map snd fences
+                       , bseWhr = case map poleEquivalence [firstNr + 1 .. lastNr] of
+                                    []   -> Nothing
+                                    whrs -> Just . conjunctSQL $ whrs
                        }
     (EFlp x) -> case selectExpr fSpec src trg x of
                  se@BSE{} -> BSE { bseCmt = "(flipped): "++ bseCmt se
@@ -579,23 +544,25 @@ selectExprInFROM fSpec src trg expr
                          then TRSimple [declName]
                          else TRQueryExpr . toSQL $
                                        BSE { bseCmt = ""
-                                           , bseSrc = selectSelItem' (sqlExprSrc fSpec expr)
-                                           , bseTrg = selectSelItem' (sqlExprTgt fSpec expr)
+                                           , bseSrc = selectSelItem' sAtt
+                                           , bseTrg = selectSelItem' tAtt
                                            , bseTbl = [TRSimple [declName]]
                                            , bseWhr = Just $ conjunctSQL
                                                [notNull (Iden[src]), notNull (Iden[trg])]
                                            }
                        )
                   else TRQueryExpr . toSQL $   BSE { bseCmt = ""
-                                           , bseSrc = selectSelItem' (sqlExprSrc fSpec expr)
-                                           , bseTrg = selectSelItem' (sqlExprTgt fSpec expr)
+                                           , bseSrc = selectSelItem' sAtt
+                                           , bseTrg = selectSelItem' tAtt
                                            , bseTbl = [TRSimple [declName]]
                                            , bseWhr = if mayContainNulls
                                                       then (Just $ conjunctSQL
-                                                              [notNull (Iden[src]), notNull (Iden[trg])])
+                                                              [notNull (Iden[sAtt]), notNull (Iden[tAtt])])
                                                       else Nothing
                                            }
                   where
+                   sAtt = sqlExprSrc fSpec expr
+                   tAtt = sqlExprTgt fSpec expr
                    (plug,_,_) = getDeclarationTableInfo fSpec d
                    (declName,mayContainNulls)
                       = (QName (name plug), case plug of 
