@@ -39,23 +39,21 @@ p <??> q = p <**> (q `opt` id)
 -- Functions copied from Lexer after decision to split lexer and parser
 ----------------------------------------------------------------------------------
 
-lexer :: GenTokenParser [Token] SourcePos Identity
-lexer = makeTokenParser langDef
+--TODO: The patters here are not always necessary
+--TODO: This function is hard to understand.
+check :: (Lexeme -> Maybe a) -> AmpParser a
+check pred
+  = tokenPrimEx
+        showtok 
+        nextpos 
+        (Just (\oldpos (Tok lex pos) lexemes old -> incSourceColumn pos (lexemeLength lex)))
+        (\(Tok lex pos) -> pred lex)
+  where  showtok (Tok lex pos)   = show lex
+         nextpos _ _ ((Tok lex pos):_) = pos
+         nextpos pos _ [] = pos
 
-langDef :: GenLanguageDef [Token] SourcePos Identity
-langDef = LanguageDef {
-        commentStart = "{-",
-        commentEnd = "-}",
-        commentLine = "--",
-        nestedComments = True,
-        identStart = letter <|> char '_',
-        identLetter = alphaNum <|> char '_',
-        opStart = oneOf $ map head operators,
-        opLetter = oneOf $ concat $ map tail operators,
-        reservedNames = keywords,
-        reservedOpNames = operators,
-        caseSensitive = True
-    }
+match :: Lexeme -> AmpParser ()
+match lex = check (\lex' -> if (lex == lex') then Just () else Nothing) <?> show lex
 
 pSym :: Token -> AmpParser Token
 pSym = pSym
@@ -79,61 +77,48 @@ opt ::  AmpParser a -> a -> AmpParser a
 a `opt` b = P.option b a
 
 -- Basic parsers
+-- TODO: Maybe we wanna make functions here for the different keywords.
 pKey :: String -> AmpParser ()
-pKey key = reserved lexer $ key -- match (LexKeyword key)
+pKey key = match (LexKeyword key)
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
-pConid = P.lexeme lexer $ try $
-        do name <- identifier lexer
-           if isUpper $ head name
-           then return name
-           else unexpected ("Expected upper case identifier but got " ++ show name)
+pConid = check (\lex -> case lex of { LexUpperId s -> Just s; other -> Nothing })
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
 pString :: AmpParser String
-pString = stringLiteral lexer
+pString = check (\lex -> case lex of { LexString s -> Just s; other -> Nothing })
 
 -- Spec just matches the given character so it has no EBNF
-pSpec :: Char -> AmpParser String
-pSpec x = P.symbol lexer $ [x]
+--TODO: This should not be available for the parser, we can make the abstraction in this lib.
+pSpec :: Char -> AmpParser ()
+pSpec sym = match (LexSymbol [sym])
 
 --- Expl ::= '{+' Any* '-}'
 pExpl :: AmpParser String
-pExpl = do _ <- try (string "{+")
-           inExpl
-        where inExpl =    do { _ <- try (str "+}");  return "explanation" }
-                    P.<|> do { skipMany1 (str "+}"); inExpl } -- TODO: We shouldn't skip them of course
-                    P.<?> "end of comment"
-              str = reservedOp lexer
+pExpl = check (\lex -> case lex of { LexExpl s -> Just s; other -> Nothing })
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
-pVarid = P.lexeme lexer $ try $
-        do name <- identifier lexer
-           if isUpper $ head name
-           then unexpected ("Expected lower case identifier but got " ++ show name)
-           else return name
+pVarid = check (\lex -> case lex of { LexLowerId s -> Just s; other -> Nothing })
 
 -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
 pAtom :: AmpParser String
-pAtom   = P.lexeme lexer (
-             do between (char '\'')
-                        (char '\'' <?> "end of atom")
-                        (many $ satisfy isLetter)
-                <?> "atom")
-            where isLetter c = (c /= '\'') && (c /= '\\') && (c > '\026')
+pAtom = check (\lex -> case lex of { LexAtom s -> Just s; other -> Nothing })
+
+--TODO: No basic parsers for the following lexemes
+-- LexOp          String
+-- LexChar        Char
+-- LexInteger     Int
+-- LexTextName    String
+-- LexTextLine    String
+-- LexSpace
 
 --- Comma ::= ','
-pComma :: AmpParser String
+pComma :: AmpParser ()
 pComma  = pSpec ','
 
 --- Semi ::= ';'
-pSemi :: AmpParser String
+pSemi :: AmpParser ()
 pSemi = pSpec ';'
-
-{- temp in comment as not specified in Lexer
-instance Ord Tok where
-    (<=) a b = show a <= show b
--}

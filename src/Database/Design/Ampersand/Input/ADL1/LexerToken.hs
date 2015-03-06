@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..),
-    makeGenToken, GenToken,
+    makeGenToken, GenToken, get_tok_val,
     Pos(..), Line, Column, Filename,
     GenTokenType(..), noPos, initPos, errGenToken, lexemeLength
 ) where
@@ -125,6 +125,7 @@ data Lexeme  = LexSymbol      String
              | LexAtom        String
              | LexChar        Char
              | LexInteger     Int
+             --TODO: Either rename this to conId/varId or rename con/var to upper/lower
              | LexUpperId     String
              | LexLowerId     String
              --TODO: The lexemes below are probably unnecessary
@@ -156,22 +157,38 @@ instance Show Lexeme where
 --    uncons []     = return $ Nothing
 --    uncons (t:ts) = return $ Just (t,ts)
 
+get_tok_val :: Token -> String
+get_tok_val (Tok l _) = case l of
+ 		 LexSymbol    val -> val
+ 		 LexOp        val -> val
+		 LexKeyword   val -> val
+		 LexString    val -> val
+		 LexExpl      val -> val
+		 LexAtom      val -> val
+		 LexChar      val -> [val]
+		 LexInteger   val -> show val
+		 LexUpperId   val -> val
+		 LexLowerId   val -> val
+		 LexTextName  val -> val
+		 LexTextLine  val -> val
+		 LexSpace         -> " "
+
 -- TODO: Check the lenghts. This is taken from Helium, but is it necessary? It can never be precise...
 lexemeLength :: Lexeme -> Int
 lexemeLength l = case l of
- 		 LexSymbol    val        -> length val
- 		 LexOp        val        -> length val
-		 LexKeyword   val        -> length val
-		 LexString    val        -> length val + 2 -- including quotes
-		 LexExpl      val        -> length val + 4 -- including quotes
-		 LexAtom      val        -> length val
-		 LexChar      val        -> 3 -- including quotes
-		 LexInteger   val        -> val `div` 10
-		 LexUpperId   val        -> length val
-		 LexLowerId   val        -> length val
-		 LexTextName  val        -> length val
-		 LexTextLine  val        -> length val
-		 LexSpace                -> 0
+ 		 LexSymbol    val -> length val
+ 		 LexOp        val -> length val
+		 LexKeyword   val -> length val
+		 LexString    val -> length val + 2 -- including quotes
+		 LexExpl      val -> length val + 4 -- including quotes
+		 LexAtom      val -> length val
+		 LexChar      val -> 3 -- including quotes
+		 LexInteger   val -> val `div` 10
+		 LexUpperId   val -> length val
+		 LexLowerId   val -> length val
+		 LexTextName  val -> length val
+		 LexTextLine  val -> length val
+		 LexSpace         -> 0
 
 -- New Lexeme Token format
 returnOutputToken :: [GenToken] -> [Token]
