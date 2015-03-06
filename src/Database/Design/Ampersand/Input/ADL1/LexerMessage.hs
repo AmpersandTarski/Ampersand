@@ -19,6 +19,7 @@ import Text.ParserCombinators.Parsec.Pos
 import Data.List (partition)
 import qualified Database.Design.Ampersand.Input.ADL1.LexerTexts as Texts
 
+--TODO: Delete the code commented out
 {-
 
 instance HasMessage LexerError where
@@ -41,7 +42,8 @@ sourcePosToRange pos =
  -}
 
 data LexerError = LexerError SourcePos LexerErrorInfo
-    
+    deriving(Show)
+
 data LexerErrorInfo
     = UnterminatedComment
 	| UnterminatedPurpose
@@ -68,6 +70,7 @@ data LexerErrorInfo
         -- e.g. [(1,3]  =>  UnexpectedClose ']' ... ')'
     | UnexpectedClose Char SourcePos Char
     | StillOpenAtEOF [(SourcePos, Char)]
+    deriving(Show)
 
 showLexerErrorInfo :: LexerErrorInfo -> [String]
 showLexerErrorInfo info =
@@ -139,8 +142,8 @@ showLexerWarningInfo info =
         LooksLikeFloatNoDigits fraction -> Texts.lexerLooksLikeFloatNoDigits fraction
         NestedComment _                 -> Texts.lexerNestedComment
         CommentOperator                 -> Texts.lexerCommentOperator
-            
-      
+
+-- TODO: This is only valid for haskell.. Probably more of the warnings too!
 keepOneTabWarning :: [LexerWarning] -> [LexerWarning]
 keepOneTabWarning = keepOneTab True
   where

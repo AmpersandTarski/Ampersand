@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..),
-    makeGenToken, GenToken,
+    makeGenToken, GenToken, returnOutputToken,
     get_tok_val, get_lex_val, get_tok_pos, get_tok_val_pos,
     Pos(..), Line, Column, Filename,
     GenTokenType(..), noPos, initPos, errGenToken, lexemeLength,
@@ -121,7 +121,7 @@ instance Show Token where
         (Tok (LexSpace)         sp )  -> "spaces "                                        ++ show sp 
        )
 
-data Lexeme  = LexSymbol      String
+data Lexeme  = LexSymbol      String -- TODO: we miss a token for special characters (see pSpec). Is this a LexSymbol Char?
              | LexOp          String
              | LexKeyword     String
              | LexString      String

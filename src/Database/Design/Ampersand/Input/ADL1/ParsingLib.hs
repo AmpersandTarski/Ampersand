@@ -3,22 +3,20 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 --    UU.getMsgs,UU.parse,UU.evalSteps,UU.Pair(..),UU.Message(..),UU.Action(..),
     pSym, pSucceed, AmpParser,pAtom,
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
-    pList, pList1, opt, pListSep, pList1Sep,pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
-    SourcePos, sourceName, sourceLine, sourceColumn
+    pList, pList1, opt, pListSep, pList1Sep,
+    pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
+    pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos,
+    pKey_val_pos, pKey_pos, pSpec_pos,
+    SourcePos, sourceName, sourceLine, sourceColumn, posOrigin
 ) where
 
 import Control.Monad.Identity (Identity)
-import Data.Char (isUpper)
 import Database.Design.Ampersand.Input.ADL1.Lexer
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
-import Text.Parsec.Char
-import Text.Parsec.Combinator
-import Text.Parsec.Pos
-import Text.Parsec.Token as P
 
 --TODO: TokenMonad?
 type AmpParser a = P.ParsecT [Token] SourcePos Identity a
@@ -71,11 +69,11 @@ pList = P.many
 pList1 ::  AmpParser a -> AmpParser [a]
 pList1 = P.many1
 
-pListSep :: AmpParser a -> AmpParser sep -> AmpParser [a]
-pListSep = P.sepBy
+pListSep :: AmpParser sep -> AmpParser a -> AmpParser [a]
+pListSep sep a = P.sepBy a sep
 
-pList1Sep ::  AmpParser a -> AmpParser sep -> AmpParser [a]
-pList1Sep = P.sepBy1
+pList1Sep ::  AmpParser sep -> AmpParser a -> AmpParser [a]
+pList1Sep sep a = P.sepBy1 a sep
 
 opt ::  AmpParser a -> a -> AmpParser a
 a `opt` b = P.option b a
@@ -94,8 +92,8 @@ pConid = check (\lex -> case lex of { LexUpperId s -> Just s; other -> Nothing }
 pString :: AmpParser String
 pString = check (\lex -> case lex of { LexString s -> Just s; other -> Nothing })
 
--- Spec just matches the given character so it has no EBNF
 --TODO: This should not be available for the parser, we can make the abstraction in this lib.
+-- matches special characters
 pSpec :: Char -> AmpParser String
 pSpec sym = match (LexSymbol [sym])
 

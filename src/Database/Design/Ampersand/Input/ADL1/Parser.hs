@@ -1,7 +1,9 @@
 {-# OPTIONS_GHC -fno-enable-rewrite-rules #-} -- Disable rewrite rules to drastically improve compilation speed
 {-# LANGUAGE FlexibleContexts #-}
-module Database.Design.Ampersand.Input.ADL1.Parser
-  (AmpParser, pContext, pPopulations,pTerm, pRule, keywordstxt, keywordsops, specialchars, opchars) where
+module Database.Design.Ampersand.Input.ADL1.Parser(
+    AmpParser, pContext, pPopulations,pTerm, pRule,
+    keywordstxt, keywordsops, specialchars, opchars
+) where
 
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Database.Design.Ampersand.Input.ADL1.LexerToken

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Database.Design.Ampersand.Input.ADL1.Lexer (
-    keywords, operators, special_chars
+    keywords, operators, special_chars, lexer
     )
 where
 
@@ -16,6 +16,7 @@ import Data.Either
 import Data.List (sort, nub)
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Misc
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Lexer"
@@ -56,13 +57,17 @@ special_chars = "()[],{}"
 opchars :: String
 opchars = nub (sort (concat operators))
 
-runLexer :: [Options] -> [Char] -> Filename -> [GenToken]
+--TODO: This is not returning any errors!
+runLexer :: [Options] -> String -> Filename -> [Token]
 runLexer opt fn input = case (lexer opt fn input) of
-                          Left error  -> []
+                          Left error  -> trace (show error) []
                           Right (x,y) -> x
-                          
-lexer :: [Options] -> String -> [Char] -> Either LexerError ([GenToken], [LexerWarning])
-lexer opt fileName input = runLexerMonad opt fileName (mainLexer noPos fileName input)
+
+--TODO: returnOutputToken shouldn't be necessary here
+lexer :: [Options] -> Filename -> String -> Either LexerError ([Token], [LexerWarning])
+lexer opt fileName input = case runLexerMonad opt fileName (mainLexer noPos fileName input) of
+                               Left error -> Left error
+                               Right (ts, ws) -> Right (returnOutputToken ts, ws)
 
 type Lexer = Pos -> Filename  -> [Char]  -> LexerMonad [GenToken]
 
@@ -71,7 +76,6 @@ mainLexer :: Lexer
 -----------------------------------------------------------
 -- Removing unnecessary text artifacts (comment, spaces,...)
 -----------------------------------------------------------
-
 
 mainLexer p fn [] =  return []
 mainLexer p fn ('-':'-':s) = mainLexer p fn (dropWhile (/= '\n') s)

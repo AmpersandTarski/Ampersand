@@ -12,14 +12,17 @@ import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
--- import Database.Design.Ampersand.Input.ADL1.UU_Scanner (scan,initPos, Token) -- Old UU lib replaced by Parsec 
--- import UU.Parsing (parse, evalSteps, getMsgs, Pair(..), Message, Parser) -- Old UU lib replaced by Parsec 
 import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.Input.ADL1.Lexer
+import Database.Design.Ampersand.Input.ADL1.LexerMessage
+import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Data.List
 import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
+import Text.Parsec.Error (messageString,errorMessages,Message(..))
+import Text.Parsec.Prim (runP)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
@@ -59,15 +62,28 @@ parseSingleADL opts filePath =
     }
  where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
 
-runParser :: AmpParser res -> String -> String -> Guarded res
-runParser parser filename input =
-  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
-      steps = parse parser (scanner input)
-  in  case  getMsgs steps of
-         []    -> let Pair res _ = evalSteps steps
-                  in  Checked res
-         msg:_ -> Errors [PE msg]
+parse :: AmpParser a -> [Token] -> Guarded a
+parse p ts =
+      -- runP :: Parsec s u a -> u -> SourceName -> s -> Either ParseError a 
+    case runP p pos name ts of
+        --TODO: Make nicer errors
+        Left err -> Errors [PE (Message (show err))]
+        Right a -> Checked a
+    where pos = sp (head ts)
+          name = sourceName pos
 
+runParser :: AmpParser a -> Filename -> String -> Guarded a
+runParser parser filename input =
+  -- lexer :: [Options] -> String -> [Char] -> Either LexerError ([Token], [LexerWarning])
+  --TODO: Give options to the lexer
+  let lexed = lexer [] filename input
+  in case lexed of
+    --TODO: Give the errors in a better way
+    Left err -> Errors [PE (Message (show err))]
+    --TODO: Do something with the warnings
+    Right (tokens, warnings)  -> parse parser tokens
+
+{-
 runParser' :: forall res . AmpParser res -> String -> String -> Either ParseError res
 runParser' parser filename input =
   let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
@@ -76,19 +92,15 @@ runParser' parser filename input =
          []    -> let Pair res _ = evalSteps steps
                   in  Right res
          msg:_ -> Left msg
-
-
-
-
-type ParseError = Message Token (Maybe Token)
+-}
 
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
 parseRule :: String -> Term TermPrim
 parseRule str
-   = case  runParser' pRule "inside Haskell code" str of
-       Right result -> result
-       Left  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
+   = case  runParser pRule "inside Haskell code" str of
+       Checked result -> result
+       Errors  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
  
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String -> String -> Either String (Term TermPrim)
@@ -99,9 +111,9 @@ parseExpr :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the file (used for error messages)
           -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result
 parseExpr str fn =
-  case runParser' pTerm fn str of
-      Right result -> Right result
-      Left  msg    -> Left $ "Parse errors:\n"++show msg
+  case runParser pTerm fn str of
+      Checked result -> Right result
+      Errors  msg    -> Left $ "Parse errors:\n"++show msg
      
 parseCtx :: String -> String -> Guarded (P_Context, [String])
 parseCtx = runParser pContext
