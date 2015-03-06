@@ -1,11 +1,14 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..),
-    makeGenToken, GenToken, get_tok_val,
+    makeGenToken, GenToken,
+    get_tok_val, get_lex_val, get_tok_pos, get_tok_val_pos,
     Pos(..), Line, Column, Filename,
-    GenTokenType(..), noPos, initPos, errGenToken, lexemeLength
+    GenTokenType(..), noPos, initPos, errGenToken, lexemeLength,
+    Origin(..), FilePos(..)
 ) where
 
-import Text.Parsec.Pos(SourcePos, newPos)
+import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..), FilePos(..))
+import Text.Parsec.Pos(SourcePos, newPos, sourceName)
 import Text.Parsec()
 
 --Generic types used in all token types
@@ -98,6 +101,7 @@ data Token = Tok  { lexeme  :: Lexeme
                    , sp      :: SourcePos
                    }
 
+-- TODO: Make use of show Lexeme
 instance Show Token where
   showsPrec _ token'
     = showString
@@ -158,7 +162,10 @@ instance Show Lexeme where
 --    uncons (t:ts) = return $ Just (t,ts)
 
 get_tok_val :: Token -> String
-get_tok_val (Tok l _) = case l of
+get_tok_val (Tok l _) = get_lex_val l
+
+get_lex_val :: Lexeme -> String
+get_lex_val l = case l of
  		 LexSymbol    val -> val
  		 LexOp        val -> val
 		 LexKeyword   val -> val
@@ -172,6 +179,14 @@ get_tok_val (Tok l _) = case l of
 		 LexTextName  val -> val
 		 LexTextLine  val -> val
 		 LexSpace         -> " "
+
+-- Gets the location of the token in the file
+get_tok_pos :: Token -> Origin
+get_tok_pos (Tok lex p) = FileLoc(FilePos (sourceName p ,p, show lex))
+
+-- Gets the location of the token in the file and it's value
+get_tok_val_pos :: Token -> (String, Origin)
+get_tok_val_pos tok = (show tok, get_tok_pos tok)
 
 -- TODO: Check the lenghts. This is taken from Helium, but is it necessary? It can never be precise...
 lexemeLength :: Lexeme -> Int

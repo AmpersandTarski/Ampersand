@@ -815,31 +815,3 @@ pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
 
 pMaybe :: AmpParser a -> AmpParser (Maybe a)
 pMaybe p = Just <$> p <|> pSucceed Nothing
-
--- Gets the location of the token in the file
-get_tok_pos :: Token -> Origin
-get_tok_pos (src,tok) = FileLoc(FilePos (sourceName src,src,show tok))
-
--- Gets the location of the token in the file and it's value
-get_tok_val_pos :: Token -> (String, Origin)
-get_tok_val_pos tok = (show tok, get_tok_pos tok)
-
--- Key has no EBNF because in EBNF it's just the given keyword.
-pKey_pos :: String -> AmpParser Origin
-pKey_pos = pKey
-
--- Spec just matches the given character so it has no EBNF
-pSpec_pos :: Char -> AmpParser Origin
-pSpec_pos = pSpec
-
-pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
-pString_val_pos    =   pString
-pVarid_val_pos     =   pVarid
-pConid_val_pos     =   pConid
-pAtom_val_pos      =   pAtom
-
-pKey_val_pos ::  String -> AmpParser (String,Origin)
-pKey_val_pos keyword = pKey
-
---   pSpec_val_pos ::  IsParser p Token => Char -> p (String,Origin)
---   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]

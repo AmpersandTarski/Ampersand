@@ -10,7 +10,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 import Control.Monad.Identity (Identity)
 import Data.Char (isUpper)
 import Database.Design.Ampersand.Input.ADL1.Lexer
-import Database.Design.Ampersand.Input.ADL1.LexerToken (Token(..),Lexeme(..),lexemeLength)
+import Database.Design.Ampersand.Input.ADL1.LexerToken
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
@@ -41,19 +41,22 @@ p <??> q = p <**> (q `opt` id)
 
 --TODO: The patters here are not always necessary
 --TODO: This function is hard to understand.
-check :: (Lexeme -> Maybe a) -> AmpParser a
-check pred
+checkTok :: (Token -> Maybe a) -> AmpParser a
+checkTok pred
   = tokenPrimEx
         showtok 
         nextpos 
         (Just (\oldpos (Tok lex pos) lexemes old -> incSourceColumn pos (lexemeLength lex)))
-        (\(Tok lex pos) -> pred lex)
+        pred
   where  showtok (Tok lex pos)   = show lex
          nextpos _ _ ((Tok lex pos):_) = pos
          nextpos pos _ [] = pos
 
-match :: Lexeme -> AmpParser ()
-match lex = check (\lex' -> if (lex == lex') then Just () else Nothing) <?> show lex
+check :: (Lexeme -> Maybe a) -> AmpParser a
+check pred = checkTok (\(Tok l _) -> pred l)
+
+match :: Lexeme -> AmpParser String
+match lex = check (\lex' -> if (lex == lex') then Just (get_lex_val lex) else Nothing) <?> show lex
 
 pSym :: Token -> AmpParser Token
 pSym = pSym
@@ -78,7 +81,7 @@ a `opt` b = P.option b a
 
 -- Basic parsers
 -- TODO: Maybe we wanna make functions here for the different keywords.
-pKey :: String -> AmpParser ()
+pKey :: String -> AmpParser String
 pKey key = match (LexKeyword key)
 
 --- Conid ::= UpperChar (Char | '_')*
@@ -92,7 +95,7 @@ pString = check (\lex -> case lex of { LexString s -> Just s; other -> Nothing }
 
 -- Spec just matches the given character so it has no EBNF
 --TODO: This should not be available for the parser, we can make the abstraction in this lib.
-pSpec :: Char -> AmpParser ()
+pSpec :: Char -> AmpParser String
 pSpec sym = match (LexSymbol [sym])
 
 --- Expl ::= '{+' Any* '-}'
@@ -116,9 +119,30 @@ pAtom = check (\lex -> case lex of { LexAtom s -> Just s; other -> Nothing })
 -- LexSpace
 
 --- Comma ::= ','
-pComma :: AmpParser ()
+pComma :: AmpParser String
 pComma  = pSpec ','
 
 --- Semi ::= ';'
-pSemi :: AmpParser ()
+pSemi :: AmpParser String
 pSemi = pSpec ';'
+
+posOf :: AmpParser a -> AmpParser Origin
+posOf parse = do { t <- parse; return (get_tok_pos t) }
+
+valPosOf :: AmpParser a -> AmpParser (a, Origin)
+valPosOf parse = do { t <- parse; return (get_tok_val t,get_tok_pos t) }
+
+pKey_pos :: String -> AmpParser Origin
+pKey_pos = posOf.pKey
+
+pSpec_pos :: Char -> AmpParser Origin
+pSpec_pos = posOf.pSpec
+
+pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
+pString_val_pos = posOf.pString
+pVarid_val_pos  = posOf.pVarid
+pConid_val_pos  = posOf.pConid
+pAtom_val_pos   = posOf.pAtom
+
+pKey_val_pos ::  String -> AmpParser (String,Origin)
+pKey_val_pos keyword = posOf.pKey
