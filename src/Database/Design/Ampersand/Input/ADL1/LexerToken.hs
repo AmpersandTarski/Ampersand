@@ -85,7 +85,7 @@ maybeshow (Pos l c) fn =  " at line " ++ show l
 
 makeGenToken :: GenTokenType -> String -> Pos -> Filename -> GenToken
 makeGenToken tokt val pos filen = GenTok tokt val pos filen
-					
+
 errGenToken :: String -> Pos -> Filename -> GenToken
 errGenToken errorstr pos filen = GenTok GtkError errorstr pos filen
 					   
@@ -209,17 +209,18 @@ lexemeLength l = case l of
 returnOutputToken :: [GenToken] -> [Token]
 returnOutputToken []     = []
 returnOutputToken (x:xs) =  conv x : returnOutputToken xs
-      where conv (GenTok GtkSymbol    val (Pos l c) fn) = Tok (LexSymbol val)         (newPos  fn l c)
-            conv (GenTok GtkOp        val (Pos l c) fn) = Tok (LexOp val)             (newPos  fn l c)
-            conv (GenTok GtkKeyword   val (Pos l c) fn) = Tok (LexKeyword val)        (newPos  fn l c)
-            conv (GenTok GtkString    val (Pos l c) fn) = Tok (LexString val)         (newPos  fn l c)
-            conv (GenTok GtkExpl      val (Pos l c) fn) = Tok (LexExpl val)           (newPos  fn l c)
-            conv (GenTok GtkAtom      val (Pos l c) fn) = Tok (LexAtom val)           (newPos  fn l c)
-            conv (GenTok GtkInteger8  val (Pos l c) fn) = Tok (LexInteger (read val)) (newPos  fn l c)
-            conv (GenTok GtkInteger10 val (Pos l c) fn) = Tok (LexInteger (read val)) (newPos  fn l c)
-            conv (GenTok GtkInteger16 val (Pos l c) fn) = Tok (LexInteger (read val)) (newPos  fn l c)
-            conv (GenTok GtkVarid     val (Pos l c) fn) = Tok (LexLowerId val)        (newPos  fn l c)
-            conv (GenTok GtkConid     val (Pos l c) fn) = Tok (LexUpperId val)        (newPos  fn l c)
-            conv (GenTok GtkTextnm    val (Pos l c) fn) = Tok (LexTextName val)       (newPos  fn l c)
-            conv (GenTok GtkTextln    val (Pos l c) fn) = Tok (LexTextLine val)       (newPos  fn l c)
-            conv (GenTok GtkSpace     val (Pos l c) fn) = Tok LexSpace                (newPos  fn l c)
+      where conv (GenTok GtkSymbol    val p fn) = Tok (LexSymbol val)         (pos fn p)
+            conv (GenTok GtkOp        val p fn) = Tok (LexOp val)             (pos fn p)
+            conv (GenTok GtkKeyword   val p fn) = Tok (LexKeyword val)        (pos fn p)
+            conv (GenTok GtkString    val p fn) = Tok (LexString val)         (pos fn p)
+            conv (GenTok GtkExpl      val p fn) = Tok (LexExpl val)           (pos fn p)
+            conv (GenTok GtkAtom      val p fn) = Tok (LexAtom val)           (pos fn p)
+            conv (GenTok GtkInteger8  val p fn) = Tok (LexInteger (read val)) (pos fn p)
+            conv (GenTok GtkInteger10 val p fn) = Tok (LexInteger (read val)) (pos fn p)
+            conv (GenTok GtkInteger16 val p fn) = Tok (LexInteger (read val)) (pos fn p)
+            conv (GenTok GtkVarid     val p fn) = Tok (LexLowerId val)        (pos fn p)
+            conv (GenTok GtkConid     val p fn) = Tok (LexUpperId val)        (pos fn p)
+            conv (GenTok GtkTextnm    val p fn) = Tok (LexTextName val)       (pos fn p)
+            conv (GenTok GtkTextln    val p fn) = Tok (LexTextLine val)       (pos fn p)
+            conv (GenTok GtkSpace     val p fn) = Tok LexSpace                (pos fn p)
+            pos fn (Pos l c) = newPos fn l c

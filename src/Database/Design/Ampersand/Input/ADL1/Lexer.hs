@@ -82,7 +82,7 @@ mainLexer p fn ('-':'-':s) = mainLexer p fn (dropWhile (/= '\n') s)
 
 mainLexer p fn (c:s) | isSpace c = let (sp,next) = span isSpace s
                                 in  mainLexer (foldl adv p (c:sp)) fn next
-								
+
 mainLexer p fn ('-':'+':s)  = returnGenToken GtkExpl (dropWhile isSpace (takeWhile (/= '\n') s)) p mainLexer p fn (dropWhile (/= '\n') s)
 
 
@@ -175,8 +175,8 @@ getOp cs -- the longest prefix of cs occurring in keywordsops
 
 scanIdent p s = let (name,rest) = span isIdChar s
                 in (name,advc (length name) p,rest)
-				
-				
+
+
 scanAtom :: [Char] -> ([Char],Int,[Char])
 scanAtom []              = ("",0,[])
 scanAtom ('\\':'&':xs)   = let (str,w,r) = scanAtom xs
@@ -194,7 +194,7 @@ scanAtom xs   = let (ch,cw,cr) = getchar xs
 
 isSpace :: Char -> Bool
 isSpace c = c == ' ' || c == '\n' || c == '\t' || c == '\r'
-				
+
 lexNest :: Lexer -> Lexer
 lexNest cont pos' fn inp = lexNest' cont pos' fn inp
  where lexNest' c p fn ('-':'}':s) = c (advc 2 p) fn s
@@ -308,8 +308,8 @@ getEscChar s@(x:xs) | isDigit x = let (tp,n,len,rest) = getNumber s
                                  Just c  -> (Just c,1,xs)
   where cntrChars = [('a','\a'),('b','\b'),('f','\f'),('n','\n'),('r','\r'),('t','\t')
                     ,('v','\v'),('\\','\\'),('"','\"')]
-					
-					
+
+
 readn :: Int -> [Char] -> Int
 readn base = foldl (\r x  -> value x + base * r) 0
 
