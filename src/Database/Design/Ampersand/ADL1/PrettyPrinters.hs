@@ -4,10 +4,11 @@ where
 
 import Text.PrettyPrint.Leijen
 import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Input.ADL1.Parser(keywordstxt)
+import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 import Data.List (intercalate)
 import Data.List.Utils (replace)
+import Debug.Trace
 
 pretty_print :: Pretty a => a -> String
 pretty_print x = displayS (renderPretty rfrac col_width doc) ""
@@ -49,7 +50,7 @@ quotePurpose :: String -> Doc
 quotePurpose x = text "{+" </> text x </> text "-}"
 
 isId :: String -> Bool
-isId a = length a > 0 && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywordstxt
+isId a = length a > 0 && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywords
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
              isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
@@ -80,6 +81,11 @@ listOfLists xs = commas $ map (hsep.quoteAll) xs
 
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
+
+--TODO: This replace shouldn't be necessary, I don't know why quotes are getting into the Prel
+-- Example to test: AmpersandData\FormalAmpersand\AST.adl
+takeQuote :: String -> String
+takeQuote str = replace "\"" "" str
 
 labelArgs :: [[String]] -> Doc
 labelArgs args = if null args || all null args
@@ -201,8 +207,8 @@ instance Pretty TermPrim where
         Patm _ str Nothing -> singleQuote str
         PVee _ -> text "V"
         Pfull _ s1 s2 -> text "V" <~> (P_Sign s1 s2)
-        Prel _ str -> text str
-        PTrel _ str sign -> text str <~> sign
+        Prel _ str -> text (takeQuote str)
+        PTrel _ str sign -> text (takeQuote str) <~> sign
       where singleQuote = squotes . text
 
 instance Pretty a => Pretty (PairView a) where
@@ -237,8 +243,8 @@ instance Pretty ConceptDef where
 
 instance Pretty P_Population where
     pretty p = case p of
-                P_RelPopu nm    _ cs -> text "POPULATION" <+> maybeQuote nm        <+> text "CONTAINS" <+> contents cs
-                P_TRelPop nm tp _ cs -> text "POPULATION" <+> maybeQuote nm <~> tp <+> text "CONTAINS" <+> contents cs
+                P_RelPopu nm    _ cs -> text "POPULATION" <+> maybeQuote (takeQuote nm)        <+> text "CONTAINS" <+> contents cs
+                P_TRelPop nm tp _ cs -> text "POPULATION" <+> maybeQuote (takeQuote nm) <~> tp <+> text "CONTAINS" <+> contents cs
                 P_CptPopu nm    _ ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> list (quoteAll ps)
                where contents = list . map prettyPair
 

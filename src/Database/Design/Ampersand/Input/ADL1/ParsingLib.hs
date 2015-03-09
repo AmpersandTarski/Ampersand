@@ -3,7 +3,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 --    UU.getMsgs,UU.parse,UU.evalSteps,UU.Pair(..),UU.Message(..),UU.Action(..),
     pSym, pSucceed, AmpParser,pAtom,
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
-    pList, pList1, opt, pListSep, pList1Sep,
+    pList, pList1, opt, pListSep, pList1Sep, try,
     pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
     pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos,
     pKey_val_pos, pKey_pos, pSpec_pos,
@@ -31,7 +31,7 @@ a <$ p = do { _ <- p; return a }
 p <**> q = (\ x f -> f x) CA.<$> p CA.<*> q
 
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
-p <??> q = p <**> (q `opt` id)
+p <??> q = try (p <**> (q `opt` id))
 
 ----------------------------------------------------------------------------------
 -- Functions copied from Lexer after decision to split lexer and parser

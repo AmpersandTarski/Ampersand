@@ -13,6 +13,9 @@ import Database.Design.Ampersand.Core.ParseTree
 import Data.List
 import Data.Maybe
 
+--TODO: After converting the parser to Parsec, we had to add some try-calls.
+--We gotta check the try-calls to see if we can refactor them or at least pay attention to the error messages.
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
 
@@ -70,7 +73,7 @@ pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
                       CPat     <$> pPatternDef   <|>
                       CPrc     <$> pProcessDef   <|>
                       CRul     <$> pRuleDef      <|>
-                      CCfy     <$> pClassify     <|>
+                      CCfy     <$> try pClassify <|>
                       CRel     <$> pRelationDef  <|>
                       CCon     <$> pConceptDef   <|>
                       CGen     <$> pGenDef       <|>
@@ -148,7 +151,7 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
     --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
     pPatElem :: AmpParser PatElem
     pPatElem = Pr <$> pRuleDef      <|>
-               Py <$> pClassify     <|>
+               Py <$> try pClassify <|>
                Pd <$> pRelationDef  <|>
                Pc <$> pConceptDef   <|>
                Pg <$> pGenDef       <|>
@@ -192,9 +195,9 @@ pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> pConceptName   -- The name spac
     --- ProcElem ::= RuleDef | Classify | RelationDef | RoleRule | RoleRelation | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
     pProcElem :: AmpParser ProcElem
     pProcElem = PrR <$> pRuleDef      <|>
-                PrY <$> pClassify     <|>
+                PrY <$> try pClassify <|>
                 PrD <$> pRelationDef  <|>
-                PrM <$> pRoleRule     <|>
+                PrM <$> try pRoleRule <|>
                 PrL <$> pRoleRelation <|>
                 PrC <$> pConceptDef   <|>
                 PrG <$> pGenDef       <|>
@@ -239,7 +242,7 @@ pClassify = rebuild <$> pKey_pos "CLASSIFY"
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
 pRuleDef =  rebuild <$> pKey_pos "RULE"
-                    <*> pMaybe (pADLid <* pKey ":" )
+                    <*> pMaybe (try (pADLid <* pKey ":" ))
                     <*> pRule
                     <*> pList pMeaning
                     <*> pList pMessage
@@ -352,8 +355,8 @@ pConceptDef       = Cd <$> pKey_pos "CONCEPT"
 
 --- GenDef ::= 'SPEC' ConceptRef 'ISA' ConceptRef | 'CLASSIFY' ConceptRef 'ISA' ConceptRef | Classify
 pGenDef :: AmpParser P_Gen
-pGenDef           = rebuild <$> pKey_pos "SPEC"     <*> pConceptRef <* pKey "ISA" <*> pConceptRef <|>  -- SPEC is obsolete syntax. Should disappear!
-                    rebuild <$> pKey_pos "CLASSIFY" <*> pConceptRef <* pKey "ISA" <*> pConceptRef <|>
+pGenDef           = try(rebuild <$> pKey_pos "SPEC"     <*> pConceptRef <* pKey "ISA" <*> pConceptRef) <|>  -- SPEC is obsolete syntax. Should disappear!
+                    try(rebuild <$> pKey_pos "CLASSIFY" <*> pConceptRef <* pKey "ISA" <*> pConceptRef) <|>
                     pClassify
                     where rebuild p spc gen = PGen{gen_spc=spc, gen_gen=gen, gen_fp =p}
 
@@ -380,7 +383,7 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
 
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
-          pIndAtt  = attL <$> pLabelProps <*> pTerm <|>
+          pIndAtt  = try (attL <$> pLabelProps <*> pTerm) <|>
                      att <$> pTerm
               where attL (Lbl nm p strs) attexpr =
                        P_Obj { obj_nm   = nm
@@ -427,7 +430,7 @@ pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRe
                          P_ViewHtml <$ pKey "PRIMHTML" <*> pString
           --- ViewAtt ::= LabelProps? Term
           pViewAtt :: AmpParser P_ObjectDef
-          pViewAtt = rebuild <$> pMaybe pLabelProps <*> pTerm
+          pViewAtt = rebuild <$> pMaybe (try pLabelProps) <*> pTerm
               where
                 rebuild mLbl attexpr =
                   case mLbl of
@@ -546,8 +549,8 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
 
 --- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
-pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent <|>
-              pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
+pPopulation = try (prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent)
+              -- <|>  pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
       prelpop :: Origin -> TermPrim -> Pairs -> P_Population
       prelpop    orig     (Prel _ nm)  contents
@@ -796,7 +799,7 @@ pLabel       = lbl <$> pADLid_val_pos <*  pKey ":"
                      lbl (nm,pos') = Lbl nm pos' []
 --- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
 pContent :: AmpParser Pairs
-pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
+pContent      = try(pSpec '[' *> pListSep pComma pRecord <* pSpec ']')
                 <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
     where
     --- RecordList ::= Record (',' Record)*
