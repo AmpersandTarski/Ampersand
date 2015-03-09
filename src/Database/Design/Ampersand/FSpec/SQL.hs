@@ -192,7 +192,7 @@ selectExpr fSpec src trg expr
                        , bseTrg = Iden [trg'    ]
                        , bseTbl = [sqlConceptTable fSpec (target expr') `as` allAtoms]
                        , bseWhr = Just $ selectNotExists 
-                                           [selectExprInFROM fSpec src' trg' expr' `as` complemented]
+                                           (selectExprInFROM fSpec src' trg' expr' `as` complemented)
                                            (Just (BinOp (Iden [complemented,trg2])
                                                           [Name "="]
                                                         (Iden [allAtoms,trg'])
@@ -306,10 +306,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                 (ptgt,ftgt) = getConceptTableInfo fSpec t
                                 (src1,trg1,tbl1) 
                                   = case (s,t) of
-                                       (ONE, ONE) -> ( NumLit "1"
-                                                     , NumLit "1"
-                                                     , []
-                                                     )
+                                       (ONE, ONE) -> fatal 309 "V[ONE*ONE] ???"
                                        (_  , ONE) -> ( Iden [QName (name psrc),QName (name fsrc)]
                                                      , NumLit "1"
                                                      , [TRSimple [QName (name psrc)]]
@@ -392,48 +389,22 @@ WHERE ECps0.`A`<>ECps2.`A
                                                            )
                                            }
                              where concpt = sqlAttConcept fSpec c
-           _ | source e == ONE ->      BSE { bseCmt = "case: source e == ONE"++"ECpl ( \""++showADL e++"\" )"
-                                           , bseSrc = NumLit "1"
-                                           , bseTrg = Iden [sqlAttConcept fSpec (target e)]
-                                           , bseTbl = [sqlConceptTable fSpec (target e)]
-                                           , bseWhr = Just $ selectNotExists 
-                                                               [selectExprInFROM fSpec src2 trg2 e `as` QName "cp"]
-                                                               Nothing
-                                           }
-                                    where src2 = sqlExprSrc fSpec e
-                                          trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
-           _ | target e == ONE ->      BSE { bseCmt = "case: target e == ONE"++"ECpl ( \""++showADL e++"\" )"
-                                           , bseSrc = Iden [sqlAttConcept fSpec (source e)]
-                                           , bseTrg = NumLit "1"
-                                           , bseTbl = [sqlConceptTable fSpec (source e)]
-                                           , bseWhr = Just $ selectNotExists 
-                                                               [selectExprInFROM fSpec src2 trg2 e `as`QName "cp"]
-                                                               Nothing
-                                           }
-                                  where src2 = sqlExprSrc fSpec e
-                                        trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
            _ | otherwise       -> sqlcomment ("case: ECpl e"++"ECpl ( \""++showADL e++"\" )") $
                                        BSE { bseCmt = "case: ECpl e"++"ECpl ( \""++showADL e++"\" )"
-                                           , bseSrc = src'
-                                           , bseTrg = trg'
-                                           , bseTbl = [sqlConceptTable fSpec (source e) `as` Name "cfst"
-                                                ,sqlConceptTable fSpec (target e) `as` Name "csnd"]
+                                           , bseSrc = Iden [closedWorld,sourceAlias]
+                                           , bseTrg = Iden [closedWorld,targetAlias]
+                                           , bseTbl = [(toTableRef . selectExprInFROM' fSpec) theClosedWorldExpression `as` closedWorld]
                                            , bseWhr = Just $ selectNotExists 
-                                                               [selectExprInFROM fSpec src2 trg2 e `as` Name "cp"]
-                                                               (Just . conjunctSQL $
-                                                                  [ BinOp src'
-                                                                          [Name "="]
-                                                                          (Iden [Name "cp",src2])
-                                                                  , BinOp trg'
-                                                                          [Name "="]
-                                                                          (Iden [Name "cp",trg2])
-                                                                  ]
-                                                               )
+                                                               (toTableRef (selectExprInFROM' fSpec e)) Nothing
                                            }
-                                    where src' = Iden [Name "cfst",sqlAttConcept fSpec (source e)]
-                                          trg' = Iden [Name "csnd",sqlAttConcept fSpec (target e)]
-                                          src2 = sqlExprSrc fSpec e
-                                          trg2 = noCollide' [src2] (sqlExprTgt fSpec e)
+              where closedWorld = Name "everything"
+                    theClosedWorldExpression =
+                       case (source e, target e) of
+                         (ONE, ONE) -> fatal 425 "The complement of I[ONE] ???"
+                         (ONE, t  ) -> EDcI t
+                         (s  , ONE) -> EDcI s
+                         (s  , t  ) -> EDcV (Sign s t) 
+                        
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
     EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
     (EDif (EDcV _,x)) -> sqlcomment ("case: EDif V x"++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
@@ -483,13 +454,13 @@ Based on this derivation:
                         , bseTbl = [sqlConceptTable fSpec (target l) `as` srcAlias
                                   ,sqlConceptTable fSpec (target r) `as` tgtAlias]
                         , bseWhr = Just $ selectNotExists 
-                                            [lCode `as` lhs]
+                                            (lCode `as` lhs)
                                             ( Just $ conjunctSQL
                                                 [BinOp (Iden [srcAlias,mainSrc])
                                                        [Name "="]
                                                        (Iden [lhs,ltrg])
                                                 ,selectNotExists 
-                                                   [rCode `as` rhs]
+                                                   (rCode `as` rhs)
                                                    ( Just $ conjunctSQL 
                                                       [BinOp (Iden [rhs,rsrc])
                                                              [Name "="]
@@ -542,7 +513,10 @@ Based on this derivation:
 --   It generates a simple table reference for primitive expressions (EDcD, EDcI, and EDcV) and a bracketed SQL expression in more complicated situations.
 --   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
 --   Note that the resulting pairs do not contain any NULL values.
-
+selectExprInFROM' :: FSpec -> Expression -> BinQueryExpr
+selectExprInFROM' fSpec expr = selectExpr fSpec sourceAlias targetAlias expr
+toTableRef :: BinQueryExpr -> TableRef
+toTableRef b = TRQueryExpr . toSQL $ b
 selectExprInFROM :: FSpec
                  -> Name      -- ^ source name (preferably quoted)
                  -> Name      -- ^ target name (preferably quoted)
@@ -682,15 +656,15 @@ selectExprRelationNew fSpec dcl =
 
 
 selectExists, selectNotExists
-     :: [TableRef]      -- ^ tables
+     :: TableRef      -- ^ tables
      -> Maybe ValueExpr -- ^ the (optional) WHERE clause
      -> ValueExpr
-selectNotExists tbls whr = PrefixOp [Name "NOT"] $ selectExists tbls whr
-selectExists tbls whr = 
+selectNotExists tbl whr = PrefixOp [Name "NOT"] $ selectExists tbl whr
+selectExists tbl whr = 
   SubQueryExpr SqExists
      Select { qeSetQuantifier = SQDefault
-            , qeSelectList    = [(Star,Nothing)]
-            , qeFrom          = tbls
+            , qeSelectList    = [(Star,Nothing)]   
+            , qeFrom          = [tbl `as` Name "aDummyName" ] -- dummyname is required because MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
             , qeWhere         = whr
             , qeGroupBy       = []
             , qeHaving        = Nothing
