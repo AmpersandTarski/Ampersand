@@ -1,6 +1,24 @@
-<!-- Atomic[BLOB] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-$if(isEditable)$<div class="input-group">
-  <textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="2" ng-blur="patch(ResourceId)"></textarea>
-</div>$else$<div style="max-width: 200px;">
-  {{val['$name$'] | limitTo:50}}...
-</div>$endif$
+<!-- Atomic[BLOB] "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+<div class="input-group">
+$if(isEditable)$
+  $if(exprIsUni)$
+  <textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="2" cols="40" ng-blur="patch(ResourceId)"></textarea>
+  $else$
+  <div ng-repeat="row in val['$name$'] track by \$index">
+    <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+    <span>{{row}}</span>
+  </div>
+  <div my-showonhover-box>
+    <textarea ng-model="selected.value" placeholder="Add text" class="form-control input-sm" rows="2" cols="40" ng-blur="addItem(val, '$name$', selected, ResourceId)"></textarea>
+  </div>
+  $endif$
+$else$
+  $if(exprIsUni)$
+  <div style="max-width: 200px;">{{val['$name$']}}</div>
+  $else$
+  <div ng-repeat="row in val['$name$'] track by \$index" style="max-width: 200px;">
+    {{row}}
+  </div>
+  $endif$
+$endif$
+</div>

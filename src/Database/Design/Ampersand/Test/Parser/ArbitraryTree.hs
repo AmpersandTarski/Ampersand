@@ -85,10 +85,13 @@ instance Arbitrary P_Process where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> listOf1 safeStr <*> listOf1 relationRef <*> arbitrary
+    arbitrary = P_RR <$> listOf1 arbitrary <*> listOf1 relationRef <*> arbitrary
 
 instance Arbitrary RoleRule where
-    arbitrary = Maintain <$> listOf1 safeStr <*> listOf1 safeStr <*> arbitrary
+    arbitrary = Maintain <$> listOf1 arbitrary <*> listOf1 safeStr <*> arbitrary
+
+instance Arbitrary Role where
+    arbitrary = Role <$> safeStr
 
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
@@ -197,7 +200,7 @@ instance Arbitrary P_Population where
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
-                      <*> listOf relationRef <*> args <*> listOf safeStr1
+                      <*> listOf relationRef <*> args <*> listOf arbitrary
                       <*> sized objTermPrim <*> arbitrary <*> safeStr
                    where args = listOf $ listOf1 safeStr
                          maybeSafeStr = oneof[Just <$> safeStr, return Nothing]

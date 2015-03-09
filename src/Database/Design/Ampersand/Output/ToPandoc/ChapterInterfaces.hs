@@ -29,7 +29,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
-     =  headerWithLabel (XRefInterfacesInterface ifc) (lev+1) (text ("Interface: " ++ quoteName (name ifc))) <>
+     =  headerWithLabel (XRefInterfacesInterface ifc) (lev+1) (text ("Interface: " ++ quoteName ifc)) <>
         ifcIntro ifc <>
         docInterface ifc
       
@@ -43,10 +43,10 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
              introBlocks = fromList $
                case lang of
                  Dutch   -> [Para
-                             [ Str $ "Dit hoofdstuk bevat de documentatie voor de interface "++ quoteName (name ifc)++"."
+                             [ Str $ "Dit hoofdstuk bevat de documentatie voor de interface "++ quoteName ifc++"."
                              ]]
                  English -> [Para
-                             [ Str $ "This chapter contains the documentation for the interface "++ quoteName (name ifc)++"."
+                             [ Str $ "This chapter contains the documentation for the interface "++ quoteName ifc++"."
                              ]]
 
     docInterface :: Interface -> Blocks
@@ -67,10 +67,10 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       docInterfaceObjects (ifcParams ifc) (ifcRoles ifc) [] (ifcObj ifc)
       where interfaceFP = fpaInterface ifc
 
-    docInterfaceObjects :: [Expression] -> [String] -> [Int] -> ObjectDef -> Blocks
+    docInterfaceObjects :: [Expression] -> [Role] -> [Int] -> ObjectDef -> Blocks
     docInterfaceObjects editableRels roles hierarchy object =
       case hierarchy of
-        [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (name (target iExp)) ++ "."
+        [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (target iExp) ++ "."
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
         _  -> plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName]
       <> interfaceObjDoc <>
@@ -80,7 +80,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
             interfaceObjDoc :: Blocks
             interfaceObjDoc =
               mconcat $
-                [ plainText  $ fieldDescr ++ quoteName (name (target iExp)) ++ ". (" ++ (if isEditable then "" else "niet ") ++ "editable)"              
+                [ plainText  $ fieldDescr ++ quoteName (target iExp) ++ ". (" ++ (if isEditable then "" else "niet ") ++ "editable)"              
                 ] ++
                 
                 case navigationDocs of
@@ -112,7 +112,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                                                      Just e@(_,d,_,_) -> (Just e, EDcD d `elem` editableRels)
                                                      Nothing          -> (Nothing, False)
                     
-                    navigationDocs = [ plainText $ quoteName (name navIfc) ++ " (voor " ++ showRoles sharedRoles ++ ")" 
+                    navigationDocs = [ plainText $ quoteName navIfc ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces
                                      , source (objctx . ifcObj $ navIfc) == target iExp
                                      , let sharedRoles = ifcRoles navIfc `intersect` roles
@@ -123,7 +123,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     
             subInterfaceDocs = docMSubInterface editableRels roles hierarchy (objmsub object)
 
-    docMSubInterface :: [Expression] -> [String] -> [Int] -> Maybe SubInterface -> [Blocks]
+    docMSubInterface :: [Expression] -> [Role] -> [Int] -> Maybe SubInterface -> [Blocks]
     docMSubInterface editableRels roles hierarchy subIfc =
       case subIfc of
         Nothing                -> []
@@ -194,7 +194,7 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
                   _                   -> fatal 81 "Bericht interfaces have wrong format"
 
 -- TODO: Maybe we should create a more general version of this function (might already exist, but I couldn't find it)
-showRoles :: [String] -> String
+showRoles :: [Role] -> String
 showRoles roles = case roles of
                     [] -> "alle rollen"
                     [rl] -> "de rol " ++ quoteName rl
@@ -202,5 +202,5 @@ showRoles roles = case roles of
                     (rl1:rls) -> "de rollen " ++ quoteName rl1 ++ 
                                  (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map quoteName rls)
 
-quoteName :: String -> String
-quoteName role = "``"++role++"''"
+quoteName :: Named a => a -> String
+quoteName x = "``"++name x++"''"

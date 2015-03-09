@@ -39,13 +39,13 @@ class Language a where
 
 class ProcessStructure a where
   processes :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
-  roles :: a -> [String]        -- ^ all roles that are used in this ProcessStructure
+  roles :: a -> [Role]        -- ^ all roles that are used in this ProcessStructure
   interfaces :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
   objDefs :: a -> [ObjectDef]
   processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
                                        -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  maintains :: a -> [(String,Rule)] -- ^ the string represents a Role
-  mayEdit :: a -> [(String,Declaration)] -- ^ the string represents a Role
+  maintains :: a -> [(Role,Rule)] 
+  mayEdit :: a -> [(Role,Declaration)] 
   workFromProcessRules :: [A_Gen] -> [Population] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations gens' udp r]
 

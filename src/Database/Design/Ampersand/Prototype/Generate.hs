@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Prototype.Generate (generateAll) where
+module Database.Design.Ampersand.Prototype.Generate (generateGenerics, generateCustomCss) where
 
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -20,40 +20,50 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
 
 
--- Generate Generics.php and static files
-generateAll :: FSpec -> IO ()
-generateAll fSpec =
- do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
---  ; verboseLn (getOpts fSpec) filecontent
-    ; writePrototypeFile fSpec "Generics.php" filecontent
-    ; when (genStaticFiles (getOpts fSpec)) $
-           case customCssFile (getOpts fSpec) of
-             Just customCssFilePath ->
-              do { customCssContents <- readCustomCssFile customCssFilePath
-                 ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
-                 }
-             Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-              do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
-                 ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
-                 ; if dedicatedCSSExists then
-                    do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
-                       ; customCssContents <- readCustomCssFile dedicatedCSSPath
-                       ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
-                       }
-                   else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-                    do { customExists <- doesFileExist $ getGenericsDir fSpec </> generatedCustomCssPath
-                       ; if customExists
-                         then verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ " already exists."
-                         else do { verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ 
-                                                               " does not exist, creating default for Oblomilan style."
-                                 ; writePrototypeFile fSpec generatedCustomCssPath "@import url(\"Oblomilan.css\");"
-                                 }
-                       }
-                 }
+generateCustomCss :: FSpec -> IO ()
+generateCustomCss fSpec =
+ do { when (genStaticFiles (getOpts fSpec)) $
+        case customCssFile (getOpts fSpec) of
+          Just customCssFilePath ->
+           do { customCssContents <- readCustomCssFile customCssFilePath
+              ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
+              }
+          Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
+           do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
+              ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
+              ; if dedicatedCSSExists then
+                 do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
+                    ; customCssContents <- readCustomCssFile dedicatedCSSPath
+                    ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
+                    }
+                else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
+                 do { customExists <- doesFileExist $ getGenericsDir fSpec </> generatedCustomCssPath
+                    ; if customExists
+                      then verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ " already exists."
+                      else do { verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ 
+                                                            " does not exist, creating default for Oblomilan style."
+                              ; writePrototypeFile fSpec generatedCustomCssPath "@import url(\"Oblomilan.css\");"
+                              }
+                    }
+              }
     }
   where
     generatedCustomCssPath = "css/Custom.css"
-    
+
+    readCustomCssFile f =
+      catch (readFile f)
+            (\e -> do let err = show (e :: IOException)
+                      _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
+                      return "")
+
+-- Generate Generics.php
+generateGenerics :: FSpec -> IO ()
+generateGenerics fSpec =
+ do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
+--  ; verboseLn (getOpts fSpec) filecontent
+    ; writePrototypeFile fSpec "Generics.php" filecontent
+    }
+ where    
     genericsPhpContent :: [String]
     genericsPhpContent =
       intercalate [""]
@@ -67,12 +77,6 @@ generateAll fSpec =
         , generateInterfaces fSpec
         ]
         
-    readCustomCssFile f =
-      catch (readFile f)
-            (\e -> do let err = show (e :: IOException)
-                      _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
-                      return "")
-
 generateConstants :: FSpec -> [String]
 generateConstants fSpec =
   [ "$versionInfo = "++showPhpStr ampersandVersionStr++";" -- so we can show the version in the php-generated html
@@ -296,7 +300,7 @@ generateRoles fSpec =
   addToLastLine ";"
     (indent 4
       (blockParenthesize  "(" ")" ","
-         [ [ "array ( 'name' => "++showPhpStr role
+         [ [ "array ( 'name' => "++showPhpStr (name role)
            , "      , 'ruleNames' => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
            , "      )" ]
          | role <- fRoles fSpec ]
@@ -345,13 +349,16 @@ generateInterfaces fSpec =
 
 generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
-  [ let roleStr = case ifcRoles interface of []    -> " for all roles"
-                                             rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
-    in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":"
-  , showPhpStr (name interface) ++ " => " ] ++
+  let roleStr = case ifcRoles interface of []    -> " for all roles"
+                                           rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
+      arrayKey | newFrontend $ getOpts fSpec = escapeIdentifier $ name interface -- For new front-end only, index on escaped name (id)
+               | otherwise                   = name interface                    -- otherwise, use normal name to prevent breakage on old prototypes
+  in  ["// Top-level interface " ++ name interface ++ roleStr  ++ ":"
+      , showPhpStr arrayKey ++ " => " 
+      ] ++
   indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
   where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
-          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr $ ifcRoles interface) ++")" 
+          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map (showPhpStr.name) $ ifcRoles interface) ++")" 
           , "      , 'invConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ invConjuncts) ++")"
           , "      , 'sigConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ sigConjuncts) ++")"
           ]
@@ -360,7 +367,10 @@ generateInterface fSpec interface =
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
-  [ "array ( 'name' => "++showPhpStr (name object)]
+  [ "array ( 'name'  => "++ showPhpStr (name object)
+  , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
+  , "      , 'label' => " ++ showPhpStr (name object)           -- only for new front-end
+  ]
   ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
       then   ["      // Normalization steps:"]
            ++["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
@@ -375,7 +385,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
        Just (srcConcept, decl, tgtConcept, isFlipped) ->
          [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
          , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
-         , "      , 'relationIsFlipped' => "++show isFlipped ] ++
+         , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
          (if isFlipped 
           then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
                , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
@@ -391,7 +401,9 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
          , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
          ]
   ++
-  [ "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (22+14*depth) "src" "tgt" normalizedInterfaceExp)
+  [ "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
+  , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
+  , "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (22+14*depth) "src" "tgt" normalizedInterfaceExp)
   ]
   ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
   [ "      )"
@@ -403,7 +415,8 @@ generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ]
     Just (InterfaceRef nm) -> [ "      // InterfaceRef"
-                              , "      , 'refSubInterface' => "++ showPhpStr nm
+                              , "      , 'refSubInterface' => " ++ showPhpStr nm
+                              , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end
                               ]
     Just (Box _ cl objects) -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
                                , "      , 'boxSubInterfaces' =>"

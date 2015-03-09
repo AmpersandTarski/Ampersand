@@ -7,11 +7,12 @@ import Data.Function (on)
 import System.FilePath        (combine)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
-import Database.Design.Ampersand.Prototype.ObjBinGen    (phpObjInterfaces)
-import Database.Design.Ampersand.Prototype.Apps.RAP   (atlas2context, atlas2populations)
+import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, doGenAtlas, writeStaticFiles)
+import Database.Design.Ampersand.Prototype.Apps.RAP    (atlas2context, atlas2populations)
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Prototype.GenBericht (doGenBericht)
-import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend)
+import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
+import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
+import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Database.Design.Ampersand.Prototype.ValidateEdit
 
@@ -61,9 +62,7 @@ generateProtoStuff opts fSpec
          ; verboseLn (getOpts fSpec) $ "Population of context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
          }
   | otherwise =
-      do { verboseLn (getOpts fSpec) "Generating prototype artifacts..."
-         ; when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
-         ; when (newFrontend (getOpts fSpec))  $ doGenFrontend fSpec
+      do { when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
          ; case testRule (getOpts fSpec) of
              Just ruleName -> ruleTest fSpec ruleName
@@ -83,7 +82,22 @@ doGenProto fSpec =
               ; exitWith $ ExitFailure 40
               }
       else do { verboseLn (getOpts fSpec) "Generating prototype..."
-              ; phpObjInterfaces fSpec
+
+              ; when (newFrontend (getOpts fSpec)) $
+                  clearTemplateDirs fSpec
+                  
+              ; writeStaticFiles (getOpts fSpec)
+              ; generatePhp fSpec
+              ; generateGenerics fSpec
+              
+              ; if (newFrontend (getOpts fSpec)) then
+                  doGenFrontend fSpec
+                else
+                  generateCustomCss fSpec
+              
+              ; when (genAtlas (getOpts fSpec)) $ doGenAtlas fSpec
+              ; verboseLn (getOpts fSpec) "\n"
+              
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
     }

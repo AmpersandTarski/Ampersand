@@ -154,10 +154,10 @@ instance ShowADL Process where
       decls = [d | d@Sgn{}<-relsDefdIn prc `uni` relsMentionedIn prc]
  -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work...
       showRM :: Process -> String
-      showRM pr = intercalate "\n  " [ "ROLE "++role++" MAINTAINS "++intercalate ", " [name rul | (_,rul)<-cl]
+      showRM pr = intercalate "\n  " [ "ROLE "++name role++" MAINTAINS "++intercalate ", " [name rul | (_,rul)<-cl]
                                      | cl<-eqCl fst (maintains pr), let role = fst (head cl)]
       showRR :: Process -> String
-      showRR pr = intercalate "\n  " [ "ROLE "++role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
+      showRR pr = intercalate "\n  " [ "ROLE "++name role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
                                      | cl<-eqCl fst (mayEdit pr), let role = fst (head cl)]
 
 -- TODO: making these tuples instance of ShowADL is very hacky
@@ -216,7 +216,7 @@ instance ShowADL Interface where
           ++ maybe "" ((" CLASS "++) . showstr) (ifcClass ifc)
           ++(if null (ifcParams ifc) then "" else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
           ++(if null (ifcArgs ifc) then "" else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
-          ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " [ r | r<-ifcRoles ifc])
+          ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " (map name (ifcRoles ifc)))
           ++showADL (ifcObj ifc)
 
 instance ShowADL IdentityDef where

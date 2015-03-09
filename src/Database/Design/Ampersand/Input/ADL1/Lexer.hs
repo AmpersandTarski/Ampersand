@@ -48,11 +48,11 @@ keywords      = [ "INCLUDE"
                 ]
 
 operators :: [String]
-operators = [ "|-", "-", "->", "<-", ">", "=", "~", "+", "*", ";", "!", "#",
+operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "." , "0", "1"]
 
 special_chars :: [Char]
-special_chars = "()[],{}"
+special_chars = "()[],{}<>"
 
 opchars :: String
 opchars = nub (sort (concat operators))
@@ -124,7 +124,6 @@ mainLexer p fn ('`':ss)
 -----------------------------------------------------------
 
 mainLexer p fn cs@(c:s)
-     | isSymbol c = returnGenToken GtkSymbol [c] p mainLexer (advc 1 p) fn s
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (advc 1 p) s
                name               = c:name'
@@ -140,6 +139,7 @@ mainLexer p fn cs@(c:s)
                        tokt | isop name = GtkKeyword
                             | otherwise =  GtkOp
                    in returnGenToken tokt name p mainLexer (foldl adv p name) fn s'
+     | isSymbol c = returnGenToken GtkSymbol [c] p mainLexer (advc 1 p) fn s
      | isDigit c = let (tktype,number,width,s') = getNumber cs
                    in  returnGenToken tktype number p mainLexer (advc width p) fn s'
      | otherwise = lexerError (UnexpectedChar c) (initialPos fn)

@@ -136,12 +136,14 @@ instance Pretty P_Process where
 
 instance Pretty P_RoleRelation where
     pretty (P_RR roles rels _) =
-        text "ROLE" <+> commas (map maybeQuote roles) <+> text "EDITS" <+> listOf rels
+        text "ROLE" <+> listOf roles <+> text "EDITS" <+> listOf rels
 
 instance Pretty RoleRule where
     pretty (Maintain roles rules _) =
-        text "ROLE" <+> id_list roles <+> text "MAINTAINS" <+> id_list rules
-        where id_list prop = commas (map maybeQuote prop)
+        text "ROLE" <+> listOf roles <+> text "MAINTAINS" <+> commas (map maybeQuote rules)
+
+instance Pretty Role where
+    pretty (Role name) = maybeQuote name
 
 instance Pretty P_Pattern where
     pretty (P_Pat nm _ _ rls gns dcs cds ids vds xps pop) =
@@ -259,7 +261,7 @@ instance Pretty P_Interface where
                        params = if null prms then empty
                                 else parens $ listOf prms
                        iroles = if null roles then empty
-                                else text "FOR" <+> (commas $ quoteAll roles)
+                                else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty (P_Obj nm _ ctx msub strs) =

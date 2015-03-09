@@ -26,7 +26,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations, getExpressionRelation
-          , Conjunct(..),DnfClause(..), dnf2expr
+          , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
           )
 where
@@ -63,9 +63,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                    , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
-                   , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
-                   , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
-                   , fRoles ::       [String]                 -- ^ All roles mentioned in this context.
+                   , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
+                   , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles may change the population of which relation.
+                   , fRoles ::       [Role]                   -- ^ All roles mentioned in this context.
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                    , invars ::       [Rule]                   -- ^ All invariant rules
@@ -113,6 +113,7 @@ instance Unique AtomID where
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x
              xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
+
 data PairID = PairID { lnkSgn :: Sign
                      , lnkLeft :: AtomID
                      , lnkRight :: AtomID

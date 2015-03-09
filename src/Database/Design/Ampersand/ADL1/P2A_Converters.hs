@@ -32,6 +32,7 @@ instance Eq SignOrd where
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
+               . checkInterfaceCycles     -- Check that interface references are not cyclic
                . checkInterfaceRefs       -- Check whether all referenced interfaces exist
                . checkUnique udefrules    -- Check uniquene names of: rules,
                . checkUnique patterns     --                          patterns,
@@ -75,6 +76,22 @@ isDanglingPurpose ctx purp =
     ExplProcess nm -> nm `notElem` map name (ctxprocs ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplContext nm -> ctxnm ctx /= nm
+
+-- Check that interface references are not cyclic
+checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
+checkInterfaceCycles gCtx =
+  case gCtx of
+    Errors err -> Errors err
+    Checked ctx ->  if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
+      where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
+            refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
+            getDeepIfcRefs obj = case objmsub obj of
+                                   Nothing                -> []
+                                   Just (InterfaceRef nm) -> [nm]
+                                   Just (Box _ _ objs)    -> concatMap getDeepIfcRefs objs
+            lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
+                                   [ifc] -> ifc
+                                   _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
 -- Check whether all referenced interfaces exist
 checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
@@ -527,7 +544,7 @@ pCtx2aCtx' _
                      , prcVds = viewdefs'
                      , prcXps = purposes'
                      }
-       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, rul <- mRules rr, name x == rul, rol <- mRoles rr] nm x) ruls
+       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
          <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
          <*> traverse pPop2aPop pops
          <*> traverse pIdentity2aIdentity idefs
@@ -558,15 +575,15 @@ pCtx2aCtx' _
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
 
-    pRul2aRul':: [String] -- list of roles for this rule
+    pRul2aRul':: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
-              -> (P_Rule TermPrim) -> Guarded ([String],Rule)  -- roles in the lhs
+              -> (P_Rule TermPrim) -> Guarded ([Role],Rule)  -- roles in the lhs
     pRul2aRul' a b c = fmap ((,) a) (pRul2aRul a b c)
-    pRul2aRul :: [String] -- list of roles for this rule
+    pRul2aRul :: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
               -> (P_Rule TermPrim) -> Guarded Rule
     pRul2aRul rol env = typeCheckRul rol env . disambiguate termPrimDisAmb
-    typeCheckRul :: [String] -- list of roles for this rule
+    typeCheckRul :: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
               -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
     typeCheckRul sgl env P_Ru { rr_nm = nm

@@ -7,25 +7,26 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceIdent$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
   
+  \$scope.val = {};
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
   url = 'interface/$interfaceName$';
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
     newAtom = Restangular.one(url).post().then(function (data){
-      \$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+      \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
     });
   }else
   
   // Checks if resourceId is provided, and if so does a get() else a getList()
   if(typeof \$routeParams.resourceId != 'undefined'){
     list = Restangular.one(url, \$routeParams.resourceId).get().then(function(data){
-      \$scope.ResourceList = Restangular.restangularizeCollection('', data, url);
+      \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
     });
   }else{
-    \$scope.ResourceList = Restangular.all(url).getList().\$object;
+    \$scope.val['$interfaceName$'] = Restangular.all(url).getList().\$object;
   }
 
 
@@ -35,7 +36,7 @@ AmpersandApp.controller('$interfaceIdent$Controller', function (\$scope, \$rootS
   // Delete function to delete a complete Resource
   \$scope.deleteResource = function (ResourceId){
     if(confirm('Are you sure?')){
-      \$scope.ResourceList[ResourceId]
+      \$scope.val['$interfaceName$'][ResourceId]
         .remove()
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
@@ -58,12 +59,30 @@ $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
   // Patch function to update a Resource
   \$scope.patch = function(ResourceId){
-    \$scope.ResourceList[ResourceId]
+    \$scope.val['$interfaceName$'][ResourceId]
       .patch()
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
-        \$scope.ResourceList[ResourceId] = Restangular.restangularizeElement('', data.content, url);
+        \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
       });
+  }
+  
+  // Function to add item to array of primitieve datatypes
+  \$scope.addItem = function(obj, property, selected, ResourceId){
+    if(selected.value != ''){
+      if(obj[property] === null) obj[property] = [];
+      obj[property].push(selected.value);
+      selected.value = '';
+      \$scope.patch(ResourceId);
+    }else{
+    	console.log('Empty value selected');
+    }
+  }
+  
+  //Function to remove item from array of primitieve datatypes
+  \$scope.removeItem = function(obj, key, ResourceId){
+    obj.splice(key, 1);
+    \$scope.patch(ResourceId);
   }
 $else$  // The interface does not contain any editable relations
 $endif$
@@ -92,9 +111,9 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   \$scope.typeahead = {}; // an empty object for typeahead
 
 
-  // A property for every editable relation to another concept (i.e. non-primitive datatypes)
-$allEditableNonPrims:{editableNonPrim|
-  \$scope.typeahead['$editableNonPrim.labelName$'] = Restangular.all('resource/$editableNonPrim.targetConcept$').getList().\$object;}$
+  // A property for every (non-primitive) tgtConcept of the editable relations in this interface
+  $editableNonPrimTargets:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
+  }$
 $else$  // The interface does not contain editable relations to non-primitive concepts
 $endif$
 });

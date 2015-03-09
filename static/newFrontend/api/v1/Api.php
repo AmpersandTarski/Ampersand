@@ -94,18 +94,18 @@ class Api{
 
 	/**************************** OBJECTINTERFACES ****************************/
 	/**
-	 * @url GET interface/{interfaceName}
-	 * @url GET interface/{interfaceName}/{atomId}
-	 * @param string $interfaceName
+	 * @url GET interface/{interfaceId}
+	 * @url GET interface/{interfaceId}/{atomId}
+	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function getAtom($interfaceName, $sessionId = null, $atomId = null, $roleId = null){
+	public function getAtom($interfaceId, $sessionId = null, $atomId = null, $roleId = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
-			$session->setInterface($interfaceName);
+			$session->setInterface($interfaceId);
 		
 			$result = array();
 			
@@ -130,22 +130,22 @@ class Api{
 	}
 	
 	/**
-	 * @url PATCH interface/{interfaceName}/{atomId}
-	 * @param string $interfaceName
+	 * @url PATCH interface/{interfaceId}/{atomId}
+	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function patchAtom($interfaceName, $sessionId, $atomId, $roleId = null, $request_data = null){
+	public function patchAtom($interfaceId, $sessionId, $atomId, $roleId = null, $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
-			$session->setInterface($interfaceName);
+			$session->setInterface($interfaceId);
 			
-			$atom = new Atom($atomId, $session->interface->srcConcept);		
+			$atom = new Atom($atomId, $session->interface->tgtConcept);	
 			
 			return array_merge(array('patches' => $atom->patch($session->interface, $request_data))
-							  ,array('content' => current((array)$atom->getContent($session->interface)))
+							  ,array('content' => current((array)$atom->getContent($session->interface, true, $atom->id))) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
 							  ,array('notifications' => Notifications::getAll())
 							  );
 		
@@ -155,21 +155,21 @@ class Api{
 	}
 	
 	/**
-	 * @url DELETE interface/{interfaceName}/{atomId}
-	 * @param string $interfaceName
+	 * @url DELETE interface/{interfaceId}/{atomId}
+	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function deleteAtom($interfaceName, $sessionId, $atomId, $roleId = null){
+	public function deleteAtom($interfaceId, $sessionId, $atomId, $roleId = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
-			$session->setInterface($interfaceName);
+			$session->setInterface($interfaceId);
 		
 			// TODO: insert check if Atom may be deleted with this interface
 			
-			$atom = new Atom($atomId, $session->interface->srcConcept);
+			$atom = new Atom($atomId, $session->interface->tgtConcept);
 			$atom->delete();
 			
 			return array('notifications' => Notifications::getAll());
@@ -180,18 +180,18 @@ class Api{
 	}
 	
 	/**
-	 * @url POST interface/{interfaceName}
-	 * @param string $interfaceName
+	 * @url POST interface/{interfaceId}
+	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function postAtom($interfaceName, $sessionId, $roleId = null){
+	public function postAtom($interfaceId, $sessionId, $roleId = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$db = Database::singleton();
 			
 			$session->setRole($roleId);
-			$session->setInterface($interfaceName);
+			$session->setInterface($interfaceId);
 			
 			// TODO: insert check if Atom may be created with this interface
 			
@@ -209,12 +209,12 @@ class Api{
 	/**************************** CONTEXT ****************************/
 	
 	/**
-	 * @url GET context/{interfaceName}
+	 * @url GET context/{interfaceId}
 	 */
-	public function getInterface($interfaceName){
+	public function getInterface($interfaceId){
 		throw new RestException(501);
 		try{			
-			$interface = new ObjectInterface($interfaceName);
+			$interface = new InterfaceObject($interfaceId);
 			
 			return $interface;
 		}catch(Exception $e){
@@ -361,17 +361,17 @@ class Api{
     
 	/**
      * @url GET interfaces
-	 * @url GET interfaces/{interfaceName}
-	 * @param string $interfaceName
+	 * @url GET interfaces/{interfaceId}
+	 * @param string $interfaceId
 	 * @param int $roleId
      */
-    public function getInterfaces($interfaceName = null, $roleId = null){
+    public function getInterfaces($interfaceId = null, $roleId = null){
     	try{
     		$session = Session::singleton();
     		$session->setRole($roleId);
     	
-	    	if(!is_null($interfaceName)){
-		    	$session->setInterface($interfaceName);
+	    	if(!is_null($interfaceId)){
+		    	$session->setInterface($interfaceId);
 	    		
 		    	return $session->interface->getInterface(); // Return specific interface
 	    		

@@ -270,7 +270,7 @@ instance ShowHS FSpec where
                 []        -> "[]"
                 [(r,rul)] -> "[ ("++show r++", "++showHSName rul++") ]"
                 _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fSpec]++indentA++"]"
-        ,wrap ", fRoles        = " indentA (\_->id) (fRoles fSpec)
+        ,wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
         ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
         ,wrap ", invars        = " indentA (\_->showHSName) (invars fSpec)
@@ -414,7 +414,8 @@ instance ShowHS PlugInfo where
 instance ShowHS RoleRelation where
  showHS opts ind rr
   = "RR "++show (rrRoles rr)++" "++showHS opts (ind++"    ") (rrRels rr)++" "++showHS opts (ind++"    ") (rrPos rr)
-
+instance ShowHS Role where
+ showHS _ ind (Role str) = ind++"Role "++show str
 instance ShowHS RoleRule where
  showHS opts ind rs
   = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS opts (ind++"    ") (mPos rs)

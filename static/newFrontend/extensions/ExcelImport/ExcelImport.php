@@ -132,6 +132,8 @@ class ImportExcel
 					// $bla .= '", SRCATOM:"' . $atom[0] . '", TGTCONCEPT:"' . $concept[$col] . '", TGTATOM:"' . $atom[$col] . '" );';
 					// echo $bla . "\n";
 					if ($atom[$col] == '' OR empty($atom[$col])) continue; // Empty cells are allowed but shouldn't do anything
+					if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
+					if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
 					
 					if (strpos('&', $atom[$col]) === 0){ // Check if this is an atom-create line, syntax = &atomname
 						$atom[$col] = $atom[0]; // '&' copies the atom-value; useful for property-relations.

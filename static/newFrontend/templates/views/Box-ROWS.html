@@ -1,11 +1,18 @@
-<!-- BOX<ROWS> "$name$" $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-<form class="form-horizontal" role="form">
-$subObjects:{subObj|
-  <!-- BOX<ROWS> CHILD: "$subObj.subObjName$" -->
-  <div class="form-group">
-    <label class="col-md-1 control-label">$subObj.subObjName$</label>
-    <div class="col-md-11">
+<!-- BOX<ROWS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+<div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
+  $if(isRoot)$<fieldset>
+    <legend>
+      <a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a>
+      <a href="" class="pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>
+    </legend>
+  $endif$
+    $subObjects:{subObj|<!-- BOX<ROWS> CHILD: "$subObj.subObjLabel$" -->
+    <div class="row">
+      <div class="row-label col-md-1"><strong>$subObj.subObjLabel$</strong></div>
+      <div class="row-content col-md-11">
 $subObj.subObjContents$
+      </div>
     </div>
-  </div>}$
-</form>
+    }$
+  $if(isRoot)$</fieldset>$endif$
+</div>

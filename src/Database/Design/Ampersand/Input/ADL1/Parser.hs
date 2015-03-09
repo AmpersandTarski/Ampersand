@@ -460,7 +460,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pRoles  `opt` [])                   <*>
                      (pKey ":" *> pTerm)                  <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [String] -> (Term TermPrim) -> P_SubInterface -> P_Interface
+    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
           lbl (nm,p) iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
@@ -480,15 +480,15 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
           pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')'
           --- InterfaceArgs ::= '{' ADLidListList '}'
           pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
-          --- Roles ::= 'FOR' ADLidList
-          pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
+          --- Roles ::= 'FOR' RoleList
+          pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pRole
 
---- SubInterface ::= ('BOX' | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
+--- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
             <|> (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos
   where pBoxKey :: AmpParser (Origin, Maybe String)
-        pBoxKey = (\o -> (o,Nothing))     <$> pKey_pos "BOX"
+        pBoxKey = (\o mCl -> (o,mCl))     <$> pKey_pos "BOX" <*> pMaybe (pSpec '<' *> pConid <* pSpec '>')
               <|> (\o -> (o,Just "ROWS")) <$> pKey_pos "ROWS"
               <|> (\o -> (o,Just "COLS")) <$> pKey_pos "COLS"
               <|> (\o -> (o,Just "TABS")) <$> pKey_pos "TABS"
@@ -550,7 +550,7 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
 --- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
 pPopulation = try (prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent)
-              -- <|>  pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
+              <|>  pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
       prelpop :: Origin -> TermPrim -> Pairs -> P_Population
       prelpop    orig     (Prel _ nm)  contents
@@ -572,21 +572,26 @@ pPopulation = try (prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "C
                    , p_popas  = contents
                    }
 
---- RoleRelation ::= 'ROLE' ADLidList 'EDITS' RelSignList
+--- RoleRelation ::= 'ROLE' RoleList 'EDITS' RelSignList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
-                            pList1Sep (pSpec ',') pADLid <*
+                            pList1Sep (pSpec ',') pRole  <*
                             pKey "EDITS"                 <*>
                             pList1Sep (pSpec ',') pRelSign
                      where rr p roles rels = P_RR roles rels p
 
---- RoleRule ::= 'ROLE' ADLidList 'MAINTAINS' ADLidList
+--- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 pRoleRule :: AmpParser RoleRule
 pRoleRule         = rr <$> pKey_pos "ROLE"               <*>
-                           pList1Sep (pSpec ',') pADLid  <*
+                           pList1Sep (pSpec ',') pRole   <*
                            pKey "MAINTAINS"              <*>
                            pList1Sep (pSpec ',') pADLid
                     where rr p roles rulIds = Maintain roles rulIds p
+
+--- Role ::= ADLid
+--- RoleList ::= Role (',' Role)*
+pRole :: AmpParser Role
+pRole =  Role <$> pADLid
 
 --- PrintThemes ::= 'THEMES' ConceptNameList
 pPrintThemes :: AmpParser [String]
