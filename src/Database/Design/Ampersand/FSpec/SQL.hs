@@ -20,6 +20,7 @@ import Database.Design.Ampersand.FSpec.ShowADL
 
 import Data.Char
 import Data.List
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.SQL"
@@ -53,108 +54,129 @@ selectExpr :: FSpec    -- current context
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec src trg expr
  = case expr of
-    EIsc{} -> let isect :: Int -> Name
-                  isect n = Name ("isect"++show n)
-                  lst'       = exprIsc2list expr
-                  sgn        = sign expr
-                  mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},EDcV _,EMp1{}] <- [exprCps2list t]]
-                  lst        = [t |t<-lst', t `notElem` mp1Tm]
-                  posTms     = if null posTms' then map notCpl (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
-                  negTms     = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
-                  posTms'    = [t | t<-lst, isPos t && not (isIdent t)]++[t | t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
-                  negTms'    = [notCpl t | t<-lst, isNeg t && isIdent t]++[notCpl t | t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
-                  exprbracs  = [ selectExprInFROM fSpec sourceAlias targetAlias l `as` isect n 
-                               | (n,l)<-zip [(0::Int)..] posTms
-                     --          , let src'' = sqlExprSrc fSpec l
-                     --          , let trg'' =noCollide' [src''] (sqlExprTgt fSpec l)
-                               ]
-                  wherecl :: Maybe ValueExpr
-                  wherecl   = Just . conjunctSQL . concat $
-                               ([if isIdent l
-                                 then -- this is the code to calculate ../\I. The code below will work, but is longer
-                                      [BinOp (Iden [isect 0, sourceAlias])
-                                             [Name "="]
-                                             (Iden [isect 0, targetAlias])
-                                      ]
-                                 else [BinOp (Iden [isect 0, sourceAlias])
-                                             [Name "="]
-                                             (Iden [isect n, sourceAlias])
-                                      ,BinOp (Iden [isect 0, targetAlias])
-                                             [Name "="]
-                                             (Iden [isect n, targetAlias])
-                                      ]
-                                | (n,l)<-tail (zip [(0::Int)..] posTms) -- not empty because of definition of posTms
-                           --     , let src''=sqlExprSrc fSpec l
-                           --     , let trg''=noCollide' [src''] (sqlExprTgt fSpec l)
-                                ]++
-                                [ [ BinOp (Iden [isect 0,sourceAlias])
-                                          [Name "="]
-                                          (sqlAtomQuote atom)
-                                  , BinOp (Iden [isect 0,targetAlias])
-                                          [Name "="]
-                                          (sqlAtomQuote atom)
-                                  ]
-                                | EMp1 atom _ <- mp1Tm
-                                ]++
-                                [ [ BinOp (Iden [isect 0,sourceAlias])
-                                          [Name "="]
-                                          (sqlAtomQuote atom1) -- source and target are unequal
-                                  , BinOp (Iden [isect 0,targetAlias])
-                                          [Name "="]
-                                          (sqlAtomQuote atom2) -- source and target are unequal
-                                  ]
-                                | t@ECps{} <- mp1Tm, [EMp1 atom1 _, EDcV _, EMp1 atom2 _]<-[exprCps2list t]
-                                ]++
-                                [if isIdent l
-                                 then -- this is the code to calculate ../\I. The code below will work, but is longer
-                                      [BinOp (Iden [isect 0, sourceAlias])
-                                             [Name "<>"]
-                                             (Iden [isect 0, targetAlias])
-                                      ]
-                                 else [selectNotExists 
-                                         [selectExprInFROM fSpec sourceAlias targetAlias l `as` Name "cp"]
-                                         (Just . conjunctSQL $
-                                           [ BinOp (Iden [isect 0,sourceAlias])
-                                                   [Name "="]
-                                                   (Iden [Name "cp",sourceAlias])
-                                           , BinOp (Iden [isect 0,targetAlias])
-                                                   [Name "="]
-                                                   (Iden [Name "cp",targetAlias])
-                                           ]
-                                         )
-                                      ]
-                                | (_,l)<-zip [(0::Int)..] negTms
-                                ]++
-                                [nub (map notNull [Iden[isect 0,sourceAlias],Iden[isect 0,targetAlias]])]
-                               )
-
-              in case lst' of
-{- The story:
+    EIsc{} -> 
+    {- The story on the case of EIsc:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
- For now, we explain only the otherwise clause (code: selectGeneric i ("isect0", ...)
- Suppose we have an expression, plaats~;locatie/\-hoofdplaats~/\-neven
- It has two negative terms (code: negTms), which are (in this example): hoofdplaats~ and neven,
- It has one positive term (code posTms), which is plaats~;locatie.
- In the resulting SQL code, the first term of posTms is taken as the basis.
- All other positive terms are added as EXISTS subexpressions in the WHERE clause and
- all negative terms are added as NOT EXISTS subexpressions in the WHERE clause.
- So our example will look like:
-                    SELECT DISTINCT isect0.`A`, isect0.`B`
-                     FROM ( SELECT bladibla) AS isect0       representing plaats~;locatie
-                    WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
-                      AND NOT EXISTS (SELECT bar)            representing neven
--}
-                  (_:_:_) -> BSE { bseCmt = "case: (EIsc lst'@(_:_:_))"++showADL expr++" ("++show sgn++")"
-                                 , bseSrc = Iden [isect 0,sourceAlias]
-                                 , bseTrg = Iden [isect 0,targetAlias]
-                                 , bseTbl = exprbracs
-                                 , bseWhr = wherecl
-                                 }
-                  _       -> fatal 123 "A list shorter than 2 cannot occur in the query at all! If it does, we have made a mistake earlier."
-    EUni (l,r) -> BUE { bueCmt = "case: EUni (l,r)"++showADL expr++" ("++show (sign expr)++")"
-                      , bue0   = selectExpr fSpec src trg l
-                      , bue1   = selectExpr fSpec src trg r
-                      }
+ Each of these subexpressions are of one of the following types:
+     1) positive and Mp1
+     2) negative and Mp1
+     3) not Mp1
+    -}
+          case posVals of
+            ( _ {-a-} : _ {-b-} : _ )
+                -> emptySet  --since a /= b, there can be no result. 
+            [val]
+                -> if val `elem` negVals then emptySet
+                   else f (Just val) nonMp1Terms
+            []  -> f Nothing nonMp1Terms
+           where 
+                  posVals :: [String]
+                  posVals = nub (map atmValue posMp1Terms)
+                  negVals :: [String]
+                  negVals = nub (map (atmValue . notCpl) negMp1Terms)
+                  atmValue (EMp1 a _) = a
+                  atmValue _          = fatal 31 "atm error"
+                  mp1Terms, nonMp1Terms :: [Expression]
+                  (mp1Terms,nonMp1Terms) = partition isMp1 (exprIsc2list expr)
+                  posMp1Terms, negMp1Terms :: [Expression]
+                  (posMp1Terms,negMp1Terms) = partition isPos mp1Terms
+                  f :: Maybe String   -- Optional the single atomvalue that might be found as the only possible value 
+                      -> [Expression] -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.  
+                      -> BinQueryExpr
+                  f specificValue subTerms 
+                     = case subTerms of
+                          [] -> case specificValue of 
+                                 Nothing  -> emptySet -- case might occur with only negMp1Terms??
+                                 Just str ->
+                                    BSE { bseCmt = "case: (EIsc "++showADL expr++" ("++show (sign expr)++")"
+                                        , bseSrc = StringLit str
+                                        , bseTrg = StringLit str
+                                        , bseTbl = []
+                                        , bseWhr = Nothing
+                                        }
+                          ts  ->   BSE { bseCmt = "case: (EIsc "++showADL expr++" ("++show (sign expr)++")" 
+                                        , bseSrc = theSrc
+                                        , bseTrg = theTrg
+                                        , bseTbl = theTbl
+                                        , bseWhr = case catMaybes [mandatoryTuple,forbiddenTuples,theWhr] of
+                                                    [] -> Nothing
+                                                    vs -> Just (conjunctSQL vs)
+                                        }
+                                     where
+                                       mandatoryTuple :: Maybe ValueExpr
+                                       mandatoryTuple =
+                                          case specificValue of
+                                            Nothing  -> Nothing
+                                            Just val -> Just $ equalToValueClause val
+                                          where
+                                            equalToValueClause :: String -> ValueExpr
+                                            equalToValueClause str = conjunctSQL 
+                                                               [ BinOp theSrc [Name "="] (StringLit str)
+                                                               , BinOp theTrg [Name "="] (StringLit str)
+                                                               ]
+
+                                       forbiddenTuples :: Maybe ValueExpr
+                                       forbiddenTuples = 
+                                           case negVals of
+                                            []  -> Nothing
+                                            _   -> Just . conjunctSQL $
+                                                     map notEqualToValueClause negVals
+                                          where
+                                            notEqualToValueClause :: String -> ValueExpr
+                                            notEqualToValueClause str = conjunctSQL 
+                                                               [ BinOp theSrc [Name "<>"] (StringLit str)
+                                                               , BinOp theTrg [Name "<>"] (StringLit str)
+                                                               ]
+
+                                       theSrc = bseSrc (makeSelectable sResult)
+                                       theTrg = bseTrg (makeSelectable sResult)
+                                       theTbl = bseTbl (makeSelectable sResult)
+                                       theWhr = bseWhr (makeSelectable sResult)
+                                       sResult = makeIntersectSelectExpr ts
+                                       makeSelectable :: BinQueryExpr -> BinQueryExpr
+                                       makeSelectable x =
+                                         case x of
+                                           BSE{}   -> x
+                                           BCQE{}  -> BSE { bseCmt = ""
+                                                          , bseSrc = Iden [sourceAlias]
+                                                          , bseTrg = Iden [targetAlias]
+                                                          , bseTbl = [TRParens . TRQueryExpr . toSQL $ x]
+                                                          , bseWhr = Nothing
+                                                          }
+                                       makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
+                                       makeIntersectSelectExpr exprs =
+                                        case map (selectExpr fSpec sourceAlias targetAlias) exprs of 
+                                          []  -> fatal 126 "makeIntersectSelectExpr must not be used on empty list"
+                                          [e] -> e
+                                          es  -> -- Note: We now have at least two subexpressions
+                                                 BSE { bseCmt = "`intersect` does not work in MySQL, so this statement is generated:"
+                                                     , bseSrc = Iden[iSect 0,sourceAlias]
+                                                     , bseTrg = Iden[iSect 0,targetAlias]
+                                                     , bseTbl = map tableRef (zip [0..] es)
+                                                     , bseWhr = Just . conjunctSQL . concatMap constraintsOfTailExpression $ 
+                                                                   [1..length (tail es)]     
+                                                     }
+                                                  where
+                                                   iSect :: Int -> Name
+                                                   iSect n = Name ("subIntersect"++show n)
+                                                   tableRef :: (Int, BinQueryExpr) -> TableRef
+                                                   tableRef (n, e) = TRQueryExpr (toSQL e) `as` iSect n
+                                                   constraintsOfTailExpression :: Int -> [ValueExpr]
+                                                   constraintsOfTailExpression n 
+                                                      = [ BinOp (Iden[iSect n,sourceAlias]) [Name "="] (Iden[iSect 0,sourceAlias])
+                                                        , BinOp (Iden[iSect n,targetAlias]) [Name "="] (Iden[iSect 0,targetAlias])
+                                                        ]
+--                                          (e:es) -> BCQE { bcqeCmt  = "intersect case"
+--                                                         , bcqeOper = Intersect
+--                                                         , bcqe0    = selectExpr fSpec sourceAlias targetAlias e
+--                                                         , bcqe1    = makeIntersectSelectExpr es
+--                                                         }
+
+    EUni (l,r) -> BCQE { bcqeCmt  = "case: EUni (l,r)"++showADL expr++" ("++show (sign expr)++")"
+                       , bcqeOper = Union
+                       , bcqe0    = selectExpr fSpec src trg l
+                       , bcqe1    = selectExpr fSpec src trg r
+                       }
     
     
     ECps (EDcV (Sign ONE _), ECpl expr')
@@ -244,7 +266,7 @@ FROM `r` AS ECps0, `A`AS ECps2
 WHERE ECps0.`A`<>ECps2.`A
 -}
           es -> let fenceName :: Int -> Name
-                    fenceName n = Name ("Fence"++show n)
+                    fenceName n = Name ("subComposit"++show n)
                     firstNr, lastNr :: Int
                     firstNr = 0
                     lastNr = firstNr + length es - 1
@@ -272,7 +294,7 @@ WHERE ECps0.`A`<>ECps2.`A
                                  , bseTbl = bseTbl se
                                  , bseWhr = bseWhr se
                                  }
-                 BUE{} -> fatal 313 "Unexpected: Directly flip a union expression. (What happend to the brackets?)"
+                 BCQE {bcqeOper=oper} -> fatal 313 $ "Unexpected: Directly flip a `"++show oper++"` expression. (What happend to the brackets?)"
     (EMp1 atom _) -> BSE { bseCmt = "case: EMp1 atom."
                          , bseSrc = sqlAtomQuote atom
                          , bseTrg = sqlAtomQuote atom
@@ -356,12 +378,7 @@ WHERE ECps0.`A`<>ECps2.`A
 
     (ECpl e)
       -> case e of
-           EDcV _        ->            BSE { bseCmt = "case: ECpl (EDcV _)  with signature "++show (sign expr)
-                                           , bseSrc = NumLit "1"
-                                           , bseTrg = NumLit "1"
-                                           , bseTbl = []
-                                           , bseWhr = Nothing
-                                           }
+           EDcV _        -> emptySet
            EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
            EDcI c        ->            BSE { bseCmt = "case: ECpl (EDcI "++name c++")"
                                            , bseSrc = Iden [QName "concept0", concpt]
@@ -683,16 +700,17 @@ selectExists tbls whr =
             }
 
 -- | a (local) data structure to hold SQL info for binary expressions
-data BinQueryExpr = BSE { bseCmt :: String          -- ^ Comment for the binary SQL SELECT statement
-                        , bseSrc :: ValueExpr       -- ^ source field and table
-                        , bseTrg :: ValueExpr       -- ^ target field and table
-                        , bseTbl :: [TableRef]      -- ^ tables
-                        , bseWhr :: Maybe ValueExpr -- ^ the (optional) WHERE clause
-                        }
-                  | BUE { bueCmt  :: String          -- ^ Comment for the binary SQL UNION statement
-                        , bue0    :: BinQueryExpr    -- ^ Left  expression
-                        , bue1    :: BinQueryExpr    -- ^ Right expression
-                        }
+data BinQueryExpr = BSE  { bseCmt :: String          -- ^ Comment for the binary SQL SELECT statement
+                         , bseSrc :: ValueExpr       -- ^ source field and table
+                         , bseTrg :: ValueExpr       -- ^ target field and table
+                         , bseTbl :: [TableRef]      -- ^ tables
+                         , bseWhr :: Maybe ValueExpr -- ^ the (optional) WHERE clause
+                         }
+                  | BCQE { bcqeCmt  :: String          -- ^ Comment for the binary CombineQueryExpr statement (Union, Intersect)
+                         , bcqeOper :: CombineOp      -- ^ The combine operator 
+                         , bcqe0    :: BinQueryExpr    -- ^ Left  expression
+                         , bcqe1    :: BinQueryExpr    -- ^ Right expression
+                         }
                         
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe 
@@ -708,12 +726,12 @@ toSQL bqe
                     , qeOffset        = Nothing
                     , qeFetchFirst    = Nothing
                     }
-    BUE{} -> CombineQueryExpr 
-                    { qe0 = toSQL (bue0 bqe)
-                    , qeCombOp = Union
-                    , qeSetQuantifier = Distinct
+    BCQE{} -> CombineQueryExpr 
+                    { qe0 = toSQL (bcqe0 bqe)
+                    , qeCombOp = bcqeOper bqe
+                    , qeSetQuantifier = SQDefault
                     , qeCorresponding = Respectively  -- ??? What does this mean?
-                    , qe1 = toSQL (bue1 bqe)
+                    , qe1 = toSQL (bcqe1 bqe)
                     }
 selectSelItem' :: Name -> ValueExpr
 selectSelItem' att = Iden [att] 
@@ -808,6 +826,14 @@ as ve a = -- TRAlias ve (Alias a Nothing)
     
 notNull :: ValueExpr -> ValueExpr
 notNull ve = PostfixOp [Name "IS NOT NULL"] ve                         
+
+emptySet :: BinQueryExpr
+emptySet = BSE { bseCmt = "this will return no results:"
+               , bseSrc = NumLit "1"
+               , bseTrg = NumLit "2"
+               , bseTbl = []
+               , bseWhr = Just (BinOp (NumLit "1") [Name "="] (NumLit "2"))
+               }
 
 
 
