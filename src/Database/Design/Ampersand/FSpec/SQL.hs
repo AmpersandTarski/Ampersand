@@ -828,12 +828,22 @@ notNull :: ValueExpr -> ValueExpr
 notNull ve = PostfixOp [Name "IS NOT NULL"] ve                         
 
 emptySet :: BinQueryExpr
-emptySet = BSE { bseCmt = "this will return no results:"
-               , bseSrc = NumLit "1"
-               , bseTrg = NumLit "2"
-               , bseTbl = []
-               , bseWhr = Just (BinOp (NumLit "1") [Name "="] (NumLit "2"))
+emptySet = BSE { bseCmt = "this will quaranteed return 0 rows:"
+               -- select 1 as src, 1 as trg from (select 1) dummy where false
+               , bseSrc = Iden [a]
+               , bseTrg = Iden [a]
+               , bseTbl = [TRQueryExpr  Select { qeSetQuantifier = SQDefault
+                                               , qeSelectList = [(NumLit "1", Just a)]
+                                               , qeFrom = []
+                                               , qeWhere = Nothing
+                                               , qeGroupBy = []
+                                               , qeHaving = Nothing
+                                               , qeOrderBy = []
+                                               , qeOffset = Nothing
+                                               , qeFetchFirst = Nothing
+                                               } `as` Name "dummy"]
+               , bseWhr = Just (BinOp (Iden [a]) [Name "<>"] (NumLit "1"))
                }
-
+            where a = Name "a"
 
 
