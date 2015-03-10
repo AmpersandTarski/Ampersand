@@ -7,7 +7,7 @@ import Data.Char
 import Control.Applicative
 
 import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Input.ADL1.Parser (keywordstxt)
+import Database.Design.Ampersand.Input.ADL1.Lexer (keywords)
 import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
 -- Useful functions to build on the quick check functions
@@ -27,7 +27,7 @@ safeStr1 = listOf1 printable
 -- Genrates a valid ADL identifier
 identifier :: Gen String
 identifier = suchThat str2 noKeyword
-    where noKeyword x = x `notElem` keywordstxt
+    where noKeyword x = x `notElem` keywords
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
           str2   = suchThat (listOf1 idChar) (\s -> length s > 1)
 

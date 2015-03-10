@@ -1,35 +1,21 @@
 {-# OPTIONS_GHC -fno-enable-rewrite-rules #-} -- Disable rewrite rules to drastically improve compilation speed
 {-# LANGUAGE FlexibleContexts #-}
 module Database.Design.Ampersand.Input.ADL1.Parser(
-    AmpParser, pContext, pPopulations,pTerm, pRule,
-    keywordstxt, keywordsops, specialchars, opchars
+    AmpParser, pContext, pPopulations,pTerm, pRule
 ) where
 
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Database.Design.Ampersand.Input.ADL1.LexerToken
-import qualified Database.Design.Ampersand.Input.ADL1.Lexer as L
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
 import Data.List
 import Data.Maybe
 
 --TODO: After converting the parser to Parsec, we had to add some try-calls.
---We gotta check the try-calls to see if we can refactor them or at least pay attention to the error messages.
+--We gotta check the try's to see if we can refactor them, or at least pay attention to the error messages.
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
-
-keywordstxt :: [String]
-keywordstxt       = L.keywords
-
-keywordsops :: [String]
-keywordsops       = L.operators
-
-specialchars :: [Char]
-specialchars      = L.special_chars
-
-opchars :: [Char]
-opchars           = nub (sort (concat keywordsops))
 
 --to parse files containing only populations
 --- Populations ::= Population+
