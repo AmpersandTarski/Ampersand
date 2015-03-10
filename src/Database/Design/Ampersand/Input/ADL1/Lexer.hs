@@ -48,6 +48,7 @@ operators :: [String]
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "." , "0", "1"]
 
+--TODO: Rename this to symbols
 special_chars :: [Char]
 special_chars = "()[],{}<>"
 
@@ -143,13 +144,11 @@ mainLexer p fn cs@(c:s)
                       | otherwise = name				  
            in returnToken (tokt val) p mainLexer p' fn s'
      | isOpsym c = let (name, s') = getOp cs
-                       tokt | isop name = LexKeyword
-                            | otherwise =  LexOp
-                   in returnToken (tokt name) p mainLexer (foldl adv p name) fn s'
+                   in returnToken (LexOp name) p mainLexer (foldl adv p name) fn s'
      | isSymbol c = returnToken (LexSymbol [c]) p mainLexer (advc 1 p) fn s
-     | isDigit c = let (tk,width,s') = getNumber cs
+     | isDigit c  = let (tk,width,s') = getNumber cs
                    in  returnToken tk p mainLexer (advc width p) fn s'
-     | otherwise = lexerError (UnexpectedChar c) (initialPos fn)
+     | otherwise  = lexerError (UnexpectedChar c) (initialPos fn)
 
 -----------------------------------------------------------
 -----------------------------------------------------------
@@ -165,14 +164,12 @@ locatein :: Ord a => [a] -> a -> Bool
 locatein es = isJust . btLocateIn compare (tab2tree (sort es))
 
 iskw :: String -> Bool
-iskw     = locatein keywords
-
-isop :: String -> Bool
-isop     = locatein operators
+iskw = locatein keywords
 
 isSymbol :: Char -> Bool
 isSymbol = locatein special_chars
 
+--TODO: We only need to check the first character of each pooperator
 isOpsym :: Char -> Bool
 isOpsym  = locatein opchars
 
@@ -182,14 +179,16 @@ isIdStart c = isLower c || c == '_'
 isIdChar :: Char -> Bool
 isIdChar c =  isAlphaNum c || c == '_'
 
+-- Finds the longest prefix of cs occurring in keywordsops
 getOp :: String -> (String, String)
-getOp cs -- the longest prefix of cs occurring in keywordsops
-    = f operators cs ""
-      where
-       f ops (e:s) op = if null [s' | o:s'<-ops, e==o] then (op,e:s) --was: f ops (e:s) op = if and (map null ops) then (op,e:s) --b.joosten
-                        else f [s' | o:s'<-ops, e==o] s (op++[e])
-       f []  _     _  = ("",cs)
-       f _   []    op = (op,[])
+getOp cs = findOper operators cs ""
+    where findOper :: [String] -> String -> String -> (String,String)
+          findOper []  _     _  = ("", cs)
+          findOper _   []    op = (op,[])
+          findOper ops (c:rest) op =
+              if null found then (op, c:rest)
+              else findOper found rest (op ++ [c])
+              where found = [s' | o:s'<-ops, c==o]
 
 scanIdent :: Pos -> String -> (String, Pos, String)
 scanIdent p s = let (name,rest) = span isIdChar s

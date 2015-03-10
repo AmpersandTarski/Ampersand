@@ -721,9 +721,9 @@ pTrm6  =  (Prim <$> pRelationRef)  <|>
 --- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef      = pRelSign                                                                                <|>
-                    pid   <$> posOf (pOperator "I")  <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
-                    pfull <$> posOf (pOperator "V")  <*> pMaybe pSign                                       <|>
-                    singl <$> valPosOf pAtom         <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')
+                    pid   <$> posOf (pKeyI)  <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
+                    pfull <$> posOf (pKeyV)  <*> pMaybe pSign                                       <|>
+                    singl <$> valPosOf pAtom <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
