@@ -268,9 +268,6 @@ selectExpr fSpec src trg expr
     In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
     The "outer poles" correspond to the source and target of the entire expression.
     To prevent name conflicts in SQL, each calculated subexpression is aliased in SQL by a unique the fenceName. ".
-SELECT DISTINCT ECps0.`C` AS `SrcC`, ECps0.`A` AS `TgtA`
-FROM `r` AS ECps0, `A`AS ECps2
-WHERE ECps0.`A`<>ECps2.`A
 -}
 {- TODO: Check these assumptions:
      1) We assume that: let exprCps2list = [e0, e1, ... , en],
@@ -290,8 +287,32 @@ WHERE ECps0.`A`<>ECps2.`A
                       where makeFence :: (Int, Expression) -> (Int, Maybe TableRef)
                             makeFence (i,e) 
                               = (i, case e of 
-                                      EDcV{} -> Nothing  
+                               -- The first and the last fence must always exist, because the source and target of the entire expression 
+                               -- depend on them. For a EDcV{} in a non-outer expression, a fence can be skipped. 
+                               -- for an outer expression we can safely generate the fence as a table holding every atom at the outer side.
+                                      EDcV{} | isOuterFence -> Just $ ( outerVselect (if i == firstNr
+                                                                                      then source e
+                                                                                      else target e) `as` fenceName i)
+                                             | otherwise    -> Nothing  
                                       _      -> Just $ (TRQueryExpr . toSQL) (selectExpr fSpec sourceAlias targetAlias e) `as` fenceName i)
+                             where
+                               isOuterFence = i == firstNr || i == lastNr
+                               outerVselect :: A_Concept -> TableRef
+                               outerVselect c = 
+                                 case c of
+                                   ONE  -> fatal 302 $ intercalate "  \n"
+                                             [ "When the outer concept of `es` == ONE, this must be handled in the bseSrc or bseTrg of the "
+                                             , "case: (ECps es), with two or more elements in es. "] 
+                                   _    -> (TRQueryExpr . toSQL) 
+                                                (selectExpr fSpec sourceAlias targetAlias 
+                                                    (if i == firstNr   
+                                                     then EDcV (Sign c ONE)
+                                                     else EDcV (Sign ONE c)
+                                                    )
+                                                )
+                                           
+                                                                  
+                                    
                     -- | each fence(i) has a pole(i) in front of it. The pole holds the constraints between that fence ande the previous fence.
                     polesConstraints :: [(Int, [ValueExpr])]
                     polesConstraints = map makePole (zip [firstNr..lastNr] (Nothing : map Just (init es)))
