@@ -204,57 +204,6 @@ selectExpr fSpec src trg expr
        case exprCps2list expr of
           [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
           [e]-> selectExpr fSpec src trg e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
---          (EDcV (Sign ONE _):fs@(_:_))
---             -> let src'  = noCollide' [trg'] (sqlExprSrc fSpec expr')
---                    trg'  = sqlExprTgt fSpec expr'
---                in 
---                 BSE { bseCmt = "case:  (EDcV (Sign ONE _): expr')"++showADL expr
---                     , bseSrc = NumLit "1"
---                     , bseTrg = Iden [QName "fst1",trg'    ]
---                     , bseTbl = [selectExprInFROM fSpec src' trg' expr' `as` QName "fst2"]
---                     , bseWhr = (Just (notNull (Iden [QName "fst3", trg'])))
---                     }
-                
-          (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
-             -> sqlcomment ("case:  (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_))"
-                            ++showADL expr)
-                (selectExpr fSpec src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
-          [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]-- this will occur quite often because of doSubsExpr
-             -> BSE { bseCmt = "case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTgt _]"++showADL expr
-                    , bseSrc = sqlAtomQuote atomSrc
-                    , bseTrg = sqlAtomQuote atomTgt
-                    , bseTbl = []
-                    , bseWhr = Nothing
-                    }
-          (e@(EMp1 atom _):f:fx)
-             -> let expr' = foldr1 (.:.) (f:fx)
-                    src' = sqlExprSrc fSpec e
-                    trg' = noCollide' [src'] (sqlExprTgt fSpec expr')
-                in 
-                 BSE { bseCmt = "case:  (EMp1{}: f: fx)"++showADL expr
-                     , bseSrc = Iden [QName "fst4",src']
-                     , bseTrg = Iden [QName "fst5",trg']
-                     , bseTbl = [selectExprInFROM fSpec src' trg' expr' `as` QName "fst6"]
-                     , bseWhr = (Just (BinOp (Iden [QName "fst7",src'])
-                                             [Name "="]
-                                             (sqlAtomQuote atom)))
-                     }
---          (e:EDcV _:f:fx) -- prevent calculating V in this case
---             | src==trg && not (isProp e) -> fatal 172 $ "selectExpr 2 src and trg are equal ("++stringOfName src++") in "++showADL e
---             | otherwise -> let expr' = foldr1 (.:.) (f:fx)
---                                src' = sqlExprSrc fSpec e
---                                mid' = noCollide' [src'] (sqlExprTgt fSpec e)
---                                mid2'= sqlExprSrc fSpec f
---                                trg' = noCollide' [mid2'] (sqlExprTgt fSpec expr')
---                            in 
---                             BSE { bseCmt = "case:  (e:ERel (EDcV _) _:f:fx)"++showADL expr
---                                 , bseSrc = Iden [QName "fst8",src']
---                                 , bseTrg = Iden [QName "snd",trg']
---                                 , bseTbl = [selectExprInFROM fSpec src' mid' e      `as` QName "fst9"
---                                            ,selectExprInFROM fSpec mid2' trg' expr' `as` QName "snd"
---                                            ]
---                                 , bseWhr = Nothing
---                                 }
 {-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
     We start numbering the fences with 0. Each fence is connected to the previous fence with a pole.
     the pole holds the constraints of the connection of the fence to the previous fence. Only pole 0 has no previous 
@@ -275,7 +224,9 @@ selectExpr fSpec src trg expr
                                 if ei == EDcV{}  then e(i+1) /= EDcV{}
                                 Or, in plain english: two neighbouring expressions are not both `V`
      2) We assume that for all expressions e in the list: e /= I[ONE]
-           (We don't like:  ... ;V[A*ONE];I[ONE];V[ONE*B];... . It should have been normalized to V[A*B])               
+           (We don't like:  ... ;V[A*ONE];I[ONE];V[ONE*B];... . It should have been normalized to V[A*B])
+     3) We assume that for all neighbouring expressions ei and e(i+1) in the list cannot be both EMp1
+           (`value1`;`value2` can be normalized to `value1` iff value1 == value2. Otherwise it can be normalized to the empty set )
 -}
           es -> let fenceName :: Int -> Name
                     fenceName n = Name ("fence"++show n)
@@ -294,7 +245,10 @@ selectExpr fSpec src trg expr
                                                                                       then source e
                                                                                       else target e) `as` fenceName i)
                                              | otherwise    -> Nothing  
-                                      _      -> Just $ (TRQueryExpr . toSQL) (selectExpr fSpec sourceAlias targetAlias e) `as` fenceName i)
+                                      EMp1{} | isOuterFence -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
+                                             | otherwise    -> Nothing
+                                      _      -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
+                                 )
                              where
                                isOuterFence = i == firstNr || i == lastNr
                                outerVselect :: A_Concept -> TableRef
@@ -303,30 +257,43 @@ selectExpr fSpec src trg expr
                                    ONE  -> fatal 302 $ intercalate "  \n"
                                              [ "When the outer concept of `es` == ONE, this must be handled in the bseSrc or bseTrg of the "
                                              , "case: (ECps es), with two or more elements in es. "] 
-                                   _    -> (TRQueryExpr . toSQL) 
-                                                (selectExpr fSpec sourceAlias targetAlias 
+                                   _    -> TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias $ 
                                                     (if i == firstNr   
                                                      then EDcV (Sign c ONE)
                                                      else EDcV (Sign ONE c)
                                                     )
-                                                )
+                                                
                                            
                                                                   
                                     
                     -- | each fence(i) has a pole(i) in front of it. The pole holds the constraints between that fence ande the previous fence.
                     polesConstraints :: [(Int, [ValueExpr])]
-                    polesConstraints = map makePole (zip [firstNr..lastNr] (Nothing : map Just (init es)))
+                    polesConstraints = map makePole (zip3 [firstNr..lastNr] (Nothing : map Just (init es)) es)
                       where 
-                        makePole :: (Int, Maybe Expression) -> (Int, [ValueExpr])
-                        makePole (i, expressionBeforePole)  =
+                        makePole :: (Int, Maybe Expression, Expression) -> (Int, [ValueExpr])
+                        makePole (i, expressionBeforePole, expressionAfterPole)  =
                           ( i
-                          , case expressionBeforePole of 
-                             Nothing       -> []
-                             (Just EDcV{}) -> []
-                             _             -> [BinOp (Iden [fenceName (i-1),targetAlias])
-                                                    [Name "="]
-                                                    (Iden [fenceName i    ,sourceAlias])]
-                          )
+                          , (case expressionBeforePole of 
+                              Nothing       -> []
+                              (Just EDcV{}) -> []
+                              (Just (EMp1 a _)) 
+                                            -> [BinOp (Iden [fenceName (i-1),targetAlias])
+                                                      [Name "="]
+                                                      (StringLit a)
+                                               ,BinOp (StringLit a)
+                                                      [Name "="]
+                                                      (Iden [fenceName i    ,sourceAlias])]
+                              _             -> [BinOp (Iden [fenceName (i-1),targetAlias])
+                                                      [Name "="]
+                                                      (Iden [fenceName i    ,sourceAlias])]
+                            )
+                            ++
+                            [ -- If the last expression happens to be an Mp1 expression, we have to generate an extra constraint: 
+                              BinOp (Iden [fenceName i, targetAlias])
+                                    [Name "="]
+                                    (Iden [fenceName i, sourceAlias])
+                               | i == lastNr, isMp1 expressionAfterPole ]
+                           )
                           
                 in BSE { bseCmt = "case: (ECps es), with two or more elements in es."++showADL expr
                        , bseSrc = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
