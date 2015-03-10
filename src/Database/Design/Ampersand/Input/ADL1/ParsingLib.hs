@@ -31,13 +31,13 @@ a <$ p = do { _ <- p; return a }
 p <**> q = (\ x f -> f x) CA.<$> p CA.<*> q
 
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
-p <??> q = try (p <**> (q `opt` id))
+p <??> q = p <**> (q `opt` id)
 
 ----------------------------------------------------------------------------------
 -- Functions copied from Lexer after decision to split lexer and parser
 ----------------------------------------------------------------------------------
 
---TODO: The patters here are not always necessary
+--TODO: The patterns here are not always necessary
 --TODO: This function is hard to understand.
 check :: (Lexeme -> Maybe a) -> AmpParser a
 check pred
