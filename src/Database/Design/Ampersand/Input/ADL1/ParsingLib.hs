@@ -1,12 +1,20 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.ParsingLib(
---    UU.getMsgs,UU.parse,UU.evalSteps,UU.Pair(..),UU.Message(..),UU.Action(..),
-    pSym, pSucceed, AmpParser,pAtom,
+    pSucceed, AmpParser,
+    -- Operators
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
+    -- Combinators
     pList, pList1, opt, pListSep, pList1Sep, try,
-    pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
+    -- Basic parsers
+    pAtom, pConid, pString, pExpl, pVarid,
+    --TODO: Remove these, specialize per symbol
+    pSpec, pSym,
+    -- Special symbols
+    pComma,
+    -- Positions
     SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
-    posOf, valPosOf, pOperator,
+    posOf, valPosOf,
+    -- Keywords
     pKeyINCLUDE, pKeyCONTEXT, pKeyENDCONTEXT, pKeyEXTENDS, pKeyTHEMES, pKeyMETA,
     pKeyPATTERN, pKeyENDPATTERN, pKeyPROCESS, pKeyENDPROCESS, pKeyINTERFACE, pKeyCLASS,
     pKeyFOR, pKeyBOX, pKeyROWS, pKeyTABS, pKeyCOLS, pKeyINITIAL,
@@ -18,7 +26,12 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pKeyKEY, pKeyIMPORT, pKeySPEC, pKeyISA, pKeyIS, pKeyI,
     pKeyV, pKeyCLASSIFY, pKeyPRAGMA, pKeyPURPOSE, pKeyIN, pKeyREF,
     pKeyENGLISH, pKeyDUTCH, pKeyREST, pKeyHTML, pKeyLATEX, pKeyMARKDOWN,
-    pKeyONE, pKeyBYPLUG, pKeyROLE, pKeyEDITS, pKeyMAINTAINS 
+    pKeyONE, pKeyBYPLUG, pKeyROLE, pKeyEDITS, pKeyMAINTAINS,
+    -- Operators
+    pOpImplication, pDash, pOpRightArrow, pOpLeftArrow, pEqual, pOpConversion,
+    pPlus, pAsterisk, pSemi, pOpRelAdd, pOpProduct, pOpRelation,
+    pColon, pOpUnion, pOpIntersection, pOpRightResidual, pOpLeftResidual, pOpDiamond,
+    pOpMultiplicity, pOpDot, pOpZero, pOpOne
 ) where
 
 import Control.Monad.Identity (Identity)
@@ -76,6 +89,7 @@ pList = P.many
 pList1 ::  AmpParser a -> AmpParser [a]
 pList1 = P.many1
 
+--TODO: Replace the pListSep functions with specialized functions with separators & outer parenthesis
 pListSep :: AmpParser sep -> AmpParser a -> AmpParser [a]
 pListSep sep a = P.sepBy a sep
 
@@ -309,9 +323,74 @@ pKeyMAINTAINS = pKey "MAINTAINS"
 -- Operators
 -----------------------------------------------------------
 
---TODO: Define function per operator
 pOperator :: String -> AmpParser String
 pOperator op = match (LexOp op)
+
+pOpImplication :: AmpParser String
+pOpImplication = pOperator "|-"
+
+pDash :: AmpParser String
+pDash = pOperator "-"
+
+pOpRightArrow :: AmpParser String
+pOpRightArrow = pOperator "->"
+
+pOpLeftArrow :: AmpParser String
+pOpLeftArrow = pOperator "<-"
+
+pEqual :: AmpParser String
+pEqual = pOperator "="
+
+pOpConversion :: AmpParser String
+pOpConversion = pOperator "~"
+
+pPlus :: AmpParser String
+pPlus = pOperator "+"
+
+pAsterisk :: AmpParser String
+pAsterisk = pOperator "*"
+
+pSemi :: AmpParser String
+pSemi = pOperator ";"
+
+pOpRelAdd :: AmpParser String
+pOpRelAdd = pOperator "!"
+
+pOpProduct :: AmpParser String
+pOpProduct = pOperator "#"
+
+pOpRelation :: AmpParser String
+pOpRelation = pOperator "::"
+
+pColon :: AmpParser String
+pColon = pOperator ":"
+
+pOpUnion :: AmpParser String
+pOpUnion = pOperator "\\/"
+
+pOpIntersection :: AmpParser String
+pOpIntersection = pOperator "/\\"
+
+pOpRightResidual :: AmpParser String
+pOpRightResidual = pOperator "\\"
+
+pOpLeftResidual :: AmpParser String
+pOpLeftResidual = pOperator "/"
+
+pOpDiamond :: AmpParser String
+pOpDiamond = pOperator "<>"
+
+pOpMultiplicity :: AmpParser String
+pOpMultiplicity = pOperator ".."
+
+pOpDot :: AmpParser String
+pOpDot = pOperator "."
+
+pOpZero :: AmpParser String
+pOpZero = pOperator "0"
+
+pOpOne :: AmpParser String
+pOpOne = pOperator "1"
 
 -----------------------------------------------------------
 -- Token parsers
@@ -344,7 +423,6 @@ pAtom :: AmpParser String
 pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 
 --TODO: No basic parsers for the following lexemes
--- LexOp          String
 -- LexChar        Char
 -- LexInteger     Int
 
@@ -356,10 +434,6 @@ pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 --- Comma ::= ','
 pComma :: AmpParser String
 pComma  = pSpec ','
-
---- Semi ::= ';'
-pSemi :: AmpParser String
-pSemi = pSpec ';'
 
 -----------------------------------------------------------
 -- Token positioning

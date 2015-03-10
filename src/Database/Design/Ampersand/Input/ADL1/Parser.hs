@@ -217,7 +217,7 @@ pClassify = rebuild <$> posOf pKeyCLASSIFY
                           }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
-                 pCterm  = f <$> pList1Sep (pOperator "/\\") pCterm1
+                 pCterm  = f <$> pList1Sep pOpIntersection pCterm1
                  pCterm1 = g <$> pConceptRef                        <|>
                            h <$> (pSpec '(' *> pCterm <* pSpec ')')  -- brackets are allowed for educational reasons.
                  f ccs = concat ccs
@@ -227,7 +227,7 @@ pClassify = rebuild <$> posOf pKeyCLASSIFY
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
 pRuleDef =  rebuild <$> posOf pKeyRULE
-                    <*> pMaybe (try (pADLid <* pOperator ":" ))
+                    <*> pMaybe (try (pADLid <* pColon ))
                     <*> pRule
                     <*> pList pMeaning
                     <*> pList pMessage
@@ -250,13 +250,13 @@ pRuleDef =  rebuild <$> posOf pKeyRULE
 
                  --- PairView ::= '(' PairViewSegmentList ')'
                  pPairView :: AmpParser (PairView (Term TermPrim))
-                 pPairView = PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
+                 pPairView = PairView <$ pSpec '(' <*> pList1Sep pComma pPairViewSegment <* pSpec ')'
 
                  --- PairViewSegmentList  ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= SrcOrTgt Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
                  pPairViewSegment = PairViewExp <$> pSrcOrTgt <*>  pTerm
-                                <|> PairViewText <$ pKeyTXT <*> pString
+                                <|> PairViewText <$ pKeyTXT   <*> pString
 
 --- SrcOrTgt ::= 'SRC' | 'TGT'
 pSrcOrTgt :: AmpParser SrcOrTgt
@@ -264,7 +264,7 @@ pSrcOrTgt = Src <$ pKeySRC <|> Tgt <$ pKeyTGT
 
 --- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser P_Declaration
-pRelationDef      = ( rebuild <$> pVarid  <*> posOf (pOperator "::")  <*> pConceptRef  <*> pFun  <*> pConceptRef
+pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef  <*> pFun  <*> pConceptRef
                       <|> rbd <$> posOf pKeyRELATION <*> pVarid  <*> pSign
                     )
                       <*> ((True <$ pKeyBYPLUG) `opt` False)
@@ -272,8 +272,8 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf (pOperator "::")  <*> pConce
                       <*> ((True <$ pKeyBYPLUG) `opt` False)
                       <*> (pPragma `opt` [])
                       <*> pList pMeaning
-                      <*> ((pOperator "=" *> pContent) `opt` [])
-                      <* (pOperator "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
+                      <*> ((pEqual *> pContent) `opt` [])
+                      <* (pOpDot `opt` "") -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                     where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
                             = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
                               where props'= nub (props `uni` fun')
@@ -293,7 +293,7 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf (pOperator "::")  <*> pConce
 
                           --- Props ::= '[' PropList? ']'
                           pProps :: AmpParser [Prop]
-                          pProps  = (f.concat) <$> (pSpec '[' *> pListSep (pSpec ',') pProp <* pSpec ']')
+                          pProps  = (f.concat) <$> (pSpec '[' *> pListSep pComma pProp <* pSpec ']')
                               where f ps = nub (ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)])
                           
                           --- PropList ::= Prop (',' Prop)*
@@ -311,23 +311,23 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf (pOperator "::")  <*> pConce
                           
                           --- Fun ::= '*' | '->' | '<-' | '[' Mult '-' Mult ']'
                           pFun :: AmpParser [Prop]
-                          pFun    = []        <$ pOperator "*"  <|>
-                                    [Uni,Tot] <$ pOperator "->" <|>
-                                    [Sur,Inj] <$ pOperator "<-" <|>
+                          pFun    = []        <$ pAsterisk      <|>
+                                    [Uni,Tot] <$ pOpRightArrow  <|>
+                                    [Sur,Inj] <$ pOpLeftArrow   <|>
                                     (rbld     <$  pSpec '['
                                               <*> (pMult (Sur,Inj) `opt` [])
-                                              <*  pOperator "-"
+                                              <*  pDash
                                               <*> (pMult (Tot,Uni) `opt` [])
                                               <*  pSpec ']'
                                     )
                               where
                                 --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
                                 pMult :: (Prop,Prop) -> AmpParser [Prop]
-                                pMult (ts,ui) = rbld  <$> (( []   <$ pOperator "0") <|> ([ts] <$ pOperator "1") )
-                                                      <*  pOperator ".."
-                                                      <*> (( [ui] <$ pOperator "1") <|> ([]   <$ pOperator "*" )) <|>
-                                                [] <$ pOperator "*"  <|>
-                                                [ts,ui] <$ pOperator "1"
+                                pMult (ts,ui) = rbld  <$> (( []   <$ pOpZero) <|> ([ts] <$ pOpOne) )
+                                                      <*  pOpMultiplicity
+                                                      <*> (( [ui] <$ pOpOne)  <|> ([]   <$ pAsterisk )) <|>
+                                                [] <$ pAsterisk  <|>
+                                                [ts,ui] <$ pOpOne
                                 rbld a b = a++b
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
@@ -353,7 +353,7 @@ pGenDef           = try(rebuild <$> posOf pKeySPEC     <*> pConceptRef <* pKeyIS
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
 --- Index ::= 'IDENT' Label ConceptRefPos '(' IndSegmentList ')'
 pIndex :: AmpParser P_IdentDef
-pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
+pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <* pSpec '(' <*> pList1Sep pComma pIndSegment <* pSpec ')'
     where identity :: Label -> (P_Concept, Origin) -> [P_IdentSegment] -> P_IdentDef
           identity (Lbl nm _ _) (c, orig) ats
            = P_Id { ix_pos = orig
@@ -396,7 +396,7 @@ pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <* pSpec '(' <*> p
 
 --- ViewDef ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentSepList ')'
 pViewDef :: AmpParser P_ViewDef
-pViewDef  = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+pViewDef  = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep pComma pViewSegment <* pSpec ')'
     where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef
           vd (Lbl nm _ _) (c, orig) ats
               = P_Vd { vd_pos = orig
@@ -444,7 +444,7 @@ pInterface = lbl <$> (pKeyINTERFACE *> pADLid_val_pos) <*>
                                                                     --       or  PTrel _ nm sgn
                      (pArgs   `opt` [])                   <*>
                      (pRoles  `opt` [])                   <*>
-                     (pOperator ":" *> pTerm)                  <*>
+                     (pColon *> pTerm)                  <*>
                      pSubInterface
     where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
           lbl (nm,p) iclass params args roles expr sub
@@ -463,11 +463,11 @@ pInterface = lbl <$> (pKeyINTERFACE *> pADLid_val_pos) <*>
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
           --- Params ::= '(' RelSignList ')'
-          pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')'
+          pParams = pSpec '(' *> pList1Sep pComma pRelSign          <* pSpec ')'
           --- InterfaceArgs ::= '{' ADLidListList '}'
-          pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
+          pArgs   = pSpec '{' *> pList1Sep pComma (pList1 pADLid)   <* pSpec '}'
           --- Roles ::= 'FOR' RoleList
-          pRoles  = pKeyFOR *> pList1Sep (pSpec ',') pRole
+          pRoles  = pKeyFOR *> pList1Sep pComma pRole
 
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
@@ -494,7 +494,7 @@ pObjDef            = obj <$> pLabelProps
                                    }
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
-pBox              = pSpec '[' *> pList1Sep (pSpec ',') pObjDef <* pSpec ']'
+pBox              = pSpec '[' *> pList1Sep pComma pObjDef <* pSpec ']'
 
 --- Sqlplug ::= 'SQLPLUG' ObjDef
 pSqlplug :: AmpParser P_ObjectDef
@@ -561,17 +561,17 @@ pPopulation = try (prelpop <$> posOf pKeyPOPULATION <*> pRelSign     <* pKeyCONT
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' RelSignList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation      = rr <$> posOf pKeyROLE              <*>
-                            pList1Sep (pSpec ',') pRole <*
+                            pList1Sep pComma pRole <*
                             pKeyEDITS                   <*>
-                            pList1Sep (pSpec ',') pRelSign
+                            pList1Sep pComma pRelSign
                      where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 pRoleRule :: AmpParser RoleRule
 pRoleRule         = rr <$> posOf pKeyROLE               <*>
-                           pList1Sep (pSpec ',') pRole  <*
+                           pList1Sep pComma pRole  <*
                            pKeyMAINTAINS                <*>
-                           pList1Sep (pSpec ',') pADLid
+                           pList1Sep pComma pADLid
                     where rr p roles rulIds = Maintain roles rulIds p
 
 --- Role ::= ADLid
@@ -582,7 +582,7 @@ pRole =  Role <$> pADLid
 --- PrintThemes ::= 'THEMES' ConceptNameList
 pPrintThemes :: AmpParser [String]
 pPrintThemes = pKeyTHEMES
-            *> pList1Sep (pSpec ',') pConceptName  -- Patterns, processes and concepts share the same name space, so these names must be checked whether the processes and patterns exist.
+            *> pList1Sep pComma pConceptName  -- Patterns, processes and concepts share the same name space, so these names must be checked whether the processes and patterns exist.
 
 --- Meaning ::= 'MEANING' LanguageRef? TextMarkup? (String | Expl)
 pMeaning :: AmpParser PMeaning
@@ -635,8 +635,8 @@ In practice, we have it a little different.
 
 {- In theory, the expression is parsed by:
 pRule :: AmpParser (Term TermPrim)
-pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
-          fEimp <$> pTrm1  <*>  posOf (pOperator "|-") <*>  pTerm   <|>
+pRule  =  fEequ <$> pTrm1  <*>  posOf (pEqual)  <*>  pTerm   <|>
+          fEimp <$> pTrm1  <*>  posOf (pOpImplication) <*>  pTerm   <|>
           pTrm1
           where fequ  lExp orig rExp = PEqu orig lExp rExp
                 fEimp lExp orig rExp = PImp orig lExp rExp
@@ -644,8 +644,8 @@ pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
 -}
 --- Rule ::= Term ('=' Term | '|-' Term)?
 pRule :: AmpParser (Term TermPrim)
-pRule  =  pTerm <??> (fEqu  <$> posOf (pOperator "=")  <*> pTerm <|>
-                      fImpl <$> posOf (pOperator "|-") <*> pTerm )
+pRule  =  pTerm <??> (fEqu  <$> posOf (pEqual)         <*> pTerm <|>
+                      fImpl <$> posOf (pOpImplication) <*> pTerm )
           where fEqu  orig rExp lExp = PEqu orig lExp rExp
                 fImpl orig rExp lExp = PImp orig lExp rExp
 
@@ -660,9 +660,9 @@ The functions pars and f have arguments 'combinator' and 'operator' only to avoi
 -}
 --- Term ::= Trm2 (('\/' Trm2)* | ('\/' Trm2)*)?
 pTerm :: AmpParser (Term TermPrim)
-pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
+pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc pOpIntersection <|> f PUni <$> pars PUni pOpUnion)
           where pars combinator operator
-                 = g <$> posOf (pOperator operator) <*> pTrm2 <*> pMaybe (pars combinator operator)
+                 = g <$> posOf operator <*> pTrm2 <*> pMaybe (pars combinator operator)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
                 f combinator (orig, y) x = combinator orig x y
@@ -670,22 +670,22 @@ pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
 pTrm2 :: AmpParser (Term TermPrim)
-pTrm2   = pTrm3 <??> (f <$> posOf (pOperator "-") <*> pTrm3)
+pTrm2   = pTrm3 <??> (f <$> posOf pDash <*> pTrm3)
           where f orig rExp lExp = PDif orig lExp rExp
 
 -- The left factored version of right- and left residuals:
 --- Trm3 ::= Trm4 ('/' Trm4 | '\' Trm4 | '<>' Trm4)?
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (fLrs <$> posOf (pOperator "/")  <*> pTrm4 <|>
-                      fRrs <$> posOf (pOperator "\\") <*> pTrm4 <|>
-                      fDia <$> posOf (pOperator "<>") <*> pTrm4 )
+pTrm3  =  pTrm4 <??> (fLrs <$> posOf pOpLeftResidual  <*> pTrm4 <|>
+                      fRrs <$> posOf pOpRightResidual <*> pTrm4 <|>
+                      fDia <$> posOf pOpDiamond       <*> pTrm4 )
           where fLrs orig rExp lExp = PLrs orig lExp rExp
                 fRrs orig rExp lExp = PRrs orig lExp rExp
                 fDia orig rExp lExp = PDia orig lExp rExp
 
 {- by the way, a slightly different way of getting exactly the same result is:
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "\\") <|> valPosOf (pOperator "<>")) <*> pTrm4 )
+pTrm3  =  pTrm4 <??> (f <$>  (valPosOf pOpLeftResidual <|> valPosOf pOpRightResidual <|> valPosOf pOpDiamond) <*> pTrm4 )
           where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
                 f ("/" , orig) rExp lExp = PLrs orig lExp rExp
                 f (_   , orig) rExp lExp = PDia orig lExp rExp
@@ -694,18 +694,18 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
-pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
-                      f PRad <$> pars PRad "!" <|>
-                      f PPrd <$> pars PPrd "#")
+pTrm4   = pTrm5 <??> (f PCps <$> pars PCps pSemi     <|>
+                      f PRad <$> pars PRad pOpRelAdd <|>
+                      f PPrd <$> pars PPrd pOpProduct)
           where pars combinator operator
-                 = g <$> posOf (pOperator operator) <*> pTrm5 <*> pMaybe (pars combinator operator)
+                 = g <$> posOf operator <*> pTrm5 <*> pMaybe (pars combinator operator)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
                 f combinator (orig, y) x = combinator orig x y
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
-pTrm5  =  f <$> pList (valPosOf (pOperator "-")) <*> pTrm6  <*> pList (valPosOf (pOperator "~" <|> pOperator "*" <|> pOperator "+" ))
+pTrm5  =  f <$> pList (valPosOf pDash) <*> pTrm6  <*> pList (valPosOf (pOpConversion <|> pAsterisk <|> pPlus ))
           where f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
                 f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)
                 f ms pe (("+",orig):ps) = PKl1 orig (f ms pe ps)              -- e+  Kleene closure (plus)
@@ -739,7 +739,7 @@ pRelSign          = prel  <$> valPosOf pVarid <*> pMaybe pSign
 
 --- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser (P_Sign,Origin)
-pSign = rebuild <$> posOf (pSpec '[') <*> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef) <* pSpec ']'
+pSign = rebuild <$> posOf (pSpec '[') <*> pConceptOneRef <*> pMaybe (pAsterisk *> pConceptOneRef) <* pSpec ']'
    where
      rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
      rebuild orig a mb
@@ -781,25 +781,25 @@ pConceptOneRefPos  = singl <$> posOf pKeyONE   <|>   conid <$> valPosOf pConid  
 pLabelProps :: AmpParser Label
 pLabelProps       = lbl <$> pADLid_val_pos
                         <*> (pArgs `opt` [])
-                        <*  posOf (pOperator ":")
+                        <*  posOf pColon
                     where lbl :: (String, Origin) -> [[String]] -> Label
                           lbl (nm,pos') strs = Lbl nm pos' strs
                           --- LabelPropsArgs ::= '{' ADLidListList '}'
-                          pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
+                          pArgs = pSpec '{' *> pList1Sep pComma (pList1 pADLid) <* pSpec '}'
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser Label
-pLabel       = lbl <$> pADLid_val_pos <*  pOperator ":"
+pLabel       = lbl <$> pADLid_val_pos <*  pColon
                where lbl :: (String, Origin) -> Label
                      lbl (nm,pos') = Lbl nm pos' []
 --- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
 pContent :: AmpParser Pairs
 pContent      = try(pSpec '[' *> pListSep pComma pRecord <* pSpec ']')
-                <|> pSpec '[' *> pListSep (pOperator ";") pRecordObs <* pSpec ']' --obsolete
+                <|> pSpec '[' *> pListSep pSemi pRecordObs <* pSpec ']' --obsolete
     where
     --- RecordList ::= Record (',' Record)*
     --- Record ::= String '*' String
-    pRecord = mkPair<$> pString <* pOperator "*" <*> pString
+    pRecord = mkPair<$> pString <* pAsterisk <*> pString
     --- RecordObsList ::= RecordObsList (';' RecordObsList)
     --- RecordObs ::= '(' String ',' String ')'
     pRecordObs = mkPair<$ pSpec '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete
