@@ -24,25 +24,9 @@ noPos = Pos 0 0
 
 type Filename   = String
 
-data Token = Tok  { tok_lex :: Lexeme
-                   ,tok_pos :: SourcePos }
-
--- TODO: Make use of show Lexeme
-instance Show Token where
-  showsPrec _ token'
-    = showString
-       (case token' of
-        (Tok (LexSymbol val)    p) -> "symbol "                ++      val             ++ show p
-        (Tok (LexOp val)        p) -> "operator "              ++      val             ++ show p
-        (Tok (LexKeyword val)   p) ->                             show val             ++ show p
-        (Tok (LexString val)    p) -> "string \""              ++      val     ++ "\"" ++ show p
-        (Tok (LexExpl val)      p) -> "explanation {+"         ++      val     ++ "-}" ++ show p
-        (Tok (LexAtom val)      p) -> "atom '"                 ++      val     ++ "'"  ++ show p
-        (Tok (LexChar val)      p) -> "character '"            ++ show val     ++ "'"  ++ show p
-        (Tok (LexInteger val)   p) -> "decimal Integer "       ++ show val             ++ show p
-        (Tok (LexLowerId val)   p) -> "lower case identifier " ++      val             ++ show p
-        (Tok (LexUpperId val)   p) -> "upper case identifier " ++      val             ++ show p
-       )
+data Token = Tok { tok_lex :: Lexeme
+                  ,tok_pos :: SourcePos }
+                 deriving(Show)
 
 data Lexeme  = LexSymbol      String -- TODO: we miss a token for special characters (see pSpec). Is this a LexSymbol Char?
              | LexOp          String
@@ -59,16 +43,16 @@ data Lexeme  = LexSymbol      String -- TODO: we miss a token for special charac
 
 instance Show Lexeme where
     show x = case x of
- 		 LexSymbol    val        -> "symbol "                           ++ " '"  ++      val      ++ "'"
- 		 LexOp        val        -> "operator "                         ++ " '"  ++      val      ++ "'"
-		 LexKeyword   val        -> "keyword"                           ++          show val
-		 LexString    val        -> "string "                           ++ " \"" ++      val      ++ "\""
-		 LexExpl      val        -> "Explanation  "                     ++ " {+" ++      val      ++ "+}" 		
-		 LexAtom      val        -> "Atom  "                            ++ " '"  ++      val      ++ "'"		
-		 LexChar      val        -> "character "                        ++ " '"  ++ show val      ++ "'" 		
-		 LexInteger   val        -> "decimal Integer "                  ++          show val
-		 LexUpperId   val        -> "upper case identifier "            ++               val
-		 LexLowerId   val        -> "lower case identifier "            ++               val
+ 		 LexSymbol    val -> "Symbol "                ++ " '"  ++      val ++ "'"
+ 		 LexOp        val -> "Operator "              ++ " '"  ++      val ++ "'"
+		 LexKeyword   val -> "Keyword"                ++          show val
+		 LexString    val -> "String "                ++ " \"" ++      val ++ "\""
+		 LexExpl      val -> "Explanation  "          ++ " {+" ++      val ++ "+}"
+		 LexAtom      val -> "Atom  "                 ++ " '"  ++      val ++ "'"
+		 LexChar      val -> "Character "             ++ " '"  ++ show val ++ "'"
+		 LexInteger   val -> "Integer "               ++          show val
+		 LexLowerId   val -> "Lower case identifier " ++               val
+		 LexUpperId   val -> "Upper case identifier " ++               val
 
 -- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
 -- This is trivial unless you are using the monad in a non-trivial way.

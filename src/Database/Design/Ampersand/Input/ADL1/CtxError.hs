@@ -27,6 +27,7 @@ import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
+import Database.Design.Ampersand.Input.ADL1.ParsingLib(sourceLine, sourceColumn)
 
 fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
