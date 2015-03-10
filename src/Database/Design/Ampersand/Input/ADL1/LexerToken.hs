@@ -30,6 +30,7 @@ instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
 
 data Lexeme  = LexSymbol      String -- TODO: we miss a token for special characters (see pSpec). Is this a LexSymbol Char?
+             -- TODO: Rename to LexOperator
              | LexOp          String
              | LexKeyword     String
              | LexString      String

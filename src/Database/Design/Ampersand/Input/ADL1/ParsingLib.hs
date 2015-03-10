@@ -5,9 +5,20 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     pList, pList1, opt, pListSep, pList1Sep, try,
     pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi,
-    pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos,
-    pKey_val_pos, pKey_pos, pSpec_pos,
-    SourcePos, sourceName, sourceLine, sourceColumn, posOrigin
+    SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
+    posOf, valPosOf, pOperator,
+    pKeyINCLUDE, pKeyCONTEXT, pKeyENDCONTEXT, pKeyEXTENDS, pKeyTHEMES, pKeyMETA,
+    pKeyPATTERN, pKeyENDPATTERN, pKeyPROCESS, pKeyENDPROCESS, pKeyINTERFACE, pKeyCLASS,
+    pKeyFOR, pKeyBOX, pKeyROWS, pKeyTABS, pKeyCOLS, pKeyINITIAL,
+    pKeySQLPLUG, pKeyPHPPLUG, pKeyTYPE, pKeyPOPULATION, pKeyCONTAINS, pKeyUNI,
+    pKeyINJ, pKeySUR, pKeyTOT, pKeySYM, pKeyASY, pKeyTRN,
+    pKeyRFX, pKeyIRF, pKeyAUT, pKeyPROP, pKeyALWAYS, pKeyRULE,
+    pKeyMESSAGE, pKeyVIOLATION, pKeySRC, pKeyTGT, pKeyTEST, pKeyRELATION,
+    pKeyMEANING, pKeyCONCEPT, pKeyIDENT, pKeyVIEW, pKeyTXT, pKeyPRIMHTML,
+    pKeyKEY, pKeyIMPORT, pKeySPEC, pKeyISA, pKeyIS, pKeyI,
+    pKeyV, pKeyCLASSIFY, pKeyPRAGMA, pKeyPURPOSE, pKeyIN, pKeyREF,
+    pKeyENGLISH, pKeyDUTCH, pKeyREST, pKeyHTML, pKeyLATEX, pKeyMARKDOWN,
+    pKeyONE, pKeyBYPLUG, pKeyROLE, pKeyEDITS, pKeyMAINTAINS 
 ) where
 
 import Control.Monad.Identity (Identity)
@@ -19,7 +30,11 @@ import Text.Parsec as P hiding(satisfy)
 
 type AmpParser a = P.ParsecT [Token] SourcePos Identity a
 
---Operators
+-----------------------------------------------------------
+-- Operators
+-----------------------------------------------------------
+
+-- TODO: Use Parsec operators
 infixl 4 <$
 (<$) :: a -> AmpParser b -> AmpParser a
 a <$ p = do { _ <- p; return a }
@@ -35,7 +50,7 @@ p <??> q = p <**> (q `opt` id)
 ----------------------------------------------------------------------------------
 
 check :: (Lexeme -> Maybe a) -> AmpParser a
-check predicate = tokenPrim showTok nextPos match
+check predicate = tokenPrim showTok nextPos matchTok
   where  -- Token pretty-printing function
          showTok :: Token -> String
          showTok (Tok lx _)   = show lx
@@ -44,8 +59,7 @@ check predicate = tokenPrim showTok nextPos match
          nextPos pos _ [] = pos
          nextPos _ _ ((Tok _ pos):_) = pos
          -- ^ Matching function for the token to parse.
-         match :: Token -> Bool
-         match (Tok l _) = predicate l
+         matchTok (Tok l _) = predicate l
 
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing) <?> show lx
@@ -71,10 +85,237 @@ pList1Sep sep a = P.sepBy1 a sep
 opt ::  AmpParser a -> a -> AmpParser a
 a `opt` b = P.option b a
 
--- Basic parsers
--- TODO: Maybe we wanna make functions here for the different keywords.
+-----------------------------------------------------------
+-- Keywords
+-----------------------------------------------------------
+
 pKey :: String -> AmpParser String
 pKey key = match (LexKeyword key)
+
+pKeyINCLUDE :: AmpParser String
+pKeyINCLUDE = pKey "INCLUDE"
+
+pKeyCONTEXT :: AmpParser String
+pKeyCONTEXT = pKey "CONTEXT"
+
+pKeyENDCONTEXT :: AmpParser String
+pKeyENDCONTEXT = pKey "ENDCONTEXT"
+
+pKeyEXTENDS :: AmpParser String
+pKeyEXTENDS = pKey "EXTENDS"
+
+pKeyTHEMES :: AmpParser String
+pKeyTHEMES = pKey "THEMES"
+
+pKeyMETA :: AmpParser String
+pKeyMETA = pKey "META"
+
+pKeyPATTERN :: AmpParser String
+pKeyPATTERN = pKey "PATTERN"
+
+pKeyENDPATTERN :: AmpParser String
+pKeyENDPATTERN = pKey "ENDPATTERN"
+
+pKeyPROCESS :: AmpParser String
+pKeyPROCESS = pKey "PROCESS"
+
+pKeyENDPROCESS :: AmpParser String
+pKeyENDPROCESS = pKey "ENDPROCESS"
+
+pKeyINTERFACE :: AmpParser String
+pKeyINTERFACE = pKey "INTERFACE"
+
+pKeyCLASS :: AmpParser String
+pKeyCLASS = pKey "CLASS"
+
+pKeyFOR :: AmpParser String
+pKeyFOR = pKey "FOR"
+
+pKeyBOX :: AmpParser String
+pKeyBOX = pKey "BOX"
+
+pKeyROWS :: AmpParser String
+pKeyROWS = pKey "ROWS"
+
+pKeyTABS :: AmpParser String
+pKeyTABS = pKey "TABS"
+
+pKeyCOLS :: AmpParser String
+pKeyCOLS = pKey "COLS"
+
+pKeyINITIAL :: AmpParser String
+pKeyINITIAL = pKey "INITIAL"
+
+pKeySQLPLUG :: AmpParser String
+pKeySQLPLUG = pKey "SQLPLUG"
+
+pKeyPHPPLUG :: AmpParser String
+pKeyPHPPLUG = pKey "PHPPLUG"
+
+pKeyTYPE :: AmpParser String
+pKeyTYPE = pKey "TYPE"
+
+pKeyPOPULATION :: AmpParser String
+pKeyPOPULATION = pKey "POPULATION"
+
+pKeyCONTAINS :: AmpParser String
+pKeyCONTAINS = pKey "CONTAINS"
+
+pKeyUNI :: AmpParser String
+pKeyUNI = pKey "UNI"
+
+pKeyINJ :: AmpParser String
+pKeyINJ = pKey "INJ"
+
+pKeySUR :: AmpParser String
+pKeySUR = pKey "SUR"
+
+pKeyTOT :: AmpParser String
+pKeyTOT = pKey "TOT"
+
+pKeySYM :: AmpParser String
+pKeySYM = pKey "SYM"
+
+pKeyASY :: AmpParser String
+pKeyASY = pKey "ASY"
+
+pKeyTRN :: AmpParser String
+pKeyTRN = pKey "TRN"
+
+pKeyRFX :: AmpParser String
+pKeyRFX = pKey "RFX"
+
+pKeyIRF :: AmpParser String
+pKeyIRF = pKey "IRF"
+
+pKeyAUT :: AmpParser String
+pKeyAUT = pKey "AUT"
+
+pKeyPROP :: AmpParser String
+pKeyPROP = pKey "PROP"
+
+pKeyALWAYS :: AmpParser String
+pKeyALWAYS = pKey "ALWAYS"
+
+pKeyRULE :: AmpParser String
+pKeyRULE = pKey "RULE"
+
+pKeyMESSAGE :: AmpParser String
+pKeyMESSAGE = pKey "MESSAGE"
+
+pKeyVIOLATION :: AmpParser String
+pKeyVIOLATION = pKey "VIOLATION"
+
+pKeySRC :: AmpParser String
+pKeySRC = pKey "SRC"
+
+pKeyTGT :: AmpParser String
+pKeyTGT = pKey "TGT"
+
+pKeyTEST :: AmpParser String
+pKeyTEST = pKey "TEST"
+
+pKeyRELATION :: AmpParser String
+pKeyRELATION = pKey "RELATION"
+
+pKeyMEANING :: AmpParser String
+pKeyMEANING = pKey "MEANING"
+
+pKeyCONCEPT :: AmpParser String
+pKeyCONCEPT = pKey "CONCEPT"
+
+pKeyIDENT :: AmpParser String
+pKeyIDENT = pKey "IDENT"
+
+pKeyVIEW :: AmpParser String
+pKeyVIEW = pKey "VIEW"
+
+pKeyTXT :: AmpParser String
+pKeyTXT = pKey "TXT"
+
+pKeyPRIMHTML :: AmpParser String
+pKeyPRIMHTML = pKey "PRIMHTML"
+
+pKeyKEY :: AmpParser String
+pKeyKEY = pKey "KEY"
+
+pKeyIMPORT :: AmpParser String
+pKeyIMPORT = pKey "IMPORT"
+
+pKeySPEC :: AmpParser String
+pKeySPEC = pKey "SPEC"
+
+pKeyISA :: AmpParser String
+pKeyISA = pKey "ISA"
+
+pKeyIS :: AmpParser String
+pKeyIS = pKey "IS"
+
+pKeyI :: AmpParser String
+pKeyI = pKey "I"
+
+pKeyV :: AmpParser String
+pKeyV = pKey "V"
+
+pKeyCLASSIFY :: AmpParser String
+pKeyCLASSIFY = pKey "CLASSIFY"
+
+pKeyPRAGMA :: AmpParser String
+pKeyPRAGMA = pKey "PRAGMA"
+
+pKeyPURPOSE :: AmpParser String
+pKeyPURPOSE = pKey "PURPOSE"
+
+pKeyIN :: AmpParser String
+pKeyIN = pKey "IN"
+
+pKeyREF :: AmpParser String
+pKeyREF = pKey "REF"
+
+pKeyENGLISH :: AmpParser String
+pKeyENGLISH = pKey "ENGLISH"
+
+pKeyDUTCH :: AmpParser String
+pKeyDUTCH = pKey "DUTCH"
+
+pKeyREST :: AmpParser String
+pKeyREST = pKey "REST"
+
+pKeyHTML :: AmpParser String
+pKeyHTML = pKey "HTML"
+
+pKeyLATEX :: AmpParser String
+pKeyLATEX = pKey "LATEX"
+
+pKeyMARKDOWN :: AmpParser String
+pKeyMARKDOWN = pKey "MARKDOWN"
+
+pKeyONE :: AmpParser String
+pKeyONE = pKey "ONE"
+
+pKeyBYPLUG :: AmpParser String
+pKeyBYPLUG = pKey "BYPLUG"
+
+pKeyROLE :: AmpParser String
+pKeyROLE = pKey "ROLE"
+
+pKeyEDITS :: AmpParser String
+pKeyEDITS = pKey "EDITS"
+
+pKeyMAINTAINS :: AmpParser String
+pKeyMAINTAINS = pKey "MAINTAINS"
+
+-----------------------------------------------------------
+-- Operators
+-----------------------------------------------------------
+
+--TODO: Define function per operator
+pOperator :: String -> AmpParser String
+pOperator op = match (LexOp op)
+
+-----------------------------------------------------------
+-- Token parsers
+-----------------------------------------------------------
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
@@ -107,6 +348,11 @@ pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 -- LexChar        Char
 -- LexInteger     Int
 
+-----------------------------------------------------------
+-- Special characters
+-----------------------------------------------------------
+
+--TODO: Make a parser per special character
 --- Comma ::= ','
 pComma :: AmpParser String
 pComma  = pSpec ','
@@ -114,6 +360,10 @@ pComma  = pSpec ','
 --- Semi ::= ';'
 pSemi :: AmpParser String
 pSemi = pSpec ';'
+
+-----------------------------------------------------------
+-- Token positioning
+-----------------------------------------------------------
 
 posOrigin :: Show a => a -> SourcePos -> Origin
 posOrigin sym p = FileLoc (FilePos (sourceName p, p, show sym))
@@ -123,18 +373,3 @@ posOf parser = do { pos <- getPosition; a <- parser; return (posOrigin a pos) }
 
 valPosOf :: Show a => AmpParser a -> AmpParser (String, Origin)
 valPosOf parser = do { pos <- getPosition; a <- parser; return (show a, posOrigin a pos) }
-
-pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  AmpParser (String,Origin)
-pString_val_pos = valPosOf pString
-pVarid_val_pos  = valPosOf pVarid
-pConid_val_pos  = valPosOf pConid
-pAtom_val_pos   = valPosOf pAtom
-
-pKey_val_pos ::  String -> AmpParser (String,Origin)
-pKey_val_pos = valPosOf.pKey
-
-pKey_pos :: String -> AmpParser Origin
-pKey_pos = posOf.pKey
-
-pSpec_pos :: Char -> AmpParser Origin
-pSpec_pos = posOf.pSpec
