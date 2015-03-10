@@ -11,16 +11,13 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 ) where
 
 import Control.Monad.Identity (Identity)
-import Database.Design.Ampersand.Input.ADL1.Lexer
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
 
---TODO: TokenMonad?
 type AmpParser a = P.ParsecT [Token] SourcePos Identity a
-type AmpLexer  a = P.ParsecT String  [Token]   Identity a
 
 --Operators
 infixl 4 <$
@@ -40,22 +37,22 @@ p <??> q = p <**> (q `opt` id)
 --TODO: The patterns here are not always necessary
 --TODO: This function is hard to understand.
 check :: (Lexeme -> Maybe a) -> AmpParser a
-check pred
+check predicate
   = tokenPrimEx
         showTok -- Token pretty-printing function.
         nextPos -- Next position calculating function.
         (Just nextState) -- The next user state
-        (\(Tok l _) -> pred l) -- ^ Matching function for the token to parse.
+        (\(Tok l _) -> predicate l) -- ^ Matching function for the token to parse.
   where  showTok :: Token -> String
-         showTok (Tok lex pos)   = show lex
+         showTok (Tok lx _)   = show lx
          nextPos :: SourcePos -> Token -> [Token] -> SourcePos
          nextPos pos _ [] = pos
-         nextPos _ _ ((Tok lex pos):_) = pos
+         nextPos _ _ ((Tok _ pos):_) = pos
          nextState :: SourcePos -> Token -> [Token] -> SourcePos -> SourcePos
-         nextState oldpos (Tok lex pos) lexemes old = incSourceColumn pos (lexemeLength lex)
+         nextState _ (Tok lx pos) _ _ = incSourceColumn pos (lexemeLength lx)
 
 match :: Lexeme -> AmpParser String
-match lex = check (\lex' -> if (lex == lex') then Just (get_lex_val lex) else Nothing) <?> show lex
+match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing) <?> show lx
 
 pSym :: Token -> AmpParser Token
 pSym = pSym
@@ -85,12 +82,12 @@ pKey key = match (LexKeyword key)
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
-pConid = check (\lex -> case lex of { LexUpperId s -> Just s; other -> Nothing })
+pConid = check (\lx -> case lx of { LexUpperId s -> Just s; _ -> Nothing })
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
 pString :: AmpParser String
-pString = check (\lex -> case lex of { LexString s -> Just s; other -> Nothing })
+pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing })
 
 --TODO: This should not be available for the parser, we can make the abstraction in this lib.
 -- matches special characters
@@ -99,15 +96,15 @@ pSpec sym = match (LexSymbol [sym])
 
 --- Expl ::= '{+' Any* '-}'
 pExpl :: AmpParser String
-pExpl = check (\lex -> case lex of { LexExpl s -> Just s; other -> Nothing })
+pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing })
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
-pVarid = check (\lex -> case lex of { LexLowerId s -> Just s; other -> Nothing })
+pVarid = check (\lx -> case lx of { LexLowerId s -> Just s; _ -> Nothing })
 
 -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
 pAtom :: AmpParser String
-pAtom = check (\lex -> case lex of { LexAtom s -> Just s; other -> Nothing })
+pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 
 --TODO: No basic parsers for the following lexemes
 -- LexOp          String

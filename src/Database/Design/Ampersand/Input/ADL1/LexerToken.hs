@@ -24,10 +24,8 @@ noPos = Pos 0 0
 
 type Filename   = String
 
---TODO: Rename the functions, the first conflicts with the Parsec function, the second is difficult to understand.
-data Token = Tok  { lexeme  :: Lexeme
-                   , sp      :: SourcePos
-                   }
+data Token = Tok  { tok_lex :: Lexeme
+                   ,tok_pos :: SourcePos }
 
 -- TODO: Make use of show Lexeme
 instance Show Token where

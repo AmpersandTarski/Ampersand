@@ -69,7 +69,7 @@ parse p ts =
         --TODO: Make nicer errors
         Left err -> Errors [PE (Message (show err))]
         Right a -> Checked a
-    where pos = sp (head ts)
+    where pos = tok_pos (head ts)
           name = sourceName pos
 
 runParser :: AmpParser a -> Filename -> String -> Guarded a
