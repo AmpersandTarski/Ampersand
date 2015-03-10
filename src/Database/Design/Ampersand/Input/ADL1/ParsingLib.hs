@@ -34,18 +34,18 @@ p <??> q = p <**> (q `opt` id)
 -- Functions copied from Lexer after decision to split lexer and parser
 ----------------------------------------------------------------------------------
 
---TODO: This function is hard to understand.
 check :: (Lexeme -> Maybe a) -> AmpParser a
-check predicate
-  = tokenPrim
-        showTok -- Token pretty-printing function.
-        nextPos -- Next position calculating function.
-        (\(Tok l _) -> predicate l) -- ^ Matching function for the token to parse.
-  where  showTok :: Token -> String
+check predicate = tokenPrim showTok nextPos match
+  where  -- Token pretty-printing function
+         showTok :: Token -> String
          showTok (Tok lx _)   = show lx
+         -- Next position calculating function
          nextPos :: SourcePos -> Token -> [Token] -> SourcePos
          nextPos pos _ [] = pos
          nextPos _ _ ((Tok _ pos):_) = pos
+         -- ^ Matching function for the token to parse.
+         match :: Token -> Bool
+         match (Tok l _) = predicate l
 
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing) <?> show lx
