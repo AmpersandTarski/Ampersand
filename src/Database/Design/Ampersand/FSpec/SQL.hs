@@ -17,6 +17,7 @@ import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.ShowADL
+import Database.Design.Ampersand.Misc
 
 import Data.Char
 import Data.List
@@ -233,22 +234,27 @@ selectExpr fSpec src trg expr
                     firstNr, lastNr :: Int
                     firstNr = 0
                     lastNr = firstNr + length es - 1
-                    fences :: [(Int, Maybe TableRef)]
-                    fences = map makeFence (zip [firstNr..lastNr] es)
-                      where makeFence :: (Int, Expression) -> (Int, Maybe TableRef)
-                            makeFence (i,e) 
-                              = (i, case e of 
+                    fenceExpr :: Int -> Expression 
+                    fenceExpr i = case lookup i (zip [firstNr..lastNr] es) of
+                                    Nothing -> fatal 238 "i out of bound!"
+                                    Just e -> e 
+                    fences :: [Maybe TableRef]
+                    fences = map makeFence [firstNr..lastNr]
+                      where makeFence :: Int -> Maybe TableRef
+                            makeFence i 
+                              = case fenceExpr i of 
                                -- The first and the last fence must always exist, because the source and target of the entire expression 
                                -- depend on them. For a EDcV{} in a non-outer expression, a fence can be skipped. 
                                -- for an outer expression we can safely generate the fence as a table holding every atom at the outer side.
                                       EDcV{} | isOuterFence -> Just $ ( outerVselect (if i == firstNr
-                                                                                      then source e
-                                                                                      else target e) `as` fenceName i)
+                                                                                      then source (head es)
+                                                                                      else target (last es)
+                                                                                     ) `as` fenceName i)
                                              | otherwise    -> Nothing  
-                                      EMp1{} | isOuterFence -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
+                                      e@EMp1{} | isOuterFence -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
                                              | otherwise    -> Nothing
-                                      _      -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
-                                 )
+                                      e      -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
+                                 
                              where
                                isOuterFence = i == firstNr || i == lastNr
                                outerVselect :: A_Concept -> TableRef
@@ -267,33 +273,38 @@ selectExpr fSpec src trg expr
                                                                   
                                     
                     -- | each fence(i) has a pole(i) in front of it. The pole holds the constraints between that fence ande the previous fence.
-                    polesConstraints :: [(Int, [ValueExpr])]
-                    polesConstraints = map makePole (zip3 [firstNr..lastNr] (Nothing : map Just (init es)) es)
+                    polesConstraints :: [[ValueExpr]]
+                    polesConstraints = map makePole [firstNr..lastNr]
                       where 
-                        makePole :: (Int, Maybe Expression, Expression) -> (Int, [ValueExpr])
-                        makePole (i, expressionBeforePole, expressionAfterPole)  =
-                          ( i
-                          , (case expressionBeforePole of 
-                              Nothing       -> []
-                              (Just EDcV{}) -> []
-                              (Just (EMp1 a _)) 
-                                            -> [BinOp (Iden [fenceName (i-1),targetAlias])
-                                                      [Name "="]
-                                                      (StringLit a)
-                                               ,BinOp (StringLit a)
-                                                      [Name "="]
-                                                      (Iden [fenceName i    ,sourceAlias])]
-                              _             -> [BinOp (Iden [fenceName (i-1),targetAlias])
-                                                      [Name "="]
-                                                      (Iden [fenceName i    ,sourceAlias])]
-                            )
-                            ++
-                            [ -- If the last expression happens to be an Mp1 expression, we have to generate an extra constraint: 
-                              BinOp (Iden [fenceName i, targetAlias])
-                                    [Name "="]
-                                    (Iden [fenceName i, sourceAlias])
-                               | i == lastNr, isMp1 expressionAfterPole ]
-                           )
+                        makePole :: Int -> [ValueExpr]
+                        makePole i 
+                          | i < firstNr || i > lastNr = fatal 279 "i out of bound!" 
+                          | i == firstNr = []
+                          | otherwise =
+                               (case fenceExpr i of 
+                                 (EDcV{}) -> []
+--                                 (EMp1 a _) 
+--                                          -> [BinOp (Iden [fenceName (i-1),targetAlias])
+--                                                    [Name "="]
+--                                                    (StringLit a)
+--                                             ,BinOp (StringLit a)
+--                                                    [Name "="]
+--                                                    (Iden [fenceName i    ,sourceAlias])]
+                                 _        -> [BinOp (Iden [fenceName (i-1),targetAlias])
+                                                    [Name "="]
+                                                    (Iden [fenceName i    ,sourceAlias])]
+                               )
+                               ++
+                               [ -- If the last expression happens to be an Mp1 expression, we have to generate an extra constraint: 
+                                BinOp (Iden [fenceName i, targetAlias])
+                                      [Name "="]
+                                      (Iden [fenceName i, sourceAlias])
+                                 | i == lastNr, isMp1 (fenceExpr i) ]
+                               ++ 
+                               [ --Just temporary, for testing only
+                               BinOp (StringLit $ "endPole"++show i)
+                                        [Name "="]
+                                        (StringLit $ "endPole"++show i)]
                           
                 in BSE { bseCmt = "case: (ECps es), with two or more elements in es."++showADL expr
                        , bseSrc = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
@@ -302,8 +313,8 @@ selectExpr fSpec src trg expr
                        , bseTrg = if target (last es) == ONE -- the last expression is V[someConcept*ONE]
                                   then NumLit "1"
                                   else Iden [fenceName lastNr, targetAlias]
-                       , bseTbl = catMaybes . map snd $ fences
-                       , bseWhr = case concatMap snd $ polesConstraints of
+                       , bseTbl = catMaybes fences
+                       , bseWhr = case concat polesConstraints of
                                     [] -> Nothing
                                     cs -> Just (conjunctSQL cs) 
                        }
@@ -417,13 +428,19 @@ selectExpr fSpec src trg expr
                                            , bseWhr = Just $ selectNotExists 
                                                                (toTableRef (selectExprInFROM' fSpec e)) Nothing
                                            }
-              where closedWorld = Name "everything"
+              where closedWorld = Name ("all_"++case theClosedWorldExpression of 
+                                                  (EDcI c) -> plur c
+                                                  (EDcV (Sign s t)) -> plur s ++ "_" ++ plur t 
+                                                  _  -> fatal 434 "closedWorldExpression is not supposed to be of this kind."
+                                       ) 
+                          where plur c = plural (fsLang fSpec) (name c)
                     theClosedWorldExpression =
                        case (source e, target e) of
                          (ONE, ONE) -> fatal 425 "The complement of I[ONE] ???"
                          (ONE, t  ) -> EDcI t
                          (s  , ONE) -> EDcI s
-                         (s  , t  ) -> EDcV (Sign s t) 
+                         (s  , t  ) | s == t    -> EDcI s
+                                    | otherwise -> EDcV (Sign s t) 
                         
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
     EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
