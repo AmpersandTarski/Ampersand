@@ -37,18 +37,15 @@ p <??> q = p <**> (q `opt` id)
 --TODO: This function is hard to understand.
 check :: (Lexeme -> Maybe a) -> AmpParser a
 check predicate
-  = tokenPrimEx
+  = tokenPrim
         showTok -- Token pretty-printing function.
         nextPos -- Next position calculating function.
-        (Just nextState) -- The next user state
         (\(Tok l _) -> predicate l) -- ^ Matching function for the token to parse.
   where  showTok :: Token -> String
          showTok (Tok lx _)   = show lx
          nextPos :: SourcePos -> Token -> [Token] -> SourcePos
          nextPos pos _ [] = pos
          nextPos _ _ ((Tok _ pos):_) = pos
-         nextState :: SourcePos -> Token -> [Token] -> SourcePos -> SourcePos
-         nextState _ (Tok lx pos) _ _ = incSourceColumn pos (lexemeLength lx)
 
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing) <?> show lx

@@ -2,8 +2,7 @@ module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..),
     get_tok_val, get_lex_val, get_tok_pos, get_tok_val_pos,
     Pos(..), Line, Column, Filename,
-    noPos, initPos, lexemeLength,
-    Origin(..), FilePos(..)
+    noPos, initPos, Origin(..), FilePos(..)
 ) where
 
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..), FilePos(..))
@@ -26,7 +25,9 @@ type Filename   = String
 
 data Token = Tok { tok_lex :: Lexeme
                   ,tok_pos :: SourcePos }
-                 deriving(Show)
+
+instance Show Token where
+  show (Tok lx p) = show lx ++ " " ++ show p
 
 data Lexeme  = LexSymbol      String -- TODO: we miss a token for special characters (see pSpec). Is this a LexSymbol Char?
              | LexOp          String
@@ -84,17 +85,3 @@ get_tok_pos (Tok t p) = FileLoc(FilePos (sourceName p ,p, show t))
 -- Gets the location of the token in the file and it's value
 get_tok_val_pos :: Token -> (String, Origin)
 get_tok_val_pos tok = (show tok, get_tok_pos tok)
-
--- TODO: Check the lenghts. This is taken from Helium, but is it necessary? It can never be precise...
-lexemeLength :: Lexeme -> Int
-lexemeLength l = case l of
- 		 LexSymbol    val -> length val
- 		 LexOp        val -> length val
-		 LexKeyword   val -> length val
-		 LexString    val -> length val + 2 -- including quotes
-		 LexExpl      val -> length val + 4 -- including quotes
-		 LexAtom      val -> length val
-		 LexChar      _   -> 3 -- including quotes
-		 LexInteger   val -> val `div` 10
-		 LexUpperId   val -> length val
-		 LexLowerId   val -> length val
