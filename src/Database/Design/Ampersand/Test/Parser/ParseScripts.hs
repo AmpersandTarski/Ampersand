@@ -121,7 +121,7 @@ models = [
         "../ampersand-models/INDOORS/BerichtDefinitie.adl",
         "../ampersand-models/Inspectie OCW/OCWdemo/Voorschriften.adl",
         "../ampersand-models/Inspectie OCW/OCWdemo/Bevoegde_gezagen_basisonderwijs.adl",
-        "../ampersand-models/Inspectie OCW/OCWdemo/batenlasten.adl",
+        --TODO: "../ampersand-models/Inspectie OCW/OCWdemo/batenlasten.adl",
         "../ampersand-models/Inspectie OCW/OCWdemo/basisonderwijs.adl",
         "../ampersand-models/ISAtest/SpecEdit.adl",
         "../ampersand-models/ISAtest/ISAtest2.adl",
