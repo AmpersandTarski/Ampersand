@@ -14,14 +14,13 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.Input.ADL1.Lexer
-import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Data.List
 import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
-import Text.Parsec.Error (messageString,errorMessages,Message(..))
+import Text.Parsec.Error (Message(..))
 import Text.Parsec.Prim (runP)
 
 fatal :: Int -> String -> a
@@ -65,12 +64,12 @@ parseSingleADL opts filePath =
 parse :: AmpParser a -> [Token] -> Guarded a
 parse p ts =
       -- runP :: Parsec s u a -> u -> SourceName -> s -> Either ParseError a 
-    case runP p pos name ts of
+    case runP p pos fn ts of
         --TODO: Make nicer errors
         Left err -> Errors [PE (Message (show err))]
         Right a -> Checked a
     where pos = tok_pos (head ts)
-          name = sourceName pos
+          fn  = sourceName pos
 
 runParser :: AmpParser a -> Filename -> String -> Guarded a
 runParser parser filename input =
@@ -81,7 +80,7 @@ runParser parser filename input =
     --TODO: Give the errors in a better way
     Left err -> Errors [PE (Message (show err))]
     --TODO: Do something with the warnings
-    Right (tokens, warnings)  -> parse parser tokens
+    Right (tokens, _)  -> parse parser tokens
 
 {-
 runParser' :: forall res . AmpParser res -> String -> String -> Either ParseError res
