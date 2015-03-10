@@ -4,10 +4,9 @@ module Database.Design.Ampersand.Input.ADL1.Parser(
     AmpParser, pContext, pPopulations,pTerm, pRule
 ) where
 
-import Database.Design.Ampersand.Input.ADL1.ParsingLib
-import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
 import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
 

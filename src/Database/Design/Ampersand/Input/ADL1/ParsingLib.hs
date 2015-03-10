@@ -34,7 +34,6 @@ p <??> q = p <**> (q `opt` id)
 -- Functions copied from Lexer after decision to split lexer and parser
 ----------------------------------------------------------------------------------
 
---TODO: The patterns here are not always necessary
 --TODO: This function is hard to understand.
 check :: (Lexeme -> Maybe a) -> AmpParser a
 check predicate
@@ -110,9 +109,6 @@ pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 -- LexOp          String
 -- LexChar        Char
 -- LexInteger     Int
--- LexTextName    String
--- LexTextLine    String
--- LexSpace
 
 --- Comma ::= ','
 pComma :: AmpParser String

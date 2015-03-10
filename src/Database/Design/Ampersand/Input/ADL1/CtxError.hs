@@ -25,8 +25,6 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.ParsingLib(SourcePos, sourceLine, sourceColumn)
-import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
 

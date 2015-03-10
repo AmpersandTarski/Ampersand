@@ -42,9 +42,6 @@ instance Show Token where
         (Tok (LexInteger val)   p) -> "decimal Integer "       ++ show val             ++ show p
         (Tok (LexLowerId val)   p) -> "lower case identifier " ++      val             ++ show p
         (Tok (LexUpperId val)   p) -> "upper case identifier " ++      val             ++ show p
-        (Tok (LexTextName val)  p) -> "text name "             ++      val             ++ show p
-        (Tok (LexTextLine val)  p) -> "text line "             ++      val             ++ show p
-        (Tok (LexSpace)         p) -> "spaces "                                        ++ show p
        )
 
 data Lexeme  = LexSymbol      String -- TODO: we miss a token for special characters (see pSpec). Is this a LexSymbol Char?
@@ -58,10 +55,6 @@ data Lexeme  = LexSymbol      String -- TODO: we miss a token for special charac
              --TODO: Either rename this to conId/varId or rename con/var to upper/lower
              | LexUpperId     String
              | LexLowerId     String
-             --TODO: The lexemes below are probably unnecessary
-             | LexTextName    String
-             | LexTextLine    String
-             | LexSpace
   deriving (Eq, Ord)
 
 instance Show Lexeme where
@@ -76,9 +69,6 @@ instance Show Lexeme where
 		 LexInteger   val        -> "decimal Integer "                  ++          show val
 		 LexUpperId   val        -> "upper case identifier "            ++               val
 		 LexLowerId   val        -> "lower case identifier "            ++               val
-		 LexTextName  val        -> "text name "                        ++ " '" ++       val      ++ "'"
-		 LexTextLine  val        -> "text name "                        ++ " '" ++       val      ++ "'"
-		 LexSpace                -> "spaces "
 
 -- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
 -- This is trivial unless you are using the monad in a non-trivial way.
@@ -102,9 +92,6 @@ get_lex_val l = case l of
 		 LexInteger   val -> show val
 		 LexUpperId   val -> val
 		 LexLowerId   val -> val
-		 LexTextName  val -> val
-		 LexTextLine  val -> val
-		 LexSpace         -> " "
 
 -- Gets the location of the token in the file
 get_tok_pos :: Token -> Origin
@@ -127,6 +114,3 @@ lexemeLength l = case l of
 		 LexInteger   val -> val `div` 10
 		 LexUpperId   val -> length val
 		 LexLowerId   val -> length val
-		 LexTextName  val -> length val
-		 LexTextLine  val -> length val
-		 LexSpace         -> 0

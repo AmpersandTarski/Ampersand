@@ -111,6 +111,7 @@ mainLexer p fn ('\'':ss)
 -- Handling infix operators
 -----------------------------------------------------------
 
+--TODO: What are infix operators? Isn't this only for Haskell?
 mainLexer p fn ('`':ss)
      = case ss of
          []    -> lexerError UnterminatedInfix (initialPos fn)
