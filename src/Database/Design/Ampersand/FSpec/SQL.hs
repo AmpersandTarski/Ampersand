@@ -260,16 +260,16 @@ selectExpr fSpec src trg expr
                        outerVselect :: A_Concept -> TableRef
                        outerVselect c = 
                          case c of
-                           ONE  -> fatal 302 $ intercalate "  \n"
+                           ONE  -> fatal 302 $ intercalate "  \n" $
                                      [ "When the outer concept of `es` == ONE, this must be handled in the bseSrc or bseTrg of the "
-                                     , "case: (ECps es), with two or more elements in es. "] 
+                                     , "case: (ECps es), with two or more elements in es. "
+                                     , "expr: "++showADL expr
+                                     ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
                            _    -> TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias $ 
                                             (if i == firstNr   
                                              then EDcV (Sign c ONE)
                                              else EDcV (Sign ONE c)
                                             )
-                                                
-                                           
                                                                   
                                     
                     -- | between two fences there is a pole. The pole holds the constraint(s) between these fences.
@@ -301,10 +301,10 @@ selectExpr fSpec src trg expr
                                     _         -> fatal 294 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
-                                  fatal 286 $ intercalate "\n  " 
+                                  fatal 286 $ intercalate "\n  " $
                                      ["Can this happen? Here is a case to analyse: (i = "++show i++")"
-                                     ,"expr: "++showADL expr
-                                     ]++show (zip (map (stringOfName . fenceName) [firstNr..]) es)
+                                     , "expr: "++showADL expr
+                                     ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
                           where
                             noConstraint str = Just $ BinOp x [Name "="] x
                                      where
