@@ -418,7 +418,7 @@ pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 
 -- matches special characters
 pSpec :: Char -> AmpParser String
-pSpec sym = match (LexSymbol [sym])
+pSpec sym = match (LexSymbol sym)
 
 pComma :: AmpParser String
 pComma  = pSpec ','

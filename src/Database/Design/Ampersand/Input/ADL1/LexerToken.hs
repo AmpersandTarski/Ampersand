@@ -29,8 +29,7 @@ data Token = Tok { tok_lex :: Lexeme
 instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
 
-               --TODO: symbols are chars instead of strings
-data Lexeme  = LexSymbol      String
+data Lexeme  = LexSymbol      Char
              -- TODO: Rename to LexOperator
              | LexOp          String
              | LexKeyword     String
@@ -46,7 +45,7 @@ data Lexeme  = LexSymbol      String
 
 instance Show Lexeme where
     show x = case x of
- 		 LexSymbol    val -> "Symbol "                ++ " '"  ++      val ++ "'"
+ 		 LexSymbol    val -> "Symbol "                ++ " '"  ++    [val] ++ "'"
  		 LexOp        val -> "Operator "              ++ " '"  ++      val ++ "'"
 		 LexKeyword   val -> "Keyword"                ++          show val
 		 LexString    val -> "String "                ++ " \"" ++      val ++ "\""
@@ -68,7 +67,7 @@ get_tok_val (Tok l _) = get_lex_val l
 
 get_lex_val :: Lexeme -> String
 get_lex_val l = case l of
- 		 LexSymbol    val -> val
+ 		 LexSymbol    val -> [val]
  		 LexOp        val -> val
 		 LexKeyword   val -> val
 		 LexString    val -> val

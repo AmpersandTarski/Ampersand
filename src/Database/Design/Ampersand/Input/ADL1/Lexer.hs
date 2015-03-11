@@ -129,18 +129,15 @@ mainLexer p fn cs@(c:s)
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (advc 1 p) s
                name               = c:name'
-               tokt   | iskw name = LexKeyword
-                      | null name' && isSymbol c
-                                  =  LexSymbol
-                      | otherwise = if isIdStart c then LexLowerId else LexUpperId
-               val    | null name' && isSymbol c
-                                  = [c]
-                      | otherwise = name
-           in returnToken (tokt val) p mainLexer p' fn s'
+               tokt   | iskw name = LexKeyword name
+                      | otherwise = if isIdStart c
+                                    then LexLowerId name
+                                    else LexUpperId name
+           in returnToken tokt p mainLexer p' fn s'
      | isOperatorBegin c
          = let (name, s') = getOp cs
            in returnToken (LexOp name) p mainLexer (foldl adv p name) fn s'
-     | isSymbol c = returnToken (LexSymbol [c]) p mainLexer (advc 1 p) fn s
+     | isSymbol c = returnToken (LexSymbol c) p mainLexer (advc 1 p) fn s
      | isDigit c
          = let (tk,width,s') = getNumber cs
            in  returnToken tk p mainLexer (advc width p) fn s'
@@ -214,6 +211,7 @@ lexNest c p fn ('{':'-':s) = lexNest (lexNest c) (advc 2 p) fn s
 lexNest c p fn (x:s)       = lexNest c (adv p x) fn s
 lexNest _ _ fn []          = lexerError UnterminatedComment (initialPos fn)
 
+--TODO: Also accept {+ ... +} as delimiters
 lexExpl :: Lexer -> Lexer
 lexExpl cont pos' file inp = lexExpl' "" cont pos' file inp
  where lexExpl' str _ p fn ('-':'}':s) = returnToken (LexExpl str) p mainLexer (advc 2 p)  fn s
