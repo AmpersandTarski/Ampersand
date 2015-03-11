@@ -7,10 +7,8 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pList, pList1, opt, pListSep, pList1Sep, try,
     -- Basic parsers
     pAtom, pConid, pString, pExpl, pVarid,
-    --TODO: Remove these, specialize per symbol
-    pSpec, pSym,
     -- Special symbols
-    pComma,
+    pComma, pParens, pBraces, pBrackets, pChevrons,
     -- Positions
     SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
     posOf, valPosOf,
@@ -76,9 +74,6 @@ check predicate = tokenPrim showTok nextPos matchTok
 
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing) <?> show lx
-
-pSym :: Token -> AmpParser Token
-pSym = pSym
 
 pSucceed :: a -> AmpParser a
 pSucceed = P.parserReturn
@@ -393,7 +388,7 @@ pOpOne :: AmpParser String
 pOpOne = pOperator "1"
 
 -----------------------------------------------------------
--- Token parsers
+-- Other token parsers
 -----------------------------------------------------------
 
 --- Conid ::= UpperChar (Char | '_')*
@@ -404,11 +399,6 @@ pConid = check (\lx -> case lx of { LexUpperId s -> Just s; _ -> Nothing })
 --- StringListSemi ::= String (';' String)*
 pString :: AmpParser String
 pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing })
-
---TODO: This should not be available for the parser, we can make the abstraction in this lib.
--- matches special characters
-pSpec :: Char -> AmpParser String
-pSpec sym = match (LexSymbol [sym])
 
 --- Expl ::= '{+' Any* '-}'
 pExpl :: AmpParser String
@@ -430,10 +420,24 @@ pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 -- Special characters
 -----------------------------------------------------------
 
---TODO: Make a parser per special character
---- Comma ::= ','
+-- matches special characters
+pSpec :: Char -> AmpParser String
+pSpec sym = match (LexSymbol [sym])
+
 pComma :: AmpParser String
 pComma  = pSpec ','
+
+pParens :: AmpParser a -> AmpParser a
+pParens parser = pSpec '(' CA.*> parser CA.<* pSpec ')'
+
+pBraces :: AmpParser a -> AmpParser a
+pBraces parser = pSpec '{' CA.*> parser CA.<* pSpec '}'
+
+pBrackets :: AmpParser a -> AmpParser a
+pBrackets parser = pSpec '[' CA.*> parser CA.<* pSpec ']'
+
+pChevrons :: AmpParser a -> AmpParser a
+pChevrons parser = pSpec '<' CA.*> parser CA.<* pSpec '>'
 
 -----------------------------------------------------------
 -- Token positioning
@@ -445,5 +449,5 @@ posOrigin sym p = FileLoc (FilePos (sourceName p, p, show sym))
 posOf :: Show a => AmpParser a -> AmpParser Origin
 posOf parser = do { pos <- getPosition; a <- parser; return (posOrigin a pos) }
 
-valPosOf :: Show a => AmpParser a -> AmpParser (String, Origin)
-valPosOf parser = do { pos <- getPosition; a <- parser; return (show a, posOrigin a pos) }
+valPosOf :: Show a => AmpParser a -> AmpParser (a, Origin)
+valPosOf parser = do { pos <- getPosition; a <- parser; return (a, posOrigin a pos) }
