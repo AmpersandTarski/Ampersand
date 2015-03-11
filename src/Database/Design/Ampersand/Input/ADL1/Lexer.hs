@@ -17,10 +17,6 @@ import Database.Design.Ampersand.Misc
 fatal :: Int -> String -> a
 fatal = fatalMsg "Lexer"
 
---  The Ampersand scanner takes the file name (String) for documentation and error messaging.
---   scanner :: String -> String -> [Token]
---   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
-
 keywords :: [String]
 keywords      = [ "INCLUDE"
                 , "CONTEXT", "ENDCONTEXT", "EXTENDS", "THEMES"
@@ -45,7 +41,7 @@ keywords      = [ "INCLUDE"
 
 operators :: [String]
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
-              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "." , "0", "1"]
+              "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
 symbols :: [Char]
 symbols = "()[],{}<>"
@@ -264,7 +260,6 @@ getNumber cs@(c:s)
           = let (n,rs) = span p ts'
             in  if null n
                 then const0
-                --TODO: Are the numbers being read correctly?
                 else (LexInteger (readn base n), 2 + length n, rs)
 
 isHexaDigit :: Char -> Bool
@@ -325,7 +320,9 @@ readn base = foldl (\r x  -> value x + base * r) 0
 -----------------------------------------------------------
 
 --TODO: Can we simplify this? The complete signature is too complicated! See:
---returnToken :: Lexeme -> Pos -> Pos -> Filename  -> String  -> LexerMonad [Token] -> Pos -> Filename  -> String  -> LexerMonad [Token]
+--returnToken :: Lexeme -> Pos -> 
+--     Pos -> Filename  -> String  -> LexerMonad [Token] -> 
+--     Pos -> Filename  -> String  -> LexerMonad [Token]
 returnToken :: Lexeme -> Pos -> Lexer -> Lexer
 returnToken lx (Pos ln col) continue posi fn input = do
     let token = Tok lx (newPos fn ln col)

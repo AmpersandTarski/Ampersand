@@ -324,11 +324,11 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef
                                 
                                 --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
                                 pMult :: (Prop,Prop) -> AmpParser [Prop]
-                                pMult (ts,ui) = (++) <$> (( []   <$ pOpZero) <|> ([ts] <$ pOpOne) )
+                                pMult (ts,ui) = (++) <$> (([]    <$ pZero) <|> ([ts] <$ pOne) )
                                                       <*  pOpMultiplicity
-                                                      <*> (( [ui] <$ pOpOne)  <|> ([]   <$ pAsterisk )) <|>
+                                                      <*> (([ui] <$ pOne)  <|> ([]   <$ pAsterisk )) <|>
                                                 [] <$ pAsterisk  <|>
-                                                [ts,ui] <$ pOpOne
+                                                [ts,ui] <$ pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)
@@ -492,6 +492,7 @@ pObjDef            = obj <$> pLabelProps
                                    , obj_msub = msub
                                    , obj_strs = strs
                                    }
+
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
 pBox              = pBrackets $ pList1Sep pComma pObjDef

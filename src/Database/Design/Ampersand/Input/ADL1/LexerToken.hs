@@ -35,7 +35,7 @@ data Lexeme  = LexSymbol      Char
              | LexString      String
              | LexExpl        String
              | LexAtom        String
-             --TODO: Integers are not used! Ask Stef if we can remove them.
+             --TODO: Errors are confusing if we have no separate tokens for 8 and 16 based numbers
              | LexInteger     Int
              | LexConId       String
              | LexVarId       String
@@ -50,6 +50,7 @@ instance Show Lexeme where
          LexExpl     val -> "Explanation "    ++ "{+" ++      val ++ "+}"
          LexAtom     val -> "Atom "           ++ "'"  ++      val ++ "'"
          LexInteger  val -> "Integer "        ++         show val
+         --TODO: Users may still prefer lower/upper case identifier here.
          LexVarId    val -> "Var identifier " ++              val
          LexConId    val -> "Con identifier " ++              val
 

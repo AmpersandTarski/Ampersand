@@ -5,13 +5,13 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
     pList, pList1, opt, pListSep, pList1Sep, try,
+    -- Positions
+    SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
+    posOf, valPosOf,
     -- Basic parsers
     pAtom, pConid, pString, pExpl, pVarid,
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
-    -- Positions
-    SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
-    posOf, valPosOf,
     -- Keywords
     pKeyINCLUDE, pKeyCONTEXT, pKeyENDCONTEXT, pKeyEXTENDS, pKeyTHEMES, pKeyMETA,
     pKeyPATTERN, pKeyENDPATTERN, pKeyPROCESS, pKeyENDPROCESS, pKeyINTERFACE, pKeyCLASS,
@@ -29,7 +29,9 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pOpImplication, pDash, pOpRightArrow, pOpLeftArrow, pEqual, pOpConversion,
     pPlus, pAsterisk, pSemi, pOpRelAdd, pOpProduct, pOpRelation,
     pColon, pOpUnion, pOpIntersection, pOpRightResidual, pOpLeftResidual, pOpDiamond,
-    pOpMultiplicity, pOpDot, pOpZero, pOpOne
+    pOpMultiplicity, pOpDot,
+    -- Integers
+    pZero, pOne, pInteger
 ) where
 
 import Control.Monad.Identity (Identity)
@@ -381,12 +383,6 @@ pOpMultiplicity = pOperator ".."
 pOpDot :: AmpParser String
 pOpDot = pOperator "."
 
-pOpZero :: AmpParser String
-pOpZero = pOperator "0"
-
-pOpOne :: AmpParser String
-pOpOne = pOperator "1"
-
 -----------------------------------------------------------
 -- Other token parsers
 -----------------------------------------------------------
@@ -411,6 +407,22 @@ pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing })
 -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse (this remark is old. Is it valid to the new lexer?)
 pAtom :: AmpParser String
 pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
+
+-----------------------------------------------------------
+-- Integers
+-----------------------------------------------------------
+
+pNumber :: Int -> AmpParser String
+pNumber nr = match (LexInteger nr)
+
+pInteger :: AmpParser Int
+pInteger = check (\lx -> case lx of { LexInteger i -> Just i; _ -> Nothing })
+
+pZero :: AmpParser String
+pZero = pNumber 0
+
+pOne :: AmpParser String
+pOne = pNumber 1
 
 -----------------------------------------------------------
 -- Special characters
