@@ -50,7 +50,7 @@
 								<span ng-show="item.isError"><i class="glyphicon glyphicon-remove"></i></span>
 							</td>
 							<td nowrap>
-								<button type="button" class="btn btn-success btn-xs" ng-click="item.upload()" ng-disabled="item.isReady || item.isUploading || item.isSuccess">
+								<button type="button" class="btn btn-success btn-xs" ng-click="item.upload()" ng-disabled="item.isReady || item.isUploading">  <!-- Removed: "|| item.isSuccess" to enable the re-upload of a file.-->
 									<span class="glyphicon glyphicon-upload"></span> Upload
 								</button>
 								<button type="button" class="btn btn-warning btn-xs" ng-click="item.cancel()" ng-disabled="!item.isUploading">
