@@ -252,12 +252,14 @@ getNumber cs@(c:s)
   | otherwise        = num10
   where (hs:ts) = s
         const0 = (LexDecimal 0, 0, 1, s)
-        num10  = let (n,r) = span isDigit cs
-                 in (LexDecimal (read n), read n, length n, r)
+        num10  = let (n, rs) = span isDigit cs
+                     nr = read n
+                 in (LexDecimal nr, nr, length n, rs)
         num16   = readNum isHexaDigit  16 LexHex
         num8    = readNum isOctalDigit 8  LexOctal
+        readNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Int, Int, String)
         readNum p base lx
-          = let (n,rs) = span p ts
+          = let (n, rs) = span p ts
             in  if null n
                 then const0
                 else let nr = readn base n

@@ -44,15 +44,15 @@ data Lexeme  = LexSymbol      Char
 
 instance Show Lexeme where
     show x = case x of
-         LexSymbol   val -> "Symbol "                ++ "'"  ++    [val] ++ "'"
-         LexOperator val -> "Operator "              ++ "'"  ++      val ++ "'"
+         LexSymbol   val -> "Symbol "                ++ "'"  ++     [val] ++ "'"
+         LexOperator val -> "Operator "              ++ "'"  ++      val  ++ "'"
          LexKeyword  val -> "Keyword "               ++         show val
-         LexString   val -> "String "                ++ "\"" ++      val ++ "\""
-         LexExpl     val -> "Explanation "           ++ "{+" ++      val ++ "+}"
-         LexAtom     val -> "Atom "                  ++ "'"  ++      val ++ "'"
-         LexDecimal  val -> "Integer "               ++  get_lex_val x
-         LexOctal    val -> "Octal "                 ++  get_lex_val x
-         LexHex      val -> "Hexadecimal "           ++  get_lex_val x
+         LexString   val -> "String "                ++ "\"" ++      val  ++ "\""
+         LexExpl     val -> "Explanation "           ++ "{+" ++      val  ++ "+}"
+         LexAtom     val -> "Atom "                  ++ "'"  ++      val  ++ "'"
+         LexDecimal   _  -> "Integer "               ++      get_lex_val  x
+         LexOctal     _  -> "Octal "                 ++      get_lex_val  x
+         LexHex       _  -> "Hexadecimal "           ++      get_lex_val  x
          LexVarId    val -> "Lower case identifier " ++              val
          LexConId    val -> "Upper case identifier " ++              val
 
@@ -75,14 +75,15 @@ get_lex_val l = case l of
          LexExpl     val -> val
          LexAtom     val -> val
          LexDecimal  val -> show val
-         LexOctal    val -> show "0o"++(toBase 8  val)
-         LexHex      val -> show "0x"++(toBase 16 val)
+         LexOctal    val -> "0o" ++ toBase 8  val
+         LexHex      val -> "0x" ++ toBase 16 val
          LexConId    val -> val
          LexVarId    val -> val
 
 toBase :: Integral a => Show a => a -> a -> String
 toBase b x = conv x ""
-       where conv n str = conv (n `div` b) (show (n `mod` b) ++ str)
+       where conv 0 str = str
+             conv n str = conv (n `div` b) (show (n `mod` b) ++ str)
 
 -- Gets the location of the token in the file
 get_tok_pos :: Token -> Origin
