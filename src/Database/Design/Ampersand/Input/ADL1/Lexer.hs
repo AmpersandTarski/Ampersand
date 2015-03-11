@@ -116,7 +116,7 @@ mainLexer p fn ('`':ss)
                                        tokens | null rest ||
                                                 head rest /= '`' = lexerError UnterminatedInfix (initialPos fn)
                                               | iskw ident       = lexerError (UnexpectedInfixKeyword ident) (initialPos fn)
-                                              | otherwise        = returnToken (LexOp ident) p mainLexer (advc 1 p1) fn (tail rest)
+                                              | otherwise        = returnToken (LexOperator ident) p mainLexer (advc 1 p1) fn (tail rest)
                                    in tokens
                           | otherwise =  lexerError (UnexpectedInfixChar c) (initialPos fn)
                   in res
@@ -136,7 +136,7 @@ mainLexer p fn cs@(c:s)
            in returnToken tokt p mainLexer p' fn s'
      | isOperatorBegin c
          = let (name, s') = getOp cs
-           in returnToken (LexOp name) p mainLexer (foldl adv p name) fn s'
+           in returnToken (LexOperator name) p mainLexer (foldl adv p name) fn s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (advc 1 p) fn s
      | isDigit c
          = let (tk,width,s') = getNumber cs

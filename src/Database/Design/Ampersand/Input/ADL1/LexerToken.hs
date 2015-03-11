@@ -30,8 +30,7 @@ instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
 
 data Lexeme  = LexSymbol      Char
-             -- TODO: Rename to LexOperator
-             | LexOp          String
+             | LexOperator    String
              | LexKeyword     String
              | LexString      String
              | LexExpl        String
@@ -45,15 +44,15 @@ data Lexeme  = LexSymbol      Char
 
 instance Show Lexeme where
     show x = case x of
- 		 LexSymbol    val -> "Symbol "                ++ " '"  ++    [val] ++ "'"
- 		 LexOp        val -> "Operator "              ++ " '"  ++      val ++ "'"
-		 LexKeyword   val -> "Keyword"                ++          show val
-		 LexString    val -> "String "                ++ " \"" ++      val ++ "\""
-		 LexExpl      val -> "Explanation  "          ++ " {+" ++      val ++ "+}"
-		 LexAtom      val -> "Atom  "                 ++ " '"  ++      val ++ "'"
-		 LexInteger   val -> "Integer "               ++          show val
-		 LexLowerId   val -> "Lower case identifier " ++               val
-		 LexUpperId   val -> "Upper case identifier " ++               val
+         LexSymbol    val -> "Symbol "                ++ "'"  ++    [val] ++ "'"
+         LexOperator  val -> "Operator "              ++ "'"  ++      val ++ "'"
+         LexKeyword   val -> "Keyword "               ++         show val
+         LexString    val -> "String "                ++ "\"" ++      val ++ "\""
+         LexExpl      val -> "Explanation "           ++ "{+" ++      val ++ "+}"
+         LexAtom      val -> "Atom "                  ++ "'"  ++      val ++ "'"
+         LexInteger   val -> "Integer "               ++         show val
+         LexLowerId   val -> "Lower case identifier " ++              val
+         LexUpperId   val -> "Upper case identifier " ++              val
 
 -- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
 -- This is trivial unless you are using the monad in a non-trivial way.
@@ -67,15 +66,15 @@ get_tok_val (Tok l _) = get_lex_val l
 
 get_lex_val :: Lexeme -> String
 get_lex_val l = case l of
- 		 LexSymbol    val -> [val]
- 		 LexOp        val -> val
-		 LexKeyword   val -> val
-		 LexString    val -> val
-		 LexExpl      val -> val
-		 LexAtom      val -> val
-		 LexInteger   val -> show val
-		 LexUpperId   val -> val
-		 LexLowerId   val -> val
+         LexSymbol    val -> [val]
+         LexOperator  val -> val
+         LexKeyword   val -> val
+         LexString    val -> val
+         LexExpl      val -> val
+         LexAtom      val -> val
+         LexInteger   val -> show val
+         LexUpperId   val -> val
+         LexLowerId   val -> val
 
 -- Gets the location of the token in the file
 get_tok_pos :: Token -> Origin

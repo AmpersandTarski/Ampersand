@@ -319,7 +319,7 @@ pKeyMAINTAINS = pKey "MAINTAINS"
 -----------------------------------------------------------
 
 pOperator :: String -> AmpParser String
-pOperator op = match (LexOp op)
+pOperator op = match (LexOperator op)
 
 pOpImplication :: AmpParser String
 pOpImplication = pOperator "|-"
