@@ -135,7 +135,7 @@ mainLexer p fn cs@(c:s)
            in returnToken (LexOperator name) p mainLexer (foldl adv p name) fn s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (advc 1 p) fn s
      | isDigit c
-         = let (tk,width,s') = getNumber cs
+         = let (tk,_,width,s') = getNumber cs
            in  returnToken tk p mainLexer (advc width p) fn s'
      | otherwise  = lexerError (UnexpectedChar c) (initialPos fn)
 
@@ -241,8 +241,8 @@ adv pos' c = case c of
 -- Numbers
 -----------------------------------------------------------
 
--- Returns tuple with the parsed lexeme, the amount of read characters and the rest of the text
-getNumber :: String -> (Lexeme, Int, String)
+-- Returns tuple with the parsed lexeme, the integer, the amount of read characters and the rest of the text
+getNumber :: String -> (Lexeme, Int, Int, String)
 getNumber [] = fatal 294 "getNumber"
 getNumber cs@(c:s)
   | c /= '0'         = num10
@@ -251,16 +251,17 @@ getNumber cs@(c:s)
   | hs `elem` "oO"   = num8
   | otherwise        = num10
   where (hs:ts) = s
-        const0 = (LexInteger 0, 1, s)
+        const0 = (LexDecimal 0, 0, 1, s)
         num10  = let (n,r) = span isDigit cs
-                 in (LexInteger (read n), length n, r)
-        num16   = readNum isHexaDigit  16 ts
-        num8    = readNum isOctalDigit 8 ts
-        readNum p base ts'
-          = let (n,rs) = span p ts'
+                 in (LexDecimal (read n), read n, length n, r)
+        num16   = readNum isHexaDigit  16 LexHex
+        num8    = readNum isOctalDigit 8  LexOctal
+        readNum p base lx
+          = let (n,rs) = span p ts
             in  if null n
                 then const0
-                else (LexInteger (readn base n), 2 + length n, rs)
+                else let nr = readn base n
+                     in (lx nr, nr, 2 + length n, rs)
 
 isHexaDigit :: Char -> Bool
 isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
@@ -302,7 +303,7 @@ getchar (x:xs)      = (Just x,1,xs)
 
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
-getEscChar s@(x:xs) | isDigit x = let (LexInteger val, len, rest) = getNumber s
+getEscChar s@(x:xs) | isDigit x = let (_, val, len, rest) = getNumber s
                                   in  if val >= 0 && val <= 255
                                          then (Just (chr val),len, rest)
                                          else (Nothing, 1, rest)

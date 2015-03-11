@@ -35,24 +35,26 @@ data Lexeme  = LexSymbol      Char
              | LexString      String
              | LexExpl        String
              | LexAtom        String
-             --TODO: Errors are confusing if we have no separate tokens for 8 and 16 based numbers
-             | LexInteger     Int
+             | LexDecimal     Int
+             | LexOctal       Int
+             | LexHex         Int
              | LexConId       String
              | LexVarId       String
   deriving (Eq, Ord)
 
 instance Show Lexeme where
     show x = case x of
-         LexSymbol   val -> "Symbol "         ++ "'"  ++    [val] ++ "'"
-         LexOperator val -> "Operator "       ++ "'"  ++      val ++ "'"
-         LexKeyword  val -> "Keyword "        ++         show val
-         LexString   val -> "String "         ++ "\"" ++      val ++ "\""
-         LexExpl     val -> "Explanation "    ++ "{+" ++      val ++ "+}"
-         LexAtom     val -> "Atom "           ++ "'"  ++      val ++ "'"
-         LexInteger  val -> "Integer "        ++         show val
-         --TODO: Users may still prefer lower/upper case identifier here.
-         LexVarId    val -> "Var identifier " ++              val
-         LexConId    val -> "Con identifier " ++              val
+         LexSymbol   val -> "Symbol "                ++ "'"  ++    [val] ++ "'"
+         LexOperator val -> "Operator "              ++ "'"  ++      val ++ "'"
+         LexKeyword  val -> "Keyword "               ++         show val
+         LexString   val -> "String "                ++ "\"" ++      val ++ "\""
+         LexExpl     val -> "Explanation "           ++ "{+" ++      val ++ "+}"
+         LexAtom     val -> "Atom "                  ++ "'"  ++      val ++ "'"
+         LexDecimal  val -> "Integer "               ++  get_lex_val x
+         LexOctal    val -> "Octal "                 ++  get_lex_val x
+         LexHex      val -> "Hexadecimal "           ++  get_lex_val x
+         LexVarId    val -> "Lower case identifier " ++              val
+         LexConId    val -> "Upper case identifier " ++              val
 
 -- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
 -- This is trivial unless you are using the monad in a non-trivial way.
@@ -72,9 +74,15 @@ get_lex_val l = case l of
          LexString   val -> val
          LexExpl     val -> val
          LexAtom     val -> val
-         LexInteger  val -> show val
+         LexDecimal  val -> show val
+         LexOctal    val -> show "0o"++(toBase 8  val)
+         LexHex      val -> show "0x"++(toBase 16 val)
          LexConId    val -> val
          LexVarId    val -> val
+
+toBase :: Integral a => Show a => a -> a -> String
+toBase b x = conv x ""
+       where conv n str = conv (n `div` b) (show (n `mod` b) ++ str)
 
 -- Gets the location of the token in the file
 get_tok_pos :: Token -> Origin

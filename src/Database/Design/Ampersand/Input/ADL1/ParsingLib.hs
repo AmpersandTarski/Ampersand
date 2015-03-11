@@ -413,10 +413,14 @@ pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
 -----------------------------------------------------------
 
 pNumber :: Int -> AmpParser String
-pNumber nr = match (LexInteger nr)
+pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
 pInteger :: AmpParser Int
-pInteger = check (\lx -> case lx of { LexInteger i -> Just i; _ -> Nothing })
+pInteger = check isNr
+    where isNr (LexDecimal i) = Just i
+          isNr (LexHex i)     = Just i
+          isNr (LexOctal i)   = Just i
+          isNr _              = Nothing
 
 pZero :: AmpParser String
 pZero = pNumber 0
