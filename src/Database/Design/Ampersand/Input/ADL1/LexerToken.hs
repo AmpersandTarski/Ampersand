@@ -29,6 +29,7 @@ data Token = Tok { tok_lex :: Lexeme
 instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
 
+               --TODO: symbols are chars instead of strings
 data Lexeme  = LexSymbol      String
              -- TODO: Rename to LexOperator
              | LexOp          String
@@ -36,7 +37,7 @@ data Lexeme  = LexSymbol      String
              | LexString      String
              | LexExpl        String
              | LexAtom        String
-             | LexChar        Char
+             --TODO: Integers are not used! Ask Stef if we can remove them.
              | LexInteger     Int
              --TODO: Either rename this to conId/varId or rename con/var to upper/lower
              | LexUpperId     String
@@ -51,7 +52,6 @@ instance Show Lexeme where
 		 LexString    val -> "String "                ++ " \"" ++      val ++ "\""
 		 LexExpl      val -> "Explanation  "          ++ " {+" ++      val ++ "+}"
 		 LexAtom      val -> "Atom  "                 ++ " '"  ++      val ++ "'"
-		 LexChar      val -> "Character "             ++ " '"  ++ show val ++ "'"
 		 LexInteger   val -> "Integer "               ++          show val
 		 LexLowerId   val -> "Lower case identifier " ++               val
 		 LexUpperId   val -> "Upper case identifier " ++               val
@@ -74,7 +74,6 @@ get_lex_val l = case l of
 		 LexString    val -> val
 		 LexExpl      val -> val
 		 LexAtom      val -> val
-		 LexChar      val -> [val]
 		 LexInteger   val -> show val
 		 LexUpperId   val -> val
 		 LexLowerId   val -> val

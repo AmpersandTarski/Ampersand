@@ -408,13 +408,9 @@ pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing })
 pVarid :: AmpParser String
 pVarid = check (\lx -> case lx of { LexLowerId s -> Just s; _ -> Nothing })
 
--- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse
+-- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse (this remark is old. Is it valid to the new lexer?)
 pAtom :: AmpParser String
 pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
-
---TODO: No basic parsers for the following lexemes
--- LexChar        Char
--- LexInteger     Int
 
 -----------------------------------------------------------
 -- Special characters
