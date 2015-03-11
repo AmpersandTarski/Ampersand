@@ -241,35 +241,20 @@ selectExpr fSpec src trg expr
                     fences :: [Maybe TableRef]
                     fences = map fenceTable [firstNr..lastNr]
                     fenceTable :: Int -> Maybe TableRef
-                    fenceTable i 
-                      = case fenceExpr i of 
-                       -- The first and the last fence must always exist, because the source and target of the entire expression 
-                       -- depend on them. For a EDcV{} in a non-outer expression, a fence can be skipped. 
-                       -- for an outer expression we can safely generate the fence as a table holding every atom at the outer side.
-                            EDcV{} | isOuterFence -> Just $ ( outerVselect (if i == firstNr
-                                                                            then source (head es)
-                                                                            else target (last es)
-                                                                           ) `as` fenceName i)
-                                   | otherwise    -> Nothing  
-                            e@EMp1{} | isOuterFence -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
-                                   | otherwise    -> Nothing
-                            e      -> Just ((TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) e `as` fenceName i)
-                        
+                    fenceTable i = 
+                      -- The first and the last fence must always exist, because the source and target of the entire expression 
+                      -- depend on them. 
+                      if i == firstNr || i == lastNr 
+                      then makeNormalFence
+                      else 
+                        case fenceExpr i of 
+                       -- In some cases of a non-outer expression, a fence need not be generated, to get better SQL queries. 
+                            EDcV{} -> Nothing  
+                            EMp1{} -> Nothing
+                            _      -> makeNormalFence
                      where
-                       isOuterFence = i == firstNr || i == lastNr
-                       outerVselect :: A_Concept -> TableRef
-                       outerVselect c = 
-                         case c of
-                           ONE  -> fatal 302 $ intercalate "  \n" $
-                                     [ "When the outer concept of `es` == ONE, this must be handled in the bseSrc or bseTrg of the "
-                                     , "case: (ECps es), with two or more elements in es. "
-                                     , "expr: "++showADL expr
-                                     ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
-                           _    -> TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias $ 
-                                            (if i == firstNr   
-                                             then EDcV (Sign c ONE)
-                                             else EDcV (Sign ONE c)
-                                            )
+                       makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) (fenceExpr i) `as` fenceName i
+                       
                                                                   
                                     
                     -- | between two fences there is a pole. The pole holds the constraint(s) between these fences.
