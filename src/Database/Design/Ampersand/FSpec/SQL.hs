@@ -34,15 +34,13 @@ selectSrcTgt ::
            FSpec       -- current context
         -> Expression  -- expression to be translated
         -> QueryExpr   -- resulting SQL expression
-selectSrcTgt fSpec expr = toSQL (selectExpr fSpec sourceAlias targetAlias expr)
+selectSrcTgt fSpec expr = toSQL (selectExpr fSpec expr)
 
 
 sourceAlias, targetAlias :: Name
 sourceAlias = (Name "src") 
 targetAlias = (Name "tgt")
 selectExpr :: FSpec    -- current context
-        -> Name        -- SQL name of the source of this expression, as assigned by the environment
-        -> Name        -- SQL name of the target of this expression, as assigned by the environment
         -> Expression  -- expression to be translated
         -> BinQueryExpr   -- resulting info for the binary SQL expression
 -- In order to translate all Expressions, code generators have been written for EUni ( \/ ), EIsc ( /\ ), EFlp ( ~ ), ECpl (unary - ), and ECps ( ; ),
@@ -53,7 +51,7 @@ selectExpr :: FSpec    -- current context
 -- That allows more efficient code while retaining correctness and completeness as much as possible.
 -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
-selectExpr fSpec src trg expr
+selectExpr fSpec expr
  = case expr of
     EIsc{} -> 
     {- The story on the case of EIsc:
@@ -146,7 +144,7 @@ selectExpr fSpec src trg expr
                                                           }
                                        makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
                                        makeIntersectSelectExpr exprs =
-                                        case map (selectExpr fSpec sourceAlias targetAlias) exprs of 
+                                        case map (selectExpr fSpec) exprs of 
                                           []  -> fatal 126 "makeIntersectSelectExpr must not be used on empty list"
                                           [e] -> e
                                           es  -> -- Note: We now have at least two subexpressions
@@ -167,44 +165,17 @@ selectExpr fSpec src trg expr
                                                       = [ BinOp (Iden[iSect n,sourceAlias]) [Name "="] (Iden[iSect 0,sourceAlias])
                                                         , BinOp (Iden[iSect n,targetAlias]) [Name "="] (Iden[iSect 0,targetAlias])
                                                         ]
---                                          (e:es) -> BCQE { bcqeCmt  = "intersect case"
---                                                         , bcqeOper = Intersect
---                                                         , bcqe0    = selectExpr fSpec sourceAlias targetAlias e
---                                                         , bcqe1    = makeIntersectSelectExpr es
---                                                         }
 
     EUni (l,r) -> BCQE { bcqeCmt  = "case: EUni (l,r)"++showADL expr++" ("++show (sign expr)++")"
                        , bcqeOper = Union
-                       , bcqe0    = selectExpr fSpec src trg l
-                       , bcqe1    = selectExpr fSpec src trg r
+                       , bcqe0    = selectExpr fSpec l
+                       , bcqe1    = selectExpr fSpec r
                        }
-    
-    
---    ECps (EDcV (Sign ONE _), ECpl expr')
---     -> case target expr' of
---         ONE -> fatal 137 "sqlConcept not defined for ONE"
---         _   -> let src'  = sqlAttConcept fSpec (source expr')
---                    trg'  = sqlAttConcept fSpec (target expr')
---                    trg2  = noCollide' [src'] (sqlAttConcept fSpec (target expr'))
---                    allAtoms = Name "allAtoms"
---                    complemented = Name "complemented"
---                in BSE { bseCmt = "case:  ECps (EDcV (Sign ONE _), ECpl expr') "++showADL expr
---                       , bseSrc = NumLit "1"
---                       , bseTrg = Iden [trg'    ]
---                       , bseTbl = [sqlConceptTable fSpec (target expr') `as` allAtoms]
---                       , bseWhr = Just $ selectNotExists 
---                                           (selectExprInFROM fSpec src' trg' expr' `as` complemented)
---                                           (Just (BinOp (Iden [complemented,trg2])
---                                                          [Name "="]
---                                                        (Iden [allAtoms,trg'])
---                                                 )
---                                           )
---                       }
                                  
     ECps{}  ->
        case exprCps2list expr of
           [] -> fatal 190 ("impossible outcome of exprCps2list: "++showADL expr)
-          [e]-> selectExpr fSpec src trg e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
+          [e]-> selectExpr fSpec e -- Even though this case cannot occur, it safeguards that there are two or more elements in exprCps2list expr in the remainder of this code.
 {-  We can treat the ECps expressions as poles-and-fences, with at least two fences.
     We start numbering the fences with 0. Each fence is connected to the previous fence with a pole.
     the pole holds the constraints of the connection of the fence to the previous fence. Only pole 0 has no previous 
@@ -253,7 +224,7 @@ selectExpr fSpec src trg expr
                             EMp1{} -> Nothing
                             _      -> makeNormalFence
                      where
-                       makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec sourceAlias targetAlias) (fenceExpr i) `as` fenceName i
+                       makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
                        
                                                                   
                                     
@@ -309,7 +280,7 @@ selectExpr fSpec src trg expr
                                     [] -> Nothing
                                     cs -> Just (conjunctSQL cs) 
                        }
-    (EFlp x) -> case selectExpr fSpec src trg x of
+    (EFlp x) -> case selectExpr fSpec x of
                  se@BSE{} -> BSE { bseCmt = "(flipped): "++ bseCmt se
                                  , bseSrc = bseTrg se
                                  , bseTrg = bseSrc se
@@ -324,41 +295,38 @@ selectExpr fSpec src trg expr
                          , bseWhr = Nothing
                          }
     (EDcV (Sign s t))    -> sqlcomment ("case: (EDcV (Sign s t))   V[ \""++show (Sign s t)++"\" ]") $
-                            let (psrc,fsrc) = getConceptTableInfo fSpec s
-                                (ptgt,ftgt) = getConceptTableInfo fSpec t
-                                (src1,trg1,tbl1) 
-                                  = case (s,t) of
-                                       (ONE, ONE) -> fatal 309 "V[ONE*ONE] ???"
-                                       (_  , ONE) -> ( Iden [QName (name psrc),QName (name fsrc)]
-                                                     , NumLit "1"
-                                                     , [TRSimple [QName (name psrc)]]
-                                                     )
-                                       (ONE, _  ) -> ( NumLit "1"
-                                                     , Iden [QName (name ptgt),QName (name ftgt)]
-                                                     , [TRSimple [QName (name ptgt)]]
-                                                     )
-                                       _     -> if s == t
-                                                then let a0 = QName (name fsrc)
-                                                         a1 = QName (name fsrc++"1")
-                                                     in
-                                                     ( Iden [a0,QName (name fsrc)]
-                                                     , Iden [a1,QName (name ftgt)]
-                                                     , [TRSimple [QName (name psrc)] `as` a0
-                                                       ,TRSimple [QName (name ptgt)] `as` a1]
-                                                     )
-                                                else ( Iden [QName (name psrc),QName (name fsrc)]
-                                                     , Iden [QName (name ptgt),QName (name ftgt)]
-                                                     , [TRSimple [QName (name psrc)]
-                                                       ,TRSimple [QName (name ptgt)]]
-                                                     )
-                            in 
-                               BSE { bseCmt = ""
-                                   , bseSrc = src1
-                                   , bseTrg = trg1
-                                   , bseTbl = tbl1
-                                   , bseWhr = Nothing
-                                   }
-    
+                 let (psrc,fsrc) = (QName (name plug), QName (name fld))
+                                     where (plug,fld) = getConceptTableInfo fSpec s
+                     (ptgt,ftgt) = (QName (name plug), QName (name fld))
+                                     where (plug,fld) = getConceptTableInfo fSpec t
+                 in case (s,t) of
+                     (ONE, ONE) -> fatal 309 "V[ONE*ONE] ???"
+                     (_  , ONE) -> BSE { bseCmt = ""
+                                       , bseSrc = Iden [psrc, fsrc]
+                                       , bseTrg = NumLit "1"
+                                       , bseTbl = [TRSimple [psrc]]
+                                       , bseWhr = Just (notNull (Iden [psrc, fsrc]))
+                                                              
+                                       }
+                     (ONE, _  ) -> BSE { bseCmt = ""
+                                       , bseSrc = NumLit "1"
+                                       , bseTrg = Iden [ptgt, ftgt]
+                                       , bseTbl = [TRSimple [ptgt]]
+                                       , bseWhr = Just (notNull (Iden [ptgt, ftgt]))
+                                       }
+                     _     -> if s == t
+                              then selectExpr fSpec (EDcI s)
+                              else BSE { bseCmt = ""
+                                       , bseSrc = Iden [first, fsrc]
+                                       , bseTrg = Iden [secnd, ftgt]
+                                       , bseTbl = [TRSimple [psrc] `as` first
+                                                  ,TRSimple [ptgt] `as` secnd]
+                                       , bseWhr = Just $ conjunctSQL
+                                               [notNull (Iden[first, fsrc]), notNull (Iden[secnd, ftgt])]
+                                       }
+                                where
+                                  first = Name "fst"
+                                  secnd = Name "snd"
     
     (EDcI c)             -> case c of
                               ONE ->   BSE { bseCmt = "I[ONE]"
@@ -370,8 +338,8 @@ selectExpr fSpec src trg expr
                               PlainConcept{} -> 
                                  let cAtt = sqlAttConcept fSpec c
                                  in    BSE { bseCmt = "I["++name c++"]"
-                                           , bseSrc = selectSelItem' (cAtt)
-                                           , bseTrg = selectSelItem' (cAtt)
+                                           , bseSrc = Iden [cAtt]
+                                           , bseTrg = Iden [cAtt]
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull (Iden [cAtt]))
                                            }
@@ -386,14 +354,14 @@ selectExpr fSpec src trg expr
                               PlainConcept{} -> 
                                  let cAtt = sqlAttConcept fSpec c
                                  in    BSE { bseCmt = "epsilon "++name c++" "++showSign sgn
-                                           , bseSrc = selectSelItem' (cAtt)
-                                           , bseTrg = selectSelItem' (cAtt)
+                                           , bseSrc = Iden [cAtt]
+                                           , bseTrg = Iden [cAtt]
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull (Iden [cAtt]))
                                            }
     (EDcD d)             -> selectExprRelationNew fSpec d
 
-    (EBrk e)             -> selectExpr fSpec src trg e
+    (EBrk e)             -> selectExpr fSpec e
 
     (ECpl e)
       -> case e of
@@ -413,17 +381,17 @@ selectExpr fSpec src trg expr
                              where concpt = sqlAttConcept fSpec c
            _ | otherwise       -> sqlcomment ("case: ECpl e"++"ECpl ( \""++showADL e++"\" )") $
                                        BSE { bseCmt = "case: ECpl e"++"ECpl ( \""++showADL e++"\" )"
-                                           , bseSrc = Iden [closedWorld,sourceAlias]
-                                           , bseTrg = Iden [closedWorld,targetAlias]
-                                           , bseTbl = [(toTableRef . selectExprInFROM' fSpec) theClosedWorldExpression `as` closedWorld]
+                                           , bseSrc = Iden [closedWorldName,sourceAlias]
+                                           , bseTrg = Iden [closedWorldName,targetAlias]
+                                           , bseTbl = [(toTableRef . selectExpr fSpec) theClosedWorldExpression `as` closedWorldName]
                                            , bseWhr = Just $ selectNotExists 
-                                                               (toTableRef (selectExprInFROM' fSpec e)) Nothing
+                                                               (toTableRef (selectExpr fSpec e)) Nothing
                                            }
-              where closedWorld = QName ("all_"++case theClosedWorldExpression of 
-                                                  (EDcI c) -> plur c
-                                                  (EDcV (Sign s t)) -> plur s ++ "_" ++ plur t 
-                                                  _  -> fatal 434 "closedWorldExpression is not supposed to be of this kind."
-                                       ) 
+              where closedWorldName = case theClosedWorldExpression of 
+                                    (EDcI c)          -> QName ("all "++ plur c)
+                                    (EDcV (Sign s t)) -> QName ("cartesian product of "++plur s ++ " and " ++ plur t) 
+                                    _                 -> fatal 434 "closedWorldExpression is not supposed to be of this kind."
+                                       
                           where plur c = plural (fsLang fSpec) (name c)
                     theClosedWorldExpression =
                        case (source e, target e) of
@@ -436,18 +404,18 @@ selectExpr fSpec src trg expr
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
     EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
     (EDif (EDcV _,x)) -> sqlcomment ("case: EDif V x"++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
-                                    (selectExpr fSpec src trg (notCpl x))
+                                    (selectExpr fSpec (notCpl x))
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
 -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l,r)
       -> sqlcomment ("case: EEqu (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-         selectExpr fSpec src trg ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
+         selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
     EImp (l,r)
       -> sqlcomment ("case: EImp (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-         selectExpr fSpec src trg (ECpl l .\/. r)
+         selectExpr fSpec (ECpl l .\/. r)
     EDif (l,r)
       -> sqlcomment ("case: EDif (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-         selectExpr fSpec src trg (l ./\. ECpl r)
+         selectExpr fSpec (l ./\. ECpl r)
     ERrs (l,r) -- The right residual l\r is defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
 {- In order to obtain an SQL-query, we make a Haskell derivation of the right residual:
              and [    (z,x)    `elem` contents l -> (z,y) `elem` contents r  | z<-contents (source l)]
@@ -518,17 +486,17 @@ Based on this derivation:
                          rResiduClause
     ELrs (l,r)
       -> sqlcomment ("case: ELrs (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-         selectExpr fSpec trg src (EFlp (flp r .\. flp l))
+         selectExpr fSpec (EFlp (flp r .\. flp l))
     EDia (l,r)
       -> sqlcomment ("case: EDia (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-         selectExpr fSpec trg src ((flp l .\. r) ./\. (l ./. flp r))
+         selectExpr fSpec ((flp l .\. r) ./\. (l ./. flp r))
     ERad{}
       -> sqlcomment ("case: ERad (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-        selectExpr fSpec src trg (deMorganERad expr)
+        selectExpr fSpec (deMorganERad expr)
     EPrd (l,r)
      -> let v = EDcV (Sign (target l) (source r))
         in sqlcomment ("case: EPrd (l,r)"++showADL expr++" ("++show (sign expr)++")") $
-           selectExpr fSpec src trg (foldr1 (.:.) [l,v,r])
+           selectExpr fSpec (foldr1 (.:.) [l,v,r])
 
 
 
@@ -541,8 +509,6 @@ Based on this derivation:
 --   It generates a simple table reference for primitive expressions (EDcD, EDcI, and EDcV) and a bracketed SQL expression in more complicated situations.
 --   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
 --   Note that the resulting pairs do not contain any NULL values.
-selectExprInFROM' :: FSpec -> Expression -> BinQueryExpr
-selectExprInFROM' fSpec expr = selectExpr fSpec sourceAlias targetAlias expr
 toTableRef :: BinQueryExpr -> TableRef
 toTableRef b = TRQueryExpr . toSQL $ b
 selectExprInFROM :: FSpec
@@ -563,16 +529,16 @@ selectExprInFROM fSpec src trg expr
                          then TRSimple [declName]
                          else TRQueryExpr . toSQL $
                                        BSE { bseCmt = ""
-                                           , bseSrc = selectSelItem' sAtt
-                                           , bseTrg = selectSelItem' tAtt
+                                           , bseSrc = Iden [sAtt]
+                                           , bseTrg = Iden [tAtt]
                                            , bseTbl = [TRSimple [declName]]
                                            , bseWhr = Just $ conjunctSQL
                                                [notNull (Iden[src]), notNull (Iden[trg])]
                                            }
                        )
                   else TRQueryExpr . toSQL $   BSE { bseCmt = ""
-                                           , bseSrc = selectSelItem' sAtt
-                                           , bseTrg = selectSelItem' tAtt
+                                           , bseSrc = Iden [sAtt]
+                                           , bseTrg = Iden [tAtt]
                                            , bseTbl = [TRSimple [declName]]
                                            , bseWhr = if mayContainNulls
                                                       then (Just $ conjunctSQL
@@ -588,21 +554,18 @@ selectExprInFROM fSpec src trg expr
                                               TblSQL{}  ->  True
                                               _         ->  False)
         EDcI ONE -> fatal 401 "ONE is unexpected at this place."
-        EDcI c -> case (cpt, cptAlias) of
-                    (cpt', (Iden [x])) -> if cpt'=== x
-                                          then TRSimple [cpt']
-                                          else sg
-                    _                  -> sg
+        EDcI c -> if cpt === sqlAttConcept fSpec c
+                  then TRSimple [cpt]
+                  else sg
                  where  
                    sg = TRQueryExpr . toSQL $  BSE { bseCmt = " case: EDcI " ++ name c ++ " "
-                                           , bseSrc = selectSelItem' (sqlAttConcept fSpec c)
+                                           , bseSrc = Iden [sqlAttConcept fSpec c]
                                            , bseTrg = Iden [sqlConcept fSpec c]
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Nothing
                                            }
-                   cptAlias = selectSelItem' (sqlAttConcept fSpec c)
                    cpt = sqlConcept fSpec c
-        _      -> TRQueryExpr . toSQL $ selectExpr fSpec src trg expr
+        _      -> TRQueryExpr . toSQL $ selectExpr fSpec expr
    where
      unquoted :: Name -> Bool
      unquoted (Name _ )   = True
@@ -735,8 +698,8 @@ toSQL bqe
                     , qeCorresponding = Respectively  -- ??? What does this mean?
                     , qe1 = toSQL (bcqe1 bqe)
                     }
-selectSelItem' :: Name -> ValueExpr
-selectSelItem' att = Iden [att] 
+--selectSelItem' :: Name -> ValueExpr
+--selectSelItem' att = Iden [att] 
 
 --selectSelItem :: (Name, Name) -> (ValueExpr ,Maybe Name)
 --selectSelItem (att,alias)
@@ -770,10 +733,10 @@ sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSp
                                        in QName (name t)
 sqlExprTgt _     expr                = QName (name (target expr))
 
--- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
--- Quotes are added just in case an SQL reserved word (e.g. "ORDER", "SELECT", etc.) is used as a concept name.
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
 sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
+
+-- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
 sqlConcept fSpec = QName . name . sqlConceptPlug fSpec
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
