@@ -131,8 +131,8 @@ mainLexer p fn cs@(c:s)
                name               = c:name'
                tokt   | iskw name = LexKeyword name
                       | otherwise = if isIdStart c
-                                    then LexLowerId name
-                                    else LexUpperId name
+                                    then LexVarId name
+                                    else LexConId name
            in returnToken tokt p mainLexer p' fn s'
      | isOperatorBegin c
          = let (name, s') = getOp cs

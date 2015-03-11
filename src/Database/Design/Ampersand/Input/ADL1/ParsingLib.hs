@@ -393,7 +393,7 @@ pOpOne = pOperator "1"
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
-pConid = check (\lx -> case lx of { LexUpperId s -> Just s; _ -> Nothing })
+pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing })
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
@@ -406,7 +406,7 @@ pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing })
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
-pVarid = check (\lx -> case lx of { LexLowerId s -> Just s; _ -> Nothing })
+pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing })
 
 -- TODO: does not escape, i.e. 'Mario\'s Pizzas' will fail to parse (this remark is old. Is it valid to the new lexer?)
 pAtom :: AmpParser String
