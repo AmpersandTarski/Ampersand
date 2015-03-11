@@ -1,8 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Database.Design.Ampersand.Input.ADL1.Lexer (
-    keywords, operators, special_chars, lexer
-    )
-where
+    keywords, operators, symbols, lexer
+) where
 
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
@@ -11,7 +10,7 @@ import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 import Text.Parsec.Pos hiding (Line, Column)
 import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
-import Data.List (sort, nub)
+import Data.List (sort)
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Misc
 
@@ -48,14 +47,9 @@ operators :: [String]
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "." , "0", "1"]
 
---TODO: Rename this to symbols
-special_chars :: [Char]
-special_chars = "()[],{}<>"
+symbols :: [Char]
+symbols = "()[],{}<>"
 
-opchars :: String
-opchars = nub (sort (concat operators))
-
---TODO: returnOutputToken shouldn't be necessary here
 lexer :: [Options] -> Filename -> String -> Either LexerError ([Token], [LexerWarning])
 lexer opt file input = case runLexerMonad opt file (mainLexer noPos file input) of
                                Left err -> Left err
@@ -136,18 +130,20 @@ mainLexer p fn cs@(c:s)
          = let (name', p', s')    = scanIdent (advc 1 p) s
                name               = c:name'
                tokt   | iskw name = LexKeyword
-                      | null name' && isSymbol c  
-                                  =  LexSymbol 
+                      | null name' && isSymbol c
+                                  =  LexSymbol
                       | otherwise = if isIdStart c then LexLowerId else LexUpperId
-               val    | null name' && isSymbol c 
+               val    | null name' && isSymbol c
                                   = [c]
-                      | otherwise = name				  
+                      | otherwise = name
            in returnToken (tokt val) p mainLexer p' fn s'
-     | isOpsym c = let (name, s') = getOp cs
-                   in returnToken (LexOp name) p mainLexer (foldl adv p name) fn s'
+     | isOperatorBegin c
+         = let (name, s') = getOp cs
+           in returnToken (LexOp name) p mainLexer (foldl adv p name) fn s'
      | isSymbol c = returnToken (LexSymbol [c]) p mainLexer (advc 1 p) fn s
-     | isDigit c  = let (tk,width,s') = getNumber cs
-                   in  returnToken tk p mainLexer (advc width p) fn s'
+     | isDigit c
+         = let (tk,width,s') = getNumber cs
+           in  returnToken tk p mainLexer (advc width p) fn s'
      | otherwise  = lexerError (UnexpectedChar c) (initialPos fn)
 
 -----------------------------------------------------------
@@ -167,11 +163,10 @@ iskw :: String -> Bool
 iskw = locatein keywords
 
 isSymbol :: Char -> Bool
-isSymbol = locatein special_chars
+isSymbol = locatein symbols
 
---TODO: We only need to check the first character of each pooperator
-isOpsym :: Char -> Bool
-isOpsym  = locatein opchars
+isOperatorBegin :: Char -> Bool
+isOperatorBegin  = locatein (map head operators)
 
 isIdStart :: Char -> Bool
 isIdStart c = isLower c || c == '_'
@@ -254,7 +249,7 @@ adv pos' c = case c of
 
 -- Returns tuple with the parsed lexeme, the amount of read characters and the rest of the text
 getNumber :: String -> (Lexeme, Int, String)
-getNumber [] = fatal 294 "getNumber" 
+getNumber [] = fatal 294 "getNumber"
 getNumber cs@(c:s)
   | c /= '0'         = num10
   | null s           = const0
@@ -273,10 +268,10 @@ getNumber cs@(c:s)
                 then const0
                 --TODO: Are the numbers being read correctly?
                 else (LexInteger (readn base n), 2 + length n, rs)
-						  
-						  
+
 isHexaDigit :: Char -> Bool
 isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
+
 isOctalDigit :: Char -> Bool
 isOctalDigit d = d >= '0' && d <= '7'
 
@@ -292,9 +287,9 @@ value c | isDigit c = ord c - ord '0'
 
 scanString :: String -> (String, Int, String)
 scanString []            = ("",0,[])
-scanString ('\\':'&':xs) = let (str,w,r) = scanString xs  -- TODO: why do we ignore \& ?  
+scanString ('\\':'&':xs) = let (str,w,r) = scanString xs  -- TODO: why do we ignore \& ?
                            in (str,w+2,r)
-scanString ('\\':'\'':xs) = let (str,w,r) = scanString xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)    
+scanString ('\\':'\'':xs) = let (str,w,r) = scanString xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)
                            in ('\'': str,w+2,r)
 scanString ('\'':xs)     = let (str,w,r) = scanString xs  -- single quote: '
                            in ('\'': str,w+1,r)
@@ -331,6 +326,8 @@ readn base = foldl (\r x  -> value x + base * r) 0
 -- Token creation function
 -----------------------------------------------------------
 
+--TODO: Can we simplify this? The complete signature is too complicated! See:
+--returnToken :: Lexeme -> Pos -> Pos -> Filename  -> String  -> LexerMonad [Token] -> Pos -> Filename  -> String  -> LexerMonad [Token]
 returnToken :: Lexeme -> Pos -> Lexer -> Lexer
 returnToken lx (Pos ln col) continue posi fn input = do
     let token = Tok lx (newPos fn ln col)
