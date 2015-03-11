@@ -419,7 +419,7 @@ selectExpr fSpec src trg expr
                                            , bseWhr = Just $ selectNotExists 
                                                                (toTableRef (selectExprInFROM' fSpec e)) Nothing
                                            }
-              where closedWorld = Name ("all_"++case theClosedWorldExpression of 
+              where closedWorld = QName ("all_"++case theClosedWorldExpression of 
                                                   (EDcI c) -> plur c
                                                   (EDcV (Sign s t)) -> plur s ++ "_" ++ plur t 
                                                   _  -> fatal 434 "closedWorldExpression is not supposed to be of this kind."
