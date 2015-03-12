@@ -5,21 +5,16 @@ module Database.Design.Ampersand.FSpec.SQL
   )
   
 where
-
-
 import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Pretty
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1.Expression
-import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Misc
-
-import Data.Char
 import Data.List
 import Data.Maybe
 
@@ -343,6 +338,22 @@ selectExpr fSpec expr
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull (Iden [cAtt]))
                                            }
+
+--        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
+--        EDcI c -> if cpt === sqlAttConcept fSpec c
+--                  then TRSimple [cpt]
+--                  else sg
+--                 where  
+--                   sg = TRQueryExpr . toSQL $  BSE { bseCmt = " case: EDcI " ++ name c ++ " "
+--                                           , bseSrc = Iden [sqlAttConcept fSpec c]
+--                                           , bseTrg = Iden [sqlConcept fSpec c]
+--                                           , bseTbl = [sqlConceptTable fSpec c]
+--                                           , bseWhr = Nothing
+--                                           }
+--                   cpt = sqlConcept fSpec c
+
+
+
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
     (EEps c sgn)     -> case c of -- select the population of the most specific concept, which is the source.
                               ONE ->   BSE { bseCmt = "epsilon "++name c++" "++showSign sgn
@@ -498,62 +509,6 @@ Based on this derivation:
 
 toTableRef :: BinQueryExpr -> TableRef
 toTableRef b = TRQueryExpr . toSQL $ b
-selectExprInFROM :: FSpec
-                 -> Name      -- ^ source name (preferably quoted)
-                 -> Name      -- ^ target name (preferably quoted)
-                 -> Expression  -- ^ Whatever expression to generate an SQL query for
-                 -> TableRef
-selectExprInFROM fSpec src trg expr 
-  = case expr of
-        EFlp e -> selectExprInFROM fSpec trg src e
-        EBrk e -> selectExprInFROM fSpec src trg e
-        EDcD d -> if sqlExprSrc fSpec expr === src && sqlExprTgt fSpec expr === trg
-                  then ( if not mayContainNulls 
-                         then TRSimple [declName]
-                         else TRQueryExpr . toSQL $
-                                       BSE { bseCmt = ""
-                                           , bseSrc = Iden [sAtt]
-                                           , bseTrg = Iden [tAtt]
-                                           , bseTbl = [TRSimple [declName]]
-                                           , bseWhr = Just $ conjunctSQL
-                                               [notNull (Iden[src]), notNull (Iden[trg])]
-                                           }
-                       )
-                  else TRQueryExpr . toSQL $   BSE { bseCmt = ""
-                                           , bseSrc = Iden [sAtt]
-                                           , bseTrg = Iden [tAtt]
-                                           , bseTbl = [TRSimple [declName]]
-                                           , bseWhr = if mayContainNulls
-                                                      then (Just $ conjunctSQL
-                                                              [notNull (Iden[sAtt]), notNull (Iden[tAtt])])
-                                                      else Nothing
-                                           }
-                  where
-                   sAtt = sqlExprSrc fSpec expr
-                   tAtt = sqlExprTgt fSpec expr
-                   (plug,_,_) = getDeclarationTableInfo fSpec d
-                   (declName,mayContainNulls)
-                      = (QName (name plug), case plug of 
-                                              TblSQL{}  ->  True
-                                              _         ->  False)
-        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
-        EDcI c -> if cpt === sqlAttConcept fSpec c
-                  then TRSimple [cpt]
-                  else sg
-                 where  
-                   sg = TRQueryExpr . toSQL $  BSE { bseCmt = " case: EDcI " ++ name c ++ " "
-                                           , bseSrc = Iden [sqlAttConcept fSpec c]
-                                           , bseTrg = Iden [sqlConcept fSpec c]
-                                           , bseTbl = [sqlConceptTable fSpec c]
-                                           , bseWhr = Nothing
-                                           }
-                   cpt = sqlConcept fSpec c
-        _      -> TRQueryExpr . toSQL $ selectExpr fSpec expr
-   where
-     unquoted :: Name -> Bool
-     unquoted (Name _ )   = True
-     unquoted (QName _)   = False
-     unquoted (UQName  _) = False --UQName = UNICODE quoted
      
 (===) :: Name -> Name -> Bool
 n === n' = stringOfName n == stringOfName n'
@@ -669,40 +624,6 @@ toSQL bqe
                     , qeCorresponding = Respectively  -- ??? What does this mean?
                     , qe1 = toSQL (bcqe1 bqe)
                     }
---selectSelItem' :: Name -> ValueExpr
---selectSelItem' att = Iden [att] 
-
---selectSelItem :: (Name, Name) -> (ValueExpr ,Maybe Name)
---selectSelItem (att,alias)
---  | att === alias           = (Iden [toQName att], Nothing)
---  | stringOfName att == "1" = fatal 778 "ONE should have no named string" -- otherwise use: (NumLit "1", Just alias)
---  | otherwise               = (Iden [toQName att], Just alias)
-
-
--- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
---   Quotes are added to prevent collision with SQL reserved words (e.g. ORDER).
---   We want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TGT" would suffice)
-sqlExprSrc :: FSpec -> Expression -> Name
---sqlExprSrc fSpec expr = sourceAlias
-sqlExprSrc fSpec (EDcV (Sign a _))   = sqlAttConcept fSpec a
-sqlExprSrc fSpec (EDcI c)            = sqlAttConcept fSpec c
-sqlExprSrc fSpec (EEps i _)          = sqlAttConcept fSpec i
-sqlExprSrc fSpec (EFlp e)            = sqlExprTgt fSpec e
-sqlExprSrc fSpec (EDcD d)            = let (_,s,_) = getDeclarationTableInfo fSpec d
-                                       in QName (name s)
-sqlExprSrc _     expr                = QName (name (source expr))
-
-
--- | sqlExprTgt gives the quoted SQL-string that serves as the attribute name in SQL.
-sqlExprTgt :: FSpec -> Expression -> Name
---sqlExprTgt fSpec expr = targetAlias
-sqlExprTgt fSpec (EDcV (Sign _ b))   = sqlAttConcept fSpec b
-sqlExprTgt fSpec (EDcI c)            = sqlAttConcept fSpec c
-sqlExprTgt fSpec (EEps i _)          = sqlAttConcept fSpec i
-sqlExprTgt fSpec (EFlp e)            = sqlExprSrc fSpec e
-sqlExprTgt fSpec (EDcD d)            = let (_,_,t) = getDeclarationTableInfo fSpec d
-                                       in QName (name t)
-sqlExprTgt _     expr                = QName (name (target expr))
 
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
 sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
@@ -726,12 +647,6 @@ sqlAttConcept fSpec c | c==ONE = QName "ONE"
                QName (head cs)
                where cs = [name f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
 
-
-toUqName :: Name -> Name
-toUqName = Name . stringOfName
-
-toQName :: Name -> Name
-toQName = QName . stringOfName
 
 stringOfName :: Name -> String
 stringOfName (Name s)   =  s
