@@ -445,25 +445,25 @@ Based on this derivation:
               | target r == ONE = fatal 333 ("ONE is unexpected as target of "++showADL r)
               | otherwise
                   = BSE { bseCmt = ""
-                        , bseSrc = Iden [ srcAlias, mainSrc]
-                        , bseTrg = Iden [ tgtAlias, mainTgt]
-                        , bseTbl = [sqlConceptTable fSpec (target l) `as` srcAlias
-                                  ,sqlConceptTable fSpec (target r) `as` tgtAlias]
+                        , bseSrc = Iden [ resLeft, mainSrc]
+                        , bseTrg = Iden [ resRight, mainTgt]
+                        , bseTbl = [sqlConceptTable fSpec (target l) `as` resLeft
+                                  ,sqlConceptTable fSpec (target r) `as` resRight]
                         , bseWhr = Just $ selectNotExists 
                                             (lCode `as` lhs)
                                             ( Just $ conjunctSQL
-                                                [BinOp (Iden [srcAlias,mainSrc])
+                                                [BinOp (Iden [resLeft,mainSrc])
                                                        [Name "="]
-                                                       (Iden [lhs,ltrg])
+                                                       (Iden [lhs,targetAlias])
                                                 ,selectNotExists 
                                                    (rCode `as` rhs)
                                                    ( Just $ conjunctSQL 
-                                                      [BinOp (Iden [rhs,rsrc])
+                                                      [BinOp (Iden [rhs,sourceAlias])
                                                              [Name "="]
-                                                             (Iden [lhs,lsrc])
-                                                      ,BinOp (Iden [rhs,rtrg])
+                                                             (Iden [lhs,sourceAlias])
+                                                      ,BinOp (Iden [rhs,targetAlias])
                                                              [Name "="]
-                                                             (Iden [tgtAlias,mainTgt])
+                                                             (Iden [resRight,mainTgt])
                                                       ]
                                                    )
                                                 ]
@@ -471,17 +471,12 @@ Based on this derivation:
                         }
              mainSrc = (sqlAttConcept fSpec.target) l  -- Note: this 'target' is not an error!!! It is part of the definition of right residu
              mainTgt = (sqlAttConcept fSpec.target) r
-             relNames = foldrMapExpression uni (\decl->[QName (name decl)]) [] expr
-             srcAlias = noCollide' relNames (QName "RResLeft")
-             tgtAlias = noCollide' relNames (QName "RResRight")
-             lhs  = QName "lhs"
-             rhs  = QName "rhs"
-             lsrc = sqlExprSrc fSpec l
-             ltrg = sqlExprTgt fSpec l  -- shouldn't this be a noCollide? Apparently not. Introducing noCollide here has produced ticket #389
-             rsrc = sqlExprSrc fSpec r
-             rtrg = sqlExprTgt fSpec r  -- shouldn't this be a noCollide? (idem)
-             lCode = selectExprInFROM fSpec lsrc ltrg l
-             rCode = selectExprInFROM fSpec rsrc rtrg r
+             resLeft  = Name "RResLeft"
+             resRight = Name "RResRight"
+             lhs  = Name "lhs"
+             rhs  = Name "rhs"
+             lCode = toTableRef $ selectExpr fSpec l -- selectExprInFROM fSpec sourceAlias targetAlias l
+             rCode = toTableRef $ selectExpr fSpec r -- selectExprInFROM fSpec sourceAlias targetAlias r
          in sqlcomment ("case: ERrs (l,r)"++showADL expr++" ("++show (sign expr)++")")
                          rResiduClause
     ELrs (l,r)
@@ -655,7 +650,10 @@ selectExists tbl whr =
   SubQueryExpr SqExists
      Select { qeSetQuantifier = SQDefault
             , qeSelectList    = [(Star,Nothing)]   
-            , qeFrom          = [tbl `as` Name "aDummyName" ] -- dummyname is required because MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+            , qeFrom          = [case tbl of 
+                                   TRAlias{} -> tbl
+                                   _  -> tbl `as` Name "aDummyName" -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+                                ]
             , qeWhere         = whr
             , qeGroupBy       = []
             , qeHaving        = Nothing
