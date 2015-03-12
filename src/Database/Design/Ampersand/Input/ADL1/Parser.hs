@@ -205,10 +205,7 @@ data ProcElem = PrR (P_Rule TermPrim)
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
-pClassify = try$
-            rebuild <$> posOf pKeyCLASSIFY
-                    <*> pConceptRef
-                    <*  pKeyIS
+pClassify = try (rebuild <$> posOf pKeyCLASSIFY <*> pConceptRef <*  pKeyIS)
                     <*> pCterm
                where
                  rebuild po lhs rhs
@@ -341,9 +338,10 @@ pConceptDef       = Cd <$> posOf pKeyCONCEPT
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
-pGenDef :: AmpParser P_Gen
-pGenDef = try$ rebuild <$> posOf (pKeyCLASSIFY <|> pKeySPEC) <*> pConceptRef <* pKeyISA <*> pConceptRef  -- SPEC is obsolete syntax. Should disappear!
+pGenDef :: AmpParser P_Gen -- TODO: SPEC is obsolete syntax. Should disappear!
+pGenDef = try (rebuild <$> key <*> pConceptRef <* pKeyISA) <*> pConceptRef -- 
           where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
+                key = posOf (pKeyCLASSIFY <|> pKeySPEC)
 
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
