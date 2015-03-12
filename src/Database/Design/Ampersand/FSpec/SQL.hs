@@ -496,14 +496,6 @@ Based on this derivation:
 
 
 
-
-
-
-
--- | selectExprInFROM is meant for SELECT expressions inside a FROM clause.
---   It generates a simple table reference for primitive expressions (EDcD, EDcI, and EDcV) and a bracketed SQL expression in more complicated situations.
---   Note that selectExprInFROM makes sure that the attributes of the generated view correspond to the parameters src and trg.
---   Note that the resulting pairs do not contain any NULL values.
 toTableRef :: BinQueryExpr -> TableRef
 toTableRef b = TRQueryExpr . toSQL $ b
 selectExprInFROM :: FSpec
@@ -512,11 +504,7 @@ selectExprInFROM :: FSpec
                  -> Expression  -- ^ Whatever expression to generate an SQL query for
                  -> TableRef
 selectExprInFROM fSpec src trg expr 
-   | src == trg && (not.isIdent) expr = fatal 373 $ "selectExprInFrom must not be called with identical src and trg. ("++show src++") "++showADL expr
-   | unquoted src = selectExprInFROM fSpec (toQName src) trg         expr
-   | unquoted trg = selectExprInFROM fSpec src         (toQName trg) expr
-   | otherwise    =
-      case expr of
+  = case expr of
         EFlp e -> selectExprInFROM fSpec trg src e
         EBrk e -> selectExprInFROM fSpec src trg e
         EDcD d -> if sqlExprSrc fSpec expr === src && sqlExprTgt fSpec expr === trg
@@ -570,33 +558,6 @@ selectExprInFROM fSpec src trg expr
 (===) :: Name -> Name -> Bool
 n === n' = stringOfName n == stringOfName n'
 
--- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
-noCollide' :: [Name] -> Name -> Name
-noCollide' nms nm = toQName (noCollide (map toUqName nms) (toUqName nm))
- where
-   noCollide :: [Name] -- ^ forbidden names
-             -> Name -- ^ preferred name
-             -> Name -- ^ a unique name (does not occur in forbidden names)
-   noCollide names nm' | nm'' `elem` map toUqName names = noCollide names (newNumber nm'')
-                       | otherwise = nm'
-    where
-      nm''           = toUqName nm'
-      newNumber :: Name -> Name
-      newNumber nm1 = Name (reverse reverseNamePart++ changeNr (reverse reverseNumberpart))
-        where
-          ( reverseNumberpart, reverseNamePart) = span isDigit  . reverse . stringOfName $ nm1
-      
-      changeNr x     = int2string (string2int x+1)
-      --  changeNr x = show (read x +1)
-      string2int :: String -> Int
-      string2int  = enc.reverse
-       where enc "" = 0
-             enc (c:cs) = digitToInt c + 10* enc cs
-      int2string :: Int -> String
-      int2string 0 = "0"
-      int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10) |n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
-
-
 -- | This function returns a (multy-lines) prettyprinted SQL qurey of a declaration. 
 selectExprRelation :: FSpec
                    -> Declaration
@@ -632,13 +593,25 @@ selectExprRelationNew fSpec dcl =
                      }
    where
      leafCode :: (PlugSQL,SqlField,SqlField) -> BinQueryExpr
-     leafCode (plug,s,t) = BSE { bseCmt = ""
-                               , bseSrc = Iden [QName (name s)]
-                               , bseTrg = Iden [QName (name t)]
-                               , bseTbl = [TRSimple [QName (name plug)]]
-                               , bseWhr = Just . conjunctSQL . map notNull $
-                                            [Iden [QName (name c)] | c<-nub [s,t]]
-                               }
+     leafCode (plug,s,t) 
+         = BSE { bseCmt = ""
+               , bseSrc = Iden [QName (name s)]
+               , bseTrg = Iden [QName (name t)]
+               , bseTbl = [TRSimple [QName (name plug)]]
+               , bseWhr = if mayContainNulls plug
+                          then Just . conjunctSQL . map notNull $
+                                [Iden [QName (name c)] | c<-nub [s,t]]
+                          else Nothing
+               }
+      where mayContainNulls TblSQL{} = True
+            mayContainNulls _        = False
+
+
+
+
+
+
+
 
 
 selectExists, selectNotExists
