@@ -32,17 +32,17 @@ class Notifications {
 		$pairView = RuleEngine::getPairView($srcAtom, $rule['srcConcept'], $tgtAtom, $rule['tgtConcept'], $rule['pairView']); 
 		
 		self::$violations[$ruleHash]['ruleMessage'] = $ruleMessage;
-		self::$violations[$ruleHash]['interfaceNames'] = $pairView['interfaceNames'];
+		self::$violations[$ruleHash]['interfaceIds'] = $pairView['interfaceIds'];
 		
 		$violationMessage = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
 		
 		// Make links to interfaces
 		$links = array();
 		foreach ($session->role->getInterfaces(null, $rule['srcConcept']) as $interface){
-			$links[] = '#/' . $interface->name . '/' . $srcAtom;
+			$links[] = '#/' . $interface->id . '/' . $srcAtom;
 		}
 		foreach ($session->role->getInterfaces(null, $rule['tgtConcept']) as $interface){
-			$links[] = '#/' . $interface->name . '/' . $tgtAtom;
+			$links[] = '#/' . $interface->id . '/' . $tgtAtom;
 		}
 		$links = array_unique($links);
 		

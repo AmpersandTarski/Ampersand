@@ -1,33 +1,44 @@
-<!-- Navigation Bar -->
-<div ng-include="'app/views/static_navigationBar.html'"></div>
-<!-- Mainview -->
-<div id="mainview" class="container">
-	<!--  Notification center -->
-	<div ng-include="'app/views/static_notificationCenter.html'"></div>
+<!-- WRAPPER -->
+<div id="wrapper">
+	<!-- HEADER -->
+	<div id="header" ng-include="'app/views/static_navigationBar.html'"></div>
 	
-	<!-- Placeholder for views -->
-	<div ng-view></div>
-	
-	<!-- Log -->
-	<div class="row" id="logWindow" ng-controller="static_logWindowController">
-		<div ng-if="switchShowLogWindow" class="col-md-12">
-			<h4>Log</h4>
-			<table style="font-size : 10px;" class="table table-striped table-hover table-condensed">
-				<thead>
-					<tr>
-						<th></th>
-						<th>Type</th>
-						<th>Message</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr ng-repeat="log in notifications.logs track by $index">
-						<td>{{::$index}}</td>
-						<td>{{::log.type}}</td>
-						<td>{{::log.message}}</td>
-					</tr>
-				</tbody>
-			</table>
+	<!-- PAGE CONTENT -->
+	<div id="main" class="container">
+		<!--  Notification center -->
+		<div ng-include="'app/views/static_notificationCenter.html'"></div>
+		
+		<!-- Placeholder for views -->
+		<div ng-view></div>
+		
+		<!-- Log -->
+		<div class="row" ng-controller="static_logWindowController">
+			<div ng-if="switchShowLogWindow" id="logWindow" class="col-md-12">
+				<h4>Log</h4>
+				<table style="font-size : 10px;" class="table table-striped table-hover table-condensed">
+					<thead>
+						<tr>
+							<th></th>
+							<th>Type</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="log in notifications.logs track by $index">
+							<td>{{::$index}}</td>
+							<td>{{::log.type}}</td>
+							<td>{{::log.message}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
+	</div>
+</div>
+
+<!-- FOOTER -->
+<div id="footer">
+	<div class="container">
+		<p class="text-muted">This application is powered by <a href="https://github.com/AmpersandTarski/ampersand" target="_blank">Ampersand</a>.</p>
 	</div>
 </div>

@@ -14,6 +14,12 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'static_installerController',
 				templateUrl: 'app/views/static_installer.html'
 			})
+		// here, you can add other stuff (e.g. DndTree)
+		//.when('/<interfaceId>/:resourceId?',
+ 		//	{
+		//		controller: 'DndTreeController',
+		//		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
+		//	})
 });
 
 AmpersandApp.config(function(RestangularProvider) {
@@ -58,28 +64,28 @@ AmpersandApp.run(function(Restangular, $rootScope){
 	
 });
 
-AmpersandApp.directive('myShowonhovertr', function (){
+AmpersandApp.directive('myShowonhoverRow', function (){
 	return {
 		link : function(scope, element, attrs) {
 			element.hide(); // default hide
 			
-			element.closest('tr').bind('mouseenter', function() {
+			element.closest('.row-content').bind('mouseenter', function() {
 				element.show();
 			});
-			element.closest('tr').bind('mouseleave', function() {
+			element.closest('.row-content').bind('mouseleave', function() {
 				element.hide();
 			});
 		}
 	}
-}).directive('myShowonhovertable', function (){
+}).directive('myShowonhoverBox', function (){
 	return {
 		link : function(scope, element, attrs) {
 			element.hide(); // default hide
 			
-			element.closest('table').bind('mouseenter', function() {
+			element.closest('.box').bind('mouseenter', function() {
 				element.show();
 			});
-			element.closest('table').bind('mouseleave', function() {
+			element.closest('.box').bind('mouseleave', function() {
 				element.hide();
 			});
 		}

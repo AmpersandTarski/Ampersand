@@ -1,6 +1,20 @@
-<!-- Atomic[TEXT] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-$if(isEditable)$<div class="input-group">
+<!-- Atomic[TEXT] "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+<div class="input-group">
+$if(isEditable)$
+  $if(exprIsUni)$
   <input ng-model="val['$name$']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
-</div>$else$<div>
-  {{val['$name$']}}
-</div>$endif$
+  $else$
+  <div ng-repeat="row in val['$name$'] track by \$index">
+    <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+    <span>{{row}}</span>
+  </div>
+  <div my-showonhover-box>
+    <input ng-model="selected.value" type="text" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(val, '$name$', selected, ResourceId)">
+  </div>
+  $endif$$else$$if(exprIsUni)$
+  <div>{{val['$name$']}}</div>
+  $else$
+  <div ng-repeat="row in val['$name$'] track by \$index">
+    {{row}}
+  </div>$endif$$endif$
+</div>

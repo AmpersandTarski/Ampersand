@@ -87,13 +87,11 @@ class Concept {
 		return (array)$allConcepts[$concept]['affectedInvConjunctIds'];
 	}
 	
-	public static function getAllInterfaces($concept){
-		global $allInterfaceObjects; // from Generics.php
-		
+	public static function getAllInterfaces($concept){		
 		$interfaces = array();
 		
-		foreach ($allInterfaceObjects as $interfaceName => $interface){
-			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceName;
+		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
+			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
 		}
 		
 		return $interfaces;

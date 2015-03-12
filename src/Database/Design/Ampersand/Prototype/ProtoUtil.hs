@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
-         , copyDirRecursively
-         , phpIdentifier,commentBlock,strReplace
+         , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
+         , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
          , indentBlockBetween,quote,sqlAtomQuote
@@ -10,8 +10,7 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
          ) where
  
 import Prelude hiding (putStrLn, readFile, writeFile)
-import Control.Monad
-import Data.Char(isAlphaNum,isDigit)
+import Data.Char
 import Data.List
 import System.Directory
 import System.FilePath
@@ -37,26 +36,44 @@ getGenericsDir fSpec =
   in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generics" else protoDir
 
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
-copyDirRecursively :: FSpec -> FilePath -> FilePath -> IO ()
-copyDirRecursively fSpec srcBase tgtBase = copy ""
+-- NOTE: tgtBase specifies the copied directory target, not its parent
+copyDirRecursively :: FilePath -> FilePath -> IO ()
+copyDirRecursively srcBase tgtBase = copy ""
   where copy fileOrDirPth = 
          do { let srcPath = srcBase </> fileOrDirPth
                   tgtPath = tgtBase </> fileOrDirPth
             ; isDir <- doesDirectoryExist srcPath
             ; if isDir then 
-               do { tgtExists <- doesDirectoryExist tgtPath
-                  ; when (not tgtExists) $
-                      createDirectory tgtPath
+               do { createDirectoryIfMissing True tgtPath
                   ; fOrDs <- getProperDirectoryContents srcPath
                   ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
                   }
               else
-               do { fileContents <- readFile srcPath 
-                  ; verboseLn (getOpts fSpec) $ "Copying: " ++ srcPath
-                  ; writeFile tgtPath fileContents
-                  }
+                copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
             }
+            
+-- Copy file while creating all subdirectories on the target path (if non-existent)
+copyDeepFile :: FilePath -> FilePath -> IO ()
+copyDeepFile srcPath tgtPath =
+ do { createDirectoryIfMissing True (takeDirectory tgtPath)
+    ; copyFile srcPath tgtPath
+    }
 
+-- Remove all files in directory dirPath, but don't enter subdirectories (for which a warning is emitted.)
+removeAllDirectoryFiles :: FilePath -> IO ()
+removeAllDirectoryFiles dirPath =
+ do { dirContents <- getProperDirectoryContents dirPath
+    ; mapM_ removeDirectoryFile dirContents 
+    }
+  where removeDirectoryFile path = 
+         do { let absPath = dirPath </> path
+            ; isDir <- doesDirectoryExist absPath
+            ; if isDir then
+                putStrLn $ "WARNING: directory '"++dirPath++"' contains a subdirectory '"++path++"' which is not cleared."
+              else
+                removeFile absPath
+            }
+     
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $
                                    getDirectoryContents pth
@@ -117,11 +134,14 @@ phpIndent i
  | i < 0     = " " --space instead of \n
  | otherwise = '\n':replicate i ' '
 
--- | guarantees a valid identifier name. The function is NOT injective!
-phpIdentifier :: String -> String
-phpIdentifier str = prefix ++ [ if isAlphaNum c then c else '_' | c <- str ]
-  where prefix | (c:_) <- str, isDigit c = "n"
-               | otherwise               = ""
+-- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
+-- This function is injective.
+escapeIdentifier :: String -> String
+escapeIdentifier ""      = "_EMPTY_"
+escapeIdentifier (c0:cs) = encode False c0 ++ concatMap (encode True) cs
+  where encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = [c]
+                          | c == '_'  = "__" -- shorthand for '_' to improve readability
+                          | otherwise = "_" ++ show (ord c) ++ "_"
 
 addSlashes :: String -> String
 addSlashes ('\'': cs) = "\\'"++addSlashes cs

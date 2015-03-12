@@ -1,9 +1,32 @@
-<!-- Atomic[DATE] "$name$" : $expAdl$ :: $source$ * $target$  ($if(!isEditable)$not $endif$editable) -->
-$if(isEditable)$<div class="input-group">
-  <input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="patch(ResourceId)"/>
-  <span class="input-group-btn">
-    <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, key+'-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
-  </span> 
-</div>$else$<div>
-  {{val['$name$'] | date : 'dd-MM-yyyy'}}
-</div>$endif$
+<!-- Atomic[DATE] "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+<div>
+$if(isEditable)$
+  $if(exprIsUni)$
+  <div class="input-group">
+    <input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="patch(ResourceId)"/>
+    <span class="input-group-btn">
+      <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, key+'-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
+    </span>
+  </div>
+  $else$
+  <div ng-repeat="row in val['$name$'] track by \$index">
+    <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+    <span>{{row | date : 'dd-MM-yyyy'}}</span>
+  </div>
+  <div my-showonhover-box class="input-group">
+    <input ng-model="selected.value" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker['new-$name$'].open" ng-blur="addItem(val, '$name$', selected, ResourceId)"/>
+    <span class="input-group-btn">
+      <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, 'new-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
+    </span>
+  </div>
+  $endif$
+$else$
+  $if(exprIsUni)$
+  <div>{{val['$name$'] | date : 'dd-MM-yyyy'}}</div>
+  $else$
+  <div ng-repeat="row in val['$name$'] track by \$index">
+    {{row}}
+  </div>
+  $endif$
+$endif$
+</div>

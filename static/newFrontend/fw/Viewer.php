@@ -19,7 +19,7 @@ class Viewer {
 		
 		// Meta tags
 		$this->addHtmlLine('<meta name="viewport" content="width=device-width, initial-scale=1.0"/>');
-		$this->addHtmlLine('<meta name="Content-Type" content="text/html; charset=UTF-8"/>');
+		$this->addHtmlLine('<meta charset="UTF-8">');
 		
 		// TODO: onderstaande caching meta tags nodig?		
 		$this->addHtmlLine('<meta name="Pragma" content="no-cache"/>');
@@ -46,7 +46,7 @@ class Viewer {
 		$this->addHtmlLine('<script src="app/lib/angular/angular-route.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-filter.min.js"></script>');
 		// Third party directives for angular
-		$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch.min.js"></script>');	
+		$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');	
 		$this->addHtmlLine('<link href="app/lib/angular/angular-ui-switch/angular-ui-switch.css" rel="stylesheet" media="screen" type="text/css">');
 		
 		// Restangular (with depency for lodash)

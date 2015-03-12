@@ -218,11 +218,11 @@ class RuleEngine {
 		
 		Notifications::addLog('Creating violation message');
 		$pairStrs = array();
-		$interfaceNames = array();
+		$interfaceIds = array();
 		foreach ($pairView as $segment){
 			// interface segment
 			if ($segment['segmentType'] == 'Ifc'){
-				$interfaceNames = explode(';', $segment['Interfaces']);
+				$interfaceIds = explode(';', $segment['Interfaces']);
 					
 			// text segment
 			}elseif ($segment['segmentType'] == 'Text'){				
@@ -248,7 +248,7 @@ class RuleEngine {
 			}
 		}
 		return array('violationMessage' => implode($pairStrs)
-					,'interfaceNames'	=> $interfaceNames);
+					,'interfaceIds'	=> $interfaceIds);
 	}
 	
 	public static function getConjunct($conjunctId){

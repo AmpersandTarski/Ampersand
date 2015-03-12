@@ -313,6 +313,7 @@ class Database
 		}
 		
 		unset($this->affectedConcepts, $this->affectedRelations);
+		$this->affectedConcepts = array(); $this->affectedRelations = array();
 		
 		if($invariantRulesHold){
 			$this->commitTransaction(); // commit database transaction

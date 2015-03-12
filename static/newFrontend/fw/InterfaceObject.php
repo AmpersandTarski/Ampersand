@@ -1,10 +1,9 @@
 <?php
 
-class ObjectInterface {
+class InterfaceObject {
 	
-	public $id;
-	public $name; // TODO: kan vervallen?
-	public $label;
+	public $id;			// Interface id (i.e. safe name) to use in framework
+	public $label;		// Interface name to show in UI
 	
 	public $interfaceRoles = array();
 	
@@ -21,27 +20,27 @@ class ObjectInterface {
 	public $tgtConcept;
 	public $tgtDataType;
 	
-	public $refInterface;
+	public $refInterfaceId;
 	private $boxSubInterfaces;
 	public $subInterfaces = array();
 	
 	public $expressionSQL;
 
 	/*
-	 * $refInterfacesArr is used to determine infinite loops in refInterface
+	 * $refInterfacesArr is used to determine infinite loops in refInterfaceId
 	 */
-	public function __construct($name, $interface = array(), $refInterfacesArr = array()){
+	public function __construct($id, $interface = array(), $refInterfacesArr = array()){
 		global $allInterfaceObjects; // from Generics.php
 		
-		if(empty($interface)) $interface = $allInterfaceObjects[$name]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
+		if(empty($interface)) $interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
 		
 		// Check if interface exists
-		if(empty($interface['name'])) throw new Exception ("Interface \'$name\' does not exists", 500);
+		if(empty($interface['id'])) throw new Exception ("Interface \'$id\' does not exists", 500);
 		
 		// Set attributes of interface
-		$this->id = $interface['name'];
-		$this->name = $interface['name'];
-		$this->label = $interface['name'];
+		$this->id = $interface['id'];
+		$this->label = $interface['label'];
+		
 		$this->interfaceRoles = $interface['interfaceRoles'];
 		
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
@@ -54,8 +53,8 @@ class ObjectInterface {
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
 		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
-		$this->totaal = ($interface['min'] == "One") ? true : false;
-		$this->univalent = ($interface['max'] == "One") ? true : false; 
+		$this->totaal = $interface['exprIsTot'];
+		$this->univalent = $interface['exprIsUni'];
 		$this->srcConcept = $interface['srcConcept'];
 		$this->tgtConcept = $interface['tgtConcept'];
 		
@@ -81,24 +80,26 @@ class ObjectInterface {
 				$this->tgtDataType = "concept"; 	// relation to other concept
 		}
 		
-		// Information about subinterfaces
-		$this->refInterface = $interface['refSubInterface'];
-		$refInterfacesArr[] = $this->name;
-		if(in_array($this->refInterface, $refInterfacesArr)) throw new Exception("Infinite loop in interface '$this->name' by referencing '$this->refInterface'", 500);
-		
+	/* Information about subinterfaces */
+		// Set attributes
+		$this->refInterfaceId = $interface['refSubInterfaceId'];
 		$this->boxSubInterfaces = $interface['boxSubInterfaces'];
 		$this->expressionSQL = $interface['expressionSQL'];
 		
+		// Check for infinite loop in interface (i.e. subinterface refers back to interface).
+		$refInterfacesArr[] = $this->id;
+		if(in_array($this->refInterfaceId, $refInterfacesArr)) throw new Exception("Infinite loop in interface '$this->id' by referencing '$this->refInterfaceId'", 500);
+				
 		// Determine subInterfaces
-		if(!empty($this->refInterface)){
+		if(!empty($this->refInterfaceId)){
 					
-			$refInterface = new ObjectInterface($this->refInterface, null, $refInterfacesArr);
+			$refInterface = new InterfaceObject($this->refInterfaceId, null, $refInterfacesArr);
 			foreach($refInterface->subInterfaces as $subInterface){
 				$this->subInterfaces[] = $subInterface;
 			}
 		}else{
 			foreach ((array)$this->boxSubInterfaces as $subInterface){
-				$this->subInterfaces[] = new ObjectInterface($subInterface['name'], $subInterface, $refInterfacesArr);
+				$this->subInterfaces[] = new InterfaceObject($subInterface['id'], $subInterface, $refInterfacesArr);
 			}
 		}
 	}
@@ -110,23 +111,29 @@ class ObjectInterface {
 	}
 	
 	
-	public static function isInterfaceForRole($roleName, $interfaceName = null){
-		if(isset($interfaceName)){
-			$interface = new ObjectInterface($interfaceName);
+	public static function isInterfaceForRole($roleName, $interfaceId = null){
+		if(isset($interfaceId)){
+			$interface = new InterfaceObject($interfaceId);
 			return (in_array($roleName, $interface->interfaceRoles) or empty($interface->interfaceRoles));
 		}		
 		
 		return (in_array($roleName, $this->interfaceRoles) or empty($this->interfaceRoles));
 	}
 	
-	public static function getSubinterface($interface, $subinterfaceName){
+	public static function getSubinterface($interface, $subinterfaceId){
 		
 		foreach((array)$interface->subInterfaces as $subinterface){
-			if($subinterface->name == $subinterfaceName) {
+			if($subinterface->id == $subinterfaceId) {
 				$result = $subinterface;
 			}
 		}
 		return empty($result) ? false : $result;
+	}
+	
+	public static function getAllInterfaceObjects(){
+		global $allInterfaceObjects; // from Generics.php
+		
+		return (array)$allInterfaceObjects;
 	}
 }
 

@@ -32,6 +32,7 @@ instance Eq SignOrd where
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
+               . checkInterfaceCycles     -- Check that interface references are not cyclic
                . checkInterfaceRefs       -- Check whether all referenced interfaces exist
                . checkUnique udefrules    -- Check uniquene names of: rules,
                . checkUnique patterns     --                          patterns,
@@ -75,6 +76,22 @@ isDanglingPurpose ctx purp =
     ExplProcess nm -> nm `notElem` map name (ctxprocs ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplContext nm -> ctxnm ctx /= nm
+
+-- Check that interface references are not cyclic
+checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
+checkInterfaceCycles gCtx =
+  case gCtx of
+    Errors err -> Errors err
+    Checked ctx ->  if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
+      where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
+            refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
+            getDeepIfcRefs obj = case objmsub obj of
+                                   Nothing                -> []
+                                   Just (InterfaceRef nm) -> [nm]
+                                   Just (Box _ _ objs)    -> concatMap getDeepIfcRefs objs
+            lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
+                                   [ifc] -> ifc
+                                   _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
 -- Check whether all referenced interfaces exist
 checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
