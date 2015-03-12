@@ -300,7 +300,7 @@ selectExpr fSpec expr
                      (ptgt,ftgt) = (QName (name plug), QName (name fld))
                                      where (plug,fld) = getConceptTableInfo fSpec t
                  in case (s,t) of
-                     (ONE, ONE) -> fatal 309 "V[ONE*ONE] ???"
+                     (ONE, ONE) -> one
                      (_  , ONE) -> BSE { bseCmt = ""
                                        , bseSrc = Iden [psrc, fsrc]
                                        , bseTrg = NumLit "1"
@@ -777,9 +777,28 @@ emptySet = BSE { bseCmt = "this will quaranteed return 0 rows:"
                                                , qeOrderBy = []
                                                , qeOffset = Nothing
                                                , qeFetchFirst = Nothing
-                                               } `as` Name "dummy"]
+                                               } `as` Name "nothing"]
                , bseWhr = Just (BinOp (Iden [a]) [Name "<>"] (NumLit "1"))
                }
             where a = Name "a"
 
+
+one :: BinQueryExpr
+one = BSE { bseCmt = "Just ONE"
+             -- select 1 as src, 1 as trg from (select 1) dummy
+          , bseSrc = Iden [a]
+          , bseTrg = Iden [a]
+          , bseTbl = [TRQueryExpr  Select { qeSetQuantifier = SQDefault
+                                          , qeSelectList = [(NumLit "1", Just a)]
+                                          , qeFrom = []
+                                          , qeWhere = Nothing
+                                          , qeGroupBy = []
+                                          , qeHaving = Nothing
+                                          , qeOrderBy = []
+                                          , qeOffset = Nothing
+                                          , qeFetchFirst = Nothing
+                                          } ]
+          , bseWhr = Nothing
+          }
+            where a = Name "a"
 
