@@ -58,7 +58,7 @@ pContext  = rebuild <$> posOf pKeyCONTEXT <*> pConceptName
                       CPat     <$> pPatternDef   <|>
                       CPrc     <$> pProcessDef   <|>
                       CRul     <$> pRuleDef      <|>
-                      CCfy     <$> try pClassify <|>
+                      CCfy     <$> pClassify     <|>
                       CRel     <$> pRelationDef  <|>
                       CCon     <$> pConceptDef   <|>
                       CGen     <$> pGenDef       <|>
@@ -136,7 +136,7 @@ pPatternDef = rebuild <$> posOf pKeyPATTERN <*> pConceptName   -- The name space
     --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
     pPatElem :: AmpParser PatElem
     pPatElem = Pr <$> pRuleDef      <|>
-               Py <$> try pClassify <|>
+               Py <$> pClassify     <|>
                Pd <$> pRelationDef  <|>
                Pc <$> pConceptDef   <|>
                Pg <$> pGenDef       <|>
@@ -180,7 +180,7 @@ pProcessDef = rebuild <$> posOf pKeyPROCESS <*> pConceptName   -- The name space
     --- ProcElem ::= RuleDef | Classify | RelationDef | RoleRule | RoleRelation | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
     pProcElem :: AmpParser ProcElem
     pProcElem = PrR <$> pRuleDef      <|>
-                PrY <$> try pClassify <|>
+                PrY <$> pClassify     <|>
                 PrD <$> pRelationDef  <|>
                 PrM <$> try pRoleRule <|>
                 PrL <$> pRoleRelation <|>
@@ -205,7 +205,8 @@ data ProcElem = PrR (P_Rule TermPrim)
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
-pClassify = rebuild <$> posOf pKeyCLASSIFY
+pClassify = try$
+            rebuild <$> posOf pKeyCLASSIFY
                     <*> pConceptRef
                     <*  pKeyIS
                     <*> pCterm
@@ -339,12 +340,10 @@ pConceptDef       = Cd <$> posOf pKeyCONCEPT
                        <*> ((pKeyTYPE *> pString) `opt` "")     -- the type of the concept.
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
---- GenDef ::= 'SPEC' ConceptRef 'ISA' ConceptRef | 'CLASSIFY' ConceptRef 'ISA' ConceptRef | Classify
+--- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen
-pGenDef           = try(rebuild <$> posOf pKeySPEC     <*> pConceptRef <* pKeyISA <*> pConceptRef) <|>  -- SPEC is obsolete syntax. Should disappear!
-                    try(rebuild <$> posOf pKeyCLASSIFY <*> pConceptRef <* pKeyISA <*> pConceptRef) <|>
-                    pClassify
-                    where rebuild p spc gen = PGen{gen_spc=spc, gen_gen=gen, gen_fp =p}
+pGenDef = try$ rebuild <$> posOf (pKeyCLASSIFY <|> pKeySPEC) <*> pConceptRef <* pKeyISA <*> pConceptRef  -- SPEC is obsolete syntax. Should disappear!
+          where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
 
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
@@ -511,7 +510,7 @@ pPurpose          = rebuild <$> posOf pKeyPURPOSE  -- "EXPLAIN" has become obsol
                             <*> pRef2Obj
                             <*> pMaybe pLanguageRef
                             <*> pMaybe pTextMarkup
-                            <*> ((pKeyREF *> (pList1Sep pSemi pString)) `opt` [])
+                            <*> ((pKeyREF *> pList1Sep pSemi pString) `opt` [])
                             <*> pExpl
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
