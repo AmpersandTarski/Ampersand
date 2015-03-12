@@ -785,11 +785,11 @@ emptySet = BSE { bseCmt = "this will quaranteed return 0 rows:"
 
 one :: BinQueryExpr
 one = BSE { bseCmt = "Just ONE"
-             -- select 1 as src, 1 as trg from (select 1) dummy
-          , bseSrc = Iden [a]
-          , bseTrg = Iden [a]
-          , bseTbl = [TRQueryExpr  Select { qeSetQuantifier = SQDefault
-                                          , qeSelectList = [(NumLit "1", Just a)]
+             -- select distinct 1 as src, 1 as tgt from (select 1) as a
+          , bseSrc = NumLit "1"
+          , bseTrg = NumLit "1"
+          , bseTbl = [(TRQueryExpr  Select { qeSetQuantifier = SQDefault
+                                          , qeSelectList = [(NumLit "1", Nothing)]
                                           , qeFrom = []
                                           , qeWhere = Nothing
                                           , qeGroupBy = []
@@ -797,8 +797,7 @@ one = BSE { bseCmt = "Just ONE"
                                           , qeOrderBy = []
                                           , qeOffset = Nothing
                                           , qeFetchFirst = Nothing
-                                          } ]
+                                          }) `as` Name "ONE" ]
           , bseWhr = Nothing
           }
-            where a = Name "a"
 
