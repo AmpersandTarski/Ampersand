@@ -12,6 +12,12 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	    }, 3000);
 	}
 	
+	$rootScope.getNotifications = function(){
+		Restangular.one('notifications/all').get().then(function(data){
+			$rootScope.updateNotifications(data);
+		});
+	}
+	
 	$scope.closeAlert = function(alerts, index) {
 		alerts.splice(index, 1);
 	}
