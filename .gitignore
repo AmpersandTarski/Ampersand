@@ -17,3 +17,4 @@ BuildInfo_Generated.hs
 *.hi
 miscellaneous/AmpersandBackup.jgcscs
 miscellaneous/AmpersandBackup.jgfns
+*.log
