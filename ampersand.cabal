@@ -78,7 +78,7 @@ executable ampersand
                      HDBC-odbc == 2.3.*,
                      HStringTemplate == 0.7.*,
                      SpreadsheetML == 0.1.*,
-                     base >= 4.6,
+                     base >= 4.6 && < 5.0,
                      bytestring == 0.10.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
@@ -97,8 +97,8 @@ executable ampersand
                      time == 1.4.*,
                      utf8-string == 0.3.*,
                      uulib == 0.9.*,
-                     simple-sql-parser >=0.4 && <0.5
-        
+                     simple-sql-parser >=0.4.1 && <0.5
+
   other-modules:     
                      Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
