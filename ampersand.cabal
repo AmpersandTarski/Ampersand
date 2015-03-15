@@ -73,7 +73,6 @@ executable ampersand
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall -O2
   build-depends:     
-                     ConfigFile == 1.1.*,
                      HDBC == 2.4.*,
                      HDBC-odbc == 2.3.*,
                      HStringTemplate == 0.7.*,
