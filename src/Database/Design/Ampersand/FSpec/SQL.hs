@@ -125,9 +125,9 @@ selectExpr fSpec expr
                                        theTrg = bseTrg (makeSelectable sResult)
                                        theTbl = bseTbl (makeSelectable sResult)
                                        theWhr = case makeSelectable sResult of
-                                                  e@BSE{} -> bseWhr e
-                                                  BCQE{}  -> fatal 129 "makeSelectable is not doing what it is supposed to do!" 
-                                                  (BQEComment c e) -> fatal 130 "makeSelectable is not doing what it is supposed to do!" 
+                                                  e@BSE{}      -> bseWhr e
+                                                  BCQE{}       -> fatal 129 "makeSelectable is not doing what it is supposed to do!" 
+                                                  BQEComment{} -> fatal 130 "makeSelectable is not doing what it is supposed to do!" 
                                        sResult = makeIntersectSelectExpr ts
                                        makeSelectable :: BinQueryExpr -> BinQueryExpr
                                        makeSelectable x =
