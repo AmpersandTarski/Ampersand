@@ -8,7 +8,6 @@ import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 import Data.List (intercalate)
 import Data.List.Utils (replace)
-import Debug.Trace
 
 pretty_print :: Pretty a => a -> String
 pretty_print x = displayS (renderPretty rfrac col_width doc) ""
