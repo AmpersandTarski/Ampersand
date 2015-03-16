@@ -135,7 +135,7 @@ selectExpr fSpec expr
                                            BSE{}   -> x
                                            _       -> BSE { bseSrc = Iden [sourceAlias]
                                                           , bseTrg = Iden [targetAlias]
-                                                          , bseTbl = [TRParens . TRQueryExpr . toSQL $ x]
+                                                          , bseTbl = [TRQueryExpr (toSQL (x)) `as` Name "someDummyNameBecauseMySQLNeedsOne" ]
                                                           , bseWhr = Nothing
                                                           }
                                        makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
