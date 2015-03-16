@@ -182,6 +182,7 @@ pProcessDef = rebuild <$> posOf pKeyPROCESS <*> pConceptName   -- The name space
     pProcElem = PrR <$> pRuleDef      <|>
                 PrY <$> pClassify     <|>
                 PrD <$> pRelationDef  <|>
+                --TODO: Move the try deeper into the parsing chain
                 PrM <$> try pRoleRule <|>
                 PrL <$> pRoleRelation <|>
                 PrC <$> pConceptDef   <|>
@@ -366,8 +367,8 @@ pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <*> pParens(pList1
 
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
-          pIndAtt  = try (attL <$> pLabelProps <*> pTerm) <|>
-                     att <$> pTerm
+          pIndAtt  = attL <$> try pLabelProps <*> pTerm <|>
+                     att <$> try pTerm
               where attL (Lbl nm p strs) attexpr =
                        P_Obj { obj_nm   = nm
                              , obj_pos  = p
@@ -533,8 +534,8 @@ pPurpose          = rebuild <$> posOf pKeyPURPOSE  -- "EXPLAIN" has become obsol
 
 --- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
-pPopulation = try (prelpop <$> posOf pKeyPOPULATION <*> pRelSign     <* pKeyCONTAINS <*> pContent)
-              <|>  pcptpop <$> posOf pKeyPOPULATION <*> pConceptName <* pKeyCONTAINS <*> pBrackets (pListSep pComma pString)
+pPopulation = try (prelpop <$> posOf pKeyPOPULATION <*> pRelSign     <* pKeyCONTAINS <*> pContent) <|>
+              try (pcptpop <$> posOf pKeyPOPULATION <*> pConceptName <* pKeyCONTAINS <*> pBrackets (pListSep pComma pString))
     where
       prelpop :: Origin -> TermPrim -> Pairs -> P_Population
       prelpop    orig     (Prel _ nm)  contents
@@ -794,8 +795,8 @@ pLabel       = lbl <$> pADLid_val_pos <*  pColon
                      lbl (nm,pos') = Lbl nm pos' []
 --- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
 pContent :: AmpParser Pairs
-pContent      = try(pBrackets (pListSep pComma pRecord))
-                <|> pBrackets (pListSep pSemi pRecordObs) --obsolete
+pContent      = try (pBrackets (pListSep pComma pRecord)) <|>
+                try (pBrackets (pListSep pSemi pRecordObs)) --obsolete
     where
     --- RecordList ::= Record (',' Record)*
     --- Record ::= String '*' String

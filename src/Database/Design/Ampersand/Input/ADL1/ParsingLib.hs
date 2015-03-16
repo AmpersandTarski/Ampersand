@@ -53,7 +53,7 @@ infixl 4 <$
 a <$ p = do { _ <- p; return a }
 
 (<**>) :: AmpParser a -> AmpParser (a -> b) -> AmpParser b
-p <**> q = (\ x f -> f x) CA.<$> p CA.<*> q
+p <**> q = (\x f -> f x) CA.<$> p CA.<*> q
 
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
 p <??> q = p <**> (q `opt` id)
