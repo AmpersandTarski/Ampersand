@@ -1,3 +1,5 @@
+--TODO: Add the functions to the module definition
+--TODO: Fix the warnings in this module
 module Database.Design.Ampersand.Input.ADL1.LexerTexts where
 
 import Data.IORef

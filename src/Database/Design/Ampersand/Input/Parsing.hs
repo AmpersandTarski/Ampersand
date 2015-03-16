@@ -2,10 +2,9 @@
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
-module Database.Design.Ampersand.Input.Parsing 
-  ( parseADL, parseADL1pExpr, parseRule, parseCtx, runParser
-  )
-where
+module Database.Design.Ampersand.Input.Parsing (
+    parseADL, parseADL1pExpr, parseRule, parseCtx, runParser
+) where
 
 import Database.Design.Ampersand.ADL1
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -14,13 +13,14 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.Input.ADL1.Lexer
+import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Data.List
 import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
-import Text.Parsec.Error (Message(..))
+import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 
 fatal :: Int -> String -> a
@@ -61,15 +61,27 @@ parseSingleADL opts filePath =
     }
  where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
 
+parseErrors :: Lang -> ParseError -> [CtxError]
+parseErrors lang err = [PE (Message msg)]
+                where msg :: String
+                      msg = show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
+                      showLang :: Lang -> [Message] -> String
+                      showLang English = showErrorMessages "or" "unknown parse error"   "expecting" "unexpected" "end of input"
+                      showLang Dutch   = showErrorMessages "of" "onbekende parsingfout" "verwacht"  "onverwacht" "einde van de invoer"
+
 parse :: AmpParser a -> [Token] -> Guarded a
 parse p ts =
       -- runP :: Parsec s u a -> u -> SourceName -> s -> Either ParseError a 
     case runP p pos fn ts of
-        --TODO: Make nicer errors
-        Left err -> Errors [PE (Message (show err))]
+        --TODO: Add language support to the parser errors
+        Left err -> Errors $ parseErrors English err
         Right a -> Checked a
     where pos = tok_pos (head ts)
           fn  = sourceName pos
+
+--TODO: Give the errors in a better way
+lexerErrors :: LexerError -> [CtxError]
+lexerErrors err = [PE (Message ("Lexer error "++show err))]
 
 runParser :: AmpParser a -> Filename -> String -> Guarded a
 runParser parser filename input =
@@ -77,8 +89,7 @@ runParser parser filename input =
   --TODO: Give options to the lexer
   let lexed = lexer [] filename input
   in case lexed of
-    --TODO: Give the errors in a better way
-    Left err -> Errors [PE (Message (show err))]
+    Left err -> Errors $ lexerErrors err
     --TODO: Do something with the warnings
     Right (tokens, _)  -> parse parser tokens
 
