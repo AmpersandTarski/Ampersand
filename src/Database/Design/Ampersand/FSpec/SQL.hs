@@ -218,6 +218,7 @@ selectExpr fSpec expr
                        -- In some cases of a non-outer expression, a fence need not be generated, to get better SQL queries. 
                             EDcV{} -> Nothing  
                             EMp1{} -> Nothing
+                            (ECpl EMp1{}) -> Nothing 
                             _      -> makeNormalFence
                      where
                        makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
@@ -243,14 +244,22 @@ selectExpr fSpec expr
                                     EMp1 a _  -> Just (BinOp (Iden [fenceName i,targetAlias])
                                                              [Name "="]
                                                              (StringLit a))
-                                    _         -> fatal 294 "there is no reason for having no fenceTable!"
+                                    (ECpl (EMp1 a _)) 
+                                              -> Just (BinOp (Iden [fenceName i,targetAlias])
+                                                             [Name "<>"]
+                                                             (StringLit a))
+                                    _         -> fatal 251 "there is no reason for having no fenceTable!"
                              (Nothing, Just _ ) ->
                                   case fenceExpr i of 
                                     EDcV _    -> noConstraint  "EDcV;.."
                                     EMp1 a _  -> Just (BinOp (StringLit a)
                                                              [Name "="]
                                                              (Iden [fenceName (i+1) ,sourceAlias]))
-                                    _         -> fatal 294 "there is no reason for having no fenceTable!"
+                                    (ECpl (EMp1 a _)) 
+                                              -> Just (BinOp (StringLit a)
+                                                             [Name "<>"]
+                                                             (Iden [fenceName (i+1) ,sourceAlias]))
+                                    _         -> fatal 258 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
                                   fatal 286 $ intercalate "\n  " $
@@ -408,10 +417,10 @@ selectExpr fSpec expr
                                                                       )
                                       }
               where posName = Name "pos"
-                    closedWorldName = QName ("cartesian product of "++plur s ++ " and " ++ plur t) 
+                    closedWorldName = QName ("cartesian product of "++plur (source e) ++ " and " ++ plur (target e)) 
                                        
                           where plur c = plural (fsLang fSpec) (name c)
-                    theClosedWorldExpression = EDcV (Sign s t) 
+                    theClosedWorldExpression = EDcV (sign e) 
                         
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
     EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
