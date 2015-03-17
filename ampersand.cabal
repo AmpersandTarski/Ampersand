@@ -94,7 +94,8 @@ executable ampersand
                      text == 1.1.*,
                      time == 1.4.*,
                      utf8-string == 0.3.*,
-                     uulib == 0.9.*
+                     uulib == 0.9.*,
+                     simple-sql-parser >=0.4.1 && <0.5
         
   other-modules:     
                      Database.Design.Ampersand,
