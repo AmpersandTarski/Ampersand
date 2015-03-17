@@ -776,6 +776,7 @@ pMarkup2aMarkup defLanguage defFormat
        fmt = fromMaybe defFormat mpdf           -- The pandoc format is always defined; if not by the user, then by default.
 
 -- helpers for generating a lattice, not having to write `Atom' all the time
+-- TODO: Names are inconsistent: maybe call these either mUnion & mIsc or mJoin & mMeet? Or even lJoin and lMeet to denote the lattice.
 mjoin,mIsc :: a -> a -> FreeLattice a
 mjoin a b = Join (Atom a) (Atom b)
 mIsc  a b = Meet (Atom a) (Atom b)
