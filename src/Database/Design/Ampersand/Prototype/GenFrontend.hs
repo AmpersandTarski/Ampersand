@@ -167,24 +167,6 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
-
--- TODO: Move to FSpec (or some other suitable place)
-lookupView :: FSpec -> String -> ViewDef
-lookupView fSpec nm =
-  case filter (\v -> vdlbl v == nm) $ vviews fSpec of
-    []   -> fatal 174 $ "Undeclared view "++show nm++"." -- Will be caught by static analysis
-    [vd] -> vd
-    vds  -> fatal 176 $ "Multiple views named " ++ show nm ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
-
-getDefaultViewForConcept :: FSpec -> A_Concept -> Maybe ViewDef
-getDefaultViewForConcept fSpec concpt =
-  case [ vd 
-       | vd@Vd{vdcpt = c, vdIsDefault = True} <- vviews fSpec
-       ,  c `elem` (concpt : largerConcepts (gens fSpec) concpt) 
-       ] of
-    []     -> Nothing
-    (vd:_) -> Just vd
---            
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
