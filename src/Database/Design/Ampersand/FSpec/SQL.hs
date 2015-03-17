@@ -398,9 +398,19 @@ selectExpr fSpec expr
                                       , bseTrg = Iden [closedWorldName,targetAlias]
                                       , bseTbl = [(toTableRef . selectExpr fSpec) theClosedWorldExpression `as` closedWorldName]
                                       , bseWhr = Just $ selectNotExists 
-                                                          (toTableRef (selectExpr fSpec e)) Nothing
+                                                          (toTableRef (selectExpr fSpec e) `as` posName) 
+                                                                      (Just . conjunctSQL $ 
+                                                                         [BinOp (Iden [closedWorldName,sourceAlias])
+                                                                                [Name "="]
+                                                                                (Iden [posName,sourceAlias])
+                                                                         ,BinOp (Iden [closedWorldName,targetAlias])
+                                                                                [Name "="]
+                                                                                (Iden [posName,targetAlias])
+                                                                         ]
+                                                                      )
                                       }
-              where closedWorldName = case theClosedWorldExpression of 
+              where posName = Name "pos"
+                    closedWorldName = case theClosedWorldExpression of 
                                     (EDcI c)          -> QName ("all "++ plur c)
                                     (EDcV (Sign s t)) -> QName ("cartesian product of "++plur s ++ " and " ++ plur t) 
                                     _                 -> fatal 434 "closedWorldExpression is not supposed to be of this kind."
