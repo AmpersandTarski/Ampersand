@@ -314,15 +314,13 @@ selectExpr fSpec expr
                                        , bseTbl = [TRSimple [ptgt]]
                                        , bseWhr = Just (notNull (Iden [ptgt, ftgt]))
                                        }
-                     _     -> if s == t
-                              then selectExpr fSpec (EDcI s)
-                              else BSE { bseSrc = Iden [first, fsrc]
-                                       , bseTrg = Iden [secnd, ftgt]
-                                       , bseTbl = [TRSimple [psrc] `as` first
-                                                  ,TRSimple [ptgt] `as` secnd]
-                                       , bseWhr = Just $ conjunctSQL
-                                               [notNull (Iden[first, fsrc]), notNull (Iden[secnd, ftgt])]
-                                       }
+                     _     -> BSE { bseSrc = Iden [first, fsrc]
+                                  , bseTrg = Iden [secnd, ftgt]
+                                  , bseTbl = [TRSimple [psrc] `as` first
+                                             ,TRSimple [ptgt] `as` secnd]
+                                  , bseWhr = Just $ conjunctSQL
+                                          [notNull (Iden[first, fsrc]), notNull (Iden[secnd, ftgt])]
+                                  }
                                 where
                                   first = Name "fst"
                                   secnd = Name "snd"
@@ -393,7 +391,7 @@ selectExpr fSpec expr
                                                  )
                                  }
                              where concpt = sqlAttConcept fSpec c
-           _ | otherwise       -> BQEComment [BlockComment $ "case: ECpl e"++"ECpl ( \""++showADL e++"\" )"] $
+           _ | otherwise       -> BQEComment (map BlockComment [ "case: ECpl e", "ECpl ( \""++showADL e++"\" )"]) $
                                   BSE { bseSrc = Iden [closedWorldName,sourceAlias]
                                       , bseTrg = Iden [closedWorldName,targetAlias]
                                       , bseTbl = [(toTableRef . selectExpr fSpec) theClosedWorldExpression `as` closedWorldName]
@@ -410,19 +408,10 @@ selectExpr fSpec expr
                                                                       )
                                       }
               where posName = Name "pos"
-                    closedWorldName = case theClosedWorldExpression of 
-                                    (EDcI c)          -> QName ("all "++ plur c)
-                                    (EDcV (Sign s t)) -> QName ("cartesian product of "++plur s ++ " and " ++ plur t) 
-                                    _                 -> fatal 434 "closedWorldExpression is not supposed to be of this kind."
+                    closedWorldName = QName ("cartesian product of "++plur s ++ " and " ++ plur t) 
                                        
                           where plur c = plural (fsLang fSpec) (name c)
-                    theClosedWorldExpression =
-                       case (source e, target e) of
-                         (ONE, ONE) -> fatal 425 "The complement of I[ONE] ???"
-                         (ONE, t  ) -> EDcI t
-                         (s  , ONE) -> EDcI s
-                         (s  , t  ) | s == t    -> EDcI s
-                                    | otherwise -> EDcV (Sign s t) 
+                    theClosedWorldExpression = EDcV (Sign s t) 
                         
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
     EKl1 _               -> fatal 249 "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
