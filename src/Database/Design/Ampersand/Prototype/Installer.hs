@@ -23,7 +23,8 @@ installerDBstruct fSpec = unlines $
       , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
       , "}"
       , ""
-      , "// Drop the database if it exists"
+      ]++setSqlModePHP++
+      [ "// Drop the database if it exists"
       , "$sql=\"DROP DATABASE $DB_name\";"
       , "mysqli_query($DB_link,$sql);"
       , "// Don't bother about the error if the database didn't exist..."
@@ -41,7 +42,7 @@ installerDBstruct fSpec = unlines $
       , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
       , "  }"
       , ""
-      ] ++
+      ]++setSqlModePHP++
       createTablesPHP fSpec ++
       [ "mysqli_query($DB_link,'SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
       , "?>"
@@ -95,7 +96,7 @@ installerDefPop fSpec = unlines $
       , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
       , "  }"
       , "$error=false;"
-      ] ++
+      ] ++setSqlModePHP++
       populateTablesPHP fSpec ++
       ["?>"
       ]

@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Prototype.PHP 
-         ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP
+         ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP, setSqlModePHP
          , evaluateExpSQL, performQuery
          , createTablesPHP, populateTablesPHP, populateTablesWithPopsPHP, plug2TableSpec
          , dropplug, historyTableSpec, sessionTableSpec, signalTableSpec, TableSpec, getTableName) where
@@ -13,7 +13,7 @@ import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
 import Database.Design.Ampersand hiding (putStr, origin)
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
+import Database.Design.Ampersand.FSpec.SQL
 
 
 fatal :: Int -> String -> a
@@ -36,7 +36,7 @@ createTablesPHP fSpec =
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , ""
-        ] ++
+        ] ++setSqlModePHP++
         createTablePHP signalTableSpec ++
         [ ""
         , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
@@ -64,7 +64,8 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   [ "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
   , "}"
-  , "" ]
+  , "" 
+  ]++setSqlModePHP
 
 
 plug2TableSpec :: PlugSQL -> TableSpec
@@ -165,7 +166,7 @@ sqlServerConnectPHP fSpec =
   , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
   , "}"
   , ""
-  ]
+  ]++setSqlModePHP
 
 createTempDbPHP :: String -> [String]
 createTempDbPHP dbNm =
@@ -188,7 +189,7 @@ createTempDbPHP dbNm =
       , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
       , "  }"
       , ""
-      ]
+      ]++setSqlModePHP
 
 
 -- evaluate normalized exp in SQL
@@ -196,7 +197,7 @@ evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
   fmap sort (performQuery (getOpts fSpec) dbNm violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = selectExpr fSpec 26 "src" "tgt" violationsExpr
+       violationsQuery = prettySQLQuery 26 (selectSrcTgt fSpec violationsExpr)
 
 performQuery :: Options -> String -> String -> IO [(String,String)]
 performQuery opts dbNm queryStr =
@@ -222,7 +223,8 @@ performQuery opts dbNm queryStr =
       , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
       , "  }"
       , ""
-      , "$sql="++showPhpStr queryStr++";"
+      ]++setSqlModePHP++
+      [ "$sql="++showPhpStr queryStr++";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
       , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
@@ -292,3 +294,15 @@ executePHP mWorkingDir phpPath phpArgs =
 
 showPHP :: [String] -> String
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
+
+
+-- | php code snippet to set the sql_mode
+setSqlModePHP :: [String]
+setSqlModePHP = 
+       [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
+                                                               -- TRADITIONAL because of some more safety
+       , "if (!mysqli_query($DB_link,$sql)) {"
+       , "  die(\"Error setting sql_mode: \" . mysqli_error($DB_link));"
+       , "  }"
+       , ""
+       ]

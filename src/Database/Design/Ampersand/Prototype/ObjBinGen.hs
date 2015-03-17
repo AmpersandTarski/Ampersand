@@ -11,6 +11,7 @@ import qualified Data.ByteString.Char8 as BS
 import Database.Design.Ampersand.Prototype.CoreImporter
 import Prelude hiding (writeFile,readFile,getContents)
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
+import Database.Design.Ampersand.Prototype.PHP
 
 generatePhp :: FSpec -> IO()
 generatePhp fSpec =
@@ -31,7 +32,7 @@ generatePhp fSpec =
               }
     }
    where
-    dbsettings = unlines
+    dbsettings = unlines $
        [ "<?php"
        , ""
        , "global $DB_host,$DB_user,$DB_pass;"
@@ -42,7 +43,8 @@ generatePhp fSpec =
        , "$DB_link=mysqli_connect($DB_host, $DB_user, $DB_pass)"
        , "      or exit(\"Error connecting to the database: username / password are probably incorrect.\");"
        , ""
-       , "?>"
+       ]++setSqlModePHP++
+       [ "?>"
        ]
 
 doGenAtlas :: FSpec -> IO()
