@@ -369,15 +369,16 @@ generateInterface fSpec interface =
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
-  [ "array ( 'name'  => "++ showPhpStr (name object)
-  , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
-  , "      , 'label' => " ++ showPhpStr (name object)              -- only for new front-end
-  ]
+     [ "array ( 'name'  => "++ showPhpStr (name object)
+     , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
+     , "      , 'label' => " ++ showPhpStr (name object)              -- only for new front-end
+     ]
+  ++ maybe [] (\viewId -> ["      , 'viewId' => " ++ showPhpStr viewId]) mViewId 
   ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
-      then   ["      // Normalization steps:"]
-           ++["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
-           ++["      //"]
-      else   []
+      then    ["      // Normalization steps:"]
+           ++ ["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
+           ++ ["      //"]
+      else    []
      )
   ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
@@ -403,10 +404,15 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
      , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery (22+14*depth) (selectSrcTgt fSpec normalizedInterfaceExp))
      ] 
-  ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
-  [ "      )"
-  ]
- where normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
+  ++ generateMSubInterface fSpec editableRels depth (objmsub object)
+  ++ [ "      )"
+     ]
+ where mViewId = case objmView object of
+                   Just vId -> Just vId
+                   Nothing  -> case getDefaultViewForConcept fSpec tgtConcept of
+                                 Just Vd{vdlbl=vId} -> Just vId
+                                 Nothing            -> Nothing
+       normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
        (srcConcept, tgtConcept, mEditableDecl) =
          case getExpressionRelation normalizedInterfaceExp of
            Just (src, decl, tgt, isFlipped) ->
