@@ -362,12 +362,12 @@ pCtx2aCtx' _
          (\(objExpr,bb) subi -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
            case subi of
              Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
-             Just (InterfaceRef s) ->
+             Just (InterfaceRef ifcId) ->
                unguard $
-                 (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef s)) <$> typeCheckInterfaceRef objExpr refIfcExpr)
-                 <$> case lookupDisambIfcObj s of
+                 (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef ifcId)) <$> typeCheckInterfaceRef objExpr refIfcExpr)
+                 <$> case lookupDisambIfcObj ifcId of
                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
-                       Nothing     -> error "interface ref not found"
+                       Nothing     -> Errors [mkUndeclaredError "interface" Nothing o ifcId]
              Just bx@(Box c _ _) ->
                case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
