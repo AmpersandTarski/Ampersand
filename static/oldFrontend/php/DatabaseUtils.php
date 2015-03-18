@@ -19,6 +19,8 @@ if (mysqli_connect_errno()) {
      . "<br/>The database may not have been initialized yet. (<a href=\"Installer.php\">Initialize database</a>)<br/>"
      );
 }
+// Set sql_mode to ANSI
+DB_doquer("SET SESSION sql_mode = 'ANSI'");
 
 // let PHP also report undefined variable references
 function terminate_missing_variables($errno, $errstr, $errfile, $errline) {
