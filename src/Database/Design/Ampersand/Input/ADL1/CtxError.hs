@@ -6,12 +6,12 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
-  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingError
+  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError
   , mkIncompatibleViewError
   , Guarded(..)
   , whenCheckedIO
-  , (<?>)
+  , unguard, (<?>)
   )
 -- SJC: I consider it ill practice to export CTXE
 -- Reason: CtxError should obtain all error messages
@@ -35,7 +35,15 @@ fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
 _notUsed = fatal
 
-infixl 4 <?>
+-- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
+-- The function is a bit more compositional than <?> as you don't have to tuple all the arguments.
+-- Similar to join and bind we have: unguard g = id <?> g, and f <?> g = unguard $ f <$> g
+unguard :: Guarded (Guarded a) -> Guarded a
+unguard (Errors errs) = Errors errs
+unguard (Checked g)   = g  
+
+infixl 4 <?> -- TODO: in case we keep this one, why not lower the precedence? 
+             --       (3 to allow elegant combination with <*> and <$>, or 2 if we also take into account <|>, which may be unnecessary as Guarded is not an Alternative)
 (<?>) :: (t -> Guarded a) -> Guarded t -> Guarded a  -- This is roughly the monadic definition for >>=, but it does not satisfy the corresponding rules so it cannot be a monad
 (<?>) _ (Errors  a) = Errors a -- note the type change
 (<?>) f (Checked a) = f a
@@ -96,10 +104,9 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-mkUndeclaredError :: (Traced e, Named e) => String -> Maybe String -> e -> String -> CtxError
-mkUndeclaredError entity mIfcName objDef ref = 
-  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ 
-                         show (name objDef) ++ maybe "" (\nm -> " of interface " ++ show nm) mIfcName ++ "."
+mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
+mkUndeclaredError entity objDef ref = 
+  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
@@ -112,9 +119,11 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
-mkNonMatchingError ::  String -> ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
-mkNonMatchingError entity objDef t s ref
- = CTXE (origin objDef) $ "The referenced "++entity++" "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
+mkIncompatibleInterfaceError ::  P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError 
+mkIncompatibleInterfaceError objDef expTgt refSrc ref = 
+  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++" at field " ++ show (name objDef) ++ 
+                         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++ 
+                         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
 
 mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
