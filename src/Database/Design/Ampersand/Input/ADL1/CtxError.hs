@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
-  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingError
+  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError
   , mkIncompatibleViewError
   , Guarded(..)
@@ -119,9 +119,11 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
-mkNonMatchingError ::  String -> ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
-mkNonMatchingError entity objDef t s ref
- = CTXE (origin objDef) $ "The referenced "++entity++" "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
+mkIncompatibleInterfaceError ::  P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError 
+mkIncompatibleInterfaceError objDef expTgt refSrc ref = 
+  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++" at field " ++ show (name objDef) ++ 
+                         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++ 
+                         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
 
 mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"

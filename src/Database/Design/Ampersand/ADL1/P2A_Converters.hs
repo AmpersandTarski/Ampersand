@@ -336,7 +336,7 @@ pCtx2aCtx' _
              Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
              Just (InterfaceRef ifcId) ->
                unguard $
-                 (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef ifcId)) <$> typeCheckInterfaceRef objExpr refIfcExpr)
+                 (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
                  <$> case lookupDisambIfcObj ifcId of
                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
                        Nothing     -> Errors [mkUndeclaredError "interface" o ifcId]
@@ -361,8 +361,7 @@ pCtx2aCtx' _
           Just vd -> let viewAnnCptStr = name $ target objExpr
                          viewDefCptStr = name $ vd_cpt vd
                          viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
-                     in  --trace ("CHECK: " ++viewAnnCptStr ++ " `isa` " ++viewDefCptStr ++ " = " ++ show viewIsCompatible) $
-                         if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr ]
+                     in  if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr]
           Nothing -> Errors [mkUndeclaredError "view" o viewId] 
      
       lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
@@ -371,16 +370,17 @@ pCtx2aCtx' _
           []          -> Nothing
           disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
       
-      typeCheckInterfaceRef :: Expression -> Expression -> Guarded Expression
-      typeCheckInterfaceRef objExpr ifcExpr = 
-        let ifcRefTargetStr = name $ target objExpr
-            ifcSourceStr = name $ source ifcExpr
-            refIsCompatible = ifcRefTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` ifcRefTargetStr
-        in  trace ("CHECK: " ++ifcRefTargetStr ++ " compares to " ++ ifcSourceStr ++ " = " ++ show refIsCompatible) $
-            if refIsCompatible 
+      typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
+      typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
+        let expTarget = target objExpr
+            expTargetStr = name expTarget
+            ifcSource = source ifcExpr
+            ifcSourceStr = name ifcSource
+            refIsCompatible = expTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` expTargetStr
+        in  if refIsCompatible 
             then pure $ addEpsilonRight' ifcSourceStr objExpr 
-            else Errors [mkIncompatibleViewError o "INTERFACE REF ERROR" ifcRefTargetStr ifcSourceStr ]
-                         -- Abuse view error to show interface ref error
+            else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
+            
       obj (e,(sr,_)) s
        = ( Obj { objnm = nm
                , objpos = orig
