@@ -104,10 +104,9 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-mkUndeclaredError :: (Traced e, Named e) => String -> Maybe String -> e -> String -> CtxError
-mkUndeclaredError entity mIfcName objDef ref = 
-  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ 
-                         show (name objDef) ++ maybe "" (\nm -> " of interface " ++ show nm) mIfcName ++ "."
+mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
+mkUndeclaredError entity objDef ref = 
+  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 

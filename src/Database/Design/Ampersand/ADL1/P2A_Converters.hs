@@ -34,7 +34,6 @@ instance Eq SignOrd where
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer to existing objects
                . checkInterfaceCycles      -- Check that interface references are not cyclic
-               . checkInterfaceRefs        -- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
                . checkMultipleDefaultViews -- Check whether each concept has at most one default view
                . checkUnique udefrules     -- Check uniquene names of: rules,
                . checkUnique patterns      --                          patterns,
@@ -95,33 +94,6 @@ checkInterfaceCycles gCtx =
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
-
--- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
-checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
-checkInterfaceRefs gCtx =
-  case gCtx of
-    Errors err  -> Errors err
-    Checked ctx -> let allInterfaceLookup = Map.fromList (map (\c -> (name c,c)) (ctxifcs ctx))
-                       undefinedInterfaceRefErrs
-                         = [ err
-                           | ifc <- ctxifcs ctx
-                           , (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
-                           , err <-
-                               case Map.lookup ref allInterfaceLookup of
-                                 Nothing -> [mkUndeclaredError "interface" (Just $ name ifc) objDef ref]
-                                 Just refIfc
-                                  -> [] {-let t = target (objctx objDef)
-                                         s = source (objctx (ifcObj refIfc))
-                                         isEq = name t == name s
-                                     in if isEq then [] else [mkNonMatchingError "interface" objDef t s ref] -}
-                           ]
-                   in  if null undefinedInterfaceRefErrs then gCtx else Errors undefinedInterfaceRefErrs
-                   
-  where getInterfaceRefs :: ObjectDef -> [(ObjectDef, String)]
-        getInterfaceRefs Obj{objmsub=Nothing}                        = []
-        getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
-        getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}            = concatMap getInterfaceRefs objs
-
 
 -- Check whether each concept has at most one default view
 checkMultipleDefaultViews :: Guarded A_Context -> Guarded A_Context
@@ -367,7 +339,7 @@ pCtx2aCtx' _
                  (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef ifcId)) <$> typeCheckInterfaceRef objExpr refIfcExpr)
                  <$> case lookupDisambIfcObj ifcId of
                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
-                       Nothing     -> Errors [mkUndeclaredError "interface" Nothing o ifcId]
+                       Nothing     -> Errors [mkUndeclaredError "interface" o ifcId]
              Just bx@(Box c _ _) ->
                case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
@@ -391,7 +363,7 @@ pCtx2aCtx' _
                          viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
                      in  --trace ("CHECK: " ++viewAnnCptStr ++ " `isa` " ++viewDefCptStr ++ " = " ++ show viewIsCompatible) $
                          if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr ]
-          Nothing -> Errors [mkUndeclaredError "view" Nothing o viewId] 
+          Nothing -> Errors [mkUndeclaredError "view" o viewId] 
      
       lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
       lookupDisambIfcObj ifcId =
