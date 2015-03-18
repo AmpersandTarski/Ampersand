@@ -64,11 +64,13 @@ instance Disambiguatable PairViewSegmentTerm where
                Tgt -> tg
           (res,rt) = disambInfo a (t,[])
 instance Disambiguatable P_ViewD where
-  disambInfo (P_Vd { vd_pos = o
-                   , vd_lbl = s
-                   , vd_cpt = c
-                   , vd_ats = a
-                   }) _ = (P_Vd o s c (map (\x -> fst (disambInfo x (c',[]))) a), (c',[]))
+  disambInfo (P_Vd { vd_pos  = o
+                   , vd_lbl  = s
+                   , vd_cpt  = c
+                   , vd_isDefault = d
+                   , vd_ats  = a
+                   , vd_html = h
+                   }) _ = (P_Vd o s c d h (map (\x -> fst (disambInfo x (c',[]))) a), (c',[]))
    where c' = [(Known (EDcI (pCpt2aCpt c)),Src)]
 
 instance Disambiguatable P_ViewSegmt where
@@ -86,10 +88,11 @@ instance Disambiguatable P_SubIfc where
 
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression
+                        v
                         d -- (potential) subobject
                         f)
                         (r,_) -- from the environment, only the source is important
-   = (P_Obj a b c' d' f, (r0,[]) -- only source information should be relevant
+   = (P_Obj a b c' v d' f, (r0,[]) -- only source information should be relevant
      )
     where
      (d', (r1,_))

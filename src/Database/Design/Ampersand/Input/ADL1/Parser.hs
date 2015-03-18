@@ -7,7 +7,7 @@ import Database.Design.Ampersand.Input.ADL1.UU_Scanner
          ( Token(..),TokenType(..),noPos
          , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma,pSemi)
 import UU.Parsing hiding (Parser)
-import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree
 import Data.List
 import Data.Maybe
@@ -33,8 +33,8 @@ keywordstxt       = [ "INCLUDE"
                     , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                     , "RELATION", "MEANING", "CONCEPT", "IDENT"
-                    , "VIEW", "TXT", "PRIMHTML"
-                    , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
+                    , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
+                    , "KEY" -- HJO, 20130605: Obsolete. Only useful as long as the old prototype generator is still in use.
                     , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                     , "CLASSIFY"
                     , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
@@ -371,6 +371,7 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
                        P_Obj { obj_nm   = nm
                              , obj_pos  = p
                              , obj_ctx  = attexpr
+                             , obj_mView = Nothing
                              , obj_msub = Nothing
                              , obj_strs = strs
                              }
@@ -378,9 +379,42 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
                         P_Obj { obj_nm   = ""
                               , obj_pos  = Origin "pIndAtt CC664"
                               , obj_ctx  = attexpr
+                              , obj_mView = Nothing
                               , obj_msub = Nothing
                               , obj_strs = []
                               }
+
+pViewDef :: AmpParser P_ViewDef
+pViewDef  = pFancyViewDef <|> pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
+
+pFancyViewDef :: AmpParser P_ViewDef
+pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> pMaybe (pKey "DEFAULT") <* pSpec '{' <*> pList1Sep (pSpec ',') pViewObj <* pSpec '}'
+                           <*> pMaybe pHtmlView 
+                           <*  pKey "ENDVIEW"
+    where mkViewDef :: Label -> (P_Concept, Origin) -> Maybe String -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
+          mkViewDef (Lbl nm _ _) (c, orig) mDefault objs mHtml =
+            P_Vd { vd_pos = orig
+                 , vd_lbl = nm
+                 , vd_cpt = c
+                 , vd_isDefault = isJust mDefault
+                 , vd_html = mHtml
+                 , vd_ats = map P_ViewExp objs
+                 }
+
+          pViewObj :: AmpParser P_ObjectDef
+          pViewObj = mkObj <$> pLabel <*> pTerm
+            where mkObj (Lbl nm p strs) attexpr = 
+                    P_Obj { obj_nm    = nm
+                          , obj_pos   = p
+                          , obj_ctx   = attexpr
+                          , obj_mView = Nothing
+                          , obj_msub  = Nothing
+                          , obj_strs  = strs -- will be []
+                          }
+          
+          pHtmlView :: AmpParser ViewHtmlTemplate                 
+          pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
+          
 
 -- | A view definition looks like:
 --      VIEW onSSN: Person("social security number":ssn)
@@ -389,19 +423,21 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*
 --      ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded~;userrole
 --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
 -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
-pViewDef :: AmpParser P_ViewDef
-pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+pViewDefLegacy :: AmpParser P_ViewDef
+pViewDefLegacy  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
     where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef
           vd (Lbl nm _ _) (c, orig) ats
               = P_Vd { vd_pos = orig
                      , vd_lbl = nm
                      , vd_cpt = c
+                     , vd_isDefault = True -- Legacy view defs are always assumed to be the default (only one is allowed)
+                     , vd_html = Nothing
                      , vd_ats = [ case viewSeg of
-                                     P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm=show i} else P_ViewExp x
+                                     P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else P_ViewExp x
                                      P_ViewText _ -> viewSeg
                                      P_ViewHtml _ -> viewSeg
-                                | (i,viewSeg)<-zip [(1::Integer)..] ats]
-                     } -- nrs also count text segments but they're are not important anyway
+                                | (i,viewSeg) <- zip [(1::Integer)..] ats]
+                     }  -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  <$> pViewAtt <|>
                          P_ViewText <$ pKey "TXT" <*> pString <|>
@@ -415,6 +451,7 @@ pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRe
                             P_Obj { obj_nm   = nm
                                   , obj_pos  = p
                                   , obj_ctx  = attexpr
+                                  , obj_mView = Nothing
                                   , obj_msub = Nothing
                                   , obj_strs = strs
                                   }
@@ -422,6 +459,7 @@ pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRe
                             P_Obj { obj_nm   = ""
                                   , obj_pos  = origin attexpr
                                   , obj_ctx  = attexpr
+                                  , obj_mView = Nothing
                                   , obj_msub = Nothing
                                   , obj_strs = []
                                   }
@@ -446,6 +484,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
                                           , obj_ctx  = expr
+                                          , obj_mView = Nothing
                                           , obj_msub = Just sub
                                           , obj_strs = args
                                           }
@@ -468,11 +507,13 @@ pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
 pObjDef :: AmpParser P_ObjectDef
 pObjDef            = obj <$> pLabelProps
                          <*> pTerm            -- the context expression (for example: I[c])
+                         <*> pMaybe (pSpec '<' *> pConid <* pSpec '>')
                          <*> pMaybe pSubInterface  -- the optional subinterface
-                     where obj (Lbl nm pos' strs) expr msub  =
+                     where obj (Lbl nm pos' strs) expr mView msub  =
                              P_Obj { obj_nm   = nm
                                    , obj_pos  = pos'
                                    , obj_ctx  = expr
+                                   , obj_mView = mView
                                    , obj_msub = msub
                                    , obj_strs = strs
                                    }

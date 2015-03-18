@@ -6,7 +6,9 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
-  , mkUndeclaredInterfaceError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingInterfaceError
+  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingError
+  , mkMultipleDefaultError
+  , mkIncompatibleViewError
   , Guarded(..)
   , whenCheckedIO
   , (<?>)
@@ -94,10 +96,10 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
-mkUndeclaredInterfaceError objDef containingIfcName ref = 
-  CTXE (origin objDef) $ "Undeclared interface " ++ show ref ++ " referenced at field " ++ 
-                         show (name objDef) ++ " of interface " ++ show containingIfcName ++ "."
+mkUndeclaredError :: (Traced e, Named e) => String -> Maybe String -> e -> String -> CtxError
+mkUndeclaredError entity mIfcName objDef ref = 
+  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ 
+                         show (name objDef) ++ maybe "" (\nm -> " of interface " ++ show nm) mIfcName ++ "."
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
@@ -110,10 +112,22 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
-mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
-mkNonMatchingInterfaceError objDef t s ref
- = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
+mkNonMatchingError ::  String -> ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
+mkNonMatchingError entity objDef t s ref
+ = CTXE (origin objDef) $ "The referenced "++entity++" "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
 
+mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
+mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
+mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
+  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++ 
+                      concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
+                             | vd <- viewDefs ]       
+
+mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
+mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
+  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
+                         ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
+    
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String

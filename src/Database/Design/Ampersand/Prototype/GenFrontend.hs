@@ -151,7 +151,7 @@ data FEObject = FEObject { objName :: String
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe String }
+data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
                    | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
 
 data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [Role] } deriving Show
@@ -167,7 +167,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
   where
     allIfcs :: [Interface]
     allIfcs = interfaceS fSpec
-
+            
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
@@ -186,10 +186,20 @@ buildInterface fSpec allIfcs ifc =
             case objmsub object of
               Nothing                  ->
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
-                  ; let specificTemplatePth = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
-                  ; hasSpecificTemplate <- doesTemplateExist fSpec $ specificTemplatePth
-                  ; let atomic = FEAtomic $ if hasSpecificTemplate then Just specificTemplatePth else Nothing
-                  ; return (atomic, iExp, isEditable, src, tgt)
+                  ; let mView = case objmView object of
+                                  Just nm -> Just $ lookupView fSpec nm
+                                  Nothing -> getDefaultViewForConcept fSpec tgt
+                  ; mSpecificTemplatePath <-
+                          case mView of
+                            Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
+                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp Obj{objnm=viewAttr} <- viewSegs])
+                            _ -> -- no view, or no view with an html template, so we fall back to target-concept template
+                                 -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
+                             do { let templatePath = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
+                                ; hasSpecificTemplate <- doesTemplateExist fSpec $ templatePath
+                                ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
+                                }
+                  ; return (FEAtomic mSpecificTemplatePath, iExp, isEditable, src, tgt)
                   }
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -291,7 +301,9 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
               -}
             -- For now, we choose specific template based on target concept. This will probably be too weak. 
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
-            ; template <- readTemplate fSpec $ fromMaybe "views/Atomic.html" mPrimTemplate -- Atomic is the default template
+            --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
+            ; let (templateFilename, viewAttrs) = fromMaybe ("views/Atomic.html", []) mPrimTemplate -- Atomic is the default template
+            ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
@@ -301,6 +313,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
+                               . setManyAttrib [(viewAttr, "{{row['@view']['"++viewAttr++"']}}") | viewAttr <- viewAttrs ] -- TODO: escape/protect
                                . setAttribute "navInterface" (fmap escapeIdentifier mNavInterface)
             }
         FEBox mClass subObjs ->

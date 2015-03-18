@@ -14,6 +14,7 @@ import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.Function
 import Data.Maybe
 import Data.List(nub)
 
@@ -31,13 +32,15 @@ instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to existing objects
-               . checkInterfaceCycles     -- Check that interface references are not cyclic
-               . checkInterfaceRefs       -- Check whether all referenced interfaces exist
-               . checkUnique udefrules    -- Check uniquene names of: rules,
-               . checkUnique patterns     --                          patterns,
-               . checkUnique ctxprocs     --                          processes.
-               . checkUnique ctxifcs      --                          and interfaces.
+pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer to existing objects
+               . checkInterfaceCycles      -- Check that interface references are not cyclic
+               . checkInterfaceRefs        -- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
+               . checkMultipleDefaultViews -- Check whether each concept has at most one default view
+               . checkUnique udefrules     -- Check uniquene names of: rules,
+               . checkUnique patterns      --                          patterns,
+               . checkUnique ctxprocs      --                          processes.
+               . checkUnique ctxvs         --                          view defs,
+               . checkUnique ctxifcs       --                          and interfaces.
                . pCtx2aCtx' opts
   where
     checkUnique f gCtx =
@@ -55,7 +58,7 @@ pCtx2aCtx opts = checkPurposes            -- Check whether all purposes refer to
 checkPurposes :: Guarded A_Context -> Guarded A_Context
 checkPurposes gCtx =
   case gCtx of
-    Errors err -> Errors err
+    Errors err  -> Errors err
     Checked ctx -> let topLevelPurposes = ctxps ctx
                        purposesInPatterns = concat (map prcXps  (ctxprocs ctx))
                        purposesInProcesses = concat (map ptxps  (ctxpats ctx))
@@ -81,8 +84,8 @@ isDanglingPurpose ctx purp =
 checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
 checkInterfaceCycles gCtx =
   case gCtx of
-    Errors err -> Errors err
-    Checked ctx ->  if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
+    Errors err  -> Errors err
+    Checked ctx -> if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
       where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
@@ -93,11 +96,11 @@ checkInterfaceCycles gCtx =
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
--- Check whether all referenced interfaces exist
+-- Check whether all referenced interfaces exist and have the right type (currently equality is enforced)
 checkInterfaceRefs :: Guarded A_Context -> Guarded A_Context
 checkInterfaceRefs gCtx =
   case gCtx of
-    Errors err -> Errors err
+    Errors err  -> Errors err
     Checked ctx -> let allInterfaceLookup = Map.fromList (map (\c -> (name c,c)) (ctxifcs ctx))
                        undefinedInterfaceRefErrs
                          = [ err
@@ -105,12 +108,12 @@ checkInterfaceRefs gCtx =
                            , (objDef, ref) <- getInterfaceRefs $ ifcObj ifc 
                            , err <-
                                case Map.lookup ref allInterfaceLookup of
-                                 Nothing -> [mkUndeclaredInterfaceError objDef (name ifc) ref ]
+                                 Nothing -> [mkUndeclaredError "interface" (Just $ name ifc) objDef ref]
                                  Just refIfc
                                   -> let t = target (objctx objDef)
                                          s = source (objctx (ifcObj refIfc))
                                          isEq = name t == name s
-                                     in if isEq then [] else [mkNonMatchingInterfaceError objDef t s ref]
+                                     in if isEq then [] else [mkNonMatchingError "interface" objDef t s ref]
                            ]
                    in  if null undefinedInterfaceRefErrs then gCtx else Errors undefinedInterfaceRefErrs
                    
@@ -118,6 +121,15 @@ checkInterfaceRefs gCtx =
         getInterfaceRefs Obj{objmsub=Nothing}                        = []
         getInterfaceRefs objDef@Obj{objmsub=Just (InterfaceRef ref)} = [(objDef,ref)]
         getInterfaceRefs Obj{objmsub=Just (Box _ _ objs)}            = concatMap getInterfaceRefs objs
+
+
+-- Check whether each concept has at most one default view
+checkMultipleDefaultViews :: Guarded A_Context -> Guarded A_Context
+checkMultipleDefaultViews gCtx =
+  case gCtx of
+    Errors err  -> Errors err
+    Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
+                   in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
@@ -306,15 +318,19 @@ pCtx2aCtx' _
     typecheckViewDef :: P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
     typecheckViewDef
        o@(P_Vd { vd_pos = orig
-            , vd_lbl = lbl -- String
-            , vd_cpt = cpt -- Concept
-            , vd_ats = pvs -- view segment
+            , vd_lbl  = lbl   -- String
+            , vd_cpt  = cpt   -- Concept
+            , vd_isDefault = isDefault
+            , vd_html = mHtml -- Html template
+            , vd_ats  = pvs   -- view segment
             })
      = (\vdts
-        -> Vd { vdpos = orig
-              , vdlbl = lbl
-              , vdcpt = pCpt2aCpt cpt
-              , vdats = vdts
+        -> Vd { vdpos  = orig
+              , vdlbl  = lbl
+              , vdcpt  = pCpt2aCpt cpt
+              , vdIsDefault = isDefault
+              , vdhtml = mHtml
+              , vdats  = vdts
               })
        <$> traverse (typeCheckViewSegment o) pvs
 
@@ -333,12 +349,13 @@ pCtx2aCtx' _
     typecheckObjDef o@(P_Obj { obj_nm = nm
                              , obj_pos = orig
                              , obj_ctx = ctx
+                             , obj_mView = mView
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
      = (\(expr,subi)
         -> case subi of
-            Nothing -> pure (obj expr Nothing)
+            Nothing -> obj expr Nothing <$ typeCheckViewAnnotation (fst expr) mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
             Just (InterfaceRef s)
               -> pure (obj expr (Just$InterfaceRef s)) -- type is checked later
             Just b@(Box c _ _)
@@ -347,10 +364,30 @@ pCtx2aCtx' _
                     r  -> pure (obj (addEpsilonRight' (head r) (fst expr), snd expr) (Just$ b))
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
+      isa :: String -> String -> Bool
+      isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
+      
+      lookupView :: String -> Maybe P_ViewDef
+      lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
+                            []   -> Nothing
+                            vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
+                        
+      typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
+      typeCheckViewAnnotation _       Nothing       = pure ()
+      typeCheckViewAnnotation objExpr (Just viewId) =
+        case lookupView viewId of 
+          Just vd -> let viewAnnCptStr = name $ target objExpr
+                         viewDefCptStr = name $ vd_cpt vd
+                         viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
+                     in  --trace ("CHECK: " ++viewAnnCptStr ++ " `isa` " ++viewDefCptStr ++ " = " ++ show viewIsCompatible) $
+                         if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr ]
+          Nothing -> Errors [mkUndeclaredError "view" Nothing o viewId] 
+        
       obj (e,(sr,_)) s
        = ( Obj { objnm = nm
                , objpos = orig
                , objctx = e
+               , objmView = mView
                , objmsub = s
                , objstrs = ostrs
                }, sr)
