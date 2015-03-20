@@ -46,9 +46,6 @@ class InterfaceObject {
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
 		
-		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
-		$this->interfaceInvariantConjunctNames = $interface['interfaceInvariantConjunctNames']; // only applies to top level interface
-		
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
