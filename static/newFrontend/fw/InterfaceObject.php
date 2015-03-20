@@ -18,6 +18,7 @@ class InterfaceObject {
 	
 	public $srcConcept;
 	public $tgtConcept;
+	public $viewId;
 	public $tgtDataType;
 	
 	public $refInterfaceId;
@@ -54,6 +55,7 @@ class InterfaceObject {
 		$this->univalent = $interface['exprIsUni'];
 		$this->srcConcept = $interface['srcConcept'];
 		$this->tgtConcept = $interface['tgtConcept'];
+		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
 		
 		// Set datatype of tgtConcept
 		switch($this->tgtConcept){

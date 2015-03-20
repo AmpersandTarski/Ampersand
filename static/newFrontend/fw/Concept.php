@@ -50,13 +50,31 @@ class Concept {
 		return $atomId;
 	}
 	
-	public static function getView($concept){
+	public static function getView($concept, $viewId = null){
 		global $allViews; // from Generics.php
+		$relevantViews = array();
 		
+		// Selecting all relevant views for this concept from $allViews in Generics.php
 		foreach ((array)$allViews as $view){
-			if ($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept']))) return $view;
+			if ($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept']))){
+				$relevantViews[$view['label']] = $view;
+				if($view['isDefault']) $defaultView = $view;
+			}
 		}
-		return null;
+		
+		if(empty($relevantViews)) return null; // No views for this concept
+		
+		// Return view
+		if(is_nul($viewId)){
+			// Check if defaultView isset
+			if(!isset($defaultView)) throw new Exception("No default view specified for concept '$concept'");
+			
+			return $defaultView;
+		}else{
+			// Check if $viewId exists
+			if(!key_exists($viewId, $relevantViews)) throw new Exception("Specified viewId '$viewId' is not a view for concept '$concept'");
+			return $relevantViews[$viewId];
+		}
 	}
 	
 	public static function getConceptTableInfo($concept){
