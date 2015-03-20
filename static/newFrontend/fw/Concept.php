@@ -66,15 +66,10 @@ class Concept {
 		
 		// Return view
 		if(is_null($viewId)){
-			if(count($relevantViews) > 1){
-				// Check if defaultView isset
-				if(!isset($defaultView)) throw new Exception("No default view specified for concept '$concept'");
-				// Return defaultView
-				return $defaultView;
-			}else{
-				// Only one view -> return that view
-				return current($relevantViews);
-			}			
+			// Check if defaultView isset
+			if(isset($defaultView)) return $defaultView;
+			// Else, no specific view
+			else return null;
 		}else{
 			// Check if $viewId exists
 			if(!key_exists($viewId, $relevantViews)) throw new Exception("Specified viewId '$viewId' is not a view for concept '$concept'");
