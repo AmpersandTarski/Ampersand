@@ -109,11 +109,10 @@ for ($i = 0; $i < count($allRoles); $i++) {
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
 echo '<div class="MenuItem" id="MenuBarNew"><span class=TextContent>New</span></div>';
+
 if (isset($allConcepts['SESSION'])) { // only show login/logout buttons when concept SESSION is used by adl script
   if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) { // if there is an Ampersand session, show the logout button
-    echo '<div class="MenuItem" id="MenuBarLogout"><a href="index.php?Login"><span class=TextContent>Loginx</span></a></div>';
-  } else { // if there is already an Ampersand session, show the logout button
-    echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Logout</span></a></div>';
+    echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Reset session</span></a></div>';
   }
 }
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
