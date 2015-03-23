@@ -164,7 +164,7 @@ if ($err) {
   
   $concept = $allInterfaceObjects[$interface]['srcConcept'];
   
-  $isNew = $concept != 'ONE' && !isAtomInConcept($atom, $concept);
+  $isNew = $concept != 'ONE' && $concept != 'SESSION' && !isAtomInConcept($atom, $concept);
   
   echo '<div id=AmpersandRoot context='.showHtmlAttrStr($contextName).
        ' interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
@@ -229,7 +229,7 @@ function topLevelInterfaceLinks() {
   global $selectedRoleNr;
   
   foreach ($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept'] == 'ONE' && isInterfaceForRole($interface, $selectedRoleNr))
+    if (($interface['srcConcept'] == 'ONE' || $interface['srcConcept'] == 'SESSION') && isInterfaceForRole($interface, $selectedRoleNr))
       echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name'])) // the interface attribute is there so we can style specific menu items with css
           .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
           .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></div>';
@@ -242,7 +242,7 @@ function genNewAtomLinks() {
   
   echo '<ul id=CreateList>';
   foreach ($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept'] != 'ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
+    if ($interface['srcConcept'] != 'ONE' && $interface['srcConcept'] != 'SESSION' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
@@ -261,7 +261,7 @@ function genNewAtomDropDownMenu() {
   // which would not be clickable, since <a>'s don't easily stretch. The click events are initialized in initCreateNewMenu (in Ampersand.js).
   echo "<div id=CreateMenu>\n";
   foreach ($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept'] != 'ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
+    if ($interface['srcConcept'] != 'ONE' && $interface['srcConcept'] != 'SESSION' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "  <div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
