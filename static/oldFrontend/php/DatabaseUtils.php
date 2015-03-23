@@ -55,16 +55,15 @@ function initSession() {
     $expiredSessions = firstCol(DB_doquer("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
     foreach ($expiredSessions as $expiredSessionAtom)
       deleteSession($expiredSessionAtom);
-      
-      // If the PHP session has the Ampersand sessionAtom, retrieve it.
-      // Note that it may still refer to an Ampersand session that has expired and therefore no longer exists in the Ampersand administration
-    $sessionAtom = $_SESSION['sessionAtom'];
-    // create a new session if $sessionAtom is not set (browser started a new session)
-    // or $sessionAtom is not in SESSIONS (previous session expired)
-    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
+          
+    // Create a new session if sessionAtom in php _SESSION is not set (browser started a new session)
+    // or sessionAtom is not in SESSIONS (previous session expired)
+    if (!isset($_SESSION['sessionAtom']) || !isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')) {
       $sessionAtom = mkUniqueAtomByTime('SESSION');
       $_SESSION['sessionAtom'] = $sessionAtom;
       addAtomToConcept($sessionAtom, 'SESSION', false);
+    } else {
+      $sessionAtom = $_SESSION['sessionAtom'];
     }
     // echo "sessionAtom = [$sessionAtom]<br>";
     
