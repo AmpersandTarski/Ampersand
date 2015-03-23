@@ -229,11 +229,13 @@ function topLevelInterfaceLinks() {
   global $selectedRoleNr;
   
   foreach ($allInterfaceObjects as $interface) {
-    if (($interface['srcConcept'] == 'ONE' || $interface['srcConcept'] == 'SESSION') && isInterfaceForRole($interface, $selectedRoleNr))
+    if (($interface['srcConcept'] == 'ONE' || $interface['srcConcept'] == 'SESSION') && isInterfaceForRole($interface, $selectedRoleNr)) {
+      $ifcRootAtom = $interface['srcConcept'] == 'ONE' ? '1' : $_SESSION['sessionAtom'];
       echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name'])) // the interface attribute is there so we can style specific menu items with css
-          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
+          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom='.$ifcRootAtom.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
           .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></div>';
     }
+  }
 }
 
 function genNewAtomLinks() {
