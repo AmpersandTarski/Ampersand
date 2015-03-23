@@ -102,8 +102,9 @@ function DB_doquerErr($quer, &$error) {
   global $DB_errs;
   
   // Replace the special atom value _SESSION by the current sessionAtom
-  $quer = str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
-  
+  // NOTE: we only replace if the query contains _SESSION, otherwise the initialization DB_doquerErr calls will yield warnings.
+  $quer = strpos($quer, '_SESSION') !== FALSE ? str_replace("_SESSION", $_SESSION['sessionAtom'], $quer) : $quer;
+
   $result = mysqli_query($DB_link, $quer);
   if (!$result) {
     $error = 'Error ' . ($ernr = mysqli_errno($DB_link)) . ' in query "' . $quer . '": ' . mysqli_error($DB_link);
