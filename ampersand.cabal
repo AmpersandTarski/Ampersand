@@ -84,18 +84,18 @@ executable ampersand
                      filepath == 1.3.*,
                      graphviz == 2999.17.*,
                      hashable == 1.2.*,
-                     mtl == 2.2.*,
+                     mtl == 2.1.*,
                      old-locale == 1.0.*,
                      old-time == 1.1.*,
                      pandoc == 1.13.*,
                      pandoc-types == 1.12.*,
                      process == 1.2.*,
+                     simple-sql-parser >=0.4.1 && <0.5,
                      split == 0.2.*,
                      text == 1.1.*,
                      time == 1.4.*,
                      utf8-string == 0.3.*,
-                     uulib == 0.9.*,
-                     simple-sql-parser >=0.4.1 && <0.5
+                     uulib == 0.9.*
         
   other-modules:     
                      Database.Design.Ampersand,
