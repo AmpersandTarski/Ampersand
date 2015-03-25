@@ -38,6 +38,7 @@ test p = do res <- quickCheckWithResult checkArgs p
                 Success _ _ _ -> return True
                 _             -> return False
 
+--TODO: Add test coverage
 parserQuickChecks :: IO Bool
 parserQuickChecks =
          do res <- test prop_pretty
