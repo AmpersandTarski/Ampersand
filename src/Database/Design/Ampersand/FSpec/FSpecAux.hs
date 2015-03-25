@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.FSpecAux 
-  (getDeclarationTableInfo,sqlRelPlugs)
+  (getDeclarationTableInfo,getConceptTableInfo)
 where
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -48,6 +48,14 @@ getDeclarationTableInfo fSpec decl =
                                  , "  sourceField: "++fldname src
                                  , "  targetField: "++fldname trg
                                  ]
+
+
+getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL,SqlField)
+getConceptTableInfo fSpec cpt 
+  = case lookupCpt fSpec cpt of
+      []    -> fatal 55 $ "No plug found for concept '"++name cpt++"'."
+      (x:_) -> x  --Any of the resulting plugs should do. 
+
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)

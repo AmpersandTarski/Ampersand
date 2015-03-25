@@ -17,9 +17,9 @@ global $allRules;
 global $dbName;
 global $storedProcedureCreated;
 
-// $link = mysqli_connect('localhost', 'root', '', $dbName); // mysqli needed because of multiple statements execution support
 $link = mysqli_connect($DB_host, $DB_user, $DB_pass, $dbName); // mysqli needed because of multiple statements execution support
-
+// Set sql_mode to ANSI
+DB_doquer("SET SESSION sql_mode = 'ANSI'");
 
 // loop over all roles
 for ($r = 0; $r < count($allRoles); $r++)

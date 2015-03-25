@@ -128,18 +128,20 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		if ($srcConcept == $ConceptC){
 			if ($srcAtom == 'NULL'){
 				$srcAtom = $AtomC;
+/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
 				// NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500);
+				throw new Exception("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500); */
 			}
 		}
 	
 		if ($tgtConcept == $ConceptC){  
 			if ($tgtAtom == 'NULL'){  
 				$tgtAtom = $AtomC;
+/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
 				// NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500);
+				throw new Exception("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500); */
 			}
 		}
 		

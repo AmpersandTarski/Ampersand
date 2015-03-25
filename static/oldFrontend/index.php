@@ -109,11 +109,10 @@ for ($i = 0; $i < count($allRoles); $i++) {
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
 echo '<div class="MenuItem" id="MenuBarNew"><span class=TextContent>New</span></div>';
+
 if (isset($allConcepts['SESSION'])) { // only show login/logout buttons when concept SESSION is used by adl script
   if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) { // if there is an Ampersand session, show the logout button
-    echo '<div class="MenuItem" id="MenuBarLogout"><a href="index.php?Login"><span class=TextContent>Loginx</span></a></div>';
-  } else { // if there is already an Ampersand session, show the logout button
-    echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Logout</span></a></div>';
+    echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Reset session</span></a></div>';
   }
 }
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
@@ -164,7 +163,7 @@ if ($err) {
   
   $concept = $allInterfaceObjects[$interface]['srcConcept'];
   
-  $isNew = $concept != 'ONE' && !isAtomInConcept($atom, $concept);
+  $isNew = $concept != 'ONE' && $concept != 'SESSION' && !isAtomInConcept($atom, $concept);
   
   echo '<div id=AmpersandRoot context='.showHtmlAttrStr($contextName).
        ' interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
@@ -229,11 +228,13 @@ function topLevelInterfaceLinks() {
   global $selectedRoleNr;
   
   foreach ($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept'] == 'ONE' && isInterfaceForRole($interface, $selectedRoleNr))
+    if (($interface['srcConcept'] == 'ONE' || $interface['srcConcept'] == 'SESSION') && isInterfaceForRole($interface, $selectedRoleNr)) {
+      $ifcRootAtom = $interface['srcConcept'] == 'ONE' ? '1' : $_SESSION['sessionAtom'];
       echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name'])) // the interface attribute is there so we can style specific menu items with css
-          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
+          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom='.$ifcRootAtom.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
           .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></div>';
     }
+  }
 }
 
 function genNewAtomLinks() {
@@ -242,7 +243,7 @@ function genNewAtomLinks() {
   
   echo '<ul id=CreateList>';
   foreach ($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept'] != 'ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
+    if ($interface['srcConcept'] != 'ONE' && $interface['srcConcept'] != 'SESSION' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
@@ -261,7 +262,7 @@ function genNewAtomDropDownMenu() {
   // which would not be clickable, since <a>'s don't easily stretch. The click events are initialized in initCreateNewMenu (in Ampersand.js).
   echo "<div id=CreateMenu>\n";
   foreach ($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept'] != 'ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
+    if ($interface['srcConcept'] != 'ONE' && $interface['srcConcept'] != 'SESSION' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "  <div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"

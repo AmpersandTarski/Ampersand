@@ -27,6 +27,9 @@ class Database
 		mysql_select_db($this->dbname, $this->dblink);
 		if (mysql_error()) throw new Exception(mysql_error(), 500);
 		
+		// Set sql_mode to ANSI
+		$this->Exe("SET SESSION sql_mode = 'ANSI'");
+		
 		$this->affectedConcepts = array();
 		$this->affectedRelations = array();
 	}

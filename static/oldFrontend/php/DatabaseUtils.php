@@ -19,6 +19,8 @@ if (mysqli_connect_errno()) {
      . "<br/>The database may not have been initialized yet. (<a href=\"Installer.php\">Initialize database</a>)<br/>"
      );
 }
+// Set sql_mode to ANSI
+DB_doquer("SET SESSION sql_mode = 'ANSI'");
 
 // let PHP also report undefined variable references
 function terminate_missing_variables($errno, $errstr, $errfile, $errline) {
@@ -53,16 +55,15 @@ function initSession() {
     $expiredSessions = firstCol(DB_doquer("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
     foreach ($expiredSessions as $expiredSessionAtom)
       deleteSession($expiredSessionAtom);
-      
-      // If the PHP session has the Ampersand sessionAtom, retrieve it.
-      // Note that it may still refer to an Ampersand session that has expired and therefore no longer exists in the Ampersand administration
-    $sessionAtom = $_SESSION['sessionAtom'];
-    // create a new session if $sessionAtom is not set (browser started a new session)
-    // or $sessionAtom is not in SESSIONS (previous session expired)
-    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
+          
+    // Create a new session if sessionAtom in php _SESSION is not set (browser started a new session)
+    // or sessionAtom is not in SESSIONS (previous session expired)
+    if (!isset($_SESSION['sessionAtom']) || !isAtomInConcept($_SESSION['sessionAtom'], 'SESSION')) {
       $sessionAtom = mkUniqueAtomByTime('SESSION');
       $_SESSION['sessionAtom'] = $sessionAtom;
       addAtomToConcept($sessionAtom, 'SESSION', false);
+    } else {
+      $sessionAtom = $_SESSION['sessionAtom'];
     }
     // echo "sessionAtom = [$sessionAtom]<br>";
     
@@ -101,8 +102,9 @@ function DB_doquerErr($quer, &$error) {
   global $DB_errs;
   
   // Replace the special atom value _SESSION by the current sessionAtom
-  $quer = str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
-  
+  // NOTE: we only replace if the query contains _SESSION, otherwise the initialization DB_doquerErr calls will yield warnings.
+  $quer = strpos($quer, '_SESSION') !== FALSE ? str_replace("_SESSION", $_SESSION['sessionAtom'], $quer) : $quer;
+
   $result = mysqli_query($DB_link, $quer);
   if (!$result) {
     $error = 'Error ' . ($ernr = mysqli_errno($DB_link)) . ' in query "' . $quer . '": ' . mysqli_error($DB_link);

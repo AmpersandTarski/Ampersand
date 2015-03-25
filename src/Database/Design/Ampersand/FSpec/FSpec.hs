@@ -26,6 +26,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations, getExpressionRelation
+          , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
           )
@@ -133,6 +134,7 @@ instance Language FSpec where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language FSpec)"
                            , objctx  = EDcI ONE
+                           , objmView = Nothing
                            , objmsub = Just . Box ONE Nothing $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
@@ -336,7 +338,8 @@ data SqlField = Fld { fldname :: String
                     , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
                     , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
                     } deriving (Eq, Show,Typeable)
-
+instance Named SqlField where
+  name = fldname
 instance Unique (PlugSQL,SqlField) where
   showUnique (p,f) = showUnique p++"."++fldname f
 instance Ord SqlField where
@@ -399,3 +402,21 @@ getExpressionRelation expr = case getRelation expr of
     getRelation (EEps i _) = Just (i, Nothing, i, False)
     getRelation _ = Nothing
 
+-- Lookup view by id in fSpec.
+lookupView :: FSpec -> String -> ViewDef
+lookupView fSpec viewId =
+  case filter (\v -> vdlbl v == viewId) $ vviews fSpec of
+    []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
+    [vd] -> vd
+    vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
+
+-- Return the default view for concpt, which is either the view for concpt itself (if it has one) or the view for
+-- concpt's smallest superconcept that has a view. Return Nothing if there is no default view.
+getDefaultViewForConcept :: FSpec -> A_Concept -> Maybe ViewDef
+getDefaultViewForConcept fSpec concpt =
+  case [ vd 
+       | vd@Vd{vdcpt = c, vdIsDefault = True} <- vviews fSpec
+       ,  c `elem` (concpt : largerConcepts (gens fSpec) concpt) 
+       ] of
+    []     -> Nothing
+    (vd:_) -> Just vd

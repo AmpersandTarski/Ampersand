@@ -9,9 +9,10 @@ import Data.Maybe
 import Control.Monad
 import System.FilePath
 import System.Directory
+import Database.Design.Ampersand.FSpec.SQL
+import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.Prototype.RelBinGenSQL
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
@@ -205,7 +206,7 @@ generateRules fSpec =
              then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
                   , "        , 'contentsSQL'   => " ++
                                   let contentsExpr = conjNF (getOpts fSpec) rExpr
-                                  in  showPhpStr (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+                                  in  showPhpStr (prettySQLQuery 26 (selectSrcTgt fSpec contentsExpr))
                     -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                     -- php/Database.php?testRule=RULENAME
                   ]
@@ -236,7 +237,7 @@ generateRules fSpec =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" exp)
+         , "          " ++ showPhpStr (prettySQLQuery 33 (selectSrcTgt fSpec exp))
          , "      )"
          ]
 
@@ -263,7 +264,7 @@ generateConjuncts fSpec =
                   [ "        // Normalized complement (== violationsSQL): " ] ++
                   (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (selectExpr fSpec 36 "src" "tgt" violationsExpr)
+           [ "        , 'violationsSQL' => "++ showPhpStr (prettySQLQuery 36 (selectSrcTgt fSpec violationsExpr))
            , "        )"
            ]
          | conj<-vconjs fSpec
@@ -318,12 +319,13 @@ generateViews fSpec =
       (blockParenthesize  "(" ")" ","
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name cpt)
+           , "        , 'isDefault' => "++showPhpBool isDefault
            , "        , 'segments' =>" -- a labeled list of sql queries for the view expressions
            , "            array"
            ] ++
            indent 14 (blockParenthesize "(" ")" "," (map genViewSeg viewSegs)) ++
            [ "        )" ]
-         | Vd _ label cpt viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
+         | Vd _ label cpt isDefault  _ viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
          ]
     ) )
  where genViewSeg (ViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]
@@ -331,7 +333,7 @@ generateViews fSpec =
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                      , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
-                                     , "          " ++ showPhpStr (selectExpr fSpec 33 "src" "tgt" (objctx objDef))
+                                     , "          " ++ showPhpStr (prettySQLQuery 33 (selectSrcTgt fSpec (objctx objDef)))
                                      , "      )"
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
@@ -367,48 +369,55 @@ generateInterface fSpec interface =
 
 genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
-  [ "array ( 'name'  => "++ showPhpStr (name object)
-  , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
-  , "      , 'label' => " ++ showPhpStr (name object)           -- only for new front-end
-  ]
+     [ "array ( 'name'  => "++ showPhpStr (name object)
+     , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
+     , "      , 'label' => " ++ showPhpStr (name object)              -- only for new front-end
+     ]
+  ++ maybe [] (\viewId -> ["      , 'viewId' => " ++ showPhpStr viewId]) mViewId 
   ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
-      then   ["      // Normalization steps:"]
-           ++["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
-           ++["      //"]
-      else   []
+      then    ["      // Normalization steps:"]
+           ++ ["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
+           ++ ["      //"]
+      else    []
      )
   ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
   ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
              -- escape for the pathological case that one of the names in the relation contains a newline
   ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
-  ++ case getExpressionRelation normalizedInterfaceExp of
-       Just (srcConcept, decl, tgtConcept, isFlipped) ->
-         [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
-         , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
-         , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
-         (if isFlipped 
-          then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
-               , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
-          else [ "      , 'min' => "++ if isTot decl then "'One'" else "'Zero'" 
-               , "      , 'max' => "++ if isUni decl then "'One'" else "'Many'" ]) ++
-         [ "      , 'srcConcept' => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (which may be flipped) 
-         , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) --
-         ]
-       Nothing ->
-         [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
-         , "      , 'relationIsFlipped' => ''"
-         , "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp)) -- fall back to typechecker type, as we don't want
-         , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp)) -- to copy its functionality here
-         ]
-  ++
-  [ "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
-  , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
-  , "      , 'expressionSQL' => " ++ showPhpStr (selectExpr fSpec (22+14*depth) "src" "tgt" normalizedInterfaceExp)
-  ]
-  ++ generateMSubInterface fSpec editableRels depth (objmsub object) ++
-  [ "      )"
-  ]
- where normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
+  ++ case mEditableDecl of
+           Just (decl, isFlipped) ->
+             [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
+             , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
+             , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
+             if isFlipped 
+             then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
+                  , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
+             else [ "      , 'min' => "++ if isTot decl then "'One'" else "'Zero'" 
+                  , "      , 'max' => "++ if isUni decl then "'One'" else "'Many'" ] 
+           Nothing ->
+             [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
+             , "      , 'relationIsFlipped' => ''"
+             ] 
+  ++ [ "      , 'srcConcept' => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (if there is one), 
+     , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) -- which may be flipped.
+     , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
+     , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
+     , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery (22+14*depth) (selectSrcTgt fSpec normalizedInterfaceExp))
+     ] 
+  ++ generateMSubInterface fSpec editableRels depth (objmsub object)
+  ++ [ "      )"
+     ]
+ where mViewId = case objmView object of
+                   Just vId -> Just vId
+                   Nothing  -> case getDefaultViewForConcept fSpec tgtConcept of
+                                 Just Vd{vdlbl=vId} -> Just vId
+                                 Nothing            -> Nothing
+       normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
+       (srcConcept, tgtConcept, mEditableDecl) =
+         case getExpressionRelation normalizedInterfaceExp of
+           Just (src, decl, tgt, isFlipped) ->
+             (src, tgt, Just (decl, isFlipped))
+           Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
 
 generateMSubInterface :: FSpec -> [Expression] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =

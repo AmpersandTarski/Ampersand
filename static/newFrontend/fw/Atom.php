@@ -5,18 +5,22 @@ Class Atom {
 	// Ampersand attributes
 	public $id;
 	public $label;
+	public $view;
 	public $concept;
 	
 	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
 		
-	public function __construct($id, $concept = null){
+	public function __construct($id, $concept = null, $viewId = null){
 		
 		// Ampersand attributes
 		$this->id = $id;
 		$this->concept = $concept;
-		$this->label = $this->getLabel();
+		
+		// View & label
+		$this->view = $this->getView($viewId);
+		is_null($this->view) ? $this->label = $this->id : $this->label = implode($this->view); // no view? label = id
 		
 		// JSON-LD attributes
 		$this->jsonld_id = JSONLD_ID_PATH . $concept . '/' . $this->id;
@@ -29,6 +33,7 @@ Class Atom {
 		
 		$result =  array('@id' => $this->jsonld_id
 						,'@label' => $this->label
+		        		,'@view' => $this->view
 						,'@type' => $this->jsonld_type
 						,'@interfaces' => $interfaces
 						,'id' => $this->id
@@ -58,7 +63,7 @@ Class Atom {
 		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array();
 		
 		foreach ($tgtAtoms as $tgtAtomId){
-			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept);
+			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
 				
 			// determine value atom 
 			if($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
@@ -70,6 +75,7 @@ Class Atom {
 				// Add other elements
 				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
 														, '@label' => $tgtAtom->label
+				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
 													 	, 'id' => $tgtAtom->id));
 				
@@ -265,12 +271,12 @@ Class Atom {
 		
 	}
 	
-	private function getLabel(){
+	private function getView($viewId = null){
 		$database = Database::singleton();
-		$view = Concept::getView($this->concept);
+		$view = Concept::getView($this->concept, $viewId);
 		
-		if(empty($view) || $this->id == ''){ // no view? label = id
-			return $this->id;
+		if(empty($view) || $this->id == ''){
+			return null;
 		
 		}else{
 			$viewStrs = array ();
@@ -278,20 +284,20 @@ Class Atom {
 			foreach ($view['segments'] as $viewSegment){
 				
 				if ($viewSegment['segmentType'] == 'Text'){ 
-					$viewStrs[] = htmlSpecialChars($viewSegment['Text']);
+					$viewStrs[$viewSegment['label']] = htmlSpecialChars($viewSegment['Text']);
 				
 				}elseif($viewSegment['segmentType'] == 'Html'){
-					$viewStrs[] = $viewSegment['Html'];
+					$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
 				
 				}else{
 					$query = "SELECT DISTINCT `tgt` FROM (".$viewSegment['expSQL'].") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
 					$tgtAtoms = array_column($database->Exe($query), 'tgt');
 					
 					$txt = count($tgtAtoms) ? $tgtAtoms[0] : $this->id; // this can happen in a create-new interface when the view fields have not yet beenfilled out, while the atom is shown
-					$viewStrs[] = htmlSpecialChars($txt);
+					$viewStrs[$viewSegment['label']] = htmlSpecialChars($txt);
 				}
 			}
-			return implode($viewStrs);
+			return $viewStrs;
 		}
 	}
 }

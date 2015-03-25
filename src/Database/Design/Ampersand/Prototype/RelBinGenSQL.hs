@@ -133,7 +133,7 @@ selectExpr fSpec i src trg expr
                 intercalate " UNION " [ "(" ++ str ++ phpIndent i ++ ")" | e<-exprUni2list expr , str<-[selectExpr fSpec (i+4) src trg e]]
     ECps (EDcV (Sign ONE _), ECpl expr')
      -> case target expr' of
-         ONE -> fatal 137 "TODO: sqlConcept not defined for ONE"
+         ONE -> fatal 137 "sqlConcept not defined for ONE"
          _   -> let src'  = sqlAttConcept fSpec (source expr')
                     trg'  = sqlAttConcept fSpec (target expr')
                     trg2  = noCollide' [src'] (sqlAttConcept fSpec (target expr'))

@@ -48,7 +48,9 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..),PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc)
+import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
+                                                , PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..)
+                                                , SrcOrTgt(..), isSrc)
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
@@ -300,10 +302,13 @@ instance Traced IdentityDef where
 
 data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
-data ViewDef = Vd { vdpos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                  , vdlbl :: String         -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
-                  , vdcpt :: A_Concept      -- ^ this expression describes the instances of this object, related to their context
-                  , vdats :: [ViewSegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
+data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+                  , vdlbl :: String          -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+                  , vdcpt :: A_Concept       -- ^ the concept for which this view is applicable
+                  , vdIsDefault :: Bool      -- ^ whether or not this is the default view for the concept
+                  , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
+--                  , vdtext :: Maybe ViewText -- Future extension
+                  , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
                   } deriving (Eq,Show)
 instance Named ViewDef where
   name = vdlbl
@@ -311,6 +316,7 @@ instance Traced ViewDef where
   origin = vdpos
 
 data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
+
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
@@ -396,6 +402,7 @@ instance Object ObjectDef where
 data ObjectDef = Obj { objnm ::   String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                      , objpos ::  Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
                      , objctx ::  Expression     -- ^ this expression describes the instances of this object, related to their context.
+                     , objmView :: Maybe String  -- ^ The view that should be used for this object
                      , objmsub :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)

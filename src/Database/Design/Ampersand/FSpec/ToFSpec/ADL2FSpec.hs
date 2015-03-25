@@ -252,15 +252,18 @@ makeFSpec opts context = fSpec
              , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
                                , objctx  = EDcI c
+                               , objmView = Nothing
                                , objmsub = Just . Box c Nothing $
                                             Obj { objnm   = "I["++name c++"]"
                                                 , objpos  = Origin "generated object: step 4a - default theme"
                                                 , objctx  = EDcI c
+                                                , objmView = Nothing
                                                 , objmsub = Nothing
                                                 , objstrs = [] }
                                            :[Obj { objnm   = name dcl ++ "::"++name (source dcl)++"*"++name (target dcl)
                                                  , objpos  = Origin "generated object: step 4a - default theme"
                                                  , objctx  = if source dcl==c then EDcD dcl else flp (EDcD dcl)
+                                                 , objmView = Nothing
                                                  , objmsub = Nothing
                                                  , objstrs = [] }
                                             | dcl <- directdecls]
@@ -285,6 +288,7 @@ makeFSpec opts context = fSpec
              = [ Obj { objnm   = showADL t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
+                     , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      , objstrs = [] }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
@@ -303,6 +307,7 @@ makeFSpec opts context = fSpec
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
+                                 , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
                                  , objstrs = [] }
              , ifcEcas     = fst (assembleECAs fSpec editables)
@@ -331,6 +336,7 @@ makeFSpec opts context = fSpec
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
+                                 , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
                                  , objstrs = [] }
              , ifcEcas     = ifcEcas     ifcc
@@ -349,7 +355,7 @@ makeFSpec opts context = fSpec
                 | theme opts == StudentTheme = name c
                 | null nms = fatal 355 "impossible"
                 | otherwise = head nms
-              att = Obj (name c) (Origin "generated attribute object: step 4b") (EDcV (Sign ONE c)) Nothing []
+              att = Obj (name c) (Origin "generated attribute object: step 4b") (EDcV (Sign ONE c)) Nothing Nothing []
         ]
      ----------------------
      --END: making interfaces

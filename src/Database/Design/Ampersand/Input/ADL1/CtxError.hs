@@ -6,10 +6,12 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
-  , mkUndeclaredInterfaceError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkNonMatchingInterfaceError
+  , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
+  , mkMultipleDefaultError
+  , mkIncompatibleViewError
   , Guarded(..)
   , whenCheckedIO
-  , (<?>)
+  , unguard, (<?>)
   )
 -- SJC: I consider it ill practice to export CTXE
 -- Reason: CtxError should obtain all error messages
@@ -33,7 +35,15 @@ fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
 _notUsed = fatal
 
-infixl 4 <?>
+-- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
+-- The function is a bit more compositional than <?> as you don't have to tuple all the arguments.
+-- Similar to join and bind we have: unguard g = id <?> g, and f <?> g = unguard $ f <$> g
+unguard :: Guarded (Guarded a) -> Guarded a
+unguard (Errors errs) = Errors errs
+unguard (Checked g)   = g  
+
+infixl 4 <?> -- TODO: in case we keep this one, why not lower the precedence? 
+             --       (3 to allow elegant combination with <*> and <$>, or 2 if we also take into account <|>, which may be unnecessary as Guarded is not an Alternative)
 (<?>) :: (t -> Guarded a) -> Guarded t -> Guarded a  -- This is roughly the monadic definition for >>=, but it does not satisfy the corresponding rules so it cannot be a monad
 (<?>) _ (Errors  a) = Errors a -- note the type change
 (<?>) f (Checked a) = f a
@@ -97,10 +107,9 @@ mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 
-mkUndeclaredInterfaceError :: ObjectDef -> String -> String -> CtxError
-mkUndeclaredInterfaceError objDef containingIfcName ref = 
-  CTXE (origin objDef) $ "Undeclared interface " ++ show ref ++ " referenced at field " ++ 
-                         show (name objDef) ++ " of interface " ++ show containingIfcName ++ "."
+mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
+mkUndeclaredError entity objDef ref = 
+  CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
@@ -113,10 +122,24 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
-mkNonMatchingInterfaceError :: ObjectDef -> A_Concept -> A_Concept -> String -> CtxError 
-mkNonMatchingInterfaceError objDef t s ref
- = CTXE (origin objDef) $ "The referenced interface "++show ref++" is of type "++show (name s)++", which does not match the required type "++show (name t)++"."
+mkIncompatibleInterfaceError ::  P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError 
+mkIncompatibleInterfaceError objDef expTgt refSrc ref = 
+  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++" at field " ++ show (name objDef) ++ 
+                         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++ 
+                         ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
 
+mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
+mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
+mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
+  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++ 
+                      concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
+                             | vd <- viewDefs ]       
+
+mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
+mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
+  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
+                         ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
+    
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String

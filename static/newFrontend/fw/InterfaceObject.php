@@ -18,6 +18,7 @@ class InterfaceObject {
 	
 	public $srcConcept;
 	public $tgtConcept;
+	public $viewId;
 	public $tgtDataType;
 	
 	public $refInterfaceId;
@@ -46,9 +47,6 @@ class InterfaceObject {
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
 		
-		$this->editableConcepts = $interface['editableConcepts']; // used by genEditableConceptInfo() function in AmpersandViewer.php
-		$this->interfaceInvariantConjunctNames = $interface['interfaceInvariantConjunctNames']; // only applies to top level interface
-		
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
@@ -57,6 +55,7 @@ class InterfaceObject {
 		$this->univalent = $interface['exprIsUni'];
 		$this->srcConcept = $interface['srcConcept'];
 		$this->tgtConcept = $interface['tgtConcept'];
+		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
 		
 		// Set datatype of tgtConcept
 		switch($this->tgtConcept){
