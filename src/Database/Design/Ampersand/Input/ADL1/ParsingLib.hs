@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Operators
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
-    pList, pList1, opt, pListSep, pList1Sep, try,
+    sepBy, sepBy1, many, many1, opt, try,
     -- Positions
     SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
     currPos, posOf, valPosOf,
@@ -66,19 +66,6 @@ match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing
 
 pSucceed :: a -> AmpParser a
 pSucceed = P.parserReturn
-
-pList :: AmpParser a -> AmpParser [a]
-pList = P.many
-
-pList1 ::  AmpParser a -> AmpParser [a]
-pList1 = P.many1
-
---TODO: Replace the pListSep functions with specialized functions with separators & outer parenthesis
-pListSep :: AmpParser sep -> AmpParser a -> AmpParser [a]
-pListSep sep a = P.sepBy a sep
-
-pList1Sep ::  AmpParser sep -> AmpParser a -> AmpParser [a]
-pList1Sep sep a = P.sepBy1 a sep
 
 opt ::  AmpParser a -> a -> AmpParser a
 a `opt` b = P.option b a
