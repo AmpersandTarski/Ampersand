@@ -1,8 +1,5 @@
 module Database.Design.Ampersand.FSpec.SQL
-  (selectSrcTgt,QueryExpr
-  ,prettySQLQuery
-  , selectExprRelation  --exported to be able to validate the generated SQL for individual relations
-  )
+  ( prettySQLQuery)
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -21,16 +18,21 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.SQL"
 
--- | prettyprint ValueExpr and indent it with spaces
-prettySQLQuery :: Int -> QueryExpr -> String
-prettySQLQuery i =  intercalate ("\n"++replicate i ' ') .  lines . prettyQueryExpr theDialect
 
-selectSrcTgt :: 
-           FSpec       -- current context
-        -> Expression  -- expression to be translated
-        -> QueryExpr   -- resulting SQL expression
-selectSrcTgt fSpec expr = toSQL (selectExpr fSpec expr)
-
+class SQLAble a where
+  -- | prettyprint and indent it with spaces
+  prettySQLQuery :: FSpec -> Int -> a -> String
+  makeANice :: (a -> BinQueryExpr) -> Int -> a -> String
+  makeANice f i =
+    intercalate ("\n"++replicate i ' ') .  lines . 
+       prettyQueryExpr theDialect . toSQL . f   
+    
+instance SQLAble Expression where  
+  prettySQLQuery = makeANice . selectExpr 
+instance SQLAble Declaration where
+  prettySQLQuery = makeANice . selectDeclaration
+  
+     
 
 sourceAlias, targetAlias :: Name
 sourceAlias = (Name "src") 
@@ -380,7 +382,7 @@ selectExpr fSpec expr
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull (Iden [cAtt]))
                                            }
-    (EDcD d)             -> selectExprRelationNew fSpec d
+    (EDcD d)             -> selectDeclaration fSpec d
 
     (EBrk e)             -> selectExpr fSpec e
 
@@ -519,26 +521,13 @@ Based on this derivation:
 
 
 toTableRef :: BinQueryExpr -> TableRef
-toTableRef b = TRQueryExpr . toSQL $ b
+toTableRef = TRQueryExpr . toSQL
      
 (===) :: Name -> Name -> Bool
 n === n' = stringOfName n == stringOfName n'
 
--- | This function returns a (multy-lines) prettyprinted SQL qurey of a declaration. 
-selectExprRelation :: FSpec
-                   -> Declaration
-                   -> String
-selectExprRelation fSpec dcl
- = prettyQueryExpr theDialect . toSQL $ selectExprRelationNew fSpec dcl
-     
-selectExprRelationNew :: FSpec
-         --          -> Name -- ^ Alias of source
-         --          -> Name -- ^ Alias of target
-                   -> Declaration
-                   -> BinQueryExpr
-
-
-selectExprRelationNew fSpec dcl =
+selectDeclaration :: FSpec -> Declaration -> BinQueryExpr
+selectDeclaration fSpec dcl =
   case dcl of
     Sgn{}  -> leafCode (getDeclarationTableInfo fSpec dcl)
     Isn{}  -> let (plug, c) = getConceptTableInfo fSpec (detyp dcl)

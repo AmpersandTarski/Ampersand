@@ -206,7 +206,7 @@ generateRules fSpec =
              then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
                   , "        , 'contentsSQL'   => " ++
                                   let contentsExpr = conjNF (getOpts fSpec) rExpr
-                                  in  showPhpStr (prettySQLQuery 26 (selectSrcTgt fSpec contentsExpr))
+                                  in  showPhpStr (prettySQLQuery fSpec 26 contentsExpr)
                     -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                     -- php/Database.php?testRule=RULENAME
                   ]
@@ -237,7 +237,7 @@ generateRules fSpec =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          " ++ showPhpStr (prettySQLQuery 33 (selectSrcTgt fSpec exp))
+         , "          " ++ showPhpStr (prettySQLQuery fSpec 33 exp)
          , "      )"
          ]
 
@@ -264,7 +264,7 @@ generateConjuncts fSpec =
                   [ "        // Normalized complement (== violationsSQL): " ] ++
                   (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (prettySQLQuery 36 (selectSrcTgt fSpec violationsExpr))
+           [ "        , 'violationsSQL' => "++ showPhpStr (prettySQLQuery fSpec 36 violationsExpr)
            , "        )"
            ]
          | conj<-vconjs fSpec
@@ -333,7 +333,7 @@ generateViews fSpec =
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                      , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
-                                     , "          " ++ showPhpStr (prettySQLQuery 33 (selectSrcTgt fSpec (objctx objDef)))
+                                     , "          " ++ showPhpStr (prettySQLQuery fSpec 33 (objctx objDef))
                                      , "      )"
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
@@ -402,7 +402,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) -- which may be flipped.
      , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
-     , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery (22+14*depth) (selectSrcTgt fSpec normalizedInterfaceExp))
+     , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery fSpec (22+14*depth) normalizedInterfaceExp)
      ] 
   ++ generateMSubInterface fSpec editableRels depth (objmsub object)
   ++ [ "      )"
