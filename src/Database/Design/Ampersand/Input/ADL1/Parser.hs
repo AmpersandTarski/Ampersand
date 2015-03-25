@@ -517,10 +517,10 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
 
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = P_Box <$> currPos <*> pBoxKey <*> pBox
-            <|> (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos
+pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
+            <|> P_InterfaceRef <$> currPos <*  pKey "INTERFACE" <*> pADLid
   where pBoxKey :: AmpParser (Maybe String)
-        pBoxKey = id   <$  pKey "BOX" <*> pMaybe (pChevrons pConid)
+        pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
               <|> Just <$> pKey "ROWS"
               <|> Just <$> pKey "COLS"
               <|> Just <$> pKey "TABS"
@@ -528,40 +528,40 @@ pSubInterface = P_Box <$> currPos <*> pBoxKey <*> pBox
 --- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
-pObjDef            = obj <$> pLabelProps
-                         <*> pTerm            -- the context expression (for example: I[c])
-                         <*> pMaybe (pChevrons pConid)
-                         <*> pMaybe pSubInterface  -- the optional subinterface
-                     where obj (Lbl nm pos' strs) expr mView msub  =
-                             P_Obj { obj_nm   = nm
-                                   , obj_pos  = pos'
-                                   , obj_ctx  = expr
-                                   , obj_mView = mView
-                                   , obj_msub = msub
-                                   , obj_strs = strs
-                                   }
+pObjDef = obj <$> pLabelProps
+              <*> pTerm            -- the context expression (for example: I[c])
+              <*> pMaybe (pChevrons pConid)
+              <*> pMaybe pSubInterface  -- the optional subinterface
+         where obj (Lbl nm pos' strs) expr mView msub  =
+                 P_Obj { obj_nm   = nm
+                       , obj_pos  = pos'
+                       , obj_ctx  = expr
+                       , obj_mView = mView
+                       , obj_msub = msub
+                       , obj_strs = strs
+                       }
 
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
-pBox              = pBrackets $ pObjDef `sepBy1` pComma
+pBox = pBrackets $ pObjDef `sepBy1` pComma
 
 --- Sqlplug ::= 'SQLPLUG' ObjDef
 pSqlplug :: AmpParser P_ObjectDef
-pSqlplug          = pKey "SQLPLUG" *> pObjDef
+pSqlplug = pKey "SQLPLUG" *> pObjDef
 
 --- Phpplug ::= 'PHPPLUG' ObjDef
 pPhpplug :: AmpParser P_ObjectDef
-pPhpplug          = pKey "PHPPLUG" *> pObjDef
+pPhpplug = pKey "PHPPLUG" *> pObjDef
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
-pPurpose          = rebuild <$> currPos
-                            <*  pKey "PURPOSE"  -- "EXPLAIN" has become obsolete
-                            <*> pRef2Obj
-                            <*> pMaybe pLanguageRef
-                            <*> pMaybe pTextMarkup
-                            <*> ((pKey "REF" *> pString `sepBy1` pSemi) `opt` [])
-                            <*> pExpl
+pPurpose = rebuild <$> currPos
+                   <*  pKey "PURPOSE"  -- "EXPLAIN" has become obsolete
+                   <*> pRef2Obj
+                   <*> pMaybe pLanguageRef
+                   <*> pMaybe pTextMarkup
+                   <*> ((pKey "REF" *> pString `sepBy1` pSemi) `opt` [])
+                   <*> pExpl
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
