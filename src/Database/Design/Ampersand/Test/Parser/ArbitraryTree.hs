@@ -90,20 +90,20 @@ instance Arbitrary P_Context where
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
        <*> listOf upper_id -- themes
-       <*> vectorOf 0 arbitrary -- patterns
-       <*> vectorOf 0 arbitrary -- processes
-       <*> vectorOf 0 arbitrary -- rules
-       <*> vectorOf 0 arbitrary -- relations
-       <*> vectorOf 0 arbitrary -- concepts
-       <*> vectorOf 0 arbitrary -- identities
-       <*> vectorOf 0 arbitrary -- views
-       <*> vectorOf 0 arbitrary -- gen definitions
-       <*> vectorOf 0 arbitrary -- interfaces
-       <*> vectorOf 0 arbitrary -- purposes
-       <*> vectorOf 0 arbitrary -- populations
-       <*> vectorOf 0 arbitrary -- sqlplugs
-       <*> vectorOf 1 arbitrary -- phpplugs
-       <*> vectorOf 1 arbitrary -- generic meta information
+       <*> listOf arbitrary -- patterns
+       <*> listOf arbitrary -- processes
+       <*> listOf arbitrary -- rules
+       <*> listOf arbitrary -- relations
+       <*> listOf arbitrary -- concepts
+       <*> listOf arbitrary -- identities
+       <*> listOf arbitrary -- views
+       <*> listOf arbitrary -- gen definitions
+       <*> listOf arbitrary -- interfaces
+       <*> listOf arbitrary -- purposes
+       <*> listOf arbitrary -- populations
+       <*> listOf arbitrary -- sqlplugs
+       <*> listOf arbitrary -- phpplugs
+       <*> listOf arbitrary -- generic meta information
 
 instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr

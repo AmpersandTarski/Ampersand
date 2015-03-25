@@ -25,9 +25,9 @@ prop_pretty ctx = testParse prettyCtx eq
 checkArgs :: Args
 checkArgs = Args
   { replay          = Nothing
-  , maxSuccess      = 100
-  , maxDiscardRatio = 10
-  , maxSize         = 50
+  , maxSuccess      = 64
+  , maxDiscardRatio = 8
+  , maxSize         = 8      -- otherwise there's nothing quick about it.
   , chatty          = False
   }
 
