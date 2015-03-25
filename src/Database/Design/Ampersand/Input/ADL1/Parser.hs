@@ -270,9 +270,9 @@ pRelationDef :: AmpParser P_Declaration
 pRelationDef      = ( rebuild <$> pVarid  <*> currPos <* pOperator "::" <*> pConceptRef  <*> pFun  <*> pConceptRef
                       <|> rbd <$> currPos <* pKey "RELATION" <*> pVarid  <*> pSign
                     )
-                      <*> ((True <$ pKey "BYPLUG") `opt` False)
+                      <*> pIsThere (pKey "BYPLUG")
                       <*> (pProps `opt` [])
-                      <*> ((True <$ pKey "BYPLUG") `opt` False)
+                      <*> pIsThere (pKey "BYPLUG")
                       <*> (pPragma `opt` [])
                       <*> many pMeaning
                       <*> ((pOperator "=" *> pContent) `opt` [])
@@ -338,7 +338,7 @@ pConceptDef :: AmpParser (String->ConceptDef)
 pConceptDef       = Cd <$> currPos
                        <*  pKey "CONCEPT"
                        <*> pConceptName           -- the concept name
-                       <*> ((True <$ pKey "BYPLUG") `opt` False)
+                       <*> pIsThere (pKey "BYPLUG")
                        <*> pString                -- the definition text
                        <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
@@ -356,15 +356,12 @@ pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pCo
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
 --- Index ::= 'IDENT' Label ConceptRefPos '(' IndSegmentList ')'
 pIndex :: AmpParser P_IdentDef
-pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <*> pParens(pIndSegment `sepBy1` pComma)
-    where identity :: Label -> (P_Concept, Origin) -> [P_IdentSegment] -> P_IdentDef
-          identity (Lbl nm _ _) (c, orig) ats
-           = P_Id { ix_pos = orig
-                  , ix_lbl = nm
-                  , ix_cpt = c
-                  , ix_ats = ats
-                  }
-
+pIndex  = P_Id <$> currPos
+               <*  pKey "IDENT"
+               <*> pLabel
+               <*> pConceptRef
+               <*> pParens (pIndSegment `sepBy1` pComma)
+    where
           --- IndSegmentList ::= IndSegment (',' IndSegment)
           --- IndSegment ::= IndAtt
           pIndSegment :: AmpParser P_IdentSegment
@@ -403,33 +400,34 @@ pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <*> pParens(pIn
 pViewDef :: AmpParser P_ViewDef
 pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' Label ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' pLabel ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
-pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> pMaybe (pKey "DEFAULT") <*> pBraces (pViewObj `sepBy1` pComma)
-                           <*> pMaybe pHtmlView 
-                           <*  pKey "ENDVIEW"
-    where mkViewDef :: Label -> (P_Concept, Origin) -> Maybe String -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
-          mkViewDef (Lbl nm _ _) (c, orig) mDefault objs mHtml =
-            P_Vd { vd_pos = orig
+pFancyViewDef  = mkViewDef <$> currPos
+                      <*  pKey "VIEW"
+                      <*> pLabel
+                      <*> pConceptOneRef
+                      <*> pIsThere (pKey "DEFAULT")
+                      <*> pBraces ((P_ViewExp <$> pViewObj) `sepBy1` pComma)
+                      <*> pMaybe pHtmlView 
+                      <*  pKey "ENDVIEW"
+    where mkViewDef pos nm cpt isDef ats html =
+            P_Vd { vd_pos = pos
                  , vd_lbl = nm
-                 , vd_cpt = c
-                 , vd_isDefault = isJust mDefault
-                 , vd_html = mHtml
-                 , vd_ats = map P_ViewExp objs
+                 , vd_cpt = cpt
+                 , vd_isDefault = isDef
+                 , vd_html = html
+                 , vd_ats = ats
                  }
-
+          
           --- ViewObjList ::= ViewObj (',' ViewObj)*
           --- ViewObj ::= Label Term
           pViewObj :: AmpParser P_ObjectDef
-          pViewObj = mkObj <$> pLabel <*> pTerm
-            where mkObj (Lbl nm p strs) attexpr = 
-                    P_Obj { obj_nm    = nm
-                          , obj_pos   = p
-                          , obj_ctx   = attexpr
-                          , obj_mView = Nothing
-                          , obj_msub  = Nothing
-                          , obj_strs  = strs -- will be []
-                          }
+          pViewObj = P_Obj <$> pLabel
+                           <*> currPos
+                           <*> pTerm
+                           <*> return Nothing
+                           <*> return Nothing
+                           <*> return []
                           
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate                 
@@ -814,12 +812,6 @@ pConceptRef     = PCpt <$> pConceptName
 pConceptOneRef :: AmpParser P_Concept
 pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 
---- ConceptRefPos ::= Conid | String
-pConceptRefPos :: AmpParser (P_Concept, Origin)
-pConceptRefPos     = conid <$> valPosOf pConid   <|>   conid <$> valPosOf pString
-                     where conid :: (String, Origin) ->  (P_Concept, Origin)
-                           conid (c,orig) = (PCpt c, orig)
-
 --- ConceptOneRefPos ::= 'ONE' | Conid | String
 pConceptOneRefPos :: AmpParser (P_Concept, Origin)
 pConceptOneRefPos  = singl <$> currPos <* pKey "ONE" <|>
@@ -844,10 +836,9 @@ pLabelProps       = lbl <$> pADLid_val_pos
                           pArgs = pBraces $ (many1 pADLid) `sepBy1` pComma
 
 --- Label ::= ADLid ':'
-pLabel :: AmpParser Label
-pLabel       = lbl <$> pADLid_val_pos <*  pColon
-               where lbl :: (String, Origin) -> Label
-                     lbl (nm,pos') = Lbl nm pos' []
+pLabel :: AmpParser String
+pLabel = pADLid <* pColon
+
 --- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
 pContent :: AmpParser Pairs
 pContent      = try (pBrackets (pRecord `sepBy` pComma))   <|>
