@@ -182,8 +182,8 @@ pProcessDef = rebuild <$> posOf pKeyPROCESS <*> pConceptName   -- The name space
                 PrY <$> pClassify     <|>
                 PrD <$> pRelationDef  <|>
                 --TODO: Move the try deeper into the parsing chain
-                PrM <$> try pRoleRule <|>
-                PrL <$> pRoleRelation <|>
+                PrM <$> try pRoleRule     <|>
+                PrL <$> try pRoleRelation <|>
                 PrC <$> pConceptDef   <|>
                 PrG <$> pGenDef       <|>
                 PrI <$> pIndex        <|>
@@ -261,6 +261,7 @@ pSrcOrTgt :: AmpParser SrcOrTgt
 pSrcOrTgt = Src <$ pKeySRC <|> Tgt <$ pKeyTGT
 
 --- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
+--TODO: This is WAY too long!
 pRelationDef :: AmpParser P_Declaration
 pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef  <*> pFun  <*> pConceptRef
                       <|> rbd <$> posOf pKeyRELATION <*> pVarid  <*> pSign
@@ -424,7 +425,7 @@ pFancyViewDef  = mkViewDef <$  pKeyVIEW <*> pLabel <*> pConceptOneRefPos <*> pMa
                           , obj_msub  = Nothing
                           , obj_strs  = strs -- will be []
                           }
-          
+                          
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate                 
           pHtmlView = ViewHtmlTemplateFile <$ pKeyHTML <* pKeyTEMPLATE <*> pString
