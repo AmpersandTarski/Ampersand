@@ -28,6 +28,7 @@ safeStr1 = listOf1 printable
 identifier :: Gen String
 identifier = suchThat str2 noKeyword
     where noKeyword x = x `notElem` keywords
+          -- The prelude functions accept Unicode characters
           idChar = elements (['a'..'z']++['A'..'Z']++['0'..'9']++"_")
           str2   = suchThat (listOf1 idChar) (\s -> length s > 1)
 
@@ -65,13 +66,26 @@ instance Arbitrary Origin where
     arbitrary = return OriginUnknown
 
 instance Arbitrary P_Context where
-    arbitrary = PCtx <$> upper_id  <*> arbitrary <*> arbitrary <*> arbitrary <*> listOf upper_id
-                     <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                     <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                     <*> arbitrary
-                     <*> arbitrary
-                     <*> arbitrary
-                     <*> arbitrary
+    arbitrary = PCtx
+       <$> upper_id   -- name
+       <*> listOf arbitrary  -- pos
+       <*> arbitrary  -- lang
+       <*> arbitrary  -- markup
+       <*> listOf upper_id -- themes
+       <*> vectorOf 0 arbitrary -- patterns
+       <*> vectorOf 0 arbitrary -- processes
+       <*> vectorOf 0 arbitrary -- rules
+       <*> vectorOf 0 arbitrary -- relations
+       <*> vectorOf 1 arbitrary -- concepts
+       <*> vectorOf 1 arbitrary -- identities
+       <*> vectorOf 1 arbitrary -- views
+       <*> vectorOf 0 arbitrary -- gen definitions
+       <*> vectorOf 1 arbitrary -- interfaces
+       <*> vectorOf 1 arbitrary -- purposes
+       <*> vectorOf 0 arbitrary -- populations
+       <*> vectorOf 0 arbitrary -- sqlplugs
+       <*> vectorOf 1 arbitrary -- phpplugs
+       <*> vectorOf 1 arbitrary -- generic meta information
 
 instance Arbitrary Meta where
     arbitrary = Meta <$> arbitrary <*> arbitrary <*>  safeStr  <*> safeStr

@@ -78,7 +78,7 @@ data ContextElement = CMeta Meta
                     | CRul (P_Rule TermPrim)
                     | CCfy P_Gen
                     | CRel P_Declaration
-                    | CCon (String->ConceptDef)
+                    | CCon (String -> ConceptDef)
                     | CGen P_Gen
                     | CIndx P_IdentDef
                     | CView P_ViewDef
@@ -97,16 +97,15 @@ pIncludeStatement = pKeyINCLUDE *> pString
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
 pLanguageRef = pKeyIN *>
-               (( Dutch   <$ pKeyDUTCH  ) <|>
-                ( English <$ pKeyENGLISH)
-               )
+               (Dutch   <$ pKeyDUTCH   <|>
+                English <$ pKeyENGLISH)
 
 --- TextMarkup ::= 'REST' | 'HTML' | 'LATEX' | 'MARKDOWN'
 pTextMarkup :: AmpParser PandocFormat
-pTextMarkup = ( ReST     <$ pKeyREST     ) <|>
-              ( HTML     <$ pKeyHTML     ) <|>
-              ( LaTeX    <$ pKeyLATEX    ) <|>
-              ( Markdown <$ pKeyMARKDOWN )
+pTextMarkup = ReST     <$ pKeyREST     <|>
+              HTML     <$ pKeyHTML     <|>
+              LaTeX    <$ pKeyLATEX    <|>
+              Markdown <$ pKeyMARKDOWN
 
 --- Meta ::= 'META' String String
 pMeta :: AmpParser Meta
@@ -148,7 +147,7 @@ pPatternDef = rebuild <$> posOf pKeyPATTERN <*> pConceptName   -- The name space
 data PatElem = Pr (P_Rule TermPrim)
              | Py P_Gen
              | Pd P_Declaration
-             | Pc (String->ConceptDef)
+             | Pc (String -> ConceptDef)
              | Pg P_Gen
              | Pk P_IdentDef
              | Pv P_ViewDef

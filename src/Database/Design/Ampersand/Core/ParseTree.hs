@@ -125,9 +125,9 @@ instance Traced P_Process where
 data RoleRule
    = Maintain
      { mRoles :: [Role]    -- ^ name of a role
-     , mRules :: [String]    -- ^ name of a Rule
+     , mRules :: [String]  -- ^ name of a Rule
      , mPos :: Origin      -- ^ position in the Ampersand script
-     } deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
+     } deriving (Eq, Show) -- deriving (Eq, Show) is just for debugging
 
 data Role = Role String deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
 instance Named Role where

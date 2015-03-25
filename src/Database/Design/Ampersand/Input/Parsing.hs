@@ -93,17 +93,6 @@ runParser parser filename input =
     --TODO: Do something with the warnings
     Right (tokens, _)  -> parse parser tokens
 
-{-
-runParser' :: forall res . AmpParser res -> String -> String -> Either ParseError res
-runParser' parser filename input =
-  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
-      steps = parse parser (scanner input)
-  in  case  getMsgs steps of
-         []    -> let Pair res _ = evalSteps steps
-                  in  Right res
-         msg:_ -> Left msg
--}
-
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
 parseRule :: String -> Term TermPrim

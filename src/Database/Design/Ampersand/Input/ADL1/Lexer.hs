@@ -83,10 +83,11 @@ mainLexer p fn ('-':'+':s)  = returnToken lx p mainLexer p fn rest
                 where lx   = LexExpl $ dropWhile isSpace (takeLine s)
                       rest = skipLine s
 
-mainLexer p fn ('{':'-':s)  = lexNest mainLexer (advc 2 p) fn s
-mainLexer p fn ('{':'+':s)  = lexExpl mainLexer (advc 2 p) fn s
-mainLexer p fn ('"':ss) =  let (s,swidth,rest) = scanString ss
-                           in if null rest || head rest /= '"'
+mainLexer p fn ('{':'-':s) = lexNest mainLexer (advc 2 p) fn s
+mainLexer p fn ('{':'+':s) = lexExpl mainLexer (advc 2 p) fn s
+mainLexer p fn ('"':ss) =
+    let (s,swidth,rest) = scanString ss
+    in if null rest || head rest /= '"'
                               then lexerError (NonTerminatedChar (Just(s))) (initialPos fn)
                               else returnToken (LexString s) p mainLexer (advc (swidth+2) p) fn (tail rest)
 
