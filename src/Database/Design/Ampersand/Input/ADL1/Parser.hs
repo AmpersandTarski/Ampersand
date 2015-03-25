@@ -114,9 +114,12 @@ pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN'
 pPatternDef :: AmpParser P_Pattern
-pPatternDef = rebuild <$> posOf pKeyPATTERN <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
+pPatternDef = rebuild <$> currPos
+                      <*  pKey "PATTERN"
+                      <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                       <*> pList pPatElem
-                      <*> posOf pKeyENDPATTERN
+                      <*> currPos
+                      <*  pKey "ENDPATTERN"
   where
     rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
@@ -342,7 +345,7 @@ pConceptDef       = Cd <$> currPos
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen -- TODO: SPEC is obsolete syntax. Should disappear!
-pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKeyISA) <*> pConceptRef -- 
+pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef -- 
           where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
                 key = pKey "CLASSIFY" <|> pKey "SPEC"
 
@@ -553,7 +556,7 @@ pPhpplug          = pKey "PHPPLUG" *> pObjDef
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
 pPurpose          = rebuild <$> currPos
-                            <*  pKeyPURPOSE  -- "EXPLAIN" has become obsolete
+                            <*  pKey "PURPOSE"  -- "EXPLAIN" has become obsolete
                             <*> pRef2Obj
                             <*> pMaybe pLanguageRef
                             <*> pMaybe pTextMarkup
