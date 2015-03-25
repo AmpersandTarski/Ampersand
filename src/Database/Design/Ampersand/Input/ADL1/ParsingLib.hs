@@ -20,7 +20,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pKeyINJ, pKeySUR, pKeyTOT, pKeySYM, pKeyASY, pKeyTRN,
     pKeyRFX, pKeyIRF, pKeyAUT, pKeyPROP, pKeyALWAYS, pKeyRULE,
     pKeyMESSAGE, pKeyVIOLATION, pKeySRC, pKeyTGT, pKeyTEST, pKeyRELATION,
-    pKeyMEANING, pKeyCONCEPT, pKeyIDENT, pKeyVIEW, pKeyTXT, pKeyPRIMHTML,
+    pKeyMEANING, pKeyCONCEPT, pKeyIDENT, pKeyVIEW, pKeyENDVIEW, pKeyDEFAULT, pKeyTXT, pKeyPRIMHTML, pKeyTEMPLATE,
     pKeyKEY, pKeyIMPORT, pKeySPEC, pKeyISA, pKeyIS, pKeyI,
     pKeyV, pKeyCLASSIFY, pKeyPRAGMA, pKeyPURPOSE, pKeyIN, pKeyREF,
     pKeyENGLISH, pKeyDUTCH, pKeyREST, pKeyHTML, pKeyLATEX, pKeyMARKDOWN,
@@ -241,11 +241,20 @@ pKeyIDENT = pKey "IDENT"
 pKeyVIEW :: AmpParser String
 pKeyVIEW = pKey "VIEW"
 
+pKeyENDVIEW :: AmpParser String
+pKeyENDVIEW = pKey "ENDVIEW"
+
+pKeyDEFAULT :: AmpParser String
+pKeyDEFAULT = pKey "DEFAULT"
+
 pKeyTXT :: AmpParser String
 pKeyTXT = pKey "TXT"
 
 pKeyPRIMHTML :: AmpParser String
 pKeyPRIMHTML = pKey "PRIMHTML"
+
+pKeyTEMPLATE :: AmpParser String
+pKeyTEMPLATE = pKey "TEMPLATE"
 
 pKeyKEY :: AmpParser String
 pKeyKEY = pKey "KEY"

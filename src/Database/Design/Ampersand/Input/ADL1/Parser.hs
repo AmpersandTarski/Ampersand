@@ -372,6 +372,7 @@ pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <*> pParens(pList1
                        P_Obj { obj_nm   = nm
                              , obj_pos  = p
                              , obj_ctx  = attexpr
+                             , obj_mView = Nothing
                              , obj_msub = Nothing
                              , obj_strs = strs
                              }
@@ -379,6 +380,7 @@ pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <*> pParens(pList1
                         P_Obj { obj_nm   = ""
                               , obj_pos  = Origin "pIndAtt CC664"
                               , obj_ctx  = attexpr
+                              , obj_mView = Nothing
                               , obj_msub = Nothing
                               , obj_strs = []
                               }
@@ -391,20 +393,58 @@ pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <*> pParens(pList1
 --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
 -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
 
---- ViewDef ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentSepList ')'
+--- ViewDef ::= FancyViewDef | ViewDefLegacy
 pViewDef :: AmpParser P_ViewDef
-pViewDef  = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <*> pParens(pList1Sep pComma pViewSegment)
+pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
+
+--- FancyViewDef ::= 'VIEW' Label ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
+pFancyViewDef :: AmpParser P_ViewDef
+pFancyViewDef  = mkViewDef <$  pKeyVIEW <*> pLabel <*> pConceptOneRefPos <*> pMaybe pKeyDEFAULT <*> pBraces (pList1Sep pComma pViewObj)
+                           <*> pMaybe pHtmlView 
+                           <*  pKeyENDVIEW
+    where mkViewDef :: Label -> (P_Concept, Origin) -> Maybe String -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
+          mkViewDef (Lbl nm _ _) (c, orig) mDefault objs mHtml =
+            P_Vd { vd_pos = orig
+                 , vd_lbl = nm
+                 , vd_cpt = c
+                 , vd_isDefault = isJust mDefault
+                 , vd_html = mHtml
+                 , vd_ats = map P_ViewExp objs
+                 }
+
+          --- ViewObjList ::= ViewObj (',' ViewObj)*
+          --- ViewObj ::= Label Term
+          pViewObj :: AmpParser P_ObjectDef
+          pViewObj = mkObj <$> pLabel <*> pTerm
+            where mkObj (Lbl nm p strs) attexpr = 
+                    P_Obj { obj_nm    = nm
+                          , obj_pos   = p
+                          , obj_ctx   = attexpr
+                          , obj_mView = Nothing
+                          , obj_msub  = Nothing
+                          , obj_strs  = strs -- will be []
+                          }
+          
+          --- HtmlView ::= 'HTML' 'TEMPLATE' String
+          pHtmlView :: AmpParser ViewHtmlTemplate                 
+          pHtmlView = ViewHtmlTemplateFile <$ pKeyHTML <* pKeyTEMPLATE <*> pString
+
+--- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentSepList ')'
+pViewDefLegacy :: AmpParser P_ViewDef
+pViewDefLegacy = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <*> pParens(pList1Sep pComma pViewSegment)
     where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef
           vd (Lbl nm _ _) (c, orig) ats
               = P_Vd { vd_pos = orig
                      , vd_lbl = nm
                      , vd_cpt = c
+                     , vd_isDefault = True
+                     , vd_html = Nothing
                      , vd_ats = [ case viewSeg of
-                                     P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm=show i} else P_ViewExp x
+                                     P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else P_ViewExp x
                                      P_ViewText _ -> viewSeg
                                      P_ViewHtml _ -> viewSeg
                                 | (i,viewSeg)<-zip [(1::Integer)..] ats]
-                     } -- nrs also count text segments but they're are not important anyway
+                     } -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           --- ViewSegmentSepList ::= ViewSegment (',' ViewSegment)*
           --- ViewSegment ::= ViewAtt | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
@@ -421,6 +461,7 @@ pViewDef  = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <
                             P_Obj { obj_nm   = nm
                                   , obj_pos  = p
                                   , obj_ctx  = attexpr
+                                  , obj_mView = Nothing
                                   , obj_msub = Nothing
                                   , obj_strs = strs
                                   }
@@ -428,6 +469,7 @@ pViewDef  = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <
                             P_Obj { obj_nm   = ""
                                   , obj_pos  = origin attexpr
                                   , obj_ctx  = attexpr
+                                  , obj_mView = Nothing
                                   , obj_msub = Nothing
                                   , obj_strs = []
                                   }
@@ -453,6 +495,7 @@ pInterface = lbl <$> (pKeyINTERFACE *> pADLid_val_pos) <*>
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
                                           , obj_ctx  = expr
+                                          , obj_mView = Nothing
                                           , obj_msub = Just sub
                                           , obj_strs = args
                                           }
@@ -476,16 +519,18 @@ pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
               <|> (\o -> (o,Just "COLS")) <$> posOf pKeyCOLS
               <|> (\o -> (o,Just "TABS")) <$> posOf pKeyTABS
 
---- ObjDef ::= LabelProps Term SubInterface?
+--- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
 pObjDef            = obj <$> pLabelProps
                          <*> pTerm            -- the context expression (for example: I[c])
+                         <*> pMaybe (pChevrons pConid)
                          <*> pMaybe pSubInterface  -- the optional subinterface
-                     where obj (Lbl nm pos' strs) expr msub  =
+                     where obj (Lbl nm pos' strs) expr mView msub  =
                              P_Obj { obj_nm   = nm
                                    , obj_pos  = pos'
                                    , obj_ctx  = expr
+                                   , obj_mView = mView
                                    , obj_msub = msub
                                    , obj_strs = strs
                                    }

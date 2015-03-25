@@ -28,8 +28,8 @@ keywords      = [ "INCLUDE"
                 , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                 , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                 , "RELATION", "MEANING", "CONCEPT", "IDENT"
-                , "VIEW", "TXT", "PRIMHTML"
-                , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
+                , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
+                , "KEY" -- HJO, 20130605: Obsolete. Only useful as long as the old prototype generator is still in use.
                 , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                 , "CLASSIFY"
                 , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"

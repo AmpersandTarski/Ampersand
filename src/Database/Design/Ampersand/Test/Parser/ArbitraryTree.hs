@@ -44,16 +44,26 @@ lower_id = suchThat identifier startLower
 
 -- Generates an object
 objTermPrim :: Int -> Gen (P_ObjDef TermPrim)
-objTermPrim i = makeObj relationRef (ifc i)
+objTermPrim 0 = objTermPrim 1 -- minimum of 1 sub interface
+objTermPrim i = makeObj relationRef (ifc i) genView
     where ifc :: Int -> Gen (Maybe (P_SubIfc TermPrim))
           ifc n = if n == 0 then return Nothing
-                  else Just <$> subIfc (makeObj relationRef (ifc (n`div`2)))
+                  else Just <$> subIfc (makeObj relationRef (ifc (n`div`2)) genView)
+          --TODO: The view is never tested like this
+          genView = return Nothing
 
-makeObj :: Gen a -> Gen (Maybe (P_SubIfc a)) -> Gen (P_ObjDef a)
-makeObj genPrim genIfc =
-        P_Obj <$> lower_id  <*> arbitrary <*> term <*> genIfc <*> args
+makeObj :: Gen a -> Gen (Maybe (P_SubIfc a)) -> Gen (Maybe String) -> Gen (P_ObjDef a)
+makeObj genPrim genIfc genView =
+        P_Obj <$> lower_id  <*> arbitrary <*> term <*> genView <*> genIfc <*> args
               where args = listOf $ listOf1 safeStr1
                     term = Prim <$> genPrim
+
+subIfc :: Gen (P_ObjDef a) -> Gen (P_SubIfc a)
+subIfc obj = oneof [
+        P_Box          <$> arbitrary <*> boxKey   <*> listOf1 obj,
+        P_InterfaceRef <$> arbitrary <*> safeStr1
+    ]
+    where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 
 genPairs :: Gen Pairs
 genPairs = listOf genPaire
@@ -215,22 +225,15 @@ instance Arbitrary P_Population where
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
                       <*> listOf relationRef <*> args <*> listOf arbitrary
-                      <*> sized objTermPrim <*> arbitrary <*> safeStr
+                      <*> sized objTermPrim <*> arbitrary <*> safeStr--TODO: Remove this 1
                    where args = listOf $ listOf1 safeStr
-                         maybeSafeStr = oneof[Just <$> safeStr, return Nothing]
+                         maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = makeObj arbitrary arbitrary
+    arbitrary = makeObj arbitrary arbitrary (return Nothing)
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
     arbitrary = subIfc arbitrary
-
-subIfc :: Gen (P_ObjDef a) -> Gen (P_SubIfc a)
-subIfc obj = oneof [
-        P_Box          <$> arbitrary <*> boxKey   <*> listOf1 obj,
-        P_InterfaceRef <$> arbitrary <*> safeStr1
-    ]
-    where boxKey = elements [Nothing,Just "ROWS",Just "COLS",Just "TABS"]
 
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary <*> listOf1 arbitrary
@@ -239,7 +242,14 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized objTermPrim
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne <*> listOf1 arbitrary
+    arbitrary = oneof [
+                P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+                     <*> return True <*> return Nothing <*> listOf1 arbitrary,
+                P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+                     <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary)]
+
+instance Arbitrary ViewHtmlTemplate where
+    arbitrary = ViewHtmlTemplateFile <$> safeStr
 
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary = oneof [

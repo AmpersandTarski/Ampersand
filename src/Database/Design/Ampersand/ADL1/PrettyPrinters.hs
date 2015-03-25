@@ -263,9 +263,11 @@ instance Pretty P_Interface where
                                 else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where
-    pretty (P_Obj nm _ ctx msub strs) =
+    pretty (P_Obj nm _ ctx mView msub strs) =
         quote nm <+> labelArgs strs <+> text ":"
-                 <~> ctx <~> msub
+                 <~> ctx <+> view mView <~> msub
+        where view Nothing  = empty
+              view (Just v) = text ("<" ++ v ++ ">")
 
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
@@ -279,18 +281,32 @@ instance Pretty P_IdentDef where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty P_IdentSegment where
-    pretty (P_IdentExp (P_Obj nm _ ctx _ strs)) =
+    pretty (P_IdentExp (P_Obj nm _ ctx mView _ strs)) =
               if null nm
               then pretty ctx -- no label
-              else text nm <+> labelArgs strs <> text ":" <~> ctx
+              else text nm <+> labelArgs strs <> text ":" <~> ctx <+> view mView
+        where view Nothing  = empty
+              view (Just v) = pretty v
 
 instance Pretty a => Pretty (P_ViewD a) where
-    pretty (P_Vd _ lbl cpt ats) =
+    pretty (P_Vd _ lbl cpt True Nothing ats) = -- legacy syntax
         text "VIEW" <+> maybeQuote lbl   <+> text ":"
                     <~> cpt <+> parens (listOf ats)
+    pretty (P_Vd _ lbl cpt isDefault html ats) = -- new syntax
+        text "VIEW" <+> maybeQuote lbl  <+> text ":"
+                    <~> cpt <+> (if isDefault then text "DEFAULT" else empty)
+                    <+> braces (listOf ats) <~> html <+> text "ENDVIEW"
+
+instance Pretty ViewHtmlTemplate where
+    pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp o)    = pretty $obj_ctx o
+    pretty (P_ViewExp (P_Obj nm _ ctx _ _ _)) = lbl <~> ctx
+            where lbl = if null nm || nm `startsWith` "seg_" then empty
+                        else maybeQuote nm <+> text ":"
+                  startsWith [] _ = True -- An empty list would be at the beginning of every list
+                  startsWith _ [] = False -- Nothing is at the beginning of an empty list
+                  startsWith (x:xs) (y:ys)= x == y && startsWith xs ys
     pretty (P_ViewText txt) = text "TXT" <+> quote txt
     pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
                         
