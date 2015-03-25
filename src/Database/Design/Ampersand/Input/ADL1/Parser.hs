@@ -433,23 +433,21 @@ pFancyViewDef  = mkViewDef <$> currPos
           pHtmlView :: AmpParser ViewHtmlTemplate                 
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
 
---- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentSepList ')'
+--- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
-pViewDefLegacy = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabel <*> currPos <*> pConceptOneRef <*> pParens(pViewSegment `sepBy1` pComma)
-    where vd :: String -> Origin -> P_Concept -> [P_ViewSegment] -> P_ViewDef
-          vd nm orig c ats
-              = P_Vd { vd_pos = orig
-                     , vd_lbl = nm
-                     , vd_cpt = c
-                     , vd_isDefault = True
-                     , vd_html = Nothing
-                     , vd_ats = [ case viewSeg of
-                                     P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else P_ViewExp x
-                                     P_ViewText _ -> viewSeg
-                                     P_ViewHtml _ -> viewSeg
-                                | (i,viewSeg)<-zip [(1::Integer)..] ats]
-                     } -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
-          --- ViewSegmentSepList ::= ViewSegment (',' ViewSegment)*
+pViewDefLegacy = P_Vd <$> currPos
+                      <*  (pKey "VIEW" <|> pKey "KEY")
+                      <*> pLabel
+                      <*> pConceptOneRef
+                      <*> return True
+                      <*> return Nothing
+                      <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
+    where ats xs = [ case viewSeg of
+                         P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else viewSeg
+                         _            -> viewSeg
+                    | (i,viewSeg) <- zip [(1::Integer)..] xs]
+                    -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
+          --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
           --- ViewSegment ::= ViewAtt | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  <$> pViewAtt <|>
