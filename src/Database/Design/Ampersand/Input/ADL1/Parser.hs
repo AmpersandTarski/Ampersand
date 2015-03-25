@@ -23,15 +23,15 @@ pPopulations = pList1 pPopulation
 
 --- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
 pContext :: AmpParser (P_Context, [String]) -- the result is the parsed context and a list of include filenames
-pContext  = rebuild <$> posOf pKeyCONTEXT <*> pConceptName
+pContext  = rebuild <$> posOf (pKey "CONTEXT") <*> pConceptName
                          <*> pLanguageRef
                          <*> pMaybe pTextMarkup
-                         <*> pList pContextElement <* pKeyENDCONTEXT
+                         <*> pList pContextElement <* pKey "ENDCONTEXT"
   where
     rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
-    rebuild    pos'      nm        lang          fmt                   ces
+    rebuild    pos       nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
-            , ctx_pos    = [pos']
+            , ctx_pos    = [pos]
             , ctx_lang   = lang
             , ctx_markup = fmt
             , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
@@ -92,24 +92,24 @@ data ContextElement = CMeta Meta
 
 --- IncludeStatement ::= 'INCLUDE' String
 pIncludeStatement :: AmpParser String
-pIncludeStatement = pKeyINCLUDE *> pString
+pIncludeStatement = pKey "INCLUDE" *> pString
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
-pLanguageRef = pKeyIN *>
-               (Dutch   <$ pKeyDUTCH   <|>
-                English <$ pKeyENGLISH)
+pLanguageRef = pKey "IN" *>
+               (Dutch   <$ pKey "DUTCH"   <|>
+                English <$ pKey "ENGLISH")
 
 --- TextMarkup ::= 'REST' | 'HTML' | 'LATEX' | 'MARKDOWN'
 pTextMarkup :: AmpParser PandocFormat
-pTextMarkup = ReST     <$ pKeyREST     <|>
-              HTML     <$ pKeyHTML     <|>
-              LaTeX    <$ pKeyLATEX    <|>
-              Markdown <$ pKeyMARKDOWN
+pTextMarkup = ReST     <$ pKey "REST"     <|>
+              HTML     <$ pKey "HTML"     <|>
+              LaTeX    <$ pKey "LATEX"    <|>
+              Markdown <$ pKey "MARKDOWN"
 
 --- Meta ::= 'META' String String
 pMeta :: AmpParser Meta
-pMeta = Meta <$> posOf pKeyMETA <*> pMetaObj <*> pString <*> pString
+pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
  where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN'
@@ -156,9 +156,9 @@ data PatElem = Pr (P_Rule TermPrim)
 
 --- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
 pProcessDef :: AmpParser P_Process
-pProcessDef = rebuild <$> posOf pKeyPROCESS <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
+pProcessDef = rebuild <$> currPos <* pKey "PROCESS" <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                       <*> pList pProcElem
-                      <*> posOf pKeyENDPROCESS
+                      <*> currPos <* pKey "ENDPROCESS"
    where
     rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Process
     rebuild pos' nm pes end
@@ -205,7 +205,7 @@ data ProcElem = PrR (P_Rule TermPrim)
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
-pClassify = try (rebuild <$> posOf pKeyCLASSIFY <*> pConceptRef <*  pKeyIS)
+pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey "IS")
                     <*> pCterm
                where
                  rebuild po lhs rhs
@@ -224,7 +224,8 @@ pClassify = try (rebuild <$> posOf pKeyCLASSIFY <*> pConceptRef <*  pKeyIS)
 
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
-pRuleDef =  rebuild <$> posOf pKeyRULE
+pRuleDef =  rebuild <$> currPos 
+                    <*  pKey "RULE"
                     <*> pMaybe (try (pADLid <* pColon ))
                     <*> pRule
                     <*> pList pMeaning
@@ -244,7 +245,7 @@ pRuleDef =  rebuild <$> posOf pKeyRULE
                  
                  --- Violation ::= 'VIOLATION' PairView
                  pViolation :: AmpParser (PairView (Term TermPrim))
-                 pViolation = id <$ pKeyVIOLATION <*> pPairView
+                 pViolation = id <$ pKey "VIOLATION" <*> pPairView
 
                  --- PairView ::= '(' PairViewSegmentList ')'
                  pPairView :: AmpParser (PairView (Term TermPrim))
@@ -253,22 +254,22 @@ pRuleDef =  rebuild <$> posOf pKeyRULE
                  --- PairViewSegmentList  ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= SrcOrTgt Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
-                 pPairViewSegment = PairViewExp <$> pSrcOrTgt <*>  pTerm
-                                <|> PairViewText <$ pKeyTXT   <*> pString
+                 pPairViewSegment = PairViewExp <$> pSrcOrTgt  <*>  pTerm
+                                <|> PairViewText <$ pKey "TXT" <*> pString
 
 --- SrcOrTgt ::= 'SRC' | 'TGT'
 pSrcOrTgt :: AmpParser SrcOrTgt
-pSrcOrTgt = Src <$ pKeySRC <|> Tgt <$ pKeyTGT
+pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
 
 --- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
 --TODO: This is WAY too long!
 pRelationDef :: AmpParser P_Declaration
 pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef  <*> pFun  <*> pConceptRef
-                      <|> rbd <$> posOf pKeyRELATION <*> pVarid  <*> pSign
+                      <|> rbd <$> currPos <* pKey "RELATION" <*> pVarid  <*> pSign
                     )
-                      <*> ((True <$ pKeyBYPLUG) `opt` False)
+                      <*> ((True <$ pKey "BYPLUG") `opt` False)
                       <*> (pProps `opt` [])
-                      <*> ((True <$ pKeyBYPLUG) `opt` False)
+                      <*> ((True <$ pKey "BYPLUG") `opt` False)
                       <*> (pPragma `opt` [])
                       <*> pList pMeaning
                       <*> ((pEqual *> pContent) `opt` [])
@@ -299,14 +300,14 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef
                           --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
                           --TODO: Should we move this to the parsing lib?
                           pProp :: AmpParser [Prop]
-                          pProp   = k [Uni] pKeyUNI <|> k [Inj] pKeyINJ <|> k [Sur] pKeySUR <|> k [Tot] pKeyTOT <|>
-                                    k [Sym] pKeySYM <|> k [Asy] pKeyASY <|> k [Trn] pKeyTRN <|>
-                                    k [Rfx] pKeyRFX <|> k [Irf] pKeyIRF <|> k [Aut] pKeyAUT <|> k [Sym, Asy] pKeyPROP
-                              where k obj key = f <$> key where f _ = obj
+                          pProp   = k [Uni] "UNI" <|> k [Inj] "INJ" <|> k [Sur] "SUR" <|> k [Tot] "TOT" <|>
+                                    k [Sym] "SYM" <|> k [Asy] "ASY" <|> k [Trn] "TRN" <|>
+                                    k [Rfx] "RFX" <|> k [Irf] "IRF" <|> k [Aut] "AUT" <|> k [Sym, Asy] "PROP"
+                              where k obj key = obj <$ pKey key
                           
                           --- Pragma ::= 'PRAGMA' String+
                           pPragma :: AmpParser [String]
-                          pPragma = pKeyPRAGMA *> pList1 pString
+                          pPragma = pKey "PRAGMA" *> pList1 pString
                           
                           --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
                           pFun :: AmpParser [Prop]
@@ -331,18 +332,19 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)
-pConceptDef       = Cd <$> posOf pKeyCONCEPT
+pConceptDef       = Cd <$> currPos
+                       <*  pKey "CONCEPT"
                        <*> pConceptName           -- the concept name
-                       <*> ((True <$ pKeyBYPLUG) `opt` False)
+                       <*> ((True <$ pKey "BYPLUG") `opt` False)
                        <*> pString                -- the definition text
-                       <*> ((pKeyTYPE *> pString) `opt` "")     -- the type of the concept.
+                       <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen -- TODO: SPEC is obsolete syntax. Should disappear!
-pGenDef = try (rebuild <$> key <*> pConceptRef <* pKeyISA) <*> pConceptRef -- 
+pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKeyISA) <*> pConceptRef -- 
           where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
-                key = posOf (pKeyCLASSIFY <|> pKeySPEC)
+                key = pKey "CLASSIFY" <|> pKey "SPEC"
 
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
@@ -351,7 +353,7 @@ pGenDef = try (rebuild <$> key <*> pConceptRef <* pKeyISA) <*> pConceptRef --
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
 --- Index ::= 'IDENT' Label ConceptRefPos '(' IndSegmentList ')'
 pIndex :: AmpParser P_IdentDef
-pIndex  = identity <$ pKeyIDENT <*> pLabel <*> pConceptRefPos <*> pParens(pList1Sep pComma pIndSegment)
+pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <*> pParens(pList1Sep pComma pIndSegment)
     where identity :: Label -> (P_Concept, Origin) -> [P_IdentSegment] -> P_IdentDef
           identity (Lbl nm _ _) (c, orig) ats
            = P_Id { ix_pos = orig
@@ -400,9 +402,9 @@ pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces a bit of harml
 
 --- FancyViewDef ::= 'VIEW' Label ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
-pFancyViewDef  = mkViewDef <$  pKeyVIEW <*> pLabel <*> pConceptOneRefPos <*> pMaybe pKeyDEFAULT <*> pBraces (pList1Sep pComma pViewObj)
+pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> pMaybe (pKey "DEFAULT") <*> pBraces (pList1Sep pComma pViewObj)
                            <*> pMaybe pHtmlView 
-                           <*  pKeyENDVIEW
+                           <*  pKey "ENDVIEW"
     where mkViewDef :: Label -> (P_Concept, Origin) -> Maybe String -> [P_ObjectDef] -> Maybe ViewHtmlTemplate -> P_ViewDef
           mkViewDef (Lbl nm _ _) (c, orig) mDefault objs mHtml =
             P_Vd { vd_pos = orig
@@ -428,11 +430,11 @@ pFancyViewDef  = mkViewDef <$  pKeyVIEW <*> pLabel <*> pConceptOneRefPos <*> pMa
                           
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate                 
-          pHtmlView = ViewHtmlTemplateFile <$ pKeyHTML <* pKeyTEMPLATE <*> pString
+          pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
 
 --- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentSepList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
-pViewDefLegacy = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRefPos <*> pParens(pList1Sep pComma pViewSegment)
+pViewDefLegacy = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <*> pParens(pList1Sep pComma pViewSegment)
     where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef
           vd (Lbl nm _ _) (c, orig) ats
               = P_Vd { vd_pos = orig
@@ -450,8 +452,8 @@ pViewDefLegacy = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRef
           --- ViewSegment ::= ViewAtt | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  <$> pViewAtt <|>
-                         P_ViewText <$ pKeyTXT <*> pString <|>
-                         P_ViewHtml <$ pKeyPRIMHTML <*> pString
+                         P_ViewText <$ pKey "TXT" <*> pString <|>
+                         P_ViewHtml <$ pKey "PRIMHTML" <*> pString
           --- ViewAtt ::= LabelProps? Term
           pViewAtt :: AmpParser P_ObjectDef
           pViewAtt = rebuild <$> pMaybe (try pLabelProps) <*> pTerm
@@ -477,8 +479,8 @@ pViewDefLegacy = vd <$ (pKeyVIEW <|> pKeyKEY) <*> pLabelProps <*> pConceptOneRef
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term SubInterface
 pInterface :: AmpParser P_Interface
-pInterface = lbl <$> (pKeyINTERFACE *> pADLid_val_pos) <*>
-                     (pMaybe $ pKeyCLASS *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
+pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
+                     (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
                      (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                     -- either  Prel _ nm
                                                                     --       or  PTrel _ nm sgn
@@ -508,17 +510,17 @@ pInterface = lbl <$> (pKeyINTERFACE *> pADLid_val_pos) <*>
           --- InterfaceArgs ::= '{' ADLidListList '}'
           pArgs   = pBraces(pList1Sep pComma (pList1 pADLid))
           --- Roles ::= 'FOR' RoleList
-          pRoles  = pKeyFOR *> pList1Sep pComma pRole
+          pRoles  = pKey "FOR" *> pList1Sep pComma pRole
 
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
-pSubInterface = (\(o,cl) objs -> P_Box o cl objs) <$> pBoxKey <*> pBox
-            <|> (\(n,p) -> P_InterfaceRef p n) <$ pKeyINTERFACE <*> pADLid_val_pos
-  where pBoxKey :: AmpParser (Origin, Maybe String)
-        pBoxKey = (\o mCl -> (o,mCl))     <$> posOf pKeyBOX <*> pMaybe (pChevrons pConid)
-              <|> (\o -> (o,Just "ROWS")) <$> posOf pKeyROWS
-              <|> (\o -> (o,Just "COLS")) <$> posOf pKeyCOLS
-              <|> (\o -> (o,Just "TABS")) <$> posOf pKeyTABS
+pSubInterface = P_Box <$> currPos <*> pBoxKey <*> pBox
+            <|> (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos
+  where pBoxKey :: AmpParser (Maybe String)
+        pBoxKey = id   <$  pKey "BOX" <*> pMaybe (pChevrons pConid)
+              <|> Just <$> pKey "ROWS"
+              <|> Just <$> pKey "COLS"
+              <|> Just <$> pKey "TABS"
 
 --- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
@@ -542,19 +544,20 @@ pBox              = pBrackets $ pList1Sep pComma pObjDef
 
 --- Sqlplug ::= 'SQLPLUG' ObjDef
 pSqlplug :: AmpParser P_ObjectDef
-pSqlplug          = posOf pKeySQLPLUG *> pObjDef
+pSqlplug          = pKey "SQLPLUG" *> pObjDef
 
 --- Phpplug ::= 'PHPPLUG' ObjDef
 pPhpplug :: AmpParser P_ObjectDef
-pPhpplug          = posOf pKeyPHPPLUG *> pObjDef
+pPhpplug          = pKey "PHPPLUG" *> pObjDef
 
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
-pPurpose          = rebuild <$> posOf pKeyPURPOSE  -- "EXPLAIN" has become obsolete
+pPurpose          = rebuild <$> currPos
+                            <*  pKeyPURPOSE  -- "EXPLAIN" has become obsolete
                             <*> pRef2Obj
                             <*> pMaybe pLanguageRef
                             <*> pMaybe pTextMarkup
-                            <*> ((pKeyREF *> pList1Sep pSemi pString) `opt` [])
+                            <*> ((pKey "REF" *> pList1Sep pSemi pString) `opt` [])
                             <*> pExpl
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
@@ -567,20 +570,20 @@ pPurpose          = rebuild <$> posOf pKeyPURPOSE  -- "EXPLAIN" has become obsol
                                      Just i  -> [take i t]  ++ splitOn s (drop (i+length s) t)
        --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' RelSign | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
-       pRef2Obj = PRef2ConceptDef  <$ pKeyCONCEPT   <*> pConceptName <|>
-                  PRef2Declaration <$ pKeyRELATION  <*> pRelSign     <|>
-                  PRef2Rule        <$ pKeyRULE      <*> pADLid       <|>
-                  PRef2IdentityDef <$ pKeyIDENT     <*> pADLid       <|>
-                  PRef2ViewDef     <$ pKeyVIEW      <*> pADLid       <|>
-                  PRef2Pattern     <$ pKeyPATTERN   <*> pADLid       <|>
-                  PRef2Process     <$ pKeyPROCESS   <*> pADLid       <|>
-                  PRef2Interface   <$ pKeyINTERFACE <*> pADLid       <|>
-                  PRef2Context     <$ pKeyCONTEXT   <*> pADLid
+       pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
+                  PRef2Declaration <$ pKey "RELATION"  <*> pRelSign     <|>
+                  PRef2Rule        <$ pKey "RULE"      <*> pADLid       <|>
+                  PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
+                  PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
+                  PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
+                  PRef2Process     <$ pKey "PROCESS"   <*> pADLid       <|>
+                  PRef2Interface   <$ pKey "INTERFACE" <*> pADLid       <|>
+                  PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 --- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
-pPopulation = try (prelpop <$> posOf pKeyPOPULATION <*> pRelSign     <* pKeyCONTAINS <*> pContent) <|>
-              try (pcptpop <$> posOf pKeyPOPULATION <*> pConceptName <* pKeyCONTAINS <*> pBrackets (pListSep pComma pString))
+pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent) <|>
+              try (pcptpop <$> currPos <* pKey "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pListSep pComma pString))
     where
       prelpop :: Origin -> TermPrim -> Pairs -> P_Population
       prelpop    orig     (Prel _ nm)  contents
@@ -604,18 +607,20 @@ pPopulation = try (prelpop <$> posOf pKeyPOPULATION <*> pRelSign     <* pKeyCONT
 
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' RelSignList
 pRoleRelation :: AmpParser P_RoleRelation
-pRoleRelation      = rr <$> posOf pKeyROLE              <*>
-                            pList1Sep pComma pRole <*
-                            pKeyEDITS                   <*>
-                            pList1Sep pComma pRelSign
+pRoleRelation      = rr <$> currPos
+                        <*  pKey "ROLE"
+                        <*> pList1Sep pComma pRole
+                        <*  pKey "EDITS"
+                        <*> pList1Sep pComma pRelSign
                      where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 pRoleRule :: AmpParser RoleRule
-pRoleRule         = rr <$> posOf pKeyROLE               <*>
-                           pList1Sep pComma pRole  <*
-                           pKeyMAINTAINS                <*>
-                           pList1Sep pComma pADLid
+pRoleRule         = rr <$> currPos
+                       <*  pKey "ROLE"
+                       <*> pList1Sep pComma pRole
+                       <*  pKey "MAINTAINS"
+                       <*> pList1Sep pComma pADLid
                     where rr p roles rulIds = Maintain roles rulIds p
 
 --- Role ::= ADLid
@@ -625,12 +630,12 @@ pRole =  Role <$> pADLid
 
 --- PrintThemes ::= 'THEMES' ConceptNameList
 pPrintThemes :: AmpParser [String]
-pPrintThemes = pKeyTHEMES
+pPrintThemes = pKey "THEMES"
             *> pList1Sep pComma pConceptName  -- Patterns, processes and concepts share the same name space, so these names must be checked whether the processes and patterns exist.
 
 --- Meaning ::= 'MEANING' LanguageRef? TextMarkup? (String | Expl)
 pMeaning :: AmpParser PMeaning
-pMeaning = rebuild <$  pKeyMEANING
+pMeaning = rebuild <$  pKey "MEANING"
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
                    <*> (pString <|> pExpl)
@@ -640,7 +645,7 @@ pMeaning = rebuild <$  pKeyMEANING
 
 --- Message ::= 'MESSAGE' LanguageRef? TextMarkup? (String | Expl)
 pMessage :: AmpParser PMessage
-pMessage = rebuild <$ pKeyMESSAGE
+pMessage = rebuild <$ pKey "MESSAGE"
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
                    <*> (pString <|> pExpl)
@@ -765,9 +770,9 @@ pTrm6 = Prim <$> pRelationRef  <|>
 
 --- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = pRelSign                                                                                <|>
-                    pid   <$> posOf (pKeyI)  <*> pMaybe (pBrackets pConceptOneRef)  <|>
-                    pfull <$> posOf (pKeyV)  <*> pMaybe pSign                                       <|>
+pRelationRef      = pRelSign                                                             <|>
+                    pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
+                    pfull <$> currPos <* pKey "V" <*> pMaybe pSign                       <|>
                     singl <$> valPosOf pAtom <*> pMaybe (pBrackets pConceptOneRef)
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
@@ -804,7 +809,7 @@ pConceptRef     = PCpt <$> pConceptName
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: AmpParser P_Concept
-pConceptOneRef  = (P_Singleton <$ pKeyONE) <|> pConceptRef
+pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 
 --- ConceptRefPos ::= Conid | String
 pConceptRefPos :: AmpParser (P_Concept, Origin)
@@ -814,7 +819,9 @@ pConceptRefPos     = conid <$> valPosOf pConid   <|>   conid <$> valPosOf pStrin
 
 --- ConceptOneRefPos ::= 'ONE' | Conid | String
 pConceptOneRefPos :: AmpParser (P_Concept, Origin)
-pConceptOneRefPos  = singl <$> posOf pKeyONE   <|>   conid <$> valPosOf pConid   <|>   conid <$> valPosOf pString
+pConceptOneRefPos  = singl <$> currPos <* pKey "ONE" <|>
+                     conid <$> valPosOf pConid       <|>
+                     conid <$> valPosOf pString
                      where singl :: Origin ->  (P_Concept, Origin)
                            singl orig     = (P_Singleton, orig)
                            conid :: (String, Origin) ->  (P_Concept, Origin)
