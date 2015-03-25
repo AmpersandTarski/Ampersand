@@ -14,7 +14,8 @@ import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
 -- Generates a simple ascii character
 printable :: Gen Char
-printable = suchThat arbitrary isPrint -- printable ASCII characters
+printable = suchThat arbitrary isValid
+    where isValid x = isPrint x && x <= 'Ñ' -- printable ASCII characters
 
 -- Generates a simple string of ascii characters
 safeStr :: Gen String

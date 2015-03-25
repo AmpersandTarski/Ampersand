@@ -91,7 +91,10 @@ runParser parser filename input =
   in case lexed of
     Left err -> Errors $ lexerErrors err
     --TODO: Do something with the warnings
-    Right (tokens, _)  -> parse parser tokens
+    Right (tokens, _)  ->
+        case parse parser tokens of
+            Checked result -> Checked result
+            Errors  msg    -> trace (show tokens) $ Errors msg
 
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.

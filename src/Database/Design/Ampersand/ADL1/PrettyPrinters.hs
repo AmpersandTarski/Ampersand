@@ -6,7 +6,7 @@ import Text.PrettyPrint.Leijen
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Database.Design.Ampersand.ADL1.Pair (Paire(..))
-import Data.List (intercalate)
+import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 
 pretty_print :: Pretty a => a -> String
@@ -46,7 +46,11 @@ quoteAll :: [String] -> [Doc]
 quoteAll = map quote
 
 quotePurpose :: String -> Doc
-quotePurpose x = text "{+" </> text x </> text "-}"
+quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
+        where escapeExpl = text.escapeCommentStart.escapeExplEnd
+              escapeCommentStart = escape "{-"
+              escapeExplEnd = escape "-}"
+              escape x = replace x (intersperse ' ' x)
 
 isId :: String -> Bool
 isId a = length a > 0 && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywords
