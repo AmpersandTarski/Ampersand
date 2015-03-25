@@ -435,9 +435,9 @@ pFancyViewDef  = mkViewDef <$> currPos
 
 --- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentSepList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
-pViewDefLegacy = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <*> pParens(pViewSegment `sepBy1` pComma)
-    where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef
-          vd (Lbl nm _ _) (c, orig) ats
+pViewDefLegacy = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabel <*> currPos <*> pConceptOneRef <*> pParens(pViewSegment `sepBy1` pComma)
+    where vd :: String -> Origin -> P_Concept -> [P_ViewSegment] -> P_ViewDef
+          vd nm orig c ats
               = P_Vd { vd_pos = orig
                      , vd_lbl = nm
                      , vd_cpt = c
@@ -812,28 +812,16 @@ pConceptRef     = PCpt <$> pConceptName
 pConceptOneRef :: AmpParser P_Concept
 pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 
---- ConceptOneRefPos ::= 'ONE' | Conid | String
-pConceptOneRefPos :: AmpParser (P_Concept, Origin)
-pConceptOneRefPos  = singl <$> currPos <* pKey "ONE" <|>
-                     conid <$> valPosOf pConid       <|>
-                     conid <$> valPosOf pString
-                     where singl :: Origin ->  (P_Concept, Origin)
-                           singl orig     = (P_Singleton, orig)
-                           conid :: (String, Origin) ->  (P_Concept, Origin)
-                           conid (c,orig) = (PCpt c, orig)
-
 --  (SJ) Why does a label have (optional) strings?
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
 --  (SJ April 15th, 2013) Since KEY has been replaced by IDENT and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
---- LabelProps ::= ADLid LabelPropsArgs? ':'
+--- LabelProps ::= ADLid ('{' ADLidListList '}')? ':'
 pLabelProps :: AmpParser Label
-pLabelProps       = lbl <$> pADLid_val_pos
+pLabelProps       = Lbl <$> pADLid
+                        <*> currPos
                         <*> (pArgs `opt` [])
                         <*  posOf pColon
-                    where lbl :: (String, Origin) -> [[String]] -> Label
-                          lbl (nm,pos') strs = Lbl nm pos' strs
-                          --- LabelPropsArgs ::= '{' ADLidListList '}'
-                          pArgs = pBraces $ (many1 pADLid) `sepBy1` pComma
+                    where pArgs = pBraces $ (many1 pADLid) `sepBy1` pComma
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
