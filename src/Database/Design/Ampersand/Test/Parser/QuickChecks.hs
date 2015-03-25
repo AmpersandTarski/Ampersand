@@ -27,7 +27,7 @@ checkArgs = Args
   { replay          = Nothing
   , maxSuccess      = 100
   , maxDiscardRatio = 10
-  , maxSize         = 100
+  , maxSize         = 50
   , chatty          = False
   }
 

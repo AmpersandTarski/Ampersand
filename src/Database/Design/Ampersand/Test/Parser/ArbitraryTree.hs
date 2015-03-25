@@ -5,6 +5,7 @@ module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
 import Test.QuickCheck
 import Data.Char
 import Control.Applicative
+import Debug.Trace
 
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer (keywords)
@@ -45,24 +46,31 @@ lower_id = suchThat identifier startLower
 -- Generates an object
 objTermPrim :: Int -> Gen (P_ObjDef TermPrim)
 objTermPrim 0 = objTermPrim 1 -- minimum of 1 sub interface
-objTermPrim i = makeObj relationRef (ifc i) genView
-    where ifc :: Int -> Gen (Maybe (P_SubIfc TermPrim))
-          ifc n = if n == 0 then return Nothing
-                  else Just <$> subIfc (makeObj relationRef (ifc (n`div`2)) genView)
+objTermPrim i = trace ("objTermPrim"++show i) $
+  makeObj relationRef ifc genView i
+    where ifc :: Int -> Gen (P_SubIfc TermPrim)
+          ifc n = trace ("ifc"++show n)$ subIfc objTermPrim (n`div`2)
           --TODO: The view is never tested like this
           genView = return Nothing
 
-makeObj :: Gen a -> Gen (Maybe (P_SubIfc a)) -> Gen (Maybe String) -> Gen (P_ObjDef a)
-makeObj genPrim genIfc genView =
-        P_Obj <$> lower_id  <*> arbitrary <*> term <*> genView <*> genIfc <*> args
+genObj :: Arbitrary a => Int -> Gen (P_ObjDef a)
+genObj = makeObj arbitrary genIfc (return Nothing)
+
+makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
+makeObj genPrim ifcGen genView n = trace ("makeObj"++show n) $
+        P_Obj <$> lower_id  <*> arbitrary <*> term <*> genView <*> ifc <*> args
               where args = listOf $ listOf1 safeStr1
                     term = Prim <$> genPrim
+                    ifc  = if n == 0 then return Nothing
+                           else Just <$> ifcGen (n`div`2)
 
-subIfc :: Gen (P_ObjDef a) -> Gen (P_SubIfc a)
-subIfc obj = oneof [
-        P_Box          <$> arbitrary <*> boxKey   <*> listOf1 obj,
-        P_InterfaceRef <$> arbitrary <*> safeStr1
-    ]
+genIfc :: Arbitrary a => Int -> Gen (P_SubIfc a)
+genIfc = subIfc genObj
+
+subIfc :: (Int -> Gen (P_ObjDef a)) -> Int -> Gen (P_SubIfc a)
+subIfc objGen n = trace ("subIfc"++show n)$
+    if n == 0 then P_InterfaceRef <$> arbitrary <*> safeStr1
+    else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
     where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 
 genPairs :: Gen Pairs
@@ -86,12 +94,12 @@ instance Arbitrary P_Context where
        <*> vectorOf 0 arbitrary -- processes
        <*> vectorOf 0 arbitrary -- rules
        <*> vectorOf 0 arbitrary -- relations
-       <*> vectorOf 1 arbitrary -- concepts
-       <*> vectorOf 1 arbitrary -- identities
-       <*> vectorOf 1 arbitrary -- views
+       <*> vectorOf 0 arbitrary -- concepts
+       <*> vectorOf 0 arbitrary -- identities
+       <*> vectorOf 0 arbitrary -- views
        <*> vectorOf 0 arbitrary -- gen definitions
-       <*> vectorOf 1 arbitrary -- interfaces
-       <*> vectorOf 1 arbitrary -- purposes
+       <*> vectorOf 0 arbitrary -- interfaces
+       <*> vectorOf 0 arbitrary -- purposes
        <*> vectorOf 0 arbitrary -- populations
        <*> vectorOf 0 arbitrary -- sqlplugs
        <*> vectorOf 1 arbitrary -- phpplugs
@@ -131,9 +139,10 @@ instance Arbitrary a => Arbitrary (Term a) where
                    sized (genTerm lv)
 
 genTerm :: Arbitrary a => Int -> Int -> Gen (Term a)
-genTerm lv n = if n <= 0 || lv > 6
-               then Prim <$> arbitrary
-               else oneof options
+genTerm lv n = trace ("genTerm "++show lv++" "++show n)$
+               if n == 0
+               then trace "genTerm.Prim"$Prim <$> arbitrary
+               else trace "oneof options"$oneof options
     where gen :: Arbitrary a => Int -> Gen (Term a)
           gen l = genTerm l (n`div`2)
   
@@ -168,7 +177,8 @@ genTerm lv n = if n <= 0 || lv > 6
              Prim <$> arbitrary]]
 
 instance Arbitrary TermPrim where
-    arbitrary = oneof [
+    arbitrary = trace "TermPrim" $
+        oneof [
            PI <$> arbitrary,
            Pid <$> arbitrary <*> genConceptOne,
            Patm <$> arbitrary <*> identifier <*> maybeConceptOne,
@@ -180,7 +190,8 @@ instance Arbitrary TermPrim where
       where maybeConceptOne = oneof [return Nothing, Just <$> genConceptOne]
 
 relationRef :: Gen TermPrim
-relationRef = oneof [
+relationRef = trace "relationRef" $
+    oneof [
        Prel  <$> arbitrary <*> lower_id,
        PTrel <$> arbitrary <*> lower_id <*> arbitrary
     ]
@@ -216,24 +227,25 @@ instance Arbitrary Paire where
     arbitrary = Paire <$> arbitrary <*> arbitrary
 
 instance Arbitrary P_Population where
-    arbitrary = oneof [
+    arbitrary =trace "P_Population"$
+        oneof [
           P_RelPopu <$> lower_id <*> arbitrary <*> genPairs,
           P_TRelPop <$> lower_id <*> arbitrary <*> arbitrary <*> genPairs,
           P_CptPopu <$> lower_id <*> arbitrary <*> listOf safeStr
         ]
 
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
+    arbitrary = trace "P_Ifc"$P_Ifc <$> safeStr1 <*> maybeSafeStr
                       <*> listOf relationRef <*> args <*> listOf arbitrary
-                      <*> sized objTermPrim <*> arbitrary <*> safeStr--TODO: Remove this 1
+                      <*> sized objTermPrim <*> arbitrary <*> safeStr
                    where args = listOf $ listOf1 safeStr
                          maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
-    arbitrary = makeObj arbitrary arbitrary (return Nothing)
+    arbitrary = sized genObj
 
 instance Arbitrary a => Arbitrary (P_SubIfc a) where
-    arbitrary = subIfc arbitrary
+    arbitrary = sized genIfc
 
 instance Arbitrary P_IdentDef where
     arbitrary = P_Id <$> arbitrary <*> safeStr <*> arbitrary <*> listOf1 arbitrary
@@ -242,27 +254,29 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized objTermPrim
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary = oneof [
-                P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                     <*> return True <*> return Nothing <*> listOf1 arbitrary,
-                P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                     <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary)]
+    arbitrary = trace "P_ViewD"$
+        oneof [P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+                    <*> return True <*> return Nothing <*> listOf1 arbitrary,
+               P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+                    <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary)]
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
 
 instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
-    arbitrary = oneof [
+    arbitrary = trace "P_ViewSegmt"$
+        oneof [
             P_ViewExp <$> arbitrary,
             P_ViewText <$> safeStr,
             P_ViewHtml <$> safeStr
         ]
 
 instance Arbitrary PPurpose where
-    arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr1
+    arbitrary = trace "PRef2"$ PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr1
 
 instance Arbitrary PRef2Obj where
-    arbitrary = oneof [
+    arbitrary = trace "PRef2Obj"$
+        oneof [
             PRef2ConceptDef <$> safeStr,
             PRef2Declaration <$> relationRef,
             PRef2Rule <$> upper_id,
@@ -292,7 +306,8 @@ instance Arbitrary P_Sign where
     arbitrary = P_Sign <$> arbitrary <*> arbitrary
 
 instance Arbitrary P_Gen where
-    arbitrary = oneof [
+    arbitrary = trace "P_Gen"$
+        oneof [
             P_Cy <$> concept <*> listOf1 arbitrary <*> arbitrary,
             PGen <$> concept <*> concept <*> arbitrary
         ]

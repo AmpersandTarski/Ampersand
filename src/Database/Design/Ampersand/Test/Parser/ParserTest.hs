@@ -32,5 +32,7 @@ parseReparse file txt = if isParsed then
                             else trace ("Error pretty printing parse tree:\n" ++ show parsed) (parsed, False) 
                         else (parsed,isParsed)
                   where (parsed,isParsed) = run file txt
-                        (reparsed,isReparsed) = run (file ++ "**pretty") $ pretty_print parsed
+                        (reparsed,isReparsed) = run (file ++ "**pretty")
+                            (--trace ("Pretty:"++pretty_print parsed)
+                            (pretty_print parsed))
                         run nm text = unguard nm text $ runParser pContext nm text
