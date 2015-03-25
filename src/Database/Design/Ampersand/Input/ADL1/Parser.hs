@@ -218,7 +218,7 @@ pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey
                           }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
-                 pCterm  = f <$> pList1Sep pOpIntersection pCterm1
+                 pCterm  = f <$> pList1Sep (pOperator "/\\") pCterm1
                  pCterm1 = g <$> pConceptRef                        <|>
                            h <$> pParens pCterm  -- brackets are allowed for educational reasons.
                  f ccs = concat ccs
@@ -267,7 +267,7 @@ pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
 --- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
 --TODO: This is WAY too long!
 pRelationDef :: AmpParser P_Declaration
-pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef  <*> pFun  <*> pConceptRef
+pRelationDef      = ( rebuild <$> pVarid  <*> currPos <* pOperator "::" <*> pConceptRef  <*> pFun  <*> pConceptRef
                       <|> rbd <$> currPos <* pKey "RELATION" <*> pVarid  <*> pSign
                     )
                       <*> ((True <$ pKey "BYPLUG") `opt` False)
@@ -275,8 +275,8 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef
                       <*> ((True <$ pKey "BYPLUG") `opt` False)
                       <*> (pPragma `opt` [])
                       <*> pList pMeaning
-                      <*> ((pEqual *> pContent) `opt` [])
-                      <* (pOpDot `opt` "") -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
+                      <*> ((pOperator "=" *> pContent) `opt` [])
+                      <* (pOperator "." `opt` "") -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                     where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
                             = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
                               where props'= nub (props `uni` fun')
@@ -314,9 +314,9 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef
                           
                           --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
                           pFun :: AmpParser [Prop]
-                          pFun    = []        <$ pAsterisk      <|>
-                                    [Uni,Tot] <$ pOpRightArrow  <|>
-                                    [Sur,Inj] <$ pOpLeftArrow   <|>
+                          pFun    = []        <$ pOperator "*"  <|>
+                                    [Uni,Tot] <$ pOperator "->" <|>
+                                    [Sur,Inj] <$ pOperator "<-" <|>
                                     id        <$> pBrackets pMults
                               where
                                 --- Mults ::= Mult '-' Mult
@@ -328,9 +328,9 @@ pRelationDef      = ( rebuild <$> pVarid  <*> posOf pOpRelation  <*> pConceptRef
                                 --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
                                 pMult :: (Prop,Prop) -> AmpParser [Prop]
                                 pMult (ts,ui) = (++) <$> (([]    <$ pZero) <|> ([ts] <$ pOne) )
-                                                      <*  pOpMultiplicity
-                                                      <*> (([ui] <$ pOne)  <|> ([]   <$ pAsterisk )) <|>
-                                                [] <$ pAsterisk  <|>
+                                                      <*  pOperator ".."
+                                                      <*> (([ui] <$ pOne)  <|> ([]   <$ pOperator "*" )) <|>
+                                                [] <$ pOperator "*"  <|>
                                                 [ts,ui] <$ pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
@@ -687,8 +687,8 @@ In practice, we have it a little different.
 
 {- In theory, the expression is parsed by:
 pRule :: AmpParser (Term TermPrim)
-pRule  =  fEequ <$> pTrm1  <*>  posOf (pEqual)  <*>  pTerm   <|>
-          fEimp <$> pTrm1  <*>  posOf (pOpImplication) <*>  pTerm   <|>
+pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
+          fEimp <$> pTrm1  <*>  posOf (pOperator "|-") <*>  pTerm   <|>
           pTrm1
           where fequ  lExp orig rExp = PEqu orig lExp rExp
                 fEimp lExp orig rExp = PImp orig lExp rExp
@@ -696,8 +696,8 @@ pRule  =  fEequ <$> pTrm1  <*>  posOf (pEqual)  <*>  pTerm   <|>
 -}
 --- Rule ::= Term ('=' Term | '|-' Term)?
 pRule :: AmpParser (Term TermPrim)
-pRule  =  pTerm <??> (fEqu  <$> posOf (pEqual)         <*> pTerm <|>
-                      fImpl <$> posOf (pOpImplication) <*> pTerm )
+pRule  =  pTerm <??> (fEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
+                      fImpl <$> currPos <* pOperator "|-" <*> pTerm )
           where fEqu  orig rExp lExp = PEqu orig lExp rExp
                 fImpl orig rExp lExp = PImp orig lExp rExp
 
@@ -712,9 +712,9 @@ The functions pars and f have arguments 'combinator' and 'operator' only to avoi
 -}
 --- Term ::= Trm2 (('\/' Trm2)* | ('\/' Trm2)*)?
 pTerm :: AmpParser (Term TermPrim)
-pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc pOpIntersection <|> f PUni <$> pars PUni pOpUnion)
-          where pars combinator operator
-                 = g <$> posOf operator <*> pTrm2 <*> pMaybe (pars combinator operator)
+pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
+          where pars combinator op
+                 = g <$> currPos <* pOperator op <*> pTrm2 <*> pMaybe (pars combinator op)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
                 f combinator (orig, y) x = combinator orig x y
@@ -728,16 +728,16 @@ pTrm2   = pTrm3 <??> (f <$> posOf pDash <*> pTrm3)
 -- The left factored version of right- and left residuals:
 --- Trm3 ::= Trm4 ('/' Trm4 | '\' Trm4 | '<>' Trm4)?
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (fLrs <$> posOf pOpLeftResidual  <*> pTrm4 <|>
-                      fRrs <$> posOf pOpRightResidual <*> pTrm4 <|>
-                      fDia <$> posOf pOpDiamond       <*> pTrm4 )
+pTrm3  =  pTrm4 <??> (fLrs <$> currPos <* pOperator "/"  <*> pTrm4 <|>
+                      fRrs <$> currPos <* pOperator "\\" <*> pTrm4 <|>
+                      fDia <$> currPos <* pOperator "<>" <*> pTrm4 )
           where fLrs orig rExp lExp = PLrs orig lExp rExp
                 fRrs orig rExp lExp = PRrs orig lExp rExp
                 fDia orig rExp lExp = PDia orig lExp rExp
 
 {- by the way, a slightly different way of getting exactly the same result is:
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (f <$>  (valPosOf pOpLeftResidual <|> valPosOf pOpRightResidual <|> valPosOf pOpDiamond) <*> pTrm4 )
+pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "\\") <|> valPosOf (pOperator "<>")) <*> pTrm4 )
           where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
                 f ("/" , orig) rExp lExp = PLrs orig lExp rExp
                 f (_   , orig) rExp lExp = PDia orig lExp rExp
@@ -746,18 +746,18 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf pOpLeftResidual <|> valPosOf pOpRightResi
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
-pTrm4   = pTrm5 <??> (f PCps <$> pars PCps pSemi     <|>
-                      f PRad <$> pars PRad pOpRelAdd <|>
-                      f PPrd <$> pars PPrd pOpProduct)
-          where pars combinator operator
-                 = g <$> posOf operator <*> pTrm5 <*> pMaybe (pars combinator operator)
+pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
+                      f PRad <$> pars PRad "!" <|>
+                      f PPrd <$> pars PPrd "#")
+          where pars combinator op
+                 = g <$> currPos <* pOperator op <*> pTrm5 <*> pMaybe (pars combinator op)
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
                 f combinator (orig, y) x = combinator orig x y
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
-pTrm5  =  f <$> pList (valPosOf pDash) <*> pTrm6  <*> pList (valPosOf (pOpConversion <|> pAsterisk <|> pPlus ))
+pTrm5  =  f <$> pList (valPosOf pDash) <*> pTrm6  <*> pList (valPosOf (pOperator "~" <|> pOperator "*" <|> pOperator "+" ))
           where f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
                 f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)
                 f ms pe (("+",orig):ps) = PKl1 orig (f ms pe ps)              -- e+  Kleene closure (plus)
@@ -795,7 +795,7 @@ pSign :: AmpParser (P_Sign, Origin)
 pSign = valPosOf $ pBrackets concepts
    where
      concepts :: AmpParser P_Sign
-     concepts = mkSign <$> pConceptOneRef <*> pMaybe (pAsterisk *> pConceptOneRef)
+     concepts = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
      
      mkSign :: P_Concept -> Maybe P_Concept -> P_Sign
      mkSign a (Just b) = P_Sign a b
@@ -856,7 +856,7 @@ pContent      = try (pBrackets (pListSep pComma pRecord)) <|>
     --- RecordList ::= Record (',' Record)*
     --- Record ::= String '*' String
     pRecord :: AmpParser Paire
-    pRecord = mkPair<$> pString <* pAsterisk <*> pString
+    pRecord = mkPair<$> pString <* pOperator "*" <*> pString
     --- RecordObsList ::= RecordObsList (';' RecordObsList)
     --- RecordObs ::= '(' String ',' String ')'
     pRecordObs :: AmpParser Paire

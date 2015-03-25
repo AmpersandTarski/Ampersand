@@ -15,10 +15,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Keywords
     pKey,
     -- Operators
-    pOpImplication, pDash, pOpRightArrow, pOpLeftArrow, pEqual, pOpConversion,
-    pPlus, pAsterisk, pSemi, pOpRelAdd, pOpProduct, pOpRelation,
-    pColon, pOpUnion, pOpIntersection, pOpRightResidual, pOpLeftResidual, pOpDiamond,
-    pOpMultiplicity, pOpDot,
+    pOperator, pDash, pSemi, pColon,
     -- Integers
     pZero, pOne, pInteger
 ) where
@@ -44,6 +41,7 @@ a <$ p = do { _ <- p; return a }
 (<**>) :: AmpParser a -> AmpParser (a -> b) -> AmpParser b
 p <**> q = (\x f -> f x) CA.<$> p CA.<*> q
 
+--TODO: Invert the order of the result
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
 p <??> q = p <**> (q `opt` id)
 
@@ -97,65 +95,14 @@ pKey key = match (LexKeyword key)
 pOperator :: String -> AmpParser String
 pOperator op = match (LexOperator op)
 
-pOpImplication :: AmpParser String
-pOpImplication = pOperator "|-"
-
 pDash :: AmpParser String
 pDash = pOperator "-"
-
-pOpRightArrow :: AmpParser String
-pOpRightArrow = pOperator "->"
-
-pOpLeftArrow :: AmpParser String
-pOpLeftArrow = pOperator "<-"
-
-pEqual :: AmpParser String
-pEqual = pOperator "="
-
-pOpConversion :: AmpParser String
-pOpConversion = pOperator "~"
-
-pPlus :: AmpParser String
-pPlus = pOperator "+"
-
-pAsterisk :: AmpParser String
-pAsterisk = pOperator "*"
 
 pSemi :: AmpParser String
 pSemi = pOperator ";"
 
-pOpRelAdd :: AmpParser String
-pOpRelAdd = pOperator "!"
-
-pOpProduct :: AmpParser String
-pOpProduct = pOperator "#"
-
-pOpRelation :: AmpParser String
-pOpRelation = pOperator "::"
-
 pColon :: AmpParser String
 pColon = pOperator ":"
-
-pOpUnion :: AmpParser String
-pOpUnion = pOperator "\\/"
-
-pOpIntersection :: AmpParser String
-pOpIntersection = pOperator "/\\"
-
-pOpRightResidual :: AmpParser String
-pOpRightResidual = pOperator "\\"
-
-pOpLeftResidual :: AmpParser String
-pOpLeftResidual = pOperator "/"
-
-pOpDiamond :: AmpParser String
-pOpDiamond = pOperator "<>"
-
-pOpMultiplicity :: AmpParser String
-pOpMultiplicity = pOperator ".."
-
-pOpDot :: AmpParser String
-pOpDot = pOperator "."
 
 -----------------------------------------------------------
 -- Other token parsers
