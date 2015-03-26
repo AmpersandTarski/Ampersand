@@ -231,8 +231,8 @@ generateRules fSpec =
        genMPairView Nothing                  = []
        genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs
 
-       genPairViewSeg (PairViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]
-       genPairViewSeg (PairViewExp srcOrTgt exp) =
+       genPairViewSeg (PairViewText _ str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]
+       genPairViewSeg (PairViewExp _ srcOrTgt exp) =
          [ "array ( 'segmentType' => 'Exp'"
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)

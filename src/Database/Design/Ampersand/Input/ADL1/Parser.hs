@@ -269,11 +269,11 @@ pRuleDef =  rebuild <$> pKey_pos "RULE"
                  pPairView = PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
 
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
-                 pPairViewSegment = PairViewExp <$> pSrcOrTgt <*>  pTerm
-                                <|> PairViewText <$ pKey "TXT" <*> pString
-
-pSrcOrTgt :: AmpParser SrcOrTgt
-pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
+                 pPairViewSegment = rebuildSrc <$> pKey_pos "SRC" <*> pTerm 
+                                <|> rebuildTgt <$> pKey_pos "TGT" <*> pTerm
+                                <|> PairViewText <$> pKey_pos "TXT" <*> pString
+                   where rebuildSrc p t = PairViewExp p Src t
+                         rebuildTgt p t = PairViewExp p Tgt t
 
 pRelationDef :: AmpParser P_Declaration
 pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*> pFun  <*> pConceptRef

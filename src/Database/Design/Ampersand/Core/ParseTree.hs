@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
@@ -49,6 +50,8 @@ import Data.Foldable
 import Prelude hiding (foldr, sequence)
 import Control.Applicative
 import Data.Typeable
+import GHC.Generics (Generic)
+import Data.Hashable
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -321,7 +324,8 @@ instance Traced a => Traced (Term a) where
    PCpl orig _    -> orig
    PBrk orig _    -> orig
 
-data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord)
+data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic)
+instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
@@ -330,10 +334,25 @@ isSrc :: SrcOrTgt -> Bool
 isSrc Src = True
 isSrc Tgt = False
 
-data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq)
-data PairViewSegment a = PairViewText String
-                       | PairViewExp SrcOrTgt a
-         deriving (Show, Typeable, Eq)
+data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq, Generic)
+instance Hashable a => Hashable (PairView a)
+instance Traced a => Traced (PairView a) where
+  origin pv = 
+    case ppv_segs pv of
+       [] -> fatal 342 "An empty PairView must not occur"
+       xs -> origin (head xs)   
+data PairViewSegment a = 
+    PairViewText{ pvsOrg :: Origin
+                , pvsStr :: String
+                }
+  | PairViewExp { pvsOrg :: Origin
+                , pvsSoT :: SrcOrTgt
+                , pvsExp :: a
+                } deriving (Show, Typeable, Eq, Generic)
+instance Hashable a => Hashable (PairViewSegment a)
+instance Traced (PairViewSegment a) where
+  origin = pvsOrg
+
 -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
 newtype PairViewTerm a = PairViewTerm (PairView (Term a))
 newtype PairViewSegmentTerm a = PairViewSegmentTerm (PairViewSegment (Term a))
@@ -347,8 +366,8 @@ instance Traversable PairViewTerm where
 instance Functor PairViewTerm where fmap = fmapDefault
 instance Foldable PairViewTerm where foldMap = foldMapDefault
 instance Traversable PairViewSegment where
-  traverse _ (PairViewText s) = pure (PairViewText s)
-  traverse f (PairViewExp st x) = PairViewExp st <$> f x
+  traverse _ (PairViewText ori s) = pure (PairViewText ori s)
+  traverse f (PairViewExp ori st x) = PairViewExp ori st <$> f x
 instance Functor PairViewSegment where fmap = fmapDefault
 instance Foldable PairViewSegment where foldMap = foldMapDefault
 instance Traversable PairView where

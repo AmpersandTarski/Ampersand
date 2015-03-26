@@ -276,8 +276,8 @@ instance MakeMeta a => MakeMeta (PairView a) where
 instance MakeMeta a => MakeMeta (PairViewSegment a) where
   makeMeta f sgmt
     = case sgmt of
-       PairViewText{}     -> sgmt
-       PairViewExp st a -> PairViewExp st (makeMeta f a)
+       PairViewText{} -> sgmt
+       PairViewExp{}  -> sgmt{pvsExp = makeMeta f (pvsExp sgmt)}
 
 instance MakeMeta a => MakeMeta (Term a) where
   makeMeta f t

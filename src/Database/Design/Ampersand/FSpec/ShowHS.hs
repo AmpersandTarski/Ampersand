@@ -566,8 +566,8 @@ instance ShowHS (PairView Expression) where
   showHS opts indent (PairView pvs) = "PairView "++showHS opts indent pvs
 
 instance ShowHS (PairViewSegment Expression) where
-  showHS _     _ (PairViewText txt) = "PairViewText "++show txt
-  showHS opts _ (PairViewExp srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS opts "" e++")"
+  showHS _     _ (PairViewText _ txt) = "PairViewText "++show txt
+  showHS opts _ (PairViewExp _ srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS opts "" e++")"
 
 instance ShowHSName Rule where
  showHSName r = haskellIdentifier ("rule_"++ rrnm r)

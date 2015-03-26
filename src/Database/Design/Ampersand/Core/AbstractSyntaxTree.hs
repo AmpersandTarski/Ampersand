@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Meta(..)
@@ -57,6 +58,8 @@ import Text.Pandoc hiding (Meta)
 import Data.Function
 import Data.List (intercalate,nub,delete)
 import Data.Typeable
+import GHC.Generics (Generic)
+import Data.Hashable
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -250,6 +253,15 @@ instance Unique Declaration where
       Sgn{} -> name d++uniqueShow False (decsgn d)
       Isn{} -> "I["++uniqueShow False (detyp d)++"]"
       Vs{}  -> "V"++uniqueShow False (decsgn d)
+instance Hashable Declaration where
+   hashWithSalt s dcl = 
+     s `hashWithSalt` constructorNr `hashWithSalt` (origin dcl)
+     where constructorNr :: Int
+           constructorNr 
+             = case dcl of 
+                 Sgn{} -> 0
+                 Isn{} -> 1
+                 Vs{}  -> 2 
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
   showsPrec _ decl@Sgn{}
    = showString (case decl of
@@ -546,11 +558,11 @@ data Expression
       | EEps A_Concept Sign            -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Sign                      -- ^ Cartesian product relation
       | EMp1 String A_Concept          -- ^ constant (string between single quotes)
-      deriving (Eq, Prelude.Ord, Show, Typeable)
+      deriving (Eq, Prelude.Ord, Show, Typeable, Generic)
 instance Unique Expression where
   showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
-  
+instance Hashable Expression
 instance Unique (PairView Expression) where
   showUnique = show
 instance Unique (PairViewSegment Expression) where
@@ -662,7 +674,12 @@ instance Eq A_Concept where
    _ == _ = False
 instance Unique A_Concept where
   showUnique = name
-
+instance Hashable A_Concept where
+  hashWithSalt s cpt =
+     s `hashWithSalt` (case cpt of
+                        PlainConcept{} -> (0::Int) `hashWithSalt` name cpt
+                        ONE            -> (1::Int)
+                      ) 
 instance Named A_Concept where
   name PlainConcept{cptnm = nm} = nm
   name ONE = "ONE"
@@ -670,8 +687,8 @@ instance Named A_Concept where
 instance Show A_Concept where
   showsPrec _ c = showString (name c)
 
-data Sign = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable)
-
+data Sign = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable, Generic)
+instance Hashable Sign
 instance Show Sign where
   showsPrec _ (Sign s t) =
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )

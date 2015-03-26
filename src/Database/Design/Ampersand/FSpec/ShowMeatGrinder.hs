@@ -7,6 +7,8 @@ where
 import Data.List
 import Data.Char
 import Data.Ord
+import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
+import Data.Typeable
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.Motivations
@@ -372,20 +374,20 @@ instance GenericPopulations (PairView Expression) where
             ]
       ]++
       case pvs of
-        PairViewText str -> 
+        PairViewText{} -> 
           [Pop "text" "PairViewSegment" "String"
-               [(uri pvs, show str)] 
+               [(uri pvs, pvsStr pvs)] 
           ]
-        PairViewExp sot expr -> 
+        PairViewExp{} -> 
           [Pop "srcOrTgt" "PairViewSegment" "SourceOrTarget"
-               [(uri pvs, show sot)] 
+               [(uri pvs, show (pvsSoT pvs))] 
           ,Pop "expTgt" "PairViewSegment" "Concept"
-               [(uri pvs, uri (case sot of
-                                Src -> source expr
-                                Tgt -> target expr
+               [(uri pvs, uri (case pvsSoT pvs of
+                                Src -> source (pvsExp pvs)
+                                Tgt -> target (pvsExp pvs)
                               ))] 
           ,Pop "expSQL" "PairViewSegment" "MySQLQuery"
-               [(uri pvs, show (prettySQLQuery fSpec 0 expr))] 
+               [(uri pvs, prettySQLQuery fSpec 0 (pvsExp pvs))] 
           ]
          
       
@@ -497,11 +499,13 @@ instance AdlId Role
 instance AdlId Sign
 instance AdlId Conjunct
 instance AdlId (PairView Expression)
+  where uri x = show (typeOf x)++show (hash x)
 instance AdlId (PairViewSegment Expression)
-
+  where uri x = show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
 instance AdlId Bool where
  uri = showUnique
 instance AdlId a => AdlId [a] where
+
 
 mkAtom :: FSpec  -> A_Concept -> String -> AtomID
 mkAtom fSpec cpt value = 

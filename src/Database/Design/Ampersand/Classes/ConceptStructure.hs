@@ -205,10 +205,12 @@ instance ConceptStructure ExplObj where
   expressionsIn _ = []
 
 instance ConceptStructure (PairViewSegment Expression) where
-  concs       (PairViewText _)  = []
-  concs       (PairViewExp _ x) = concs x
-  expressionsIn    (PairViewText _)  = []
-  expressionsIn    (PairViewExp _ x) = expressionsIn x
+  concs pvs = case pvs of
+      PairViewText{} -> []
+      PairViewExp{}  -> concs (pvsExp pvs)
+  expressionsIn pvs = case pvs of
+      PairViewText{} -> []
+      PairViewExp{}  -> expressionsIn (pvsExp pvs)
 
 instance ConceptStructure A_Gen where
   concs g@Isa{}  = nub [gengen g,genspc g]

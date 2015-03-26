@@ -181,8 +181,8 @@ instance ShowADL Pattern where
     ++ "ENDPATTERN"
 
 instance ShowADL (PairViewSegment Expression) where
- showADL (PairViewText str)         = "TXT " ++ show str
- showADL (PairViewExp srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
+ showADL (PairViewText _ str)       = "TXT " ++ show str
+ showADL (PairViewExp _ srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
 
 instance ShowADL SrcOrTgt where
  showADL Src = "SRC"

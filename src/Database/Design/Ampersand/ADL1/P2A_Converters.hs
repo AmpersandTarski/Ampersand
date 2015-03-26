@@ -673,13 +673,13 @@ pCtx2aCtx' _
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst
     typeCheckPairViewSeg :: Origin -> Expression -> (PairViewSegment (Term (TermPrim, DisambPrim))) -> Guarded (PairViewSegment Expression)
-    typeCheckPairViewSeg _ _ (PairViewText x) = pure (PairViewText x)
-    typeCheckPairViewSeg o t (PairViewExp s x)
+    typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
+    typeCheckPairViewSeg o t (PairViewExp orig s x)
      = unguard $
          (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
                           [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
                           lst -> if b || and (map (name (source e) `elem`) lst)
-                                 then pure (PairViewExp s e)
+                                 then pure (PairViewExp orig s e)
                                  else mustBeBound (origin (fmap fst x)) [(Src, e)])
          <$> typecheckTerm x
 
