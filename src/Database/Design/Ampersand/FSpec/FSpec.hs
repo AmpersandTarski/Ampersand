@@ -90,7 +90,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
-                   , crudInfo ::     CrudInfo                 -- ^ 
+                   , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.

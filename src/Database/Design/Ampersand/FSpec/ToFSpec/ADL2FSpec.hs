@@ -41,10 +41,10 @@ makeFSpec opts context = fSpec
               , vprocesses   = allProcs
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
-              , interfaceS   = map enrichIfc (ctxifcs context) -- interfaces specified in the Ampersand script
+              , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
-                                      || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
+                                      || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fSwitchboard = switchboard fSpec
               , fActivities  = allActivities
@@ -56,15 +56,15 @@ makeFSpec opts context = fSpec
               , invars       = invariants context
               , allRules     = allrules
               , vconjs       = allConjs
-              , allConjsPerRule = allConjsPerRule'
-              , allConjsPerDecl = allConjsPerDecl'
-              , allConjsPerConcept = allConjsPerConcept'
+              , allConjsPerRule = fSpecAllConjsPerRule
+              , allConjsPerDecl = fSpecAllConjsPerDecl
+              , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
-              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
               , allUsedDecls = relsUsedIn context
-              , allDecls     = relsDefdIn context
-              , allConcepts  = concs context `uni` [ONE]
+              , allDecls     = fSpecAllDecls
+              , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
               , fsisa        = let f gen = case gen of
                                             Isa{} -> [(genspc gen, gengen gen)]
@@ -77,7 +77,7 @@ makeFSpec opts context = fSpec
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
-              , crudInfo     = CrudInfo
+              , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
               , initialPops  = initialpops
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
@@ -88,6 +88,11 @@ makeFSpec opts context = fSpec
                                          , not $ null viols
                                          ]
               }
+              
+     fSpecAllConcepts = concs context `uni` [ONE]
+     fSpecAllDecls = relsDefdIn context
+     fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
+     
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context)
                      else ctxthms context
@@ -114,10 +119,10 @@ makeFSpec opts context = fSpec
        where populations = ctxpopus context++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
-     allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
-     allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
-     allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
-     allQuads = nub $ makeAllQuads allConjsPerRule'
+     fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     fSpecAllConjsPerConcept = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
+     allQuads = makeAllQuads fSpecAllConjsPerRule
 
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules
