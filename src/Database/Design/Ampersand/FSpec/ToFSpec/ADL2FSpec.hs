@@ -1,23 +1,24 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec, preEmpt, editable) where
 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
-import Database.Design.Ampersand.ADL1.Rule
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-import Database.Design.Ampersand.FSpec.ShowADL
-import Text.Pandoc
 import Data.Char
 import Data.List
 import Data.Maybe
+import Text.Pandoc
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.ADL1.Rule
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.Poset
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.FSpec.Crud
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
+import Database.Design.Ampersand.FSpec.ToFSpec.Calc
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
+import Database.Design.Ampersand.FSpec.ShowADL
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -32,7 +33,7 @@ makeFSpec opts context = fSpec
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
               , rulesInScope = rulesInThemesInScope
-              , declsInScope = declsInThemesInScope
+              , declsInScope = declsInThemesInScope 
               , concsInScope = concsInThemesInScope
               , cDefsInScope = cDefsInThemesInScope
               , gensInScope  = gensInThemesInScope
@@ -76,6 +77,7 @@ makeFSpec opts context = fSpec
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
+              , crudInfo     = CrudInfo
               , initialPops  = initialpops
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)

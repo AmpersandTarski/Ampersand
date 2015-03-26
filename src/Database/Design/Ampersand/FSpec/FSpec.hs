@@ -29,18 +29,17 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
-          )
-where
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc.Options (Options)
-import Database.Design.Ampersand.ADL1.Pair
-import Database.Design.Ampersand.ADL1.Expression (notCpl)
+          ) where
+          
 import Data.List
 import Data.Typeable
-
---import Debug.Trace
+import Database.Design.Ampersand.ADL1.Pair
+import Database.Design.Ampersand.ADL1.Expression (notCpl)
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.FSpec.Crud
+import Database.Design.Ampersand.Misc.Options (Options)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
@@ -91,6 +90,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
+                   , crudInfo ::     CrudInfo                 -- ^ 
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
