@@ -345,11 +345,26 @@ instance GenericPopulations Rule where
              [(uri rul,(uri.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
              [(uri rul,uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
---TODO: Add pairView:
---      , Pop "pairView"  "Rule" "PairView"
---             [(uri rul,()]
+      , Pop "pairView"  "Rule" "PairView"
+             [(uri rul, uri pve) | Just pve <- [rrviol rul] ]
       ]
-       
+instance GenericPopulations (PairView Expression) where
+ generics fSpec pve = 
+      [ Comment " "
+      , Pop "segment" "PairView" "PairViewSegment"
+            [(uri pve,uri pvseg) | pvseg <- ppv_segs pve]
+      ]
+      ++   concatMap (generics fSpec) (ppv_segs pve)
+      
+instance GenericPopulations (PairViewSegment Expression) where
+ generics fSpec pvs = 
+      [ Comment "TODO (PairViewSegment Expression) "
+      , Pop "segmentType" "PairViewSegment" "PairViewSegmentType"
+            [(uri pvs, case pvs of 
+                         PairViewText{} -> "Text"
+                         PairViewExp{}  -> "Exp")
+            ]
+      ]
 instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
@@ -457,7 +472,9 @@ instance AdlId Rule
 instance AdlId Role
 instance AdlId Sign
 instance AdlId Conjunct
- 
+instance AdlId (PairView Expression)
+instance AdlId (PairViewSegment Expression)
+
 instance AdlId Bool where
  uri = showUnique
 instance AdlId a => AdlId [a] where

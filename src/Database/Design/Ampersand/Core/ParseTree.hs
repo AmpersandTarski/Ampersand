@@ -330,10 +330,10 @@ isSrc :: SrcOrTgt -> Bool
 isSrc Src = True
 isSrc Tgt = False
 
-data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving Show
+data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq)
 data PairViewSegment a = PairViewText String
                        | PairViewExp SrcOrTgt a
-         deriving Show
+         deriving (Show, Typeable, Eq)
 -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
 newtype PairViewTerm a = PairViewTerm (PairView (Term a))
 newtype PairViewSegmentTerm a = PairViewSegmentTerm (PairViewSegment (Term a))

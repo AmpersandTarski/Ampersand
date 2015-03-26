@@ -550,7 +550,11 @@ data Expression
 instance Unique Expression where
   showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
-
+  
+instance Unique (PairView Expression) where
+  showUnique = show
+instance Unique (PairViewSegment Expression) where
+  showUnique = show
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- implication
 infixl 2 ./\.   -- intersection
