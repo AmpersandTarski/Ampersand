@@ -10,6 +10,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
+import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.Directory
 import System.FilePath
@@ -40,8 +41,8 @@ createFSpec' fType opts =
          -> return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
        _ 
          -> do rapCtx <- getFormalFile -- the P_Context of the 
-               let rapCtxMeta = (pure . toMeta) <?> rapCtx
-                   grindedUserCtx = (pure . toMeta) <?> (grind <?> userFspec)
+               let rapCtxMeta = unguard $ (pure . toMeta) <$> rapCtx
+                   grindedUserCtx = unguard $ pure . toMeta <$> (unguard $ grind <$> userFspec)
                let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
                                      -- P_Context, that contains all 'things' specified in the user's file 
                                      -- as populations in RAP. These populations are the only contents of 
@@ -71,7 +72,7 @@ createFSpec' fType opts =
     toFspec :: A_Context -> Guarded FSpec
     toFspec = pure . makeFSpec opts
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
-    pCtx2Fspec c = toFspec <?> ((pCtx2aCtx opts) <?> c)
+    pCtx2Fspec c = unguard $ toFspec <$> (unguard $ pCtx2aCtx opts <$> c)
     merge :: Guarded [P_Context] -> Guarded P_Context
     merge ctxs = fmap f ctxs
       where
@@ -93,10 +94,11 @@ createFSpec' fType opts =
 getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
 getPopulationsFrom opts filePath =
  do gpCtx <- parseADL opts filePath
-    return (f <?> gpCtx) 
+    return (unguard $ f <$> gpCtx) 
    where
      f :: P_Context -> Guarded [Population]
-     f pCtx = pure . initialPops . makeFSpec opts
-          <?> (pCtx2aCtx opts pCtx)
+     f pCtx = unguard $ 
+                pure . initialPops . makeFSpec opts
+                 <$> pCtx2aCtx opts pCtx
      
      
