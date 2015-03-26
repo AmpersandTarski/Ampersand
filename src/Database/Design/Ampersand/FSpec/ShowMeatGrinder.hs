@@ -13,6 +13,7 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.Motivations
 import Database.Design.Ampersand.FSpec.SQL
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
@@ -445,11 +446,9 @@ instance GenericPopulations Conjunct where
          [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndSignal r]
   , Pop "invariantRuleNames" "Conjunct" "Rule" 
          [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
---TODO: ViolationsSQL
---  , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
---         [(uri conj
---             ,selectExpr fSpec 0 "src" "tgt" (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
---          )]
+  , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
+         [(uri conj , prettySQLQuery fSpec 0 (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
+          )]
   ] 
 
 
