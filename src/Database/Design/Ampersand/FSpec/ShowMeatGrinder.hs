@@ -10,6 +10,7 @@ import Data.Ord
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.Motivations
+import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
@@ -345,26 +346,49 @@ instance GenericPopulations Rule where
              [(uri rul,(uri.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
              [(uri rul,uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
-      , Pop "pairView"  "Rule" "PairView"
-             [(uri rul, uri pve) | Just pve <- [rrviol rul] ]
-      ]
+      ]++case rrviol rul of
+        Nothing -> []
+        Just pve ->
+         [ Pop "pairView"  "Rule" "PairView"
+              [(uri rul, uri pve)]
+         ]++generics fSpec pve
+      
+      
 instance GenericPopulations (PairView Expression) where
  generics fSpec pve = 
       [ Comment " "
-      , Pop "segment" "PairView" "PairViewSegment"
-            [(uri pve,uri pvseg) | pvseg <- ppv_segs pve]
-      ]
-      ++   concatMap (generics fSpec) (ppv_segs pve)
-      
-instance GenericPopulations (PairViewSegment Expression) where
- generics fSpec pvs = 
-      [ Comment "TODO (PairViewSegment Expression) "
+      ]++concatMap makeSegment (zip [0..] (ppv_segs pve))
+  where
+    makeSegment :: (Int,PairViewSegment Expression) -> [Pop]
+    makeSegment (i,pvs) =
+      [ Pop "segment" "PairView" "PairViewSegment"
+             [(uri pve,uri pvs)]
+      , Pop "sequenceNr" "PairViewSegment" "Int"
+             [(uri pvs,show i)]
       , Pop "segmentType" "PairViewSegment" "PairViewSegmentType"
-            [(uri pvs, case pvs of 
+             [(uri pvs, case pvs of 
                          PairViewText{} -> "Text"
                          PairViewExp{}  -> "Exp")
             ]
-      ]
+      ]++
+      case pvs of
+        PairViewText str -> 
+          [Pop "text" "PairViewSegment" "String"
+               [(uri pvs, show str)] 
+          ]
+        PairViewExp sot expr -> 
+          [Pop "srcOrTgt" "PairViewSegment" "SourceOrTarget"
+               [(uri pvs, show sot)] 
+          ,Pop "expTgt" "PairViewSegment" "Concept"
+               [(uri pvs, uri (case sot of
+                                Src -> source expr
+                                Tgt -> target expr
+                              ))] 
+          ,Pop "expSQL" "PairViewSegment" "MySQLQuery"
+               [(uri pvs, show (prettySQLQuery fSpec 0 expr))] 
+          ]
+         
+      
 instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "

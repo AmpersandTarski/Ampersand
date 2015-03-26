@@ -93,11 +93,13 @@ RELATION pairView[Rule*PairView] -- e.g.
 --                            )
 --                    )
 --              )
-RELATION segment[PairView*PairViewSegment]
+RELATION segment[PairView*PairViewSegment] [SUR,INJ]
+RELATION sequenceNr[PairViewSegment*Int] [UNI,TOT]
 RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
-RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'
-RELATION expTgt[PairViewSegment*Concept] [UNI]
-RELATION expSQL[PairViewSegment*MySQLQuery] [UNI]
+RELATION text[PairViewSegment*String] [UNI] -- IFF segmentType == 'Text'
+RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
+RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
+RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 
 
