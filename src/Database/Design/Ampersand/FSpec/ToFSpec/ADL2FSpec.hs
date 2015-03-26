@@ -24,7 +24,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
 
 makeFSpec :: Options -> A_Context -> FSpec
-makeFSpec opts context = fSpec
+makeFSpec opts context = trace ("CRUD info:\n"++show (crudInfo fSpec)) $ fSpec -- TODO: remove trace
  where
      fSpec =
         FSpec { fsName       = name context
