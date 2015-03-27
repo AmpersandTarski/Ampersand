@@ -164,7 +164,7 @@ instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr (uni) []
                      [ (expressionsIn.ifcObj) ifc
-                     , (expressionsIn.ifcParams) ifc
+                     , map EDcD $ ifcParams ifc -- Return param declarations as expressions
                      ]
 
 instance ConceptStructure Declaration where

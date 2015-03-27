@@ -439,9 +439,7 @@ instance Traced P_Population where
 data P_Interface =
      P_Ifc { ifc_Name :: String           -- ^ the name of the interface
            , ifc_Class :: Maybe String    -- ^ the class of the interface
-           , ifc_Params :: [TermPrim]     -- ^ a list of relations that are editable within this interface.
-                                          --   either   Prel o nm
-                                          --       or   PTrel o nm sgn TODO
+           , ifc_Params :: [P_NamedRel]     -- ^ a list of named relations that are editable within this interface.
            , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])

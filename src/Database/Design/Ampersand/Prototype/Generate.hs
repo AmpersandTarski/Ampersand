@@ -367,7 +367,7 @@ generateInterface fSpec interface =
         invConjuncts = [ c | c <- ifcControls interface, any isFrontEndInvariant $ rc_orgRules c ] -- NOTE: these two
         sigConjuncts = [ c | c <- ifcControls interface, any isFrontEndSignal    $ rc_orgRules c ] --       may overlap
 
-genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects :: FSpec -> [Declaration] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      [ "array ( 'name'  => "++ showPhpStr (name object)
      , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
@@ -387,7 +387,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ case mEditableDecl of
            Just (decl, isFlipped) ->
              [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
-             , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
+             , "      , 'relationIsEditable' => "++ showPhpBool (decl `elem` editableRels) 
              , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
              if isFlipped 
              then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
@@ -419,7 +419,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
              (src, tgt, Just (decl, isFlipped))
            Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
 
-generateMSubInterface :: FSpec -> [Expression] -> Int -> Maybe SubInterface -> [String]
+generateMSubInterface :: FSpec -> [Declaration] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ]

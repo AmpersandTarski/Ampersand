@@ -525,9 +525,6 @@ pCtx2aCtx' _
     namedRel2Decl :: P_NamedRel -> Guarded Declaration
     namedRel2Decl o@(PNamedRel _ r Nothing)  = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
     namedRel2Decl o@(PNamedRel _ r (Just s)) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
-    
-    termPrim2Expr :: TermPrim -> Guarded Expression
-    termPrim2Expr = pDisAmb2Expr . termPrimDisAmb
 
     pIfc2aIfc :: (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc (P_Ifc { ifc_Params = tps
@@ -549,7 +546,7 @@ pCtx2aCtx' _
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp
-                    }) <$> traverse termPrim2Expr tps
+                    }) <$> traverse namedRel2Decl tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
     pProc2aProc :: P_Process -> Guarded Process

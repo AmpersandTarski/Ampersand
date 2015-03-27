@@ -474,7 +474,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pRoles  `opt` [])                   <*>
                      (pKey ":" *> pTerm)                  <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
+    where lbl :: (String, Origin) -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
           lbl (nm,p) iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
@@ -491,7 +491,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
-          pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')'
+          pParams = pSpec '(' *> pList1Sep (pSpec ',') pNamedRel          <* pSpec ')'
           pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
           pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pRole
 
@@ -730,12 +730,6 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
 pNamedRel :: AmpParser P_NamedRel
 pNamedRel = pnamedrel  <$> pVarid_val_pos <*> pMaybe (fst <$> pSign)
             where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
-
--- TODO: remove
-pRelSign :: AmpParser TermPrim
-pRelSign          = prel  <$> pVarid_val_pos <*> pMaybe (fst <$> pSign)
-                    where prel (nm,orig) mSgn = PNamedR $ PNamedRel orig nm mSgn
-
 
 pSign :: AmpParser (P_Sign,Origin)
 pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'

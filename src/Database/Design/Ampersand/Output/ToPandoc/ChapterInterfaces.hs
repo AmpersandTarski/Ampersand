@@ -67,7 +67,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       docInterfaceObjects (ifcParams ifc) (ifcRoles ifc) [] (ifcObj ifc)
       where interfaceFP = fpaInterface ifc
 
-    docInterfaceObjects :: [Expression] -> [Role] -> [Int] -> ObjectDef -> Blocks
+    docInterfaceObjects :: [Declaration] -> [Role] -> [Int] -> ObjectDef -> Blocks
     docInterfaceObjects editableRels roles hierarchy object =
       case hierarchy of
         [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (target iExp) ++ "."
@@ -109,7 +109,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
                     
                     (expressionRelM, isEditable) = case getExpressionRelation iExp of
-                                                     Just e@(_,d,_,_) -> (Just e, EDcD d `elem` editableRels)
+                                                     Just e@(_,d,_,_) -> (Just e, d `elem` editableRels)
                                                      Nothing          -> (Nothing, False)
                     
                     navigationDocs = [ plainText $ quoteName navIfc ++ " (voor " ++ showRoles sharedRoles ++ ")" 
@@ -123,7 +123,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                     
             subInterfaceDocs = docMSubInterface editableRels roles hierarchy (objmsub object)
 
-    docMSubInterface :: [Expression] -> [Role] -> [Int] -> Maybe SubInterface -> [Blocks]
+    docMSubInterface :: [Declaration] -> [Role] -> [Int] -> Maybe SubInterface -> [Blocks]
     docMSubInterface editableRels roles hierarchy subIfc =
       case subIfc of
         Nothing                -> []
