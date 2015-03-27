@@ -38,7 +38,6 @@ class Language a where
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
 class ProcessStructure a where
-  processes :: a -> [Pattern]       -- ^ all roles that are used in this ProcessStructure
   roles :: a -> [Role]        -- ^ all roles that are used in this ProcessStructure
   interfaces :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
   objDefs :: a -> [ObjectDef]
@@ -77,7 +76,6 @@ rulesFromIdentity identity
             }
 
 instance ProcessStructure a => ProcessStructure [a] where
-  processes     = concatMap processes
   roles         = concatMap roles
   interfaces    = concatMap interfaces
   objDefs       = concatMap objDefs
@@ -94,7 +92,6 @@ instance Language A_Context where
                              , objstrs = []
                              }
   relsDefdIn context = uniteRels (concatMap relsDefdIn (patterns context)
-                                ++ concatMap relsDefdIn (processes context)
                                 ++ ctxds context)
      where
       -- relations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
@@ -112,7 +109,6 @@ instance Language A_Context where
   patterns             = ctxpats
 
 instance ProcessStructure A_Context where
-  processes            = fatal 115 "ctxprocs"
   roles        context = nub ([r | proc<-(ctxprocs context++ctxpats context), r <- roles proc]++  --TODO: Make it possible to define a role outside a PATTERN or PROCESS
                               [r | interface<-ctxifcs context, r <- ifcRoles interface])
   interfaces           = ctxifcs
@@ -138,7 +134,6 @@ instance Language Pattern where
   patterns   pat = [pat]
 
 instance ProcessStructure Pattern where
-  processes    proc = [proc]
   roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
                             [r | (r,_) <- prcRRels proc] )
   interfaces    _   = []

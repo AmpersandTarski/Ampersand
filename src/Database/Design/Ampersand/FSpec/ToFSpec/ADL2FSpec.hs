@@ -112,7 +112,7 @@ makeFSpec opts context = fSpec
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap ptups (processes context)++concatMap ptups (patterns context)       
+       where populations = ctxpopus context++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
      allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
