@@ -42,8 +42,8 @@ generateAmpersandOutput fSpec =
     ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
     ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
     ; when (proofs (getOpts fSpec))      $ doGenProofs   fSpec
-    ; when (genMeat (getOpts fSpec) && (not . includeRap) (getOpts fSpec))  -- When rap is included, the file is created there.
-        $ doGenMeatGrinder fSpec
+    ; when (genGenericsFile (getOpts fSpec) || genASTFile (getOpts fSpec))
+        $ doGenGenericsPopulation fSpec
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
@@ -84,8 +84,8 @@ doGenHaskell fSpec =
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".hs"
 
-doGenMeatGrinder :: FSpec -> IO()
-doGenMeatGrinder fSpec =
+doGenGenericsPopulation :: FSpec -> IO()
+doGenGenericsPopulation fSpec =
  do verboseLn (getOpts fSpec) $ "Generating meta-population for "++name fSpec
     let (nm,content) = makeGenerics fSpec
         outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension nm ".adl"
