@@ -545,7 +545,7 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
 
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
-                  PRef2Declaration <$ pKey "RELATION"  <*> pRelSign     <|>
+                  PRef2Declaration <$ pKey "RELATION"  <*> pNamedRel    <|>
                   PRef2Rule        <$ pKey "RULE"      <*> pADLid       <|>
                   PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
@@ -718,7 +718,7 @@ pTrm6  =  (Prim <$> pRelationRef)  <|>
           PBrk <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')'
 
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = pRelSign                                                                         <|>
+pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> pKey_pos "I"  <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
                     pfull <$> pKey_pos "V"  <*> pMaybe pSign                                       <|>
                     singl <$> pAtom_val_pos <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')
@@ -728,9 +728,15 @@ pRelationRef      = pRelSign                                                    
                           pfull orig (Just (P_Sign src trg, _)) = Pfull orig src trg
                           singl (nm,orig) x  = Patm orig nm x
 
+pNamedRel :: AmpParser P_NamedRel
+pNamedRel = pnamedrel  <$> pVarid_val_pos <*> pMaybe (fst <$> pSign)
+            where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
+
+-- TODO: remove
 pRelSign :: AmpParser TermPrim
 pRelSign          = prel  <$> pVarid_val_pos <*> pMaybe (fst <$> pSign)
                     where prel (nm,orig) mSgn = PNamedR $ PNamedRel orig nm mSgn
+
 
 pSign :: AmpParser (P_Sign,Origin)
 pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'

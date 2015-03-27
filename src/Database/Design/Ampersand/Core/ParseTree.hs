@@ -547,8 +547,7 @@ instance Traced (P_ViewD a) where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
 data PRef2Obj = PRef2ConceptDef String
-              | PRef2Declaration TermPrim -- TODO: PNamedRel-- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
-                                      -- or        Prel o nm; Other terms become fatals
+              | PRef2Declaration P_NamedRel
               | PRef2Rule String
               | PRef2IdentityDef String
               | PRef2ViewDef String
@@ -562,8 +561,7 @@ data PRef2Obj = PRef2ConceptDef String
 instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
-     PRef2Declaration (PNamedR (PNamedRel _ nm mSgn)) -> nm++maybe "" show mSgn
-     PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
+     PRef2Declaration (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
      PRef2Rule str -> str
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
