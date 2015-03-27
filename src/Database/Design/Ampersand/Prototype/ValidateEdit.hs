@@ -3,6 +3,7 @@ module Database.Design.Ampersand.Prototype.ValidateEdit where
 import Prelude hiding (putStr, putStrLn)
 import Data.List
 import Data.Maybe
+import System.FilePath hiding (isValid)
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Prototype.PHP
@@ -27,12 +28,14 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; putStrLn $ "Edit script:\n" ++ editScript
             
             ; createTempDatabase fSpec beforePops
-            ; _ <- executePHP (Just $ Opts.dirPrototype (getOpts fSpec)) "php/ValidateEdit.php" [editScript] -- TODO: escape
-            --; putStrLn $ phpOutput 
+            ; let phpDir = Opts.dirPrototype (getOpts fSpec) </> "php"
+            ; let phpScript = "ValidateEdit.php"
+            ; putStrLn $ "Executing php script "++ phpDir </> phpScript
+            ; _ <- executePHP (Just phpDir) phpScript [editScript] -- TODO: escape
             
             ; let expectedConceptTables  = [ (c,atoms) | PCptPopu c atoms <- afterPops ]
             ; let expectedRelationTables = [ (d,pairs) | PRelPopu d pairs <- afterPops ]
-            ; let actualConcepts = allConcepts fSpec \\ [ONE] -- TODO: are these the right concepts and decls?
+            ; let actualConcepts = [ c | c<- allConcepts fSpec, c /= ONE, name c /= "SESSION" ] -- TODO: are these the right concepts and decls?
             ; let actualRelations = allDecls fSpec            --
             ; actualConceptTables <- mapM (getSqlConceptTable fSpec) actualConcepts
             ; actualRelationTables <- mapM (getSqlRelationTable fSpec) actualRelations
