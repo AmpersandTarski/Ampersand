@@ -409,7 +409,7 @@ pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> 
                           , obj_ctx   = attexpr
                           , obj_mView = Nothing
                           , obj_msub  = Nothing
-                          , obj_strs  = strs -- will be []
+                          , obj_strs  = strs -- will always be []
                           }
           
           pHtmlView :: AmpParser ViewHtmlTemplate                 
