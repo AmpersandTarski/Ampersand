@@ -94,8 +94,8 @@ data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for 
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
-   = P_RR { rr_Roles :: [Role]  -- ^ name of a role
-          , rr_Rels :: [TermPrim] -- ^ TODO: Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+   = P_RR { rr_Roles :: [Role]      -- ^ list of roles
+          , rr_Rels :: [P_NamedRel] -- ^ list of named relations
           , rr_Pos :: Origin      -- ^ position in the Ampersand script
           } deriving (Show)       -- deriving Show is just for debugging
 instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'

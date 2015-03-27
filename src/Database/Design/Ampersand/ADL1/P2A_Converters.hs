@@ -522,12 +522,6 @@ pCtx2aCtx' _
     disambNamedRel (PNamedRel _ r Nothing)  = [EDcD dc | dc <- (Map.elems $ findDecls r)]
     disambNamedRel (PNamedRel _ r (Just s)) = [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
 
-    -- TODO: Remove
-    termPrim2Decl :: TermPrim -> Guarded Declaration
-    termPrim2Decl o@(PNamedR (PNamedRel _ r  Nothing)) = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
-    termPrim2Decl o@(PNamedR (PNamedRel _ r (Just s))) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
-    termPrim2Decl _ = fatal 231 "Expecting Declaration"
-
     namedRel2Decl :: P_NamedRel -> Guarded Declaration
     namedRel2Decl o@(PNamedRel _ r Nothing)  = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
     namedRel2Decl o@(PNamedRel _ r (Just s)) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
@@ -589,7 +583,7 @@ pCtx2aCtx' _
                      , prcXps = purposes'
                      }
        ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
-         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
+         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- rolrels]
          <*> traverse pPop2aPop pops
          <*> traverse pIdentity2aIdentity idefs
          <*> traverse pViewDef2aViewDef viewdefs

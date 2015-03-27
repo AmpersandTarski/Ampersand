@@ -581,7 +581,7 @@ pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
                             pList1Sep (pSpec ',') pRole <*
                             pKey "EDITS"                 <*>
-                            pList1Sep (pSpec ',') pRelSign
+                            pList1Sep (pSpec ',') pNamedRel
                      where rr p roles rels = P_RR roles rels p
 
 pRoleRule :: AmpParser RoleRule
