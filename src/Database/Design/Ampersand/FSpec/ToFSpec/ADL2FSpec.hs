@@ -30,8 +30,7 @@ makeFSpec opts context = fSpec
               , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
-              , pattsInScope = pattsInThemesInScope
-              , procsInScope = procsInThemesInScope
+              , pattsInScope = pattsInThemesInScope ++ procsInThemesInScope
               , rulesInScope = rulesInThemesInScope
               , declsInScope = declsInThemesInScope
               , concsInScope = concsInThemesInScope
@@ -91,12 +90,13 @@ makeFSpec opts context = fSpec
                      then map name (patterns context) ++ map name allProcs
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
+     procsInThemesInScope :: [Pattern]
      procsInThemesInScope = filter (\p -> name p `elem` themesInScope) (ctxprocs context)
      cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` concatMap prcRules procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
-     declsInThemesInScope = ctxds context `uni` concatMap prcDcls  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
+     rulesInThemesInScope = ctxrs context `uni` concatMap ptrls procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
+     declsInThemesInScope = ctxds context `uni` concatMap ptdcs  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
      concsInThemesInScope = concs (ctxrs context)  `uni`  concs procsInThemesInScope  `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
+     gensInThemesInScope  = ctxgs context ++ concatMap ptgns procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
 
      enrichIfc :: Interface -> Interface
      enrichIfc ifc
@@ -112,7 +112,7 @@ makeFSpec opts context = fSpec
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
+       where populations = ctxpopus context++concatMap ptups (processes context)++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
      allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]

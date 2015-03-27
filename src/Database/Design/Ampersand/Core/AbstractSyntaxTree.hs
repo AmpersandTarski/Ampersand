@@ -71,7 +71,7 @@ data A_Context
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
-         , ctxprocs :: [Process]     -- ^ The processes defined in this context
+         , ctxprocs :: [Pattern]     -- ^ The processes defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
@@ -95,34 +95,27 @@ instance Unique A_Context where
 instance Named A_Context where
   name  = ctxnm
 
-data Theme = PatternTheme Pattern | ProcessTheme Process
+data Theme = PatternTheme Pattern
 
 instance Named Theme where
   name (PatternTheme pat) = name pat
-  name (ProcessTheme prc) = name prc
 
 instance Traced Theme where
   origin (PatternTheme pat) = origin pat
-  origin (ProcessTheme prc) = origin prc
 
-data Process = Proc { prcNm :: String
-                    , prcPos :: Origin
-                    , prcEnd :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
-                    , prcRules :: [Rule]
-                    , prcGens :: [A_Gen]
-                    , prcDcls :: [Declaration]
-                    , prcUps :: [Population]  -- ^ The user defined populations in this process
-                    , prcRRuls :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
-                    , prcRRels :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
-                    , prcIds :: [IdentityDef]            -- ^ The identity definitions defined in this process
-                    , prcVds :: [ViewDef]            -- ^ The view definitions defined in this process
-                    , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
+data Process = Proc { prcNmZZZ :: String
+                    , prcPosZZZ :: Origin
+                    , prcEndZZZ :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
+                    , ptrlsZZZ :: [Rule]
+                    , prcGensZZZ :: [A_Gen]
+                    , prcDclsZZZ :: [Declaration]
+                    , prcUpsZZZ :: [Population]  -- ^ The user defined populations in this process
+                    , prcRRulsZZZ :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
+                    , prcRRelsZZZ :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
+                    , prcIdsZZZ :: [IdentityDef]            -- ^ The identity definitions defined in this process
+                    , prcVdsZZZ :: [ViewDef]            -- ^ The view definitions defined in this process
+                    , prcXpsZZZ :: [Purpose]           -- ^ The motivations of elements defined in this process
                     }
-instance Named Process where
-  name = prcNm
-
-instance Traced Process where
-  origin = prcPos
 
 data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role
@@ -140,10 +133,12 @@ data Pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
+           , prcRRuls :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
+           , prcRRels :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           } deriving (Typeable, Show)    -- Show for debugging purposes
+           }   deriving (Typeable, Show)    -- Show for debugging purposes
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where

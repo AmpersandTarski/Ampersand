@@ -59,9 +59,8 @@ checkPurposes gCtx =
   case gCtx of
     Errors err  -> Errors err
     Checked ctx -> let topLevelPurposes = ctxps ctx
-                       purposesInPatterns = concat (map prcXps  (ctxprocs ctx))
-                       purposesInProcesses = concat (map ptxps  (ctxpats ctx))
-                       allPurposes = topLevelPurposes ++ purposesInPatterns ++ purposesInProcesses
+                       purposesInPatterns = concat (map ptxps  (ctxprocs ctx++ctxpats ctx))
+                       allPurposes = topLevelPurposes ++ purposesInPatterns
                        danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
                    in  if null danglingPurposes then gCtx else Errors $ map mkDanglingPurposeError danglingPurposes
 
@@ -551,7 +550,7 @@ pCtx2aCtx' _
                     }) <$> traverse termPrim2Expr tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
-    pProc2aProc :: P_Process -> Guarded Process
+    pProc2aProc :: P_Process -> Guarded Pattern
     pProc2aProc P_Prc { procNm = nm
                       , procPos = orig
                       , procEnd = posEnd
@@ -568,18 +567,18 @@ pCtx2aCtx' _
                       }
      = (\ ruls' rels' pops' idefs' viewdefs' purposes'
          ->  let (decls',dPops) = unzip [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
-             in Proc { prcNm = nm
-                     , prcPos = orig
-                     , prcEnd = posEnd
-                     , prcRules = map snd ruls'
-                     , prcGens = map pGen2aGen gens
-                     , prcDcls = decls'
-                     , prcUps = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
+             in A_Pat { ptnm = nm
+                      , ptpos = orig
+                     , ptend = posEnd
+                     , ptrls = map snd ruls'
+                     , ptgns = map pGen2aGen gens
+                     , ptdcs = decls'
+                     , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
-                     , prcIds = idefs'
-                     , prcVds = viewdefs'
-                     , prcXps = purposes'
+                     , ptids = idefs'
+                     , ptvds = viewdefs'
+                     , ptxps = purposes'
                      }
        ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
          <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
@@ -590,9 +589,15 @@ pCtx2aCtx' _
 
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> parRuls ppat <*> parKeys ppat <*> parPops ppat <*> parViews ppat <*> parPrps ppat
+     = f <$> traverse (\x -> pRul2aRul' [rol | rr <- (pt_RRuls ppat), roleName <- mRules rr, name x == roleName, rol <- mRoles rr] (pt_nm ppat) x) (pt_rls ppat)
+         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
+         <*> parRuls ppat 
+         <*> parKeys ppat 
+         <*> parPops ppat 
+         <*> parViews ppat 
+         <*> parPrps ppat
        where
-        f prules keys' pops' views' xpls
+        f ruls' rels' prules keys' pops' views' xpls
            = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
              in A_Pat { ptnm  = name ppat
                       , ptpos = pt_pos ppat
@@ -601,6 +606,8 @@ pCtx2aCtx' _
                       , ptgns = agens'
                       , ptdcs = decls'
                       , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
+                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
+                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                       , ptids = keys'
                       , ptvds = views'
                       , ptxps = xpls

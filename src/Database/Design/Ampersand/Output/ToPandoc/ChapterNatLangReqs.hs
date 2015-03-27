@@ -102,9 +102,9 @@ chpNatLangReqs lev fSpec =
   dpRequirementsOld = theBlocks
     where
       (theBlocks,_) = if null (themes fSpec)
-                      then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
+                      then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (PatternTheme . fpProc) (vprocesses fSpec)
                       else printThemes toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
-                                                                       [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
+                                                                       [ PatternTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
       toBeProcessedStuff = ( conceptsWith
                            , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
@@ -214,7 +214,7 @@ chpNatLangReqs lev fSpec =
               printIntro ccds
                 = case fsLang fSpec of
                       Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (PatternTheme . fpProc) (vprocesses fSpec), name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of
@@ -238,7 +238,7 @@ chpNatLangReqs lev fSpec =
                                  )
 
                       English -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (PatternTheme . fpProc) (vprocesses fSpec), name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of

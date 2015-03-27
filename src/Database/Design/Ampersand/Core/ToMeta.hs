@@ -54,6 +54,8 @@ instance MakeMeta P_Pattern where
            , pt_rls = makeMeta f (pt_rls p)
            , pt_gns = makeMeta f (pt_gns p)
            , pt_dcs = makeMeta f (pt_dcs p)
+           , pt_RRuls = makeMeta f (pt_RRuls p)
+           , pt_RRels = makeMeta f (pt_RRels p)
            , pt_cds = makeMeta f (pt_cds p)
            , pt_ids = makeMeta f (pt_ids p)
            , pt_vds = makeMeta f (pt_vds p)

@@ -50,7 +50,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      , pattsInScope :: [Pattern]
-                     , procsInScope :: [Process]
                      , rulesInScope :: [Rule]
                      , declsInScope :: [Declaration]
                      , concsInScope :: [A_Concept]
@@ -148,7 +147,7 @@ instance Language FSpec where
   patterns   = vpatterns
 
 data FProcess
-  = FProc { fpProc :: Process
+  = FProc { fpProc :: Pattern
           , fpActivities :: [Activity]
           }
 instance Named FProcess where

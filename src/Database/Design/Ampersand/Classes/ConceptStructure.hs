@@ -144,22 +144,6 @@ instance ConceptStructure Pattern where
                      , (expressionsIn.ptvds) p
                      ]
 
-instance ConceptStructure Process where
-  concs prc = foldr uni []
-              [ (concs.prcRules) prc
-              , (concs.prcGens) prc
-              , (concs.prcDcls) prc
-              , (concs.prcUps) prc
-              , (concs.prcIds) prc
-              , (concs.prcVds) prc
-              , (concs.prcXps) prc
-              ]
-  expressionsIn p = foldr (uni) []
-                     [ (expressionsIn.prcRules) p
-                     , (expressionsIn.prcIds) p
-                     , (expressionsIn.prcVds) p
-                     ]
-
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr (uni) []
