@@ -20,7 +20,7 @@ import Database.Design.Ampersand.Core.ToMeta
 fatal :: Int -> String -> a
 fatal = fatalMsg "CreateFspec"
 
-data MetaType = Generics | AST
+
 
 -- | create an FSpec, based on the provided command-line options.
 createFSpec :: Options  -- ^The options derived from the command line
@@ -76,9 +76,7 @@ createFSpec opts =
     grind :: MetaType -> FSpec -> Guarded P_Context
     grind mType fSpec
       = fmap fstIfNoIncludes $ parseCtx f c
-      where (f,c) = case mType of
-                      Generics -> makeGenerics fSpec
-                      AST -> meatGrinder fSpec 
+      where (f,c) = makeMetaPopulationFile mType fSpec
             fstIfNoIncludes (a,includes)
              = case includes of 
                [] -> a

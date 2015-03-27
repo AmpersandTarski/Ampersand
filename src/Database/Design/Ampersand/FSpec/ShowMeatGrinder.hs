@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.FSpec.ShowMeatGrinder
-  (meatGrinder,makeGenerics)
+  (makeMetaPopulationFile,MetaType(..))
 where
 
 import Data.List
@@ -27,13 +27,17 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "ShowMeatGrinder"
 
-makeGenerics :: FSpec -> (FilePath,String)
-makeGenerics fSpec = ("TemporaryPopulationsFileOfGenerics" ,content (generics fSpec) "Generics" fSpec )
-meatGrinder :: FSpec -> (FilePath, String)
-meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content (metaPops fSpec) "AST" fSpec)
+data MetaType = Generics | AST deriving (Show)
 
-content :: (FSpec -> [Pop]) -> String -> FSpec -> String
-content popKind cName fSpec = unlines
+makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
+makeMetaPopulationFile mType fSpec
+  = ("MetaPopulationFile"++show mType, content popKind mType fSpec)
+    where popKind = case mType of
+                      Generics -> generics fSpec
+                      AST      -> metaPops fSpec 
+
+content :: (FSpec -> [Pop]) -> MetaType -> FSpec -> String
+content popKind mType fSpec = unlines
    ([ "{- Do not edit manually. This code has been generated!!!"
     , "    Generated with "++ampersandVersionStr
     , "    Generated at "++show (genTime (getOpts fSpec))
@@ -48,7 +52,7 @@ content popKind cName fSpec = unlines
     , ""
     , "-}"
     , ""
-    , "CONTEXT "++cName++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
+    , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
     ++ (concat.intersperse  []) (map (lines.showADL) (popKind fSpec))
     ++
     [ ""

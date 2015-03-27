@@ -24,7 +24,7 @@ import Database.Design.Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), LanguageDependent(..))
 import Database.Design.Ampersand.FSpec.ShowECA (showECA)
-import Database.Design.Ampersand.FSpec.ShowMeatGrinder (meatGrinder,makeGenerics)
+import Database.Design.Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile,MetaType(..))
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
        (clAnalysis, cdAnalysis, ClassDiag(..))
 import Database.Design.Ampersand.FSpec.Graphic.Graphics
