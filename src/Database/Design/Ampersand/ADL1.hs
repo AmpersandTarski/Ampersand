@@ -39,7 +39,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
          ,Sign(..),showSign,GenR()
          , (<==>),meet,join
-         ,A_Context(..),Process(..)
+         ,A_Context(..)
          ,Association(..)
          ,Expression(..)
          ,A_Gen(..)

@@ -5,7 +5,6 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Meta(..)
  , Theme(..)
- , Process(..)
  , Pattern(..)
  , PairView(..)
  , PairViewSegment(..)
@@ -102,20 +101,6 @@ instance Named Theme where
 
 instance Traced Theme where
   origin (PatternTheme pat) = origin pat
-
-data Process = Proc { prcNmZZZ :: String
-                    , prcPosZZZ :: Origin
-                    , prcEndZZZ :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
-                    , ptrlsZZZ :: [Rule]
-                    , prcGensZZZ :: [A_Gen]
-                    , prcDclsZZZ :: [Declaration]
-                    , prcUpsZZZ :: [Population]  -- ^ The user defined populations in this process
-                    , prcRRulsZZZ :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
-                    , prcRRelsZZZ :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
-                    , prcIdsZZZ :: [IdentityDef]            -- ^ The identity definitions defined in this process
-                    , prcVdsZZZ :: [ViewDef]            -- ^ The view definitions defined in this process
-                    , prcXpsZZZ :: [Purpose]           -- ^ The motivations of elements defined in this process
-                    }
 
 data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role
