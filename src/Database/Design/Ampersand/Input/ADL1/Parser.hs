@@ -555,22 +555,21 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 pPopulation :: AmpParser P_Population
-pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent <|>
+pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
               pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
-      prelpop :: Origin -> TermPrim -> Pairs -> P_Population
-      prelpop    orig     (PNamedR (PNamedRel _ nm Nothing))  contents
-       = P_RelPopu { p_rnme   = nm
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
-      prelpop orig (PNamedR (PNamedRel _ nm (Just sgn))) contents
-       = P_TRelPop { p_rnme   = nm
-                   , p_type   = sgn
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
-      prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
+      prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
+      prelpop orig (PNamedRel _ nm mSgn)  contents =
+        case mSgn of Nothing  -> P_RelPopu { p_rnme   = nm
+                                           , p_orig   = orig
+                                           , p_popps  = contents
+                                           }
+                     Just sgn -> P_TRelPop { p_rnme   = nm
+                                           , p_type   = sgn
+                                           , p_orig   = orig
+                                           , p_popps  = contents
+                                           }
+                                           
       pcptpop :: Origin -> String -> [String] -> P_Population
       pcptpop    orig      cnm       contents
        = P_CptPopu { p_cnme   = cnm
