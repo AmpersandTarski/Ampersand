@@ -73,7 +73,7 @@ instance GetOneGuarded Declaration where
 
 cannotDisambRel :: (ShowADL a2, Association a2) => (TermPrim) -> [a2] -> Guarded a
 cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
-cannotDisambRel o@Prel{} lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
+cannotDisambRel o@(PNamedR(PNamedRel _ _ Nothing)) lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
 cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature.\n  You may have intended one of these:"++concat ["\n  "++showADL l|l<-lst]]
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]

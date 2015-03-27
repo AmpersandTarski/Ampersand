@@ -142,7 +142,7 @@ copyIncludes fSpec =
 data FEInterface = FEInterface { ifcName :: String
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcRoles :: [Role], _ifcEditableRels :: [Expression], _ifcObj :: FEObject }
+                               , _ifcRoles :: [Role], _ifcEditableRels :: [Declaration], _ifcObj :: FEObject }
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
@@ -178,7 +178,7 @@ buildInterface fSpec allIfcs ifc =
     --       (name comes from interface, but is equal to object name)
     } 
   where    
-    buildObject :: [Expression] -> ObjectDef -> IO FEObject
+    buildObject :: [Declaration] -> ObjectDef -> IO FEObject
     buildObject editableRels object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
               
@@ -228,8 +228,8 @@ buildInterface fSpec allIfcs ifc =
         }
       where getIsEditableSrcTgt expr = 
               case getExpressionRelation expr of
-                Nothing                          -> (False,                         source expr, target expr)
-                Just (declSrc, decl, declTgt, _) -> (EDcD decl `elem` editableRels, declSrc,     declTgt    ) 
+                Nothing                          -> (False,                    source expr, target expr)
+                Just (declSrc, decl, declTgt, _) -> (decl `elem` editableRels, declSrc,     declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
 
 ------ Generate RouteProvider.js
@@ -263,7 +263,7 @@ genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels o
                        setAttribute "contextName"         (addSlashes $ fsName fSpec)
                      . setAttribute "isTopLevel"          (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"   [ show $ escapeIdentifier (name r) | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"   [ show $ escapeIdentifier (name r) | r <- editableRels ] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (escapeIdentifier iName)
                      . setAttribute "interfaceLabel"      iName -- no escaping for labels in templates needed
@@ -369,7 +369,7 @@ genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editable
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"        [ show $ escapeIdentifier (name r) | EDcD r <- editableRels] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"        [ show $ escapeIdentifier (name r) | r <- editableRels ] -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableNonPrimTargets"   allEditableNonPrimTargets
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable

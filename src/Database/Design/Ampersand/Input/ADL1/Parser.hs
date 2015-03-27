@@ -287,9 +287,9 @@ pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*
                       <*> ((pKey "=" *> pContent) `opt` [])
                       <* (pKey "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                     where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
-                            = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
+                            = rbd pos' nm (P_Sign src trg) bp1 props' --bp2 pragma meanings content
                               where props'= nub (props `uni` fun')
-                          rbd pos' nm (sgn,_) bp1 props bp2 pragma meanings content
+                          rbd pos' nm sgn bp1 props bp2 pragma meanings content
                             = P_Sgn { dec_nm   = nm
                                     , dec_sign = sgn
                                     , dec_prps = props
@@ -409,7 +409,7 @@ pFancyViewDef  = mkViewDef <$  pKey "VIEW" <*> pLabel <*> pConceptOneRefPos <*> 
                           , obj_ctx   = attexpr
                           , obj_mView = Nothing
                           , obj_msub  = Nothing
-                          , obj_strs  = strs -- will be []
+                          , obj_strs  = strs -- will always be []
                           }
           
           pHtmlView :: AmpParser ViewHtmlTemplate                 
@@ -469,12 +469,12 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
                      (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                     -- either  Prel _ nm
-                                                                    --       or  PTrel _ nm sgn
+                                                                    --       or  PNamedRel _ nm sgn
                      (pArgs   `opt` [])                   <*>
                      (pRoles  `opt` [])                   <*>
                      (pKey ":" *> pTerm)                  <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
+    where lbl :: (String, Origin) -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
           lbl (nm,p) iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
@@ -491,7 +491,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
-          pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')'
+          pParams = pSpec '(' *> pList1Sep (pSpec ',') pNamedRel          <* pSpec ')'
           pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
           pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pRole
 
@@ -545,7 +545,7 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
 
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
-                  PRef2Declaration <$ pKey "RELATION"  <*> pRelSign     <|>
+                  PRef2Declaration <$ pKey "RELATION"  <*> pNamedRel    <|>
                   PRef2Rule        <$ pKey "RULE"      <*> pADLid       <|>
                   PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
@@ -555,22 +555,21 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 pPopulation :: AmpParser P_Population
-pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent <|>
+pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
               pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
-      prelpop :: Origin -> TermPrim -> Pairs -> P_Population
-      prelpop    orig     (Prel _ nm)  contents
-       = P_RelPopu { p_rnme   = nm
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
-      prelpop orig (PTrel _ nm sgn) contents
-       = P_TRelPop { p_rnme   = nm
-                   , p_type   = sgn
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
-      prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
+      prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
+      prelpop orig (PNamedRel _ nm mSgn)  contents =
+        case mSgn of Nothing  -> P_RelPopu { p_rnme   = nm
+                                           , p_orig   = orig
+                                           , p_popps  = contents
+                                           }
+                     Just sgn -> P_TRelPop { p_rnme   = nm
+                                           , p_type   = sgn
+                                           , p_orig   = orig
+                                           , p_popps  = contents
+                                           }
+                                           
       pcptpop :: Origin -> String -> [String] -> P_Population
       pcptpop    orig      cnm       contents
        = P_CptPopu { p_cnme   = cnm
@@ -582,7 +581,7 @@ pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
                             pList1Sep (pSpec ',') pRole <*
                             pKey "EDITS"                 <*>
-                            pList1Sep (pSpec ',') pRelSign
+                            pList1Sep (pSpec ',') pNamedRel
                      where rr p roles rels = P_RR roles rels p
 
 pRoleRule :: AmpParser RoleRule
@@ -718,29 +717,26 @@ pTrm6  =  (Prim <$> pRelationRef)  <|>
           PBrk <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')'
 
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = pRelSign                                                                         <|>
+pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> pKey_pos "I"  <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
                     pfull <$> pKey_pos "V"  <*> pMaybe pSign                                       <|>
                     singl <$> pAtom_val_pos <*> pMaybe (pSpec '[' *> pConceptOneRef <* pSpec ']')
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
-                          pfull orig (Just (P_Sign src trg, _)) = Pfull orig src trg
+                          pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
                           singl (nm,orig) x  = Patm orig nm x
 
-pRelSign :: AmpParser TermPrim
-pRelSign          = prel  <$> pVarid_val_pos <*> pMaybe pSign
-                    where prel (nm,orig) Nothing = Prel orig nm
-                          prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
+pNamedRel :: AmpParser P_NamedRel
+pNamedRel = pnamedrel  <$> pVarid_val_pos <*> pMaybe pSign
+            where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
 
-pSign :: AmpParser (P_Sign,Origin)
-pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'
-   where
-     rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
-     rebuild orig a mb
-      = case mb of
-          Just b  -> (P_Sign a b, orig)
-          Nothing -> (P_Sign a a, orig)
+pSign :: AmpParser P_Sign
+pSign = mkSign <$ pSpec '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'
+   where mkSign :: P_Concept -> Maybe P_Concept -> P_Sign
+         mkSign src mTgt =
+           case mTgt of Just tgt -> P_Sign src tgt
+                        Nothing  -> P_Sign src src
 
 pConceptName ::   AmpParser String
 pConceptName    = pConid <|> pString

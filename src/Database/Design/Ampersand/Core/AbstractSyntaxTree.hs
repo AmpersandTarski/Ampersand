@@ -369,7 +369,7 @@ rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts
                                 , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
                                 ]
 
-data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions are allowed!
+data Interface = Ifc { ifcParams ::   [Declaration]
                      , ifcClass ::    Maybe String
                      , ifcArgs ::     [[String]]
                      , ifcRoles ::    [Role]

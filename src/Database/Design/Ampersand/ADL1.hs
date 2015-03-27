@@ -29,7 +29,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , P_Interface(..)
          , P_SubInterface
          , Term(..)
-         , TermPrim(..)
+         , TermPrim(..), P_NamedRel(..)
          , P_Gen(..)
          , P_Declaration(..)
          , ConceptDef(..)
