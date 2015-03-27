@@ -287,9 +287,9 @@ pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*
                       <*> ((pKey "=" *> pContent) `opt` [])
                       <* (pKey "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                     where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
-                            = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
+                            = rbd pos' nm (P_Sign src trg) bp1 props' --bp2 pragma meanings content
                               where props'= nub (props `uni` fun')
-                          rbd pos' nm (sgn,_) bp1 props bp2 pragma meanings content
+                          rbd pos' nm sgn bp1 props bp2 pragma meanings content
                             = P_Sgn { dec_nm   = nm
                                     , dec_sign = sgn
                                     , dec_prps = props
@@ -724,21 +724,19 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
-                          pfull orig (Just (P_Sign src trg, _)) = Pfull orig src trg
+                          pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
                           singl (nm,orig) x  = Patm orig nm x
 
 pNamedRel :: AmpParser P_NamedRel
-pNamedRel = pnamedrel  <$> pVarid_val_pos <*> pMaybe (fst <$> pSign)
+pNamedRel = pnamedrel  <$> pVarid_val_pos <*> pMaybe pSign
             where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
 
-pSign :: AmpParser (P_Sign,Origin)
-pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'
-   where
-     rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
-     rebuild orig a mb
-      = case mb of
-          Just b  -> (P_Sign a b, orig)
-          Nothing -> (P_Sign a a, orig)
+pSign :: AmpParser P_Sign
+pSign = mkSign <$ pSpec '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'
+   where mkSign :: P_Concept -> Maybe P_Concept -> P_Sign
+         mkSign src mTgt =
+           case mTgt of Just tgt -> P_Sign src tgt
+                        Nothing  -> P_Sign src src
 
 pConceptName ::   AmpParser String
 pConceptName    = pConid <|> pString
