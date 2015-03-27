@@ -319,10 +319,6 @@ instance Motivated Rule where
 --           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]]
 --           } ]
 
-instance Motivated Theme where
-  explForObj (PatternTheme pat) eo = explForObj pat eo
-  explanations (PatternTheme pat) = explanations pat
-
 instance Motivated Pattern where
 --  meaning _ pat = fatal 324 ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
   explForObj x (ExplPattern str) = name x == str

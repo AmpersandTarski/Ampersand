@@ -4,7 +4,6 @@
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Meta(..)
- , Theme(..)
  , Pattern(..)
  , PairView(..)
  , PairViewSegment(..)
@@ -93,14 +92,6 @@ instance Unique A_Context where
   showUnique = name
 instance Named A_Context where
   name  = ctxnm
-
-data Theme = PatternTheme Pattern
-
-instance Named Theme where
-  name (PatternTheme pat) = name pat
-
-instance Traced Theme where
-  origin (PatternTheme pat) = origin pat
 
 data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role

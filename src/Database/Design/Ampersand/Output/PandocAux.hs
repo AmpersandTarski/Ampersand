@@ -359,7 +359,7 @@ data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefConceptualAnalysisDeclaration Declaration
              | XRefConceptualAnalysisRule Rule
              | XRefInterfacesInterface Interface
-             | XRefNaturalLanguageTheme (Maybe Theme) 
+             | XRefNaturalLanguageTheme (Maybe Pattern) 
 xRefTo :: XRefObj -> Inlines
 xRefTo x = rawInline "latex"  $ xRefToLatexRefString x
 xRefToLatexRefString :: XRefObj -> String
