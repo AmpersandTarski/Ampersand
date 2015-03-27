@@ -517,13 +517,14 @@ pCtx2aCtx' _
            Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt conspt))
            PVee _      -> Vee
            Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
-           Prel _ r    -> Rel [EDcD dc | dc <- (Map.elems $ findDecls r)]
-           PTrel _ r s -> Rel [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
+           PNamedR nr -> Rel $ disambNamedRel nr
         )
+    disambNamedRel (PNamedRel _ r Nothing)  = [EDcD dc | dc <- (Map.elems $ findDecls r)]
+    disambNamedRel (PNamedRel _ r (Just s)) = [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
 
     termPrim2Decl :: TermPrim -> Guarded Declaration
-    termPrim2Decl o@(Prel _ r   ) = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
-    termPrim2Decl o@(PTrel _ r s) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
+    termPrim2Decl o@(PNamedR (PNamedRel _ r  Nothing)) = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
+    termPrim2Decl o@(PNamedR (PNamedRel _ r (Just s))) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
     termPrim2Decl _ = fatal 231 "Expecting Declaration"
     termPrim2Expr :: TermPrim -> Guarded Expression
     termPrim2Expr = pDisAmb2Expr . termPrimDisAmb

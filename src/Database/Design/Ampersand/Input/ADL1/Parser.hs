@@ -469,7 +469,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
                      (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                     -- either  Prel _ nm
-                                                                    --       or  PTrel _ nm sgn
+                                                                    --       or  PNamedRel _ nm sgn
                      (pArgs   `opt` [])                   <*>
                      (pRoles  `opt` [])                   <*>
                      (pKey ":" *> pTerm)                  <*>
@@ -559,12 +559,12 @@ pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAI
               pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
       prelpop :: Origin -> TermPrim -> Pairs -> P_Population
-      prelpop    orig     (Prel _ nm)  contents
+      prelpop    orig     (PNamedR (PNamedRel _ nm Nothing))  contents
        = P_RelPopu { p_rnme   = nm
                    , p_orig   = orig
                    , p_popps  = contents
                    }
-      prelpop orig (PTrel _ nm sgn) contents
+      prelpop orig (PNamedR (PNamedRel _ nm (Just sgn))) contents
        = P_TRelPop { p_rnme   = nm
                    , p_type   = sgn
                    , p_orig   = orig
@@ -729,9 +729,8 @@ pRelationRef      = pRelSign                                                    
                           singl (nm,orig) x  = Patm orig nm x
 
 pRelSign :: AmpParser TermPrim
-pRelSign          = prel  <$> pVarid_val_pos <*> pMaybe pSign
-                    where prel (nm,orig) Nothing = Prel orig nm
-                          prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
+pRelSign          = prel  <$> pVarid_val_pos <*> pMaybe (fst <$> pSign)
+                    where prel (nm,orig) mSgn = PNamedR $ PNamedRel orig nm mSgn
 
 pSign :: AmpParser (P_Sign,Origin)
 pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'

@@ -512,8 +512,7 @@ instance ShowHS PRef2Obj where
  showHS _ _ peObj
   = case peObj of
          PRef2ConceptDef str               -> "PRef2ConceptDef " ++show str
-         PRef2Declaration (PTrel _ nm sgn) -> "PRef2Declaration "++show nm++show sgn
-         PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
+         PRef2Declaration (PNamedR (PNamedRel _ nm mSgn)) -> "PRef2Declaration "++show nm++maybe "" show mSgn
          PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
          PRef2Rule str                     -> "PRef2Rule "       ++show str
          PRef2IdentityDef str              -> "PRef2IdentityDef "++show str

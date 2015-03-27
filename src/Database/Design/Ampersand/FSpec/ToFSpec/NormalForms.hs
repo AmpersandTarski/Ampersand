@@ -479,7 +479,7 @@ term2rTerm term
            PKl1 _ e                 -> RKl1 (term2rTerm e)
            PFlp _ e                 -> RFlp (term2rTerm e)
            PBrk _ e                 -> term2rTerm e
-           Prim (PTrel _ str sgn)   -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
+           Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (name (pSrc sgn)) (name (pTgt sgn))
            Prim (Pid _ c)           -> RId  (pCpt2aCpt c)
            Prim (Pfull _ s t)       -> RVee (pCpt2aCpt s) (pCpt2aCpt t)
            Prim (Patm _ a (Just c)) -> RAtm a (pCpt2aCpt c)
