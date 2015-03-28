@@ -584,7 +584,7 @@ pCtx2aCtx' _
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
      = f <$> traverse (\x -> pRul2aRul' [rol | rr <- (pt_RRuls ppat), roleName <- mRules rr, name x == roleName, rol <- mRoles rr] (pt_nm ppat) x) (pt_rls ppat)
-         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
+         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
          <*> parRuls ppat 
          <*> parKeys ppat 
          <*> parPops ppat 
