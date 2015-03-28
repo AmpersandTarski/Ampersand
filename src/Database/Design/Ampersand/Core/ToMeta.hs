@@ -63,23 +63,6 @@ instance MakeMeta P_Pattern where
            , pt_pop = makeMeta f (pt_pop p)
            }
 
-instance MakeMeta P_Process where
-  makeMeta f p
-   = P_Prc { procNm    =            (procNm p)
-           , procPos   = makeMeta f (procPos p)
-           , procEnd   = makeMeta f (procEnd p)
-           , procRules = makeMeta f (procRules p)
-           , procGens  = makeMeta f (procGens p)
-           , procDcls  = makeMeta f (procDcls p)
-           , procRRuls = makeMeta f (procRRuls p)
-           , procRRels = makeMeta f (procRRels p)
-           , procCds   = makeMeta f (procCds p)
-           , procIds   = makeMeta f (procIds p)
-           , procVds   = makeMeta f (procVds p)
-           , procXps   = makeMeta f (procXps p)
-           , procPop   = makeMeta f (procPop p)
-           } 
-
 instance MakeMeta ConceptDef where
   makeMeta f cd
    = Cd  { cdpos  = makeMeta f (cdpos cd)

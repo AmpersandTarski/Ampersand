@@ -37,7 +37,6 @@ pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer t
                . checkMultipleDefaultViews -- Check whether each concept has at most one default view
                . checkUnique udefrules     -- Check uniquene names of: rules,
                . checkUnique patterns      --                          patterns,
-               . checkUnique ctxprocs      --                          processes.
                . checkUnique ctxvs         --                          view defs,
                . checkUnique ctxifcs       --                          and interfaces.
                . pCtx2aCtx' opts
@@ -59,7 +58,7 @@ checkPurposes gCtx =
   case gCtx of
     Errors err  -> Errors err
     Checked ctx -> let topLevelPurposes = ctxps ctx
-                       purposesInPatterns = concat (map ptxps  (ctxprocs ctx++ctxpats ctx))
+                       purposesInPatterns = concatMap ptxps (ctxpats ctx)
                        allPurposes = topLevelPurposes ++ purposesInPatterns
                        danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
                    in  if null danglingPurposes then gCtx else Errors $ map mkDanglingPurposeError danglingPurposes
@@ -74,10 +73,9 @@ isDanglingPurpose ctx purp =
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
-    ExplProcess nm -> nm `notElem` map name (ctxprocs ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplContext nm -> ctxnm ctx /= nm
-
+    ExplProcess _ -> fatal 78 "still TODO, get rid of ExplProcess"
 -- Check that interface references are not cyclic
 checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
 checkInterfaceCycles gCtx =
@@ -124,17 +122,16 @@ pCtx2aCtx' _
       , ctx_php    = p_phpdefs      --  user defined phpplugs, taken from the Ampersand script
       , ctx_metas  = p_metas        --  generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
       }
- = (\pats procs rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs
+ = (\pats _ rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs
      -> ACtx{ ctxnm = n1
             , ctxpos = n2
             , ctxlang = deflangCtxt
             , ctxmarkup = deffrmtCtxt
             , ctxthms = p_themes
             , ctxpats = pats
-            , ctxprocs = procs
             , ctxrs = rules
             , ctxds = ctxDecls
-            , ctxpopus = nub (udpops++dclPops++mp1Pops rules++mp1Pops pats++mp1Pops procs++mp1Pops identdefs++mp1Pops viewdefs++mp1Pops interfaces)
+            , ctxpopus = nub (udpops++dclPops++mp1Pops rules++mp1Pops pats++mp1Pops identdefs++mp1Pops viewdefs++mp1Pops interfaces)
             , ctxcds = allConceptDefs
             , ctxks = identdefs
             , ctxvs = viewdefs
@@ -146,8 +143,8 @@ pCtx2aCtx' _
             , ctxphp = phpdefs
             , ctxmetas = p_metas
             }
-    ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
-      <*> traverse pProc2aProc p_processes         --  The processes defined in this context
+    ) <$> traverse pPat2aPat (p_patterns ++ p_processes)            --  The patterns defined in this context
+      <*> traverse pPat2aPat []         --  The processes defined in this context
       <*> traverse (pRul2aRul [] n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
@@ -163,7 +160,7 @@ pCtx2aCtx' _
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
     genRules = [ ( Set.singleton (name (gen_spc x)), Set.fromList (map name (gen_concs x)))
-               | x <- p_gens ++ concatMap pt_gns p_patterns ++ concatMap procGens p_processes
+               | x <- p_gens ++ concatMap pt_gns (p_patterns ++ p_processes)
                ]
     genLattice :: Op1EqualitySystem String
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
@@ -181,10 +178,9 @@ pCtx2aCtx' _
 
     (decls,dclPops)= unzip dps
     (ctxDecls,_ ) = unzip ctxDecls'
-    dps = ctxDecls'++patDecls++patProcs
+    dps = ctxDecls'++patDecls
     ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
-    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
-    patProcs  = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The relations declared in all processes within this context.
+    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns ++p_processes , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
 
 -- In order to find declarations efficiently, a Map is constructed to search declarations by name.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
@@ -550,42 +546,42 @@ pCtx2aCtx' _
                     }) <$> traverse termPrim2Expr tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
-    pProc2aProc :: P_Process -> Guarded Pattern
-    pProc2aProc P_Prc { procNm = nm
-                      , procPos = orig
-                      , procEnd = posEnd
-                      , procRules = ruls
-                      , procGens = gens
-                      , procDcls = dcls
-                      , procRRuls = rolruls
-                      , procRRels = rolrels
-                      , procCds = _cdefs -- SJ2013: the underscore means that this argument is not used.
-                      , procIds = idefs
-                      , procVds = viewdefs
-                      , procXps = purposes
-                      , procPop = pops
-                      }
-     = (\ ruls' rels' pops' idefs' viewdefs' purposes'
-         ->  let (decls',dPops) = unzip [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
-             in A_Pat { ptnm = nm
-                      , ptpos = orig
-                     , ptend = posEnd
-                     , ptrls = map snd ruls'
-                     , ptgns = map pGen2aGen gens
-                     , ptdcs = decls'
-                     , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
-                     , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
-                     , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
-                     , ptids = idefs'
-                     , ptvds = viewdefs'
-                     , ptxps = purposes'
-                     }
-       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
-         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
-         <*> traverse pPop2aPop pops
-         <*> traverse pIdentity2aIdentity idefs
-         <*> traverse pViewDef2aViewDef viewdefs
-         <*> traverse pPurp2aPurp purposes
+--    pProc2aProc :: P_Pattern -> Guarded Pattern
+--    pProc2aProc P_Prc { procNm = nm
+--                      , procPos = orig
+--                      , procEnd = posEnd
+--                      , procRules = ruls
+--                      , procGens = gens
+--                      , procDcls = dcls
+--                      , procRRuls = rolruls
+--                      , procRRels = rolrels
+--                      , procCds = _cdefs -- SJ2013: the underscore means that this argument is not used.
+--                      , procIds = idefs
+--                      , procVds = viewdefs
+--                      , procXps = purposes
+--                      , procPop = pops
+--                      }
+--     = (\ ruls' rels' pops' idefs' viewdefs' purposes'
+--         ->  let (decls',dPops) = unzip [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
+--             in A_Pat { ptnm = nm
+--                      , ptpos = orig
+--                     , ptend = posEnd
+--                     , ptrls = map snd ruls'
+--                     , ptgns = map pGen2aGen gens
+--                     , ptdcs = decls'
+--                     , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
+--                     , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
+--                     , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
+--                     , ptids = idefs'
+--                     , ptvds = viewdefs'
+--                     , ptxps = purposes'
+--                     }
+--       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
+--         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
+--         <*> traverse pPop2aPop pops
+--         <*> traverse pIdentity2aIdentity idefs
+--         <*> traverse pViewDef2aViewDef viewdefs
+--         <*> traverse pPurp2aPurp purposes
 
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
@@ -721,7 +717,7 @@ pCtx2aCtx' _
        else head cs
        where cs = [cd | cd<-allConceptDefs, name cd==s]
     allConceptDefs :: [ConceptDef]
-    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns++concatMap procCds p_processes
+    allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
 
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 -- SJ 20140211 @SJC: TODO graag een typefout genereren voor een SESSION atoom anders dan _SESSION.

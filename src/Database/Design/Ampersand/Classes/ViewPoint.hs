@@ -109,13 +109,14 @@ instance Language A_Context where
   patterns             = ctxpats
 
 instance ProcessStructure A_Context where
-  roles        context = nub ([r | proc<-(ctxprocs context++ctxpats context), r <- roles proc]++  --TODO: Make it possible to define a role outside a PATTERN or PROCESS
-                              [r | interface<-ctxifcs context, r <- ifcRoles interface])
+  roles        context = nub (roles (ctxpats context)++  --TODO: Make it possible to define a role outside a PATTERN or PROCESS
+                              concatMap ifcRoles (ctxifcs context)
+                             )
   interfaces           = ctxifcs
   objDefs      context = [ifcObj s | s<-ctxifcs context]
   processRules context = [r |r<-udefrules context, (not.null) [role | (role, rul) <-maintains context, name r == name rul ] ]
-  maintains    context = maintains (ctxprocs context)
-  mayEdit      context = mayEdit (ctxprocs context)
+  maintains    context = maintains (ctxpats context)
+  mayEdit      context = mayEdit (ctxpats context)
 
 instance Language Pattern where
   objectdef    pat = Obj { objnm   = name pat

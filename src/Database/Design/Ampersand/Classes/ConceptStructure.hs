@@ -58,7 +58,6 @@ instance ConceptStructure a => ConceptStructure [a] where
 instance ConceptStructure A_Context where
   concs ctx = foldr uni []
               [ (concs.ctxpats) ctx
-              , (concs.ctxprocs) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx
               , (concs.ctxpopus) ctx
@@ -73,7 +72,6 @@ instance ConceptStructure A_Context where
               ]
   expressionsIn ctx = foldr uni []
                       [ (expressionsIn.ctxpats) ctx
-                      , (expressionsIn.ctxprocs) ctx
                       , (expressionsIn.ctxifcs) ctx
                       , (expressionsIn.ctxrs) ctx
                       , (expressionsIn.ctxks) ctx

@@ -30,7 +30,7 @@ makeFSpec opts context = fSpec
               , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
-              , pattsInScope = pattsInThemesInScope ++ procsInThemesInScope
+              , pattsInScope = pattsInThemesInScope
               , rulesInScope = rulesInThemesInScope
               , declsInScope = declsInThemesInScope
               , concsInScope = concsInThemesInScope
@@ -90,13 +90,11 @@ makeFSpec opts context = fSpec
                      then map name (patterns context) ++ map name allProcs
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
-     procsInThemesInScope :: [Pattern]
-     procsInThemesInScope = filter (\p -> name p `elem` themesInScope) (ctxprocs context)
      cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` concatMap ptrls procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
-     declsInThemesInScope = ctxds context `uni` concatMap ptdcs  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
-     concsInThemesInScope = concs (ctxrs context)  `uni`  concs procsInThemesInScope  `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = ctxgs context ++ concatMap ptgns procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
+     rulesInThemesInScope = ctxrs context `uni` concatMap ptrls pattsInThemesInScope
+     declsInThemesInScope = ctxds context `uni` concatMap ptdcs pattsInThemesInScope
+     concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
+     gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
      enrichIfc :: Interface -> Interface
      enrichIfc ifc
@@ -125,7 +123,7 @@ makeFSpec opts context = fSpec
      gRules = multrules context++identityRules context
      allProcs = [ FProc {fpProc = p
                         ,fpActivities =selectActs p
-                        } | p<-ctxprocs context ]
+                        } | p<-patterns context ]
                 where selectActs p   = [act | act<-fActivities fSpec
                                             , (not.null) (selRoles p act)]
                       selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]

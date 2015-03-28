@@ -106,7 +106,7 @@ pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
 
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
-                    | CPrc P_Process
+                    | CPrc P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy P_Gen
                     | CRel P_Declaration
@@ -182,26 +182,26 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pe PPurpose
              | Pp P_Population
 
-pProcessDef :: AmpParser P_Process
+pProcessDef :: AmpParser P_Pattern
 pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                       <*> pList pProcElem
                       <*> pKey_pos "ENDPROCESS"
    where
-    rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Process
+    rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
-      = P_Prc { procNm    = nm
-              , procPos   = pos'
-              , procEnd   = end
-              , procRules = [rr | PrR rr<-pes]
-              , procGens  = [g  | PrG g <-pes]
-              , procDcls  = [d  | PrD d <-pes]
-              , procRRuls = [rr | PrM rr<-pes]
-              , procRRels = [rr | PrL rr<-pes]
-              , procCds   = [cd nm | PrC cd<-pes]
-              , procIds   = [ix | PrI ix<-pes]
-              , procVds   = [vd | PrV vd<-pes]
-              , procXps   = [e  | PrE e <-pes]
-              , procPop   = [p  | PrP p <-pes]
+      = P_Pat { pt_nm    = nm
+              , pt_pos   = pos'
+              , pt_end   = end
+              , pt_rls = [rr | PrR rr<-pes]
+              , pt_gns  = [g  | PrG g <-pes]
+              , pt_dcs  = [d  | PrD d <-pes]
+              , pt_RRuls = [rr | PrM rr<-pes]
+              , pt_RRels = [rr | PrL rr<-pes]
+              , pt_cds   = [cd nm | PrC cd<-pes]
+              , pt_ids   = [ix | PrI ix<-pes]
+              , pt_vds   = [vd | PrV vd<-pes]
+              , pt_xps   = [e  | PrE e <-pes]
+              , pt_pop   = [p  | PrP p <-pes]
               }
     pProcElem :: AmpParser ProcElem
     pProcElem = PrR <$> pRuleDef      <|>

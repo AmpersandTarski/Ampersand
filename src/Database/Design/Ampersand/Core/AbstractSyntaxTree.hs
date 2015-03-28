@@ -69,7 +69,6 @@ data A_Context
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
-         , ctxprocs :: [Pattern]     -- ^ The processes defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
