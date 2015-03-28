@@ -157,7 +157,6 @@ instance XML PPurpose where
 --                PRef2Rule{}        -> Tag "ExplRule"        atts
 --                PRef2IdentityDef{} -> Tag "ExplIdentityDef" atts
 --                PRef2Pattern{}     -> Tag "ExplPattern"     atts
---                PRef2Process{}     -> Tag "ExplProcess"     atts
 --                PRef2Interface{}   -> Tag "ExplInterface"   atts
 --                PRef2Context{}     -> Tag "ExplContext"     atts
 --                PRef2Fspc{}        -> Tag "ExplContext"     atts
@@ -182,7 +181,6 @@ instance XML Purpose where
 --                ExplIdentityDef kname lang ref _ -> Tag "ExplIdentityDef" (atts kname lang ref)
 --                ExplViewDef     kname lang ref _ -> Tag "ExplViewDef"     (atts kname lang ref)
 --                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
---                ExplProcess     pname lang ref _ -> Tag "ExplProcess"     (atts pname lang ref)
 --                ExplInterface   cname lang ref _ -> Tag "ExplInterface"   (atts cname lang ref)
 --                ExplContext     cname lang ref _ -> Tag "ExplContext"     (atts cname lang ref)
 --           where

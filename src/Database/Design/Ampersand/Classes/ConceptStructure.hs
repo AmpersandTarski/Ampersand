@@ -189,7 +189,6 @@ instance ConceptStructure ExplObj where
   concs (ExplIdentityDef _) = [{-beware of loops...-}]
   concs (ExplViewDef _)     = [{-beware of loops...-}]
   concs (ExplPattern _)     = [{-beware of loops...-}]
-  concs (ExplProcess _)     = [{-beware of loops...-}]
   concs (ExplInterface _)   = [{-beware of loops...-}]
   concs (ExplContext _)     = [{-beware of loops...-}]
   

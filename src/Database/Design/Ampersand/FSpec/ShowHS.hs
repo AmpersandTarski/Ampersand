@@ -510,7 +510,6 @@ instance ShowHS ExplObj where
           ExplIdentityDef str-> "ExplIdentityDef "++show str
           ExplViewDef str    -> "ExplViewDef "    ++show str
           ExplPattern str    -> "ExplPattern "    ++show str
-          ExplProcess str    -> "ExplProcess "    ++show str
           ExplInterface str  -> "ExplInterface "  ++show str
           ExplContext str    -> "ExplContext "    ++show str
 

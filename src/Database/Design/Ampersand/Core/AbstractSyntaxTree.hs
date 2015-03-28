@@ -489,7 +489,6 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplIdentityDef String
              | ExplViewDef String
              | ExplPattern String
-             | ExplProcess String
              | ExplInterface String
              | ExplContext String
           deriving (Show ,Eq, Typeable)
@@ -502,7 +501,6 @@ instance Unique ExplObj where
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
      (ExplPattern s)     -> "a Pattern named "++s
-     (ExplProcess s)     -> "a Process named "++s
      (ExplInterface s)   -> "an Interface named "++s
      (ExplContext s)     -> "a Context named "++s
      

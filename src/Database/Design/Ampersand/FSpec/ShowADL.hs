@@ -126,7 +126,6 @@ instance ShowADL ExplObj where
       ExplIdentityDef str-> "IDENT "++showstr str
       ExplViewDef str    -> "VIEW "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
-      ExplProcess str    -> "PROCESS "++str
       ExplInterface str  -> "INTERFACE "++showstr str
       ExplContext str    -> "CONTEXT "++showstr str
 

@@ -75,7 +75,6 @@ isDanglingPurpose ctx purp =
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplContext nm -> ctxnm ctx /= nm
-    ExplProcess _ -> fatal 78 "still TODO, get rid of ExplProcess"
 -- Check that interface references are not cyclic
 checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
 checkInterfaceCycles gCtx =
@@ -704,7 +703,7 @@ pCtx2aCtx' _
     pRefObj2aRefObj (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj (PRef2ViewDef     s ) = pure$ ExplViewDef s
     pRefObj2aRefObj (PRef2Pattern     s ) = pure$ ExplPattern s
-    pRefObj2aRefObj (PRef2Process     s ) = pure$ ExplProcess s
+    pRefObj2aRefObj (PRef2Process     s ) = pure$ ExplPattern s
     pRefObj2aRefObj (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
