@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, mkCrudInfo) where
+module Database.Design.Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
 
 import Data.List
 import Database.Design.Ampersand.Basics
@@ -9,25 +9,32 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "Crud"
 
+type CrudObject = (A_Concept,Bool,Bool,Bool,Bool)
 
 data CrudInfo = CrudInfo { getCrudObjects     :: [A_Concept]
-                         , getIfcCrudMatrices :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
+                         , getIfcCrudObjs :: [ (Interface, [CrudObject]) ]
                          -- TODO: think about representation of these matrices
                          } deriving Show
 
 showCrudInfo :: CrudInfo -> String
-showCrudInfo (CrudInfo crudObjects ifcCrudMatrices) =
+showCrudInfo (CrudInfo crudObjects ifcCrudObjs) =
   "CRUD info\nObjects: " ++ showNames crudObjects ++
   "\nMatrices\n" ++ concat
     [ "Interface " ++ name ifc ++
       "\nC R U D Object\n" ++
       (unlines $ map showCrud cObjs)
-    | (ifc, cObjs) <- ifcCrudMatrices
+    | (ifc, cObjs) <- ifcCrudObjs
     ] ++ "\n"
   where showNames xs = intercalate ", " $ map name xs
         showCrud (cncpt, isC, isR, isU, isD) = concat [ showX isX ++ " " | isX <- [isC, isR, isU, isD] ] ++ show (name cncpt)
         showX isX = if isX then "X" else " "
 
+getCrudObjectsForInterface :: CrudInfo -> Interface -> [CrudObject]
+getCrudObjectsForInterface crudInfo ifc = 
+  case lookup ifc $ getIfcCrudObjs crudInfo of
+    Nothing       -> fatal 33 $ "NO CRUD matrix for interface " ++ show (name ifc)
+    Just crudObjs -> crudObjs
+  
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim allDecls allIfcs =
   CrudInfo allCrudObjects [ (ifc, getCrudMatrix ifc) | ifc <- allIfcs ]
@@ -38,8 +45,13 @@ mkCrudInfo  allConceptsPrim allDecls allIfcs =
 
         -- Not the most efficient implementation, but it is easy to read, and the total number of concepts will not be enormous.
         getCrudMatrix :: Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
-        getCrudMatrix ifc = [ (cObj, cObj `elem` crudCreateObjs, cObj `elem` crudReadObjs, cObj `elem` crudUpdateObjs, cObj `elem` crudDeleteObjs)
+        getCrudMatrix ifc = [ (cObj, isC, isR, isU, isD)
                             | cObj <- allCrudObjects
+                            , let isC = cObj `elem` crudCreateObjs
+                            , let isR = cObj `elem` crudReadObjs
+                            , let isU = cObj `elem` crudUpdateObjs
+                            , let isD = cObj `elem` crudDeleteObjs
+                            , or [isC, isR, isU, isD] -- TODO: is this right?
                             ]
 
           where crudCreateObjs = getEditableTargets allIfcs ifc
