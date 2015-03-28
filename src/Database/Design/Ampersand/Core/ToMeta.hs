@@ -201,7 +201,6 @@ instance MakeMeta PRef2Obj where
       PRef2IdentityDef _ -> ref 
       PRef2ViewDef _     -> ref 
       PRef2Pattern _     -> ref 
-      PRef2Process _     -> ref 
       PRef2Interface _   -> ref 
       PRef2Context _     -> ref 
       PRef2Fspc _        -> ref

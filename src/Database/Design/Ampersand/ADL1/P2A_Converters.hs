@@ -703,7 +703,6 @@ pCtx2aCtx' _
     pRefObj2aRefObj (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj (PRef2ViewDef     s ) = pure$ ExplViewDef s
     pRefObj2aRefObj (PRef2Pattern     s ) = pure$ ExplPattern s
-    pRefObj2aRefObj (PRef2Process     s ) = pure$ ExplPattern s
     pRefObj2aRefObj (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s

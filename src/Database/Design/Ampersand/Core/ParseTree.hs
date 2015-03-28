@@ -529,7 +529,6 @@ data PRef2Obj = PRef2ConceptDef String
               | PRef2IdentityDef String
               | PRef2ViewDef String
               | PRef2Pattern String
-              | PRef2Process String
               | PRef2Interface String
               | PRef2Context String
               | PRef2Fspc String
@@ -543,7 +542,6 @@ instance Named PRef2Obj where
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
      PRef2Pattern str -> str
-     PRef2Process str -> str
      PRef2Interface str -> str
      PRef2Context str -> str
      PRef2Fspc str -> str

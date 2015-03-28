@@ -552,7 +552,7 @@ pPurpose          = rebuild <$> pKey_pos "PURPOSE"  -- "EXPLAIN" has become obso
                   PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
-                  PRef2Process     <$ pKey "PROCESS"   <*> pADLid       <|>
+                  PRef2Pattern     <$ pKey "PROCESS"   <*> pADLid       <|>
                   PRef2Interface   <$ pKey "INTERFACE" <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 

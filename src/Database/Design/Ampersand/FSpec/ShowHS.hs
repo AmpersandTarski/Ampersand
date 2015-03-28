@@ -489,7 +489,6 @@ instance ShowHS PRef2Obj where
          PRef2IdentityDef str                   -> "PRef2IdentityDef "++show str
          PRef2ViewDef str                       -> "PRef2ViewDef "    ++show str
          PRef2Pattern str                       -> "PRef2Pattern "    ++show str
-         PRef2Process str                       -> "PRef2Process "    ++show str
          PRef2Interface str                     -> "PRef2Interface "  ++show str
          PRef2Context str                       -> "PRef2Context "    ++show str
          PRef2Fspc str                          -> "PRef2Fspc "       ++show str
