@@ -9,7 +9,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , Role(..)
    , P_Pattern(..)
    , P_Declaration(..)
-   , Term(..), TermPrim(..)
+   , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
@@ -93,8 +93,8 @@ data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for 
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
-   = P_RR { rr_Roles :: [Role]  -- ^ name of a role
-          , rr_Rels :: [TermPrim] -- ^ Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+   = P_RR { rr_Roles :: [Role]      -- ^ list of roles
+          , rr_Rels :: [P_NamedRel] -- ^ list of named relations
           , rr_Pos :: Origin      -- ^ position in the Ampersand script
           } deriving (Show)       -- deriving Show is just for debugging
 instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
@@ -188,8 +188,10 @@ data TermPrim
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
-   | Prel Origin String                     -- ^ we expect expressions in flip-normal form
-   | PTrel Origin String P_Sign             -- ^ type cast expression
+   | PNamedR P_NamedRel
+   deriving Show
+
+data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
    deriving Show
 
 {- For whenever it may turn out to be useful
@@ -271,8 +273,8 @@ instance Traced TermPrim where
    Patm orig _ _  -> orig
    PVee orig      -> orig
    Pfull orig _ _ -> orig
-   Prel orig _    -> orig
-   PTrel orig _ _ -> orig
+   PNamedR r      -> origin r
+   
 instance Named TermPrim where
  name e = case e of
    PI _        -> "I"
@@ -280,8 +282,13 @@ instance Named TermPrim where
    Patm _ s _  -> s
    PVee _      -> "V"
    Pfull _ _ _ -> "V"
-   Prel _ r    -> r
-   PTrel _ r _ -> r
+   PNamedR r   -> name r
+   
+instance Traced P_NamedRel where
+  origin (PNamedRel o _ _) = o
+
+instance Named P_NamedRel where
+  name (PNamedRel _ nm _) = nm
 
 instance Traced a => Traced (Term a) where
  origin e = case e of
@@ -411,9 +418,7 @@ instance Traced P_Population where
 data P_Interface =
      P_Ifc { ifc_Name :: String           -- ^ the name of the interface
            , ifc_Class :: Maybe String    -- ^ the class of the interface
-           , ifc_Params :: [TermPrim]     -- ^ a list of relations that are editable within this interface.
-                                          --   either   Prel o nm
-                                          --       or   PTrel o nm sgn
+           , ifc_Params :: [P_NamedRel]     -- ^ a list of named relations that are editable within this interface.
            , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
@@ -519,8 +524,7 @@ instance Traced (P_ViewD a) where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
 data PRef2Obj = PRef2ConceptDef String
-              | PRef2Declaration TermPrim -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
-                                      -- or        Prel o nm; Other terms become fatals
+              | PRef2Declaration P_NamedRel
               | PRef2Rule String
               | PRef2IdentityDef String
               | PRef2ViewDef String
@@ -534,9 +538,7 @@ data PRef2Obj = PRef2ConceptDef String
 instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
-     PRef2Declaration (PTrel _ nm sgn) -> nm++show sgn
-     PRef2Declaration (Prel _ nm) -> nm
-     PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
+     PRef2Declaration (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
      PRef2Rule str -> str
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str

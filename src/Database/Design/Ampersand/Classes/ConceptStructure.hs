@@ -9,8 +9,17 @@ import Data.Maybe
 import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpression)
 import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ConceptStructure"
+
+{- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
+   (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
+   define relsMentionedIn directly.
+   
+   Another improvement would be to factorize the prim constructors from the Expression data type, so expressionsIn won't need to be partial
+   anymore.
+-}
 
 class ConceptStructure a where
   concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
@@ -146,7 +155,7 @@ instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr (uni) []
                      [ (expressionsIn.ifcObj) ifc
-                     , (expressionsIn.ifcParams) ifc
+                     , map EDcD $ ifcParams ifc -- Return param declarations as expressions
                      ]
 
 instance ConceptStructure Declaration where

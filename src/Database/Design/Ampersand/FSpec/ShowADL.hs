@@ -405,8 +405,10 @@ instance ShowADL TermPrim where
  showADL (Patm _ a (Just c))                      = "'"++a++"'["++show c++"]"
  showADL (PVee _)                                 = "V"
  showADL (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
- showADL (Prel _ rel)                             = rel
- showADL (PTrel _ rel psgn)                       = rel++showsign psgn
+ showADL (PNamedR rel)                            = showADL rel
+ 
+instance ShowADL P_NamedRel where
+ showADL (PNamedRel _ rel mSgn)                    = rel++maybe "" showsign mSgn
   where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"
 
 --used to compose error messages at p2a time

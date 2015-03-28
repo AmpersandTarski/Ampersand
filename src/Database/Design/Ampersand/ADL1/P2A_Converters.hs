@@ -512,16 +512,14 @@ pCtx2aCtx' _
            Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt conspt))
            PVee _      -> Vee
            Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
-           Prel _ r    -> Rel [EDcD dc | dc <- (Map.elems $ findDecls r)]
-           PTrel _ r s -> Rel [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
+           PNamedR nr -> Rel $ disambNamedRel nr
         )
+    disambNamedRel (PNamedRel _ r Nothing)  = [EDcD dc | dc <- (Map.elems $ findDecls r)]
+    disambNamedRel (PNamedRel _ r (Just s)) = [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
 
-    termPrim2Decl :: TermPrim -> Guarded Declaration
-    termPrim2Decl o@(Prel _ r   ) = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
-    termPrim2Decl o@(PTrel _ r s) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
-    termPrim2Decl _ = fatal 231 "Expecting Declaration"
-    termPrim2Expr :: TermPrim -> Guarded Expression
-    termPrim2Expr = pDisAmb2Expr . termPrimDisAmb
+    namedRel2Decl :: P_NamedRel -> Guarded Declaration
+    namedRel2Decl o@(PNamedRel _ r Nothing)  = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
+    namedRel2Decl o@(PNamedRel _ r (Just s)) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
 
     pIfc2aIfc :: (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc (P_Ifc { ifc_Params = tps
@@ -543,7 +541,7 @@ pCtx2aCtx' _
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp
-                    }) <$> traverse termPrim2Expr tps
+                    }) <$> traverse namedRel2Decl tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
 --    pProc2aProc :: P_Pattern -> Guarded Pattern
@@ -577,7 +575,7 @@ pCtx2aCtx' _
 --                     , ptxps = purposes'
 --                     }
 --       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
---         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
+--         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- rolrels]
 --         <*> traverse pPop2aPop pops
 --         <*> traverse pIdentity2aIdentity idefs
 --         <*> traverse pViewDef2aViewDef viewdefs
@@ -701,7 +699,7 @@ pCtx2aCtx' _
        <$> pRefObj2aRefObj objref
     pRefObj2aRefObj :: PRef2Obj -> Guarded ExplObj
     pRefObj2aRefObj (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
-    pRefObj2aRefObj (PRef2Declaration tm) = ExplDeclaration <$> (termPrim2Decl tm)
+    pRefObj2aRefObj (PRef2Declaration tm) = ExplDeclaration <$> (namedRel2Decl tm)
     pRefObj2aRefObj (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj (PRef2ViewDef     s ) = pure$ ExplViewDef s
