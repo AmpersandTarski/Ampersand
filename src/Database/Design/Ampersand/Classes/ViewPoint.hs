@@ -27,7 +27,7 @@ class Language a where
   invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
                                      --   That includes multiplicity rules and identity rules, but excludes rules that are assigned to a role.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ identityRules x
+  invariants x  = filter (not . isSignal . (\r -> trace ("Rule: (isSignal: "++show (isSignal r)++") "++name r) r)) (udefrules x) ++ multrules x ++ identityRules x
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.

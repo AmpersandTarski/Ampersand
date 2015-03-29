@@ -584,18 +584,17 @@ pCtx2aCtx' _
     pPat2aPat ppat
      = f <$> traverse (\x -> pRul2aRul' [rol | rr <- (pt_RRuls ppat), roleName <- mRules rr, name x == roleName, rol <- mRoles rr] (pt_nm ppat) x) (pt_rls ppat)
          <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
-         <*> parRuls ppat 
          <*> parKeys ppat 
          <*> parPops ppat 
          <*> parViews ppat 
          <*> parPrps ppat
        where
-        f ruls' rels' prules keys' pops' views' xpls
+        f ruls' rels' keys' pops' views' xpls
            = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
              in A_Pat { ptnm  = name ppat
                       , ptpos = pt_pos ppat
                       , ptend = pt_end ppat
-                      , ptrls = prules
+                      , ptrls = map snd ruls'
                       , ptgns = agens'
                       , ptdcs = decls'
                       , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
@@ -606,7 +605,6 @@ pCtx2aCtx' _
                       , ptxps = xpls
                       }
         agens'   = map pGen2aGen (pt_gns ppat)
-        parRuls  = traverse (pRul2aRul []  (name ppat)) . pt_rls
         parKeys  = traverse pIdentity2aIdentity . pt_ids
         parPops  = traverse pPop2aPop . pt_pop
         parViews = traverse pViewDef2aViewDef . pt_vds

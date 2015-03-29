@@ -440,7 +440,18 @@ instance ShowHS Pattern where
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
      , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
+
+     , case prcRRuls pat of
+        []          -> ", prcRRuls = [] {- no role-rule assignments -}"
+        [(rol,rul)] -> ", prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
+        rs          -> ", prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
+     , case prcRRels pat of
+        []          -> ", prcRRels = [] {- no role-relation assignments -}"
+        [(rol,rel)] -> ", prcRRels = [ ("++show rol++", "++showHS opts "" rel++") ]"
+        rs          -> ", prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS opts "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
+
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
+     , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)
      , wrap ", ptxps = " indentB (showHS opts) (ptxps pat)
      , "}"
      ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
