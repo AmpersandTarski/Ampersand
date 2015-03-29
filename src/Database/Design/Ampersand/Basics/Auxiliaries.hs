@@ -3,7 +3,7 @@ module Database.Design.Ampersand.Basics.Auxiliaries
          ( module Database.Design.Ampersand.Basics.Auxiliaries
          , module Debug.Trace) where
 
-import Data.List (nub,elemIndex)
+import Data.List
 import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
 import Data.Maybe (fromMaybe)
 import Data.Map (Map) 
@@ -39,6 +39,15 @@ getCycles edges =
       keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
       graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
   in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
+
+
+-- |  Warshall's transitive closure algorithm
+transClosureMap :: (Eq a, Ord a) => Map a [a] -> Map a [a]
+transClosureMap xs
+  = foldl f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
+    where
+     f :: (Eq a, Ord a) => Map a [a] -> a -> Map a [a]   -- The type is given for documentation purposes only
+     f q x = Map.unionWith union q (Map.fromListWith union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 
 -- The following function can be used to determine how much of a set of alternative expression is already determined
 -- | The 'combinations' function returns all possible combinations of lists of list.
