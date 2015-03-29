@@ -160,7 +160,7 @@ showImage opts pict =
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
-orderingByTheme :: FSpec -> [( Maybe Theme   -- A theme is about either a pattern or a process.
+orderingByTheme :: FSpec -> [( Maybe Pattern   -- A theme is about either a pattern or a process.
                             , [Rule]        -- The rules of that theme
                             , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
                             , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
@@ -172,11 +172,11 @@ orderingByTheme fSpec
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
-  -- | The themes that should be taken into account for this ordering
+  -- | The patterns that should be taken into account for this ordering
   tms = if null (themes fSpec)
-        then map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
-        else [ PatternTheme pat           | pat <-patterns   fSpec, name pat  `elem` themes fSpec ]
-           ++[ ProcessTheme (fpProc fprc) | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
+        then (patterns fSpec) ++ map (fpProc) (vprocesses fSpec)
+        else [ pat           | pat <-patterns   fSpec, name pat  `elem` themes fSpec ]
+           ++[ (fpProc fprc) | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
   f ruls rels cpts ts
    = case ts of
        t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
@@ -189,7 +189,7 @@ orderingByTheme fSpec
   -- | This function takes care of partitioning each of the
   --   lists in a pair of lists of elements which do and do not belong
   --   to the theme, respectively
-  partitionByTheme :: Theme
+  partitionByTheme :: Pattern
                    -> [Rule]
                    -> [Declaration]
                    -> [A_Concept]
@@ -197,14 +197,11 @@ orderingByTheme fSpec
                       , ([Declaration],[Declaration])
                       , ([A_Concept],[A_Concept])
                       )
-  partitionByTheme thme ruls rels cpts
+  partitionByTheme pat ruls rels cpts
       = ((rulsOfTheme,rulsNotOfTheme), (relsOfTheme,relsNotOfTheme), (cptsOfTheme,cptsNotOfTheme))
      where
        (rulsOfTheme,rulsNotOfTheme) = partition isRulOfTheme ruls
-       isRulOfTheme r = r `elem` (case thme of
-                                    PatternTheme pat -> ptrls pat
-                                    ProcessTheme prc -> prcRules prc
-                                 )
+       isRulOfTheme r = r `elem` ptrls pat
        (relsOfTheme,relsNotOfTheme) = partition isRelOfTheme rels
        isRelOfTheme r = r `elem` (concatMap relsDefdIn rulsOfTheme++concatMap relsUsedIn rulsOfTheme)
        (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts

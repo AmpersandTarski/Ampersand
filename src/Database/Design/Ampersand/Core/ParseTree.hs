@@ -4,7 +4,6 @@ module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
-   , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
    , Role(..)
@@ -63,7 +62,7 @@ data P_Context
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         , ctx_PPrcs ::  [P_Process]      -- ^ The processes as defined by the parser
+         , ctx_PPrcs ::  [P_Pattern]      -- ^ The processes as defined by the parser
          , ctx_rs ::     [(P_Rule TermPrim)]         -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
@@ -102,28 +101,6 @@ instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
 instance Traced P_RoleRelation where
  origin = rr_Pos
 
-data P_Process
-   = P_Prc { procNm :: String
-           , procPos :: Origin             -- ^ the start position in the file
-           , procEnd :: Origin             -- ^ the end position in the file
-           , procRules :: [(P_Rule TermPrim)]         -- ^ the rules in this process
-           , procGens :: [P_Gen]           -- ^ the generalizations in this process
-           , procDcls :: [P_Declaration]   -- ^ the relation that are declared in this process
-           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
-           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-           , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
-           , procIds :: [P_IdentDef]       -- ^ The identity definitions defined in this process
-           , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
-           , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
-           , procPop :: [P_Population]     -- ^ The populations that are local to this process
-           } deriving Show
-
-instance Named P_Process where
- name = procNm
-
-instance Traced P_Process where
- origin = procPos
-
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data RoleRule
    = Maintain
@@ -147,6 +124,8 @@ data P_Pattern
            , pt_rls :: [(P_Rule TermPrim)]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
+           , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
@@ -550,7 +529,6 @@ data PRef2Obj = PRef2ConceptDef String
               | PRef2IdentityDef String
               | PRef2ViewDef String
               | PRef2Pattern String
-              | PRef2Process String
               | PRef2Interface String
               | PRef2Context String
               | PRef2Fspc String
@@ -564,7 +542,6 @@ instance Named PRef2Obj where
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
      PRef2Pattern str -> str
-     PRef2Process str -> str
      PRef2Interface str -> str
      PRef2Context str -> str
      PRef2Fspc str -> str

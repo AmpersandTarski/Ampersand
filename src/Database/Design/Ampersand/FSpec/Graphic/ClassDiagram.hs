@@ -116,8 +116,7 @@ cdAnalysis fSpec =
    allDcls = topLevelDcls ++
              [ d -- restricted to those themes that must be printed.
              | d@Sgn{} <- nub . concat $
-                            [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] ++
-                            [relsDefdIn p ++ relsMentionedIn p  | p <- procsInScope fSpec ]
+                            [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] 
              ]
    assocsAndAggrs = [ decl2assocOrAggr d
                     | d <- allDcls

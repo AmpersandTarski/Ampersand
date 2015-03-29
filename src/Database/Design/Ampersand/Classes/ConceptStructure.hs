@@ -67,7 +67,6 @@ instance ConceptStructure a => ConceptStructure [a] where
 instance ConceptStructure A_Context where
   concs ctx = foldr uni []
               [ (concs.ctxpats) ctx
-              , (concs.ctxprocs) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx
               , (concs.ctxpopus) ctx
@@ -82,7 +81,6 @@ instance ConceptStructure A_Context where
               ]
   expressionsIn ctx = foldr uni []
                       [ (expressionsIn.ctxpats) ctx
-                      , (expressionsIn.ctxprocs) ctx
                       , (expressionsIn.ctxifcs) ctx
                       , (expressionsIn.ctxrs) ctx
                       , (expressionsIn.ctxks) ctx
@@ -153,22 +151,6 @@ instance ConceptStructure Pattern where
                      , (expressionsIn.ptvds) p
                      ]
 
-instance ConceptStructure Process where
-  concs prc = foldr uni []
-              [ (concs.prcRules) prc
-              , (concs.prcGens) prc
-              , (concs.prcDcls) prc
-              , (concs.prcUps) prc
-              , (concs.prcIds) prc
-              , (concs.prcVds) prc
-              , (concs.prcXps) prc
-              ]
-  expressionsIn p = foldr (uni) []
-                     [ (expressionsIn.prcRules) p
-                     , (expressionsIn.prcIds) p
-                     , (expressionsIn.prcVds) p
-                     ]
-
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr (uni) []
@@ -207,7 +189,6 @@ instance ConceptStructure ExplObj where
   concs (ExplIdentityDef _) = [{-beware of loops...-}]
   concs (ExplViewDef _)     = [{-beware of loops...-}]
   concs (ExplPattern _)     = [{-beware of loops...-}]
-  concs (ExplProcess _)     = [{-beware of loops...-}]
   concs (ExplInterface _)   = [{-beware of loops...-}]
   concs (ExplContext _)     = [{-beware of loops...-}]
   

@@ -54,29 +54,14 @@ instance MakeMeta P_Pattern where
            , pt_rls = makeMeta f (pt_rls p)
            , pt_gns = makeMeta f (pt_gns p)
            , pt_dcs = makeMeta f (pt_dcs p)
+           , pt_RRuls = makeMeta f (pt_RRuls p)
+           , pt_RRels = makeMeta f (pt_RRels p)
            , pt_cds = makeMeta f (pt_cds p)
            , pt_ids = makeMeta f (pt_ids p)
            , pt_vds = makeMeta f (pt_vds p)
            , pt_xps = makeMeta f (pt_xps p)
            , pt_pop = makeMeta f (pt_pop p)
            }
-
-instance MakeMeta P_Process where
-  makeMeta f p
-   = P_Prc { procNm    =            (procNm p)
-           , procPos   = makeMeta f (procPos p)
-           , procEnd   = makeMeta f (procEnd p)
-           , procRules = makeMeta f (procRules p)
-           , procGens  = makeMeta f (procGens p)
-           , procDcls  = makeMeta f (procDcls p)
-           , procRRuls = makeMeta f (procRRuls p)
-           , procRRels = makeMeta f (procRRels p)
-           , procCds   = makeMeta f (procCds p)
-           , procIds   = makeMeta f (procIds p)
-           , procVds   = makeMeta f (procVds p)
-           , procXps   = makeMeta f (procXps p)
-           , procPop   = makeMeta f (procPop p)
-           } 
 
 instance MakeMeta ConceptDef where
   makeMeta f cd
@@ -216,7 +201,6 @@ instance MakeMeta PRef2Obj where
       PRef2IdentityDef _ -> ref 
       PRef2ViewDef _     -> ref 
       PRef2Pattern _     -> ref 
-      PRef2Process _     -> ref 
       PRef2Interface _   -> ref 
       PRef2Context _     -> ref 
       PRef2Fspc _        -> ref

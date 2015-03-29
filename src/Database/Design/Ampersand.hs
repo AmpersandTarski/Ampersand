@@ -21,7 +21,7 @@ module Database.Design.Ampersand
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)
-   , Process(..) , FProcess(..)
+   , FProcess(..)
    , Prop(..), RuleOrigin(..)
    , Lang(..)
    , SqlFieldUsage(..)

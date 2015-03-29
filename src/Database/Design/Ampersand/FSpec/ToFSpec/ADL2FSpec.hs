@@ -31,7 +31,6 @@ makeFSpec opts context = fSpec
               , fspos        = ctxpos context
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
-              , procsInScope = procsInThemesInScope
               , rulesInScope = rulesInThemesInScope
               , declsInScope = declsInThemesInScope
               , concsInScope = concsInThemesInScope
@@ -47,7 +46,7 @@ makeFSpec opts context = fSpec
                                       || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
                                     , allInterfaces opts]  -- generated interfaces
               , fSwitchboard = switchboard fSpec
-              , fActivities  = [ makeActivity fSpec rul | rul <-processRules context]
+              , fActivities  = allActivities
               , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
               , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
               , fRoles       = roles context
@@ -88,15 +87,14 @@ makeFSpec opts context = fSpec
                                          ]
               }
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                     then map name (patterns context) ++ map name allProcs
+                     then map name (patterns context)
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
-     procsInThemesInScope = filter (\p -> name p `elem` themesInScope) (ctxprocs context)
      cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` concatMap prcRules procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
-     declsInThemesInScope = ctxds context `uni` concatMap prcDcls  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
-     concsInThemesInScope = concs (ctxrs context)  `uni`  concs procsInThemesInScope  `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
+     rulesInThemesInScope = ctxrs context `uni` concatMap ptrls pattsInThemesInScope
+     declsInThemesInScope = ctxds context `uni` concatMap ptdcs pattsInThemesInScope
+     concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
+     gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
      enrichIfc :: Interface -> Interface
      enrichIfc ifc
@@ -111,23 +109,23 @@ makeFSpec opts context = fSpec
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
+       where populations = ctxpopus context++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
      allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
      allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
-     allQuads = makeAllQuads allConjsPerRule'
+     allQuads = nub $ makeAllQuads allConjsPerRule'
 
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
      allProcs = [ FProc {fpProc = p
-                        ,fpActivities =selectActs p
-                        } | p<-ctxprocs context ]
-                where selectActs p   = [act | act<-fActivities fSpec
-                                            , (not.null) (selRoles p act)]
-                      selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
+                        ,fpActivities =[act | act<-allActivities, (not.null) (selRoles p act)]
+                        } | p<-patterns context ]
+                where selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
+     allActivities :: [Activity]
+     allActivities = [ makeActivity fSpec rul | rul <-processRules context]
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
      calcProps d = d{decprps_calc = Just calculated}
