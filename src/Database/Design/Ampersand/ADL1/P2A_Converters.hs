@@ -543,51 +543,14 @@ pCtx2aCtx' _
                     }) <$> traverse namedRel2Decl tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
---    pProc2aProc :: P_Pattern -> Guarded Pattern
---    pProc2aProc P_Prc { procNm = nm
---                      , procPos = orig
---                      , procEnd = posEnd
---                      , procRules = ruls
---                      , procGens = gens
---                      , procDcls = dcls
---                      , procRRuls = rolruls
---                      , procRRels = rolrels
---                      , procCds = _cdefs -- SJ2013: the underscore means that this argument is not used.
---                      , procIds = idefs
---                      , procVds = viewdefs
---                      , procXps = purposes
---                      , procPop = pops
---                      }
---     = (\ ruls' rels' pops' idefs' viewdefs' purposes'
---         ->  let (decls',dPops) = unzip [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
---             in A_Pat { ptnm = nm
---                      , ptpos = orig
---                     , ptend = posEnd
---                     , ptrls = map snd ruls'
---                     , ptgns = map pGen2aGen gens
---                     , ptdcs = decls'
---                     , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
---                     , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
---                     , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
---                     , ptids = idefs'
---                     , ptvds = viewdefs'
---                     , ptxps = purposes'
---                     }
---       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, roleName <- mRules rr, name x == roleName, rol <- mRoles rr] nm x) ruls
---         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- rolrels]
---         <*> traverse pPop2aPop pops
---         <*> traverse pIdentity2aIdentity idefs
---         <*> traverse pViewDef2aViewDef viewdefs
---         <*> traverse pPurp2aPurp purposes
-
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
      = f <$> traverse (\x -> pRul2aRul' [rol | rr <- (pt_RRuls ppat), roleName <- mRules rr, name x == roleName, rol <- mRoles rr] (pt_nm ppat) x) (pt_rls ppat)
          <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
-         <*> parKeys ppat 
-         <*> parPops ppat 
-         <*> parViews ppat 
-         <*> parPrps ppat
+         <*> traverse pIdentity2aIdentity (pt_ids ppat) 
+         <*> traverse pPop2aPop (pt_pop ppat)
+         <*> traverse pViewDef2aViewDef (pt_vds ppat) 
+         <*> traverse pPurp2aPurp (pt_xps ppat)
        where
         f ruls' rels' keys' pops' views' xpls
            = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
@@ -595,7 +558,7 @@ pCtx2aCtx' _
                       , ptpos = pt_pos ppat
                       , ptend = pt_end ppat
                       , ptrls = map snd ruls'
-                      , ptgns = agens'
+                      , ptgns = map pGen2aGen (pt_gns ppat)
                       , ptdcs = decls'
                       , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
                       , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
@@ -604,11 +567,6 @@ pCtx2aCtx' _
                       , ptvds = views'
                       , ptxps = xpls
                       }
-        agens'   = map pGen2aGen (pt_gns ppat)
-        parKeys  = traverse pIdentity2aIdentity . pt_ids
-        parPops  = traverse pPop2aPop . pt_pop
-        parViews = traverse pViewDef2aViewDef . pt_vds
-        parPrps  = traverse pPurp2aPurp . pt_xps
 
     pRul2aRul':: [Role] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
