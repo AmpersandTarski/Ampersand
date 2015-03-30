@@ -2,6 +2,8 @@ module Database.Design.Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrud
 
 import Data.Function
 import Data.List
+import Data.Map (Map) 
+import qualified Data.Map as Map 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Classes.Relational
@@ -10,10 +12,8 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "Crud"
 
-type CrudObject = (A_Concept,Bool,Bool,Bool,Bool)
-
 data CrudInfo = CrudInfo { allCrudObjects :: [A_Concept]
-                         , crudObjsPerInterface :: [ (Interface, [CrudObject]) ]
+                         , crudObjsPerInterface :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
                          , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
                          -- TODO: name (crudPerInterface,crudPerConcept?) (also in code below)
                          -- TODO: think about representation of these matrices
@@ -32,45 +32,59 @@ showCrudInfo (CrudInfo crudObjects ifcCrudObjs _) =
         showCrud (cncpt, isC, isR, isU, isD) = concat [ showX isX ++ " " | isX <- [isC, isR, isU, isD] ] ++ show (name cncpt)
         showX isX = if isX then "X" else " "
 
-getCrudObjectsForInterface :: CrudInfo -> Interface -> [CrudObject]
+getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
 getCrudObjectsForInterface crudInfo ifc = 
   case lookup ifc $ crudObjsPerInterface crudInfo of
-    Nothing       -> fatal 33 $ "NO CRUD matrix for interface " ++ show (name ifc)
+    Nothing       -> fatal 33 $ "NO CRUD objects for interface " ++ show (name ifc)
     Just crudObjs -> crudObjs
   
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim allDecls allIfcs =
-  CrudInfo crudObjects crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
+  CrudInfo crudCncpts crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where allConcepts = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
-        nonCrudObjects = [ source d | d <- allDecls, isUni d && isSur d ] ++
+        nonCrudConcpts = [ source d | d <- allDecls, isUni d && isSur d ] ++
                          [ target d | d <- allDecls, isInj d && isTot d ]
-        crudObjects = allConcepts \\ nonCrudObjects
-        crudObjsPerIfc = [ (ifc, getCrudMatrix ifc) | ifc <- allIfcs ]
+        crudCncpts = allConcepts \\ nonCrudConcpts
+        
+        transSurjClosureMap :: [(A_Concept, [(A_Concept, Declaration)])]
+        transSurjClosureMap = Map.toList . transClosureMapEx . Map.fromList $
+          [ (source d, [(target d,d)]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
+          [ (target d, [(source d,d)]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
+        
+        -- crud concept together with declarations that comprise the object
+        crudObjs :: [(A_Concept, [Declaration])]
+        crudObjs = [ (crudCncpt, [ d | (crcpt, tgtsDecls) <- transSurjClosureMap, crcpt == crudCncpt, (_,d) <- tgtsDecls ]) 
+                   | crudCncpt <- crudCncpts ]
+        
+        getCrudUpdateConcpts :: Declaration -> [A_Concept]
+        getCrudUpdateConcpts decl = [ cObj | (cObj, cDecls) <- crudObjs, decl `elem` cDecls ]
+
+        crudObjsPerIfc = [ (ifc, getCrudObjsPerIfc ifc) | ifc <- allIfcs ]
         
         -- Not the most efficient implementation, but it is easy to read, and the total number of concepts will not be enormous.
-        getCrudMatrix :: Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
-        getCrudMatrix ifc = [ (cObj, isC, isR, isU, isD)
-                            | cObj <- crudObjects
-                            , let isC = cObj `elem` crudCreateObjs
-                            , let isR = cObj `elem` crudReadObjs
-                            , let isU = cObj `elem` crudUpdateObjs
-                            , let isD = cObj `elem` crudDeleteObjs
-                            , or [isC, isR, isU, isD] -- TODO: is this right?
-                            ]
-
-          where crudCreateObjs = getEditableTargets allIfcs ifc
-                crudReadObjs   = concs (relsUsedIn ifc) -- NOTE: this includes interface params, even if they do not appear in any of the field expressions
-                crudDeleteObjs = crudCreateObjs -- TODO: check if these are the same in Ampersand
-                crudUpdateObjs = []
-
-getEditableTargets :: [Interface] -> Interface -> [A_Concept]
-getEditableTargets allIfcs ifc = concatMap editableTarget $ getAllInterfaceExprs allIfcs ifc
+        getCrudObjsPerIfc :: Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
+        getCrudObjsPerIfc ifc = [ (cObj, isC, isR, isU, isD)
+                                | cObj <- crudCncpts
+                                , let isC = cObj `elem` crudCreateCncpts
+                                , let isR = cObj `elem` crudReadCncpts
+                                , let isU = cObj `elem` crudUpdateCncpts
+                                , let isD = cObj `elem` crudDeleteCncpts
+                                , or [isC, isR, isU, isD]
+                                ]                            
+          where crudCreateCncpts = editableTgts
+                crudReadCncpts   = concs (relsUsedIn ifc) -- NOTE: this includes interface params, even if they do not appear in any of the field expressions
+                crudDeleteCncpts = crudCreateCncpts -- We can't currently distinguish between these two.
+                crudUpdateCncpts = concatMap getCrudUpdateConcpts editableDecls
+                (editableDecls, editableTgts) = unzip $ getEditableDeclsAndTargets allIfcs ifc
+                                             
+-- NOTE: editable target is not necessarily the target of decl, as it may have been flipped (in which case it's the source)
+getEditableDeclsAndTargets :: [Interface] -> Interface -> [(Declaration, A_Concept)]
+getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterfaceExprs allIfcs ifc
   where editableTarget expr = 
           case getExpressionRelation expr of
             Nothing                                                              -> []
-            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` ifcParams ifc -> [if isFlipped then declSrc else declTgt]
+            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` ifcParams ifc -> [(decl, if isFlipped then declSrc else declTgt)]
                                                      | otherwise                 -> []
--- TODO: Handle specs? And do we use source/target expr or declSrc/Tgt?
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
@@ -83,12 +97,14 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                     [i]     -> getAllInterfaceExprs allIfcs i
                                 Just (Box _ _ objs)    -> concatMap getExprs objs
 
-getCrudObjsPerConcept :: [(Interface, [CrudObject])] -> [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
+getCrudObjsPerConcept :: [(Interface, [(A_Concept,Bool,Bool,Bool,Bool)])] ->
+                         [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
 getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterfaces
   where conceptsAndInterfaces :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
         conceptsAndInterfaces = concatMap toIfcPerConcept crudsPerIfc
         
-        toIfcPerConcept :: (Interface, [CrudObject]) -> [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
+        toIfcPerConcept :: (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) -> 
+                           [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
         toIfcPerConcept (ifc, ifcCrudObjs) = [ (cncpt, ( if isC then [ifc] else []
                                                        , if isR then [ifc] else []
                                                        , if isU then [ifc] else []
@@ -97,3 +113,12 @@ getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterf
                                                )
                                              | (cncpt, isC, isR, isU, isD) <- ifcCrudObjs
                                              ]
+
+                                             
+-- |  Yet another Warshall's transitive closure algorithm. This one uses labeled relations, and keeps track of the last label of each path.
+transClosureMapEx :: (Eq a, Ord a, Eq lbl) =>Map a [(a,lbl)] -> Map a [(a,lbl)]
+transClosureMapEx xs
+  = foldl f xs (Map.keys xs `intersect` nub (map fst $ concat (Map.elems xs)))
+    where
+     f :: (Eq a, Ord a, Eq x) => Map a [(a,x)] -> a -> Map a [(a,x)]
+     f q x = Map.unionWith union q (Map.fromListWith union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` map fst bs])
