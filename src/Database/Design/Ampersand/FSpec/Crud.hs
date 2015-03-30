@@ -1,5 +1,6 @@
 module Database.Design.Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
 
+import Data.Function
 import Data.List
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes.ConceptStructure
@@ -11,13 +12,15 @@ fatal = fatalMsg "Crud"
 
 type CrudObject = (A_Concept,Bool,Bool,Bool,Bool)
 
-data CrudInfo = CrudInfo { getCrudObjects     :: [A_Concept]
-                         , getIfcCrudObjs :: [ (Interface, [CrudObject]) ]
+data CrudInfo = CrudInfo { allCrudObjects :: [A_Concept]
+                         , crudObjsPerInterface :: [ (Interface, [CrudObject]) ]
+                         , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
+                         -- TODO: name (crudPerInterface,crudPerConcept?) (also in code below)
                          -- TODO: think about representation of these matrices
                          } deriving Show
 
 showCrudInfo :: CrudInfo -> String
-showCrudInfo (CrudInfo crudObjects ifcCrudObjs) =
+showCrudInfo (CrudInfo crudObjects ifcCrudObjs _) =
   "CRUD info\nObjects: " ++ showNames crudObjects ++
   "\nMatrices\n" ++ concat
     [ "Interface " ++ name ifc ++
@@ -31,22 +34,23 @@ showCrudInfo (CrudInfo crudObjects ifcCrudObjs) =
 
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [CrudObject]
 getCrudObjectsForInterface crudInfo ifc = 
-  case lookup ifc $ getIfcCrudObjs crudInfo of
+  case lookup ifc $ crudObjsPerInterface crudInfo of
     Nothing       -> fatal 33 $ "NO CRUD matrix for interface " ++ show (name ifc)
     Just crudObjs -> crudObjs
   
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim allDecls allIfcs =
-  CrudInfo allCrudObjects [ (ifc, getCrudMatrix ifc) | ifc <- allIfcs ]
+  CrudInfo crudObjects crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where allConcepts = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
         nonCrudObjects = [ source d | d <- allDecls, isUni d && isSur d ] ++
                          [ target d | d <- allDecls, isInj d && isTot d ]
-        allCrudObjects = allConcepts \\ nonCrudObjects
-
+        crudObjects = allConcepts \\ nonCrudObjects
+        crudObjsPerIfc = [ (ifc, getCrudMatrix ifc) | ifc <- allIfcs ]
+        
         -- Not the most efficient implementation, but it is easy to read, and the total number of concepts will not be enormous.
         getCrudMatrix :: Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
         getCrudMatrix ifc = [ (cObj, isC, isR, isU, isD)
-                            | cObj <- allCrudObjects
+                            | cObj <- crudObjects
                             , let isC = cObj `elem` crudCreateObjs
                             , let isR = cObj `elem` crudReadObjs
                             , let isU = cObj `elem` crudUpdateObjs
@@ -79,5 +83,17 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                     [i]     -> getAllInterfaceExprs allIfcs i
                                 Just (Box _ _ objs)    -> concatMap getExprs objs
 
-                                
-                                
+getCrudObjsPerConcept :: [(Interface, [CrudObject])] -> [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
+getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterfaces
+  where conceptsAndInterfaces :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
+        conceptsAndInterfaces = concatMap toIfcPerConcept crudsPerIfc
+        
+        toIfcPerConcept :: (Interface, [CrudObject]) -> [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
+        toIfcPerConcept (ifc, ifcCrudObjs) = [ (cncpt, ( if isC then [ifc] else []
+                                                       , if isR then [ifc] else []
+                                                       , if isU then [ifc] else []
+                                                       , if isD then [ifc] else []
+                                                       )
+                                               )
+                                             | (cncpt, isC, isR, isU, isD) <- ifcCrudObjs
+                                             ]
