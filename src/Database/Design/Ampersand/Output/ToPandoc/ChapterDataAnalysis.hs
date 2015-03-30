@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAna
 import Database.Design.Ampersand.ADL1 hiding (Association)
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Database.Design.Ampersand.Output.PandocAux
+import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic
 import Data.Char
@@ -46,6 +47,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     <> daRulesBlocks
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
+    <> crudMatrixSection sectionLevel fSpec
   thePictures
     =  (if not summaryOnly then maybe [] (\p->[p]) mClassificationPicture else [])
     ++ logicalDataModelPictures ++ technicalDataModelPictures
@@ -221,6 +223,21 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                               Mult MinOne  MaxOne  -> " For this association each " <> (emph.text.assTgt) assoc <> " has exactly one "  <> (emph.text.assSrc) assoc <> "."
                               Mult MinOne  MaxMany -> " For this association each " <> (emph.text.assTgt) assoc <> " has at least one " <> (emph.text.assSrc) assoc <> "."
      -}
+
+crudMatrixSection :: Int -> FSpec -> Blocks
+crudMatrixSection lev fSpec =
+     header lev (text "Logical data model")
+  <> mconcat
+      [ simpleTable [ plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D" ] $
+          [ [ plainText $ name cncpt
+            , mconcat $ map (plainText . name) ifcsC
+            , mconcat $ map (plainText . name) ifcsR
+            , mconcat $ map (plainText . name) ifcsU
+            , mconcat $ map (plainText . name) ifcsD ]
+          | (cncpt, (ifcsC, ifcsR, ifcsU, ifcsD)) <- crudObjsPerConcept (crudInfo fSpec)
+          ]
+      ]
+  
 
 technicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
 technicalDataModelSection lev fSpec = (theBlocks,[pict])

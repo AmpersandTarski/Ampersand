@@ -1,29 +1,30 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec, preEmpt, editable) where
 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
-import Database.Design.Ampersand.ADL1.Rule
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-import Database.Design.Ampersand.FSpec.ShowADL
-import Text.Pandoc
 import Data.Char
 import Data.List
 import Data.Maybe
+import Text.Pandoc
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.ADL1.Rule
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.Poset
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.FSpec.Crud
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
+import Database.Design.Ampersand.FSpec.ToFSpec.Calc
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
+import Database.Design.Ampersand.FSpec.ShowADL
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
 
 makeFSpec :: Options -> A_Context -> FSpec
-makeFSpec opts context = fSpec
+makeFSpec opts context = trace ("CRUD info:\n"++showCrudInfo (crudInfo fSpec)) $ fSpec -- TODO: remove trace
  where
      fSpec =
         FSpec { fsName       = name context
@@ -32,7 +33,7 @@ makeFSpec opts context = fSpec
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
               , rulesInScope = rulesInThemesInScope
-              , declsInScope = declsInThemesInScope
+              , declsInScope = declsInThemesInScope 
               , concsInScope = concsInThemesInScope
               , cDefsInScope = cDefsInThemesInScope
               , gensInScope  = gensInThemesInScope
@@ -40,10 +41,10 @@ makeFSpec opts context = fSpec
               , vprocesses   = allProcs
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
-              , interfaceS   = map enrichIfc (ctxifcs context) -- interfaces specified in the Ampersand script
+              , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
-                                      || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
+                                      || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fSwitchboard = switchboard fSpec
               , fActivities  = allActivities
@@ -55,15 +56,15 @@ makeFSpec opts context = fSpec
               , invars       = invariants context
               , allRules     = allrules
               , vconjs       = allConjs
-              , allConjsPerRule = allConjsPerRule'
-              , allConjsPerDecl = allConjsPerDecl'
-              , allConjsPerConcept = allConjsPerConcept'
+              , allConjsPerRule = fSpecAllConjsPerRule
+              , allConjsPerDecl = fSpecAllConjsPerDecl
+              , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
-              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
               , allUsedDecls = relsUsedIn context
-              , allDecls     = relsDefdIn context
-              , allConcepts  = concs context `uni` [ONE]
+              , allDecls     = fSpecAllDecls
+              , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
               , fsisa        = let f gen = case gen of
                                             Isa{} -> [(genspc gen, gengen gen)]
@@ -76,6 +77,7 @@ makeFSpec opts context = fSpec
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
+              , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
               , initialPops  = initialpops
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
@@ -86,6 +88,11 @@ makeFSpec opts context = fSpec
                                          , not $ null viols
                                          ]
               }
+              
+     fSpecAllConcepts = concs context `uni` [ONE]
+     fSpecAllDecls = relsDefdIn context
+     fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
+     
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context)
                      else ctxthms context
@@ -112,10 +119,10 @@ makeFSpec opts context = fSpec
        where populations = ctxpopus context++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
-     allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
-     allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
-     allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
-     allQuads = nub $ makeAllQuads allConjsPerRule'
+     fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     fSpecAllConjsPerConcept = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
+     allQuads = makeAllQuads fSpecAllConjsPerRule
 
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules
