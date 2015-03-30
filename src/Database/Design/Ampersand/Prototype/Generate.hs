@@ -69,6 +69,7 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
+        , generateDBstructQueries fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -95,6 +96,136 @@ generateConstants fSpec =
   ]
   where opts = getOpts fSpec
   
+generateDBstructQueries :: FSpec -> [String]
+generateDBstructQueries fSpec =
+  [ "$allDBstructQueries ="
+  ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
+   ++
+  [          "        );"
+  ]
+  where
+    theSQLstatements :: [String]
+    theSQLstatements =
+       [ "DROP DATABASE $DB_name"
+       , "CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8"
+       , "SET SESSION sql_mode = 'ANSI,TRADITIONAL'"  
+       ]++
+       createTableStatements ++
+       [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+       ]
+    createTableStatements :: [String]
+    createTableStatements = 
+      [ -- Session timeout table
+        "" --   "DROP TABLE "++ show "__SessionTimeout__"
+      , unlines (
+          [ "CREATE TABLE "++ show "__SessionTimeout__"
+          ] ++
+          map ("             " ++)
+            [ "( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
+            , ", "++show "lastAccess"++" BIGINT NOT NULL"
+            , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+            ]  -- TODO: the quote at the end of this statement is printed on a new line! (not nice!) How come??
+        )
+
+        -- Timestamp table
+      , "" -- "DROP TABLE "++ show "__History__"
+      , unlines (
+          [ "CREATE TABLE "++ show "__History__"
+          ] ++
+          map ("             " ++)
+            [ "( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
+            , ", "++show "Date"++" VARCHAR(255) DEFAULT NULL"
+            , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+            ]
+        )
+      , "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++") VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
+
+        -- Signal table
+      , "" -- "DROP TABLE "++ show "__all_signals__"
+      , unlines (
+          [ "CREATE TABLE "++ show "__all_signals__"
+          ] ++
+          map ("             " ++)
+            [ "( "++show "conjId"++" VARCHAR(255) NOT NULL"
+            , ", "++show "src"++" VARCHAR(255) NOT NULL"
+            , ", "++show "tgt"++" VARCHAR(255) NOT NULL"
+            , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+            ]
+        ) 
+      ] ++ 
+      ( map unStat . concatMap tableSpec2Queries) [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec]
+     
+      where 
+        unStat :: Statement -> String
+        unStat (SQL str) = str
+        tableSpec2Queries :: TableSpecNew -> [Statement]
+        tableSpec2Queries ts = 
+          [ SQL $ "DROP   TABLE "++show (tsName ts)] ++
+          [ SQL . intercalate "\n           " $  
+                   ( tsCmnt ts ++ 
+                     ["CREATE TABLE "++show (tsName ts)] 
+                     ++ (map (uncurry (++)) 
+                            (zip (" ( ": repeat " , " ) 
+                                 (  map fld2sql (tsflds ts)
+                                 ++ tsKey ts
+                                 )
+                            )
+                        )
+                     ++ [" )"]
+                   )
+          ]
+        fld2sql :: SqlField -> String
+        fld2sql = fieldSpec2Str . fld2FieldSpec
+
+data Statement = SQL String
+data TableSpecNew 
+  = TableSpec { tsCmnt :: [String]
+              , tsName :: String
+              , tsflds :: [SqlField]
+              , tsKey  :: [String]
+              , tsEngn :: String
+              }
+data FieldSpecNew
+  = FieldSpec { fsname :: String
+              , fstype :: String
+              , fsauto :: Bool
+              }
+fld2FieldSpec ::SqlField -> FieldSpecNew
+fld2FieldSpec fld 
+  = FieldSpec { fsname = name fld
+              , fstype = showSQL (fldtype fld)
+              , fsauto = fldauto fld 
+              }
+fieldSpec2Str :: FieldSpecNew -> String
+fieldSpec2Str fs = intercalate " "
+                    [ show (fsname fs)
+                    , fstype fs
+                    , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
+                    ] 
+plug2TableSpec :: PlugSQL -> TableSpecNew
+plug2TableSpec plug 
+  = TableSpec 
+     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+     , tsName = name plug
+     , tsflds = plugFields plug
+     , tsKey  = case (plug, (head.plugFields) plug) of
+                 (BinSQL{}, _)   -> []
+                 (_,    primFld) ->
+                      case flduse primFld of
+                         TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
+                                                ++ "KEY ("++(show . fldname) primFld++")"
+                                        ]
+                         ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
+                         PlainAttr     -> []
+     , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8"
+     }
+
+commentBlockSQL :: [String] -> [String]
+commentBlockSQL xs = 
+  hbar ++  map ("-- "++) xs ++ hbar
+  where hbar = [replicate (maximum (map length xs) +3) '-']
+  
+
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
   [ "$allSpecializations = // transitive, so including specializations of specializations"
