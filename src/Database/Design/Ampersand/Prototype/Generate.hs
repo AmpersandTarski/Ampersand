@@ -69,6 +69,7 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
+        , generateAllDefPopQueries fSpec
         , generateDBstructQueries fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
@@ -153,15 +154,13 @@ generateDBstructQueries fSpec =
             ]
         ) 
       ] ++ 
-      ( map unStat . concatMap tableSpec2Queries) [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec]
+      ( concatMap tableSpec2Queries) [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec]
      
       where 
-        unStat :: Statement -> String
-        unStat (SQL str) = str
-        tableSpec2Queries :: TableSpecNew -> [Statement]
+        tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
-          [ SQL $ "DROP   TABLE "++show (tsName ts)] ++
-          [ SQL . intercalate "\n           " $  
+          [ "DROP   TABLE "++show (tsName ts)] ++
+          [ intercalate "\n           " $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
@@ -177,7 +176,6 @@ generateDBstructQueries fSpec =
         fld2sql :: SqlField -> String
         fld2sql = fieldSpec2Str . fld2FieldSpec
 
-data Statement = SQL String
 data TableSpecNew 
   = TableSpec { tsCmnt :: [String]
               , tsName :: String
@@ -225,6 +223,58 @@ commentBlockSQL xs =
   hbar ++  map ("-- "++) xs ++ hbar
   where hbar = [replicate (maximum (map length xs) +3) '-']
   
+generateAllDefPopQueries :: FSpec -> [String]
+generateAllDefPopQueries fSpec =
+  [ "$allDefPopQueries ="
+  ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
+   ++
+  [          "        );"
+  ]
+  where
+    theSQLstatements
+      = fillSignalTable (initialConjunctSignals fSpec) ++
+        populateTablesWithPops
+        
+
+    fillSignalTable :: [(Conjunct, [Paire])] -> [String]
+    fillSignalTable [] = []
+    fillSignalTable conjSignals 
+     = [intercalate "\n           " $ 
+            [ "INSERT IGNORE INTO "++show (getTableName signalTableSpec)
+            , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
+            , "VALUES" 
+            ] ++
+            intersperse "\n , " 
+               [ "(" ++show (rc_id conj)++", "++show (srcPaire p)++", "++show (trgPaire p)++")" 
+               | (conj, viols) <- conjSignals
+               , p <- viols
+               ]
+       ]
+    populateTablesWithPops :: [String]
+    populateTablesWithPops =
+      concatMap populatePlug [p | InternalPlug p <- plugInfos fSpec]
+      where
+        populatePlug :: PlugSQL -> [String]
+        populatePlug plug 
+          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
+             []  -> []
+             tblRecords 
+                 -> [intercalate "\n           " $ 
+                       [ "INSERT IGNORE INTO "++show (name plug)
+                       , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++")"
+                       , "VALUES" 
+                       ] ++
+                       intersperse "  , " 
+                          [ "(" ++valuechain md++ ")" | md<-tblRecords]
+                    ]
+         where
+           valuechain record 
+             = intercalate ", " 
+                 [case fld of 
+                    Nothing -> "NULL"
+                    Just str -> show str
+                 | fld <- record ]
+
 
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
