@@ -69,8 +69,8 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
-        , generateAllDefPopQueries fSpec
         , generateDBstructQueries fSpec
+        , generateAllDefPopQueries fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -116,50 +116,33 @@ generateDBstructQueries fSpec =
        ]
     createTableStatements :: [String]
     createTableStatements = 
-      [ -- Session timeout table
-        "" --   "DROP TABLE "++ show "__SessionTimeout__"
-      , unlines (
-          [ "CREATE TABLE "++ show "__SessionTimeout__"
-          ] ++
-          map ("             " ++)
-            [ "( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
-            , ", "++show "lastAccess"++" BIGINT NOT NULL"
-            , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
-            ]  -- TODO: the quote at the end of this statement is printed on a new line! (not nice!) How come??
-        )
-
-        -- Timestamp table
-      , "" -- "DROP TABLE "++ show "__History__"
-      , unlines (
-          [ "CREATE TABLE "++ show "__History__"
-          ] ++
-          map ("             " ++)
-            [ "( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
-            , ", "++show "Date"++" VARCHAR(255) DEFAULT NULL"
-            , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
-            ]
-        )
-      , "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++") VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
-
-        -- Signal table
-      , "" -- "DROP TABLE "++ show "__all_signals__"
-      , unlines (
-          [ "CREATE TABLE "++ show "__all_signals__"
-          ] ++
-          map ("             " ++)
-            [ "( "++show "conjId"++" VARCHAR(255) NOT NULL"
-            , ", "++show "src"++" VARCHAR(255) NOT NULL"
-            , ", "++show "tgt"++" VARCHAR(255) NOT NULL"
-            , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
-            ]
-        ) 
+      map (intercalate "\n         ")
+      [ [ "CREATE TABLE "++ show "__SessionTimeout__"
+        , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
+        , "   , "++show "lastAccess"++" BIGINT NOT NULL"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        ]
+      , [ "CREATE TABLE "++ show "__History__"
+        , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
+        , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        ]
+      , [ "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
+        , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
+        ]
+      , [ "CREATE TABLE "++ show "__all_signals__"
+        , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
+        , "   , "++show "src"++" VARCHAR(255) NOT NULL"
+        , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        ]
       ] ++ 
-      ( concatMap tableSpec2Queries) [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec]
+      ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])
      
       where 
         tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
-          [ "DROP   TABLE "++show (tsName ts)] ++
+         -- [ "DROP TABLE "++show (tsName ts)] ++
           [ intercalate "\n           " $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
@@ -242,13 +225,13 @@ generateAllDefPopQueries fSpec =
      = [intercalate "\n           " $ 
             [ "INSERT IGNORE INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
-            , "VALUES" 
-            ] ++
-            intersperse "\n , " 
-               [ "(" ++show (rc_id conj)++", "++show (srcPaire p)++", "++show (trgPaire p)++")" 
-               | (conj, viols) <- conjSignals
-               , p <- viols
-               ]
+            ] ++ lines 
+              ( "VALUES " ++ intercalate "\n     , " 
+                  [ "(" ++show (rc_id conj)++", "++show (srcPaire p)++", "++show (trgPaire p)++")" 
+                  | (conj, viols) <- conjSignals
+                  , p <- viols
+                  ]
+              )
        ]
     populateTablesWithPops :: [String]
     populateTablesWithPops =
@@ -262,10 +245,10 @@ generateAllDefPopQueries fSpec =
                  -> [intercalate "\n           " $ 
                        [ "INSERT IGNORE INTO "++show (name plug)
                        , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++")"
-                       , "VALUES" 
-                       ] ++
-                       intersperse "  , " 
+                       ] ++ lines
+                         ( "VALUES " ++ intercalate "\n     , " 
                           [ "(" ++valuechain md++ ")" | md<-tblRecords]
+                         )
                     ]
          where
            valuechain record 
