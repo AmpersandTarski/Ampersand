@@ -5,7 +5,7 @@ $if(isEditable)$
     <span>$if(navInterface)$<a ng-href="#/$navInterface$/{{row['id']}}">{{row['@label']}}</a>$else${{row['@label']}}$endif$</span>
   </div>
 
-  <div $if(exprIsUni)$ng-if="!val['$name$']"$endif$ my-showonhover-box>
+  <div $if(exprIsUni)$ng-if="!val['$name$']"$endif$ my-showonhover-box ng-controller="addObjectController">
     <input ng-model="selected.id" type="text" class="input-sm" placeholder="Add new" typeahead="item['id'] as item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected, ResourceId)">
   </div>
 $else$
