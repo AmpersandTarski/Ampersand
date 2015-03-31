@@ -101,10 +101,9 @@ chpNatLangReqs lev fSpec =
   dpRequirementsOld :: [Block]
   dpRequirementsOld = theBlocks
     where
-      (theBlocks,_) = if null (themes fSpec)
-                      then printThemes toBeProcessedStuff newCounter $ (patterns fSpec) ++ map (fpProc) (vprocesses fSpec)
-                      else printThemes toBeProcessedStuff newCounter $ [pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
-                                                                       [fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
+      (theBlocks,_) = 
+        printThemes toBeProcessedStuff newCounter
+           [pat | pat<-patterns fSpec, null (themes fSpec) || name pat `elem` themes fSpec ]
       toBeProcessedStuff = ( conceptsWith
                            , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
