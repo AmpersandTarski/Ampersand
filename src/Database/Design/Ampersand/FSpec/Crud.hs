@@ -12,7 +12,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "Crud"
 
-data CrudInfo = CrudInfo { allCrudObjects :: [A_Concept]
+data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[Declaration])]
                          , crudObjsPerInterface :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
                          , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
                          -- TODO: name (crudPerInterface,crudPerConcept?) (also in code below)
@@ -20,16 +20,15 @@ data CrudInfo = CrudInfo { allCrudObjects :: [A_Concept]
                          } deriving Show
 
 showCrudInfo :: CrudInfo -> String
-showCrudInfo (CrudInfo crudObjects ifcCrudObjs _) =
-  "CRUD info\nObjects: " ++ showNames crudObjects ++
+showCrudInfo (CrudInfo crudObjs ifcCrudObjs _) =
+  "CRUD info\nObjects:\n" ++ unlines [ name crudCncpt ++" : " ++ show (map name crudDecls) | (crudCncpt, crudDecls) <- crudObjs] ++
   "\nMatrices\n" ++ concat
     [ "Interface " ++ name ifc ++
       "\nC R U D Object\n" ++
       (unlines $ map showCrud cObjs)
     | (ifc, cObjs) <- ifcCrudObjs
     ] ++ "\n"
-  where showNames xs = intercalate ", " $ map name xs
-        showCrud (cncpt, isC, isR, isU, isD) = concat [ showX isX ++ " " | isX <- [isC, isR, isU, isD] ] ++ show (name cncpt)
+  where showCrud (cncpt, isC, isR, isU, isD) = concat [ showX isX ++ " " | isX <- [isC, isR, isU, isD] ] ++ show (name cncpt)
         showX isX = if isX then "X" else " "
 
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
@@ -40,7 +39,7 @@ getCrudObjectsForInterface crudInfo ifc =
   
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim allDecls allIfcs =
-  CrudInfo crudCncpts crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
+  CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where allConcepts = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
         nonCrudConcpts = [ source d | d <- allDecls, isUni d && isSur d ] ++
                          [ target d | d <- allDecls, isInj d && isTot d ]
@@ -51,10 +50,13 @@ mkCrudInfo  allConceptsPrim allDecls allIfcs =
           [ (target d, [(source d,d)]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
           [ (source d, [(target d,d)]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
         
+        showGraph :: [(A_Concept, [(A_Concept, Declaration)])] -> String
+        showGraph o = show [(name crcpt, map (\(tgt,dcl)-> (name tgt, name dcl)) tgtsDecls) |(crcpt, tgtsDecls) <- o]
         
         -- crud concept together with declarations that comprise the object
         crudObjs :: [(A_Concept, [Declaration])]
-        crudObjs = [ (crudCncpt, [ d | (crcpt, tgtsDecls) <- transSurjClosureMap, crcpt == crudCncpt, (_,d) <- tgtsDecls ]) 
+        crudObjs = trace (showGraph transSurjClosureMap ) $
+                   [ (crudCncpt, [ d | (crcpt, tgtsDecls) <- transSurjClosureMap, crcpt == crudCncpt, (_,d) <- tgtsDecls ]) 
                    | crudCncpt <- crudCncpts ]
         
         getCrudUpdateConcpts :: Declaration -> [A_Concept]
@@ -117,7 +119,7 @@ getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterf
 
                                              
 -- |  Yet another Warshall's transitive closure algorithm. This one uses labeled relations, and keeps track of the last label of each path.
-transClosureMapEx :: (Eq a, Ord a, Eq lbl) =>Map a [(a,lbl)] -> Map a [(a,lbl)]
+transClosureMapEx :: (Eq a, Ord a, Eq lbl) => Map a [(a,lbl)] -> Map a [(a,lbl)]
 transClosureMapEx xs
   = foldl f xs (Map.keys xs `intersect` nub (map fst $ concat (Map.elems xs)))
     where
