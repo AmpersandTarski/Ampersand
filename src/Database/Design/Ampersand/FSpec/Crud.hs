@@ -47,9 +47,10 @@ mkCrudInfo  allConceptsPrim allDecls allIfcs =
         crudCncpts = allConcepts \\ nonCrudConcpts
         
         transSurjClosureMap :: [(A_Concept, [(A_Concept, Declaration)])]
-        transSurjClosureMap = Map.toList . transClosureMapEx . Map.fromList $
-          [ (source d, [(target d,d)]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
-          [ (target d, [(source d,d)]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
+        transSurjClosureMap = Map.toList . transClosureMapEx . Map.fromListWith union $
+          [ (target d, [(source d,d)]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
+          [ (source d, [(target d,d)]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
+        
         
         -- crud concept together with declarations that comprise the object
         crudObjs :: [(A_Concept, [Declaration])]
