@@ -107,10 +107,6 @@ generateDBstructQueries fSpec =
   where
     theSQLstatements :: [String]
     theSQLstatements =
-       [ "DROP DATABASE $DB_name"
-       , "CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8"
-       , "SET SESSION sql_mode = 'ANSI,TRADITIONAL'"  
-       ]++
        createTableStatements ++
        [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
        ]
@@ -223,11 +219,11 @@ generateAllDefPopQueries fSpec =
     fillSignalTable [] = []
     fillSignalTable conjSignals 
      = [intercalate "\n           " $ 
-            [ "INSERT IGNORE INTO "++show (getTableName signalTableSpec)
+            [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate "\n     , " 
-                  [ "(" ++show (rc_id conj)++", "++show (srcPaire p)++", "++show (trgPaire p)++")" 
+                  [ "(" ++intercalate ", " (map showValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
@@ -243,7 +239,7 @@ generateAllDefPopQueries fSpec =
              []  -> []
              tblRecords 
                  -> [intercalate "\n           " $ 
-                       [ "INSERT IGNORE INTO "++show (name plug)
+                       [ "INSERT INTO "++show (name plug)
                        , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++")"
                        ] ++ lines
                          ( "VALUES " ++ intercalate "\n     , " 
@@ -255,7 +251,7 @@ generateAllDefPopQueries fSpec =
              = intercalate ", " 
                  [case fld of 
                     Nothing -> "NULL"
-                    Just str -> show str
+                    Just str -> showValue str
                  | fld <- record ]
 
 
@@ -610,3 +606,6 @@ genPhp generatorModule moduleName contentLines = unlines $
   ] ++ replicate 2 "" ++ contentLines ++
   [ "?>"
   ]
+showValue :: String -> String
+showValue str = "'"++str++"'"
+
