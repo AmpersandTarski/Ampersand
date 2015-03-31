@@ -12,7 +12,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "Crud"
 
-data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[Declaration])]
+data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])]
                          , crudObjsPerInterface :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
                          , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
                          -- TODO: name (crudPerInterface,crudPerConcept?) (also in code below)
@@ -45,23 +45,24 @@ mkCrudInfo  allConceptsPrim allDecls allIfcs =
                          [ target d | d <- allDecls, isInj d && isTot d ]
         crudCncpts = allConcepts \\ nonCrudConcpts
         
-        transSurjClosureMap :: [(A_Concept, [(A_Concept, Declaration)])]
-        transSurjClosureMap = Map.toList . transClosureMapEx . Map.fromListWith union $
-          [ (target d, [(source d,d)]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
-          [ (source d, [(target d,d)]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
+        transSurjClosureMap :: Map A_Concept [A_Concept]
+        transSurjClosureMap = transClosureMap . Map.fromListWith union $
+          [ (target d, [source d]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
+          [ (source d, [target d]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
         
-        showGraph :: [(A_Concept, [(A_Concept, Declaration)])] -> String
-        showGraph o = show [(name crcpt, map (\(tgt,dcl)-> (name tgt, name dcl)) tgtsDecls) |(crcpt, tgtsDecls) <- o]
         
         -- crud concept together with declarations that comprise the object
-        crudObjs :: [(A_Concept, [Declaration])]
-        crudObjs = trace (showGraph transSurjClosureMap ) $
-                   [ (crudCncpt, [ d | (crcpt, tgtsDecls) <- transSurjClosureMap, crcpt == crudCncpt, (_,d) <- tgtsDecls ]) 
+        crudObjs :: [(A_Concept, [A_Concept])]
+        crudObjs = trace (show transSurjClosureMap ) $
+                   [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
                    | crudCncpt <- crudCncpts ]
         
         getCrudUpdateConcpts :: Declaration -> [A_Concept]
-        getCrudUpdateConcpts decl = [ cObj | (cObj, cDecls) <- crudObjs, decl `elem` cDecls ]
-
+        getCrudUpdateConcpts decl = 
+          if  isSur decl || isTot decl  -- TODO: no isUni?  -- TODO: no isInj?
+          then [ cObj | (cObj, cCncpts) <- crudObjs, source decl `elem` cCncpts && target decl `elem` cCncpts ]    
+          else []
+          
         crudObjsPerIfc = [ (ifc, getCrudObjsPerIfc ifc) | ifc <- allIfcs ]
         
         -- Not the most efficient implementation, but it is easy to read, and the total number of concepts will not be enormous.
@@ -116,12 +117,3 @@ getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterf
                                                )
                                              | (cncpt, isC, isR, isU, isD) <- ifcCrudObjs
                                              ]
-
-                                             
--- |  Yet another Warshall's transitive closure algorithm. This one uses labeled relations, and keeps track of the last label of each path.
-transClosureMapEx :: (Eq a, Ord a, Eq lbl) => Map a [(a,lbl)] -> Map a [(a,lbl)]
-transClosureMapEx xs
-  = foldl f xs (Map.keys xs `intersect` nub (map fst $ concat (Map.elems xs)))
-    where
-     f :: (Eq a, Ord a, Eq x) => Map a [(a,x)] -> a -> Map a [(a,x)]
-     f q x = Map.unionWith union q (Map.fromListWith union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` map fst bs])
