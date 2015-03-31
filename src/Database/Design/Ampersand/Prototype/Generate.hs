@@ -203,8 +203,8 @@ plug2TableSpec plug
 
 commentBlockSQL :: [String] -> [String]
 commentBlockSQL xs = 
-  hbar ++  map ("-- "++) xs ++ hbar
-  where hbar = [replicate (maximum (map length xs) +3) '-']
+   map ("-- "++) $ hbar ++ xs ++ hbar
+  where hbar = [replicate (maximum . map length $ xs) '-']
   
 generateAllDefPopQueries :: FSpec -> [String]
 generateAllDefPopQueries fSpec =
