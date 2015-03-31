@@ -15,8 +15,8 @@ class Database
 	private $db_name;
 	
 	private $transaction;
-	private $affectedConcepts; // array with all affected Concepts during a transaction.
-	private $affectedRelations; // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
+	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
+	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
 	
 	private static $_instance = null;
 	
@@ -29,26 +29,23 @@ class Database
 		$this->db_pass = $DB_pass;
 		$this->db_name = $DB_name;
 		
+		// Connect to mysql
 		$this->connect();
 		
-		$this->affectedConcepts = array();
-		$this->affectedRelations = array();
+		// Select DB
+		try{
+			$this->selectDB();
+		}catch (Exception $e){
+			Notifications::addLog($e->getMessage(), 'DATABASE');
+			$this->createDB();
+			$this->selectDB();
+			$this->installDB();
+		}
 	}
 	
 	// Prevent any copy of this object
 	private function __clone(){
 		
-	}
-	
-	private function connect(){
-		$this->db_link = mysql_connect($this->db_host, $this->db_user, $this->db_pass);
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
-		
-		mysql_select_db($this->db_name, $this->db_link);
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
-		
-		// Set sql_mode to ANSI
-		$this->Exe("SET SESSION sql_mode = 'ANSI'");
 	}
 	
 	public static function singleton(){
@@ -57,10 +54,38 @@ class Database
 	}
 	
 	public function resetDatabase(){
+		$this->dropDB();
+		$this->createDB();
+		$this->selectDB();
+		$this->installDB();	
+	}
+	
+	private function connect(){
+		$this->db_link = mysql_connect($this->db_host, $this->db_user, $this->db_pass);
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
+	}
+	
+	private function createDB(){
+		$this->Exe("CREATE DATABASE $this->db_name DEFAULT CHARACTER SET UTF8");
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+	}
+	private function dropDB(){
+		$this->Exe("DROP DATABASE $this->db_name");
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+	}
+	
+	private function selectDB(){
+		mysql_select_db($this->db_name, $this->db_link);
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
+		// Set sql_mode to ANSI
+		$this->Exe("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+	}
+	
+	private function installDB(){
 		global $allDBstructQueries; // from Generics.php
 		global $allDefPopQueries; // from Generics.php
-		
-		$allDBstructQueries = str_replace('$DB_name', $this->db_name, $allDBstructQueries);
 		
 		Notifications::addLog('========= INSTALLER ==========');
 		
@@ -69,8 +94,6 @@ class Database
 		foreach($allDBstructQueries as $query){
 			$this->Exe($query);
 			
-			// reconnect after DATABASE is DROPped and CREATEd again
-			if(strpos($query, 'CREATE DATABASE') !== false) $this->connect();
 		}
 		Notifications::addLog('---------- DB population queries -----------');
 		foreach($allDefPopQueries as $query){
