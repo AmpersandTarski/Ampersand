@@ -19,6 +19,7 @@ import Data.List
 import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
+import System.Info (os)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
@@ -56,7 +57,19 @@ parseSingleADL opts filePath =
                   }
              }
     }
- where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
+ where normalizePath relativePath = makeAbsolute . (concatMap escapeSpace) $ takeDirectory filePath </> relativePath 
+-- Taken from newer version of directory-1.2.2.0:
+       makeAbsolute :: FilePath -> IO FilePath
+       makeAbsolute = fmap normalise . absolutize
+         where absolutize path -- avoid the call to `getCurrentDirectory` if we can
+                 | isRelative path = fmap (</> path) getCurrentDirectory
+                 | otherwise       = return path
+       escapeSpace :: Char -> [Char]
+       escapeSpace ' '
+         | os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
+                = "^ "
+         | otherwise = trace ("operating system: "++ os) "\\ "
+       escapeSpace c   = [c]
 
 runParser :: AmpParser res -> String -> String -> Guarded res
 runParser parser filename input =
