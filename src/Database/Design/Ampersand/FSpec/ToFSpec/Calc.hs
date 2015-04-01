@@ -81,29 +81,29 @@ conjuncts opts = exprIsc2list.conjNF opts.rrexp
 --                                 | length new   <= n = f new css
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
-testConfluence :: FSpec -> Blocks
-testConfluence fSpec
- = let tcss = [(expr,tcs) | expr<-expressionsIn fSpec, let tcs=dfProofs expr, length tcs>1]
+testConfluence :: A_Context -> Blocks
+testConfluence context
+ = let tcss = [(expr,tcs) | expr<-expressionsIn context, let tcs=dfProofs expr, length tcs>1]
        sumt = sum (map (length.snd) tcss)
    in
-   para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) fSpec<>" expressions."<>linebreak)<>
+   para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) context<>" expressions."<>linebreak)<>
    para ("This script contains "<>linebreak<>(str.show.length) tcss<> " non-confluent expressions "<>linebreak)<>
    para (linebreak<>"Total number of derived expressions: "<>(str.show) sumt<>linebreak)<>
-   para ("Confluence analysis for "<>(str.name) fSpec)<>
+   para ("Confluence analysis for "<>(str.name) context)<>
    mconcat
      [ para (linebreak<>"expression:   "<>(str . showADL) expr<>linebreak)<>
        bulletList [ showProof (para.str.showADL) prf | (_,prf)<-tcs ]
      | (expr,tcs)<-tcss]
 
-deriveProofs :: FSpec -> Blocks
-deriveProofs fSpec
- = testConfluence fSpec<>
+deriveProofs :: Options -> A_Context -> FSpec -> Blocks  --TODO: get rid of use of FSpec here.
+deriveProofs opts context fSpec
+ = testConfluence context<>
    para (linebreak<>"--------------"<>linebreak)<>
-   para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
+   para ("Rules and their conjuncts for "<>(str.name) context)<>
    bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
                       "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
-                      "conjNF:   "<>str (showADL (conjNF (getOpts fSpec) (rrexp r)))<>linebreak<>
-                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts (getOpts fSpec) r ]
+                      "conjNF:   "<>str (showADL (conjNF opts (rrexp r)))<>linebreak<>
+                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts opts r ]
                      )
               | r<-grules fSpec++vrules fSpec]<>
    para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
@@ -194,7 +194,7 @@ deriveProofs fSpec
     interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
     derivations :: [Blocks]
     ecaRs :: [ECArule]
-    (ecaRs, derivations) = assembleECAs fSpec (allDecls fSpec)
+    (ecaRs, derivations) = assembleECAs opts context (relsDefdIn context)
 {-
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
@@ -477,8 +477,8 @@ actSem opts Del dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem
                          | otherwise           = conjNF opts (dcl ./\. notCpl delt)
 
 -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
-assembleECAs :: FSpec -> [Declaration] -> ([ECArule],[Blocks])
-assembleECAs fSpec editables
+assembleECAs :: Options -> A_Context -> [Declaration] -> ([ECArule],[Blocks])
+assembleECAs options context editables
  = unzip [eca i | (eca,i) <- zip ecas [(1::Int)..]]
    where
     ecas :: [Int->(ECArule,Blocks)]
@@ -623,7 +623,8 @@ assembleECAs fSpec editables
           , (Del, Isn a, Do Del rel (delta (Sign a a).:.vee) [])
           , (Del, Isn b, Do Del rel (vee.:.delta (Sign b b)) [])
           ]
-        | rel <- allDecls fSpec, let dlt = delta (sign rel)
+        | rel <- relsDefdIn context
+        , let dlt = delta (sign rel)
         , let a=source rel, let b=target rel
         , let vee = (EDcV . sign) rel
         ]
@@ -638,10 +639,9 @@ assembleECAs fSpec editables
         [ [ (Ins, Isn s, Do Ins (Isn g) dlt [])
           , (Del, Isn g, Do Del (Isn s) dlt [])
           ]
-        | let dlt = delta (sign rel), (s,g) <- fsisa fSpec
+        | let dlt = delta (sign rel), (s,g) <- concatMap genericAndSpecifics (gens context)
         ]
     fst4 (x,_,_,_) = x
-    options = getOpts fSpec
 
 -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
