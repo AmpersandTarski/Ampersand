@@ -290,16 +290,22 @@ selectExpr fSpec expr
     (EFlp x) -> flipped (selectExpr fSpec x)
                  where 
                    flipped se =
-                    case se of 
-                     BSE{} -> BQEComment [BlockComment "Flipped: "] $
-                              BSE { bseSrc = bseTrg se
-                                  , bseTrg = bseSrc se
-                                  , bseTbl = bseTbl se
-                                  , bseWhr = bseWhr se
-                                  }
-                     BCQE {bcqeOper=oper} -> fatal 313 $ "Unexpected: Directly flip a `"++show oper++"` expression. (What happend to the brackets?)"
-                     (BQEComment c e) -> BQEComment c (flipped e)
-                 
+                     BQEComment [BlockComment ("Flipped: "++show x)] $
+                        case se of 
+                         BSE{}  -> BSE { bseSrc = bseTrg se
+                                       , bseTrg = bseSrc se
+                                       , bseTbl = bseTbl se
+                                       , bseWhr = bseWhr se
+                                       }
+                         BCQE{} -> BSE { bseSrc = Iden [targetAlias]
+                                       , bseTrg = Iden [sourceAlias]
+                                       , bseTbl = [toTableRef se `as` Name "flipped"] -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+                                       , bseWhr = Nothing
+                                       }
+                         (BQEComment c e) 
+                                -> case flipped e of
+                                    BQEComment (_:c') fe -> BQEComment (c++c') fe
+                                    _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
     (EMp1 atom _) -> BQEComment [BlockComment "case: EMp1 atom."] $
                      BSE { bseSrc = sqlAtomQuote atom
                          , bseTrg = sqlAtomQuote atom
