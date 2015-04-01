@@ -231,7 +231,7 @@ pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey
 pRuleDef :: AmpParser (P_Rule TermPrim)
 pRuleDef =  rebuild <$> currPos 
                     <*  pKey "RULE"
-                    <*> pMaybe (try (pADLid <* pColon ))
+                    <*> pMaybe (try $ pADLid <* pColon)
                     <*> pRule
                     <*> many pMeaning
                     <*> many pMessage
@@ -265,74 +265,65 @@ pRuleDef =  rebuild <$> currPos
                    where rebuildSrc p t = PairViewExp p Src t
                          rebuildTgt p t = PairViewExp p Tgt t
 
---- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
---TODO: This is WAY too long!
+--- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
+--TODO: Check if we need to support the old syntax and/or the optional '.'
 pRelationDef :: AmpParser P_Declaration
-pRelationDef      = ( rebuild <$> pVarid  <*> currPos <* pOperator "::" <*> pConceptRef  <*> pFun  <*> pConceptRef
-                      <|> rbd <$> currPos <* pKey "RELATION" <*> pVarid  <*> pSign
-                    )
-                      <*> pIsThere (pKey "BYPLUG")
-                      <*> (pProps `opt` [])
-                      <*> pIsThere (pKey "BYPLUG")
-                      <*> (pPragma `opt` [])
-                      <*> many pMeaning
-                      <*> ((pOperator "=" *> pContent) `opt` [])
-                      <* (pOperator "." `opt` "") -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
-                    where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
-                            = rbd pos' nm (P_Sign src trg) bp1 props' --bp2 pragma meanings content
-                              where props'= nub (props `uni` fun')
-                          rbd pos' nm sgn bp1 props bp2 pragma meanings content
-                            = P_Sgn { dec_nm   = nm
-                                    , dec_sign = sgn
-                                    , dec_prps = props
-                                    , dec_prL  = head pr
-                                    , dec_prM  = pr!!1
-                                    , dec_prR  = pr!!2
-                                    , dec_Mean = meanings
-                                    , dec_popu = content
-                                    , dec_fpos = pos'
-                                    , dec_plug = bp1 || bp2
-                                    }
-                              where pr = pragma++["","",""]
+pRelationDef = do pos <- currPos
+                  (nm,sgn,fun) <- newRelDef <|> oldRelDef
+                  bp1 <- pIsThere (pKey "BYPLUG")
+                  prop <- optList pProps
+                  bp2 <- pIsThere (pKey "BYPLUG")
+                  pragma <- optList (pKey "PRAGMA" *> many1 pString)
+                  meanings <- many pMeaning
+                  content <- optList (pOperator "=" *> pContent)
+                  _ <- optList (pOperator ".")
+                  let (pr0:pr1:pr2:_) = pragma ++ ["","",""]
+                  let byplug = bp1 || bp2
+                  let props = prop ++ fun
+                  return $ P_Sgn nm sgn props pr0 pr1 pr2 meanings content pos byplug
+            where newRelDef = do _   <- pKey "RELATION"
+                                 nm  <- pVarid
+                                 sgn <- pSign
+                                 return (nm,sgn,[])
+                  oldRelDef = do nm  <- pVarid
+                                 _   <- pOperator "::"
+                                 src <- pConceptRef
+                                 fun <- pFun
+                                 tgt <- pConceptRef
+                                 return (nm,P_Sign src tgt,fun)
 
-                          --- Props ::= '[' PropList? ']'
-                          pProps :: AmpParser [Prop]
-                          pProps  = (f.concat) <$> pBrackets (pProp `sepBy` pComma)
-                              where f ps = nub (ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)])
-                          
-                          --- PropList ::= Prop (',' Prop)*
-                          --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
-                          --TODO: Should we move this to the parsing lib?
-                          pProp :: AmpParser [Prop]
-                          pProp   = k [Uni] "UNI" <|> k [Inj] "INJ" <|> k [Sur] "SUR" <|> k [Tot] "TOT" <|>
-                                    k [Sym] "SYM" <|> k [Asy] "ASY" <|> k [Trn] "TRN" <|>
-                                    k [Rfx] "RFX" <|> k [Irf] "IRF" <|> k [Aut] "AUT" <|> k [Sym, Asy] "PROP"
-                              where k obj key = obj <$ pKey key
-                          
-                          --- Pragma ::= 'PRAGMA' String+
-                          pPragma :: AmpParser [String]
-                          pPragma = pKey "PRAGMA" *> many1 pString
-                          
-                          --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
-                          pFun :: AmpParser [Prop]
-                          pFun    = []        <$ pOperator "*"  <|>
-                                    [Uni,Tot] <$ pOperator "->" <|>
-                                    [Sur,Inj] <$ pOperator "<-" <|>
-                                    id        <$> pBrackets pMults
-                              where
-                                --- Mults ::= Mult '-' Mult
-                                pMults :: AmpParser [Prop]
-                                pMults = (++) <$> pMult (Sur,Inj) `opt` []
-                                              <*  pDash
-                                              <*> pMult (Tot,Uni) `opt` []
-                                
-                                --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
-                                pMult :: (Prop,Prop) -> AmpParser [Prop]
-                                pMult (ts,ui) = (++) <$> (([]    <$ pZero) <|> ([ts] <$ pOne) )
-                                                      <*  pOperator ".."
-                                                      <*> (([ui] <$ pOne)  <|> ([]   <$ pOperator "*" )) <|>
-                                                [] <$ pOperator "*"  <|>
-                                                [ts,ui] <$ pOne
+--- Props ::= '[' PropList? ']'
+pProps :: AmpParser [Prop]
+pProps  = (nub.f.concat) <$> pBrackets (pProp `sepBy` pComma)
+  where -- add Uni and Inj if ps has neither Sym nor Asy
+        f ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
+        --- PropList ::= Prop (',' Prop)*
+        --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
+        pProp :: AmpParser [Prop]
+        pProp = [Uni] <$ pKey "UNI" <|> [Inj] <$ pKey "INJ" <|> [Sur] <$ pKey "SUR" <|>
+                [Tot] <$ pKey "TOT" <|> [Sym] <$ pKey "SYM" <|> [Asy] <$ pKey "ASY" <|>
+                [Trn] <$ pKey "TRN" <|> [Rfx] <$ pKey "RFX" <|> [Irf] <$ pKey "IRF" <|>
+                [Aut] <$ pKey "AUT" <|> [Sym, Asy] <$ pKey "PROP"
+
+--- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
+pFun :: AmpParser [Prop]
+pFun  = []        <$ pOperator "*"  <|>
+        [Uni,Tot] <$ pOperator "->" <|>
+        [Sur,Inj] <$ pOperator "<-" <|>
+        pBrackets pMults
+  where --- Mults ::= Mult '-' Mult
+        pMults :: AmpParser [Prop]
+        pMults = (++) <$> pMult (Sur,Inj) `opt` []
+                      <*  pDash
+                      <*> pMult (Tot,Uni) `opt` []
+        
+        --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
+        pMult :: (Prop,Prop) -> AmpParser [Prop]
+        pMult (ts,ui) = (++) <$> (([]    <$ pZero) <|> ([ts] <$ pOne) )
+                             <*  pOperator ".."
+                             <*> (([ui] <$ pOne)  <|> ([]   <$ pOperator "*" )) <|>
+                        [] <$ pOperator "*"  <|>
+                        [ts,ui] <$ pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)

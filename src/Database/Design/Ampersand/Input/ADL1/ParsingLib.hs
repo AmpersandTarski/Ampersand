@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.ParsingLib(
-    pSucceed, AmpParser, pIsThere,
+    pSucceed, AmpParser, pIsThere, optList,
     -- Operators
     --TODO: Maybe we don't need to export these here
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
@@ -48,6 +48,9 @@ p <??> q = p <**> (q `opt` id)
 
 pIsThere :: AmpParser a -> AmpParser Bool
 pIsThere p = (True <$ p) `opt` False
+
+optList :: AmpParser [a] -> AmpParser [a]
+optList p = p `opt` []
 
 ----------------------------------------------------------------------------------
 -- Functions copied from Lexer after decision to split lexer and parser
