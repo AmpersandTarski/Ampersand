@@ -46,7 +46,15 @@ makeFSpec opts context = fSpec
                                     , isIdent ctxrel && source ctxrel==ONE
                                       || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
-              , fSwitchboard = switchboard fSpec
+              , fSwitchboard
+                  = Fswtch
+                           { fsbEvIn  = nub (map ecaTriggr allVecas) -- eventsIn
+                           , fsbEvOut = nub [evt | eca<-allVecas, evt<-eventsFrom (ecaAction eca)] -- eventsOut
+                           , fsbConjs = nub [ (qRule q, rc_conjunct x) | q <- filter (not . isSignal . qRule) allQuads
+                                                                       , x <- qConjuncts q]
+                           , fsbECAs  = allVecas
+                           }
+
               , fActivities  = allActivities
               , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
               , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
@@ -60,7 +68,7 @@ makeFSpec opts context = fSpec
               , allConjsPerDecl = fSpecAllConjsPerDecl
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
-              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+              , vEcas        = allVecas
               , vrels        = calculatedDecls
               , allUsedDecls = relsUsedIn context
               , allDecls     = fSpecAllDecls
@@ -133,6 +141,7 @@ makeFSpec opts context = fSpec
                 where selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
      allActivities :: [Activity]
      allActivities = [ makeActivity fSpec rul | rul <-processRules context]
+     allVecas = {-preEmpt opts . -} fst (assembleECAs fSpec fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
      calcProps d = d{decprps_calc = Just calculated}
@@ -363,6 +372,7 @@ makeFSpec opts context = fSpec
      ----------------------
      --END: making interfaces
      ----------------------
+
 
 {- makeActivity turns a process rule into an activity definition.
 Each activity can be mapped to a single interface.
@@ -643,22 +653,6 @@ preEmpt opts ers = pr [length ers] (10::Int)
   cascade  _  (Let _ _ _)  = fatal 611 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
   cascade  _  (Ref _)      = fatal 612 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
   cascade  _  (GCH{})      = fatal 655 "Deze constructor is niet gedefinieerd" -- SJO, 20140428:Toegevoegd om warning te verwijderen
-
-switchboard :: FSpec -> Fswitchboard
-switchboard fSpec
- = Fswtch
-    { fsbEvIn  = eventsIn
-    , fsbEvOut = eventsOut
-    , fsbConjs = conjs
-    , fsbECAs  = ecas
-    }
-   where
-     qs :: [Quad]
-     qs        = filter (not . isSignal . qRule) (vquads fSpec) -- all quads for invariant rules
-     (ecas, _) = assembleECAs fSpec (allDecls fSpec)
-     conjs     = nub [ (qRule q, rc_conjunct x) | q<-qs, x<-qConjuncts q]
-     eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
-     eventsOut = nub [evt | eca<-ecas, evt<-eventsFrom (ecaAction eca)]
 
 class Named a => Rename a where
  rename :: a->String->a
