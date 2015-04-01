@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-         (makeFSpec, preEmpt, editable) where
+         (makeFSpec, preEmpt) where
 
 import Prelude hiding (Ord(..))
 import Data.Char
@@ -363,10 +363,6 @@ makeFSpec opts context = fSpec
      ----------------------
      --END: making interfaces
      ----------------------
-
-editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
-editable (EDcD Sgn{}) = True
-editable _            = False
 
 {- makeActivity turns a process rule into an activity definition.
 Each activity can be mapped to a single interface.
