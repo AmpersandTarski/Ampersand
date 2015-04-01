@@ -1,10 +1,9 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Meta(..)
- , Theme(..)
- , Process(..)
  , Pattern(..)
  , PairView(..)
  , PairViewSegment(..)
@@ -27,6 +26,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Purpose(..)
  , ExplObj(..)
  , Expression(..)
+ , getExpressionRelation
  , A_Concept(..)
  , A_Markup(..)
  , AMeaning(..)
@@ -57,6 +57,8 @@ import Text.Pandoc hiding (Meta)
 import Data.Function
 import Data.List (intercalate,nub,delete)
 import Data.Typeable
+import GHC.Generics (Generic)
+import Data.Hashable
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -68,7 +70,6 @@ data A_Context
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
-         , ctxprocs :: [Process]     -- ^ The processes defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
@@ -92,35 +93,6 @@ instance Unique A_Context where
 instance Named A_Context where
   name  = ctxnm
 
-data Theme = PatternTheme Pattern | ProcessTheme Process
-
-instance Named Theme where
-  name (PatternTheme pat) = name pat
-  name (ProcessTheme prc) = name prc
-
-instance Traced Theme where
-  origin (PatternTheme pat) = origin pat
-  origin (ProcessTheme prc) = origin prc
-
-data Process = Proc { prcNm :: String
-                    , prcPos :: Origin
-                    , prcEnd :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
-                    , prcRules :: [Rule]
-                    , prcGens :: [A_Gen]
-                    , prcDcls :: [Declaration]
-                    , prcUps :: [Population]  -- ^ The user defined populations in this process
-                    , prcRRuls :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
-                    , prcRRels :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
-                    , prcIds :: [IdentityDef]            -- ^ The identity definitions defined in this process
-                    , prcVds :: [ViewDef]            -- ^ The view definitions defined in this process
-                    , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
-                    }
-instance Named Process where
-  name = prcNm
-
-instance Traced Process where
-  origin = prcPos
-
 data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role
         , rrRels :: [Declaration]   -- ^ name of a Relation
@@ -137,10 +109,12 @@ data Pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
+           , prcRRuls :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
+           , prcRRels :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           } deriving (Typeable, Show)    -- Show for debugging purposes
+           }   deriving (Typeable, Show)    -- Show for debugging purposes
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
@@ -250,6 +224,15 @@ instance Unique Declaration where
       Sgn{} -> name d++uniqueShow False (decsgn d)
       Isn{} -> "I["++uniqueShow False (detyp d)++"]"
       Vs{}  -> "V"++uniqueShow False (decsgn d)
+instance Hashable Declaration where
+   hashWithSalt s dcl = 
+     s `hashWithSalt` constructorNr `hashWithSalt` (origin dcl)
+     where constructorNr :: Int
+           constructorNr 
+             = case dcl of 
+                 Sgn{} -> 0
+                 Isn{} -> 1
+                 Vs{}  -> 2 
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
   showsPrec _ decl@Sgn{}
    = showString (case decl of
@@ -357,7 +340,7 @@ rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts
                                 , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
                                 ]
 
-data Interface = Ifc { ifcParams ::   [Expression] -- Only primitive expressions are allowed!
+data Interface = Ifc { ifcParams ::   [Declaration]
                      , ifcClass ::    Maybe String
                      , ifcArgs ::     [[String]]
                      , ifcRoles ::    [Role]
@@ -507,7 +490,6 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplIdentityDef String
              | ExplViewDef String
              | ExplPattern String
-             | ExplProcess String
              | ExplInterface String
              | ExplContext String
           deriving (Show ,Eq, Typeable)
@@ -520,7 +502,6 @@ instance Unique ExplObj where
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
      (ExplPattern s)     -> "a Pattern named "++s
-     (ExplProcess s)     -> "a Process named "++s
      (ExplInterface s)   -> "an Interface named "++s
      (ExplContext s)     -> "a Context named "++s
      
@@ -546,11 +527,15 @@ data Expression
       | EEps A_Concept Sign            -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Sign                      -- ^ Cartesian product relation
       | EMp1 String A_Concept          -- ^ constant (string between single quotes)
-      deriving (Eq, Prelude.Ord, Show, Typeable)
+      deriving (Eq, Prelude.Ord, Show, Typeable, Generic)
 instance Unique Expression where
   showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
-
+instance Hashable Expression
+instance Unique (PairView Expression) where
+  showUnique = show
+instance Unique (PairViewSegment Expression) where
+  showUnique = show
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- implication
 infixl 2 ./\.   -- intersection
@@ -642,6 +627,42 @@ instance Association Expression where
 showSign :: Association a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 
+-- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
+-- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
+-- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+-- This is used to determine the type of the atoms provided by the outside world through interfaces.
+getExpressionRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getExpressionRelation expr = case getRelation expr of
+   Just (s,Just d,t,isFlipped)  -> Just (s,d,t,isFlipped)
+   _                            -> Nothing
+ where
+    -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target 
+    -- concepts, as well as a boolean that states whether the relation is flipped. 
+    getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
+    getRelation (ECps (e, EDcI{})) = getRelation e
+    getRelation (ECps (EDcI{}, e)) = getRelation e
+    getRelation (ECps (e1, e2))
+      = case (getRelation e1, getRelation e2) of --note: target e1==source e2
+         (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
+                                                           if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
+                                                           if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
+                                                           Nothing
+         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else                       
+                                                           if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else                       
+                                                           Nothing                                                     
+         (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
+                                                           if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else        
+                                                           Nothing                                                                 
+         _                                              -> Nothing
+    getRelation (EFlp e)
+     = case getRelation e of
+         Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
+         Nothing                -> Nothing
+    getRelation (EDcD d)   = Just (source d, Just d, target d, False)
+    getRelation (EEps i _) = Just (i, Nothing, i, False)
+    getRelation _ = Nothing
+
+
 -- The following definition of concept is used in the type checker only.
 -- It is called Concept, meaning "type checking concept"
 
@@ -658,7 +679,12 @@ instance Eq A_Concept where
    _ == _ = False
 instance Unique A_Concept where
   showUnique = name
-
+instance Hashable A_Concept where
+  hashWithSalt s cpt =
+     s `hashWithSalt` (case cpt of
+                        PlainConcept{} -> (0::Int) `hashWithSalt` name cpt
+                        ONE            -> (1::Int)
+                      ) 
 instance Named A_Concept where
   name PlainConcept{cptnm = nm} = nm
   name ONE = "ONE"
@@ -666,8 +692,8 @@ instance Named A_Concept where
 instance Show A_Concept where
   showsPrec _ c = showString (name c)
 
-data Sign = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable)
-
+data Sign = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable, Generic)
+instance Hashable Sign
 instance Show Sign where
   showsPrec _ (Sign s t) =
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )

@@ -101,10 +101,9 @@ chpNatLangReqs lev fSpec =
   dpRequirementsOld :: [Block]
   dpRequirementsOld = theBlocks
     where
-      (theBlocks,_) = if null (themes fSpec)
-                      then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
-                      else printThemes toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
-                                                                       [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
+      (theBlocks,_) = 
+        printThemes toBeProcessedStuff newCounter
+           [pat | pat<-patterns fSpec, null (themes fSpec) || name pat `elem` themes fSpec ]
       toBeProcessedStuff = ( conceptsWith
                            , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
@@ -124,7 +123,7 @@ chpNatLangReqs lev fSpec =
                        , [Declaration]           -- all relations to be processed into this section and the sections to come
                        , [Rule])                 -- all rules to be processed into this section and the sections to come
                     -> Counter           -- unique definition counters
-                    -> [Theme]         -- the patterns that must be processed into this specification
+                    -> [Pattern]         -- the patterns that must be processed into this specification
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
       printThemes  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre allThemes
            = case allThemes of
@@ -151,7 +150,7 @@ chpNatLangReqs lev fSpec =
       -- | printOneTheme tells the story in natural language of a single theme.
       -- For this purpose, Ampersand authors should take care in composing explanations.
       -- Each explanation should state the purpose (and nothing else).
-  printOneTheme :: ( Maybe Theme    -- The theme to process (if any)
+  printOneTheme :: ( Maybe Pattern    -- The theme to process (if any)
                    , [Rule]         -- Rules to print in this section
                    , [Declaration]  -- Relations to print in this section
                    , [A_Concept]    -- Concepts, to print in this section
@@ -214,7 +213,7 @@ chpNatLangReqs lev fSpec =
               printIntro ccds
                 = case fsLang fSpec of
                       Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- (patterns fSpec) ++ map (fpProc) (vprocesses fSpec), name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of
@@ -238,7 +237,7 @@ chpNatLangReqs lev fSpec =
                                  )
 
                       English -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- patterns fSpec ++ map fpProc (vprocesses fSpec), name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of

@@ -27,7 +27,7 @@ class Language a where
   invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
                                      --   That includes multiplicity rules and identity rules, but excludes rules that are assigned to a role.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ identityRules x
+  invariants x  = filter (not . isSignal) (udefrules x) ++ multrules x ++ identityRules x
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
@@ -38,7 +38,6 @@ class Language a where
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
 class ProcessStructure a where
-  processes :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
   roles :: a -> [Role]        -- ^ all roles that are used in this ProcessStructure
   interfaces :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
   objDefs :: a -> [ObjectDef]
@@ -77,7 +76,6 @@ rulesFromIdentity identity
             }
 
 instance ProcessStructure a => ProcessStructure [a] where
-  processes     = concatMap processes
   roles         = concatMap roles
   interfaces    = concatMap interfaces
   objDefs       = concatMap objDefs
@@ -94,7 +92,6 @@ instance Language A_Context where
                              , objstrs = []
                              }
   relsDefdIn context = uniteRels (concatMap relsDefdIn (patterns context)
-                                ++ concatMap relsDefdIn (processes context)
                                 ++ ctxds context)
      where
       -- relations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
@@ -105,47 +102,21 @@ instance Language A_Context where
                          , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                           , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                           }]
-  udefrules    context = concatMap udefrules  (ctxpats context) ++ concatMap udefrules  (ctxprocs context) ++ ctxrs context
-  identities   context = concatMap identities (ctxpats context) ++ concatMap identities (ctxprocs context) ++ ctxks context
-  viewDefs     context = concatMap viewDefs   (ctxpats context) ++ concatMap viewDefs   (ctxprocs context) ++ ctxvs context
-  gens         context = concatMap gens       (ctxpats context) ++ concatMap gens       (ctxprocs context) ++ ctxgs context
+  udefrules    context = concatMap udefrules  (ctxpats context) ++ ctxrs context
+  identities   context = concatMap identities (ctxpats context) ++ ctxks context
+  viewDefs     context = concatMap viewDefs   (ctxpats context) ++ ctxvs context
+  gens         context = concatMap gens       (ctxpats context) ++ ctxgs context
   patterns             = ctxpats
 
 instance ProcessStructure A_Context where
-  processes            = ctxprocs
-  roles        context = nub ([r | proc<-ctxprocs context, r <- roles proc]++
-                              [r | interface<-ctxifcs context, r <- ifcRoles interface])
+  roles        context = nub (roles (ctxpats context)++  --TODO: Make it possible to define a role outside a PATTERN or PROCESS
+                              concatMap ifcRoles (ctxifcs context)
+                             )
   interfaces           = ctxifcs
   objDefs      context = [ifcObj s | s<-ctxifcs context]
   processRules context = [r |r<-udefrules context, (not.null) [role | (role, rul) <-maintains context, name r == name rul ] ]
-  maintains    context = maintains (ctxprocs context)
-  mayEdit      context = mayEdit (ctxprocs context)
-
-instance Language Process where
-  objectdef    prc = Obj { objnm   = name prc
-                         , objpos  = origin prc
-                         , objctx  = EDcI ONE
-                         , objmView = Nothing
-                         , objmsub = Nothing
-                         , objstrs = []
-                         }
-  relsDefdIn proc = prcDcls proc
-  udefrules       = prcRules -- all user defined rules in this process
---  invariants proc = [r | r<-prcRules proc, not (isSignal r) ]
-  identities      = prcIds
-  viewDefs        = prcVds
-  gens            = prcGens
-  patterns    _   = []
-
-instance ProcessStructure Process where
-  processes    proc = [proc]
-  roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
-                            [r | (r,_) <- prcRRels proc] )
-  interfaces    _   = []
-  objDefs       _   = []
-  processRules proc = [r |r<-prcRules proc, isSignal r]
-  maintains         = prcRRuls  -- says which roles maintain which rules.
-  mayEdit           = prcRRels  -- says which roles may change the population of which relation.
+  maintains    context = maintains (ctxpats context)
+  mayEdit      context = mayEdit (ctxpats context)
 
 instance Language Pattern where
   objectdef    pat = Obj { objnm   = name pat
@@ -162,6 +133,15 @@ instance Language Pattern where
   viewDefs       = ptvds
   gens           = ptgns
   patterns   pat = [pat]
+
+instance ProcessStructure Pattern where
+  roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
+                            [r | (r,_) <- prcRRels proc] )
+  interfaces    _   = []
+  objDefs       _   = []
+  processRules proc = [r |r<-ptrls proc, isSignal r]
+  maintains         = prcRRuls  -- says which roles maintain which rules.
+  mayEdit           = prcRRels  -- says which roles may change the population of which relation.
 
 instance Language Rule where
 -- TODO Split class Language. It does not feel right that objectdef and patterns are
@@ -186,6 +166,8 @@ instance Language Rule where
                        , ptgns = []  -- A rule defines no Gens.
                        , ptdcs = relsDefdIn r
                        , ptups = []
+                       , prcRRuls = []
+                       , prcRRels = []
                        , ptids = []
                        , ptvds = []
                        , ptxps = []

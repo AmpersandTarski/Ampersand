@@ -89,8 +89,8 @@ defaultWriterVariables fSpec
          , ""
          , "\\usepackage[all]{hypcap}"
          , ""
-{-
-         , "% hack1) described at http://tex.stackexchange.com/questions/1230/reference-name-of-description-list-item-in-latex"
+
+         , "% hack1) For the purpose of clear references in Latex. See also https://github.com/AmpersandTarski/ampersand/issues/31"
          , "\\makeatletter"
          , "\\let\\orgdescriptionlabel\\descriptionlabel"
          , "\\renewcommand*{\\descriptionlabel}[1]{%"
@@ -105,7 +105,7 @@ defaultWriterVariables fSpec
          , "\\makeatother"
          , "% End-hack1"
          , ""
--}
+
          , "% hack2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that ecuations are"
          , "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note"
          , "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath"
@@ -359,7 +359,7 @@ data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefConceptualAnalysisDeclaration Declaration
              | XRefConceptualAnalysisRule Rule
              | XRefInterfacesInterface Interface
-             | XRefNaturalLanguageTheme (Maybe Theme) 
+             | XRefNaturalLanguageTheme (Maybe Pattern) 
 xRefTo :: XRefObj -> Inlines
 xRefTo x = rawInline "latex"  $ xRefToLatexRefString x
 xRefToLatexRefString :: XRefObj -> String

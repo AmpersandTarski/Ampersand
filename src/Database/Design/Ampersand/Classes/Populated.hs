@@ -7,8 +7,8 @@ import Prelude hiding (lookup)
 import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics                          (Collection (uni,isc,(>-)),fatalMsg, Named(..))
-import Data.Map (Map, (!), lookup, keys, assocs, elems, fromList, fromListWith, unionWith, unionsWith, differenceWith, mergeWithKey, empty)
+import Database.Design.Ampersand.Basics hiding (empty)
+import Data.Map hiding (null, unions)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
 import Data.List (nub)
@@ -84,10 +84,10 @@ fullContents gens pt e = [ mkPair a b | let pairMap=contents e, a<-keys pairMap,
                                 , (not.null) ((contents l ! x ) `isc` (flipr ! y))
                                 ] where flipr = contents (EFlp r)
          EKl0 x     -> if source x == target x --see #166
-                       then closMap (unionWith uni (contents x) (contents (EDcI (source x))))
+                       then transClosureMap (unionWith uni (contents x) (contents (EDcI (source x))))
                        else fatal 87 ("source and target of "++show x++show (sign x)++ " are not equal.")
          EKl1 x     -> if source x == target x --see #166
-                       then closMap (contents x)
+                       then transClosureMap (contents x)
                        else fatal 90 ("source and target of "++show x++show (sign x)++ " are not equal.")
          EFlp x     -> fromListWith uni [(b,[a]) | (a,bs)<-assocs (contents x), b<-bs]
          ECpl x     -> contents (EDcV (sign x) .-. x)
@@ -97,13 +97,3 @@ fullContents gens pt e = [ mkPair a b | let pairMap=contents e, a<-keys pairMap,
          EEps i _   -> fromList [(a,[a]) | a <- atomsOf gens pt i]
          EDcV sgn   -> fromList [(s, cod) | s <- atomsOf gens pt (source sgn), let cod=atomsOf gens pt (target sgn), not (null cod) ]
          EMp1 a c   -> fromList [(a,[a]) | name c/="SESSION"] -- prevent populating SESSION
-
-----------------------------------------------------
---  Warshall's transitive closure algorithm in Haskell:
-----------------------------------------------------
-closMap :: (Eq a, Ord a) => Map a [a] -> Map a [a]
-closMap xs
-  = foldl f xs (keys xs `isc` nub (concat (elems xs)))
-    where
-     f :: (Eq a, Ord a) => Map a [a] -> a -> Map a [a]   -- The type is given for documentation purposes only
-     f q x = unionWith uni q (fromListWith uni [(a, q ! x) | (a, bs) <- assocs q, x `elem` bs])

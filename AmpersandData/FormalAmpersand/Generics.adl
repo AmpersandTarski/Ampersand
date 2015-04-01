@@ -2,6 +2,9 @@ CONTEXT Generics IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
 {+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP-}
 
+CONCEPT MySQLQuery "" TYPE "Blob"
+
+
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
 RELATION contextName[Context*ContextName] [UNI,TOT]   -- e.g. 'GRCengine';
 RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
@@ -93,11 +96,13 @@ RELATION pairView[Rule*PairView] -- e.g.
 --                            )
 --                    )
 --              )
-RELATION segment[PairView*PairViewSegment]
+RELATION segment[PairView*PairViewSegment] [SUR,INJ]
+RELATION sequenceNr[PairViewSegment*Int] [UNI,TOT]
 RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
-RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'
-RELATION expTgt[PairViewSegment*Concept] [UNI]
-RELATION expSQL[PairViewSegment*MySQLQuery] [UNI]
+RELATION text[PairViewSegment*String] [UNI] -- IFF segmentType == 'Text'
+RELATION srcOrTgt[PairViewSegment*SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
+RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
+RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 
 

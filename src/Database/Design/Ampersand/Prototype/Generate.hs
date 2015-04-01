@@ -69,6 +69,8 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
+        , generateDBstructQueries fSpec
+        , generateAllDefPopQueries fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -95,6 +97,164 @@ generateConstants fSpec =
   ]
   where opts = getOpts fSpec
   
+generateDBstructQueries :: FSpec -> [String]
+generateDBstructQueries fSpec =
+  [ "$allDBstructQueries ="
+  ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
+   ++
+  [          "        );"
+  ]
+  where
+    theSQLstatements :: [String]
+    theSQLstatements =
+       createTableStatements ++
+       [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+       ]
+    createTableStatements :: [String]
+    createTableStatements = 
+      map (intercalate "\n         ")
+      [ [ "CREATE TABLE "++ show "__SessionTimeout__"
+        , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
+        , "   , "++show "lastAccess"++" BIGINT NOT NULL"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        ]
+      , [ "CREATE TABLE "++ show "__History__"
+        , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
+        , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        ]
+      , [ "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
+        , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
+        ]
+      , [ "CREATE TABLE "++ show "__all_signals__"
+        , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
+        , "   , "++show "src"++" VARCHAR(255) NOT NULL"
+        , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        ]
+      ] ++ 
+      ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])
+     
+      where 
+        tableSpec2Queries :: TableSpecNew -> [String]
+        tableSpec2Queries ts = 
+         -- [ "DROP TABLE "++show (tsName ts)] ++
+          [ intercalate "\n           " $  
+                   ( tsCmnt ts ++ 
+                     ["CREATE TABLE "++show (tsName ts)] 
+                     ++ (map (uncurry (++)) 
+                            (zip (" ( ": repeat " , " ) 
+                                 (  map fld2sql (tsflds ts)
+                                 ++ tsKey ts
+                                 )
+                            )
+                        )
+                     ++ [" )"]
+                   )
+          ]
+        fld2sql :: SqlField -> String
+        fld2sql = fieldSpec2Str . fld2FieldSpec
+
+data TableSpecNew 
+  = TableSpec { tsCmnt :: [String]
+              , tsName :: String
+              , tsflds :: [SqlField]
+              , tsKey  :: [String]
+              , tsEngn :: String
+              }
+data FieldSpecNew
+  = FieldSpec { fsname :: String
+              , fstype :: String
+              , fsauto :: Bool
+              }
+fld2FieldSpec ::SqlField -> FieldSpecNew
+fld2FieldSpec fld 
+  = FieldSpec { fsname = name fld
+              , fstype = showSQL (fldtype fld)
+              , fsauto = fldauto fld 
+              }
+fieldSpec2Str :: FieldSpecNew -> String
+fieldSpec2Str fs = intercalate " "
+                    [ show (fsname fs)
+                    , fstype fs
+                    , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
+                    ] 
+plug2TableSpec :: PlugSQL -> TableSpecNew
+plug2TableSpec plug 
+  = TableSpec 
+     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+     , tsName = name plug
+     , tsflds = plugFields plug
+     , tsKey  = case (plug, (head.plugFields) plug) of
+                 (BinSQL{}, _)   -> []
+                 (_,    primFld) ->
+                      case flduse primFld of
+                         TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
+                                                ++ "KEY ("++(show . fldname) primFld++")"
+                                        ]
+                         ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
+                         PlainAttr     -> []
+     , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8"
+     }
+
+commentBlockSQL :: [String] -> [String]
+commentBlockSQL xs = 
+   map ("-- "++) $ hbar ++ xs ++ hbar
+  where hbar = [replicate (maximum . map length $ xs) '-']
+  
+generateAllDefPopQueries :: FSpec -> [String]
+generateAllDefPopQueries fSpec =
+  [ "$allDefPopQueries ="
+  ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
+   ++
+  [          "        );"
+  ]
+  where
+    theSQLstatements
+      = fillSignalTable (initialConjunctSignals fSpec) ++
+        populateTablesWithPops
+        
+
+    fillSignalTable :: [(Conjunct, [Paire])] -> [String]
+    fillSignalTable [] = []
+    fillSignalTable conjSignals 
+     = [intercalate "\n           " $ 
+            [ "INSERT INTO "++show (getTableName signalTableSpec)
+            , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
+            ] ++ lines 
+              ( "VALUES " ++ intercalate "\n     , " 
+                  [ "(" ++intercalate ", " (map showValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
+                  | (conj, viols) <- conjSignals
+                  , p <- viols
+                  ]
+              )
+       ]
+    populateTablesWithPops :: [String]
+    populateTablesWithPops =
+      concatMap populatePlug [p | InternalPlug p <- plugInfos fSpec]
+      where
+        populatePlug :: PlugSQL -> [String]
+        populatePlug plug 
+          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
+             []  -> []
+             tblRecords 
+                 -> [intercalate "\n           " $ 
+                       [ "INSERT INTO "++show (name plug)
+                       , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++")"
+                       ] ++ lines
+                         ( "VALUES " ++ intercalate "\n     , " 
+                          [ "(" ++valuechain md++ ")" | md<-tblRecords]
+                         )
+                    ]
+         where
+           valuechain record 
+             = intercalate ", " 
+                 [case fld of 
+                    Nothing -> "NULL"
+                    Just str -> showValue str
+                 | fld <- record ]
+
+
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
   [ "$allSpecializations = // transitive, so including specializations of specializations"
@@ -206,7 +366,7 @@ generateRules fSpec =
              then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
                   , "        , 'contentsSQL'   => " ++
                                   let contentsExpr = conjNF (getOpts fSpec) rExpr
-                                  in  showPhpStr (prettySQLQuery 26 (selectSrcTgt fSpec contentsExpr))
+                                  in  showPhpStr (prettySQLQuery fSpec 26 contentsExpr)
                     -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                     -- php/Database.php?testRule=RULENAME
                   ]
@@ -231,13 +391,13 @@ generateRules fSpec =
        genMPairView Nothing                  = []
        genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs
 
-       genPairViewSeg (PairViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]
-       genPairViewSeg (PairViewExp srcOrTgt exp) =
+       genPairViewSeg (PairViewText _ str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]
+       genPairViewSeg (PairViewExp _ srcOrTgt exp) =
          [ "array ( 'segmentType' => 'Exp'"
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          " ++ showPhpStr (prettySQLQuery 33 (selectSrcTgt fSpec exp))
+         , "          " ++ showPhpStr (prettySQLQuery fSpec 33 exp)
          , "      )"
          ]
 
@@ -264,7 +424,7 @@ generateConjuncts fSpec =
                   [ "        // Normalized complement (== violationsSQL): " ] ++
                   (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
              else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (prettySQLQuery 36 (selectSrcTgt fSpec violationsExpr))
+           [ "        , 'violationsSQL' => "++ showPhpStr (prettySQLQuery fSpec 36 violationsExpr)
            , "        )"
            ]
          | conj<-vconjs fSpec
@@ -333,7 +493,7 @@ generateViews fSpec =
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                      , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                      , "      , 'expSQL' =>"
-                                     , "          " ++ showPhpStr (prettySQLQuery 33 (selectSrcTgt fSpec (objctx objDef)))
+                                     , "          " ++ showPhpStr (prettySQLQuery fSpec 33 (objctx objDef))
                                      , "      )"
                                    ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
@@ -367,7 +527,7 @@ generateInterface fSpec interface =
         invConjuncts = [ c | c <- ifcControls interface, any isFrontEndInvariant $ rc_orgRules c ] -- NOTE: these two
         sigConjuncts = [ c | c <- ifcControls interface, any isFrontEndSignal    $ rc_orgRules c ] --       may overlap
 
-genInterfaceObjects :: FSpec -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects :: FSpec -> [Declaration] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      [ "array ( 'name'  => "++ showPhpStr (name object)
      , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
@@ -387,7 +547,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
   ++ case mEditableDecl of
            Just (decl, isFlipped) ->
              [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
-             , "      , 'relationIsEditable' => "++ showPhpBool (EDcD decl `elem` editableRels) 
+             , "      , 'relationIsEditable' => "++ showPhpBool (decl `elem` editableRels) 
              , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
              if isFlipped 
              then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
@@ -402,7 +562,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) -- which may be flipped.
      , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
-     , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery (22+14*depth) (selectSrcTgt fSpec normalizedInterfaceExp))
+     , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery fSpec (22+14*depth) normalizedInterfaceExp)
      ] 
   ++ generateMSubInterface fSpec editableRels depth (objmsub object)
   ++ [ "      )"
@@ -419,7 +579,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
              (src, tgt, Just (decl, isFlipped))
            Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
 
-generateMSubInterface :: FSpec -> [Expression] -> Int -> Maybe SubInterface -> [String]
+generateMSubInterface :: FSpec -> [Declaration] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ]
@@ -446,3 +606,6 @@ genPhp generatorModule moduleName contentLines = unlines $
   ] ++ replicate 2 "" ++ contentLines ++
   [ "?>"
   ]
+showValue :: String -> String
+showValue str = "'"++str++"'"
+

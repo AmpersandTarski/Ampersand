@@ -11,7 +11,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkIncompatibleViewError
   , Guarded(..)
   , whenCheckedIO
-  , unguard, (<?>)
+  , unguard
   )
 -- SJC: I consider it ill practice to export CTXE
 -- Reason: CtxError should obtain all error messages
@@ -36,17 +36,11 @@ fatal = fatalMsg "Input.ADL1.CtxError"
 _notUsed = fatal
 
 -- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
--- The function is a bit more compositional than <?> as you don't have to tuple all the arguments.
+-- The function is a bit more compositional than the previous ly used <?> as you don't have to tuple all the arguments.
 -- Similar to join and bind we have: unguard g = id <?> g, and f <?> g = unguard $ f <$> g
 unguard :: Guarded (Guarded a) -> Guarded a
 unguard (Errors errs) = Errors errs
 unguard (Checked g)   = g  
-
-infixl 4 <?> -- TODO: in case we keep this one, why not lower the precedence? 
-             --       (3 to allow elegant combination with <*> and <$>, or 2 if we also take into account <|>, which may be unnecessary as Guarded is not an Alternative)
-(<?>) :: (t -> Guarded a) -> Guarded t -> Guarded a  -- This is roughly the monadic definition for >>=, but it does not satisfy the corresponding rules so it cannot be a monad
-(<?>) _ (Errors  a) = Errors a -- note the type change
-(<?>) f (Checked a) = f a
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -82,7 +76,7 @@ instance GetOneGuarded Declaration where
 
 cannotDisambRel :: (ShowADL a2, Association a2) => (TermPrim) -> [a2] -> Guarded a
 cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
-cannotDisambRel o@Prel{} lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
+cannotDisambRel o@(PNamedR(PNamedRel _ _ Nothing)) lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
 cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature.\n  You may have intended one of these:"++concat ["\n  "++showADL l|l<-lst]]
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]

@@ -123,20 +123,6 @@ instance Pretty Meta where
 instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
 
-instance Pretty P_Process where
-    pretty p = text "PROCESS" <+> quoteConcept (procNm p) <+\>
-               perline (procRules p) <+\>
-               perline (procGens p) <+\>
-               perline (procDcls p) <+\>
-               perline (procRRuls p) <+\>
-               perline (procRRels p) <+\>
-               perline (procCds p) <+\>
-               perline (procIds p) <+\>
-               perline (procVds p) <+\>
-               perline (procXps p) <+\>
-               perline (procPop p) <+\>
-               text "ENDPROCESS"
-
 instance Pretty P_RoleRelation where
     pretty (P_RR roles rels _) =
         text "ROLE" <+> listOf roles <+> text "EDITS" <+> listOf rels
@@ -149,18 +135,21 @@ instance Pretty Role where
     pretty (Role name) = maybeQuote name
 
 instance Pretty P_Pattern where
-    pretty (P_Pat nm _ _ rls gns dcs cds ids vds xps pop) =
-          text "PATTERN"
+    pretty (P_Pat nm _ _ rls gns dcs rruls rrels cds ids vds xps pop) =
+          text keyword
           <+>  quoteConcept nm
           <+\> perline rls
           <+\> perline gns
           <+\> perline dcs
+          <+\> perline rruls
+          <+\> perline rrels
           <+\> perline cds
           <+\> perline ids
           <+\> perline vds
           <+\> perline xps
           <+\> perline pop
-          <+>  text "ENDPATTERN"
+          <+>  text ("END"++keyword)
+        where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
 instance Pretty P_Declaration where
     pretty (P_Sgn nm sign prps prL prM prR mean popu _ plug) =
@@ -212,16 +201,18 @@ instance Pretty TermPrim where
         Patm _ str Nothing -> singleQuote str
         PVee _ -> text "V"
         Pfull _ s1 s2 -> text "V" <~> (P_Sign s1 s2)
-        Prel _ str -> text (takeQuote str)
-        PTrel _ str sign -> text (takeQuote str) <~> sign
+        PNamedR rel -> pretty rel
       where singleQuote = squotes . text
+
+instance Pretty P_NamedRel where
+    pretty (PNamedRel _ str mpSign) = text (takeQuote str) <~> mpSign
 
 instance Pretty a => Pretty (PairView a) where
     pretty (PairView ss) = text "VIOLATION" <+> parens (listOf ss)
 
 instance Pretty a => Pretty (PairViewSegment a) where
-    pretty (PairViewText str) = text "TXT" <+> quote str
-    pretty (PairViewExp srcTgt term) = pretty srcTgt <~> term
+    pretty (PairViewText _ str) = text "TXT" <+> quote str
+    pretty (PairViewExp _ srcTgt term) = pretty srcTgt <~> term
 
 instance Pretty SrcOrTgt where
     pretty Src = text "SRC"
@@ -325,12 +316,11 @@ instance Pretty PPurpose where
 instance Pretty PRef2Obj where
     pretty p = case p of
         PRef2ConceptDef str       -> text "CONCEPT"   <+> quoteConcept str
-        PRef2Declaration termPrim -> text "RELATION"  <~> termPrim
+        PRef2Declaration namedRel -> text "RELATION"  <~> namedRel
         PRef2Rule str             -> text "RULE"      <+> maybeQuote str
         PRef2IdentityDef str      -> text "IDENT"     <+> maybeQuote str
         PRef2ViewDef str          -> text "VIEW"      <+> maybeQuote str
         PRef2Pattern str          -> text "PATTERN"   <+> maybeQuote str
-        PRef2Process str          -> text "PROCESS"   <+> maybeQuote str
         PRef2Interface str        -> text "INTERFACE" <+> maybeQuote str
         PRef2Context str          -> text "CONTEXT"   <+> maybeQuote str
         PRef2Fspc str             -> text "PRef2Fspc" <+> maybeQuote str

@@ -395,8 +395,8 @@ chpDiagnosis fSpec
             [[]] ++ -- empty row
             [mkTableRow contextStr (filter decusr $ vrels fSpec) (vrules fSpec)])
     ]
-    where mkTableRowPat p = mkTableRow (name p) (ptdcs p) (ptrls p)
-          mkTableRowProc (FProc p _) = mkTableRow (name p) (prcDcls p) (prcRules p)
+    where mkTableRowPat p            = mkTableRow (name p) (ptdcs p) (ptrls p)
+          mkTableRowProc (FProc p _) = mkTableRowPat p
           mkTableRow nm decls ruls =
             let nrOfRels = length decls
                 nrOfRefRels = length $ filter hasRef decls

@@ -107,7 +107,6 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   }
   
   // Typeahead functionality
-  \$scope.selected = {}; // an empty object for temporary storing typeahead selections
   \$scope.typeahead = {}; // an empty object for typeahead
 
 

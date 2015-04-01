@@ -57,8 +57,8 @@ instance Disambiguatable PairViewTerm where
    = (PairViewTerm (PairView [pv' | pv <- lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
      , ([],[])) -- unrelated
 instance Disambiguatable PairViewSegmentTerm where
-  disambInfo (PairViewSegmentTerm (PairViewText s)) _ = (PairViewSegmentTerm (PairViewText s), ([],[]))
-  disambInfo (PairViewSegmentTerm (PairViewExp st a)) (sr,tg) = (PairViewSegmentTerm (PairViewExp st res), rt)
+  disambInfo (PairViewSegmentTerm (PairViewText orig s)) _ = (PairViewSegmentTerm (PairViewText orig s), ([],[]))
+  disambInfo (PairViewSegmentTerm (PairViewExp orig st a)) (sr,tg) = (PairViewSegmentTerm (PairViewExp orig st res), rt)
     where t = case st of
                Src -> sr
                Tgt -> tg

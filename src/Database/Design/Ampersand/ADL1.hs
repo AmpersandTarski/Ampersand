@@ -17,7 +17,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , P_Context(..), mergeContexts
          , Meta(..)
          , MetaObj(..)
-         , P_Process(..), P_RoleRelation(..), RoleRule(..)
+         , P_RoleRelation(..), RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
@@ -29,7 +29,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , P_Interface(..)
          , P_SubInterface
          , Term(..)
-         , TermPrim(..)
+         , TermPrim(..), P_NamedRel(..)
          , P_Gen(..)
          , P_Declaration(..)
          , ConceptDef(..)
@@ -39,7 +39,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
          ,Sign(..),showSign,GenR()
          , (<==>),meet,join
-         ,A_Context(..),Process(..)
+         ,A_Context(..)
          ,Association(..)
          ,Expression(..)
          ,A_Gen(..)

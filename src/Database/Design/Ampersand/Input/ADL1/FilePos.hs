@@ -1,19 +1,34 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Input.ADL1.FilePos
          (FilePos(..), Origin(..), SourcePos, Traced(..)) where
 
 import Text.Parsec.Pos
 import Database.Design.Ampersand.Basics
 import Data.Typeable
+import GHC.Generics (Generic)
+import Data.Hashable
 
 --fatal :: Int -> String -> a
 --fatal = fatalMsg "Input.ADL1.FilePos"
 
 --Traced a have an origin, which may be unknown.
-data FilePos = FilePos (String, SourcePos, String) deriving (Eq, Ord)
-data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord, Typeable)
+data FilePos = FilePos (String, SourcePos, String) deriving (Eq, Ord, Generic)
+instance Hashable FilePos where
+  hashWithSalt s (FilePos (fn,pos, sym))
+    = s  `hashWithSalt`
+      fn `hashWithSalt`
+      l  `hashWithSalt`
+      c  `hashWithSalt`
+      sym
+    where l = sourceLine pos
+          c = sourceColumn pos
+
+data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord, Typeable, Generic)
+
 instance Unique Origin where
   showUnique = show
+instance Hashable Origin
 
 instance Show FilePos where
   show (FilePos (fn, src, _))

@@ -54,29 +54,14 @@ instance MakeMeta P_Pattern where
            , pt_rls = makeMeta f (pt_rls p)
            , pt_gns = makeMeta f (pt_gns p)
            , pt_dcs = makeMeta f (pt_dcs p)
+           , pt_RRuls = makeMeta f (pt_RRuls p)
+           , pt_RRels = makeMeta f (pt_RRels p)
            , pt_cds = makeMeta f (pt_cds p)
            , pt_ids = makeMeta f (pt_ids p)
            , pt_vds = makeMeta f (pt_vds p)
            , pt_xps = makeMeta f (pt_xps p)
            , pt_pop = makeMeta f (pt_pop p)
            }
-
-instance MakeMeta P_Process where
-  makeMeta f p
-   = P_Prc { procNm    =            (procNm p)
-           , procPos   = makeMeta f (procPos p)
-           , procEnd   = makeMeta f (procEnd p)
-           , procRules = makeMeta f (procRules p)
-           , procGens  = makeMeta f (procGens p)
-           , procDcls  = makeMeta f (procDcls p)
-           , procRRuls = makeMeta f (procRRuls p)
-           , procRRels = makeMeta f (procRRels p)
-           , procCds   = makeMeta f (procCds p)
-           , procIds   = makeMeta f (procIds p)
-           , procVds   = makeMeta f (procVds p)
-           , procXps   = makeMeta f (procXps p)
-           , procPop   = makeMeta f (procPop p)
-           } 
 
 instance MakeMeta ConceptDef where
   makeMeta f cd
@@ -216,7 +201,6 @@ instance MakeMeta PRef2Obj where
       PRef2IdentityDef _ -> ref 
       PRef2ViewDef _     -> ref 
       PRef2Pattern _     -> ref 
-      PRef2Process _     -> ref 
       PRef2Interface _   -> ref 
       PRef2Context _     -> ref 
       PRef2Fspc _        -> ref
@@ -276,8 +260,8 @@ instance MakeMeta a => MakeMeta (PairView a) where
 instance MakeMeta a => MakeMeta (PairViewSegment a) where
   makeMeta f sgmt
     = case sgmt of
-       PairViewText{}     -> sgmt
-       PairViewExp st a -> PairViewExp st (makeMeta f a)
+       PairViewText{} -> sgmt
+       PairViewExp{}  -> sgmt{pvsExp = makeMeta f (pvsExp sgmt)}
 
 instance MakeMeta a => MakeMeta (Term a) where
   makeMeta f t
@@ -309,8 +293,13 @@ instance MakeMeta TermPrim where
       Patm  o a c     -> Patm o a (makeMeta f c)
       PVee  _         -> t
       Pfull o src tgt -> Pfull o (makeMeta f src)(makeMeta f tgt)
-      Prel  _ _       -> t
-      PTrel o s sgn   -> PTrel o s (makeMeta f sgn)
+      PNamedR nr      -> PNamedR (makeMeta f nr)
+
+instance MakeMeta P_NamedRel where
+  makeMeta f t
+   = case t of
+      PNamedRel  _ _ Nothing   -> t
+      PNamedRel o s (Just sgn) -> PNamedRel o s (makeMeta f $ Just sgn)
    
 instance MakeMeta Paire where
   makeMeta _ = id

@@ -71,7 +71,7 @@ getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
  where getPairViewExps r@Ru{rrviol = Just (PairView pvsegs)} =
-         [ (exp, "violation view for rule "++show (name r)) | PairViewExp _ exp <- pvsegs ]
+         [ (exp, "violation view for rule "++show (name r)) | PairViewExp _ _ exp <- pvsegs ]
        getPairViewExps _    = []
 
 getAllIdExps :: FSpec -> [ValidationExp]

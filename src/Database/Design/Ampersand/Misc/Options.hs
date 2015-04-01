@@ -67,7 +67,6 @@ data Options = Options { showVersion :: Bool
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genStaticFiles :: Bool-- Generate the static files into the prototype
                        , genBericht :: Bool
-                       , genMeat :: Bool  -- Generate the meta-population and output it to an .adl file
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , ampersandDataDir :: FilePath -- the directory where Ampersand data files are.
@@ -78,7 +77,10 @@ data Options = Options { showVersion :: Bool
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , test :: Bool
-                       , includeRap :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
+                       , genASTTables :: Bool -- When set, generate the meta-tables of AST into the prototype
+                       , genASTFile :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
+                       , genGenericsFile :: Bool  -- Generate the meta-population in generics format and output it to an .adl file
+                       , genGenericTables :: Bool -- When set, generate the meta-tables of generics into the prototype
                        , pangoFont :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
@@ -165,7 +167,6 @@ getOptions =
                       , genFPAExcel   = False
                       , genStaticFiles= True
                       , genBericht    = False
-                      , genMeat       = False
                       , language      = Nothing
                       , progrName     = progName
                       , fileName      = if hasExtension fName
@@ -174,7 +175,10 @@ getOptions =
                       , baseName      = takeBaseName fName
                       , export2adl    = False
                       , test          = False
-                      , includeRap    = False
+                      , genGenericTables = False
+                      , genGenericsFile       = False
+                      , genASTTables     = False
+                      , genASTFile    = False
                       , pangoFont     = "Sans"
                       , sqlHost       = "localhost"
                       , sqlLogin      = "ampersand"
@@ -431,13 +435,21 @@ options = map pp
                (NoArg (\opts -> return opts{test = True}))
                "Used for test purposes only."
             , Hidden)
-          , (Option []        ["rap"]
-               (NoArg (\opts -> return opts{includeRap = True}))
-               "Include RAP into the generated artifacts (experimental)"
+          , (Option []        ["ast-tables"]
+               (NoArg (\opts -> return opts{genASTTables = True}))
+               "When set, generate the meta-tables of AST into the prototype"
             , Hidden)
-          , (Option []        ["meta"]
-               (NoArg (\opts -> return opts{genMeat = True}))
-               "Generate meta-population in an .adl file (experimental)"
+          , (Option []        ["ast-file"]
+               (NoArg (\opts -> return opts{genASTFile = True}))
+               "Generate the meta-population in AST format and output it to an .adl file"
+            , Hidden)
+          , (Option []        ["generic-tables"]
+               (NoArg (\opts -> return opts{genGenericTables = True}))
+               "Generate the meta-tables of generics into the prototype"
+            , Hidden)
+          , (Option []        ["generic-file"]
+               (NoArg (\opts -> return opts{genGenericsFile = True}))
+               "Generate the meta-population in Generics format and output it to an .adl file"
             , Hidden)
           , (Option []        ["pango"]
                (ReqArg (\nm opts -> return opts{pangoFont = nm}

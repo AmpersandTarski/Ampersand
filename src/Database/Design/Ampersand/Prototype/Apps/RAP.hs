@@ -41,7 +41,7 @@ selectdecl :: (IConnection conn) => conn
 selectdecl conn fSpec dclName
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where stmt = selectExprRelation fSpec dcl
+   where stmt = prettySQLQuery fSpec 0 dcl
          dcl = therel dclName "" ""
          therel ::String -> String -> String -> Declaration
          therel relname relsource reltarget
@@ -259,6 +259,8 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     , let snm = geta r_cptnm sid (error "while geta r_cptnm for spc.")]
          , pt_dcs = [atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
                     |(i,(pid',rid))<-zip [1..] r_ptdcs, pid==pid']
+         , pt_RRuls = []
+         , pt_RRels = []
          , pt_cds = []
          , pt_ids = []
          , pt_vds = []
@@ -267,7 +269,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     , (rid',rpurp)<-r_rrpurpose, rid==rid', not(null rpurp)
                     , let rnm = geta r_rrnm rid (error "while geta r_rrnm for rpurp.")]
                  ++ [PRef2 (DBLoc "Atlas(RelPurpose)")
-                           (PRef2Declaration (PTrel OriginUnknown rnm (atlas2sign rid r_decsgn r_src r_trg r_cptnm)))
+                           (PRef2Declaration (PNamedRel OriginUnknown rnm (Just $ atlas2sign rid r_decsgn r_src r_trg r_cptnm)))
                            (P_Markup Nothing Nothing rpurp) []
                     | (pid',rid)<-r_ptdcs, pid==pid'
                     , (rid',rpurp)<-r_decpurpose, rid==rid', not(null rpurp)

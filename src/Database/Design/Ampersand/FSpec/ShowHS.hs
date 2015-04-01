@@ -249,7 +249,6 @@ instance ShowHS FSpec where
         ,     ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
         ,     ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
         ,wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fSpec)
-        ,wrap ", procsInScope  = " indentA (\_->showHSName) (procsInScope fSpec)
         ,wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fSpec)
         ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
         ,wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
@@ -440,7 +439,18 @@ instance ShowHS Pattern where
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
      , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
+
+     , case prcRRuls pat of
+        []          -> ", prcRRuls = [] {- no role-rule assignments -}"
+        [(rol,rul)] -> ", prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
+        rs          -> ", prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
+     , case prcRRels pat of
+        []          -> ", prcRRels = [] {- no role-relation assignments -}"
+        [(rol,rel)] -> ", prcRRels = [ ("++show rol++", "++showHS opts "" rel++") ]"
+        rs          -> ", prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS opts "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
+
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
+     , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)
      , wrap ", ptxps = " indentB (showHS opts) (ptxps pat)
      , "}"
      ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
@@ -458,33 +468,6 @@ instance ShowHS FProcess where
      ] where indentA = indent ++"      "     -- adding the width of "FProc "
              indentB = indentA++"                 " -- adding the width of ", fpActivities = "
 
-instance ShowHSName Process where
- showHSName prc = haskellIdentifier ("prc_"++name prc)
-
-instance ShowHS Process where
- showHS opts indent prc
-  = intercalate indentA
-     [ "Proc { prcNm = "++show (name prc)
-     , ", prcPos = "++showHS opts "" (prcPos prc)
-     , ", prcEnd = "++showHS opts "" (prcEnd prc)
-     , ", prcRules = [" ++intercalate ", " [showHSName r | r<-prcRules prc] ++ concat [" {- no rules -} "                     | null (prcRules prc)] ++"]"
-     , wrap ", prcGens = " indentB (showHS opts) (prcGens prc)
-     , ", prcDcls = ["  ++intercalate ", " [showHSName d | d<-prcDcls  prc] ++ concat [" {- no relations -} "              | null (prcDcls  prc)] ++"]"
-     , wrap ", prcUps = " indentB (showHS opts) (prcUps prc)
-     , case prcRRuls prc of
-        []          -> ", prcRRuls = [] {- no role-rule assignments -}"
-        [(rol,rul)] -> ", prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
-        rs          -> ", prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
-     , case prcRRels prc of
-        []          -> ", prcRRels = [] {- no role-relation assignments -}"
-        [(rol,rel)] -> ", prcRRels = [ ("++show rol++", "++showHS opts "" rel++") ]"
-        rs          -> ", prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS opts "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
-     , wrap ", prcIds = " indentB (showHS opts) (prcIds prc)
-     , wrap ", prcVds = " indentB (showHS opts) (prcVds prc)
-     , wrap ", prcXps = " indentB (showHS opts) (prcXps prc)
-     , "}"
-     ] where indentA = indent ++"      "     -- adding the width of "FProc "
-             indentB = indentA++"             " -- adding the width of ", prcRules = "
 
 instance ShowHS Activity where
  showHS opts indent act =
@@ -510,18 +493,15 @@ instance ShowHS PPurpose where
 instance ShowHS PRef2Obj where
  showHS _ _ peObj
   = case peObj of
-         PRef2ConceptDef str               -> "PRef2ConceptDef " ++show str
-         PRef2Declaration (PTrel _ nm sgn) -> "PRef2Declaration "++show nm++show sgn
-         PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
-         PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
-         PRef2Rule str                     -> "PRef2Rule "       ++show str
-         PRef2IdentityDef str              -> "PRef2IdentityDef "++show str
-         PRef2ViewDef str                  -> "PRef2ViewDef "    ++show str
-         PRef2Pattern str                  -> "PRef2Pattern "    ++show str
-         PRef2Process str                  -> "PRef2Process "    ++show str
-         PRef2Interface str                -> "PRef2Interface "  ++show str
-         PRef2Context str                  -> "PRef2Context "    ++show str
-         PRef2Fspc str                     -> "PRef2Fspc "       ++show str
+         PRef2ConceptDef str                    -> "PRef2ConceptDef " ++show str
+         PRef2Declaration (PNamedRel _ nm mSgn) -> "PRef2Declaration "++show nm++maybe "" show mSgn
+         PRef2Rule str                          -> "PRef2Rule "       ++show str
+         PRef2IdentityDef str                   -> "PRef2IdentityDef "++show str
+         PRef2ViewDef str                       -> "PRef2ViewDef "    ++show str
+         PRef2Pattern str                       -> "PRef2Pattern "    ++show str
+         PRef2Interface str                     -> "PRef2Interface "  ++show str
+         PRef2Context str                       -> "PRef2Context "    ++show str
+         PRef2Fspc str                          -> "PRef2Fspc "       ++show str
 
 instance ShowHS Purpose where
  showHS opts _ expla =
@@ -539,7 +519,6 @@ instance ShowHS ExplObj where
           ExplIdentityDef str-> "ExplIdentityDef "++show str
           ExplViewDef str    -> "ExplViewDef "    ++show str
           ExplPattern str    -> "ExplPattern "    ++show str
-          ExplProcess str    -> "ExplProcess "    ++show str
           ExplInterface str  -> "ExplInterface "  ++show str
           ExplContext str    -> "ExplContext "    ++show str
 
@@ -565,8 +544,8 @@ instance ShowHS (PairView Expression) where
   showHS opts indent (PairView pvs) = "PairView "++showHS opts indent pvs
 
 instance ShowHS (PairViewSegment Expression) where
-  showHS _     _ (PairViewText txt) = "PairViewText "++show txt
-  showHS opts _ (PairViewExp srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS opts "" e++")"
+  showHS _     _ (PairViewText _ txt) = "PairViewText "++show txt
+  showHS opts _ (PairViewExp _ srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS opts "" e++")"
 
 instance ShowHSName Rule where
  showHSName r = haskellIdentifier ("rule_"++ rrnm r)

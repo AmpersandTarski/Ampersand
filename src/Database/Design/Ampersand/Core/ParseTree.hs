@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts
    , Meta(..)
    , MetaObj(..)
-   , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
    , Role(..)
    , P_Pattern(..)
    , P_Declaration(..)
-   , Term(..), TermPrim(..)
+   , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
@@ -49,6 +49,8 @@ import Data.Foldable
 import Prelude hiding (foldr, sequence)
 import Control.Applicative
 import Data.Typeable
+import GHC.Generics (Generic)
+import Data.Hashable
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -60,7 +62,7 @@ data P_Context
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         , ctx_PPrcs ::  [P_Process]      -- ^ The processes as defined by the parser
+         , ctx_PPrcs ::  [P_Pattern]      -- ^ The processes as defined by the parser
          , ctx_rs ::     [(P_Rule TermPrim)]         -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
@@ -91,35 +93,13 @@ data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for 
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
-   = P_RR { rr_Roles :: [Role]  -- ^ name of a role
-          , rr_Rels :: [TermPrim] -- ^ Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+   = P_RR { rr_Roles :: [Role]      -- ^ list of roles
+          , rr_Rels :: [P_NamedRel] -- ^ list of named relations
           , rr_Pos :: Origin      -- ^ position in the Ampersand script
           } deriving (Show)       -- deriving Show is just for debugging
 instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
 instance Traced P_RoleRelation where
  origin = rr_Pos
-
-data P_Process
-   = P_Prc { procNm :: String
-           , procPos :: Origin             -- ^ the start position in the file
-           , procEnd :: Origin             -- ^ the end position in the file
-           , procRules :: [(P_Rule TermPrim)]         -- ^ the rules in this process
-           , procGens :: [P_Gen]           -- ^ the generalizations in this process
-           , procDcls :: [P_Declaration]   -- ^ the relation that are declared in this process
-           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
-           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-           , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
-           , procIds :: [P_IdentDef]       -- ^ The identity definitions defined in this process
-           , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
-           , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
-           , procPop :: [P_Population]     -- ^ The populations that are local to this process
-           } deriving Show
-
-instance Named P_Process where
- name = procNm
-
-instance Traced P_Process where
- origin = procPos
 
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data RoleRule
@@ -144,6 +124,8 @@ data P_Pattern
            , pt_rls :: [(P_Rule TermPrim)]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
+           , pt_RRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
+           , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
@@ -206,8 +188,10 @@ data TermPrim
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
-   | Prel Origin String                     -- ^ we expect expressions in flip-normal form
-   | PTrel Origin String P_Sign             -- ^ type cast expression
+   | PNamedR P_NamedRel
+   deriving Show
+
+data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
    deriving Show
 
 {- For whenever it may turn out to be useful
@@ -289,8 +273,8 @@ instance Traced TermPrim where
    Patm orig _ _  -> orig
    PVee orig      -> orig
    Pfull orig _ _ -> orig
-   Prel orig _    -> orig
-   PTrel orig _ _ -> orig
+   PNamedR r      -> origin r
+   
 instance Named TermPrim where
  name e = case e of
    PI _        -> "I"
@@ -298,8 +282,13 @@ instance Named TermPrim where
    Patm _ s _  -> s
    PVee _      -> "V"
    Pfull _ _ _ -> "V"
-   Prel _ r    -> r
-   PTrel _ r _ -> r
+   PNamedR r   -> name r
+   
+instance Traced P_NamedRel where
+  origin (PNamedRel o _ _) = o
+
+instance Named P_NamedRel where
+  name (PNamedRel _ nm _) = nm
 
 instance Traced a => Traced (Term a) where
  origin e = case e of
@@ -321,7 +310,8 @@ instance Traced a => Traced (Term a) where
    PCpl orig _    -> orig
    PBrk orig _    -> orig
 
-data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord)
+data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord, Generic)
+instance Hashable SrcOrTgt
 instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
@@ -330,10 +320,25 @@ isSrc :: SrcOrTgt -> Bool
 isSrc Src = True
 isSrc Tgt = False
 
-data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving Show
-data PairViewSegment a = PairViewText String
-                       | PairViewExp SrcOrTgt a
-         deriving Show
+data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq, Generic)
+instance Hashable a => Hashable (PairView a)
+instance Traced a => Traced (PairView a) where
+  origin pv = 
+    case ppv_segs pv of
+       [] -> fatal 342 "An empty PairView must not occur"
+       xs -> origin (head xs)   
+data PairViewSegment a = 
+    PairViewText{ pvsOrg :: Origin
+                , pvsStr :: String
+                }
+  | PairViewExp { pvsOrg :: Origin
+                , pvsSoT :: SrcOrTgt
+                , pvsExp :: a
+                } deriving (Show, Typeable, Eq, Generic)
+instance Hashable a => Hashable (PairViewSegment a)
+instance Traced (PairViewSegment a) where
+  origin = pvsOrg
+
 -- | the newtype to make it possible for a PairView to be disambiguatable: it must be of the form "d a" instead of "d (Term a)"
 newtype PairViewTerm a = PairViewTerm (PairView (Term a))
 newtype PairViewSegmentTerm a = PairViewSegmentTerm (PairViewSegment (Term a))
@@ -347,8 +352,8 @@ instance Traversable PairViewTerm where
 instance Functor PairViewTerm where fmap = fmapDefault
 instance Foldable PairViewTerm where foldMap = foldMapDefault
 instance Traversable PairViewSegment where
-  traverse _ (PairViewText s) = pure (PairViewText s)
-  traverse f (PairViewExp st x) = PairViewExp st <$> f x
+  traverse _ (PairViewText ori s) = pure (PairViewText ori s)
+  traverse f (PairViewExp ori st x) = PairViewExp ori st <$> f x
 instance Functor PairViewSegment where fmap = fmapDefault
 instance Foldable PairViewSegment where foldMap = foldMapDefault
 instance Traversable PairView where
@@ -413,9 +418,7 @@ instance Traced P_Population where
 data P_Interface =
      P_Ifc { ifc_Name :: String           -- ^ the name of the interface
            , ifc_Class :: Maybe String    -- ^ the class of the interface
-           , ifc_Params :: [TermPrim]     -- ^ a list of relations that are editable within this interface.
-                                          --   either   Prel o nm
-                                          --       or   PTrel o nm sgn
+           , ifc_Params :: [P_NamedRel]     -- ^ a list of named relations that are editable within this interface.
            , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
@@ -521,13 +524,11 @@ instance Traced (P_ViewD a) where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
 data PRef2Obj = PRef2ConceptDef String
-              | PRef2Declaration TermPrim -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
-                                      -- or        Prel o nm; Other terms become fatals
+              | PRef2Declaration P_NamedRel
               | PRef2Rule String
               | PRef2IdentityDef String
               | PRef2ViewDef String
               | PRef2Pattern String
-              | PRef2Process String
               | PRef2Interface String
               | PRef2Context String
               | PRef2Fspc String
@@ -536,14 +537,11 @@ data PRef2Obj = PRef2ConceptDef String
 instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
-     PRef2Declaration (PTrel _ nm sgn) -> nm++show sgn
-     PRef2Declaration (Prel _ nm) -> nm
-     PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
+     PRef2Declaration (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
      PRef2Rule str -> str
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
      PRef2Pattern str -> str
-     PRef2Process str -> str
      PRef2Interface str -> str
      PRef2Context str -> str
      PRef2Fspc str -> str

@@ -12,17 +12,13 @@ module Database.Design.Ampersand.FSpec.ShowADL
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Named(..))
+import Database.Design.Ampersand.Basics      (fatalMsg,Collection(..),Named(..))
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
-import Data.List hiding (head)
-import Prelude hiding (head)
+import Data.List
+import Prelude
 --import Debug.Trace
-
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ShowADL"
@@ -130,35 +126,12 @@ instance ShowADL ExplObj where
       ExplIdentityDef str-> "IDENT "++showstr str
       ExplViewDef str    -> "VIEW "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
-      ExplProcess str    -> "PROCESS "++str
       ExplInterface str  -> "INTERFACE "++showstr str
       ExplContext str    -> "CONTEXT "++showstr str
 
 showstr :: String -> String
 showstr str = "\""++str++"\""
 
-instance ShowADL Process where
- showADL prc
-  = "PROCESS " ++ name prc
-    ++ (if null (udefrules prc) then "" else "\n  " ++intercalate "\n  " (map showADL (udefrules prc)) ++ "\n")
-    ++ (if null (maintains prc) then "" else "\n  " ++                        showRM prc               ++ "\n")
-    ++ (if null (mayEdit prc)   then "" else "\n  " ++                        showRR prc               ++ "\n")
--- concept definitions are not printed, because we have no way of telling where they come from....
-    ++ (if null (prcIds prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcIds prc))    ++ "\n")
-    ++ (if null (prcXps prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcXps prc))    ++ "\n")
--- The relations declared in the pattern are supplemented by all relations used by the rules.
--- Thus, the resulting pattern is self-contained with respect to declarations.
-    ++ (if null decls           then "" else "\n  " ++intercalate "\n  " (map showADL decls)           ++ "\n")
-    ++ "ENDPROCESS"
-    where
-      decls = [d | d@Sgn{}<-relsDefdIn prc `uni` relsMentionedIn prc]
- -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work...
-      showRM :: Process -> String
-      showRM pr = intercalate "\n  " [ "ROLE "++name role++" MAINTAINS "++intercalate ", " [name rul | (_,rul)<-cl]
-                                     | cl<-eqCl fst (maintains pr), let role = fst (head cl)]
-      showRR :: Process -> String
-      showRR pr = intercalate "\n  " [ "ROLE "++name role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
-                                     | cl<-eqCl fst (mayEdit pr), let role = fst (head cl)]
 
 -- TODO: making these tuples instance of ShowADL is very hacky
 instance ShowADL (String,Rule) where
@@ -171,6 +144,7 @@ instance ShowADL (String,Interface) where
  showADL (role,ifc) = "ROLE "++role++" USES "++show (name ifc)
 
 instance ShowADL Pattern where
+-- TODO: This function is VERY outdated
  showADL pat
   = "PATTERN " ++ showstr (name pat) ++ "\n"
     ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
@@ -181,8 +155,8 @@ instance ShowADL Pattern where
     ++ "ENDPATTERN"
 
 instance ShowADL (PairViewSegment Expression) where
- showADL (PairViewText str)         = "TXT " ++ show str
- showADL (PairViewExp srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
+ showADL (PairViewText _ str)       = "TXT " ++ show str
+ showADL (PairViewExp _ srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
 
 instance ShowADL SrcOrTgt where
  showADL Src = "SRC"
@@ -329,7 +303,6 @@ instance ShowADL A_Context where
   = "CONTEXT " ++name context
     ++ " " ++ (showADL (ctxlang context))
     ++ (if null (ctxmetas context) then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxmetas context))++ "\n")
-    ++ (if null (ctxprocs context) then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxprocs context))++ "\n") -- All processes
     ++ (if null (ctxifcs context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxifcs context)) ++ "\n")
     ++ (if null (ctxpats context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxpats context)) ++ "\n")
     ++ (if null (ctxrs context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxrs context))   ++ "\n")
@@ -432,8 +405,10 @@ instance ShowADL TermPrim where
  showADL (Patm _ a (Just c))                      = "'"++a++"'["++show c++"]"
  showADL (PVee _)                                 = "V"
  showADL (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
- showADL (Prel _ rel)                             = rel
- showADL (PTrel _ rel psgn)                       = rel++showsign psgn
+ showADL (PNamedR rel)                            = showADL rel
+ 
+instance ShowADL P_NamedRel where
+ showADL (PNamedRel _ rel mSgn)                    = rel++maybe "" showsign mSgn
   where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"
 
 --used to compose error messages at p2a time

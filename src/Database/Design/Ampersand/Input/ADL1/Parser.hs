@@ -74,7 +74,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT") <*> pConceptName
 
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
-                    | CPrc P_Process
+                    | CPrc P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy P_Gen
                     | CRel P_Declaration
@@ -129,6 +129,8 @@ pPatternDef = rebuild <$> currPos
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
+             , pt_RRuls = []  -- TODO: Add RoleRule to Pattern
+             , pt_RRels = []  -- TODO: Add P_RoleRelation to Pattern
              , pt_cds = [c nm | Pc c<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
@@ -158,26 +160,26 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pp P_Population
 
 --- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
-pProcessDef :: AmpParser P_Process
+pProcessDef :: AmpParser P_Pattern
 pProcessDef = rebuild <$> currPos <* pKey "PROCESS" <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                       <*> many pProcElem
                       <*> currPos <* pKey "ENDPROCESS"
    where
-    rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Process
+    rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
-      = P_Prc { procNm    = nm
-              , procPos   = pos'
-              , procEnd   = end
-              , procRules = [rr | PrR rr<-pes]
-              , procGens  = [g  | PrG g <-pes]
-              , procDcls  = [d  | PrD d <-pes]
-              , procRRuls = [rr | PrM rr<-pes]
-              , procRRels = [rr | PrL rr<-pes]
-              , procCds   = [cd nm | PrC cd<-pes]
-              , procIds   = [ix | PrI ix<-pes]
-              , procVds   = [vd | PrV vd<-pes]
-              , procXps   = [e  | PrE e <-pes]
-              , procPop   = [p  | PrP p <-pes]
+      = P_Pat { pt_nm    = nm
+              , pt_pos   = pos'
+              , pt_end   = end
+              , pt_rls = [rr | PrR rr<-pes]
+              , pt_gns  = [g  | PrG g <-pes]
+              , pt_dcs  = [d  | PrD d <-pes]
+              , pt_RRuls = [rr | PrM rr<-pes]
+              , pt_RRels = [rr | PrL rr<-pes]
+              , pt_cds   = [cd nm | PrC cd<-pes]
+              , pt_ids   = [ix | PrI ix<-pes]
+              , pt_vds   = [vd | PrV vd<-pes]
+              , pt_xps   = [e  | PrE e <-pes]
+              , pt_pop   = [p  | PrP p <-pes]
               }
     --- ProcElem ::= RuleDef | Classify | RelationDef | RoleRule | RoleRelation | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
     pProcElem :: AmpParser ProcElem
@@ -255,14 +257,13 @@ pRuleDef =  rebuild <$> currPos
                  pPairView = PairView <$> pParens (pPairViewSegment `sepBy1` pComma)
 
                  --- PairViewSegmentList  ::= PairViewSegment (',' PairViewSegment)*
-                 --- PairViewSegment ::= SrcOrTgt Term | 'TXT' String
+                 --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
-                 pPairViewSegment = PairViewExp <$> pSrcOrTgt  <*>  pTerm
-                                <|> PairViewText <$ pKey "TXT" <*> pString
-
---- SrcOrTgt ::= 'SRC' | 'TGT'
-pSrcOrTgt :: AmpParser SrcOrTgt
-pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
+                 pPairViewSegment = rebuildSrc   <$> posOf (pKey "SRC") <*> pTerm 
+                                <|> rebuildTgt   <$> posOf (pKey "TGT") <*> pTerm
+                                <|> PairViewText <$> posOf (pKey "TXT") <*> pString
+                   where rebuildSrc p t = PairViewExp p Src t
+                         rebuildTgt p t = PairViewExp p Tgt t
 
 --- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? Pragma? Meaning* ('=' Content)? '.'?
 --TODO: This is WAY too long!
@@ -278,9 +279,9 @@ pRelationDef      = ( rebuild <$> pVarid  <*> currPos <* pOperator "::" <*> pCon
                       <*> ((pOperator "=" *> pContent) `opt` [])
                       <* (pOperator "." `opt` "") -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                     where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings content
-                            = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings content
+                            = rbd pos' nm (P_Sign src trg) bp1 props' --bp2 pragma meanings content
                               where props'= nub (props `uni` fun')
-                          rbd pos' nm (sgn,_) bp1 props bp2 pragma meanings content
+                          rbd pos' nm sgn bp1 props bp2 pragma meanings content
                             = P_Sgn { dec_nm   = nm
                                     , dec_sign = sgn
                                     , dec_prps = props
@@ -482,12 +483,12 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
                      (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                     -- either  Prel _ nm
-                                                                    --       or  PTrel _ nm sgn
+                                                                    --       or  PNamedRel _ nm sgn
                      (pArgs   `opt` [])                   <*>
                      (pRoles  `opt` [])                   <*>
                      (pColon *> pTerm)                  <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> Maybe String -> [TermPrim] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
+    where lbl :: (String, Origin) -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
           lbl (nm,p) iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
@@ -504,8 +505,8 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
-          --- Params ::= '(' RelSignList ')'
-          pParams = pParens(pRelSign `sepBy1` pComma)
+          --- Params ::= '(' NamedRel ')'
+          pParams = pParens(pNamedRel `sepBy1` pComma)
           --- InterfaceArgs ::= '{' ADLidListList '}'
           pArgs   = pBraces((many1 pADLid) `sepBy1` pComma)
           --- Roles ::= 'FOR' RoleList
@@ -570,33 +571,32 @@ pPurpose = rebuild <$> currPos
        --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' RelSign | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
-                  PRef2Declaration <$ pKey "RELATION"  <*> pRelSign     <|>
+                  PRef2Declaration <$ pKey "RELATION"  <*> pNamedRel    <|>
                   PRef2Rule        <$ pKey "RULE"      <*> pADLid       <|>
                   PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>
                   PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
-                  PRef2Process     <$ pKey "PROCESS"   <*> pADLid       <|>
+                  PRef2Pattern     <$ pKey "PROCESS"   <*> pADLid       <|>
                   PRef2Interface   <$ pKey "INTERFACE" <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
---- Population ::= 'POPULATION' RelSign 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
+--- Population ::= 'POPULATION' NamedRel 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
-pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent) <|>
+pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent) <|>
               try (pcptpop <$> currPos <* pKey "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
     where
-      prelpop :: Origin -> TermPrim -> Pairs -> P_Population
-      prelpop    orig     (Prel _ nm)  contents
-       = P_RelPopu { p_rnme   = nm
+      prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
+      prelpop orig (PNamedRel _ nm mSgn)  contents =
+        case mSgn of Nothing  -> P_RelPopu { p_rnme   = nm
                    , p_orig   = orig
                    , p_popps  = contents
                    }
-      prelpop orig (PTrel _ nm sgn) contents
-       = P_TRelPop { p_rnme   = nm
+                     Just sgn -> P_TRelPop { p_rnme   = nm
                    , p_type   = sgn
                    , p_orig   = orig
                    , p_popps  = contents
                    }
-      prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
+                                           
       pcptpop :: Origin -> String -> [String] -> P_Population
       pcptpop    orig      cnm       contents
        = P_CptPopu { p_cnme   = cnm
@@ -604,13 +604,13 @@ pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pRelSign     <* 
                    , p_popas  = contents
                    }
 
---- RoleRelation ::= 'ROLE' RoleList 'EDITS' RelSignList
+--- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation      = rr <$> currPos
                         <*  pKey "ROLE"
                         <*> pRole `sepBy1` pComma
                         <*  pKey "EDITS"
-                        <*> pRelSign `sepBy1` pComma
+                        <*> pNamedRel `sepBy1` pComma
                      where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
@@ -769,33 +769,30 @@ pTrm6 = Prim <$> pRelationRef  <|>
 
 --- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = pRelSign                                                             <|>
+pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
                     pfull <$> currPos <* pKey "V" <*> pMaybe pSign                       <|>
                     singl <$> valPosOf pAtom <*> pMaybe (pBrackets pConceptOneRef)
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
-                          pfull orig (Just (P_Sign src trg, _)) = Pfull orig src trg
+                          pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
                           singl (nm,orig) x  = Patm orig nm x
 
---- RelSignList ::= RelSign (',' RelSign)*
---- RelSign ::= Varid Sign?
-pRelSign :: AmpParser TermPrim
-pRelSign          = prel  <$> valPosOf pVarid <*> pMaybe pSign
-                    where prel (nm,orig) Nothing = Prel orig nm
-                          prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
+--- NamedRelList ::= NamedRel (',' NamedRel)*
+--- NamedRel ::= Varid Sign?
+pNamedRel :: AmpParser P_NamedRel
+pNamedRel = pnamedrel  <$> valPosOf pVarid <*> pMaybe pSign
+                    where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
 
 --- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
-pSign :: AmpParser (P_Sign, Origin)
-pSign = valPosOf $ pBrackets concepts
+pSign :: AmpParser P_Sign
+pSign = pBrackets sign
    where
-     concepts :: AmpParser P_Sign
-     concepts = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
-     
+     sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
      mkSign :: P_Concept -> Maybe P_Concept -> P_Sign
-     mkSign a (Just b) = P_Sign a b
-     mkSign a Nothing  = P_Sign a a
+     mkSign src (Just tgt) = P_Sign src tgt
+     mkSign src  Nothing   = P_Sign src src
 
 --- ConceptName ::= Conid | String
 --- ConceptNameList ::= ConceptName (',' ConceptName)

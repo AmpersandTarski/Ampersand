@@ -7,11 +7,16 @@ require_once (__DIR__ . '/../localSettings.php');
 // TODO: change to mysqli
 class Database
 {	
-	private $dblink;
-	private $dbname;
+	private $db_link;
+	
+	private $db_host;
+	private $db_user;
+	private $db_pass;
+	private $db_name;
+	
 	private $transaction;
-	private $affectedConcepts; // array with all affected Concepts during a transaction.
-	private $affectedRelations; // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
+	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
+	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
 	
 	private static $_instance = null;
 	
@@ -19,19 +24,23 @@ class Database
 	private function __construct()
 	{
 		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
-		$this->dbname = $DB_name;
+		$this->db_host = $DB_host;
+		$this->db_user = $DB_user;
+		$this->db_pass = $DB_pass;
+		$this->db_name = $DB_name;
 		
-		$this->dblink = mysql_connect($DB_host, $DB_user, $DB_pass);
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		// Connect to mysql
+		$this->connect();
 		
-		mysql_select_db($this->dbname, $this->dblink);
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
-		
-		// Set sql_mode to ANSI
-		$this->Exe("SET SESSION sql_mode = 'ANSI'");
-		
-		$this->affectedConcepts = array();
-		$this->affectedRelations = array();
+		// Select DB
+		try{
+			$this->selectDB();
+		}catch (Exception $e){
+			Notifications::addLog($e->getMessage(), 'DATABASE');
+			$this->createDB();
+			$this->selectDB();
+			$this->installDB();
+		}
 	}
 	
 	// Prevent any copy of this object
@@ -42,6 +51,57 @@ class Database
 	public static function singleton(){
 		if(!is_object (self::$_instance) ) self::$_instance = new Database();
 		return self::$_instance;
+	}
+	
+	public function resetDatabase(){
+		$this->dropDB();
+		$this->createDB();
+		$this->selectDB();
+		$this->installDB();	
+	}
+	
+	private function connect(){
+		$this->db_link = mysql_connect($this->db_host, $this->db_user, $this->db_pass);
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
+	}
+	
+	private function createDB(){
+		$this->Exe("CREATE DATABASE $this->db_name DEFAULT CHARACTER SET UTF8");
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+	}
+	private function dropDB(){
+		$this->Exe("DROP DATABASE $this->db_name");
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+	}
+	
+	private function selectDB(){
+		mysql_select_db($this->db_name, $this->db_link);
+		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
+		// Set sql_mode to ANSI
+		$this->Exe("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+	}
+	
+	private function installDB(){
+		global $allDBstructQueries; // from Generics.php
+		global $allDefPopQueries; // from Generics.php
+		
+		Notifications::addLog('========= INSTALLER ==========');
+		
+		$this->startTransaction();
+		Notifications::addLog('---------- DB structure queries ------------');
+		foreach($allDBstructQueries as $query){
+			$this->Exe($query);
+			
+		}
+		Notifications::addLog('---------- DB population queries -----------');
+		foreach($allDefPopQueries as $query){
+			$this->Exe($query);
+		}
+		Notifications::addLog('========= END OF INSTALLER ==========');
+		
+		$this->closeTransaction('Database reset to initial state', true);
 	}
 	
 	/*
@@ -55,7 +115,7 @@ class Database
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
-		$result = mysql_query($query,$this->dblink);
+		$result = mysql_query($query,$this->db_link);
 		Notifications::addLog($query, 'QUERY');
 
 		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query, 500);
@@ -75,7 +135,7 @@ class Database
 	}
 	
 	public function error(){
-		return mysql_error($this->dblink);
+		return mysql_error($this->db_link);
 	}
 
 // =============================== CHANGES TO DATABASE ===========================================================

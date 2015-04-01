@@ -47,11 +47,13 @@ lower_id = suchThat identifier startLower
 objTermPrim :: Int -> Gen (P_ObjDef TermPrim)
 objTermPrim 0 = objTermPrim 1 -- minimum of 1 sub interface
 objTermPrim i =
-  makeObj relationRef ifc genView i
+  makeObj genPrim ifc genView i
     where ifc :: Int -> Gen (P_SubIfc TermPrim)
           ifc n = subIfc objTermPrim (n`div`2)
           --TODO: The view is never tested like this
           genView = return Nothing
+          genPrim :: Gen TermPrim
+          genPrim = PNamedR <$> relationRef
 
 --TODO: refactor obj/ifc generators
 genObj :: Arbitrary a => Int -> Gen (P_ObjDef a)
@@ -112,11 +114,6 @@ instance Arbitrary Meta where
 instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
 
-instance Arbitrary P_Process where
-    arbitrary = P_Prc <$> identifier<*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary
-
 instance Arbitrary P_RoleRelation where
     arbitrary = P_RR <$> listOf1 arbitrary <*> listOf1 relationRef <*> arbitrary
 
@@ -129,7 +126,7 @@ instance Arbitrary Role where
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Declaration where
     arbitrary = P_Sgn <$> lower_id  <*> arbitrary <*> arbitrary <*> safeStr1  <*> safeStr1
@@ -184,25 +181,20 @@ instance Arbitrary TermPrim where
            Patm <$> arbitrary <*> identifier <*> maybeConceptOne,
            PVee <$> arbitrary,
            Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
-           relationRef, -- twice for increasing the chance of the 2 constructors in relationRef.
-           relationRef
+           PNamedR <$> relationRef
        ]
       where maybeConceptOne = oneof [return Nothing, Just <$> genConceptOne]
 
-relationRef :: Gen TermPrim
-relationRef =
-    oneof [
-       Prel  <$> arbitrary <*> lower_id,
-       PTrel <$> arbitrary <*> lower_id <*> arbitrary
-    ]
+relationRef :: Gen P_NamedRel
+relationRef = PNamedRel <$> arbitrary <*> lower_id <*> arbitrary
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = PairView <$> listOf1 arbitrary
 
 instance Arbitrary a => Arbitrary (PairViewSegment (Term a)) where
     arbitrary = oneof [
-            PairViewText <$> safeStr,
-            PairViewExp <$> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
+            PairViewText <$> arbitrary <*> safeStr,
+            PairViewExp <$> arbitrary <*> arbitrary <*> sized(genTerm 1) -- only accepts pTerm, no pRule.
         ]
 
 instance Arbitrary a => Arbitrary (PairViewTerm a) where
@@ -283,7 +275,6 @@ instance Arbitrary PRef2Obj where
             PRef2IdentityDef <$> upper_id,
             PRef2ViewDef <$> upper_id,
             PRef2Pattern <$> upper_id,
-            PRef2Process <$> upper_id,
             PRef2Interface <$> upper_id,
             PRef2Context <$> upper_id
             -- The PRef2Fspc is not used in the parser.

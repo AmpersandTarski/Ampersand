@@ -11,23 +11,18 @@ class Api{
 	 * @param int $roleId
 	 */
 	public function installer($sessionId, $roleId = null){
-		try{
-			include (__DIR__ . '/../../generics/InstallerDBstruct.php');
-			include (__DIR__ . '/../../generics/InstallerDefPop.php');
-			
+		try{			
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			
 			$db = Database::singleton();
-			
-			$db->closeTransaction('Database reset to initial value', true);	
+			$db->resetDatabase();
 			
 			return Notifications::getAll(); // Return all notifications
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
 		}
-		
 	}
 	
 	/**

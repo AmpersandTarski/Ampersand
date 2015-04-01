@@ -1,23 +1,24 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec, preEmpt, editable) where
 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
-import Database.Design.Ampersand.ADL1.Rule
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-import Database.Design.Ampersand.FSpec.ShowADL
-import Text.Pandoc
 import Data.Char
 import Data.List
 import Data.Maybe
+import Text.Pandoc
+import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.ADL1.Rule
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.Poset
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.FSpec.Crud
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
+import Database.Design.Ampersand.FSpec.ToFSpec.Calc
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
+import Database.Design.Ampersand.FSpec.ShowADL
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -31,9 +32,8 @@ makeFSpec opts context = fSpec
               , fspos        = ctxpos context
               , themes       = themesInScope
               , pattsInScope = pattsInThemesInScope
-              , procsInScope = procsInThemesInScope
               , rulesInScope = rulesInThemesInScope
-              , declsInScope = declsInThemesInScope
+              , declsInScope = declsInThemesInScope 
               , concsInScope = concsInThemesInScope
               , cDefsInScope = cDefsInThemesInScope
               , gensInScope  = gensInThemesInScope
@@ -41,13 +41,13 @@ makeFSpec opts context = fSpec
               , vprocesses   = allProcs
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
-              , interfaceS   = map enrichIfc (ctxifcs context) -- interfaces specified in the Ampersand script
+              , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
-                                      || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
+                                      || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fSwitchboard = switchboard fSpec
-              , fActivities  = [ makeActivity fSpec rul | rul <-processRules context]
+              , fActivities  = allActivities
               , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
               , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
               , fRoles       = roles context
@@ -56,15 +56,15 @@ makeFSpec opts context = fSpec
               , invars       = invariants context
               , allRules     = allrules
               , vconjs       = allConjs
-              , allConjsPerRule = allConjsPerRule'
-              , allConjsPerDecl = allConjsPerDecl'
-              , allConjsPerConcept = allConjsPerConcept'
+              , allConjsPerRule = fSpecAllConjsPerRule
+              , allConjsPerDecl = fSpecAllConjsPerDecl
+              , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
-              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec (allDecls fSpec))   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+              , vEcas        = {-preEmpt opts . -} fst (assembleECAs fSpec fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
               , vrels        = calculatedDecls
               , allUsedDecls = relsUsedIn context
-              , allDecls     = relsDefdIn context
-              , allConcepts  = concs context `uni` [ONE]
+              , allDecls     = fSpecAllDecls
+              , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
               , fsisa        = let f gen = case gen of
                                             Isa{} -> [(genspc gen, gengen gen)]
@@ -77,6 +77,7 @@ makeFSpec opts context = fSpec
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
+              , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
               , initialPops  = initialpops
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
@@ -87,23 +88,26 @@ makeFSpec opts context = fSpec
                                          , not $ null viols
                                          ]
               }
+              
+     fSpecAllConcepts = concs context `uni` [ONE]
+     fSpecAllDecls = relsDefdIn context
+     fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
+     
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                     then map name (patterns context) ++ map name allProcs
+                     then map name (patterns context)
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
-     procsInThemesInScope = filter (\p -> name p `elem` themesInScope) (ctxprocs context)
      cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` concatMap prcRules procsInThemesInScope `uni` concatMap ptrls pattsInThemesInScope
-     declsInThemesInScope = ctxds context `uni` concatMap prcDcls  procsInThemesInScope `uni` concatMap ptdcs pattsInThemesInScope
-     concsInThemesInScope = concs (ctxrs context)  `uni`  concs procsInThemesInScope  `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = ctxgs context ++ concatMap prcGens procsInThemesInScope ++ concatMap ptgns pattsInThemesInScope
+     rulesInThemesInScope = ctxrs context `uni` concatMap ptrls pattsInThemesInScope
+     declsInThemesInScope = ctxds context `uni` concatMap ptdcs pattsInThemesInScope
+     concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
+     gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
      enrichIfc :: Interface -> Interface
      enrichIfc ifc
-      = ifc{ ifcEcas = fst (assembleECAs fSpec editables)
+      = ifc{ ifcEcas = fst (assembleECAs fSpec $ ifcParams ifc)
            , ifcControls = makeIfcControls (ifcParams ifc) allConjs
            }
-        where editables = [d | EDcD d<-ifcParams ifc]++[Isn c | EDcI c<-ifcParams ifc]
      initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
                              , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
                              }
@@ -112,23 +116,23 @@ makeFSpec opts context = fSpec
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
-       where populations = ctxpopus context++concatMap prcUps (processes context)++concatMap ptups (patterns context)       
+       where populations = ctxpopus context++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
-     allConjsPerRule' = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
-     allConjsPerDecl' = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
-     allConjsPerConcept' = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
-     allQuads = makeAllQuads allConjsPerRule'
+     fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
+     fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
+     fSpecAllConjsPerConcept = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
+     allQuads = makeAllQuads fSpecAllConjsPerRule
 
      allrules = vRules ++ gRules
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
      allProcs = [ FProc {fpProc = p
-                        ,fpActivities =selectActs p
-                        } | p<-ctxprocs context ]
-                where selectActs p   = [act | act<-fActivities fSpec
-                                            , (not.null) (selRoles p act)]
-                      selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
+                        ,fpActivities =[act | act<-allActivities, (not.null) (selRoles p act)]
+                        } | p<-patterns context ]
+                where selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
+     allActivities :: [Activity]
+     allActivities = [ makeActivity fSpec rul | rul <-processRules context]
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
      calcProps d = d{decprps_calc = Just calculated}
@@ -277,7 +281,7 @@ makeFSpec opts context = fSpec
              }
         | c<-concs fSpec
         , let directdecls = [ d | d<-relsDefdIn fSpec, c `elem` concs d]
-        , let params = map EDcD directdecls
+        , let params = directdecls
         ]
       --end student theme
       --otherwise: default theme
@@ -302,7 +306,7 @@ makeFSpec opts context = fSpec
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
         [Ifc { ifcClass    = Nothing
-             , ifcParams   = map EDcD editables
+             , ifcParams   = params
              , ifcArgs     = []
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
@@ -310,7 +314,7 @@ makeFSpec opts context = fSpec
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
                                  , objstrs = [] }
-             , ifcEcas     = fst (assembleECAs fSpec editables)
+             , ifcEcas     = fst (assembleECAs fSpec params)
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
              , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
@@ -323,9 +327,8 @@ makeFSpec opts context = fSpec
           not (length objattributes==1 && isIdent(objctx(head objattributes)))
         , let e0=head cl, if null e0 then fatal 284 "null e0" else True
         , let c=source (head e0)
-        , let editables = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
-                          [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
-        , let params = map EDcD editables
+        , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
+                       [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
         ]
      --end otherwise: default theme
      --end stap4a
@@ -459,10 +462,10 @@ makeAllConjs opts allRls =
          split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
          split dc              []             = dc
 
-makeIfcControls :: [Expression] -> [Conjunct] -> [Conjunct]
+makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs = [ conj 
                                 | conj<-allConjs
-                                , (not.null) (params `isc` primsMentionedIn (rc_conjunct conj))
+                                , (not.null) (map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
                                 -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
                                 -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
                                 -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).

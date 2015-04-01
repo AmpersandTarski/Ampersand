@@ -1,8 +1,5 @@
 module Database.Design.Ampersand.FSpec.SQL
-  (selectSrcTgt,QueryExpr
-  ,prettySQLQuery
-  , selectExprRelation  --exported to be able to validate the generated SQL for individual relations
-  )
+  ( prettySQLQuery)
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -21,16 +18,21 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.SQL"
 
--- | prettyprint ValueExpr and indent it with spaces
-prettySQLQuery :: Int -> QueryExpr -> String
-prettySQLQuery i =  intercalate ("\n"++replicate i ' ') .  lines . prettyQueryExpr theDialect
 
-selectSrcTgt :: 
-           FSpec       -- current context
-        -> Expression  -- expression to be translated
-        -> QueryExpr   -- resulting SQL expression
-selectSrcTgt fSpec expr = toSQL (selectExpr fSpec expr)
-
+class SQLAble a where
+  -- | prettyprint and indent it with spaces
+  prettySQLQuery :: FSpec -> Int -> a -> String
+  makeANice :: (a -> BinQueryExpr) -> Int -> a -> String
+  makeANice f i =
+    intercalate ("\n"++replicate i ' ') .  lines . 
+       prettyQueryExpr theDialect . toSQL . f   
+    
+instance SQLAble Expression where  
+  prettySQLQuery = makeANice . selectExpr 
+instance SQLAble Declaration where
+  prettySQLQuery = makeANice . selectDeclaration
+  
+     
 
 sourceAlias, targetAlias :: Name
 sourceAlias = (Name "src") 
@@ -47,7 +49,8 @@ selectExpr :: FSpec    -- current context
 -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec expr
- = case expr of
+ = case -- trace ("\nExpression:"++showADL expr ++"\n  "++show expr) 
+        expr of
     EIsc{} -> 
     {- The story on the case of EIsc:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
@@ -288,16 +291,22 @@ selectExpr fSpec expr
     (EFlp x) -> flipped (selectExpr fSpec x)
                  where 
                    flipped se =
-                    case se of 
-                     BSE{} -> BQEComment [BlockComment "Flipped: "] $
-                              BSE { bseSrc = bseTrg se
-                                  , bseTrg = bseSrc se
-                                  , bseTbl = bseTbl se
-                                  , bseWhr = bseWhr se
-                                  }
-                     BCQE {bcqeOper=oper} -> fatal 313 $ "Unexpected: Directly flip a `"++show oper++"` expression. (What happend to the brackets?)"
-                     (BQEComment c e) -> BQEComment c (flipped e)
-                 
+                     BQEComment [BlockComment ("Flipped: "++show x)] $
+                        case se of 
+                         BSE{}  -> BSE { bseSrc = bseTrg se
+                                       , bseTrg = bseSrc se
+                                       , bseTbl = bseTbl se
+                                       , bseWhr = bseWhr se
+                                       }
+                         BCQE{} -> BSE { bseSrc = Iden [targetAlias]
+                                       , bseTrg = Iden [sourceAlias]
+                                       , bseTbl = [toTableRef se `as` Name "flipped"] -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
+                                       , bseWhr = Nothing
+                                       }
+                         (BQEComment c e) 
+                                -> case flipped e of
+                                    BQEComment (_:c') fe -> BQEComment (c++c') fe
+                                    _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
     (EMp1 atom _) -> BQEComment [BlockComment "case: EMp1 atom."] $
                      BSE { bseSrc = sqlAtomQuote atom
                          , bseTrg = sqlAtomQuote atom
@@ -380,7 +389,7 @@ selectExpr fSpec expr
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull (Iden [cAtt]))
                                            }
-    (EDcD d)             -> selectExprRelationNew fSpec d
+    (EDcD d)             -> selectDeclaration fSpec d
 
     (EBrk e)             -> selectExpr fSpec e
 
@@ -519,26 +528,13 @@ Based on this derivation:
 
 
 toTableRef :: BinQueryExpr -> TableRef
-toTableRef b = TRQueryExpr . toSQL $ b
+toTableRef = TRQueryExpr . toSQL
      
 (===) :: Name -> Name -> Bool
 n === n' = stringOfName n == stringOfName n'
 
--- | This function returns a (multy-lines) prettyprinted SQL qurey of a declaration. 
-selectExprRelation :: FSpec
-                   -> Declaration
-                   -> String
-selectExprRelation fSpec dcl
- = prettyQueryExpr theDialect . toSQL $ selectExprRelationNew fSpec dcl
-     
-selectExprRelationNew :: FSpec
-         --          -> Name -- ^ Alias of source
-         --          -> Name -- ^ Alias of target
-                   -> Declaration
-                   -> BinQueryExpr
-
-
-selectExprRelationNew fSpec dcl =
+selectDeclaration :: FSpec -> Declaration -> BinQueryExpr
+selectDeclaration fSpec dcl =
   case dcl of
     Sgn{}  -> leafCode (getDeclarationTableInfo fSpec dcl)
     Isn{}  -> let (plug, c) = getConceptTableInfo fSpec (detyp dcl)

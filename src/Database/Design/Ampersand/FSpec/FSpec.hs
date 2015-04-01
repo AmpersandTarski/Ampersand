@@ -25,22 +25,21 @@ module Database.Design.Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlType(..)
           , SqlFieldUsage(..)
-          , getGeneralizations, getSpecializations, getExpressionRelation
+          , getGeneralizations, getSpecializations
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
-          )
-where
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc.Options (Options)
-import Database.Design.Ampersand.ADL1.Pair
-import Database.Design.Ampersand.ADL1.Expression (notCpl)
+          ) where
+          
 import Data.List
 import Data.Typeable
-
---import Debug.Trace
+import Database.Design.Ampersand.ADL1.Pair
+import Database.Design.Ampersand.ADL1.Expression (notCpl)
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.FSpec.Crud
+import Database.Design.Ampersand.Misc.Options (Options)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
@@ -50,7 +49,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      , pattsInScope :: [Pattern]
-                     , procsInScope :: [Process]
                      , rulesInScope :: [Rule]
                      , declsInScope :: [Declaration]
                      , concsInScope :: [A_Concept]
@@ -92,6 +90,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
+                   , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
@@ -148,7 +147,7 @@ instance Language FSpec where
   patterns   = vpatterns
 
 data FProcess
-  = FProc { fpProc :: Process
+  = FProc { fpProc :: Pattern
           , fpActivities :: [Activity]
           }
 instance Named FProcess where
@@ -366,41 +365,6 @@ getGeneralizations fSpec = largerConcepts (gens fSpec)
 
 getSpecializations :: FSpec -> A_Concept -> [A_Concept]
 getSpecializations fSpec = smallerConcepts (gens fSpec)
-
--- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
--- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
--- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
--- This is used to determine the type of the atoms provided by the outside world through interfaces.
-getExpressionRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
-getExpressionRelation expr = case getRelation expr of
-   Just (s,Just d,t,isFlipped)  -> Just (s,d,t,isFlipped)
-   _                            -> Nothing
- where
-    -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target 
-    -- concepts, as well as a boolean that states whether the relation is flipped. 
-    getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
-    getRelation (ECps (e, EDcI{})) = getRelation e
-    getRelation (ECps (EDcI{}, e)) = getRelation e
-    getRelation (ECps (e1, e2))
-      = case (getRelation e1, getRelation e2) of --note: target e1==source e2
-         (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
-                                                           if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
-                                                           if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
-                                                           Nothing
-         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else                       
-                                                           if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else                       
-                                                           Nothing                                                     
-         (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
-                                                           if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else        
-                                                           Nothing                                                                 
-         _                                              -> Nothing
-    getRelation (EFlp e)
-     = case getRelation e of
-         Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
-         Nothing                -> Nothing
-    getRelation (EDcD d)   = Just (source d, Just d, target d, False)
-    getRelation (EEps i _) = Just (i, Nothing, i, False)
-    getRelation _ = Nothing
 
 -- Lookup view by id in fSpec.
 lookupView :: FSpec -> String -> ViewDef

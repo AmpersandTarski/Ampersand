@@ -9,8 +9,17 @@ import Data.Maybe
 import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpression)
 import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ConceptStructure"
+
+{- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
+   (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
+   define relsMentionedIn directly.
+   
+   Another improvement would be to factorize the prim constructors from the Expression data type, so expressionsIn won't need to be partial
+   anymore.
+-}
 
 class ConceptStructure a where
   concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
@@ -58,7 +67,6 @@ instance ConceptStructure a => ConceptStructure [a] where
 instance ConceptStructure A_Context where
   concs ctx = foldr uni []
               [ (concs.ctxpats) ctx
-              , (concs.ctxprocs) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx
               , (concs.ctxpopus) ctx
@@ -73,7 +81,6 @@ instance ConceptStructure A_Context where
               ]
   expressionsIn ctx = foldr uni []
                       [ (expressionsIn.ctxpats) ctx
-                      , (expressionsIn.ctxprocs) ctx
                       , (expressionsIn.ctxifcs) ctx
                       , (expressionsIn.ctxrs) ctx
                       , (expressionsIn.ctxks) ctx
@@ -144,27 +151,11 @@ instance ConceptStructure Pattern where
                      , (expressionsIn.ptvds) p
                      ]
 
-instance ConceptStructure Process where
-  concs prc = foldr uni []
-              [ (concs.prcRules) prc
-              , (concs.prcGens) prc
-              , (concs.prcDcls) prc
-              , (concs.prcUps) prc
-              , (concs.prcIds) prc
-              , (concs.prcVds) prc
-              , (concs.prcXps) prc
-              ]
-  expressionsIn p = foldr (uni) []
-                     [ (expressionsIn.prcRules) p
-                     , (expressionsIn.prcIds) p
-                     , (expressionsIn.prcVds) p
-                     ]
-
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr (uni) []
                      [ (expressionsIn.ifcObj) ifc
-                     , (expressionsIn.ifcParams) ifc
+                     , map EDcD $ ifcParams ifc -- Return param declarations as expressions
                      ]
 
 instance ConceptStructure Declaration where
@@ -198,17 +189,18 @@ instance ConceptStructure ExplObj where
   concs (ExplIdentityDef _) = [{-beware of loops...-}]
   concs (ExplViewDef _)     = [{-beware of loops...-}]
   concs (ExplPattern _)     = [{-beware of loops...-}]
-  concs (ExplProcess _)     = [{-beware of loops...-}]
   concs (ExplInterface _)   = [{-beware of loops...-}]
   concs (ExplContext _)     = [{-beware of loops...-}]
   
   expressionsIn _ = []
 
 instance ConceptStructure (PairViewSegment Expression) where
-  concs       (PairViewText _)  = []
-  concs       (PairViewExp _ x) = concs x
-  expressionsIn    (PairViewText _)  = []
-  expressionsIn    (PairViewExp _ x) = expressionsIn x
+  concs pvs = case pvs of
+      PairViewText{} -> []
+      PairViewExp{}  -> concs (pvsExp pvs)
+  expressionsIn pvs = case pvs of
+      PairViewText{} -> []
+      PairViewExp{}  -> expressionsIn (pvsExp pvs)
 
 instance ConceptStructure A_Gen where
   concs g@Isa{}  = nub [gengen g,genspc g]

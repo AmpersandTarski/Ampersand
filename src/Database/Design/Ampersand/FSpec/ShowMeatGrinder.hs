@@ -1,15 +1,19 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.FSpec.ShowMeatGrinder
-  (meatGrinder,makeGenerics)
+  (makeMetaPopulationFile,MetaType(..))
 where
 
 import Data.List
 import Data.Char
 import Data.Ord
+import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
+import Data.Typeable
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.Motivations
+import Database.Design.Ampersand.FSpec.SQL
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
@@ -23,13 +27,17 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "ShowMeatGrinder"
 
-makeGenerics :: FSpec -> (FilePath,String)
-makeGenerics fSpec = ("TemporaryPopulationsFileOfGenerics" ,content (generics fSpec) "Generics" fSpec )
-meatGrinder :: FSpec -> (FilePath, String)
-meatGrinder fSpec = ("TemporaryPopulationsFileOfRap" ,content (metaPops fSpec) "AST" fSpec)
+data MetaType = Generics | AST deriving (Show)
 
-content :: (FSpec -> [Pop]) -> String -> FSpec -> String
-content popKind cName fSpec = unlines
+makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
+makeMetaPopulationFile mType fSpec
+  = ("MetaPopulationFile"++show mType, content popKind mType fSpec)
+    where popKind = case mType of
+                      Generics -> generics fSpec
+                      AST      -> metaPops fSpec 
+
+content :: (FSpec -> [Pop]) -> MetaType -> FSpec -> String
+content popKind mType fSpec = unlines
    ([ "{- Do not edit manually. This code has been generated!!!"
     , "    Generated with "++ampersandVersionStr
     , "    Generated at "++show (genTime (getOpts fSpec))
@@ -44,7 +52,7 @@ content popKind cName fSpec = unlines
     , ""
     , "-}"
     , ""
-    , "CONTEXT "++cName++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
+    , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
     ++ (concat.intersperse  []) (map (lines.showADL) (popKind fSpec))
     ++
     [ ""
@@ -345,11 +353,49 @@ instance GenericPopulations Rule where
              [(uri rul,(uri.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
              [(uri rul,uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
---TODO: Add pairView:
---      , Pop "pairView"  "Rule" "PairView"
---             [(uri rul,()]
-      ]
-       
+      ]++case rrviol rul of
+        Nothing -> []
+        Just pve ->
+         [ Pop "pairView"  "Rule" "PairView"
+              [(uri rul, uri pve)]
+         ]++generics fSpec pve
+      
+      
+instance GenericPopulations (PairView Expression) where
+ generics fSpec pve = 
+      [ Comment " "
+      ]++concatMap makeSegment (zip [0..] (ppv_segs pve))
+  where
+    makeSegment :: (Int,PairViewSegment Expression) -> [Pop]
+    makeSegment (i,pvs) =
+      [ Pop "segment" "PairView" "PairViewSegment"
+             [(uri pve,uri pvs)]
+      , Pop "sequenceNr" "PairViewSegment" "Int"
+             [(uri pvs,show i)]
+      , Pop "segmentType" "PairViewSegment" "PairViewSegmentType"
+             [(uri pvs, case pvs of 
+                         PairViewText{} -> "Text"
+                         PairViewExp{}  -> "Exp")
+            ]
+      ]++
+      case pvs of
+        PairViewText{} -> 
+          [Pop "text" "PairViewSegment" "String"
+               [(uri pvs, pvsStr pvs)] 
+          ]
+        PairViewExp{} -> 
+          [Pop "srcOrTgt" "PairViewSegment" "SourceOrTarget"
+               [(uri pvs, show (pvsSoT pvs))] 
+          ,Pop "expTgt" "PairViewSegment" "Concept"
+               [(uri pvs, uri (case pvsSoT pvs of
+                                Src -> source (pvsExp pvs)
+                                Tgt -> target (pvsExp pvs)
+                              ))] 
+          ,Pop "expSQL" "PairViewSegment" "MySQLQuery"
+               [(uri pvs, prettySQLQuery fSpec 0 (pvsExp pvs))] 
+          ]
+         
+      
 instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
@@ -404,11 +450,9 @@ instance GenericPopulations Conjunct where
          [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndSignal r]
   , Pop "invariantRuleNames" "Conjunct" "Rule" 
          [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
---TODO: ViolationsSQL
---  , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
---         [(uri conj
---             ,selectExpr fSpec 0 "src" "tgt" (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
---          )]
+  , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
+         [(uri conj , prettySQLQuery fSpec 0 (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
+          )]
   ] 
 
 
@@ -457,10 +501,14 @@ instance AdlId Rule
 instance AdlId Role
 instance AdlId Sign
 instance AdlId Conjunct
- 
+instance AdlId (PairView Expression)
+  where uri x = show (typeOf x)++show (hash x)
+instance AdlId (PairViewSegment Expression)
+  where uri x = show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
 instance AdlId Bool where
  uri = showUnique
 instance AdlId a => AdlId [a] where
+
 
 mkAtom :: FSpec  -> A_Concept -> String -> AtomID
 mkAtom fSpec cpt value = 

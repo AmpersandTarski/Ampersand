@@ -319,23 +319,11 @@ instance Motivated Rule where
 --           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]]
 --           } ]
 
-instance Motivated Theme where
-  explForObj (PatternTheme pat) eo = explForObj pat eo
-  explForObj (ProcessTheme prc) eo = explForObj prc eo
-  explanations (PatternTheme pat) = explanations pat
-  explanations (ProcessTheme prc) = explanations prc
-
 instance Motivated Pattern where
 --  meaning _ pat = fatal 324 ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
   explForObj x (ExplPattern str) = name x == str
   explForObj _ _ = False
   explanations = ptxps
-
-instance Motivated Process where
---  meaning _ prc = fatal 329 ("Processes have no intrinsic meaning, (used with process '"++name prc++"')")
-  explForObj x (ExplProcess str) = name x == str
-  explForObj _ _ = False
-  explanations = prcXps
 
 instance Motivated Interface where
 --  meaning _ obj = fatal 342 ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")

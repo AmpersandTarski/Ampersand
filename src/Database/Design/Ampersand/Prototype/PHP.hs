@@ -197,7 +197,7 @@ evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
   fmap sort (performQuery (getOpts fSpec) dbNm violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = prettySQLQuery 26 (selectSrcTgt fSpec violationsExpr)
+       violationsQuery = prettySQLQuery fSpec 26 violationsExpr
 
 performQuery :: Options -> String -> String -> IO [(String,String)]
 performQuery opts dbNm queryStr =
