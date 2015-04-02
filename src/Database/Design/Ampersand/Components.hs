@@ -72,7 +72,7 @@ doGenProofs fSpec =
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension ("proofs_of_"++baseName (getOpts fSpec)) ".html"
        thePandoc = setTitle title (doc theDoc)
        title  = text $ "Proofs for "++name fSpec
-       theDoc = deriveProofs fSpec
+       theDoc = fDeriveProofs fSpec
        --theDoc = plain (text "Aap")  -- use for testing...
 
 doGenHaskell :: FSpec -> IO()

@@ -55,6 +55,7 @@ makeFSpec opts context = fSpec
                            , fsbECAs  = allVecas
                            }
 
+              , fDeriveProofs = deriveProofs opts context 
               , fActivities  = allActivities
               , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
               , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
@@ -62,7 +63,6 @@ makeFSpec opts context = fSpec
               , vrules       = vRules
               , grules       = gRules
               , invars       = invariants context
-              , allRules     = allrules
               , vconjs       = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
@@ -123,13 +123,14 @@ makeFSpec opts context = fSpec
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
 
-     allConjs = makeAllConjs opts allrules
+     allConjs = allConjuncts opts context
+     fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
-     allQuads = makeAllQuads fSpecAllConjsPerRule
-
-     allrules = vRules ++ gRules
+     allQuads = quadsOfContext opts context 
+     
+     allrules = allRules context
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
      allProcs = [ FProc {fpProc = p
@@ -137,7 +138,7 @@ makeFSpec opts context = fSpec
                         } | p<-patterns context ]
                 where selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
      allActivities :: [Activity]
-     allActivities = [ makeActivity fSpec rul | rul <-processRules context]
+     allActivities = map makeActivity (processRules context)
      allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
@@ -371,100 +372,66 @@ makeFSpec opts context = fSpec
      ----------------------
      printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
-{- makeActivity turns a process rule into an activity definition.
-Each activity can be mapped to a single interface.
-A call to such an interface takes the population of the current context to another population,
-while maintaining all invariants.
--}
-makeActivity :: FSpec -> Rule -> Activity
-makeActivity fSpec rul
- = let s = Act{ actRule   = rul
-              , actTrig   = decls
-              , actAffect = nub [ d' | (d,_,d')<-clos affectPairs, d `elem` decls]
-              , actQuads  = invQs
-              , actEcas   = [eca | eca<-vEcas fSpec, eDcl (ecaTriggr eca) `elem` decls]
-              , actPurp   = [Expl { explPos = OriginUnknown
-                                  , explObj = ExplRule (name rul)
-                                  , explMarkup = A_Markup { amLang   = Dutch
-                                                          , amFormat = ReST
-                                                          , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
-                                                          }
-                                  , explUserdefd = False
-                                  , explRefIds = ["Regel "++name rul]
-                                  }
-                            ,Expl { explPos = OriginUnknown
-                                  , explObj = ExplRule (name rul)
-                                  , explMarkup = A_Markup { amLang   = English
-                                                          , amFormat = ReST
-                                                          , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
-                                                          }
-                                  , explUserdefd = False
-                                  , explRefIds = ["Regel "++name rul]
-                                  }
-                            ]
-              } in s
- where
--- relations that may be affected by an edit action within the transaction
-     decls        = relsUsedIn rul
--- the quads that induce automated action on an editable relation.
--- (A quad contains the conjunct(s) to be maintained.)
--- Those are the quads that originate from invariants.
-     invQs       = [q | q<-vquads fSpec, (not.isSignal.qRule) q
-                      , (not.null) ((relsUsedIn.qRule) q `isc` decls)] -- SJ 20111201 TODO: make this selection more precise (by adding inputs and outputs to a quad).
--- a relation affects another if there is a quad (i.e. an automated action) that links them
-     affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(relsUsedIn.qRule) q]
--- the relations affected by automated action
---      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
-----------------------------------------------------
---  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
-----------------------------------------------------
-     clos :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
-     clos xs
-       = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
+        {- makeActivity turns a process rule into an activity definition.
+        Each activity can be mapped to a single interface.
+        A call to such an interface takes the population of the current context to another population,
+        while maintaining all invariants.
+        -}
+     makeActivity :: Rule -> Activity
+     makeActivity rul
+         = let s = Act{ actRule   = rul
+                      , actTrig   = decls
+                      , actAffect = nub [ d' | (d,_,d')<-clos affectPairs, d `elem` decls]
+                      , actQuads  = invQs
+                      , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
+                      , actPurp   = [Expl { explPos = OriginUnknown
+                                          , explObj = ExplRule (name rul)
+                                          , explMarkup = A_Markup { amLang   = Dutch
+                                                                  , amFormat = ReST
+                                                                  , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
+                                                                  }
+                                          , explUserdefd = False
+                                          , explRefIds = ["Regel "++name rul]
+                                          }
+                                    ,Expl { explPos = OriginUnknown
+                                          , explObj = ExplRule (name rul)
+                                          , explMarkup = A_Markup { amLang   = English
+                                                                  , amFormat = ReST
+                                                                  , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
+                                                                  }
+                                          , explUserdefd = False
+                                          , explRefIds = ["Regel "++name rul]
+                                          }
+                                    ]
+                      } in s
          where
-          f q x = q `un`
-                     [(a, qs `uni` qs', b') | (a, qs, b) <- q, b == x,
-                      (a', qs', b') <- q, a' == x]
-          ts `un` [] = ts
-          ts `un` ((a',qs',b'):ts')
-           = ([(a,qs `uni` qs',b) | (a,qs,b)<-ts, a==a' && b==b']++
-              [(a,qs,b)           | (a,qs,b)<-ts, a/=a' || b/=b']++
-              [(a',qs',b')        | (a',b') `notElem` [(a,b) |(a,_,b)<-ts]]) `un` ts'
-
--- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
--- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
--- the rule may have to be restored using functionality from one of the clauses.
-makeAllQuads :: [(Rule, [Conjunct])] -> [Quad]
-makeAllQuads conjsPerRule =
-  [ Quad { qDcl     = d
-         , qRule    = rule
-         , qConjuncts = conjs
-         }
-  | (rule,conjs) <- conjsPerRule, d <-relsUsedIn rule
-  ]
-  
-makeAllConjs :: Options -> [Rule] -> [Conjunct]
-makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, [Rule])]
-      conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
-      
-      conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
-                     , rc_orgRules   = rs
-                     , rc_conjunct   = expr
-                     , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
-                     }
-              | ((expr, rs),i) <- zip conjExprs [0..]
-              ]
-  in  conjs
-   where
-      expr2dnfClause :: Expression -> DnfClause
-      expr2dnfClause conj = (split (Dnf [] []).exprUni2list) conj
-       where
-         split :: DnfClause -> [Expression] -> DnfClause
-         split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
-         split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
-         split dc              []             = dc
-
+        -- relations that may be affected by an edit action within the transaction
+             decls        = relsUsedIn rul
+        -- the quads that induce automated action on an editable relation.
+        -- (A quad contains the conjunct(s) to be maintained.)
+        -- Those are the quads that originate from invariants.
+             invQs       = [q | q<-allQuads, (not.isSignal.qRule) q
+                              , (not.null) ((relsUsedIn.qRule) q `isc` decls)] -- SJ 20111201 TODO: make this selection more precise (by adding inputs and outputs to a quad).
+        -- a relation affects another if there is a quad (i.e. an automated action) that links them
+             affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(relsUsedIn.qRule) q]
+        -- the relations affected by automated action
+        --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
+        ----------------------------------------------------
+        --  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
+        ----------------------------------------------------
+             clos :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
+             clos xs
+               = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
+                 where
+                  f q x = q `un`
+                             [(a, qs `uni` qs', b') | (a, qs, b) <- q, b == x,
+                              (a', qs', b') <- q, a' == x]
+                  ts `un` [] = ts
+                  ts `un` ((a',qs',b'):ts')
+                   = ([(a,qs `uni` qs',b) | (a,qs,b)<-ts, a==a' && b==b']++
+                      [(a,qs,b)           | (a,qs,b)<-ts, a/=a' || b/=b']++
+                      [(a',qs',b')        | (a',b') `notElem` [(a,b) |(a,_,b)<-ts]]) `un` ts'
+        
 makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs = [ conj 
                                 | conj<-allConjs
@@ -474,140 +441,6 @@ makeIfcControls params allConjs = [ conj
                                 -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
                                 ]
   
-allShifts :: Options -> DnfClause -> [DnfClause]
-allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
--- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
- where
- {-
-  diagnostic
-   = intercalate "\n  "
-       [ "shiftL: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
-       , "shiftR: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
-       ] -}
-  shiftL :: DnfClause -> [DnfClause]
-  shiftL dc@(Dnf antcs conss)
-   | null antcs || null conss = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
-   | otherwise                = [ Dnf ass (case css of
-                                            [] -> let antcExpr = foldr1 (./\.) ass in
-                                                  if isEndo antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
-                                            _  -> css
-                                          )
-                                | (ass,css)<-nub (move antcs conss)
-                                ]
-   where
-   -- example:  r;s /\ p;r |- x;y   and suppose x and y are both univalent.
-   --  antcs =  [ r;s, p;r ]
-   --  conss =  [ x;y ]
-    move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-    move ass [] = [(ass,[])]
-    move ass css
-     = (ass,css):
-       if and [ (not.isEDcI) cs | cs<-css]     -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
-       then [ts | let headEs = map headECps css
-                , length (eqClass (==) headEs) == 1                    -- example: True, because map head css == [ "x" ]
-                , let h=head headEs                                    -- example: h= "x"
-                , isUni h                                              -- example: assume True
-                , ts<-move [if source h==source as then flp h.:.as else fatal 455 "type mismatch"
-                           |as<-ass] (map tailECps css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
-            [ts | let lastEs = map lastECps css
-                , length (eqClass (==) lastEs) == 1
-                , let l=head lastEs
-                , isInj l
-                , ts<-move [if target as==target l then as.:.flp l else fatal 461 "type mismatch"
-                           |as<-ass] (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
-       else []
-   -- Here is (informally) what the example does:
-   -- move [ r;s , p;r ] [ x;y ]
-   -- ( [ r;s , p;r ] , [ x;y ] ): [ ts | ts<-move [flp x.:.as | as<-[ r;s , p;r ] [ y ] ] ]
-   -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ ts | ts<-move [flp y.:.as | as<-[ y~;x~;r;s , y~;x~;p;r ] [] ] ]
-   -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ [ y~;x~;r;s , y~;x~;p;r ] , [] ] ]
-   -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
-
-  shiftR :: DnfClause -> [DnfClause]
-  shiftR dc@(Dnf antcs conss)
-   | null antcs || null conss = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
-   | otherwise                = [ Dnf (case ass of
-                                        [] -> let consExpr = foldr1 (.\/.) css in
-                                              if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
-                                        _  -> ass
-                                      ) css
-                                | (ass,css)<-nub (move antcs conss)
-                                ]
-   where
-   -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.
-   --  ass =  [ r;s , r;r ]
-   --  css =  [ x;y ]
-    move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-    move ass css =
-     case ass of
-      [] -> [] -- was [([EDcI (target (last css))],css)]
-      _  ->
-       (ass,css):
-       if and [ (not.isEDcI) as | as<-ass]
-       then [ts | let headEs = map headECps ass
-                , length (eqClass (==) headEs) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
-                , let h=head headEs                                      -- example: h= "r"
-                , isSur h                                                -- example: assume True
-                , ts<-move (map tailECps ass) [if source h==source cs then flp h.:.cs else fatal 496 "type mismatch"
-                                              |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
-            [ts | let lastEs = map lastECps ass
-                , length (eqClass (==) lastEs) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
-                , let l=head lastEs
-                , isTot l
-                , ts<-move (map initECps ass) [if target cs==target l then cs.:.flp l else fatal 502 "type mismatch"
-                                              |cs<-css]]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
-       else []
-   -- Here is (informally) what the example does:
-   -- move [ r;s , r;r ] [ x;y ]
-   -- ( [ r;s , r;r ] , [ x;y ] ): move [ s , r ] [ r~;x;y ]
-   -- ( [ r;s , r;r ] , [ x;y ] ): ( [ s , r ]  , [ r~;x;y ] ) : []
-   -- [ [ r;s , r;r ] , [ x;y ] ), ( [ s , r ]  , [ r~;x;y ] ) ]
-   --  diagnostic
-   --    = "\n  antcs: [ "++intercalate "\n         , " [showADL a | a<-antcs ]++"\n       ]"++
-   --      "\n  conss: [ "++intercalate "\n         , " [showADL c | c<-conss ]++"\n       ]"++
-   --      "\n  move:  [ "++intercalate "\n         , " ["("++sh " /\\ " as++"\n           ,"++sh " \\/ " cs++")" | (as,cs)<-move antcs conss ]++"\n       ]"
-   --  sh :: String -> [Expression] -> String
-   --  sh str es = intercalate str [ showADL e | e<-es]
-
-  normDNF :: DnfClause -> DnfClause
-  normDNF (Dnf antcs conss) = Dnf lhs rhs
-   where lhs = case antcs of
-                [] -> []
-                _  -> (exprIsc2list . conjNF opts . foldr1 (./\.)) antcs
-         rhs = case conss of
-                [] -> []
-                _  -> (exprUni2list . disjNF opts . foldr1 (.\/.)) conss
-
-  pnEq :: DnfClause -> Bool
-  pnEq (Dnf antcs conss) = antcs/=conss
-
-  headECps :: Expression -> Expression
-  headECps expr = f expr
-   where f (ECps (l@ECps{},_)) = f l
-         f (ECps (l,_)) = l
-         f _ = expr
-
-  tailECps :: Expression -> Expression
-  tailECps expr = f expr
-   where f (ECps (ECps (l,r),q)) = f (ECps (l, ECps (r,q)))
-         f (ECps (_,r)) = r
-         f _ = EDcI (target expr)
-
-  initECps :: Expression -> Expression
-  initECps expr = f expr
-   where f (ECps (l, ECps (r,q))) = initECps (ECps (ECps (l,r),q))
-         f (ECps (l,_)) = l
-         f _ = EDcI (source expr)
-
-  lastECps :: Expression -> Expression
-  lastECps expr = f expr
-   where f (ECps (_,r@ECps{})) = f r
-         f (ECps (_,r)) = r
-         f _ = expr
-
-  isEDcI :: Expression -> Bool
-  isEDcI EDcI{} = True
-  isEDcI _ = False
 
 -- If one rule r blocks upon an event, e.g. e@(ON Ins rel), while another ECA rule r'
 -- maintains something else with that same event e, we can save r' the trouble.

@@ -5,16 +5,16 @@ module Database.Design.Ampersand.FSpec.ToFSpec.Calc
             , checkMono
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
             , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc'
+            , quadsOfContext
           --  , testInterface
             ) where
 
-import Database.Design.Ampersand.Basics (fatalMsg,Collection (isc),Named(..),eqCl,Flippable(..))
+import Database.Design.Ampersand.Basics
 import Data.List hiding (head)
 import Data.Monoid
 import GHC.Exts (sortWith)
 --import Data.ByteString.Char8
 --import Data.ByteString.Lazy.Char8
-import Database.Design.Ampersand.Basics.Auxiliaries (commaEng)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.Expression
@@ -33,9 +33,6 @@ fatal = fatalMsg "FSpec.ToFSpec.Calc"
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
-
-conjuncts :: Options -> Rule -> [Expression]
-conjuncts opts = exprIsc2list.conjNF opts.rrexp
 
 -- testInterface :: FSpec -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
@@ -95,8 +92,8 @@ testConfluence context
        bulletList [ showProof (para.str.showADL) prf | (_,prf)<-tcs ]
      | (expr,tcs)<-tcss]
 
-deriveProofs :: Options -> A_Context -> FSpec -> Blocks  --TODO: get rid of use of FSpec here.
-deriveProofs opts context fSpec
+deriveProofs :: Options -> A_Context -> Blocks
+deriveProofs opts context
  = testConfluence context<>
    para (linebreak<>"--------------"<>linebreak)<>
    para ("Rules and their conjuncts for "<>(str.name) context)<>
@@ -105,8 +102,8 @@ deriveProofs opts context fSpec
                       "conjNF:   "<>str (showADL (conjNF opts (rrexp r)))<>linebreak<>
                       interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts opts r ]
                      )
-              | r<-grules fSpec++vrules fSpec]<>
-   para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
+              | r<-allRules context]<>
+   para ("Transformation of user specified rules into ECA rules for "<>(str.name) context)<>
    para (linebreak<>"--------------"<>linebreak<>"First step: determine the "<>(str.show.length) quads<>" quads:")<>
    bulletList [ para ( "-- quad ------------"<>linebreak<>"When relation "<>(str . showADL . qDcl) q<>" is changed,"
                        <>linebreak<>(str . showADL . qRule) q
@@ -131,20 +128,20 @@ deriveProofs opts context fSpec
                     , let (_,dc,r) = head cl
                     ]
               ]<>
-   para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) fSpec<>" ECA rules"<>
-         if verboseP (getOpts fSpec)
+   para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) context<>" ECA rules"<>
+         if verboseP opts
           then " (Turn --verbose off if you want to see ECA rules only)"
           else " (Turn on --verbose if you want to see more detail)"
         )<>
-   ( if verboseP (getOpts fSpec) then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
+   ( if verboseP opts then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
    bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
-                codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (getOpts fSpec) (ecaAction ecarule)})<>
+                codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA opts (ecaAction ecarule)})<>
                 bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                    <>linebreak<>"derivation:"
                                   )<>
-                             (showProof (para.str.showADL).dfProof (getOpts fSpec)) d<>  -- Produces its result in disjunctive normal form
-                             para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF (getOpts fSpec)) d)
-                           | verboseP (getOpts fSpec), e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
+                             (showProof (para.str.showADL).dfProof opts) d<>  -- Produces its result in disjunctive normal form
+                             para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF opts) d)
+                           | verboseP opts, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
               | ecarule <- ecaRs]
 {-
       ++
@@ -161,7 +158,7 @@ deriveProofs opts context fSpec
 {- TODO: readdress preEmpt. It is wrong
       interText []
         [ [linebreak<>"-- Preempted ECA rule "<>(str.show.ecaNum) er<>"------------"<>linebreak<>str (showECA "\n  " er)]
-        | er<- preEmpt (getOpts fSpec) ecaRs]
+        | er<- preEmpt opts ecaRs]
       ++ -}
 {-
       [ linebreak<>"--------------", linebreak]
@@ -188,7 +185,7 @@ deriveProofs opts context fSpec
 -}
    where
 --    visible _  = True -- We take all quads into account.
-    quads  = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
+    quads  = quadsOfContext opts context -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
 --    interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
     interText _ [] = ""
     interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
@@ -199,24 +196,24 @@ deriveProofs opts context fSpec
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
                                    [ ["event = ", str (show ev), space, str (showADL rel), linebreak ] <>
-                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
+                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem opts ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
                                      ["r'    = "] <> conjProof r' <> [linebreak ] <>
                                      ["viols = r'-"] <> disjProof (ECpl r') <> [ linebreak ] <>
-                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel)))<>
+                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem opts ev (EDcD rel) (delta (sign rel)))<>
                                      "            "<>conjProof (ECpl r) <>"\n"<>
-                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF (getOpts fSpec)) (notCpl r .\/. r')<>")"<>
+                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF opts) (notCpl r .\/. r')<>")"<>
                                         conjProof (notCpl r .\/. r')<>"\n"<>
                                      "delta: r-/\\r' = "<>conjProof (EIsc[notCpl r,r'])<>
-                                     "\nNow compute a reaction\n(isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r') = "<>show ((isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r'))<>"\n"<>
+                                     "\nNow compute a reaction\n(isTrue.conjNF opts) (notCpl r .\/. r') = "<>show ((isTrue.conjNF opts) (notCpl r .\/. r'))<>"\n"<>
                                      (if null (lambda ev (ERel rel ) r)
                                       then "lambda "<>showADL rel<>" ("<>showADL r<>") = empty\n"
                                       else -- for debug purposes:
                                            -- "lambda "<>show ev<>" "<>showADL rel<>" ("<>showADL r<>") = \n"<>(interText "\n\n".map showPr.lambda ev (ERel rel)) r<>"\n"<>
                                            -- "derivMono ("<>showADL r<>") "<>show ev<>" "<>showADL rel<>"\n = "<>({-interText "\n". map -}showPr.derivMono r ev) rel<>"\n"<>
-                                           -- "\nNow compute checkMono (getOpts fSpec) r ev rel = \n"<>show (checkMono (getOpts fSpec) r ev rel)<>"\n"<>
-                                           if (isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r')
+                                           -- "\nNow compute checkMono opts r ev rel = \n"<>show (checkMono opts r ev rel)<>"\n"<>
+                                           if (isTrue.conjNF opts) (notCpl r .\/. r')
                                            then "A reaction is not required, because  r |- r'. Proof:"<>conjProof (notCpl r .\/. r')<>"\n"
-                                           else if checkMono (getOpts fSpec) r ev rel
+                                           else if checkMono opts r ev rel
                                            then "A reaction is not required, because  r |- r'. Proof:"{-<>(str.showPr.derivMono r ev) rel-}<>"NIET TYPECORRECT: (showPr.derivMono r ev) rel"<>"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ _ = delta (sign rel) in
                                                 "An appropriate reaction on this event is required."
@@ -224,10 +221,10 @@ deriveProofs opts context fSpec
                                      )
                                    | rel<-relsUsedIn r   -- nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
-                                   , r'<-[subst (rel, actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel))) r]
-                        --        , viols<-[conjNF (getOpts fSpec) (ECpl r')]
-                                   , True ]  -- (isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r')
-                                  | r<-[dc | cs<-[makeCjcts (getOpts fSpec) rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
+                                   , r'<-[subst (rel, actSem opts ev (EDcD rel) (delta (sign rel))) r]
+                        --        , viols<-[conjNF opts (ECpl r')]
+                                   , True ]  -- (isTrue.conjNF opts) (notCpl r .\/. r')
+                                  | r<-[dc | cs<-[makeCjcts opts rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
                  prf = cfProof (getOpts fSpec) e
@@ -774,4 +771,23 @@ commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
 commaNLPandoc  _  [a]  = [a]
 commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
 commaNLPandoc  _  []   = []
+   
+   
+quadsOfContext :: Options -> A_Context -> [Quad]
+quadsOfContext opts context 
+  = makeAllQuads (converse [ (conj, rc_orgRules conj) | conj <- allConjuncts opts context ])
+
+        -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
+        -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
+        -- the rule may have to be restored using functionality from one of the clauses.
+makeAllQuads :: [(Rule, [Conjunct])] -> [Quad]
+makeAllQuads conjsPerRule =
+  [ Quad { qDcl     = d
+         , qRule    = rule
+         , qConjuncts = conjs
+         }
+  | (rule,conjs) <- conjsPerRule, d <-relsUsedIn rule
+  ]
+  
+
    
