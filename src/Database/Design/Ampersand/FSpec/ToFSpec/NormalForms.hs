@@ -1590,15 +1590,16 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
        , "shiftR: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
        ] -}
   shiftL :: DnfClause -> [DnfClause]
-  shiftL dc@(Dnf antcs conss)
-   | null antcs || null conss = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
-   | otherwise                = [ Dnf ass (case css of
-                                            [] -> let antcExpr = foldr1 (./\.) ass in
-                                                  if isEndo antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
-                                            _  -> css
-                                          )
-                                | (ass,css)<-nub (move antcs conss)
-                                ]
+  shiftL dc
+   | null (antcs dc)|| null (conss dc) = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
+   | otherwise = [ Dnf { antcs = ass
+                       , conss = case css of
+                                   [] -> let antcExpr = foldr1 (./\.) ass in
+                                         if isEndo antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
+                                   _  -> css
+                       }
+                 | (ass,css)<-nub (move (antcs dc) (conss dc))
+                 ]
    where
    -- example:  r;s /\ p;r |- x;y   and suppose x and y are both univalent.
    --  antcs =  [ r;s, p;r ]
@@ -1629,14 +1630,14 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
    -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
 
   shiftR :: DnfClause -> [DnfClause]
-  shiftR dc@(Dnf antcs conss)
-   | null antcs || null conss = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
+  shiftR dc
+   | null (antcs dc) || null (conss dc) = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
    | otherwise                = [ Dnf (case ass of
                                         [] -> let consExpr = foldr1 (.\/.) css in
                                               if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
                                         _  -> ass
                                       ) css
-                                | (ass,css)<-nub (move antcs conss)
+                                | (ass,css)<-nub (move (antcs dc) (conss dc))
                                 ]
    where
    -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.
@@ -1675,16 +1676,17 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
    --  sh str es = intercalate str [ showADL e | e<-es]
 
   normDNF :: DnfClause -> DnfClause
-  normDNF (Dnf antcs conss) = Dnf lhs rhs
-   where lhs = case antcs of
-                [] -> []
-                _  -> (exprIsc2list . conjNF opts . foldr1 (./\.)) antcs
-         rhs = case conss of
-                [] -> []
-                _  -> (exprUni2list . disjNF opts . foldr1 (.\/.)) conss
+  normDNF dc = 
+    Dnf { antcs = case antcs dc of
+                   [] -> []
+                   _  -> (exprIsc2list . conjNF opts . foldr1 (./\.)) (antcs dc)
+        , conss = case conss dc of
+                   [] -> []
+                   _  -> (exprUni2list . disjNF opts . foldr1 (.\/.)) (conss dc)
+        }
 
   pnEq :: DnfClause -> Bool
-  pnEq (Dnf antcs conss) = antcs/=conss
+  pnEq dc = antcs dc /= conss dc
 
   headECps :: Expression -> Expression
   headECps expr = f expr

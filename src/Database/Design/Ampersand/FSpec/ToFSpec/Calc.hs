@@ -549,7 +549,7 @@ assembleECAs options context editables
                      | conjEqClass <- [] -- TODO: implement this once we can test it (note: computing eq. class is no longer necessary)
                     -- conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
                      , conjunct <- (fst.head) conjEqClass                  -- get conjuncts from the clauses
-                     , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
+                     , clause <- rc_dnfClauses conjunct  -- the DNF form of each clause
                      , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct, because the type may be different.
                      , let vee     = EDcV (sign expr)
                      , let ex'     = subst (rel, actSem options ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
@@ -558,12 +558,12 @@ assembleECAs options context editables
                      , let notClau = notCpl clause'                                            -- the violations after the edit action
                      , let viols   = conjNF options notClau                                            -- the violations after the edit action
                      , let viols'  = disjNF options notClau                                            -- the violations after the edit action
-                     , let negs    = if (length.nub.map sign) (vee:antcs)>1
-                                     then fatal 265 ("type inconsistencies in antcs: "++show (map showADL (vee:antcs)))
-                                     else foldr (./\.) vee antcs
-                     , let poss    = if (length.nub.map sign) (vee:conss)>1
-                                     then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss)))
-                                     else foldr (.\/.) (notCpl vee) conss
+                     , let negs    = if (length.nub.map sign) (vee:antcs clause)>1
+                                     then fatal 265 ("type inconsistencies in antcs: "++show (map showADL (vee:antcs clause)))
+                                     else foldr (./\.) vee (antcs clause)
+                     , let poss    = if (length.nub.map sign) (vee:conss clause)>1
+                                     then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss clause)))
+                                     else foldr (.\/.) (notCpl vee) (conss clause)
                      , let frExpr  = case ev of
                                       Ins -> disjNF options (notCpl negs)
                                       Del -> disjNF options poss

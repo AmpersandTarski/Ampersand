@@ -234,12 +234,12 @@ instance Eq Activity where
 
 --
 dnf2expr :: DnfClause -> Expression
-dnf2expr (Dnf antcs conss)
- = case (antcs, conss) of
+dnf2expr dnf
+ = case (antcs dnf, conss dnf) of
     ([],[]) -> fatal 327 "empty dnf clause"
-    ([],_ ) -> foldr1 (.\/.) conss
-    (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
-    (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
+    ([],cs ) -> foldr1 (.\/.) cs
+    (as,[]) -> notCpl (foldr1 (./\.) as)
+    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. (foldr1 (.\/.) cs)
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef

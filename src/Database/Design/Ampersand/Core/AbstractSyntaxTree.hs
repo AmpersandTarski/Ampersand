@@ -181,7 +181,9 @@ data Conjunct = Cjct { rc_id         :: String -- string that identifies this co
                      , rc_dnfClauses :: [DnfClause]
                      } deriving (Show,Typeable)
 
-data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+data DnfClause = Dnf { antcs :: [Expression]
+                     , conss :: [Expression]
+                     }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
 instance Eq Conjunct where
   rc==rc' = rc_id rc==rc_id rc'

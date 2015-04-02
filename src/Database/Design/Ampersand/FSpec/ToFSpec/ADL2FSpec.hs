@@ -157,10 +157,10 @@ makeFSpec opts context = fSpec
      totsurs
       = nub [rel | q<-filter (not . isSignal . qRule) allQuads -- all quads for invariant rules
                  , isIdent (qDcl q)
-                 , x<-qConjuncts q, Dnf antcs conss<-rc_dnfClauses x
-                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
+                 , x<-qConjuncts q, dnf<-rc_dnfClauses x
+                 , let antc = conjNF opts (foldr (./\.) (EDcV (sign (head (antcs dnf++conss dnf)))) (antcs dnf))
                  , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
-                 , cons<-map exprCps2list conss
+                 , cons<-map exprCps2list (conss dnf)
             -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
                  , rel<-init cons++[flp r | r<-tail cons]
                  ]
@@ -238,11 +238,11 @@ makeFSpec opts context = fSpec
      dRels = [     EDcD d  | d@Sgn{}<-relsDefdIn context, not(deciss d), isInj d, not$decplug d]++
              [flp (EDcD d) | d@Sgn{}<-relsDefdIn context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
-     maxTotPaths = clos cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
-     maxInjPaths = clos dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
+     maxTotPaths = clos1 cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
+     maxInjPaths = clos1 dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
      --    Warshall's transitive closure algorithm, adapted for this purpose:
-     clos :: [Expression] -> [[Expression]]
-     clos xs
+     clos1 :: [Expression] -> [[Expression]]
+     clos1 xs
       = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
         where
           f :: [[Expression]] -> A_Concept -> [[Expression]]
@@ -381,7 +381,7 @@ makeFSpec opts context = fSpec
      makeActivity rul
          = let s = Act{ actRule   = rul
                       , actTrig   = decls
-                      , actAffect = nub [ d' | (d,_,d')<-clos affectPairs, d `elem` decls]
+                      , actAffect = nub [ d' | (d,_,d')<-clos2 affectPairs, d `elem` decls]
                       , actQuads  = invQs
                       , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
                       , actPurp   = [Expl { explPos = OriginUnknown
@@ -419,8 +419,8 @@ makeFSpec opts context = fSpec
         ----------------------------------------------------
         --  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
         ----------------------------------------------------
-             clos :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
-             clos xs
+             clos2 :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
+             clos2 xs
                = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
                  where
                   f q x = q `un`
