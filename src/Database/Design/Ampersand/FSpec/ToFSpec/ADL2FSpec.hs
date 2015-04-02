@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-         (makeFSpec, preEmpt) where
+         (makeFSpec) where
 
 import Prelude hiding (Ord(..))
 import Data.Char
@@ -439,48 +439,6 @@ makeIfcControls params allConjs = [ conj
                                 -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
                                 ]
   
-
--- If one rule r blocks upon an event, e.g. e@(ON Ins rel), while another ECA rule r'
--- maintains something else with that same event e, we can save r' the trouble.
--- After all, event e will block anyway.
--- preEmpt tries to simplify ECArules by predicting whether a rule will block.
-preEmpt :: Options -> [ECArule] -> [ECArule]
-preEmpt opts ers = pr [length ers] (10::Int)
- where
-  pr :: [Int] -> Int -> [ECArule]
-  pr ls n
-    | n == 0              = fatal 633 $ "too many cascading levels in preEmpt "++show ls
-    | (not.null) cascaded = pr (length cascaded:ls)
-                            -- ([er{ecaAction=normPA opts (ecaAction er)} | er<-cascaded] ++uncasced)
-                               (n-1)
-    | otherwise           = [er{ecaAction=normPA opts (ecaAction er)} | er<-uncasced]
-   where
--- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
--- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
-    new  = [er{ecaAction=normPA opts (ecaAction er)} | er<-ers]
-    cascaded = [er{ecaAction=action'} | er<-new, let (c,action') = cascade (eDcl (ecaTriggr er)) (ecaAction er), c]
-    uncasced = [er |                    er<-new, let (c,_)       = cascade (eDcl (ecaTriggr er)) (ecaAction er), not c]
--- cascade inserts a block on the place where a Do component exists that matches the blocking event.
---  cascade :: Relation -> PAclause -> (Bool, PAclause)
-  cascade dcl (Do srt to _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
-   where blkErs = [er | er<-ers
-                      , Blk _<-[ecaAction er]
-                      , let t = ecaTriggr er
-                      , eSrt t == srt
-                      , eDcl t == to
-                      , not (dcl ==to)
-                      ]
-  cascade  _  c@Do{}           = (False, c)
-  cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
-  cascade rel (Rmv c clause m) = ((fst.cascade rel.clause) "dummystr", Rmv c (snd.cascade rel.clause) m)
---cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (snd.cascade rel.cl)   m)
-  cascade rel (CHC ds m)       = (any (fst.cascade rel) ds, CHC (map (snd.cascade rel) ds) m)
-  cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
-  cascade  _  (Nop m)          = (False, Nop m)
-  cascade  _  (Blk m)          = (False, Blk m)
-  cascade  _  (Let _ _ _)  = fatal 611 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
-  cascade  _  (Ref _)      = fatal 612 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
-  cascade  _  (GCH{})      = fatal 655 "Deze constructor is niet gedefinieerd" -- SJO, 20140428:Toegevoegd om warning te verwijderen
 
 class Named a => Rename a where
  rename :: a->String->a
