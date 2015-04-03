@@ -61,7 +61,8 @@ module Database.Design.Ampersand
    , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
    , exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list
    -- * Functions with plugs:
-   , showPlug, plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
+--   , showPlug, plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
+   , showPlug, plugFields, tblcontents, fldauto
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
    , createFSpec

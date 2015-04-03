@@ -27,14 +27,14 @@ main =
                                   mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                   exitWith $ ExitFailure 10
               Checked fSpec -> do generateAmpersandOutput fSpec
-                                  generateProtoStuff opts fSpec
+                                  generateProtoStuff      fSpec
 
-generateProtoStuff :: Options -> FSpec -> IO ()
-generateProtoStuff opts fSpec
+generateProtoStuff :: FSpec -> IO ()
+generateProtoStuff fSpec
   | Just nm <- validateEdit (getOpts fSpec) =
       do { verboseLn (getOpts fSpec) "Validating edit operations:"
-         ; gBeforePops <- getPopulationsFrom opts $ nm ++ ".before.pop"
-         ; gAfterPops <- getPopulationsFrom opts $ nm ++ ".after.pop"
+         ; gBeforePops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".before.pop"
+         ; gAfterPops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".after.pop"
          ; case (,) <$> gBeforePops <*> gAfterPops of
               Errors err -> do putStrLn "Error(s) found in before/after populations:"
                                mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
@@ -51,7 +51,7 @@ generateProtoStuff opts fSpec
          }
   | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1Format =
       do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .adl-file..."
-         ; cx<-atlas2context opts fSpec
+         ; cx<-atlas2context (getOpts fSpec) fSpec
          ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) (showADL cx)
          ; verboseLn (getOpts fSpec) $ "Context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
          }

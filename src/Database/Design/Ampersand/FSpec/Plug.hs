@@ -8,11 +8,10 @@ module Database.Design.Ampersand.FSpec.Plug
      ,SqlFieldUsage(..)
      ,SqlType(..)
      ,showSQL
-     ,requiredFields,requires,plugpath,eLkpTbl
+     ,plugpath
 
      ,tblcontents
      ,fldauto
-     ,isPlugIndex,kernelrels,attrels,bijectivefields
      ,PlugSQL(..)
      )
 where
@@ -197,68 +196,7 @@ isPlugIndex plug f =
      | otherwise                            -> False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug))
     TblSQL{}    -> elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
 
---mLkpTbl stores the relation of some target field with one source field
---an isPlugIndex target field is a kernel field related to some similar or larger kernel field
---any other target field is an attribute field related to its kernel field
-kernelrels::PlugSQL ->[(SqlField,SqlField)]
-kernelrels plug@ScalarSQL{} = [(sqlColumn plug,sqlColumn plug)]
-kernelrels (BinSQL{})       = fatal 375 "Binary plugs do not know the concept of kernel fields."
-kernelrels plug@TblSQL{}    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,isPlugIndex plug tfld]
-attrels::PlugSQL ->[(SqlField,SqlField)]
-attrels plug@ScalarSQL{}    = [(sqlColumn plug,sqlColumn plug)]
-attrels BinSQL{}            = fatal 379 "Binary plugs do not know the concept of attribute fields."
-attrels plug@TblSQL{}       = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(isPlugIndex plug tfld)]
 
---the kernel of SqlFields is ordered by existence of elements for some instance of the entity stored in the plug.
---fldexpr of key is the relation with a similar or larger key.
---(similar = uni,tot,inj,sur, includes = uni,inj,sur)
---
---each kernel field is a key to attributes and itself (kfld), and each attribute field is related to one kernel field (kfld)
---kfld may be smaller than the ID of the plug, but larger than other kernel fields in the plug
---All (kernel) fields larger than or similar to kfld and their total attributes are required.
---(remark that the total property of an attribute points to the relation of the att with its key, which is not the ID of the plug per se)
---Smaller (kernel) fields and their total attributes may contain NULL where kfld does not and are not required.
---
---auto increment fields are not considered to be required
-requiredFields :: PlugSQL -> SqlField ->[SqlField]
-requiredFields plug@ScalarSQL{} _ = [sqlColumn plug]
-requiredFields plug@BinSQL{}    _ = [fst(columns plug),snd(columns plug)]
-requiredFields plug@TblSQL{} fld
- = [f |f<-requiredkeys++requiredatts, not (fldauto f)]
-  where
-  kfld | null findfld = fatal 401 $ "fld "++fldname fld++" must be in the plug "++name plug++"."
-       | isPlugIndex plug fld = fld
-       | otherwise = fst(head findfld) --fld is an attribute field, take its kernel field
-  findfld = [(k,maybek) |(_,k,maybek)<-mLkpTbl plug,fld==maybek]
-  requiredkeys = similar++requiredup
-  requiredatts = [a |k<-requiredkeys,(k',a)<-attrels plug,k==k',isTot(fldexpr a)]
-  -----------
-  --kernelclusters is a list of kernel field clusters clustered by similarity
-  --similar is the cluster where kfld is in
-  similar = [c |Cluster cs<-kernelclusters plug,kfld `elem` cs,c<-cs]
-  --the kernel fields in which a similar field is included, but not a similar field
-  --(clusterBy includeskey [Cluster [x]] (kernelrels plug) returns one inclusion chain (cluster) from ID to x
-  --Thus, similar elements of elements in the chain (except x) are not taken into account yet (see similarskeysup and requiredup)
-  keysup = nub[rf |x<-similar
-                  ,cs<-map cslist(clusterBy includeskey [Cluster [x]] (kernelrels plug))
-                  ,rf<-cs]
-            >- similar
-  --there can be a key1 similar to a key2 in keysup, but key1 is not in keysup.
-  --key1 is required just like key2 because they are similar
-  similarskeysup = nub[key1 | Cluster cs<-kernelclusters plug
-                            , key1<-cs
-                            , key2<-keysup
-                            , key2 `elem` cs
-                            , key1 `notElem` keysup]
-  --the similarskeysup may have required fields not in keysup (recursion)
-  --add those which are not in keysup yet
-  requiredup = nub(keysup++requiredbysimilarkeysup)
-  requiredbysimilarkeysup = nub[rf |x<-similarskeysup,rf<-requiredFields plug x]
-  -----------
-
---fld1 requires fld2 in plug?
-requires :: PlugSQL -> (SqlField,SqlField) ->Bool
-requires plug (fld1,fld2) = fld2 `elem` requiredFields plug fld1
 
 composeCheck :: Expression -> Expression -> Expression
 composeCheck l r
@@ -320,79 +258,33 @@ eLkpTbl p = clos1 [([r],s,t)|(r,s,t)<-mLkpTbl p]
        where
         f q x = q `uni` [( r++r' , a, b') | (r ,a, b) <- q, b == x, (r', a', b') <- q, a' == x]
 
---bijective fields of f (incl. f)
-bijectivefields::PlugSQL -> SqlField -> [SqlField]
-bijectivefields p f = [bij |Cluster fs<-kernelclusters p, f `elem` fs,bij<-fs]
-
---the clusters of kernel sqlfields that are similar because they relate uni,inj,tot,sur
-kernelclusters ::PlugSQL -> [Cluster SqlField]
-kernelclusters plug@ScalarSQL{} = [Cluster [sqlColumn plug]]
-kernelclusters (BinSQL{})       = [] --a binary plugs has no kernel (or at most (entityfield plug))
-kernelclusters plug@TblSQL{}    = clusterBy similarkey [] (kernelrels plug)
-
---similar key: some source key s that is not equal to target key t (i.e. not the identity), but related uni,tot,inj,sur in some other way
-similarkey::(SqlField,SqlField)->Bool
-similarkey (s,t) = s/=t && isTot (fldexpr t) && isSur (fldexpr t) && isInj (fldexpr t) && isUni (fldexpr t)
-
---includes key: some target key t that is related to source key s uni,inj,sur but not tot
-includeskey::(SqlField,SqlField)->Bool
-includeskey (_,t) = not(isTot (fldexpr t)) && isSur (fldexpr t) && isInj (fldexpr t) && isUni (fldexpr t)
-
---clusterBy clusters similar items like eqClass clusters equal items
---[(a,a)] defines flat relations between items (not closed)
---((a,a) -> Bool) defines some transitive relation between two items (for example similarity, equality, inclusion)
---[Cluster a] defines the initial set of clusters which may be []
---            EXAMPLE USE ->
---            if the relation is not symmetric and you need one chain from x to the top
---            then set [Cluster [x]]
---            (note: ClusterBy does not take into account any other relation than the one provided!)
---TODO -> test plugs that require more than one run (i.e. a composition of kernel fields n>2: ID(fld1;fld2;..;fldn)KernelConcept )
---REMARK151210 -> I have made a data type of cluster instead of just list to distinguish between lists and clusters (type checked and better readable code)
---                It is an idea to do the same for eqCl and eqClass (Class=Cluster or v.v.)
-data Cluster a = Cluster [a] deriving (Eq,Show)
-cslist :: Cluster a -> [a]
-cslist (Cluster xs) = xs
-clusterBy :: (Show a,Eq a) => ((a,a) -> Bool) -> [Cluster a] -> [(a,a)] -> [Cluster a]
-clusterBy f [] xs = clusterBy f [Cluster [b] |(_,b)<-xs] xs --initial clusters, for every target there will be a cluster at first (see mergeclusters)
-clusterBy f cs xs
-   | cs==nxtrun = mergeclusters cs
-   | otherwise = clusterBy f (mergeclusters nxtrun) xs
-   where
-   nxtrun = [Cluster (addtohead (head ys)++ys) |Cluster ys<-cs, not(null ys)]
-   addtohead y =[fst x | x<-xs, snd x==y, f x] --if x=(fst x);y and (f x), then fst x is chained to y
-   --we can merge clusters with equal heads, because
-   -- + similar things are chained to the head of the cluster
-   -- + and the head of mergeclusters == head of every cluster in cs' because we mergecluster each time we add one thing to the head of some cluster
-   mergeclusters cs' = [Cluster (nub(concat cl)) |cl<-eqClass eqhead (map cslist cs')]
-   eqhead c1 c2
-     | null (c1++c2) = fatal 547 "clusters are not expected to be empty at this point."
-     | otherwise = head c1==head c2
 
 -- | tblcontents is meant to compute the contents of an entity table.
 --   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.
 type TblRecord = [Maybe String]
 tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
-tblcontents gs udp plug@ScalarSQL{}
-   = [[Just x] | x<-atomsOf gs udp (cLkp plug)]
-tblcontents gs udp plug@BinSQL{}
-   = [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gs udp (mLkp plug)]
-tblcontents gs udp plug@TblSQL{}
+tblcontents gs udp plug
+   = case plug of
+     ScalarSQL{} -> [[Just x] | x<-atomsOf gs udp (cLkp plug)]
+     BinSQL{}    -> [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gs udp (mLkp plug)]
+     TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other,
  --where NULL in a kernel field implies NULL in the following kernel fields
  --and the first field is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
- | null(fields plug) = fatal 593 "no fields in plug."
- | otherwise = transpose
+       case fields plug of 
+         []   -> fatal 593 "no fields in plug."
+         f:fs -> transpose
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomsOf gs udp c then Just a else Nothing | a<-cAtoms ]
                        _      -> [ (lkp a . fullContents gs udp) fExp | a<-cAtoms ]
-                   | fld<-tail (fields plug), let fExp=fldexpr fld
+                   | fld<-fs, let fExp=fldexpr fld
                    ]
                  )
                  where
-                   cAtoms = (atomsOf gs udp . source . fldexpr . head . fields) plug
+                   cAtoms = (atomsOf gs udp . source . fldexpr) f
                    lkp a pairs
                     = case [ p | p<-pairs, a==srcPaire p ] of
                        [] -> Nothing
