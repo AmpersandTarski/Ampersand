@@ -86,13 +86,14 @@ makeFSpec opts context
                                  | r <- allrules, not (isSignal r)
                                  , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
               , allExprs     = expressionsIn context
+              , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations (gens context) initialpops conj
                                          , not $ null viols
                                          ]
               }
    where           
-     fSpecAllConcepts = concs context `uni` [ONE]
+     fSpecAllConcepts = concs context -- `uni` [ONE]
      fSpecAllDecls = relsDefdIn context
      fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
      
