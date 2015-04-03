@@ -90,12 +90,8 @@ instance MetaPopulations FSpec where
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
-  ++[ Pop "ctxnm"   "Context" "Conid"
+  ++[ Pop "name"   "Context" "Conid"
            [(uri fSpec,name fSpec)]]
-  ++[ Pop "ctxpats" "Context" "Pattern"
-           [(uri fSpec,uri pat) | pat <- vpatterns fSpec]]
-  ++[ Pop "ctxcs" "Context" "PlainConcept"
-           [(uri fSpec,uri cpt) | cpt <- allConcepts fSpec, cpt /= ONE]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.vgens) fSpec++")"]
@@ -104,8 +100,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) allAtoms++")"]
   ++   concatMap (metaPops fSpec) allAtoms
-  ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length) allSigns++")"]
-  ++   concatMap (metaPops fSpec) allSigns
+  ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length.allSigns) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
@@ -124,13 +120,13 @@ instance MetaPopulations FSpec where
           PRelPopu{} ->  map (mkAtom fSpec ((source.popdcl) udp).srcPaire) (popps udp)
                       ++ map (mkAtom fSpec ((target.popdcl) udp).trgPaire) (popps udp)
           PCptPopu{} ->  map (mkAtom fSpec (        popcpt  udp)         ) (popas udp)
-    allSigns :: [Sign]
-    allSigns = [] --TODO. 
 
 instance MetaPopulations Pattern where
- metaPops _ pat =
+ metaPops fSpec pat =
    [ Comment " "
    , Comment $ " Pattern `"++name pat++"` "
+   , Pop "ctxpats" "Context" "Pattern"
+          [(uri fSpec,uri pat)]
    , Pop "ptnm"    "Pattern" "Conid"
           [(uri pat, ptnm pat)]
    , Pop "ptrls"   "Pattern" "Rule"
@@ -139,7 +135,7 @@ instance MetaPopulations Pattern where
           [(uri pat,uri x) | x <- ptgns pat]
    , Pop "ptdcs"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptxps"   "Pattern" "Blob"
+   , Pop "ptxps"   "Pattern" "Purpose"
           [(uri pat,uri x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
@@ -181,13 +177,15 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Comment " "
       , Comment $ " Concept `"++name cpt++"` "
+      , Pop "concs" "Context" "PlainConcept"
+           [(uri fSpec,uri cpt)]
       , Pop "cptnm" "PlainConcept" "Conid"
              [(uri cpt, name cpt)]
-      , Pop "cptdf" "PlainConcept" "Blob"
+      , Pop "cptdf" "PlainConcept" "ConceptDefinition"
              [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
-      , Pop "cptpurpose" "PlainConcept" "Blob"
+      , Pop "cptpurpose" "PlainConcept" "Purpose"
              [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
-      , Pop "cpttp" "PlainConcept" "Blob"
+      , Pop "cpttp" "PlainConcept" "TechnicalType"
              [(uri cpt,cpttp cpt)  | not.null.cpttp $ cpt
              ]
       ]
@@ -235,13 +233,7 @@ instance MetaPopulations AtomID where
    ]
 instance MetaPopulations Sign where
  metaPops _ sgn =
---      [ Pop "sign" "Declaration" "Sign"
---             [(aap,uri sgn)]
---      , Pop "sign" "PairID" "Sign"
---             [(noot,uri sgn)]
-      [ Pop "in" "PairID" "Declaration"
-             [(uri sgn, uri (source sgn))]
-      , Pop "src" "Sign" "Concept"
+      [ Pop "src" "Sign" "Concept"
              [(uri sgn, uri (source sgn))]
       , Pop "trg" "Sign" "Concept"
              [(uri sgn, uri (target sgn))]
@@ -283,37 +275,34 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
-      , Pop "decnm" "Declaration" "Varid"
+      , Pop "name" "Declaration" "Varid"
              [(uri dcl, name dcl)]
-      , Pop "decsgn" "Declaration" "Sign"
-             [(uri dcl,uri (decsgn dcl))]
-      , Comment $ " PropertyRules of "++name dcl++":"
-      , Pop "decprps" "Declaration" "PropertyRule"
-             [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
-      , Pop "declaredthrough" "PropertyRule" "Property"
-             [(uri rul,show prp) | rul <- filter ofDecl (grules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
+      , Pop "sign" "Declaration" "Sign"
+             [(uri dcl,uri (sign dcl))]
       , Pop "decprL" "Declaration" "String"
              [(uri dcl,decprL dcl)]
       , Pop "decprM" "Declaration" "String"
              [(uri dcl,decprM dcl)]
       , Pop "decprR" "Declaration" "String"
              [(uri dcl,decprR dcl)]
-      , Pop "decmean" "Declaration" "Blob"
+      , Pop "decmean" "Declaration" "Meaning"
              [(uri dcl, show(decMean dcl))]
-      , Pop "decpurpose" "Declaration" "Blob"
+      , Pop "decpurpose" "Declaration" "Purpose"
              [(uri dcl, showADL x) | x <- explanations dcl]
       , Comment $ "The population of "++name dcl++":"
-      , Pop "decpopu" "Declaration" "PairID"
-             [(uri dcl,uri p) | p <- mkLinks fSpec (sign dcl) (pairsOf dcl)]
+      , Pop "in" "PairID" "Declaration"
+             [(uri p,uri dcl) | p <- mkLinks fSpec (sign dcl) (pairsOf dcl)]
       ]++ metaPops fSpec ( mkLinks fSpec (sign dcl) (pairsOf dcl))
 
-     Isn{} -> fatal 157 "Isn is not implemented yet"
+
+     Isn{} -> 
+      [ Comment " "
+      , Comment $ " Declaration `I["++name (source dcl)++"]`"
+      , Pop "sign" "Declaration" "Sign"
+             [(uri dcl,uri (sign dcl))]
+      ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
     where
-      ofDecl :: Rule -> Bool
-      ofDecl rul = case rrdcl rul of
-                     Nothing -> False
-                     Just (_,d) -> d == dcl
       pairsOf :: Declaration -> Pairs
       pairsOf d = case filter theDecl (initialPops fSpec) of
                     []    -> []
@@ -404,13 +393,17 @@ instance MetaPopulations Rule where
              [(uri rul,rrnm rul)]
       , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]
-      , Pop "rrmean"  "Rule" "Blob"
+      , Pop "rrmean"  "Rule" "Meaning"
              [(uri rul,show(rrmean rul))]
-      , Pop "rrpurpose"  "Rule" "Blob"
+      , Pop "rrpurpose"  "Rule" "Purpose"
              [(uri rul,showADL x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Sign"
-             [(uri rul,uri (rrtyp rul))]
+             [(uri rul,uri (sign rul))]
+      , Pop "declaredthrough" "PropertyRule" "Property"
+             [(uri rul,show prp) | Just(prp,_) <- [rrdcl rul]]
+      , Pop "decprps" "Declaration" "PropertyRule"
+             [(uri dcl, uri rul) | Just(_,dcl) <- [rrdcl rul]]
       ]
 
 
@@ -420,14 +413,11 @@ instance MetaPopulations PlugInfo where
       [ Comment $ " Plug `"++name plug++"` "
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "PlainConcept" "Plug"                 
-             [(uri cpt,uri plug)| cpt <- concs plug, isRelevant plug] -- TODO @Stef: Dit levert mogelijk meerdere plugs op, omdat we hier naar plugs kijken, en niet filteren op alleen brede tabellen. Waardoor weten we dat we niet naar BinSQL moeten kijken, maar alleen naar TblSQL? En hoe zit dat voor andere typen plugs (PHP plugs?)  
+             [(uri cpt,uri plug)| cpt <- concs plug]  
       , Pop "in" "Declaration" "Plug"
-             [(uri dcl,uri plug)| dcl <- relsMentionedIn plug, isRelevant plug]  --Idem
+             [(uri dcl,uri plug)| dcl <- relsMentionedIn plug]
       ]      
--- TIJDELIJKE FUNCTIE: Moet worden overlegd met Stef:
-isRelevant :: PlugInfo -> Bool
-isRelevant (InternalPlug TblSQL{}) = True
-isRelevant _ = False
+
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
  

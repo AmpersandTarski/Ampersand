@@ -3,7 +3,7 @@ CONTEXT RAP IN ENGLISH
 INCLUDE "ASTdocumentation.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
-1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als ctxnm, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
+1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als name, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
       Reactie HJO/20150207: Die snap ik niet. Twee Concepten met dezelfde naam zijn hetzelfde Concept. Een Pattern mag dezelfde naam hebben als een Concept. Daarmee zijn de uiteraard niet identiek. Een Pattern is nou een maal geen Concept. Dit is nu zo geregeld in RAP. Als je punt is, dat twee verschillende Concepten best dezelfde naam zouden mogen hebben, dan hebben we een issue. Maar ik denk niet dat je dit bedoelt.
 2) VIEWs (zoals 'VIEW Gen') horen m.i. niet in dit bestand thuis, maar daar waar de UI wordt gespecificeerd. IDENTs horen wel in dit bestand thuis.
       Reactie HJO/20150207: Helemaal mee eens. Gaan we doen. 
@@ -11,15 +11,21 @@ INCLUDE "ASTdocumentation.adl"
       Reactie HJO/20150207: Dat denk ik ook. Leuk is, dat dit geen invloed heeft op de meatgrinder. Immers, die zorgt alleen maar voor de juiste populatie van Declarations. Als blijkt dat we dan overtredingen krijgen, dan gaan we dat meemaken...
 -}
 
+CONCEPT Purpose "" TYPE "Blob"
+CONCEPT Meaning "" TYPE "Blob"
+CONCEPT ConceptDefinition "" TYPE "Blob"
+
+
+
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-IDENT Context: Context(ctxnm)
+IDENT Context: Context(name[Context*Conid])  
 
-RELATION ctxnm[Context*Conid] [UNI,TOT,INJ]
+RELATION name[Context*Conid] [UNI,TOT,INJ]
 MEANING "The name of a context."
 RELATION ctxpats[Context*Pattern]
 MEANING "The patterns in a context."
-RELATION ctxcs[Context*PlainConcept]
+RELATION concs[Context*PlainConcept]
 MEANING "A concept, mentioned anywhere in a context, is declared."
 ENDPATTERN
 
@@ -35,8 +41,10 @@ RELATION ptgns[Pattern*Gen]
 MEANING "The user-defined generalization rules in a pattern."
 RELATION ptdcs[Pattern*Declaration]
 MEANING "The relation declarations in a pattern."
-RELATION ptxps[Pattern*Blob]
+RELATION ptxps[Pattern*Purpose]
 MEANING "The purposes of a pattern."
+
+
 ENDPATTERN
 
 PATTERN Specialization
@@ -67,11 +75,11 @@ RELATION cptnm[PlainConcept*Conid] [UNI,TOT,INJ]
 MEANING "The name of a concept."
 --RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door instanceOf~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
 --MEANING "The population of a concept."
-RELATION cptdf[PlainConcept*Blob]
+RELATION cptdf[PlainConcept*ConceptDefinition]
 MEANING "The definitions of a concept."
-RELATION cptpurpose[PlainConcept*Blob]
+RELATION cptpurpose[PlainConcept*Purpose]
 MEANING "The purposes of a concept."
-RELATION cpttp[PlainConcept*Blob]
+RELATION cpttp[PlainConcept*TechnicalType]
 MEANING "The (technical) type of a concept"
 
 --CONCEPT Order "The order of the is-a-relation between concepts."
@@ -88,7 +96,7 @@ MEANING "The (technical) type of a concept"
 
 --NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
 --if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so->risk for awkward messages in new interface
---RULE "referential integrity": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- order;order~;cptos
+--RULE "referential integrity": src~;sign~;decpopu;left \/ trg~;sign~;decpopu;right |- order;order~;cptos
 --MEANING "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
 --MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
@@ -114,8 +122,6 @@ ENDPATTERN
 PATTERN Sign
 VIEW Sign: Sign( TXT "[" , src;cptnm , TXT "*" , trg;cptnm , TXT "]" )
 
-RELATION sign[Declaration*Sign] [UNI,TOT]
-RELATION in[PairID*Declaration] [UNI,TOT]
 
 RELATION src[Sign*Concept] [UNI,TOT]
 MEANING "The source of a sign."
@@ -149,14 +155,14 @@ MEANING "Type consistency means that all pairs in a relation have the same signa
 ENDPATTERN
 
 PATTERN Declaration
-VIEW Declaration: Declaration( decnm , TXT "::", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
---IDENT Declaration: Declaration( decnm, decsgn;src;cptnm, decsgn;trg;cptnm )
-RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
+VIEW Declaration: Declaration( name , TXT "::", sign;src;cptnm ,TXT " * ", sign;trg;cptnm )
+--IDENT Declaration: Declaration( name, sign;src;cptnm, sign;trg;cptnm )
+RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
-RELATION decnm[Declaration*Varid] [UNI,TOT]
+RELATION name[Declaration*Varid] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The name of a relation."
-RELATION decsgn[Declaration*Sign] [UNI,TOT]
+RELATION sign[Declaration*Sign] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The sign of a declaration."
 RELATION decprps[Declaration*PropertyRule] [INJ]
 MEANING "The properties of a relation."
@@ -166,42 +172,39 @@ SPEC PropertyRule ISA Rule
 CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
 RULE "property enum": I[Property] |- '->' \/ 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
 MEANING "There are eleven tokens, that can be used to define properties on a relation. -> means univalent and total; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
-RELATION declaredthrough[PropertyRule*Property] [TOT]
-MEANING "A property is defined as part of the declaration of relation."
-
 RELATION decprL[Declaration*String] [UNI]
 MEANING "The prefix of the pragma of a relation."
 RELATION decprM[Declaration*String] [UNI]
 MEANING "The infix of the pragma of a relation."
 RELATION decprR[Declaration*String] [UNI]
 MEANING "The suffix of the pragma of a relation."
-RELATION decmean[Declaration * Blob]
+RELATION decmean[Declaration * Meaning]
 MEANING "The meanings of a relation."
-RELATION decpurpose[Declaration * Blob]
+RELATION decpurpose[Declaration * Purpose]
 MEANING "The purposes of a relation."
-RELATION decpopu[Declaration*PairID]
+RELATION in[PairID*Declaration]
 MEANING "The population of a relation."
 
-RULE "entity integrity of relation": left;left~ /\ right;right~ /\ decpopu~;decpopu |- I
+RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
 MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
 MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
 VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
 
---RULE "typed domain": decpopu;left;cptos~;order  |- decsgn;src;order
+--RULE "typed domain": decpopu;left;cptos~;order  |- sign;src;order
 --MEANING "The atoms in the domain of a relation belong to the same class as the source of that relation."
 --MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
---VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC decsgn;src)
+--VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC sign;src)
 
---RULE "typed codomain": decpopu;right;cptos~;order |- decsgn;trg;order
+--RULE "typed codomain": decpopu;right;cptos~;order |- sign;trg;order
 --MEANING "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 --MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
---VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
+--VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC sign;trg)
 ENDPATTERN
 
 PATTERN Expression
-IDENT ExpressionID : ExpressionID(exprvalue)
+--IDENT ExpressionID : ExpressionID(exprvalue)  -- @Stef wat wordt hiermee bedoeld? stel wat is de exprvalue van bijvoorbeeld de expressie 'r;t~' ?? Waarom onderscheid in Expression en ExpressonID??
 
-RELATION exprvalue[ExpressionID*Expression] [UNI,TOT]
+RELATION exprvalue[ExpressionID*Expression] --[UNI,TOT]
 MEANING "The value of an expression."
 RELATION relsMentionedIn[ExpressionID*Declaration]
 MEANING "The user-declared relations in an expression."
@@ -217,9 +220,9 @@ RELATION relsgn[RelationRef*Sign] [UNI,TOT]
 MEANING "A relation reference has the sign of the relation that is being referred to."
 RELATION reldcl[RelationRef*Declaration] [UNI,TOT]
 MEANING "A relation reference has the relation that is being referred to."
-RULE "rel name is decl name": relnm = reldcl;decnm
+RULE "rel name is decl name": relnm = reldcl;name
 MEANING "A relation reference has the same name as the relation to which it refers."
-RULE "rel sign sub of decl sign": reldcl = relnm;decnm~ /\ relsgn;subsgn;decsgn~
+RULE "rel sign sub of decl sign": reldcl = relnm;name~ /\ relsgn;subsgn;sign~
 MEANING "A relation reference refers to the relation with the same name, the signature of which is larger or equal to the signature of the relation reference."
 ENDPATTERN
 
@@ -230,17 +233,20 @@ RELATION rrnm[Rule*ADLid] [UNI,TOT,INJ]
 MEANING "The name of a rule."
 RELATION rrexp[Rule*ExpressionID] [UNI,TOT]
 MEANING "The rule expressed in relation algebra."
-RELATION rrmean[Rule * Blob]
+RELATION rrmean[Rule * Meaning]
 MEANING "The meanings of a rule."
-RELATION rrpurpose[Rule * Blob]
+RELATION rrpurpose[Rule * Purpose]
 MEANING "The purposes of a rule."
+RELATION declaredthrough[PropertyRule*Property] [TOT]
+MEANING "A property is defined as part of the declaration of relation."
+
 ENDPATTERN
 
 PATTERN Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION sign[Rule*Sign] [UNI,TOT]
 RELATION maintains[Plug*Rule]
-RELATION in[PlainConcept*Plug] [UNI,TOT]
-RELATION in[Declaration*Plug] [UNI,TOT]
+RELATION in[PlainConcept*Plug] [TOT]
+RELATION in[Declaration*Plug] [TOT]
 
 -- Rules
 RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~

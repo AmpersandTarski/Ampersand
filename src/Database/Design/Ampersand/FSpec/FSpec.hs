@@ -96,6 +96,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
+                   , allSigns      :: [Sign]                  -- ^ All Signs in the fSpec
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'
@@ -119,6 +120,8 @@ data PairID = PairID { lnkSgn :: Sign
                      , lnkLeft :: AtomID
                      , lnkRight :: AtomID
                      } deriving (Typeable,Eq)
+instance Association PairID where
+  sign = lnkSgn
 instance Unique PairID where
   showUnique x = uniqueShow False (lnkSgn x)
               ++ uniqueShow False (lnkLeft x)
