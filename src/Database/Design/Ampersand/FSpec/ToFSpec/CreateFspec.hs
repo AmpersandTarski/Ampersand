@@ -26,20 +26,20 @@ fatal = fatalMsg "CreateFspec"
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
-  do userCtx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let userFspec = pCtx2Fspec userCtx
+  do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+     let userFspec = pCtx2Fspec userP_Ctx
      case whatToCreateExtra of
        Nothing 
          -> return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
        Just mType
-         -> do rapCtx <- getFormalFile mType -- the P_Context of the 
-               let rapCtxMeta = unguard $ pure . (toMeta opts) <$> rapCtx
-                   grindedUserCtx = unguard $ pure . (toMeta opts) <$> (unguard $ grind mType <$> userFspec)
+         -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the 
+               let rapCtxMeta = unguard $ pure . (toMeta opts) <$> rapP_Ctx
+                   metaPop = unguard $ pure . (toMeta opts) <$> (unguard $ grind mType <$> userFspec)
                let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
                                      -- P_Context, that contains all 'things' specified in the user's file 
                                      -- as populations in RAP. These populations are the only contents of 
                                      -- the returned P_Context. 
-                     (merge.sequenceA) [grindedUserCtx, rapCtxMeta] -- Both p_Contexts are merged into a single P_Context
+                     (merge.sequenceA) [ metaPop, rapCtxMeta, userP_Ctx]
                return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
      where
     
@@ -80,7 +80,7 @@ createFSpec opts =
             fstIfNoIncludes (a,includes)
              = case includes of 
                [] -> a
-               _  -> fatal 83 "Meatgrinder returns included file. That shouldn't be possible!"
+               _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
             
      
 getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
