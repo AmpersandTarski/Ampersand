@@ -2,16 +2,19 @@
 module Database.Design.Ampersand.Core.ToMeta 
   (toMeta)
 where
+import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.ParseTree
 
 -- | When dealing with meta-stuff for Ampersand, (Like makeGenerics, makeRAP), 
 --   the names of Concepts should be different than 'normal', user-defined Concepts. 
 --   This function modifies everything in the context to reflect that.  
-toMeta :: (P_Context -> P_Context)
-toMeta ctx = makeMeta f ctx 
-  where 
-    f :: String -> String
-    f str = "__"++str++"__"
+toMeta :: Options -> (P_Context -> P_Context)
+toMeta opts ctx = if metaTablesHaveUnderscore opts
+                  then makeMeta f ctx
+                  else ctx
+   where 
+      f :: String -> String
+      f str = "__"++str++"__"
 
 class MakeMeta a where
   makeMeta :: (String -> String) -> a -> a

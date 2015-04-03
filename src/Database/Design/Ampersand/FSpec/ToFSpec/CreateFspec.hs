@@ -33,8 +33,8 @@ createFSpec opts =
          -> return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
        Just mType
          -> do rapCtx <- getFormalFile mType -- the P_Context of the 
-               let rapCtxMeta = unguard $ (pure . toMeta) <$> rapCtx
-                   grindedUserCtx = unguard $ pure . toMeta <$> (unguard $ grind mType <$> userFspec)
+               let rapCtxMeta = unguard $ pure . (toMeta opts) <$> rapCtx
+                   grindedUserCtx = unguard $ pure . (toMeta opts) <$> (unguard $ grind mType <$> userFspec)
                let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
                                      -- P_Context, that contains all 'things' specified in the user's file 
                                      -- as populations in RAP. These populations are the only contents of 
