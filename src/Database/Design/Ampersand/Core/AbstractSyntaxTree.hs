@@ -39,7 +39,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
- , smallerConcepts, largerConcepts, rootConcepts
+ , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics
  , showSign
  , aMarkup2String
  , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
@@ -181,7 +181,9 @@ data Conjunct = Cjct { rc_id         :: String -- string that identifies this co
                      , rc_dnfClauses :: [DnfClause]
                      } deriving (Show,Typeable)
 
-data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+data DnfClause = Dnf { antcs :: [Expression]
+                     , conss :: [Expression]
+                     }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
 instance Eq Conjunct where
   rc==rc' = rc_id rc==rc_id rc'
@@ -321,6 +323,12 @@ instance Show A_Gen where
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
+
+genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]
+genericAndSpecifics gen = 
+    case gen of
+      Isa{} -> [(genspc gen, gengen gen)]
+      IsE{} -> [(genspc gen, g ) | g<-genrhs gen]
 
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.

@@ -40,6 +40,7 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.Misc.Options (Options)
+import Text.Pandoc.Builder (Blocks)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
@@ -61,6 +62,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
+                   , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles may change the population of which relation.
@@ -68,7 +70,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                    , invars ::       [Rule]                   -- ^ All invariant rules
-                   , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
                    , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
@@ -233,12 +234,12 @@ instance Eq Activity where
 
 --
 dnf2expr :: DnfClause -> Expression
-dnf2expr (Dnf antcs conss)
- = case (antcs, conss) of
+dnf2expr dnf
+ = case (antcs dnf, conss dnf) of
     ([],[]) -> fatal 327 "empty dnf clause"
-    ([],_ ) -> foldr1 (.\/.) conss
-    (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
-    (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
+    ([],cs ) -> foldr1 (.\/.) cs
+    (as,[]) -> notCpl (foldr1 (./\.) as)
+    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. (foldr1 (.\/.) cs)
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef

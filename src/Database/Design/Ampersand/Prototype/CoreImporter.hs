@@ -52,7 +52,7 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   , conjNF, disjNF, simplify
 --   , v, notCpl, isPos, isNeg
 --   -- * Functions with plugs:
---   , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
+--   , tblfields, fldauto
 --   -- * Parser related stuff
 --   , ParserVersion(..)
 --   , parseFile

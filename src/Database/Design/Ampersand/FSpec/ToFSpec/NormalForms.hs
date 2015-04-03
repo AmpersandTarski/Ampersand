@@ -2,6 +2,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
   (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
+  , makeAllConjs, conjuncts, allConjuncts
   ) where
   
 import Data.Set (Set)
@@ -14,6 +15,7 @@ import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Misc.Options
 import Database.Design.Ampersand.Input (parseRule)
 import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
@@ -1569,3 +1571,174 @@ isEUni _       = False
 isEIsc :: Expression -> Bool
 isEIsc EIsc{}  = True
 isEIsc _       = False
+
+
+
+
+
+conjuncts :: Options -> Rule -> [Expression]
+conjuncts opts = exprIsc2list.conjNF opts.rrexp
+
+allShifts :: Options -> DnfClause -> [DnfClause]
+allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
+-- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
+ where
+ {-
+  diagnostic
+   = intercalate "\n  "
+       [ "shiftL: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
+       , "shiftR: [ "++intercalate "\n          , " [showHS opts "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
+       ] -}
+  shiftL :: DnfClause -> [DnfClause]
+  shiftL dc
+   | null (antcs dc)|| null (conss dc) = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
+   | otherwise = [ Dnf { antcs = ass
+                       , conss = case css of
+                                   [] -> let antcExpr = foldr1 (./\.) ass in
+                                         if isEndo antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
+                                   _  -> css
+                       }
+                 | (ass,css)<-nub (move (antcs dc) (conss dc))
+                 ]
+   where
+   -- example:  r;s /\ p;r |- x;y   and suppose x and y are both univalent.
+   --  antcs =  [ r;s, p;r ]
+   --  conss =  [ x;y ]
+    move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
+    move ass [] = [(ass,[])]
+    move ass css
+     = (ass,css):
+       if and [ (not.isEDcI) cs | cs<-css]     -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
+       then [ts | let headEs = map headECps css
+                , length (eqClass (==) headEs) == 1                    -- example: True, because map head css == [ "x" ]
+                , let h=head headEs                                    -- example: h= "x"
+                , isUni h                                              -- example: assume True
+                , ts<-move [if source h==source as then flp h.:.as else fatal 455 "type mismatch"
+                           |as<-ass] (map tailECps css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
+            [ts | let lastEs = map lastECps css
+                , length (eqClass (==) lastEs) == 1
+                , let l=head lastEs
+                , isInj l
+                , ts<-move [if target as==target l then as.:.flp l else fatal 461 "type mismatch"
+                           |as<-ass] (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
+       else []
+   -- Here is (informally) what the example does:
+   -- move [ r;s , p;r ] [ x;y ]
+   -- ( [ r;s , p;r ] , [ x;y ] ): [ ts | ts<-move [flp x.:.as | as<-[ r;s , p;r ] [ y ] ] ]
+   -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ ts | ts<-move [flp y.:.as | as<-[ y~;x~;r;s , y~;x~;p;r ] [] ] ]
+   -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ [ y~;x~;r;s , y~;x~;p;r ] , [] ] ]
+   -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
+
+  shiftR :: DnfClause -> [DnfClause]
+  shiftR dc
+   | null (antcs dc) || null (conss dc) = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
+   | otherwise                = [ Dnf (case ass of
+                                        [] -> let consExpr = foldr1 (.\/.) css in
+                                              if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
+                                        _  -> ass
+                                      ) css
+                                | (ass,css)<-nub (move (antcs dc) (conss dc))
+                                ]
+   where
+   -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.
+   --  ass =  [ r;s , r;r ]
+   --  css =  [ x;y ]
+    move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
+    move ass css =
+     case ass of
+      [] -> [] -- was [([EDcI (target (last css))],css)]
+      _  ->
+       (ass,css):
+       if and [ (not.isEDcI) as | as<-ass]
+       then [ts | let headEs = map headECps ass
+                , length (eqClass (==) headEs) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
+                , let h=head headEs                                      -- example: h= "r"
+                , isSur h                                                -- example: assume True
+                , ts<-move (map tailECps ass) [if source h==source cs then flp h.:.cs else fatal 496 "type mismatch"
+                                              |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+            [ts | let lastEs = map lastECps ass
+                , length (eqClass (==) lastEs) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
+                , let l=head lastEs
+                , isTot l
+                , ts<-move (map initECps ass) [if target cs==target l then cs.:.flp l else fatal 502 "type mismatch"
+                                              |cs<-css]]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
+       else []
+   -- Here is (informally) what the example does:
+   -- move [ r;s , r;r ] [ x;y ]
+   -- ( [ r;s , r;r ] , [ x;y ] ): move [ s , r ] [ r~;x;y ]
+   -- ( [ r;s , r;r ] , [ x;y ] ): ( [ s , r ]  , [ r~;x;y ] ) : []
+   -- [ [ r;s , r;r ] , [ x;y ] ), ( [ s , r ]  , [ r~;x;y ] ) ]
+   --  diagnostic
+   --    = "\n  antcs: [ "++intercalate "\n         , " [showADL a | a<-antcs ]++"\n       ]"++
+   --      "\n  conss: [ "++intercalate "\n         , " [showADL c | c<-conss ]++"\n       ]"++
+   --      "\n  move:  [ "++intercalate "\n         , " ["("++sh " /\\ " as++"\n           ,"++sh " \\/ " cs++")" | (as,cs)<-move antcs conss ]++"\n       ]"
+   --  sh :: String -> [Expression] -> String
+   --  sh str es = intercalate str [ showADL e | e<-es]
+
+  normDNF :: DnfClause -> DnfClause
+  normDNF dc = 
+    Dnf { antcs = case antcs dc of
+                   [] -> []
+                   _  -> (exprIsc2list . conjNF opts . foldr1 (./\.)) (antcs dc)
+        , conss = case conss dc of
+                   [] -> []
+                   _  -> (exprUni2list . disjNF opts . foldr1 (.\/.)) (conss dc)
+        }
+
+  pnEq :: DnfClause -> Bool
+  pnEq dc = antcs dc /= conss dc
+
+  headECps :: Expression -> Expression
+  headECps expr = f expr
+   where f (ECps (l@ECps{},_)) = f l
+         f (ECps (l,_)) = l
+         f _ = expr
+
+  tailECps :: Expression -> Expression
+  tailECps expr = f expr
+   where f (ECps (ECps (l,r),q)) = f (ECps (l, ECps (r,q)))
+         f (ECps (_,r)) = r
+         f _ = EDcI (target expr)
+
+  initECps :: Expression -> Expression
+  initECps expr = f expr
+   where f (ECps (l, ECps (r,q))) = initECps (ECps (ECps (l,r),q))
+         f (ECps (l,_)) = l
+         f _ = EDcI (source expr)
+
+  lastECps :: Expression -> Expression
+  lastECps expr = f expr
+   where f (ECps (_,r@ECps{})) = f r
+         f (ECps (_,r)) = r
+         f _ = expr
+
+  isEDcI :: Expression -> Bool
+  isEDcI EDcI{} = True
+  isEDcI _ = False
+
+
+allConjuncts :: Options -> A_Context -> [Conjunct]
+allConjuncts opts context = makeAllConjs opts (allRules context)
+
+makeAllConjs :: Options -> [Rule] -> [Conjunct]
+makeAllConjs opts allRls =
+  let conjExprs :: [(Expression, [Rule])]
+      conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
+      
+      conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
+                     , rc_orgRules   = rs
+                     , rc_conjunct   = expr
+                     , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
+                     }
+              | ((expr, rs),i) <- zip conjExprs [0..]
+              ]
+  in  conjs
+   where
+      expr2dnfClause :: Expression -> DnfClause
+      expr2dnfClause conj = (split (Dnf [] []).exprUni2list) conj
+       where
+         split :: DnfClause -> [Expression] -> DnfClause
+         split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
+         split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
+         split dc              []             = dc
+
