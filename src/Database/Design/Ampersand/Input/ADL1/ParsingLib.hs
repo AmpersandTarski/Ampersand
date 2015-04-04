@@ -69,7 +69,7 @@ check predicate = tokenPrim showTok nextPos matchTok
          matchTok (Tok l _) = predicate l
 
 match :: Lexeme -> AmpParser String
-match lx = check (\lx' -> if lx == lx' then Just (getLexVal lx) else Nothing) <?> show lx
+match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <?> show lx
 
 pSucceed :: a -> AmpParser a
 pSucceed = P.parserReturn
