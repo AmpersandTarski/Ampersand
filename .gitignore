@@ -19,3 +19,5 @@ BuildInfo_Generated.hs
 miscellaneous/AmpersandBackup.jgcscs
 miscellaneous/AmpersandBackup.jgfns
 *.log
+/.hpc
+/hpc
