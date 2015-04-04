@@ -4,9 +4,11 @@ module Database.Design.Ampersand.Input.ADL1.LexerTexts where
 
 import Data.IORef
 import System.IO.Unsafe
+import Data.Maybe (fromMaybe)
 
 data Language = English | Dutch deriving Eq
 
+{-# NOINLINE language #-}
 language :: IORef Language
 language = unsafePerformIO (newIORef English)
 
@@ -18,9 +20,8 @@ select :: IORef Language -> [Arrow Language msg] -> msg
 select languageRef table = 
     let language = unsafePerformIO (readIORef languageRef)
         convert (a :-> b) = (a, b)
-    in case lookup language (map convert table) of
-        Nothing -> error "Texts.select: unknown language"
-        Just msg -> msg
+    in fromMaybe (error "Texts.select: unknown language")
+        (lookup language (map convert table))
 
 warning = select language
     [ English :-> "Warning"

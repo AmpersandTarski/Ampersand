@@ -88,7 +88,7 @@ mainLexer p fn ('{':'+':s) = lexExpl mainLexer (advc 2 p) fn s
 mainLexer p fn ('"':ss) =
     let (s,swidth,rest) = scanString ss
     in if null rest || head rest /= '"'
-                              then lexerError (NonTerminatedChar (Just(s))) (initialPos fn)
+                              then lexerError (NonTerminatedChar (Just s)) (initialPos fn)
                               else returnToken (LexString s) p mainLexer (advc (swidth+2) p) fn (tail rest)
 
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
@@ -210,7 +210,7 @@ lexNest _ _ fn []          = lexerError UnterminatedComment (initialPos fn)
 
 --TODO: Also accept {+ ... +} as delimiters
 lexExpl :: Lexer -> Lexer
-lexExpl cont pos' file inp = lexExpl' "" cont pos' file inp
+lexExpl = lexExpl' ""
  where lexExpl' str _ p fn ('-':'}':s) = returnToken (LexExpl str) p mainLexer (advc 2 p)  fn s
        lexExpl' str c p fn ('{':'-':s) = lexNest (lexExpl' str c) (advc 2 p) fn s
        lexExpl' str c p fn ('-':'-':s) = lexExpl' str c  p fn (dropWhile (/= '\n') s)
@@ -257,7 +257,7 @@ getNumber cs@(c:s)
                      nr = read n
                  in (LexDecimal nr, nr, length n, rs)
         num16   = readNum isHexaDigit  16 LexHex
-        num8    = readNum isOctalDigit 8  LexOctal
+        num8    = readNum isOctDigit 8  LexOctal
         readNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Int, Int, String)
         readNum p base lx
           = let (n, rs) = span p ts
@@ -268,9 +268,6 @@ getNumber cs@(c:s)
 
 isHexaDigit :: Char -> Bool
 isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
-
-isOctalDigit :: Char -> Bool
-isOctalDigit d = d >= '0' && d <= '7'
 
 value :: Char -> Int
 value c | isDigit c = ord c - ord '0'

@@ -1,5 +1,4 @@
-{-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving, Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-
+{-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks) where
 
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseReparse)
@@ -12,14 +11,13 @@ import Debug.Trace
 
 -- Tries to parse a string, and if successful, tests the result with the given function
 testParse :: String -> (P_Context -> Bool) -> Bool
-testParse text check = if success then check ctx else False
+testParse text check = success && check ctx
         where (ctx, success) = parseReparse "QuickChecks.hs" text
 
 -- Tests whether the parsed context is equal to the original one
 prop_pretty :: P_Context -> Bool
 prop_pretty ctx = testParse prettyCtx eq
-        where eq p = if ctx == p then True
-                     else trace("Printed versions are different: " ++ prettyCtx ++ "\n\n---------\n\n" ++ pretty_print p) False
+        where eq p = ctx == p || trace ("Printed versions are different: " ++ prettyCtx ++ "\n\n---------\n\n" ++ pretty_print p) False
               prettyCtx = pretty_print ctx
 
 checkArgs :: Args
@@ -35,11 +33,8 @@ checkArgs = Args
 test :: Testable prop => prop -> IO Bool
 test p = do res <- quickCheckWithResult checkArgs p
             case trace (show res) res of
-                Success _ _ _ -> return True
-                _             -> return False
+                Success {} -> return True
+                _          -> return False
 
---TODO: Add test coverage
 parserQuickChecks :: IO Bool
-parserQuickChecks =
-         do res <- test prop_pretty
-            return res
+parserQuickChecks = test prop_pretty

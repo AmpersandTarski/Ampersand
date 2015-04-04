@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..),
-    get_tok_val, get_lex_val, get_tok_pos, get_tok_val_pos,
+    get_tok_val, getLexVal, getTokenPos, getTokenValPos,
     Pos(..), Line, Column, Filename,
     noPos, initPos, Origin(..), FilePos(..)
 ) where
@@ -23,8 +23,8 @@ noPos = Pos 0 0
 
 type Filename   = String
 
-data Token = Tok { tok_lex :: Lexeme
-                  ,tok_pos :: SourcePos }
+data Token = Tok { tokLex :: Lexeme
+                 , tokPos :: SourcePos }
 
 instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
@@ -50,9 +50,9 @@ instance Show Lexeme where
          LexString   val -> "String "                ++ "\"" ++      val  ++ "\""
          LexExpl     val -> "Explanation "           ++ "{+" ++      val  ++ "+}"
          LexAtom     val -> "Atom "                  ++ "'"  ++      val  ++ "'"
-         LexDecimal   _  -> "Integer "               ++      get_lex_val  x
-         LexOctal     _  -> "Octal "                 ++      get_lex_val  x
-         LexHex       _  -> "Hexadecimal "           ++      get_lex_val  x
+         LexDecimal   _  -> "Integer "               ++      getLexVal  x
+         LexOctal     _  -> "Octal "                 ++      getLexVal  x
+         LexHex       _  -> "Hexadecimal "           ++      getLexVal  x
          LexVarId    val -> "Lower case identifier " ++              val
          LexConId    val -> "Upper case identifier " ++              val
 
@@ -64,10 +64,10 @@ instance Show Lexeme where
 --    uncons (t:ts) = return $ Just (t,ts)
 
 get_tok_val :: Token -> String
-get_tok_val (Tok l _) = get_lex_val l
+get_tok_val (Tok l _) = getLexVal l
 
-get_lex_val :: Lexeme -> String
-get_lex_val l = case l of
+getLexVal :: Lexeme -> String
+getLexVal l = case l of
          LexSymbol   val -> [val]
          LexOperator val -> val
          LexKeyword  val -> val
@@ -86,9 +86,9 @@ toBase b x = conv x ""
              conv n str = conv (n `div` b) (show (n `mod` b) ++ str)
 
 -- Gets the location of the token in the file
-get_tok_pos :: Token -> Origin
-get_tok_pos (Tok t p) = FileLoc(FilePos (sourceName p, p, show t))
+getTokenPos :: Token -> Origin
+getTokenPos (Tok t p) = FileLoc(FilePos (sourceName p, p, show t))
 
 -- Gets the location of the token in the file and it's value
-get_tok_val_pos :: Token -> (String, Origin)
-get_tok_val_pos tok = (show tok, get_tok_pos tok)
+getTokenValPos :: Token -> (String, Origin)
+getTokenValPos tok = (show tok, getTokenPos tok)

@@ -1,5 +1,4 @@
-{-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving, Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-
+{-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse, parseReparse) where
 
 import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..))

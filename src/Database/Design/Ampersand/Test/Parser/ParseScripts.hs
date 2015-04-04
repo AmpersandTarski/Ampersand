@@ -1,5 +1,4 @@
-{-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving, Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-
+{-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Database.Design.Ampersand.Test.Parser.ParseScripts (testScripts, scripts) where
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseFile)
 import System.Directory
@@ -15,14 +14,14 @@ testScripts fs =
        else return False
 
 endswith :: String -> String -> Bool
-endswith a b = (drop (length a - length b) a) == b
+endswith a b = drop (length a - length b) a == b
 
 -- Returns tuple with files and subdirectories inside the given directory
 getDirectory :: FilePath -> IO ([FilePath],[FilePath])
 getDirectory path =
     do contents <- getDirectoryContents path
        let valid = filter (\x-> x /= "." && x /= "..") contents
-       let paths = map ((++) path) valid
+       let paths = map (path ++) valid
        files <- filterM doesFileExist paths
        subdirs <- filterM doesDirectoryExist paths
        return (sort files, sort subdirs)
@@ -30,7 +29,7 @@ getDirectory path =
 getFiles :: String -> FilePath -> IO [FilePath]
 getFiles ext dir =
     do (fs, ds) <- getDirectory (dir++"/")
-       let files = filter (\f->f `endswith` ext) fs
+       let files = filter (`endswith` ext) fs
        foldM recursive files ds
       where recursive rs d =
                 do ms <- getFiles ext d

@@ -34,13 +34,13 @@ identifier = suchThat str2 noKeyword
           str2   = suchThat (listOf1 idChar) (\s -> length s > 1)
 
 -- Genrates a valid ADL upper-case identifier
-upper_id :: Gen String
-upper_id = suchThat identifier startUpper
+upperId :: Gen String
+upperId = suchThat identifier startUpper
     where startUpper = isUpper . head
 
 -- Genrates a valid ADL lower-case identifier
-lower_id :: Gen String
-lower_id = suchThat identifier startLower
+lowerId :: Gen String
+lowerId = suchThat identifier startLower
     where startLower = isLower . head
 
 -- Generates an object
@@ -61,7 +61,7 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
-        P_Obj <$> lower_id  <*> arbitrary <*> term <*> genView <*> ifc <*> args
+        P_Obj <$> lowerId  <*> arbitrary <*> term <*> genView <*> ifc <*> args
               where args = listOf $ listOf1 safeStr1
                     term = Prim <$> genPrim
                     ifc  = if n == 0 then return Nothing
@@ -88,11 +88,11 @@ instance Arbitrary Origin where
 
 instance Arbitrary P_Context where
     arbitrary = PCtx
-       <$> upper_id   -- name
+       <$> upperId   -- name
        <*> listOf arbitrary  -- pos
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
-       <*> listOf upper_id -- themes
+       <*> listOf upperId -- themes
        <*> listOf arbitrary -- patterns
        <*> listOf arbitrary -- processes
        <*> listOf arbitrary -- rules
@@ -129,7 +129,7 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Declaration where
-    arbitrary = P_Sgn <$> lower_id  <*> arbitrary <*> arbitrary <*> safeStr1  <*> safeStr1
+    arbitrary = P_Sgn <$> lowerId  <*> arbitrary <*> arbitrary <*> safeStr1  <*> safeStr1
                       <*> safeStr1  <*> arbitrary <*> genPairs  <*> arbitrary <*> arbitrary
 
 instance Arbitrary a => Arbitrary (Term a) where
@@ -186,7 +186,7 @@ instance Arbitrary TermPrim where
       where maybeConceptOne = oneof [return Nothing, Just <$> genConceptOne]
 
 relationRef :: Gen P_NamedRel
-relationRef = PNamedRel <$> arbitrary <*> lower_id <*> arbitrary
+relationRef = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
 
 instance Arbitrary a => Arbitrary (PairView (Term a)) where
     arbitrary = PairView <$> listOf1 arbitrary
@@ -221,9 +221,9 @@ instance Arbitrary Paire where
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          P_RelPopu <$> lower_id <*> arbitrary <*> genPairs,
-          P_TRelPop <$> lower_id <*> arbitrary <*> arbitrary <*> genPairs,
-          P_CptPopu <$> lower_id <*> arbitrary <*> listOf safeStr
+          P_RelPopu <$> lowerId <*> arbitrary <*> genPairs,
+          P_TRelPop <$> lowerId <*> arbitrary <*> arbitrary <*> genPairs,
+          P_CptPopu <$> lowerId <*> arbitrary <*> listOf safeStr
         ]
 
 instance Arbitrary P_Interface where
@@ -271,14 +271,14 @@ instance Arbitrary PRef2Obj where
         oneof [
             PRef2ConceptDef <$> safeStr,
             PRef2Declaration <$> relationRef,
-            PRef2Rule <$> upper_id,
-            PRef2IdentityDef <$> upper_id,
-            PRef2ViewDef <$> upper_id,
-            PRef2Pattern <$> upper_id,
-            PRef2Interface <$> upper_id,
-            PRef2Context <$> upper_id
+            PRef2Rule <$> upperId,
+            PRef2IdentityDef <$> upperId,
+            PRef2ViewDef <$> upperId,
+            PRef2Pattern <$> upperId,
+            PRef2Interface <$> upperId,
+            PRef2Context <$> upperId
             -- The PRef2Fspc is not used in the parser.
-            -- PRef2Fspc <$> upper_id
+            -- PRef2Fspc <$> upperId
         ]
 
 instance Arbitrary PMeaning where
@@ -288,7 +288,7 @@ instance Arbitrary PMessage where
     arbitrary = PMessage <$> arbitrary
 
 instance Arbitrary P_Concept where
-    arbitrary = PCpt <$> upper_id
+    arbitrary = PCpt <$> upperId
 
 genConceptOne :: Gen P_Concept
 genConceptOne = oneof [arbitrary, return P_Singleton]
@@ -302,7 +302,7 @@ instance Arbitrary P_Gen where
             P_Cy <$> concept <*> listOf1 arbitrary <*> arbitrary,
             PGen <$> concept <*> concept <*> arbitrary
         ]
-        where concept = PCpt <$> upper_id
+        where concept = PCpt <$> upperId
 
 instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]

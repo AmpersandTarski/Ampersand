@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC  -XScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
@@ -6,20 +6,21 @@ module Database.Design.Ampersand.Input.Parsing (
     parseADL, parseADL1pExpr, parseRule, parseCtx, runParser
 ) where
 
+import Control.Applicative
+import Data.List
+import Data.Traversable (sequenceA)
 import Database.Design.Ampersand.ADL1
-import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Input.ADL1.ParsingLib
-import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.Input.ADL1.Lexer
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerToken
-import Database.Design.Ampersand.Input.ADL1.CtxError
-import Data.List
+import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.Input.ADL1.ParsingLib
+import Database.Design.Ampersand.Misc
+import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import System.Directory
 import System.FilePath
-import Data.Traversable (sequenceA)
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 
@@ -37,7 +38,7 @@ parseADLs :: Options -> [FilePath] -> [FilePath] -> IO (Guarded [P_Context])
 parseADLs _    _               []        = return $ Checked []
 parseADLs opts parsedFilePaths filePaths =
  do { let filePathsToParse = nub filePaths \\ parsedFilePaths
-    ; whenCheckedIO (fmap sequenceA $ mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
+    ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
        do { let (ctxts, newFilessToParse) = unzip ctxtNewFilePathss
           ; whenCheckedIO (parseADLs opts (parsedFilePaths ++ filePaths) $ concat newFilessToParse) $ \ctxts' ->
               return $ Checked $ ctxts ++ ctxts'
@@ -53,11 +54,10 @@ parseSingleADL opts filePath =
         Left err -> error $ "ERROR reading file " ++ filePath ++ ":\n" ++ err 
                     -- TODO: would like to return an Errors value here, but this datatype currently only accommodates UUParsing Messages 
         Right fileContents ->
-         do { whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 
+         whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 
                do { filePaths <- mapM normalizePath relativePaths
                   ; return $ Checked (ctxts, filePaths)
                   }
-             }
     }
  where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
 
@@ -76,7 +76,7 @@ parse p ts =
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
         Right a -> Checked a
-    where pos = tok_pos (head ts)
+    where pos = tokPos (head ts)
           fn  = sourceName pos
 
 --TODO: Give the errors in a better way
@@ -103,16 +103,12 @@ parseRule str
    = case  runParser pRule "inside Haskell code" str of
        Checked result -> result
        Errors  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
- 
--- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> Either String (Term TermPrim)
-parseADL1pExpr pexprstr fn = parseExpr pexprstr fn
 
 -- | Parse isolated ADL1 expression strings
-parseExpr :: String            -- ^ The string to be parsed
-          -> String            -- ^ The name of the file (used for error messages)
-          -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result
-parseExpr str fn =
+parseADL1pExpr :: String            -- ^ The string to be parsed
+               -> String            -- ^ The name of the file (used for error messages)
+               -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result
+parseADL1pExpr str fn =
   case runParser pTerm fn str of
       Checked result -> Right result
       Errors  msg    -> Left $ "Parse errors:\n"++show msg

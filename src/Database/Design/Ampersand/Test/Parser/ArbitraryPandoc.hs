@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
 -- provides Arbitrary instance for Pandoc types
--- from https://raw.githubusercontent.com/jgm/pandoc/master/tests/Tests/Arbitrary.hs
-module Database.Design.Ampersand.Test.Parser.ArbitraryPandoc ()
+-- from https://github.com/jgm/pandoc/blob/master/tests/Tests/Arbitrary.hs
+module Tests.Arbitrary ()
 where
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Arbitrary

@@ -64,12 +64,12 @@ check predicate = tokenPrim showTok nextPos matchTok
          -- Next position calculating function
          nextPos :: SourcePos -> Token -> [Token] -> SourcePos
          nextPos pos _ [] = pos
-         nextPos _ _ ((Tok _ pos):_) = pos
+         nextPos _ _ (Tok _ pos:_) = pos
          -- ^ Matching function for the token to parse.
          matchTok (Tok l _) = predicate l
 
 match :: Lexeme -> AmpParser String
-match lx = check (\lx' -> if (lx == lx') then Just (get_lex_val lx) else Nothing) <?> show lx
+match lx = check (\lx' -> if lx == lx' then Just (getLexVal lx) else Nothing) <?> show lx
 
 pSucceed :: a -> AmpParser a
 pSucceed = P.parserReturn

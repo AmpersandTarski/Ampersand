@@ -220,12 +220,10 @@ pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey
                           }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
-                 pCterm  = f <$> pCterm1 `sepBy1` (pOperator "/\\")
-                 pCterm1 = g <$> pConceptRef                        <|>
-                           h <$> pParens pCterm  -- brackets are allowed for educational reasons.
-                 f ccs = concat ccs
-                 g c = [c]
-                 h cs = cs
+                 pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
+                 pCterm1 = single <$> pConceptRef                        <|>
+                           id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
+                 single x = [x]
 
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
@@ -259,11 +257,9 @@ pRuleDef =  rebuild <$> currPos
                  --- PairViewSegmentList  ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
-                 pPairViewSegment = rebuildSrc   <$> posOf (pKey "SRC") <*> pTerm 
-                                <|> rebuildTgt   <$> posOf (pKey "TGT") <*> pTerm
+                 pPairViewSegment = PairViewExp  <$> posOf (pKey "SRC") <*> return Src <*> pTerm 
+                                <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
-                   where rebuildSrc p t = PairViewExp p Src t
-                         rebuildTgt p t = PairViewExp p Tgt t
 
 --- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
 --TODO: Check if we need to support the old syntax and/or the optional '.'
@@ -313,9 +309,9 @@ pFun  = []        <$ pOperator "*"  <|>
         pBrackets pMults
   where --- Mults ::= Mult '-' Mult
         pMults :: AmpParser [Prop]
-        pMults = (++) <$> pMult (Sur,Inj) `opt` []
+        pMults = (++) <$> optList (pMult (Sur,Inj))
                       <*  pDash
-                      <*> pMult (Tot,Uni) `opt` []
+                      <*> optList (pMult (Tot,Uni))
         
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         pMult :: (Prop,Prop) -> AmpParser [Prop]
@@ -332,7 +328,7 @@ pConceptDef       = Cd <$> currPos
                        <*> pConceptName           -- the concept name
                        <*> pIsThere (pKey "BYPLUG")
                        <*> pString                -- the definition text
-                       <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
+                       <*> optList (pKey "TYPE" *> pString)     -- the type of the concept.
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
@@ -470,17 +466,16 @@ pViewDefLegacy = P_Vd <$> currPos
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term SubInterface
 pInterface :: AmpParser P_Interface
-pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
-                     (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
-                     (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
-                                                                    -- either  Prel _ nm
-                                                                    --       or  PNamedRel _ nm sgn
-                     (pArgs   `opt` [])                   <*>
-                     (pRoles  `opt` [])                   <*>
-                     (pColon *> pTerm)                  <*>
+pInterface = lbl <$> currPos                                       <*>
+                     (pKey "INTERFACE" *> pADLid)                  <*>
+                     pMaybe (pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
+                     optList pParams                               <*> -- a list of expressions, which say which relations are editable within this service.
+                     optList pArgs                                 <*> -- either  Prel _ nm or  PNamedRel _ nm sgn
+                     optList pRoles                                <*>
+                     (pColon *> pTerm)                             <*>
                      pSubInterface
-    where lbl :: (String, Origin) -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> (Term TermPrim) -> P_SubInterface -> P_Interface
-          lbl (nm,p) iclass params args roles expr sub
+    where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> P_SubInterface -> P_Interface
+          lbl p nm iclass params args roles expr sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
                      , ifc_Params = params
@@ -499,7 +494,7 @@ pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
           --- Params ::= '(' NamedRel ')'
           pParams = pParens(pNamedRel `sepBy1` pComma)
           --- InterfaceArgs ::= '{' ADLidListList '}'
-          pArgs   = pBraces((many1 pADLid) `sepBy1` pComma)
+          pArgs   = pBraces(many1 pADLid `sepBy1` pComma)
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole `sepBy1` pComma
 
@@ -548,7 +543,7 @@ pPurpose = rebuild <$> currPos
                    <*> pRef2Obj
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
-                   <*> ((pKey "REF" *> pString `sepBy1` pSemi) `opt` [])
+                   <*> optList (pKey "REF" *> pString `sepBy1` pSemi)
                    <*> pExpl
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
@@ -558,7 +553,7 @@ pPurpose = rebuild <$> currPos
                     splitOn [] s = [s]
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
                                      Nothing -> [t]
-                                     Just i  -> [take i t]  ++ splitOn s (drop (i+length s) t)
+                                     Just i  -> take i t : splitOn s (drop (i+length s) t)
        --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' RelSign | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
@@ -768,13 +763,13 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
-                          singl (nm,orig) x  = Patm orig nm x
+                          singl (nm,orig) = Patm orig nm
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Sign?
 pNamedRel :: AmpParser P_NamedRel
 pNamedRel = pnamedrel  <$> valPosOf pVarid <*> pMaybe pSign
-                    where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
+                    where pnamedrel (nm, orig) = PNamedRel orig nm
 
 --- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser P_Sign
@@ -807,7 +802,7 @@ pLabelProps       = Lbl <$> pADLid
                         <*> currPos
                         <*> (pArgs `opt` [])
                         <*  posOf pColon
-                    where pArgs = pBraces $ (many1 pADLid) `sepBy1` pComma
+                    where pArgs = pBraces (many1 pADLid `sepBy1` pComma)
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
@@ -832,9 +827,6 @@ pContent      = try (pBrackets (pRecord `sepBy` pComma))   <|>
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser String
 pADLid            = pVarid <|> pConid <|> pString
-
-pADLid_val_pos :: AmpParser (String, Origin)
-pADLid_val_pos    = valPosOf pVarid <|> valPosOf pConid <|> valPosOf pString
 
 pMaybe :: AmpParser a -> AmpParser (Maybe a)
 pMaybe p = Just <$> p <|> pSucceed Nothing

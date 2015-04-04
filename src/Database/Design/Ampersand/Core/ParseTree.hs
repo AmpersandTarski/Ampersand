@@ -121,10 +121,10 @@ data P_Pattern
    = P_Pat { pt_nm :: String            -- ^ Name of this pattern
            , pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           , pt_rls :: [(P_Rule TermPrim)]         -- ^ The user defined rules in this pattern
+           , pt_rls :: [P_Rule TermPrim]-- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
+           , pt_RRuls :: [RoleRule]     -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
@@ -232,29 +232,29 @@ instance Traversable Term where
  traverse f' x
   = case x of
     Prim a -> Prim <$> f' a
-    PEqu o a b -> PEqu o <$> (f a) <*> (f b)
-    PImp o a b -> PImp o <$> (f a) <*> (f b)
-    PIsc o a b -> PIsc o <$> (f a) <*> (f b)
-    PUni o a b -> PUni o <$> (f a) <*> (f b)
-    PDif o a b -> PDif o <$> (f a) <*> (f b)
-    PLrs o a b -> PLrs o <$> (f a) <*> (f b)
-    PRrs o a b -> PRrs o <$> (f a) <*> (f b)
-    PDia o a b -> PDia o <$> (f a) <*> (f b)
-    PCps o a b -> PCps o <$> (f a) <*> (f b)
-    PRad o a b -> PRad o <$> (f a) <*> (f b)
-    PPrd o a b -> PPrd o <$> (f a) <*> (f b)
-    PKl0 o a   -> PKl0 o <$> (f a)
-    PKl1 o a   -> PKl1 o <$> (f a)
-    PFlp o a   -> PFlp o <$> (f a)
-    PCpl o a   -> PCpl o <$> (f a)
-    PBrk o a   -> PBrk o <$> (f a)
+    PEqu o a b -> PEqu o <$> f a <*> f b
+    PImp o a b -> PImp o <$> f a <*> f b
+    PIsc o a b -> PIsc o <$> f a <*> f b
+    PUni o a b -> PUni o <$> f a <*> f b
+    PDif o a b -> PDif o <$> f a <*> f b
+    PLrs o a b -> PLrs o <$> f a <*> f b
+    PRrs o a b -> PRrs o <$> f a <*> f b
+    PDia o a b -> PDia o <$> f a <*> f b
+    PCps o a b -> PCps o <$> f a <*> f b
+    PRad o a b -> PRad o <$> f a <*> f b
+    PPrd o a b -> PPrd o <$> f a <*> f b
+    PKl0 o a   -> PKl0 o <$> f a
+    PKl1 o a   -> PKl1 o <$> f a
+    PFlp o a   -> PFlp o <$> f a
+    PCpl o a   -> PCpl o <$> f a
+    PBrk o a   -> PBrk o <$> f a
   where f = traverse f'
 
 instance Functor P_SubIfc where fmap = fmapDefault
 instance Foldable P_SubIfc where foldMap = foldMapDefault
 instance Traversable P_SubIfc where
   traverse _ (P_InterfaceRef a b) = pure (P_InterfaceRef a b)
-  traverse f (P_Box o c lst) = P_Box o c <$> (traverse (traverse f) lst)
+  traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
  origin = si_ori
@@ -363,7 +363,7 @@ instance Foldable PairView where foldMap = foldMapDefault
 
 data P_Rule a  =
    P_Ru { rr_nm ::   String            -- ^ Name of this rule
-        , rr_exp ::  (Term a)   -- ^ The rule expression
+        , rr_exp ::  Term a            -- ^ The rule expression
         , rr_fps ::  Origin            -- ^ Position in the Ampersand file
         , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
         , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
