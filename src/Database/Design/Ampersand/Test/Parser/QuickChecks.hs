@@ -3,7 +3,7 @@ module Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks) whe
 
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseReparse)
 import Database.Design.Ampersand.Test.Parser.ArbitraryTree()
-import Database.Design.Ampersand.ADL1.PrettyPrinters(pretty_print)
+import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import Database.Design.Ampersand.Core.ParseTree (P_Context)
 
 import Test.QuickCheck(Args(..), quickCheckWithResult, Testable, Result(..))
@@ -17,8 +17,8 @@ testParse text check = success && check ctx
 -- Tests whether the parsed context is equal to the original one
 prop_pretty :: P_Context -> Bool
 prop_pretty ctx = testParse prettyCtx eq
-        where eq p = ctx == p || trace ("Printed versions are different: " ++ prettyCtx ++ "\n\n---------\n\n" ++ pretty_print p) False
-              prettyCtx = pretty_print ctx
+        where eq p = ctx == p || trace ("Printed versions are different: " ++ prettyCtx ++ "\n\n---------\n\n" ++ prettyPrint p) False
+              prettyCtx = prettyPrint ctx
 
 checkArgs :: Args
 checkArgs = Args

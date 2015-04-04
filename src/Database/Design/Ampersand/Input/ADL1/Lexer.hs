@@ -43,7 +43,7 @@ operators :: [String]
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
-symbols :: [Char]
+symbols :: String -- [Char]
 symbols = "()[],{}<>"
 
 lexer :: [Options] -> Filename -> String -> Either LexerError ([Token], [LexerWarning])

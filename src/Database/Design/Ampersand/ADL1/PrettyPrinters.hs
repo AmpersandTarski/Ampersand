@@ -9,8 +9,8 @@ import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 
-pretty_print :: Pretty a => a -> String
-pretty_print x = displayS (renderPretty rfrac col_width doc) ""
+prettyPrint :: Pretty a => a -> String
+prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
         where col_width = 120
               rfrac = 0.4
               doc = pretty x
@@ -53,12 +53,12 @@ quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
               escape x = replace x (intersperse ' ' x)
 
 isId :: String -> Bool
-isId a = length a > 0 && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywords
+isId a = not (null a) && all isIdChar a && isFirstIdChar(head a) && a `notElem` keywords
        where isFirstIdChar x = elem x $ "_"++['a'..'z']++['A'..'Z']
              isIdChar x = isFirstIdChar x || elem x ['0'..'9']
 
 isUpperId :: String -> Bool
-isUpperId xs = isId xs && (head xs) `elem` ['A'..'Z']
+isUpperId xs = isId xs && head xs `elem` ['A'..'Z']
 
 maybeQuote :: String -> Doc
 maybeQuote a = if isId a then text a else quote a
@@ -88,7 +88,7 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 --TODO: This replace shouldn't be necessary, I don't know why quotes are getting into the Prel
 -- Example to test: AmpersandData\FormalAmpersand\AST.adl
 takeQuote :: String -> String
-takeQuote str = replace "\"" "" str
+takeQuote = replace "\"" ""
 
 labelArgs :: [[String]] -> Doc
 labelArgs args = if null args || all null args
@@ -200,7 +200,7 @@ instance Pretty TermPrim where
         Patm _ str (Just concept) -> singleQuote str <> text "[" <> pretty concept <> text "]"
         Patm _ str Nothing -> singleQuote str
         PVee _ -> text "V"
-        Pfull _ s1 s2 -> text "V" <~> (P_Sign s1 s2)
+        Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
         PNamedR rel -> pretty rel
       where singleQuote = squotes . text
 

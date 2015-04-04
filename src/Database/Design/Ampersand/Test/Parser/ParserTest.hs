@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse, parseReparse) where
 
 import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..))
-import Database.Design.Ampersand.ADL1.PrettyPrinters(pretty_print)
+import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.Input.Parsing
@@ -31,5 +31,5 @@ parseReparse file txt = if isParsed then
                             else trace ("Error pretty printing parse tree:\n" ++ show parsed) (parsed, False) 
                         else (parsed,isParsed)
                   where (parsed,isParsed) = run file txt
-                        (reparsed,isReparsed) = run (file ++ "**pretty") $ pretty_print parsed
+                        (reparsed,isReparsed) = run (file ++ "**pretty") $ prettyPrint parsed
                         run nm text = unguard nm text $ runParser pContext nm text

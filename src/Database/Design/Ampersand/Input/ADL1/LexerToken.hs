@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..),
-    get_tok_val, getLexVal, getTokenPos, getTokenValPos,
+    getTokenVal, getLexVal, getTokenPos, getTokenValPos,
     Pos(..), Line, Column, Filename,
     noPos, initPos, Origin(..), FilePos(..)
 ) where
@@ -63,8 +63,8 @@ instance Show Lexeme where
 --    uncons []     = return $ Nothing
 --    uncons (t:ts) = return $ Just (t,ts)
 
-get_tok_val :: Token -> String
-get_tok_val (Tok l _) = getLexVal l
+getTokenVal :: Token -> String
+getTokenVal (Tok l _) = getLexVal l
 
 getLexVal :: Lexeme -> String
 getLexVal l = case l of

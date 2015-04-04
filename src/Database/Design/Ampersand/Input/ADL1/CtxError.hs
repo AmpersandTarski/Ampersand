@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr
@@ -72,9 +72,9 @@ instance GetOneGuarded (SubInterface) where
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
-  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++(showFullOrig$origin l) | l<-lst]]
+  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++showFullOrig (origin l) | l<-lst]]
 
-cannotDisambRel :: (ShowADL a2, Association a2) => (TermPrim) -> [a2] -> Guarded a
+cannotDisambRel :: (ShowADL a2, Association a2) => TermPrim -> [a2] -> Guarded a
 cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
 cannotDisambRel o@(PNamedR(PNamedRel _ _ Nothing)) lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
 cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature.\n  You may have intended one of these:"++concat ["\n  "++showADL l|l<-lst]]
@@ -215,7 +215,7 @@ writeBind e
 data Guarded a = Errors [CtxError] | Checked a deriving Show
 
 instance Functor Guarded where
- fmap _ (Errors a) = (Errors a)
+ fmap _ (Errors a)  = Errors a
  fmap f (Checked a) = Checked (f a)
 
 instance Applicative Guarded where
@@ -231,14 +231,10 @@ instance Applicative Guarded where
 -- Shorthand for working with Guarded in IO
 whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
 whenCheckedIO ioGA fIOGB =
- do { gA <- ioGA 
-    ; case gA of
-         Errors errs -> return $ Errors errs
-         Checked a   ->
-          do { gB <- fIOGB a
-             ; return gB
-             }
-    }
+   do gA <- ioGA 
+      case gA of
+         Errors err -> return (Errors err)
+         Checked a  -> fIOGB a
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
