@@ -13,10 +13,11 @@ module Database.Design.Ampersand.Input.ADL1.LexerMessage
     , LexerWarningInfo(..)
     , keepOneTabWarning
     , isLooksLikeFloatWarningInfo
+    , showLexerErrorInfo
+    , showLexerWarningInfo
     ) where
 
 import Text.ParserCombinators.Parsec.Pos
-import Data.List (partition)
 import qualified Database.Design.Ampersand.Input.ADL1.LexerTexts as Texts
 
 --TODO: Delete the code commented out
