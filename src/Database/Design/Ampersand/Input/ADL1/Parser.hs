@@ -730,7 +730,7 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
                           singl (nm,orig) x  = Patm orig nm x
 
 pNamedRel :: AmpParser P_NamedRel
-pNamedRel = pnamedrel  <$> pVarid_val_pos <*> pMaybe pSign
+pNamedRel = pnamedrel  <$> (pVarid_val_pos <|> pString_val_pos) <*> pMaybe pSign
             where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
 
 pSign :: AmpParser P_Sign

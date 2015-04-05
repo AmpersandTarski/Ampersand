@@ -16,6 +16,7 @@ import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Core.ToMeta
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
@@ -31,7 +32,7 @@ data MetaType = Generics | AST deriving (Show)
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
-  = ("MetaPopulationFile"++show mType, content popKind mType fSpec)
+  = ("MetaPopulationFile"++show mType++".pop", content popKind mType fSpec)
     where popKind = case mType of
                       Generics -> generics fSpec
                       AST      -> metaPops fSpec 
@@ -53,7 +54,7 @@ content popKind mType fSpec = unlines
     , "-}"
     , ""
     , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ (concat.intersperse  []) (map (lines.showADL) (popKind fSpec))
+    ++ (concat.intersperse  []) (map (lines . showADL' (getOpts fSpec)) (popKind fSpec))
     ++
     [ ""
     , "ENDCONTEXT"
@@ -454,11 +455,12 @@ data Pop = Pop { popName ::String
                }
          | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
                    }
-instance ShowADL Pop where
- showADL pop =
-  case pop of
-      Pop{} -> "POPULATION "++ popName pop++
-                  " ["++popSource pop++" * "++popTarget pop++"] CONTAINS"
+showADL' :: Options -> Pop -> String
+showADL' opts pop = 
+     case pop of
+      Pop{} -> "POPULATION "++ (toVarid . string2Meta opts . popName $ pop)++
+                  " ["++(toConid  . string2Meta opts . popSource $ pop)++"*"++
+                        (toConid  . string2Meta opts . popTarget $ pop)++"] CONTAINS"
               ++
               if null (popPairs pop)
               then "[]"
@@ -468,7 +470,16 @@ instance ShowADL Pop where
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
           prepend str = "-- " ++ str
-
+          toConid str 
+            |isConID str = str
+            |otherwise   = show str
+          toVarid str
+            |isVarID str = str
+            |otherwise   = show str
+          isConID (c:_) = and [isAlpha c, isUpper c]
+          isConID [] = fatal 478 "empty name!"
+          isVarID (c:_) = and [isAlpha c, isLower c]   
+          isVarID [] = fatal 478 "empty name!"
 class Unique a => AdlId a where
  uri :: a -> String
  uri = camelCase . uniqueShow True

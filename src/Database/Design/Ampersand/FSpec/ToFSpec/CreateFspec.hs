@@ -8,6 +8,7 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -16,6 +17,7 @@ import System.FilePath
 import Data.Traversable (sequenceA)
 import Control.Applicative
 import Database.Design.Ampersand.Core.ToMeta
+import Control.Monad
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "CreateFspec"
@@ -27,27 +29,45 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let userFspec = pCtx2Fspec userP_Ctx
-     case whatToCreateExtra of
+     let 
+     genFiles userP_Ctx >> genTables userP_Ctx
+   where
+    genFiles :: Guarded P_Context -> IO(Guarded ())
+    genFiles uCtx 
+      = case pCtx2Fspec uCtx of
+          Errors es -> return(Errors es)
+          Checked uFspec
+            ->   when (genASTFile opts) (doGenMetaFile AST uFspec)
+              >> when (genGenericsFile opts) (doGenMetaFile Generics uFspec)
+              >> return (Checked ())
+     
+       
+    genTables :: Guarded P_Context -> IO(Guarded FSpec)
+    genTables uCtx= case whatTablesToCreateExtra of
        Nothing 
-         -> return userFspec --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
+--         -> return (pCtx2Fspec uCtx) --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
+         -> do rapP_Ctx <- getFormalFile AST
+               let rapP_CtxMeta = unguard $ pure . (toMeta (opts {metaTablesHaveUnderscore=True})) <$> rapP_Ctx
+               return (pCtx2Fspec rapP_CtxMeta) 
        Just mType
          -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the 
-               let rapCtxMeta = unguard $ pure . (toMeta opts) <$> rapP_Ctx
-                   metaPop = unguard $ pure . (toMeta opts) <$> (unguard $ grind mType <$> userFspec)
+               let rapP_CtxMeta = unguard $ pure . (toMeta opts) <$> rapP_Ctx
+                   metaPop = unguard ( pure . toMeta opts <$> (unguard ( grind mType <$> pCtx2Fspec uCtx)))
                let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
                                      -- P_Context, that contains all 'things' specified in the user's file 
                                      -- as populations in RAP. These populations are the only contents of 
                                      -- the returned P_Context. 
-                     (merge.sequenceA) [ metaPop, rapCtxMeta, userP_Ctx]
+                     (merge.sequenceA) [ --metaPop, 
+                                         rapP_CtxMeta, uCtx]
                return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
-     where
+     
+       
     
-    whatToCreateExtra :: Maybe MetaType
-    whatToCreateExtra 
-       | genASTTables opts     || genASTFile opts      = Just AST
-       | genGenericTables opts || genGenericsFile opts = Just Generics
-       | otherwise = Nothing
+    whatTablesToCreateExtra :: Maybe MetaType
+    whatTablesToCreateExtra 
+       | genASTTables opts     = Just AST
+       | genGenericTables opts = Just Generics
+       | otherwise             = Nothing
     getFormalFile :: MetaType -> IO(Guarded P_Context)
     getFormalFile mType
      = do let file = ampersandDataDir opts 
@@ -93,5 +113,12 @@ getPopulationsFrom opts filePath =
                 pure . initialPops . makeFSpec opts
                  <$> pCtx2aCtx opts pCtx
 
-
+doGenMetaFile :: MetaType -> FSpec -> IO()
+doGenMetaFile mType fSpec =
+ do { verboseLn (getOpts fSpec) $ "Generating "++show mType++" meta file for "++name fSpec
+    ; writeFile outputFile contents
+    ; verboseLn (getOpts fSpec) $ show mType++" written into " ++ outputFile ++ "."
+    }
+ where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
+       (fpath,contents) = makeMetaPopulationFile mType fSpec
  

@@ -59,6 +59,7 @@ import Data.List (intercalate,nub,delete)
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
+import Data.Char
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -262,7 +263,11 @@ aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
 data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord)
 
 instance Named Declaration where
-  name d@Sgn{}   = decnm d
+  name d@Sgn{}   = case decnm d of
+                     []  -> fatal 266 "Declaration with an empty name!"
+                     c:cs -> if and [isAlpha c, isLower c]
+                            then c:cs
+                            else show (c:cs)
   name Isn{}     = "I"
   name Vs{}      = "V"
 instance Association Declaration where
@@ -694,7 +699,11 @@ instance Hashable A_Concept where
                         ONE            -> (1::Int)
                       ) 
 instance Named A_Concept where
-  name PlainConcept{cptnm = nm} = nm
+  name PlainConcept{cptnm = nm} = case nm of
+                                   []    -> fatal 703 "Concept with an empty name!"
+                                   (c:_) -> if and [isAlpha c, isUpper c]
+                                            then nm
+                                            else show nm
   name ONE = "ONE"
 
 instance Show A_Concept where

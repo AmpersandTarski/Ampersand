@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Core.ToMeta 
-  (toMeta)
+  (toMeta, string2Meta)
 where
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.ParseTree
@@ -8,13 +8,15 @@ import Database.Design.Ampersand.Core.ParseTree
 -- | When dealing with meta-stuff for Ampersand, (Like makeGenerics, makeRAP), 
 --   the names of Concepts should be different than 'normal', user-defined Concepts. 
 --   This function modifies everything in the context to reflect that.  
-toMeta :: Options -> (P_Context -> P_Context)
-toMeta opts ctx = if metaTablesHaveUnderscore opts
-                  then makeMeta f ctx
-                  else ctx
-   where 
-      f :: String -> String
-      f str = "__"++str++"__"
+toMeta :: MakeMeta a => Options -> (a -> a)
+toMeta opts = 
+  if metaTablesHaveUnderscore opts then makeMeta (string2Meta opts) else id
+
+string2Meta :: Options -> String -> String
+string2Meta opts str 
+              = if metaTablesHaveUnderscore opts 
+                then "__"++str++"__"
+                else str
 
 class MakeMeta a where
   makeMeta :: (String -> String) -> a -> a
@@ -139,7 +141,6 @@ instance MakeMeta P_IdentSegment where
    = P_IdentExp
           { ks_obj = makeMeta f (ks_obj sgmt)
           }
-
 instance MakeMeta a => MakeMeta (P_ViewD a) where
   makeMeta f vd
    = P_Vd { vd_pos = makeMeta f (vd_pos vd) 
@@ -238,7 +239,7 @@ instance MakeMeta Meta where
           }
 instance MakeMeta a => MakeMeta (P_ObjDef a) where
   makeMeta f obj
-   = P_Obj { obj_nm   =            (obj_nm obj)
+   = P_Obj { obj_nm   =          f (obj_nm obj)
            , obj_pos  = makeMeta f (obj_pos obj)
            , obj_ctx  = makeMeta f (obj_ctx obj)
            , obj_mView =           (obj_mView obj)

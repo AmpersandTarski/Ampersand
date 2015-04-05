@@ -388,7 +388,7 @@ chpNatLangReqs lev fSpec =
   mkSentence isDev decl srcAtom tgtAtom
    = case decl of
        Sgn{} | null (prL++prM++prR)
-                  -> [str' (upCap srcAtom), Space] ++ devShow (source decl) ++ [Str "corresponds",Space,Str "to",Space,str' tgtAtom, Space] ++ devShow (target decl) ++[Str "in",Space,Str "relation",Space,str' (decnm decl),Str "."]
+                  -> [str' (upCap srcAtom), Space] ++ devShow (source decl) ++ [Str "corresponds",Space,Str "to",Space,str' tgtAtom, Space] ++ devShow (target decl) ++[Str "in",Space,Str "relation",Space,str' (name decl),Str "."]
              | otherwise
                   -> leftHalf prL ++ rightHalf
                     where prL = decprL decl
