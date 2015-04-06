@@ -358,7 +358,7 @@ pIndex  = P_Id <$> currPos
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
           pIndAtt  = attL <$> try pLabelProps <*> pTerm <|>
-                     att <$> try pTerm
+                     P_Obj <$> return "" <*> return (Origin "pIndAtt CC664") <*> try pTerm <*> return Nothing <*> return Nothing <*> return []
               where attL (Lbl nm p strs) attexpr =
                        P_Obj { obj_nm   = nm
                              , obj_pos  = p
@@ -367,14 +367,6 @@ pIndex  = P_Id <$> currPos
                              , obj_msub = Nothing
                              , obj_strs = strs
                              }
-                    att attexpr =
-                        P_Obj { obj_nm   = ""
-                              , obj_pos  = Origin "pIndAtt CC664"
-                              , obj_ctx  = attexpr
-                              , obj_mView = Nothing
-                              , obj_msub = Nothing
-                              , obj_strs = []
-                              }
 
 -- | A view definition looks like:
 --      VIEW onSSN: Person("social security number":ssn)
@@ -710,12 +702,10 @@ pTrm2   = pTrm3 <??> (f <$> posOf pDash <*> pTrm3)
 -- The left factored version of right- and left residuals:
 --- Trm3 ::= Trm4 ('/' Trm4 | '\' Trm4 | '<>' Trm4)?
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (fLrs <$> currPos <* pOperator "/"  <*> pTrm4 <|>
-                      fRrs <$> currPos <* pOperator "\\" <*> pTrm4 <|>
-                      fDia <$> currPos <* pOperator "<>" <*> pTrm4 )
-          where fLrs orig rExp lExp = PLrs orig lExp rExp
-                fRrs orig rExp lExp = PRrs orig lExp rExp
-                fDia orig rExp lExp = PDia orig lExp rExp
+pTrm3  =  pTrm4 <??> (f <$> currPos
+                        <*> (PLrs <$ pOperator "/"  <|> PRrs <$ pOperator "\\" <|> PDia <$ pOperator "<>")
+                        <*> pTrm4)
+          where f orig constr right left = constr orig left right
 
 {- by the way, a slightly different way of getting exactly the same result is:
 pTrm3 :: AmpParser (Term TermPrim)
