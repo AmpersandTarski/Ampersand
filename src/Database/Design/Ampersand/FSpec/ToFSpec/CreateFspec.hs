@@ -45,23 +45,24 @@ createFSpec opts =
     genTables :: Guarded P_Context -> IO(Guarded FSpec)
     genTables uCtx= case whatTablesToCreateExtra of
        Nothing 
---         -> return (pCtx2Fspec uCtx) --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
-         -> do rapP_Ctx <- getFormalFile AST
-               let rapP_CtxMeta = unguard $ pure . (toMeta (opts {metaTablesHaveUnderscore=True})) <$> rapP_Ctx
-               return (pCtx2Fspec rapP_CtxMeta) 
+         -> return ((pCtx2Fspec . f) (toMeta opts <$> uCtx)) --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
+--         -> do rapP_Ctx <- getFormalFile AST
+--               let rapP_CtxMeta = unguard $ pure . (toMeta (opts {metaTablesHaveUnderscore=True})) <$> rapP_Ctx
+--               return (pCtx2Fspec rapP_CtxMeta) 
        Just mType
          -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the 
-               let rapP_CtxMeta = unguard $ pure . (toMeta opts) <$> rapP_Ctx
-                   metaPop = unguard ( pure . toMeta opts <$> (unguard ( grind mType <$> pCtx2Fspec uCtx)))
-               let populatedRapCtx = --the P_Context of the user is transformed with the meatgrinder to a
-                                     -- P_Context, that contains all 'things' specified in the user's file 
-                                     -- as populations in RAP. These populations are the only contents of 
-                                     -- the returned P_Context. 
-                     (merge.sequenceA) [ --metaPop, 
-                                         rapP_CtxMeta, uCtx]
-               return $ pCtx2Fspec populatedRapCtx -- the RAP specification that is populated with the user's 'things' is returned.
+               let populationPctx       = unguard ( grind mType <$> pCtx2Fspec uCtx)
+                   populatedRapPctx     = (merge.sequenceA) [rapP_Ctx,populationPctx]
+                   metaPopulatedRapPctx = toMeta opts <$> 
+                                            populatedRapPctx
+                   allCombinedPctx      = (merge.sequenceA) [uCtx,f metaPopulatedRapPctx]
+               return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
      
-       
+      where
+          f x = trace (sf x) x
+          sf gCtx = case gCtx of 
+                     Errors errs -> "There are "++(show . length) errs++" errors!"
+                     Checked pCtx -> show pCtx
     
     whatTablesToCreateExtra :: Maybe MetaType
     whatTablesToCreateExtra 
