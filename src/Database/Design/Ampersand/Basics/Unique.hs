@@ -22,8 +22,8 @@ class (Typeable e, Eq e) => Unique e where
                      , theShow  = showUnique
                      }
   -- | representation of a Unique thing into a string.  
-  uniqueShow :: Bool ->  -- ^ Should the type show too? 
-              e    ->  -- ^ the thing to show
+  uniqueShow :: Bool ->  -- Should the type show too? 
+              e    ->    -- The thing to show
               String
   uniqueShow includeType x = typePrefix ++ (showUnique . theThing . self) x
     where
