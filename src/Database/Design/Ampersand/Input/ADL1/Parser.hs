@@ -468,7 +468,7 @@ pViewDefLegacy  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConcep
 
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
-                     (pMaybe $ pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
+                     (pMaybe $ pKey "CLASS" *> (pConid <|> (show <$> pString))) <*> -- the class is an upper-case identifier or a quoted string
                      (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                     -- either  Prel _ nm
                                                                     --       or  PNamedRel _ nm sgn
@@ -730,8 +730,9 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
                           singl (nm,orig) x  = Patm orig nm x
 
 pNamedRel :: AmpParser P_NamedRel
-pNamedRel = pnamedrel  <$> (pVarid_val_pos <|> pString_val_pos) <*> pMaybe pSign
-            where pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
+pNamedRel = pnamedrel  <$> (pVarid_val_pos <|> mustQuote <$> pString_val_pos) <*> pMaybe pSign
+            where mustQuote (nm, orig) = (show nm, orig)
+                  pnamedrel (nm,orig) mSgn = PNamedRel orig nm mSgn
 
 pSign :: AmpParser P_Sign
 pSign = mkSign <$ pSpec '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptOneRef) <* pSpec ']'
@@ -741,7 +742,7 @@ pSign = mkSign <$ pSpec '[' <*> pConceptOneRef <*> pMaybe (pKey "*" *> pConceptO
                         Nothing  -> P_Sign src src
 
 pConceptName ::   AmpParser String
-pConceptName    = pConid <|> pString
+pConceptName    = pConid <|> (show <$> pString)
 
 pConceptRef ::    AmpParser P_Concept
 pConceptRef     = PCpt <$> pConceptName
@@ -750,16 +751,20 @@ pConceptOneRef :: AmpParser P_Concept
 pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 
 pConceptRefPos :: AmpParser (P_Concept, Origin)
-pConceptRefPos     = conid <$> pConid_val_pos   <|>   conid <$> pString_val_pos
-                     where conid :: (String, Origin) ->  (P_Concept, Origin)
-                           conid (c,orig) = (PCpt c, orig)
+pConceptRefPos     = conid False <$> pConid_val_pos   <|>   conid True <$> pString_val_pos
+                     where conid :: Bool -> (String, Origin) ->  (P_Concept, Origin)
+                           conid mustQuote (c,orig) = (PCpt (if mustQuote then show c
+                                                             else c )
+                                                      , orig)
 
 pConceptOneRefPos :: AmpParser (P_Concept, Origin)
-pConceptOneRefPos  = singl <$> pKey_pos "ONE"   <|>   conid <$> pConid_val_pos   <|>   conid <$> pString_val_pos
+pConceptOneRefPos  = singl <$> pKey_pos "ONE"   <|>   conid False <$> pConid_val_pos   <|>   conid True <$> pString_val_pos
                      where singl :: Origin ->  (P_Concept, Origin)
                            singl orig     = (P_Singleton, orig)
-                           conid :: (String, Origin) ->  (P_Concept, Origin)
-                           conid (c,orig) = (PCpt c, orig)
+                           conid :: Bool -> (String, Origin) ->  (P_Concept, Origin)
+                           conid mustQuote (c,orig) = (PCpt (if mustQuote then show c
+                                                             else c )
+                                                      , orig)
 
 --  (SJ) Why does a label have (optional) strings?
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
@@ -785,11 +790,12 @@ pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
     pRecordObs = mkPair<$ pSpec '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete
 
 pADLid :: AmpParser String
-pADLid            = pVarid <|> pConid <|> pString
+pADLid            = pVarid <|> pConid <|> (show <$> pString)
 
 pADLid_val_pos :: AmpParser (String, Origin)
-pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
-
+pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> (mustQuote <$> pString_val_pos)
+          where mustQuote (nm, org) = (show nm, org) 
+          
 pMaybe :: IsParser p s => p a -> p (Maybe a)
 pMaybe p = Just <$> p <|> pSucceed Nothing
 
