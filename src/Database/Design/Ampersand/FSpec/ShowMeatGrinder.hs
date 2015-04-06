@@ -16,7 +16,6 @@ import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Core.ToMeta
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
@@ -54,7 +53,7 @@ content popKind mType fSpec = unlines
     , "-}"
     , ""
     , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ (concat.intersperse  []) (map (lines . showADL' (getOpts fSpec)) (popKind fSpec))
+    ++ (concat.intersperse  []) (map (lines . showADL ) (popKind fSpec))
     ++
     [ ""
     , "ENDCONTEXT"

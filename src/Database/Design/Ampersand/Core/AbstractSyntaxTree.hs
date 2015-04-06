@@ -262,10 +262,7 @@ aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
 data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord)
 
 instance Named Declaration where
-  name d@Sgn{}   = case decnm d of
-                     []  -> fatal 266 "Declaration with an empty name!"
-                     c:cs -> if and [isAlpha c, isLower c]
-                            then c:cs
+  name d@Sgn{}   = decnm d
   name Isn{}     = "I"
   name Vs{}      = "V"
 instance Association Declaration where

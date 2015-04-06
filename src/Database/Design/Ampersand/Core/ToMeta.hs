@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Core.ToMeta 
-  (toMeta, string2Meta)
+  (toMeta)
 where
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.ParseTree
@@ -15,8 +15,13 @@ toMeta opts =
 string2Meta :: Options -> String -> String
 string2Meta opts str 
               = if metaTablesHaveUnderscore opts 
-                then "__"++str++"__"
+                then show ("__"++unquoted++"__")
                 else str
+  where
+    unquoted
+     | length str < 2 = str
+     | head str == '"' && last str == '"' = reverse . tail . reverse . tail $ str
+     | otherwise = str 
 
 class MakeMeta a where
   makeMeta :: (String -> String) -> a -> a
