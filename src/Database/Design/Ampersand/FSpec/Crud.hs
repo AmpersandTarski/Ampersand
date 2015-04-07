@@ -14,11 +14,12 @@ fatal = fatalMsg "Crud"
 
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
+-- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 
+--      (see notes/todo's here and in ampersand-models/Tests/NoSentinel/Crud.adl)
 
 data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])] -- crud concept together with its target concept in the surjective/total transitive closure of declarations 
                          , crudObjsPerInterface :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
                          , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
-                         -- TODO: name (crudPerInterface,crudPerConcept?) (also in code below)
                          -- TODO: think about representation of these matrices
                          } deriving Show
 
