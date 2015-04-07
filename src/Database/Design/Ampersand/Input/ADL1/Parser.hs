@@ -261,32 +261,38 @@ pRuleDef =  rebuild <$> currPos
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
---- RelationDef ::= (Varid '::' ConceptRef Fun ConceptRef | 'RELATION' Varid Sign) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
---TODO: Check if we need to support the old syntax and/or the optional '.'
+--- RelationDef ::= (RelationNew | RelationOld) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
 pRelationDef :: AmpParser P_Declaration
-pRelationDef = do pos <- currPos
-                  (nm,sgn,fun) <- newRelDef <|> oldRelDef
-                  bp1 <- pIsThere (pKey "BYPLUG")
-                  prop <- optList pProps
-                  bp2 <- pIsThere (pKey "BYPLUG")
-                  pragma <- optList (pKey "PRAGMA" *> many1 pString)
-                  meanings <- many pMeaning
-                  content <- optList (pOperator "=" *> pContent)
-                  _ <- optList (pOperator ".")
-                  let (pr0:pr1:pr2:_) = pragma ++ ["","",""]
-                  let byplug = bp1 || bp2
-                  let props = prop ++ fun
-                  return $ P_Sgn nm sgn props pr0 pr1 pr2 meanings content pos byplug
-            where newRelDef = do _   <- pKey "RELATION"
-                                 nm  <- pVarid
-                                 sgn <- pSign
-                                 return (nm,sgn,[])
-                  oldRelDef = do nm  <- pVarid
-                                 _   <- pOperator "::"
-                                 src <- pConceptRef
-                                 fun <- pFun
-                                 tgt <- pConceptRef
-                                 return (nm,P_Sign src tgt,fun)
+pRelationDef = reorder <$> currPos
+                       <*> (pRelationNew <|> pRelationOld)
+                       <*> pIsThere (pKey "BYPLUG")
+                       <*> optList pProps
+                       <*> pIsThere (pKey "BYPLUG")
+                       <*> optList (pKey "PRAGMA" *> many1 pString)
+                       <*> many pMeaning
+                       <*> optList (pOperator "=" *> pContent)
+                       <* optList (pOperator ".")
+            where reorder pos (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
+                    let (prL:prM:prR:_) = pragma ++ ["","",""]
+                        plug = bp1 || bp2
+                        props = prop ++ fun
+                    in P_Sgn nm sign props prL prM prR meanings popu pos plug
+
+--- RelationNew ::= 'RELATION' Varid Sign
+pRelationNew :: AmpParser (String,P_Sign,Props)
+pRelationNew = tuple <$  pKey "RELATION"
+                     <*> pVarid
+                     <*> pSign
+               where tuple nm sgn = (nm,sgn,[])
+
+--- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
+pRelationOld :: AmpParser (String,P_Sign,Props)
+pRelationOld = tuple <$> pVarid
+                     <*  pOperator "::"
+                     <*> pConceptRef
+                     <*> pFun
+                     <*> pConceptRef
+            where tuple nm src fun tgt = (nm,P_Sign src tgt,fun)
 
 --- Props ::= '[' PropList? ']'
 pProps :: AmpParser [Prop]
