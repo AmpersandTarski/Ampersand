@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     --TODO: Maybe we don't need to export these here
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
-    sepBy, sepBy1, many, many1, opt, try, expr,
+    sepBy, sepBy1, many, many1, opt, try, expr, choice,
     -- Positions
     SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
     currPos, posOf, valPosOf,

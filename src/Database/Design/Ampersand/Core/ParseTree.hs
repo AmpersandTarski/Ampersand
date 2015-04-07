@@ -35,7 +35,7 @@ module Database.Design.Ampersand.Core.ParseTree (
 
    , Label(..)
 
-   , Prop(..), Props
+   , Prop(..), Props, normalizeProps
    -- Inherited stuff:
    , module Database.Design.Ampersand.Input.ADL1.FilePos
    , module Database.Design.Ampersand.ADL1.Pair
@@ -45,7 +45,8 @@ import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
 import Data.Traversable
-import Data.Foldable
+import Data.Foldable hiding (concat)
+import Data.List (nub)
 import Prelude hiding (foldr, sequence)
 import Control.Applicative
 import Data.Typeable
@@ -613,6 +614,7 @@ data Prop      = Uni          -- ^ univalent
                | Rfx          -- ^ reflexive
                | Irf          -- ^ irreflexive
                | Aut          -- ^ automatically computed (NOTE: this is a hacky way to denote these until we have appropriate syntax)
+               | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
                  deriving (Eq,Ord)
 instance Show Prop where
  showsPrec _ Uni = showString "UNI"
@@ -625,6 +627,7 @@ instance Show Prop where
  showsPrec _ Rfx = showString "RFX"
  showsPrec _ Irf = showString "IRF"
  showsPrec _ Aut = showString "AUT"
+ showsPrec _ Prop = showString "PROP"
 
 instance Flippable Prop where
  flp Uni = Inj
@@ -639,6 +642,15 @@ data Label = Lbl { lblnm :: String
                  } deriving Show
 instance Eq Label where
  l==l' = lblnm l==lblnm l'
+
+normalizeProps :: [Prop] -> [Prop]
+normalizeProps = nub.conv.rep
+    where -- replace PROP by SYM, ASY
+          rep (Prop:ps) = [Sym, Asy] ++ rep ps
+          rep (p:ps) = (p:rep ps)
+          rep [] = []
+          -- add Uni and Inj if ps has neither Sym nor Asy
+          conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)

@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser(
     AmpParser, pContext, pPopulations,pTerm, pRule
 ) where
 
-import Database.Design.Ampersand.Basics  (fatalMsg,Collection(..))
+import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
@@ -296,16 +296,13 @@ pRelationOld = tuple <$> pVarid
 
 --- Props ::= '[' PropList? ']'
 pProps :: AmpParser [Prop]
-pProps  = (nub.f.concat) <$> pBrackets (pProp `sepBy` pComma)
-  where -- add Uni and Inj if ps has neither Sym nor Asy
-        f ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
-        --- PropList ::= Prop (',' Prop)*
+pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
+  where --- PropList ::= Prop (',' Prop)*
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
-        pProp :: AmpParser [Prop]
-        pProp = [Uni] <$ pKey "UNI" <|> [Inj] <$ pKey "INJ" <|> [Sur] <$ pKey "SUR" <|>
-                [Tot] <$ pKey "TOT" <|> [Sym] <$ pKey "SYM" <|> [Asy] <$ pKey "ASY" <|>
-                [Trn] <$ pKey "TRN" <|> [Rfx] <$ pKey "RFX" <|> [Irf] <$ pKey "IRF" <|>
-                [Aut] <$ pKey "AUT" <|> [Sym, Asy] <$ pKey "PROP"
+        pProp :: AmpParser Prop
+        pProp = choice [ p <$ pKey (show p)
+                       | p <- [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut, Prop]
+                       ]
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser [Prop]

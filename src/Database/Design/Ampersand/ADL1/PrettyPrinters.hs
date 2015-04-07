@@ -380,3 +380,4 @@ instance Pretty Prop where
                 Rfx -> "RFX"
                 Irf -> "IRF"
                 Aut -> "AUT"
+                Prop -> "PROP"

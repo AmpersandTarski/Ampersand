@@ -317,4 +317,4 @@ instance Arbitrary Label where
     arbitrary = Lbl <$> safeStr1 <*> arbitrary <*> listOf(listOf1 safeStr1)
 
 instance Arbitrary Prop where
-    arbitrary = elements [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut]
+    arbitrary = elements [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut, Prop]
