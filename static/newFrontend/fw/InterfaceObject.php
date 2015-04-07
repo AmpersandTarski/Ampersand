@@ -15,6 +15,7 @@ class InterfaceObject {
 	public $univalent;
 	public $totaal;
 	public $editable;
+	public $isProperty;
 	
 	public $srcConcept;
 	public $tgtConcept;
@@ -53,6 +54,7 @@ class InterfaceObject {
 		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
 		$this->totaal = $interface['exprIsTot'];
 		$this->univalent = $interface['exprIsUni'];
+		$this->isProperty = $interface['exprIsProp'];
 		$this->srcConcept = $interface['srcConcept'];
 		$this->tgtConcept = $interface['tgtConcept'];
 		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;

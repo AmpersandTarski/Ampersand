@@ -64,9 +64,12 @@ Class Atom {
 		
 		foreach ($tgtAtoms as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
-				
+
 			// determine value atom 
-			if($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
+			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+				$content = !is_null($tgtAtom->id);
+				
+			}elseif($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
 				$content = array();
 				
 				// Add @context for JSON-LD to rootElement
@@ -89,14 +92,15 @@ Class Atom {
 			// subinterfaces
 			if(!empty($interface->subInterfaces) && $interface->tgtDataType != "concept") throw new Exception("TgtConcept of interface: '" . $interface->label . "' is primitive datatype and can not have subinterfaces", 501);
 			foreach($interface->subInterfaces as $subinterface){
-			
 				$otherAtom = $tgtAtom->getContent($subinterface, false);
 				$content[$subinterface->id] = $otherAtom;
 				
 			}
 			
 			// determine whether value of atom must be inserted as list or as single value
-			if($interface->univalent AND !($interface->tgtDataType == "concept")){ // in cause of univalent (i.e. count of $tgtAtoms <= 1) and a datatype (i.e. not concept)
+			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+				$arr = $content;
+			}elseif($interface->univalent AND !($interface->tgtDataType == "concept")){ // in cause of univalent (i.e. count of $tgtAtoms <= 1) and a datatype (i.e. not concept)
 				$arr = $content;
 			}elseif(!($interface->tgtDataType == "concept")){
 				$arr[] = $content;
@@ -148,6 +152,18 @@ Class Atom {
 						
 					}
 					
+					// replace property value (true/false) by the srcAtomId TODO: place below within editable check.
+					if ($tgtInterface->isProperty){
+						if(!is_bool($patch['value'])) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
+						if($patch['value']){						
+							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+						}else{
+							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+						}
+						
+						break;
+					}
+					
 					// if tgtDataType is a concept (i.e. ! prim. datatype), use key of object in $patch['value']
 					if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
 					// elseif tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
@@ -173,7 +189,12 @@ Class Atom {
 					}
 					
 					break;
-				case "add" :
+					
+				/*
+				 *
+				 * PROPERTIES are always a 'replace', so no dealing with them here
+				 */
+				case "add" :					
 					$pathArr = explode('/', $patch['path']);
 					
 					$tgtInterface = $interface;
@@ -213,6 +234,11 @@ Class Atom {
 					}
 					
 					break;
+					
+				/* 
+				 * 
+				 * PROPERTIES are always a 'replace', so no dealing with them here
+				 */
 				case "remove" :
 					$pathArr = explode('/', $patch['path']);
 					
