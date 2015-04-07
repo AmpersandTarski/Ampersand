@@ -31,7 +31,7 @@ data MetaType = Generics | AST deriving (Show)
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
-  = ("MetaPopulationFile"++show mType, content popKind mType fSpec)
+  = ("MetaPopulationFile"++show mType++".adl", content popKind mType fSpec)
     where popKind = case mType of
                       Generics -> generics fSpec
                       AST      -> metaPops fSpec 
@@ -53,7 +53,7 @@ content popKind mType fSpec = unlines
     , "-}"
     , ""
     , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ (concat.intersperse  []) (map (lines.showADL) (popKind fSpec))
+    ++ (concat.intersperse  []) (map (lines . showADL ) (popKind fSpec))
     ++
     [ ""
     , "ENDCONTEXT"

@@ -86,9 +86,9 @@ makeLinkTable context dcl totsurs =
         -> fatal 55 $ "unexpected call of makeLinkTable("++show dcl++"), because it is injective or univalent."
      | otherwise
         -> BinSQL
-             { sqlname = name dcl
+             { sqlname = unquote . name $ dcl
              , columns = ( -- The source field:
-                           Fld { fldname = concat["Src" | isEndo dcl]++name (source trgExpr)
+                           Fld { fldname = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , fldexpr = srcExpr
                                , fldtype = sqlTypeOf context (target srcExpr)
                                , flduse  = if suitableAsKey (sqlTypeOf context (target srcExpr))
@@ -98,7 +98,7 @@ makeLinkTable context dcl totsurs =
                                , flduniq = isUni trgExpr
                                }
                          , -- The target field:
-                           Fld { fldname = concat["Tgt" | isEndo dcl]++name (target trgExpr)
+                           Fld { fldname = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , fldexpr = trgExpr
                                , fldtype = sqlTypeOf context (target trgExpr)
                                , flduse  = if suitableAsKey (sqlTypeOf context (target trgExpr))
@@ -125,7 +125,12 @@ makeLinkTable context dcl totsurs =
     trgExpr
      | not r_is_Tot && r_is_Sur = flp (EDcD dcl)
      | otherwise                = EDcD dcl
-
+unquote :: String -> String
+unquote str 
+  | length str < 2 = str
+  | head str == '"' && last str == '"' = reverse . tail . reverse .tail $ str 
+  | otherwise = str
+      
 suitableAsKey :: SqlType -> Bool
 suitableAsKey st =
   case st of
@@ -203,8 +208,8 @@ rel2fld context
        
        mkColumnName expr = mkColumnName' False expr
          where  mkColumnName' isFlipped (EFlp x) = mkColumnName' (not isFlipped) x
-                mkColumnName' isFlipped (EDcD d) = (if isFlipped then "src" else "tgt")++"_"++name d
-                mkColumnName' _         (EDcI c) = name c
+                mkColumnName' isFlipped (EDcD d) = (if isFlipped then "src" else "tgt")++"_"++(unquote . name) d
+                mkColumnName' _         (EDcI c) = (unquote . name) c
                 mkColumnName' _ rel = fatal 162 ( "Unexpected relation found:\n"++
                                                   intercalate "\n  "
                                                     [ "***rel:"
@@ -343,7 +348,7 @@ makeEntityTables opts context allDcls isas conceptss exclusions
     kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
     kernel2Plug (kernel, attsAndIsaRels)
      =  TblSQL
-             { sqlname = name (head kernel) -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
+             { sqlname = unquote . name . head $ kernel -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
              , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable ++ isaLookuptable
@@ -399,7 +404,7 @@ makeEntityTables opts context allDcls isas conceptss exclusions
 makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeUserDefinedSqlPlug context obj
  | null(attributes obj) && isIdent(objctx obj)
-    = ScalarSQL { sqlname   = name obj
+    = ScalarSQL { sqlname   = unquote . name $ obj
                 , sqlColumn = rel2fld context [EDcI c] [] (EDcI c)
                 , cLkp      = c
                 }
@@ -414,7 +419,7 @@ makeUserDefinedSqlPlug context obj
        "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
        "\nplugfields:"++concat ["\n  "++show plugField | plugField<-plugfields]
       ) -}
-     TblSQL { sqlname = name obj
+     TblSQL { sqlname = unquote . name $ obj
             , fields  = plugfields
             , cLkpTbl = conceptLookuptable
             , mLkpTbl = attributeLookuptable
