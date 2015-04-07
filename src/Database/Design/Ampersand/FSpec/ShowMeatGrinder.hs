@@ -90,7 +90,7 @@ instance MetaPopulations FSpec where
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
-  ++[ Pop "name"   "Context" "Conid"
+  ++[ Pop "name"   "Context" "ContextName"
            [(uri fSpec,name fSpec)]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
@@ -127,12 +127,12 @@ instance MetaPopulations Pattern where
    , Comment $ " Pattern `"++name pat++"` "
    , Pop "ctxpats" "Context" "Pattern"
           [(uri fSpec,uri pat)]
-   , Pop "ptnm"    "Pattern" "Conid"
-          [(uri pat, ptnm pat)]
-   , Pop "ptrls"   "Pattern" "Rule"
+   , Pop "name"    "Pattern" "PatternName"
+          [(uri pat, name pat)]
+   , Pop "allRules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
-   , Pop "ptgns"   "Pattern" "Gen"
-          [(uri pat,uri x) | x <- ptgns pat]
+   , Pop "gens"   "Pattern" "Gen"
+          [(uri pat,uri x) | x <- gens pat]
    , Pop "ptdcs"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
    , Pop "ptxps"   "Pattern" "Purpose"
@@ -157,7 +157,7 @@ instance GenericPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "allConcepts" "Context" "Concept"
              [(uri fSpec,uri cpt)]
-      , Pop "cptnm" "Concept" "ConceptName"
+      , Pop "name" "Concept" "ConceptName"
              [(uri cpt, name cpt)]
       , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
              [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
@@ -179,7 +179,7 @@ instance MetaPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "concs" "Context" "PlainConcept"
            [(uri fSpec,uri cpt)]
-      , Pop "cptnm" "PlainConcept" "Conid"
+      , Pop "name" "PlainConcept" "ConceptName"
              [(uri cpt, name cpt)]
       , Pop "cptdf" "PlainConcept" "ConceptDefinition"
              [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
@@ -275,7 +275,7 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
-      , Pop "name" "Declaration" "Varid"
+      , Pop "name" "Declaration" "DeclarationName"
              [(uri dcl, name dcl)]
       , Pop "sign" "Declaration" "Sign"
              [(uri dcl,uri (sign dcl))]
@@ -389,8 +389,8 @@ instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "rrnm"  "Rule" "ADLid"
-             [(uri rul,rrnm rul)]
+      , Pop "name"  "Rule" "RuleName"
+             [(uri rul,name rul)]
       , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
@@ -471,7 +471,7 @@ instance ShowADL Pop where
 
 class Unique a => AdlId a where
  uri :: a -> String
- uri = camelCase . uniqueShow True
+ uri = camelCase . uniqueShow False
 -- All 'things' that are relevant in the meta-environment (RAP),
 -- must be an instance of AdlId:
 instance AdlId A_Concept
