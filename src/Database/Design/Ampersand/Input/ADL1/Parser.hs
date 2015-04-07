@@ -467,7 +467,7 @@ pInterface = lbl <$> currPos                                       <*>
                      (pColon *> pTerm)                             <*>
                      pSubInterface
     where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> P_SubInterface -> P_Interface
-          lbl p nm iclass params args roles expr sub
+          lbl p nm iclass params args roles term sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
                      , ifc_Params = params
@@ -475,7 +475,7 @@ pInterface = lbl <$> currPos                                       <*>
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
-                                          , obj_ctx  = expr
+                                          , obj_ctx  = term
                                           , obj_mView = Nothing
                                           , obj_msub = Just sub
                                           , obj_strs = args
@@ -507,10 +507,10 @@ pObjDef = obj <$> pLabelProps
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj (Lbl nm pos' strs) expr mView msub  =
+         where obj (Lbl nm pos' strs) term mView msub  =
                  P_Obj { obj_nm   = nm
                        , obj_pos  = pos'
-                       , obj_ctx  = expr
+                       , obj_ctx  = term
                        , obj_mView = mView
                        , obj_msub = msub
                        , obj_strs = strs
@@ -670,10 +670,8 @@ pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
 -}
 --- Rule ::= Term ('=' Term | '|-' Term)?
 pRule :: AmpParser (Term TermPrim)
-pRule  =  pTerm <??> (fEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
-                      fImpl <$> currPos <* pOperator "|-" <*> pTerm )
-          where fEqu  orig rExp lExp = PEqu orig lExp rExp
-                fImpl orig rExp lExp = PImp orig lExp rExp
+pRule  =  expr pTerm (PEqu  <$> currPos <* pOperator "=" <|>
+                      PImp  <$> currPos <* pOperator "|-")
 
 {-
 pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
@@ -696,16 +694,14 @@ pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
 pTrm2 :: AmpParser (Term TermPrim)
-pTrm2   = pTrm3 <??> (f <$> posOf pDash <*> pTrm3)
-          where f orig rExp lExp = PDif orig lExp rExp
+pTrm2   = expr pTrm3 (PDif <$> posOf pDash)
 
 -- The left factored version of right- and left residuals:
 --- Trm3 ::= Trm4 ('/' Trm4 | '\' Trm4 | '<>' Trm4)?
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (f <$> currPos
-                        <*> (PLrs <$ pOperator "/"  <|> PRrs <$ pOperator "\\" <|> PDia <$ pOperator "<>")
-                        <*> pTrm4)
-          where f orig constr right left = constr orig left right
+pTrm3  =  expr pTrm4 (PLrs <$> currPos <* pOperator "/"  <|>
+                      PRrs <$> currPos <* pOperator "\\" <|>
+                      PDia <$> currPos <* pOperator "<>")
 
 {- by the way, a slightly different way of getting exactly the same result is:
 pTrm3 :: AmpParser (Term TermPrim)
@@ -740,20 +736,18 @@ pTrm5  =  f <$> many (valPosOf pDash) <*> pTrm6  <*> many (valPosOf (pOperator "
 --- Trm6 ::= RelationRef | '(' Term ')'
 pTrm6 :: AmpParser (Term TermPrim)
 pTrm6 = Prim <$> pRelationRef  <|>
-        brk  <$> valPosOf (pParens pTerm)
-      where brk (val, pos) = PBrk pos val
+        PBrk <$> currPos <*> pParens pTerm
 
 --- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
                     pfull <$> currPos <* pKey "V" <*> pMaybe pSign                       <|>
-                    singl <$> valPosOf pAtom <*> pMaybe (pBrackets pConceptOneRef)
+                    Patm  <$> currPos <*> pAtom   <*> pMaybe (pBrackets pConceptOneRef)
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
-                          singl (nm,orig) = Patm orig nm
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Sign?
