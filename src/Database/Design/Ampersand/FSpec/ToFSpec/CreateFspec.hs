@@ -8,7 +8,6 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -40,35 +39,25 @@ createFSpec opts =
             ->   when (genASTFile opts) (doGenMetaFile AST uFspec)
               >> when (genGenericsFile opts) (doGenMetaFile Generics uFspec)
               >> return (Checked ())
-     
-       
+
     genTables :: Guarded P_Context -> IO(Guarded FSpec)
     genTables uCtx= case whatTablesToCreateExtra of
        Nothing 
-         -> return ((pCtx2Fspec . f) (toMeta opts <$> uCtx)) --no magical Meta Mystery 'Meuk', so a 'normal' fSpec is returned.
---         -> do rapP_Ctx <- getFormalFile AST
---               let rapP_CtxMeta = unguard $ pure . (toMeta (opts {metaTablesHaveUnderscore=True})) <$> rapP_Ctx
---               return (pCtx2Fspec rapP_CtxMeta) 
+         -> return (pCtx2Fspec uCtx)
        Just mType
          -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the 
                let populationPctx       = unguard ( grind mType <$> pCtx2Fspec uCtx)
-                   populatedRapPctx     = (merge.sequenceA) [rapP_Ctx,populationPctx]
-                   metaPopulatedRapPctx = toMeta opts <$> 
-                                            populatedRapPctx
-                   allCombinedPctx      = (merge.sequenceA) [uCtx,f metaPopulatedRapPctx]
+                   populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
+                   metaPopulatedRapPctx = toMeta opts <$> populatedRapPctx
+                   allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
                return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
-     
-      where
-          f x = trace (sf x) x
-          sf gCtx = case gCtx of 
-                     Errors errs -> "There are "++(show . length) errs++" errors!"
-                     Checked pCtx -> show pCtx
-    
+
     whatTablesToCreateExtra :: Maybe MetaType
     whatTablesToCreateExtra 
        | genASTTables opts     = Just AST
        | genGenericTables opts = Just Generics
        | otherwise             = Nothing
+
     getFormalFile :: MetaType -> IO(Guarded P_Context)
     getFormalFile mType
      = do let file = ampersandDataDir opts 
@@ -118,7 +107,7 @@ doGenMetaFile :: MetaType -> FSpec -> IO()
 doGenMetaFile mType fSpec =
  do { verboseLn (getOpts fSpec) $ "Generating "++show mType++" meta file for "++name fSpec
     ; writeFile outputFile contents
-    ; verboseLn (getOpts fSpec) $ show mType++" written into " ++ outputFile ++ "."
+    ; verboseLn (getOpts fSpec) $ show mType++" written into " ++ outputFile ++ ""
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
        (fpath,contents) = makeMetaPopulationFile mType fSpec
