@@ -94,7 +94,8 @@ runParser parser filename input =
     Right (tokens, _)  ->
         case parse parser tokens of
             Checked result -> Checked result
-            Errors  msg    -> trace (show tokens) $ Errors msg
+            Errors  msg    -> Errors msg
+            --Errors  msg    -> trace (show tokens) $ Errors msg
 
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
