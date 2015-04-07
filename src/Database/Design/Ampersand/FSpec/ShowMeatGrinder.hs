@@ -98,8 +98,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.allConcepts) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) allAtoms++")"]
-  ++   concatMap (metaPops fSpec) allAtoms
+  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
+  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
   ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length.allSigns) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
@@ -112,14 +112,6 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
   )
    where
-    allAtoms :: [AtomID]
-    allAtoms = nub (concatMap atoms (initialPops fSpec))
-      where
-        atoms :: Population -> [AtomID]
-        atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom fSpec ((source.popdcl) udp).srcPaire) (popps udp)
-                      ++ map (mkAtom fSpec ((target.popdcl) udp).trgPaire) (popps udp)
-          PCptPopu{} ->  map (mkAtom fSpec (        popcpt  udp)         ) (popas udp)
 
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
@@ -277,6 +269,8 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
+      , Pop "allDeclarations" "Context" "Declaration"
+             [(uri fSpec,uri dcl)] 
       , Pop "name" "Declaration" "DeclarationName"
              [(uri dcl, name dcl)]
       , Pop "sign" "Declaration" "Sign"
@@ -291,10 +285,7 @@ instance MetaPopulations Declaration where
              [(uri dcl, show(decMean dcl))]
       , Pop "decpurpose" "Declaration" "Purpose"
              [(uri dcl, showADL x) | x <- explanations dcl]
-      , Comment $ "The population of "++name dcl++":"
-      , Pop "in" "PairID" "Declaration"
-             [(uri p,uri dcl) | p <- mkLinks fSpec (sign dcl) (pairsOf dcl)]
-      ]++ metaPops fSpec ( mkLinks fSpec (sign dcl) (pairsOf dcl))
+      ]
 
 
      Isn{} -> 
@@ -304,17 +295,6 @@ instance MetaPopulations Declaration where
              [(uri dcl,uri (sign dcl))]
       ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
-    where
-      pairsOf :: Declaration -> Pairs
-      pairsOf d = case filter theDecl (initialPops fSpec) of
-                    []    -> []
-                    [pop] -> popps pop
-                    _     -> fatal 273 "Multiple entries found in populationTable"
-        where
-          theDecl :: Population -> Bool
-          theDecl p = case p of
-                        PRelPopu{} -> popdcl p == d
-                        PCptPopu{} -> False
 
 instance MetaPopulations Expression where
  metaPops _ e =

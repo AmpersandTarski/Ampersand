@@ -82,6 +82,8 @@ makeFSpec opts context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
               , initialPops  = initialpops
+              , allAtoms     = allatoms
+              , allLinks     = alllinks
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
                                  , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
@@ -93,6 +95,43 @@ makeFSpec opts context
                                          ]
               }
    where           
+     allatoms :: [AtomID]
+     allatoms = nub (concatMap atoms initialpops)
+       where
+         atoms :: Population -> [AtomID]
+         atoms udp = case udp of
+           PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
+                       ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
+           PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
+     mkAtom :: A_Concept -> String -> AtomID
+     mkAtom cpt value = 
+        AtomID { atmRoots = rootConcepts gs [cpt]
+               , atmIn   = largerConcepts gs cpt `uni` [cpt]
+               , atmVal  = value
+               }
+       where
+         gs = gens context
+     dclLinks :: Declaration -> [PairID]
+     dclLinks dcl
+       = [PairID { lnkSgn = sign dcl
+                 , lnkLeft  = mkAtom (source dcl) (srcPaire p) 
+                 , lnkRight = mkAtom (target dcl) (trgPaire p)
+                 }
+         | p <- pairsOf dcl]
+     alllinks ::  [PairID]
+     alllinks = concatMap dclLinks fSpecAllDecls
+     pairsOf :: Declaration -> Pairs
+     pairsOf d = case filter theDecl initialpops of
+                    []    -> []
+                    [pop] -> popps pop
+                    _     -> fatal 273 "Multiple entries found in populationTable"
+        where
+          theDecl :: Population -> Bool
+          theDecl p = case p of
+                        PRelPopu{} -> popdcl p == d
+                        PCptPopu{} -> False
+
+
      fSpecAllConcepts = concs context -- `uni` [ONE]
      fSpecAllDecls = relsDefdIn context
      fSpecAllInterfaces = map enrichIfc (ctxifcs context) 

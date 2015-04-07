@@ -28,6 +28,8 @@ RELATION patterns[Context*Pattern]
 MEANING "The patterns in a context."
 RELATION concs[Context*PlainConcept]
 MEANING "A concept, mentioned anywhere in a context, is declared."
+RELATION allDeclarations[Context*Declaration]
+MEANING "A relation declared in a context"
 RELATION gens[Context*Gen]
 MEANING "The user-defined generalization rules in a context."
 ENDPATTERN
@@ -239,6 +241,7 @@ IDENT Rule: Rule(name[Rule*RuleName])
 CLASSIFY RuleName ISA ADLid
 RELATION name[Rule*RuleName] [UNI,TOT,INJ]
 MEANING "The name of a rule."
+RELATION sign[Rule*Sign] [UNI,TOT]
 RELATION rrexp[Rule*ExpressionID] [UNI,TOT]
 MEANING "The rule expressed in relation algebra."
 RELATION rrmean[Rule * Meaning]
@@ -250,8 +253,7 @@ MEANING "A property is defined as part of the declaration of relation."
 
 ENDPATTERN
 
-PATTERN Plugs -- This pattern documents the semantics of plugs as of november 2014.
-RELATION sign[Rule*Sign] [UNI,TOT]
+PROCESS Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION maintains[Plug*Rule]
 RELATION in[PlainConcept*Plug] [TOT]
 RELATION in[Declaration*Plug] [TOT]
@@ -260,9 +262,10 @@ RELATION in[Declaration*Plug] [TOT]
 RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
 MEANING "A plug, which maintains a rule, must contain every relation that is mentioned explicitly in that rule."
 
+ROLE Ampersand MAINTAINS "All isas in one plug"
 RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;in) \/ in)
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
-ENDPATTERN
+ENDPROCESS
 
 PATTERN ToDo -- This pattern contains stuff still to be done.
 RELATION rrviols[Rule*Violation]

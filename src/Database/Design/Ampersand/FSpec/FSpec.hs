@@ -93,6 +93,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
+                   , allAtoms ::     [AtomID]
+                   , allLinks ::     [PairID]
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
