@@ -12,7 +12,10 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "Crud"
 
-data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])]
+-- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
+
+
+data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])] -- crud concept together with its target concept in the surjective/total transitive closure of declarations 
                          , crudObjsPerInterface :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
                          , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
                          -- TODO: name (crudPerInterface,crudPerConcept?) (also in code below)
@@ -51,7 +54,7 @@ mkCrudInfo  allConceptsPrim allDecls allIfcs =
           [ (source d, [target d]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
         
         
-        -- crud concept together with declarations that comprise the object
+        -- crud concept together with its target concept in the surjective/total transitive closure of declarations
         crudObjs :: [(A_Concept, [A_Concept])]
         crudObjs = trace (show transSurjClosureMap ) $
                    [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
