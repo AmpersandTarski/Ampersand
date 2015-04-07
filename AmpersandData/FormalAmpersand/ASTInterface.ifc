@@ -1,0 +1,24 @@
+CONTEXT "AST Interface" IN ENGLISH
+
+INTERFACE Ampersand FOR Ampersand : I[ONE]
+BOX [ Context : V[ONE*Context];name
+    , "All specializations" : V[ONE*Context];gens
+    , "ALL concepts" : V[ONE*Context];concs
+    , "All patterns" : V[ONE*Context];patterns
+    ]
+
+INTERFACE Pattern FOR Ampersand : I[Pattern]
+BOX [ Pattern : name
+    ]
+
+INTERFACE Concept FOR Ampersand : I[PlainConcept]
+BOX [ Concept : name
+    ]
+
+INTERFACE Gen FOR Ampersand : I[Gen]
+BOX [ gengen : gengen
+    , genspc : genspc
+    ]
+
+
+ENDCONTEXT

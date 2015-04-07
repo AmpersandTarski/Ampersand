@@ -463,6 +463,7 @@ sqlTypeOf' str = case str of
        "Pass" -> SQLPass
        ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
        "Blob" -> SQLBlob
+       "Text" -> SQLText
        "Single" -> SQLSingle
        "Double" -> SQLDouble
        ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number

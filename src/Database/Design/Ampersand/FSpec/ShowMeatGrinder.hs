@@ -125,7 +125,7 @@ instance MetaPopulations Pattern where
  metaPops fSpec pat =
    [ Comment " "
    , Comment $ " Pattern `"++name pat++"` "
-   , Pop "ctxpats" "Context" "Pattern"
+   , Pop "patterns" "Context" "Pattern"
           [(uri fSpec,uri pat)]
    , Pop "name"    "Pattern" "PatternName"
           [(uri pat, name pat)]
@@ -139,8 +139,10 @@ instance MetaPopulations Pattern where
           [(uri pat,uri x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
- metaPops _ gen =
-  [ Pop "genspc"  "Gen" "PlainConcept"
+ metaPops fSpec gen =
+  [ Pop "gens" "Context" "Gen"
+          [(uri fSpec,uri gen)]
+  , Pop "genspc"  "Gen" "PlainConcept"
           [(uri gen,uri(genspc gen))]
   , Pop "gengen"  "Gen" "PlainConcept"
           [(uri gen,uri c) | c<- case gen of
