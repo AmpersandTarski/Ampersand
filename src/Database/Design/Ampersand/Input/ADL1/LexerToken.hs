@@ -18,7 +18,7 @@ initPos :: Pos
 initPos = Pos 1 1
 
 noPos :: Pos
-noPos = Pos 0 0
+noPos = Pos 1 0
 
 type Filename   = String
 
