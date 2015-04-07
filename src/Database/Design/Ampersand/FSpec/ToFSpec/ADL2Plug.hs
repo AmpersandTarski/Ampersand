@@ -203,7 +203,7 @@ rel2fld context
        tbl rs  = [ entry
                  | cl<-eqCl (map toLower.name.source) rs
                  , entry<-if length cl==1
-                          then [(rel,mkColumnName rel++"_"++name (source rel)) |rel<-cl]
+                          then [(rel,mkColumnName rel++"_"++(unquote . name . source) rel) |rel<-cl]
                           else [(rel,mkColumnName rel++"_"++show i)|(rel,i)<-zip cl [(0::Int)..]]]
        
        mkColumnName expr = mkColumnName' False expr
