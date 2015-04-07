@@ -305,10 +305,8 @@ instance MakeMeta TermPrim where
       PNamedR nr      -> PNamedR (makeMeta f nr)
 
 instance MakeMeta P_NamedRel where
-  makeMeta f t
-   = case t of
-      PNamedRel  _ _ Nothing   -> t
-      PNamedRel o s (Just sgn) -> PNamedRel o s (makeMeta f $ Just sgn)
+  makeMeta f (PNamedRel o nm      sgn)
+            = PNamedRel o (f nm) (makeMeta f sgn)
    
 instance MakeMeta Paire where
   makeMeta _ = id
