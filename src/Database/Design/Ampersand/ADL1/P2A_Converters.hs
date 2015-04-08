@@ -74,7 +74,9 @@ isDanglingPurpose ctx purp =
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
-    ExplContext nm -> ctxnm ctx /= nm
+    ExplContext nm -> ctxnm ctx /= nm 
+                         && False -- HJO: This line is a workaround for the issue mentioned in https://github.com/AmpersandTarski/ampersand/issues/46
+                                  -- TODO: fix this when we pick up working on multiple contexts.
 -- Check that interface references are not cyclic
 checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
 checkInterfaceCycles gCtx =
