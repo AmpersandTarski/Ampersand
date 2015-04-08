@@ -266,8 +266,6 @@ pCtx2aCtx' _
     castConcept x
      = PlainConcept { cptnm = x
                     }
-          where hasRightName :: ConceptDef -> Bool
-                hasRightName cd = cdcpt cd == x
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }

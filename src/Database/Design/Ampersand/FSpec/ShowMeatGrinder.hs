@@ -19,7 +19,6 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Core.ParseTree
 
 --import Data.Hashable
 import Data.Maybe
@@ -179,9 +178,6 @@ instance MetaPopulations A_Concept where
              [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "PlainConcept" "Purpose"
              [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
-      , Pop "cpttp" "PlainConcept" "TechnicalType"
-             [(uri cpt,cpttp cpt)  | not.null.cpttp $ cpt
-             ]
       ]
      ONE -> [
             ]
@@ -482,22 +478,6 @@ instance AdlId Bool where
 instance AdlId a => AdlId [a] where
 
 
-mkAtom :: FSpec  -> A_Concept -> String -> AtomID
-mkAtom fSpec cpt value = 
-   AtomID { atmRoots = rootConcepts gs [cpt]
-          , atmIn   = largerConcepts gs cpt `uni` [cpt]
-          , atmVal  = value
-          }
-  where
-    gs = vgens fSpec
-mkLink :: FSpec -> Sign -> Paire -> PairID
-mkLink fSpec sgn p 
-  = PairID { lnkSgn = sgn
-         , lnkLeft  = mkAtom fSpec (source sgn) (srcPaire p) 
-         , lnkRight = mkAtom fSpec (target sgn) (trgPaire p)
-         }
-mkLinks :: FSpec -> Sign -> [Paire] -> [PairID]
-mkLinks fSpec sgn = map $ mkLink fSpec sgn
 
 
 -- | remove spaces and make camelCase
