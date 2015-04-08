@@ -676,7 +676,6 @@ getExpressionRelation expr = case getRelation expr of
 
 data A_Concept
    = PlainConcept { cptnm :: String  -- ^PlainConcept nm represents the set of instances cs by name nm.
-                  , cpttp :: String  -- HJO, 20150204 TODO: add sqlTypeOf. It is required for the meatgrinder. (zit nu ver weg gestopt bij het maken van plugs. 
                   }
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
     deriving (Prelude.Ord,Typeable)

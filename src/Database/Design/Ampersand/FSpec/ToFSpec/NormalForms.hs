@@ -604,7 +604,6 @@ rTerm2expr term
      makeConcept "ONE" = ONE
      makeConcept  str  = 
         PlainConcept { cptnm = str
-                     , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "
                      }
 
 instance ShowADL RTerm where

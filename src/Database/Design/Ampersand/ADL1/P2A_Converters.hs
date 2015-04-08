@@ -263,8 +263,9 @@ pCtx2aCtx' _
     castConcept "ONE" = ONE
     castConcept x
      = PlainConcept { cptnm = x
-                    , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "}
-
+                    }
+          where hasRightName :: ConceptDef -> Bool
+                hasRightName cd = cdcpt cd == x
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }

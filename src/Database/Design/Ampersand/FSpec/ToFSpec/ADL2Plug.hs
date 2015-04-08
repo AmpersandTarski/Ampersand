@@ -327,7 +327,7 @@ makeEntityTables opts context allDcls isas conceptss exclusions
              rs  -> [ Isa{gengen=rootConcept, genspc=c} | c<-rs ]
          | (rootConcept,kernel) <- zip [rc | i<-[0::Int ..]
                                            , let rc=PlainConcept { cptnm = "rootConcept"++show i
-                                                                 , cpttp = ""}
+                                                                 }
                                            , rc `notElem` concs context ]
                                        preKernels
          ]
