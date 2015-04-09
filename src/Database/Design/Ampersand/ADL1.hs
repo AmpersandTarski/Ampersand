@@ -17,7 +17,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , P_Context(..), mergeContexts
          , Meta(..)
          , MetaObj(..)
-         , P_RoleRelation(..), RoleRule(..)
+         , P_RoleRelation(..), P_RoleRule(..)
          , P_Pattern(..)
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)

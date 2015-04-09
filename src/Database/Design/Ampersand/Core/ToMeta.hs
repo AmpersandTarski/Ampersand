@@ -120,7 +120,7 @@ instance MakeMeta a => MakeMeta (P_Rule a) where
           , rr_viol = makeMeta f (rr_viol rul)
           }
 
-instance MakeMeta RoleRule where
+instance MakeMeta P_RoleRule where
   makeMeta f rr
    = Maintain
           { mRoles =            (mRoles rr)

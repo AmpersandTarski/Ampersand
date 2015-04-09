@@ -416,7 +416,7 @@ instance ShowHS RoleRelation where
   = "RR "++show (rrRoles rr)++" "++showHS opts (ind++"    ") (rrRels rr)++" "++showHS opts (ind++"    ") (rrPos rr)
 instance ShowHS Role where
  showHS _ ind (Role str) = ind++"Role "++show str
-instance ShowHS RoleRule where
+instance ShowHS P_RoleRule where
  showHS opts ind rs
   = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS opts (ind++"    ") (mPos rs)
 

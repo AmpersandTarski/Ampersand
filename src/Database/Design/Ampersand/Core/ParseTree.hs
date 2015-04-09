@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , Meta(..)
    , MetaObj(..)
    , P_RoleRelation(..)
-   , RoleRule(..)
+   , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
    , P_Declaration(..)
@@ -102,7 +102,7 @@ instance Traced P_RoleRelation where
  origin = rr_Pos
 
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
-data RoleRule
+data P_RoleRule
    = Maintain
      { mRoles :: [Role]    -- ^ name of a role
      , mRules :: [String]    -- ^ name of a Rule
@@ -114,7 +114,7 @@ instance Named Role where
  name (Role nm) = nm
 instance Unique Role where
  showUnique = name
-instance Traced RoleRule where
+instance Traced P_RoleRule where
  origin = mPos
 
 data P_Pattern
@@ -124,7 +124,7 @@ data P_Pattern
            , pt_rls :: [(P_Rule TermPrim)]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
+           , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern

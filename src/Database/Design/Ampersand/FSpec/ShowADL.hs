@@ -181,7 +181,7 @@ instance ShowADL RoleRelation where
  showADL r
   = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map showADL (rrRels r))
 
-instance ShowADL RoleRule where
+instance ShowADL P_RoleRule where
  showADL r = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
 
 instance ShowADL Interface where
