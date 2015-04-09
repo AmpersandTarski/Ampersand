@@ -7,7 +7,6 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice,
     -- Positions
-    SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
     currPos, posOf, valPosOf,
     -- Basic parsers
     pAtom, pConid, pString, pExpl, pVarid,
@@ -22,13 +21,15 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 ) where
 
 import Control.Monad.Identity (Identity)
+import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
+import Text.Parsec.Pos (newPos)
 
-type AmpParser a = P.ParsecT [Token] SourcePos Identity a
+type AmpParser a = P.ParsecT [Token] FilePos Identity a
 
 -----------------------------------------------------------
 -- Operators
@@ -60,7 +61,7 @@ check predicate = tokenPrim showTok nextPos matchTok
          -- Next position calculating function
          nextPos :: SourcePos -> Token -> [Token] -> SourcePos
          nextPos pos _ [] = pos
-         nextPos _ _ (Tok _ pos:_) = pos
+         nextPos _ _ (Tok _ (FilePos file line col):_) = newPos file line col
          -- ^ Matching function for the token to parse.
          matchTok (Tok l _) = predicate l
 
@@ -167,7 +168,7 @@ pChevrons parser = pSpec '<' CA.*> parser CA.<* pSpec '>'
 -----------------------------------------------------------
 
 posOrigin :: Show a => a -> SourcePos -> Origin
-posOrigin sym p = FileLoc (FilePos (sourceName p, p, show sym))
+posOrigin sym p = FileLoc (FilePos (sourceName p) (sourceLine p) (sourceColumn p)) (show sym)
 
 currPos :: AmpParser Origin
 currPos = posOf $ return ()

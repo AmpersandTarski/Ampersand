@@ -16,22 +16,22 @@ module Database.Design.Ampersand.Input.ADL1.LexerMonad
     ) where
 
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
+import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Misc
 
 import Control.Applicative
 import Control.Monad
-import Text.ParserCombinators.Parsec.Pos
 
-type Bracket = (SourcePos, Char)
+type Bracket = (FilePos, Char)
 
 -- Output monad: [LexerWarning]
--- State monad: SourcePos and [Bracket]
+-- State monad: FilePos and [Bracket]
 newtype LexerMonad a =
-    LM ([Options] -> SourcePos -> [Bracket] ->
-        Either LexerError (a, [LexerWarning], SourcePos, [Bracket]))
+    LM ([Options] -> FilePos -> [Bracket] ->
+        Either LexerError (a, [LexerWarning], FilePos, [Bracket]))
 
-unLM :: LexerMonad t -> [Options] -> SourcePos -> [Bracket]
-          -> Either LexerError (t, [LexerWarning], SourcePos, [Bracket])
+unLM :: LexerMonad t -> [Options] -> FilePos -> [Bracket]
+          -> Either LexerError (t, [LexerWarning], FilePos, [Bracket])
 unLM (LM x) = x
 
 bindLM :: LexerMonad a -> (a -> LexerMonad b) -> LexerMonad b
@@ -60,35 +60,33 @@ instance Applicative LexerMonad where
     pure = returnLM
     (<*>) = ap
 
-runLexerMonad :: [Options] -> String -> LexerMonad a -> Either LexerError (a, [LexerWarning])
+runLexerMonad :: [Options] -> FilePath -> LexerMonad a -> Either LexerError (a, [LexerWarning])
 runLexerMonad opts file (LM f) =
-    case f opts (initialPos file) [] of
+    case f opts (initPos file) [] of
         Left err -> Left err
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
+-- TODO: These methods are not being used anywhere
 getOpts :: LexerMonad [Options]
 getOpts = LM (\opts pos brackets -> Right (opts, [], pos, brackets))
 
-getPos :: LexerMonad SourcePos
+getPos :: LexerMonad FilePos
 getPos = LM (\_ pos brackets -> Right (pos, [], pos, brackets))
 
 incPos :: Int -> LexerMonad ()
 incPos i = LM (\_ pos brackets -> Right ((), [], addPos i pos, brackets))
 
 nextPos :: Char -> LexerMonad ()
-nextPos c = LM (\_ pos brackets -> Right ( (), [], updatePosChar pos c, brackets ))
+nextPos c = LM (\_ pos brackets -> Right ( (), [], updatePos pos c, brackets ))
 
-lexerError :: LexerErrorInfo -> SourcePos -> LexerMonad a
+lexerError :: LexerErrorInfo -> FilePos -> LexerMonad a
 lexerError err pos =
     LM (\_ _ _ -> Left (LexerError pos err))
 
-lexerWarning :: LexerWarningInfo -> SourcePos -> LexerMonad ()
+lexerWarning :: LexerWarningInfo -> FilePos -> LexerMonad ()
 lexerWarning warning warningPos =
     LM (\_ pos brackets ->
         Right ((), [LexerWarning warningPos warning], pos, brackets))
-
-addPos :: Int -> SourcePos -> SourcePos
-addPos i pos = incSourceColumn pos i
 
 openBracket :: Char -> LexerMonad ()
 openBracket c = LM (\_ pos brackets ->

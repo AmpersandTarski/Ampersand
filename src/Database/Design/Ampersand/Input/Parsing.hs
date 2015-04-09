@@ -16,7 +16,6 @@ import Database.Design.Ampersand.Input.ADL1.Lexer
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.Parser
-import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Database.Design.Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import System.Directory
@@ -71,13 +70,13 @@ parseErrors lang err = [PE (Message msg)]
 
 parse :: AmpParser a -> [Token] -> Guarded a
 parse p ts =
-      -- runP :: Parsec s u a -> u -> SourceName -> s -> Either ParseError a 
+      -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a 
     case runP p pos fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
         Right a -> Checked a
     where pos = tokPos (head ts)
-          fn  = sourceName pos
+          fn  = nm pos where nm (FilePos file _ _ ) = file
 
 --TODO: Give the errors in a better way
 lexerErrors :: LexerError -> [CtxError]

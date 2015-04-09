@@ -3,11 +3,11 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
     keywords, operators, symbols, lexer
 ) where
 
+import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
-import Text.Parsec.Pos hiding (Line, Column)
 import Data.Char hiding(isSymbol, isSpace)
 import Data.Maybe
 import Data.List (sort)
@@ -46,8 +46,9 @@ operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
 symbols :: String -- [Char]
 symbols = "()[],{}<>"
 
+--TODO: The init pos gets calculated here and again in the runLexerMonad method
 lexer :: [Options] -> Filename -> String -> Either LexerError ([Token], [LexerWarning])
-lexer opt file input = case runLexerMonad opt file (mainLexer noPos file input) of
+lexer opt file input = case runLexerMonad opt file (mainLexer (initPos file) input) of
                                Left err -> Left err
                                Right (ts, ws) -> Right (ts, ws)
 
@@ -65,7 +66,7 @@ takeLine = takeWhile (/= '\n')
 -- Lexer definition
 -----------------------------------------------------------
 
-type Lexer = Pos -> Filename  -> String  -> LexerMonad [Token]
+type Lexer = FilePos -> String  -> LexerMonad [Token]
 
 mainLexer :: Lexer
 
@@ -73,72 +74,73 @@ mainLexer :: Lexer
 -- Removing unnecessary text artifacts (comment, spaces,...)
 -----------------------------------------------------------
 
-mainLexer _ _ [] =  return []
-mainLexer p fn ('-':'-':s) = mainLexer p fn (skipLine s)
+mainLexer _ [] =  return []
 
-mainLexer p fn (c:s) | isSpace c = let (spc,next) = span isSpace s
-                                in  mainLexer (foldl adv p (c:spc)) fn next
+mainLexer p ('-':'-':s) = mainLexer p (skipLine s) --TODO: Test if we should increase line number and reset the column number
 
-mainLexer p fn ('-':'+':s)  = returnToken lx p mainLexer p fn rest
+mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpace s
+                                in  mainLexer (foldl updatePos p (c:spc)) next
+
+mainLexer p ('-':'+':s)  = returnToken lx p mainLexer p rest
                 where lx   = LexExpl $ dropWhile isSpace (takeLine s)
                       rest = skipLine s
 
-mainLexer p fn ('{':'-':s) = lexNest mainLexer (advc 2 p) fn s
-mainLexer p fn ('{':'+':s) = lexExpl mainLexer (advc 2 p) fn s
-mainLexer p fn ('"':ss) =
+mainLexer p ('{':'-':s) = lexNest mainLexer (addPos 2 p) s
+mainLexer p ('{':'+':s) = lexExpl mainLexer (addPos 2 p) s
+mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
     in if null rest || head rest /= '"'
-                              then lexerError (NonTerminatedChar (Just s)) (initialPos fn)
-                              else returnToken (LexString s) p mainLexer (advc (swidth+2) p) fn (tail rest)
+                              then lexerError (NonTerminatedChar (Just s)) p
+                              else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
-mainLexer p fn ('\'':ss)
+mainLexer p ('\'':ss)
      = let (s,swidth,rest) = scanAtom ss
        in if null rest || head rest /= '\''
-             then lexerError UnterminatedAtom (initialPos fn)
-             else returnToken (LexAtom s) p mainLexer (advc (swidth+2) p) fn (tail rest)
+             then lexerError UnterminatedAtom p
+             else returnToken (LexAtom s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
 -----------------------------------------------------------
 -- Handling infix operators
 -----------------------------------------------------------
 
 --TODO: What are infix operators? Isn't this only for Haskell?
-mainLexer p fn ('`':ss)
+mainLexer p ('`':ss)
      = case ss of
-         []    -> lexerError UnterminatedInfix (initialPos fn)
+         []    -> lexerError UnterminatedInfix p
          (c:s) -> let res | isIdStart c || isUpper c =
-                                   let (name,p1,rest) = scanIdent (advc 2 p) s
+                                   let (name,p1,rest) = scanIdent (addPos 2 p) s
                                        ident = c:name
                                        tokens | null rest ||
-                                                head rest /= '`' = lexerError UnterminatedInfix (initialPos fn)
-                                              | iskw ident       = lexerError (UnexpectedInfixKeyword ident) (initialPos fn)
-                                              | otherwise        = returnToken (LexOperator ident) p mainLexer (advc 1 p1) fn (tail rest)
+                                                head rest /= '`' = lexerError UnterminatedInfix p
+                                              | iskw ident       = lexerError (UnexpectedInfixKeyword ident) p
+                                              | otherwise        = returnToken (LexOperator ident) p mainLexer (addPos 1 p1) (tail rest)
                                    in tokens
-                          | otherwise =  lexerError (UnexpectedInfixChar c) (initialPos fn)
+                          | otherwise =  lexerError (UnexpectedInfixChar c) p
                   in res
 
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
 
-mainLexer p fn cs@(c:s)
+mainLexer p cs@(c:s)
      | isIdStart c || isUpper c
-         = let (name', p', s')    = scanIdent (advc 1 p) s
+         = let (name', p', s')    = scanIdent (addPos 1 p) s
                name               = c:name'
                tokt   | iskw name = LexKeyword name
                       | otherwise = if isIdStart c
                                     then LexVarId name
                                     else LexConId name
-           in returnToken tokt p mainLexer p' fn s'
+           in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
          = let (name, s') = getOp cs
-           in returnToken (LexOperator name) p mainLexer (foldl adv p name) fn s'
-     | isSymbol c = returnToken (LexSymbol c) p mainLexer (advc 1 p) fn s
+           in returnToken (LexOperator name) p mainLexer (foldl updatePos p name) s'
+     | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = let (tk,_,width,s') = getNumber cs
-           in  returnToken tk p mainLexer (advc width p) fn s'
-     | otherwise  = lexerError (UnexpectedChar c) (initialPos fn)
+           in  returnToken tk p mainLexer (addPos width p) s'
+     | otherwise  = lexerError (UnexpectedChar c) p
 
 -----------------------------------------------------------
 -----------------------------------------------------------
@@ -179,9 +181,10 @@ getOp cs = findOper operators cs ""
               else findOper found rest (op ++ [c])
               where found = [s' | o:s'<-ops, c==o]
 
-scanIdent :: Pos -> String -> (String, Pos, String)
+-- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
+scanIdent :: FilePos -> String -> (String, FilePos, String)
 scanIdent p s = let (name,rest) = span isIdChar s
-                in (name,advc (length name) p,rest)
+                in (name,addPos (length name) p,rest)
 
 
 scanAtom :: String -> (String,Int,String)
@@ -203,40 +206,19 @@ isSpace :: Char -> Bool
 isSpace c = c == ' ' || c == '\n' || c == '\t' || c == '\r'
 
 lexNest :: Lexer -> Lexer
-lexNest c p fn ('-':'}':s) = c (advc 2 p) fn s
-lexNest c p fn ('{':'-':s) = lexNest (lexNest c) (advc 2 p) fn s
-lexNest c p fn (x:s)       = lexNest c (adv p x) fn s
-lexNest _ _ fn []          = lexerError UnterminatedComment (initialPos fn)
+lexNest c p ('-':'}':s) = c (addPos 2 p) s
+lexNest c p ('{':'-':s) = lexNest (lexNest c) (addPos 2 p) s
+lexNest c p (x:s)       = lexNest c (updatePos p x) s
+lexNest _ p []          = lexerError UnterminatedComment p
 
 --TODO: Also accept {+ ... +} as delimiters
 lexExpl :: Lexer -> Lexer
 lexExpl = lexExpl' ""
- where lexExpl' str _ p fn ('-':'}':s) = returnToken (LexExpl str) p mainLexer (advc 2 p)  fn s
-       lexExpl' str c p fn ('{':'-':s) = lexNest (lexExpl' str c) (advc 2 p) fn s
-       lexExpl' str c p fn ('-':'-':s) = lexExpl' str c  p fn (dropWhile (/= '\n') s)
-       lexExpl' str c p fn (x:s)       = lexExpl' (str++[x]) c (adv p x) fn s
-       lexExpl' _   _ _ fn []          = lexerError UnterminatedPurpose (initialPos fn)
-
------------------------------------------------------------
--- position handling
------------------------------------------------------------
-
-tabWidth :: Column -> Int
-tabWidth c = 8 - ((c-1) `mod` 8)
-
-advl ::  Line -> Pos -> Pos
-advl i (Pos l _) = Pos (l+i) 1
-
-advc :: Column -> Pos ->  Pos
-advc i (Pos l c) = Pos l (c+i)
-
-
-adv :: Pos -> Char -> Pos
-adv pos' c = case c of
-  '\t' -> advc (tabWidth (column pos')) pos'
-  '\n' -> advl 1 pos'
-  '\r' -> advl 1 pos'
-  _    -> advc 1 pos'
+ where lexExpl' str _ p ('-':'}':s) = returnToken (LexExpl str) p mainLexer (addPos 2 p)  s
+       lexExpl' str c p ('{':'-':s) = lexNest (lexExpl' str c) (addPos 2 p) s
+       lexExpl' str c p ('-':'-':s) = lexExpl' str c p (dropWhile (/= '\n') s)
+       lexExpl' str c p (x:s)       = lexExpl' (str++[x]) c (updatePos p x) s
+       lexExpl' _   _ p []          = lexerError UnterminatedPurpose p
 
 -----------------------------------------------------------
 -- Numbers
@@ -320,12 +302,8 @@ readn base = foldl (\r x  -> value x + base * r) 0
 -- Token creation function
 -----------------------------------------------------------
 
---TODO: Can we simplify this? The complete signature is too complicated! See:
---returnToken :: Lexeme -> Pos -> 
---     Pos -> Filename  -> String  -> LexerMonad [Token] -> 
---     Pos -> Filename  -> String  -> LexerMonad [Token]
-returnToken :: Lexeme -> Pos -> Lexer -> Lexer
-returnToken lx (Pos ln col) continue posi fn input = do
-    let token = Tok lx (newPos fn ln col)
-    tokens <- continue posi fn input
+returnToken :: Lexeme -> FilePos -> Lexer -> Lexer
+returnToken lx pos continue posi input = do
+    let token = Tok lx pos
+    tokens <- continue posi input
     return (token:tokens)

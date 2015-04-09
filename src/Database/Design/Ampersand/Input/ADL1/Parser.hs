@@ -243,7 +243,7 @@ pRuleDef =  rebuild <$> currPos
                           , rr_msg  = msg
                           , rr_viol = mViolation
                           }
-                 rulid (FileLoc(FilePos (_,src,_))) = "rule@line" ++ show (sourceLine src)
+                 rulid (FileLoc pos _) = "rule@" ++ show (show pos)
                  rulid _ = fatal 226 "pRuleDef is expecting a file location."
                  
                  --- Violation ::= 'VIOLATION' PairView

@@ -8,7 +8,6 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
 import Data.List
 import System.FilePath
-import Text.Parsec.Pos(sourceLine)
 
 
 fatal :: Int -> String -> a

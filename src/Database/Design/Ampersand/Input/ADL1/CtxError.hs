@@ -29,7 +29,7 @@ import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
-import Database.Design.Ampersand.Input.ADL1.ParsingLib(sourceLine, sourceColumn)
+import Database.Design.Ampersand.Input.ADL1.FilePos()
 
 fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
@@ -241,9 +241,13 @@ showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
 showErr (PE msg)   = messageString msg
 
 showFullOrig :: Origin -> String
-showFullOrig (FileLoc (FilePos (filename,src,t)))
-              = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show (sourceLine src)++" : "++show (sourceColumn src)
+showFullOrig (FileLoc (FilePos filename line column) t)
+              = "Error at symbol " ++ t ++
+                " in file " ++ filename ++
+                " at line " ++ show line ++
+                " : " ++ show column
+
 showFullOrig x = show x
 showMinorOrigin :: Origin -> String
-showMinorOrigin (FileLoc (FilePos (_,src,_))) = "line " ++ show (sourceLine src)++" : "++show (sourceColumn src)
+showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" : "++show column
 showMinorOrigin v = show v

@@ -17,7 +17,7 @@ module Database.Design.Ampersand.Input.ADL1.LexerMessage
     , showLexerWarningInfo
     ) where
 
-import Text.ParserCombinators.Parsec.Pos
+import Database.Design.Ampersand.Input.ADL1.FilePos(FilePos)
 import qualified Database.Design.Ampersand.Input.ADL1.LexerTexts as Texts
 
 --TODO: Delete the code commented out
@@ -35,14 +35,14 @@ instance HasMessage LexerError where
         in MessageOneLiner (MessageString line) :
             [ MessageHints Texts.hint [ MessageString s | s <- rest ] ]
 
-sourcePosToRange :: SourcePos -> Range
+sourcePosToRange :: FilePos -> Range
 sourcePosToRange pos = 
     let name = sourceName pos; line = sourceLine pos; col = sourceColumn pos
         position = Position_Position name line col
     in Range_Range position position
  -}
 
-data LexerError = LexerError SourcePos LexerErrorInfo
+data LexerError = LexerError FilePos LexerErrorInfo
     deriving(Show)
 
 data LexerErrorInfo
@@ -69,8 +69,8 @@ data LexerErrorInfo
         -- In UnexpectedClose, first char is the closing bracket we see, 
         -- second char is the closing bracket we would like to see first
         -- e.g. [(1,3]  =>  UnexpectedClose ']' ... ')'
-    | UnexpectedClose Char SourcePos Char
-    | StillOpenAtEOF [(SourcePos, Char)]
+    | UnexpectedClose Char FilePos Char
+    | StillOpenAtEOF [(FilePos, Char)]
     deriving(Show)
 
 showLexerErrorInfo :: LexerErrorInfo -> [String]
@@ -126,13 +126,13 @@ instance HasMessage LexerWarning where
 -}
 
 data LexerWarning =
-    LexerWarning SourcePos LexerWarningInfo
+    LexerWarning FilePos LexerWarningInfo
 
 data LexerWarningInfo 
     = TabCharacter
     | LooksLikeFloatNoFraction String
     | LooksLikeFloatNoDigits String
-    | NestedComment SourcePos
+    | NestedComment FilePos
     | CommentOperator
 
 showLexerWarningInfo :: LexerWarningInfo -> [String]

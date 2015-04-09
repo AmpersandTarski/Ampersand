@@ -1,29 +1,15 @@
 module Database.Design.Ampersand.Input.ADL1.LexerToken (
     Token(..), Lexeme(..), lexemeText,
-    Pos(..), Line, Column, Filename,
-    noPos, initPos, Origin(..), FilePos(..)
+    initPos, Filename, FilePos(..)
 ) where
 
-import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..), FilePos(..))
-import Text.Parsec.Pos(SourcePos)
+import Database.Design.Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
 import Text.Parsec()
-
-type Line = Int
-type Column = Int
-
---TODO: Use either Pos or SourcePos, why both?
-data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord, Show)
-
-initPos :: Pos
-initPos = Pos 1 1
-
-noPos :: Pos
-noPos = Pos 1 0
 
 type Filename   = String
 
 data Token = Tok { tokLex :: Lexeme
-                 , tokPos :: SourcePos }
+                 , tokPos :: FilePos }
 
 instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
