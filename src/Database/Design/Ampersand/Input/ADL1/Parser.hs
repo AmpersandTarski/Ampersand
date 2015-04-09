@@ -360,9 +360,9 @@ pIndex  = P_Id <$> currPos
 
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
-          pIndAtt  = attL <$> try pLabelProps <*> pTerm <|>
+          pIndAtt  = attL <$> currPos <*> try pLabelProps <*> pTerm <|>
                      P_Obj <$> return "" <*> return (Origin "pIndAtt CC664") <*> try pTerm <*> return Nothing <*> return Nothing <*> return []
-              where attL (Lbl nm p strs) attexpr =
+              where attL p (nm, strs) attexpr =
                        P_Obj { obj_nm   = nm
                              , obj_pos  = p
                              , obj_ctx  = attexpr
@@ -438,11 +438,11 @@ pViewDefLegacy = P_Vd <$> currPos
                          P_ViewHtml <$ pKey "PRIMHTML" <*> pString
           --- ViewAtt ::= LabelProps? Term
           pViewAtt :: AmpParser P_ObjectDef
-          pViewAtt = rebuild <$> pMaybe (try pLabelProps) <*> pTerm
+          pViewAtt = rebuild <$> currPos <*> pMaybe (try pLabelProps) <*> pTerm
               where
-                rebuild mLbl attexpr =
+                rebuild p mLbl attexpr =
                   case mLbl of
-                    Just (Lbl nm p strs) ->
+                    Just (nm, strs) ->
                             P_Obj { obj_nm   = nm
                                   , obj_pos  = p
                                   , obj_ctx  = attexpr
@@ -452,7 +452,7 @@ pViewDefLegacy = P_Vd <$> currPos
                                   }
                     Nothing ->
                             P_Obj { obj_nm   = ""
-                                  , obj_pos  = origin attexpr
+                                  , obj_pos  = p
                                   , obj_ctx  = attexpr
                                   , obj_mView = Nothing
                                   , obj_msub = Nothing
@@ -506,13 +506,14 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
 --- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
-pObjDef = obj <$> pLabelProps
+pObjDef = obj <$> currPos
+              <*> pLabelProps
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj (Lbl nm pos' strs) term mView msub  =
+         where obj pos (nm, strs) term mView msub  =
                  P_Obj { obj_nm   = nm
-                       , obj_pos  = pos'
+                       , obj_pos  = pos
                        , obj_ctx  = term
                        , obj_mView = mView
                        , obj_msub = msub
@@ -742,8 +743,9 @@ pTrm6 :: AmpParser (Term TermPrim)
 pTrm6 = Prim <$> pRelationRef  <|>
         PBrk <$> currPos <*> pParens pTerm
 
-invert :: (Origin -> a -> a -> b) -> Origin -> a -> a -> b
-invert constr pos right left = constr pos left right
+-- Help function for several expressions. The type 't' is each of the left and right terms, while t is the result type.
+invert :: (Origin -> t -> t -> r) -> Origin -> t -> t -> r
+invert constructor position rightTerm leftTerm = constructor position leftTerm rightTerm
 
 --- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
@@ -788,12 +790,11 @@ pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
 --  (SJ April 15th, 2013) Since KEY has been replaced by IDENT and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
 --- LabelProps ::= ADLid ('{' ADLidListList '}')? ':'
-pLabelProps :: AmpParser Label
-pLabelProps       = Lbl <$> pADLid
-                        <*> currPos
-                        <*> (pArgs `opt` [])
+pLabelProps :: AmpParser (String, [[String]])
+pLabelProps       = (,) <$> pADLid
+                        <*> optList pArgs
                         <*  posOf pColon
-                    where pArgs = pBraces (many1 pADLid `sepBy1` pComma)
+                    where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String

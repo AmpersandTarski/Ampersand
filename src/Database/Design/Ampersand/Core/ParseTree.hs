@@ -33,8 +33,6 @@ module Database.Design.Ampersand.Core.ParseTree (
 
    , PandocFormat(..)
 
-   , Label(..)
-
    , Prop(..), Props, normalizeProps
    -- Inherited stuff:
    , module Database.Design.Ampersand.Input.ADL1.FilePos
@@ -635,13 +633,6 @@ instance Flippable Prop where
  flp Sur = Tot
  flp Inj = Uni
  flp x = x
-
-data Label = Lbl { lblnm :: String
-                 , lblpos :: Origin
-                 , lblstrs :: [[String]]
-                 } deriving Show
-instance Eq Label where
- l==l' = lblnm l==lblnm l'
 
 normalizeProps :: [Prop] -> [Prop]
 normalizeProps = nub.conv.rep

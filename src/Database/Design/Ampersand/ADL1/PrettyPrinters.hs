@@ -95,6 +95,9 @@ labelArgs args = if null args || all null args
                  then empty
                  else braces $ listOfLists args
 
+prettyLabel :: String -> [[String]] -> Doc
+prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
+
 instance Pretty P_Context where
     pretty p = text "CONTEXT" <+> quoteConcept(ctx_nm p) <~> ctx_lang p
                <~> ctx_markup p
@@ -259,7 +262,7 @@ instance Pretty P_Interface where
 
 instance Pretty a => Pretty (P_ObjDef a) where
     pretty (P_Obj nm _ ctx mView msub strs) =
-        quote nm <+> labelArgs strs <+> text ":"
+        prettyLabel nm strs <+> text ":"
                  <~> ctx <+> view mView <~> msub
         where view Nothing  = empty
               view (Just v) = text ("<" ++ v ++ ">")
@@ -279,7 +282,7 @@ instance Pretty P_IdentSegment where
     pretty (P_IdentExp (P_Obj nm _ ctx mView _ strs)) =
               if null nm
               then pretty ctx -- no label
-              else text nm <+> labelArgs strs <> text ":" <~> ctx <+> view mView
+              else prettyLabel nm strs <> text ":" <~> ctx <+> view mView
         where view Nothing  = empty
               view (Just v) = pretty v
 
@@ -363,10 +366,6 @@ instance Pretty PandocFormat where
         HTML     -> text "HTML"
         LaTeX    -> text "LATEX"
         Markdown -> text "MARKDOWN"
-
-instance Pretty Label where
-    pretty (Lbl nm _ strs) =
-        text "LABEL?" <+> maybeQuote nm <+> listOfLists strs
 
 instance Pretty Prop where
     pretty p = text $ case p of
