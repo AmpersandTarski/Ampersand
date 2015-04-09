@@ -562,6 +562,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) -- which may be flipped.
      , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
+     , "      , 'exprIsProp'    => " ++ showPhpBool (isProp normalizedInterfaceExp) 
      , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery fSpec (22+14*depth) normalizedInterfaceExp)
      ] 
   ++ generateMSubInterface fSpec editableRels depth (objmsub object)

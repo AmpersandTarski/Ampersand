@@ -113,7 +113,6 @@ instance ConceptStructure A_Concept where
 
 instance ConceptStructure ConceptDef where
   concs        cd = [PlainConcept { cptnm = name cd
-                                  , cpttp = cdtyp cd
                                   }
                     ]
   expressionsIn _ = []

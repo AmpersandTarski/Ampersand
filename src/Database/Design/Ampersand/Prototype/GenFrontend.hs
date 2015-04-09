@@ -146,7 +146,7 @@ data FEInterface = FEInterface { ifcName :: String
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , objIsEditable :: Bool, _exprIsUni :: Bool, _exprIsTot :: Bool
+                         , objIsEditable :: Bool, _exprIsUni :: Bool, _exprIsTot :: Bool, _exprIsProp :: Bool
                          , _objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
@@ -224,7 +224,7 @@ buildInterface fSpec allIfcs ifc =
                         , let nRoles = ifcRoles nIfc `intersect` ifcRoles ifc
                         ]
 
-        ; return $ FEObject (name object) iExp' src tgt isEditable (isUni iExp') (isTot iExp') navIfcs aOrB
+        ; return $ FEObject (name object) iExp' src tgt isEditable (isUni iExp') (isTot iExp') (isProp iExp') navIfcs aOrB
         }
       where getIsEditableSrcTgt expr = 
               case getExpressionRelation expr of
@@ -281,11 +281,12 @@ data SubObjectAttr = SubObjAttr { subObjName :: String, subObjLabel :: String, i
                                 , subObjContents :: String } deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
-genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot navInterfaces _) =
+genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot exprIsProp navInterfaces _) =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
       atomicAndBoxAttrs = setAttribute "isEditable" isEditable
                         . setAttribute "exprIsUni"  exprIsUni
                         . setAttribute "exprIsTot"  exprIsTot
+                        . setAttribute "exprIsProp" exprIsProp
                         . setAttribute "name"       (escapeIdentifier nm)
                         . setAttribute "label"      nm -- no escaping for labels in templates needed
                         . setAttribute "expAdl"     (showADL oExp) 

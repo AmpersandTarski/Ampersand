@@ -49,23 +49,6 @@ processModel fp
                       | (from,to,e,d) <- allEdges
                       ]
       allEdges  = nub[(from,to,e,d) | (e,d,from)<-eventsOut, (e',d',to)<-eventsIn, e==e', d==d']
-{-
-data Activity = Act { actRule ::   Rule
-                    , actTrig ::   [Relation]
-                    , actAffect :: [Relation]
-                    , actQuads ::  [Quad]
-                    , actEcas ::   [ECArule]
-                    , actPurp ::   [Purpose]
-                    }
-data ECArule= ECA { ecaTriggr :: Event     -- The event on which this rule is activated
-                  , ecaDelta ::  Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
-                  , ecaAction :: PAclause  -- The action to be taken when triggered.
-                  , ecaNum ::    Int       -- A unique number that identifies the ECArule within its scope.
-                  }
-data Event = On { eSrt :: InsDel
-                  , eRel :: Relation
-                  } deriving (Show,Eq)
--}
       eventsIn  = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, let On e d = ecaTriggr eca]
       eventsOut = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, (e,d)<-(nub.evs.ecaAction) eca]
                   where evs :: PAclause -> [(InsDel,Declaration)]

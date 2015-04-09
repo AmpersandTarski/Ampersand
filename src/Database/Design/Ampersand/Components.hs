@@ -34,16 +34,13 @@ fatal = fatalMsg "Components"
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: FSpec -> IO ()
 generateAmpersandOutput fSpec =
- do { verboseLn (getOpts fSpec) "Generating common Ampersand artifacts..."
-    ; when (genXML (getOpts fSpec))      $ doGenXML      fSpec
+ do { when (genXML (getOpts fSpec))      $ doGenXML      fSpec
     ; when (genUML (getOpts fSpec))      $ doGenUML      fSpec
     ; when (haskell (getOpts fSpec))     $ doGenHaskell  fSpec
     ; when (export2adl (getOpts fSpec))  $ doGenADL      fSpec
     ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
     ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
     ; when (proofs (getOpts fSpec))      $ doGenProofs   fSpec
-    ; when (genGenericsFile (getOpts fSpec)) $ doGenGenericsPopulation Generics fSpec
-    ; when (genASTFile (getOpts fSpec))  $ doGenGenericsPopulation AST fSpec
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
@@ -72,7 +69,7 @@ doGenProofs fSpec =
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension ("proofs_of_"++baseName (getOpts fSpec)) ".html"
        thePandoc = setTitle title (doc theDoc)
        title  = text $ "Proofs for "++name fSpec
-       theDoc = deriveProofs fSpec
+       theDoc = fDeriveProofs fSpec
        --theDoc = plain (text "Aap")  -- use for testing...
 
 doGenHaskell :: FSpec -> IO()
@@ -83,14 +80,6 @@ doGenHaskell fSpec =
     ; verboseLn (getOpts fSpec) $ "Haskell written into " ++ outputFile ++ "."
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".hs"
-
-doGenGenericsPopulation :: MetaType -> FSpec -> IO()
-doGenGenericsPopulation mType fSpec =
- do verboseLn (getOpts fSpec) $ "Generating meta-population for "++name fSpec
-    let (nm,content) = makeMetaPopulationFile mType fSpec
-        outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension nm ".adl"
-    writeFile outputFile content
-    verboseLn (getOpts fSpec) $ "Meta population written into " ++ outputFile ++ "."
 
 doGenXML :: FSpec -> IO()
 doGenXML fSpec =

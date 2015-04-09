@@ -18,8 +18,8 @@ import Database.Design.Ampersand.FSpec.FSpec
        (FSpec(..), concDefs, FProcess(..), ECArule(..), plugFields, lookupCpt, metaValues)
 import Database.Design.Ampersand.FSpec.Plug
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
-        requiredFields, requires, plugpath, Plugable(..),
-        showSQL, fldauto, isPlugIndex)
+        Plugable(..),
+        showSQL, fldauto)
 import Database.Design.Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), LanguageDependent(..))
@@ -30,7 +30,7 @@ import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
 import Database.Design.Ampersand.FSpec.Graphic.Graphics
        (makePicture,writePicture,Picture(..), PictureReq(..),imagePath)
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-       (deriveProofs,showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc')
+       (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc')
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
        (makeFSpec)
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms

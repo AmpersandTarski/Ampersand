@@ -81,6 +81,7 @@ data Options = Options { showVersion :: Bool
                        , genASTFile :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
                        , genGenericsFile :: Bool  -- Generate the meta-population in generics format and output it to an .adl file
                        , genGenericTables :: Bool -- When set, generate the meta-tables of generics into the prototype
+                       , metaTablesHaveUnderscore :: Bool -- Separate the extra tables used with ASTTables or GenericTables by letting them have underscores
                        , pangoFont :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
@@ -179,6 +180,7 @@ getOptions =
                       , genGenericsFile       = False
                       , genASTTables     = False
                       , genASTFile    = False
+                      , metaTablesHaveUnderscore = False
                       , pangoFont     = "Sans"
                       , sqlHost       = "localhost"
                       , sqlLogin      = "ampersand"
@@ -450,6 +452,10 @@ options = map pp
           , (Option []        ["generic-file"]
                (NoArg (\opts -> return opts{genGenericsFile = True}))
                "Generate the meta-population in Generics format and output it to an .adl file"
+            , Hidden)
+          , (Option []        ["meta-tables-have-underscore"]
+               (NoArg (\opts -> return opts{metaTablesHaveUnderscore = True}))
+               "Separate the extra tables used with ast-tables or generic-tables by letting them have underscores"
             , Hidden)
           , (Option []        ["pango"]
                (ReqArg (\nm opts -> return opts{pangoFont = nm}

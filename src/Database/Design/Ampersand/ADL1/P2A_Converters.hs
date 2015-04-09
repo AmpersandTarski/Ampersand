@@ -74,7 +74,9 @@ isDanglingPurpose ctx purp =
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
-    ExplContext nm -> ctxnm ctx /= nm
+    ExplContext nm -> ctxnm ctx /= nm 
+                         && False -- HJO: This line is a workaround for the issue mentioned in https://github.com/AmpersandTarski/ampersand/issues/46
+                                  -- TODO: fix this when we pick up working on multiple contexts.
 -- Check that interface references are not cyclic
 checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
 checkInterfaceCycles gCtx =
@@ -263,8 +265,7 @@ pCtx2aCtx' _
     castConcept "ONE" = ONE
     castConcept x
      = PlainConcept { cptnm = x
-                    , cpttp = fatal 260 "the technical type should be derived from the conceptdefs of this concept. "}
-
+                    }
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }

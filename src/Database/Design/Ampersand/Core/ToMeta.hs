@@ -2,16 +2,26 @@
 module Database.Design.Ampersand.Core.ToMeta 
   (toMeta)
 where
+import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.ParseTree
 
 -- | When dealing with meta-stuff for Ampersand, (Like makeGenerics, makeRAP), 
 --   the names of Concepts should be different than 'normal', user-defined Concepts. 
 --   This function modifies everything in the context to reflect that.  
-toMeta :: (P_Context -> P_Context)
-toMeta ctx = makeMeta f ctx 
-  where 
-    f :: String -> String
-    f str = "__"++str++"__"
+toMeta :: MakeMeta a => Options -> (a -> a)
+toMeta opts = 
+  if metaTablesHaveUnderscore opts then makeMeta (string2Meta opts) else id
+
+string2Meta :: Options -> String -> String
+string2Meta opts str 
+              = if metaTablesHaveUnderscore opts 
+                then show ("__"++unquoted++"__")
+                else str
+  where
+    unquoted
+     | length str < 2 = str
+     | head str == '"' && last str == '"' = reverse . tail . reverse . tail $ str
+     | otherwise = str 
 
 class MakeMeta a where
   makeMeta :: (String -> String) -> a -> a
@@ -136,7 +146,6 @@ instance MakeMeta P_IdentSegment where
    = P_IdentExp
           { ks_obj = makeMeta f (ks_obj sgmt)
           }
-
 instance MakeMeta a => MakeMeta (P_ViewD a) where
   makeMeta f vd
    = P_Vd { vd_pos = makeMeta f (vd_pos vd) 
@@ -235,7 +244,7 @@ instance MakeMeta Meta where
           }
 instance MakeMeta a => MakeMeta (P_ObjDef a) where
   makeMeta f obj
-   = P_Obj { obj_nm   =            (obj_nm obj)
+   = P_Obj { obj_nm   =          f (obj_nm obj)
            , obj_pos  = makeMeta f (obj_pos obj)
            , obj_ctx  = makeMeta f (obj_ctx obj)
            , obj_mView =           (obj_mView obj)
@@ -296,10 +305,8 @@ instance MakeMeta TermPrim where
       PNamedR nr      -> PNamedR (makeMeta f nr)
 
 instance MakeMeta P_NamedRel where
-  makeMeta f t
-   = case t of
-      PNamedRel  _ _ Nothing   -> t
-      PNamedRel o s (Just sgn) -> PNamedRel o s (makeMeta f $ Just sgn)
+  makeMeta f (PNamedRel o nm      sgn)
+            = PNamedRel o (f nm) (makeMeta f sgn)
    
 instance MakeMeta Paire where
   makeMeta _ = id

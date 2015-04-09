@@ -166,7 +166,7 @@ natLangOps l
                apply decl d c =
                   case decl of
                     Sgn{}     -> if null (prL++prM++prR)
-                                   then "$"++d++"$ "++decnm decl++" $"++c++"$"
+                                   then "$"++d++"$ "++name decl++" $"++c++"$"
                                    else prL++" $"++d++"$ "++prM++" $"++c++"$ "++prR
                        where prL = decprL decl
                              prM = decprM decl

@@ -32,6 +32,8 @@ class Language a where
   multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = concatMap rulesFromIdentity (identities x)
+  allRules :: a -> [Rule]
+  allRules x = udefrules x ++ multrules x ++ identityRules x
   identities :: a -> [IdentityDef]   -- ^ all keys that are defined in a
   viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint

@@ -288,7 +288,7 @@ instance Motivated Declaration where
 --      applyM decl a b =
 --               case decl of
 --                 Sgn{} | null (prL++prM++prR)
---                            -> a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(decnm decl)]
+--                            -> a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
 --                       | null prL
 --                            -> a++[Space,Str prM,Space]++b++[Space,Str prR]
 --                       | otherwise

@@ -218,10 +218,10 @@ instance ShowHS Fswitchboard where
       shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS opts newindent'' conj++newindent++"   )"
 
 instance ShowHS DnfClause where
- showHS opts indent (Dnf antcs conss)
+ showHS opts indent dnf
    = intercalate indent
-       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) antcs
-       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) conss
+       [ wrap "Dnf " (indent++"    ") (\_->showHS opts (indent++"      ")) (antcs dnf)
+       , wrap "    " (indent++"    ") (\_->showHS opts (indent++"      ")) (conss dnf)
        ]
 
 instance ShowHSName Conjunct where

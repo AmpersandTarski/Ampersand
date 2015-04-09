@@ -19,7 +19,6 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Core.ParseTree
 
 --import Data.Hashable
 import Data.Maybe
@@ -31,7 +30,7 @@ data MetaType = Generics | AST deriving (Show)
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
-  = ("MetaPopulationFile"++show mType, content popKind mType fSpec)
+  = ("MetaPopulationFile"++show mType++".adl", content popKind mType fSpec)
     where popKind = case mType of
                       Generics -> generics fSpec
                       AST      -> metaPops fSpec 
@@ -53,7 +52,7 @@ content popKind mType fSpec = unlines
     , "-}"
     , ""
     , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ (concat.intersperse  []) (map (lines.showADL) (popKind fSpec))
+    ++ (concat.intersperse  []) (map (lines . showADL ) (popKind fSpec))
     ++
     [ ""
     , "ENDCONTEXT"
@@ -90,22 +89,18 @@ instance MetaPopulations FSpec where
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
-  ++[ Pop "ctxnm"   "Context" "Conid"
+  ++[ Pop "name"   "Context" "ContextName"
            [(uri fSpec,name fSpec)]]
-  ++[ Pop "ctxpats" "Context" "Pattern"
-           [(uri fSpec,uri pat) | pat <- vpatterns fSpec]]
-  ++[ Pop "ctxcs" "Context" "PlainConcept"
-           [(uri fSpec,uri cpt) | cpt <- allConcepts fSpec, cpt /= ONE]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.vgens) fSpec++")"]
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.allConcepts) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) allAtoms++")"]
-  ++   concatMap (metaPops fSpec) allAtoms
-  ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length) allSigns++")"]
-  ++   concatMap (metaPops fSpec) allSigns
+  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
+  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length.allSigns) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
@@ -116,35 +111,29 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
   )
    where
-    allAtoms :: [AtomID]
-    allAtoms = nub (concatMap atoms (initialPops fSpec))
-      where
-        atoms :: Population -> [AtomID]
-        atoms udp = case udp of
-          PRelPopu{} ->  map (mkAtom fSpec ((source.popdcl) udp).srcPaire) (popps udp)
-                      ++ map (mkAtom fSpec ((target.popdcl) udp).trgPaire) (popps udp)
-          PCptPopu{} ->  map (mkAtom fSpec (        popcpt  udp)         ) (popas udp)
-    allSigns :: [Sign]
-    allSigns = [] --TODO. 
 
 instance MetaPopulations Pattern where
- metaPops _ pat =
+ metaPops fSpec pat =
    [ Comment " "
    , Comment $ " Pattern `"++name pat++"` "
-   , Pop "ptnm"    "Pattern" "Conid"
-          [(uri pat, ptnm pat)]
-   , Pop "ptrls"   "Pattern" "Rule"
+   , Pop "patterns" "Context" "Pattern"
+          [(uri fSpec,uri pat)]
+   , Pop "name"    "Pattern" "PatternName"
+          [(uri pat, name pat)]
+   , Pop "allRules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
-   , Pop "ptgns"   "Pattern" "Gen"
-          [(uri pat,uri x) | x <- ptgns pat]
+   , Pop "gens"   "Pattern" "Gen"
+          [(uri pat,uri x) | x <- gens pat]
    , Pop "ptdcs"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptxps"   "Pattern" "Blob"
+   , Pop "ptxps"   "Pattern" "Purpose"
           [(uri pat,uri x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
- metaPops _ gen =
-  [ Pop "genspc"  "Gen" "PlainConcept"
+ metaPops fSpec gen =
+  [ Pop "gens" "Context" "Gen"
+          [(uri fSpec,uri gen)]
+  , Pop "genspc"  "Gen" "PlainConcept"
           [(uri gen,uri(genspc gen))]
   , Pop "gengen"  "Gen" "PlainConcept"
           [(uri gen,uri c) | c<- case gen of
@@ -161,7 +150,7 @@ instance GenericPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "allConcepts" "Context" "Concept"
              [(uri fSpec,uri cpt)]
-      , Pop "cptnm" "Concept" "ConceptName"
+      , Pop "name" "Concept" "ConceptName"
              [(uri cpt, name cpt)]
       , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
              [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
@@ -181,15 +170,14 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Comment " "
       , Comment $ " Concept `"++name cpt++"` "
-      , Pop "cptnm" "PlainConcept" "Conid"
+      , Pop "concs" "Context" "PlainConcept"
+           [(uri fSpec,uri cpt)]
+      , Pop "name" "PlainConcept" "ConceptName"
              [(uri cpt, name cpt)]
-      , Pop "cptdf" "PlainConcept" "Blob"
+      , Pop "cptdf" "PlainConcept" "ConceptDefinition"
              [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
-      , Pop "cptpurpose" "PlainConcept" "Blob"
+      , Pop "cptpurpose" "PlainConcept" "Purpose"
              [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
-      , Pop "cpttp" "PlainConcept" "Blob"
-             [(uri cpt,cpttp cpt)  | not.null.cpttp $ cpt
-             ]
       ]
      ONE -> [
             ]
@@ -235,13 +223,7 @@ instance MetaPopulations AtomID where
    ]
 instance MetaPopulations Sign where
  metaPops _ sgn =
---      [ Pop "sign" "Declaration" "Sign"
---             [(aap,uri sgn)]
---      , Pop "sign" "PairID" "Sign"
---             [(noot,uri sgn)]
-      [ Pop "in" "PairID" "Declaration"
-             [(uri sgn, uri (source sgn))]
-      , Pop "src" "Sign" "Concept"
+      [ Pop "src" "Sign" "Concept"
              [(uri sgn, uri (source sgn))]
       , Pop "trg" "Sign" "Concept"
              [(uri sgn, uri (target sgn))]
@@ -283,47 +265,32 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
-      , Pop "decnm" "Declaration" "Varid"
+      , Pop "allDeclarations" "Context" "Declaration"
+             [(uri fSpec,uri dcl)] 
+      , Pop "name" "Declaration" "DeclarationName"
              [(uri dcl, name dcl)]
-      , Pop "decsgn" "Declaration" "Sign"
-             [(uri dcl,uri (decsgn dcl))]
-      , Comment $ " PropertyRules of "++name dcl++":"
-      , Pop "decprps" "Declaration" "PropertyRule"
-             [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
-      , Pop "declaredthrough" "PropertyRule" "Property"
-             [(uri rul,show prp) | rul <- filter ofDecl (grules fSpec), Just (prp,d) <- [rrdcl rul], d == dcl]
+      , Pop "sign" "Declaration" "Sign"
+             [(uri dcl,uri (sign dcl))]
       , Pop "decprL" "Declaration" "String"
              [(uri dcl,decprL dcl)]
       , Pop "decprM" "Declaration" "String"
              [(uri dcl,decprM dcl)]
       , Pop "decprR" "Declaration" "String"
              [(uri dcl,decprR dcl)]
-      , Pop "decmean" "Declaration" "Blob"
+      , Pop "decmean" "Declaration" "Meaning"
              [(uri dcl, show(decMean dcl))]
-      , Pop "decpurpose" "Declaration" "Blob"
+      , Pop "decpurpose" "Declaration" "Purpose"
              [(uri dcl, showADL x) | x <- explanations dcl]
-      , Comment $ "The population of "++name dcl++":"
-      , Pop "decpopu" "Declaration" "PairID"
-             [(uri dcl,uri p) | p <- mkLinks fSpec (sign dcl) (pairsOf dcl)]
-      ]++ metaPops fSpec ( mkLinks fSpec (sign dcl) (pairsOf dcl))
+      ]
 
-     Isn{} -> fatal 157 "Isn is not implemented yet"
+
+     Isn{} -> 
+      [ Comment " "
+      , Comment $ " Declaration `I["++name (source dcl)++"]`"
+      , Pop "sign" "Declaration" "Sign"
+             [(uri dcl,uri (sign dcl))]
+      ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
-    where
-      ofDecl :: Rule -> Bool
-      ofDecl rul = case rrdcl rul of
-                     Nothing -> False
-                     Just (_,d) -> d == dcl
-      pairsOf :: Declaration -> Pairs
-      pairsOf d = case filter theDecl (initialPops fSpec) of
-                    []    -> []
-                    [pop] -> popps pop
-                    _     -> fatal 273 "Multiple entries found in populationTable"
-        where
-          theDecl :: Population -> Bool
-          theDecl p = case p of
-                        PRelPopu{} -> popdcl p == d
-                        PCptPopu{} -> False
 
 instance MetaPopulations Expression where
  metaPops _ e =
@@ -400,17 +367,21 @@ instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "rrnm"  "Rule" "ADLid"
-             [(uri rul,rrnm rul)]
+      , Pop "name"  "Rule" "RuleName"
+             [(uri rul,name rul)]
       , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]
-      , Pop "rrmean"  "Rule" "Blob"
+      , Pop "rrmean"  "Rule" "Meaning"
              [(uri rul,show(rrmean rul))]
-      , Pop "rrpurpose"  "Rule" "Blob"
+      , Pop "rrpurpose"  "Rule" "Purpose"
              [(uri rul,showADL x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Sign"
-             [(uri rul,uri (rrtyp rul))]
+             [(uri rul,uri (sign rul))]
+      , Pop "declaredthrough" "PropertyRule" "Property"
+             [(uri rul,show prp) | Just(prp,_) <- [rrdcl rul]]
+      , Pop "decprps" "Declaration" "PropertyRule"
+             [(uri dcl, uri rul) | Just(_,dcl) <- [rrdcl rul]]
       ]
 
 
@@ -420,14 +391,11 @@ instance MetaPopulations PlugInfo where
       [ Comment $ " Plug `"++name plug++"` "
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "PlainConcept" "Plug"                 
-             [(uri cpt,uri plug)| cpt <- concs plug, isRelevant plug] -- TODO @Stef: Dit levert mogelijk meerdere plugs op, omdat we hier naar plugs kijken, en niet filteren op alleen brede tabellen. Waardoor weten we dat we niet naar BinSQL moeten kijken, maar alleen naar TblSQL? En hoe zit dat voor andere typen plugs (PHP plugs?)  
+             [(uri cpt,uri plug)| cpt <- concs plug]  
       , Pop "in" "Declaration" "Plug"
-             [(uri dcl,uri plug)| dcl <- relsMentionedIn plug, isRelevant plug]  --Idem
+             [(uri dcl,uri plug)| dcl <- relsMentionedIn plug]
       ]      
--- TIJDELIJKE FUNCTIE: Moet worden overlegd met Stef:
-isRelevant :: PlugInfo -> Bool
-isRelevant (InternalPlug TblSQL{}) = True
-isRelevant _ = False
+
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
  
@@ -481,7 +449,7 @@ instance ShowADL Pop where
 
 class Unique a => AdlId a where
  uri :: a -> String
- uri = camelCase . uniqueShow True
+ uri = camelCase . uniqueShow False
 -- All 'things' that are relevant in the meta-environment (RAP),
 -- must be an instance of AdlId:
 instance AdlId A_Concept
@@ -510,22 +478,6 @@ instance AdlId Bool where
 instance AdlId a => AdlId [a] where
 
 
-mkAtom :: FSpec  -> A_Concept -> String -> AtomID
-mkAtom fSpec cpt value = 
-   AtomID { atmRoots = rootConcepts gs [cpt]
-          , atmIn   = largerConcepts gs cpt `uni` [cpt]
-          , atmVal  = value
-          }
-  where
-    gs = vgens fSpec
-mkLink :: FSpec -> Sign -> Paire -> PairID
-mkLink fSpec sgn p 
-  = PairID { lnkSgn = sgn
-         , lnkLeft  = mkAtom fSpec (source sgn) (srcPaire p) 
-         , lnkRight = mkAtom fSpec (target sgn) (trgPaire p)
-         }
-mkLinks :: FSpec -> Sign -> [Paire] -> [PairID]
-mkLinks fSpec sgn = map $ mkLink fSpec sgn
 
 
 -- | remove spaces and make camelCase

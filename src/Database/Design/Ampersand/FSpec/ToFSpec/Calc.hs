@@ -1,20 +1,18 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
 module Database.Design.Ampersand.FSpec.ToFSpec.Calc
             ( deriveProofs
-            , lambda
-            , checkMono
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
             , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc'
+            , quadsOfContext
           --  , testInterface
             ) where
 
-import Database.Design.Ampersand.Basics (fatalMsg,Collection (isc),Named(..),eqCl,Flippable(..))
+import Database.Design.Ampersand.Basics
 import Data.List hiding (head)
 import Data.Monoid
 import GHC.Exts (sortWith)
 --import Data.ByteString.Char8
 --import Data.ByteString.Lazy.Char8
-import Database.Design.Ampersand.Basics.Auxiliaries (commaEng)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.Expression
@@ -33,9 +31,6 @@ fatal = fatalMsg "FSpec.ToFSpec.Calc"
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
-
-conjuncts :: Options -> Rule -> [Expression]
-conjuncts opts = exprIsc2list.conjNF opts.rrexp
 
 -- testInterface :: FSpec -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
@@ -81,32 +76,32 @@ conjuncts opts = exprIsc2list.conjNF opts.rrexp
 --                                 | length new   <= n = f new css
 --                                 | otherwise         = stored: f cs css
 --                                   where new = stored++str++cs
-testConfluence :: FSpec -> Blocks
-testConfluence fSpec
- = let tcss = [(expr,tcs) | expr<-expressionsIn fSpec, let tcs=dfProofs expr, length tcs>1]
+testConfluence :: A_Context -> Blocks
+testConfluence context
+ = let tcss = [(expr,tcs) | expr<-expressionsIn context, let tcs=dfProofs expr, length tcs>1]
        sumt = sum (map (length.snd) tcss)
    in
-   para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) fSpec<>" expressions."<>linebreak)<>
+   para ("Confluence analysis statistics from "<>(str.show.length.expressionsIn) context<>" expressions."<>linebreak)<>
    para ("This script contains "<>linebreak<>(str.show.length) tcss<> " non-confluent expressions "<>linebreak)<>
    para (linebreak<>"Total number of derived expressions: "<>(str.show) sumt<>linebreak)<>
-   para ("Confluence analysis for "<>(str.name) fSpec)<>
+   para ("Confluence analysis for "<>(str.name) context)<>
    mconcat
      [ para (linebreak<>"expression:   "<>(str . showADL) expr<>linebreak)<>
        bulletList [ showProof (para.str.showADL) prf | (_,prf)<-tcs ]
      | (expr,tcs)<-tcss]
 
-deriveProofs :: FSpec -> Blocks
-deriveProofs fSpec
- = testConfluence fSpec<>
+deriveProofs :: Options -> A_Context -> Blocks
+deriveProofs opts context
+ = testConfluence context<>
    para (linebreak<>"--------------"<>linebreak)<>
-   para ("Rules and their conjuncts for "<>(str.name) fSpec)<>
+   para ("Rules and their conjuncts for "<>(str.name) context)<>
    bulletList [ para ("rule r:   "<>str (showADL r)<>linebreak<>
                       "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
-                      "conjNF:   "<>str (showADL (conjNF (getOpts fSpec) (rrexp r)))<>linebreak<>
-                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts (getOpts fSpec) r ]
+                      "conjNF:   "<>str (showADL (conjNF opts (rrexp r)))<>linebreak<>
+                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts opts r ]
                      )
-              | r<-grules fSpec++vrules fSpec]<>
-   para ("Transformation of user specified rules into ECA rules for "<>(str.name) fSpec)<>
+              | r<-allRules context]<>
+   para ("Transformation of user specified rules into ECA rules for "<>(str.name) context)<>
    para (linebreak<>"--------------"<>linebreak<>"First step: determine the "<>(str.show.length) quads<>" quads:")<>
    bulletList [ para ( "-- quad ------------"<>linebreak<>"When relation "<>(str . showADL . qDcl) q<>" is changed,"
                        <>linebreak<>(str . showADL . qRule) q
@@ -131,20 +126,20 @@ deriveProofs fSpec
                     , let (_,dc,r) = head cl
                     ]
               ]<>
-   para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) fSpec<>" ECA rules"<>
-         if verboseP (getOpts fSpec)
+   para (linebreak<>"Third step: determine "<>(str.show.length.udefrules) context<>" ECA rules"<>
+         if verboseP opts
           then " (Turn --verbose off if you want to see ECA rules only)"
           else " (Turn on --verbose if you want to see more detail)"
         )<>
-   ( if verboseP (getOpts fSpec) then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
+   ( if verboseP opts then para ( "--------------"<>linebreak)<>bulletList derivations else fromList [] )<>
    bulletList [ para ( "-- ECA Rule "<>(str.show.ecaNum) ecarule<>" ---------")<>
-                codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA (getOpts fSpec) (ecaAction ecarule)})<>
+                codeBlock ("\n  "++showECA "\n  " ecarule{ecaAction=normPA opts (ecaAction ecarule)})<>
                 bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                    <>linebreak<>"derivation:"
                                   )<>
-                             (showProof (para.str.showADL).dfProof (getOpts fSpec)) d<>  -- Produces its result in disjunctive normal form
-                             para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF (getOpts fSpec)) d)
-                           | verboseP (getOpts fSpec), e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
+                             (showProof (para.str.showADL).dfProof opts) d<>  -- Produces its result in disjunctive normal form
+                             para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF opts) d)
+                           | verboseP opts, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
               | ecarule <- ecaRs]
 {-
       ++
@@ -161,7 +156,7 @@ deriveProofs fSpec
 {- TODO: readdress preEmpt. It is wrong
       interText []
         [ [linebreak<>"-- Preempted ECA rule "<>(str.show.ecaNum) er<>"------------"<>linebreak<>str (showECA "\n  " er)]
-        | er<- preEmpt (getOpts fSpec) ecaRs]
+        | er<- preEmpt opts ecaRs]
       ++ -}
 {-
       [ linebreak<>"--------------", linebreak]
@@ -188,35 +183,35 @@ deriveProofs fSpec
 -}
    where
 --    visible _  = True -- We take all quads into account.
-    quads  = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
+    quads  = quadsOfContext opts context -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
 --    interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
     interText _ [] = ""
     interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
     derivations :: [Blocks]
     ecaRs :: [ECArule]
-    (ecaRs, derivations) = assembleECAs fSpec (allDecls fSpec)
+    (ecaRs, derivations) = assembleECAs opts context (relsDefdIn context)
 {-
            [ str ("Available code fragments on rule "<>name rule<>":", linebreak ]<>
            interText [linebreak] [showADL rule<> " yields\n"<>interText "\n\n"
                                    [ ["event = ", str (show ev), space, str (showADL rel), linebreak ] <>
-                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
+                                     [str (showADL r<>"["<>showADL rel<>":="<>showADL (actSem opts ev (EDcD rel) (delta (sign rel)))<>"] = r'"), linebreak ] <>
                                      ["r'    = "] <> conjProof r' <> [linebreak ] <>
                                      ["viols = r'-"] <> disjProof (ECpl r') <> [ linebreak ] <>
-                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel)))<>
+                                     "violations, considering that the valuation of "<>showADL rel<>" has just been changed to "<>showADL (actSem opts ev (EDcD rel) (delta (sign rel)))<>
                                      "            "<>conjProof (ECpl r) <>"\n"<>
-                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF (getOpts fSpec)) (notCpl r .\/. r')<>")"<>
+                                     "reaction? evaluate r |- r' ("<>(str.showADL.conjNF opts) (notCpl r .\/. r')<>")"<>
                                         conjProof (notCpl r .\/. r')<>"\n"<>
                                      "delta: r-/\\r' = "<>conjProof (EIsc[notCpl r,r'])<>
-                                     "\nNow compute a reaction\n(isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r') = "<>show ((isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r'))<>"\n"<>
+                                     "\nNow compute a reaction\n(isTrue.conjNF opts) (notCpl r .\/. r') = "<>show ((isTrue.conjNF opts) (notCpl r .\/. r'))<>"\n"<>
                                      (if null (lambda ev (ERel rel ) r)
                                       then "lambda "<>showADL rel<>" ("<>showADL r<>") = empty\n"
                                       else -- for debug purposes:
                                            -- "lambda "<>show ev<>" "<>showADL rel<>" ("<>showADL r<>") = \n"<>(interText "\n\n".map showPr.lambda ev (ERel rel)) r<>"\n"<>
                                            -- "derivMono ("<>showADL r<>") "<>show ev<>" "<>showADL rel<>"\n = "<>({-interText "\n". map -}showPr.derivMono r ev) rel<>"\n"<>
-                                           -- "\nNow compute checkMono (getOpts fSpec) r ev rel = \n"<>show (checkMono (getOpts fSpec) r ev rel)<>"\n"<>
-                                           if (isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r')
+                                           -- "\nNow compute checkMono opts r ev rel = \n"<>show (checkMono opts r ev rel)<>"\n"<>
+                                           if (isTrue.conjNF opts) (notCpl r .\/. r')
                                            then "A reaction is not required, because  r |- r'. Proof:"<>conjProof (notCpl r .\/. r')<>"\n"
-                                           else if checkMono (getOpts fSpec) r ev rel
+                                           else if checkMono opts r ev rel
                                            then "A reaction is not required, because  r |- r'. Proof:"{-<>(str.showPr.derivMono r ev) rel-}<>"NIET TYPECORRECT: (showPr.derivMono r ev) rel"<>"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ _ = delta (sign rel) in
                                                 "An appropriate reaction on this event is required."
@@ -224,10 +219,10 @@ deriveProofs fSpec
                                      )
                                    | rel<-relsUsedIn r   -- nub [x |x<-relsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
-                                   , r'<-[subst (rel, actSem (getOpts fSpec) ev (EDcD rel) (delta (sign rel))) r]
-                        --        , viols<-[conjNF (getOpts fSpec) (ECpl r')]
-                                   , True ]  -- (isTrue.conjNF (getOpts fSpec)) (notCpl r .\/. r')
-                                  | r<-[dc | cs<-[makeCjcts (getOpts fSpec) rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
+                                   , r'<-[subst (rel, actSem opts ev (EDcD rel) (delta (sign rel))) r]
+                        --        , viols<-[conjNF opts (ECpl r')]
+                                   , True ]  -- (isTrue.conjNF opts) (notCpl r .\/. r')
+                                  | r<-[dc | cs<-[makeCjcts opts rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
                  prf = cfProof (getOpts fSpec) e
@@ -477,8 +472,8 @@ actSem opts Del dcl delt | sign dcl/=sign delt = fatal 598 "Type error in actSem
                          | otherwise           = conjNF opts (dcl ./\. notCpl delt)
 
 -- | assembleECAs  assembles larger chunks of code, because it combines acts that are triggered by the same event.
-assembleECAs :: FSpec -> [Declaration] -> ([ECArule],[Blocks])
-assembleECAs fSpec editables
+assembleECAs :: Options -> A_Context -> [Declaration] -> ([ECArule],[Blocks])
+assembleECAs options context editables
  = unzip [eca i | (eca,i) <- zip ecas [(1::Int)..]]
    where
     ecas :: [Int->(ECArule,Blocks)]
@@ -552,7 +547,7 @@ assembleECAs fSpec editables
                      | conjEqClass <- [] -- TODO: implement this once we can test it (note: computing eq. class is no longer necessary)
                     -- conjEqClass <- eqCl fst [ (qConjuncts q, qRule q) | q<-relEq ]
                      , conjunct <- (fst.head) conjEqClass                  -- get conjuncts from the clauses
-                     , clause@(Dnf antcs conss) <- rc_dnfClauses conjunct  -- the DNF form of each clause
+                     , clause <- rc_dnfClauses conjunct  -- the DNF form of each clause
                      , let expr    = dnf2expr clause                       -- Note that this differs from:  rc_conjunct conjunct, because the type may be different.
                      , let vee     = EDcV (sign expr)
                      , let ex'     = subst (rel, actSem options ev (EDcD rel) (delta (sign rel))) expr -- the clause after the edit action
@@ -561,12 +556,12 @@ assembleECAs fSpec editables
                      , let notClau = notCpl clause'                                            -- the violations after the edit action
                      , let viols   = conjNF options notClau                                            -- the violations after the edit action
                      , let viols'  = disjNF options notClau                                            -- the violations after the edit action
-                     , let negs    = if (length.nub.map sign) (vee:antcs)>1
-                                     then fatal 265 ("type inconsistencies in antcs: "++show (map showADL (vee:antcs)))
-                                     else foldr (./\.) vee antcs
-                     , let poss    = if (length.nub.map sign) (vee:conss)>1
-                                     then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss)))
-                                     else foldr (.\/.) (notCpl vee) conss
+                     , let negs    = if (length.nub.map sign) (vee:antcs clause)>1
+                                     then fatal 265 ("type inconsistencies in antcs: "++show (map showADL (vee:antcs clause)))
+                                     else foldr (./\.) vee (antcs clause)
+                     , let poss    = if (length.nub.map sign) (vee:conss clause)>1
+                                     then fatal 265 ("type inconsistencies in conss: "++show (map showADL (vee:conss clause)))
+                                     else foldr (.\/.) (notCpl vee) (conss clause)
                      , let frExpr  = case ev of
                                       Ins -> disjNF options (notCpl negs)
                                       Del -> disjNF options poss
@@ -623,7 +618,8 @@ assembleECAs fSpec editables
           , (Del, Isn a, Do Del rel (delta (Sign a a).:.vee) [])
           , (Del, Isn b, Do Del rel (vee.:.delta (Sign b b)) [])
           ]
-        | rel <- allDecls fSpec, let dlt = delta (sign rel)
+        | rel <- relsDefdIn context
+        , let dlt = delta (sign rel)
         , let a=source rel, let b=target rel
         , let vee = (EDcV . sign) rel
         ]
@@ -638,10 +634,9 @@ assembleECAs fSpec editables
         [ [ (Ins, Isn s, Do Ins (Isn g) dlt [])
           , (Del, Isn g, Do Del (Isn s) dlt [])
           ]
-        | let dlt = delta (sign rel), (s,g) <- fsisa fSpec
+        | let dlt = delta (sign rel), (s,g) <- concatMap genericAndSpecifics (gens context)
         ]
     fst4 (x,_,_,_) = x
-    options = getOpts fSpec
 
 -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
@@ -774,4 +769,66 @@ commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
 commaNLPandoc  _  [a]  = [a]
 commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
 commaNLPandoc  _  []   = []
+   
+   
+quadsOfContext :: Options -> A_Context -> [Quad]
+quadsOfContext opts context 
+  = makeAllQuads (converse [ (conj, rc_orgRules conj) | conj <- allConjuncts opts context ])
+
+        -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
+        -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
+        -- the rule may have to be restored using functionality from one of the clauses.
+makeAllQuads :: [(Rule, [Conjunct])] -> [Quad]
+makeAllQuads conjsPerRule =
+  [ Quad { qDcl     = d
+         , qRule    = rule
+         , qConjuncts = conjs
+         }
+  | (rule,conjs) <- conjsPerRule, d <-relsUsedIn rule
+  ]
+  
+{-
+-- If one rule r blocks upon an event, e.g. e@(ON Ins rel), while another ECA rule r'
+-- maintains something else with that same event e, we can save r' the trouble.
+-- After all, event e will block anyway.
+-- preEmpt tries to simplify ECArules by predicting whether a rule will block.
+preEmpt :: Options -> [ECArule] -> [ECArule]
+preEmpt opts ers = pr [length ers] (10::Int)
+ where
+  pr :: [Int] -> Int -> [ECArule]
+  pr ls n
+    | n == 0              = fatal 633 $ "too many cascading levels in preEmpt "++show ls
+    | (not.null) cascaded = pr (length cascaded:ls)
+                            -- ([er{ecaAction=normPA opts (ecaAction er)} | er<-cascaded] ++uncasced)
+                               (n-1)
+    | otherwise           = [er{ecaAction=normPA opts (ecaAction er)} | er<-uncasced]
+   where
+-- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
+-- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
+    new  = [er{ecaAction=normPA opts (ecaAction er)} | er<-ers]
+    cascaded = [er{ecaAction=action'} | er<-new, let (c,action') = cascade (eDcl (ecaTriggr er)) (ecaAction er), c]
+    uncasced = [er |                    er<-new, let (c,_)       = cascade (eDcl (ecaTriggr er)) (ecaAction er), not c]
+-- cascade inserts a block on the place where a Do component exists that matches the blocking event.
+--  cascade :: Relation -> PAclause -> (Bool, PAclause)
+  cascade dcl (Do srt to _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
+   where blkErs = [er | er<-ers
+                      , Blk _<-[ecaAction er]
+                      , let t = ecaTriggr er
+                      , eSrt t == srt
+                      , eDcl t == to
+                      , not (dcl ==to)
+                      ]
+  cascade  _  c@Do{}           = (False, c)
+  cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
+  cascade rel (Rmv c clause m) = ((fst.cascade rel.clause) "dummystr", Rmv c (snd.cascade rel.clause) m)
+--cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (snd.cascade rel.cl)   m)
+  cascade rel (CHC ds m)       = (any (fst.cascade rel) ds, CHC (map (snd.cascade rel) ds) m)
+  cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
+  cascade  _  (Nop m)          = (False, Nop m)
+  cascade  _  (Blk m)          = (False, Blk m)
+  cascade  _  (Let _ _ _)  = fatal 611 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
+  cascade  _  (Ref _)      = fatal 612 "Deze constructor is niet gedefinieerd" -- HJO, 20131205:Toegevoegd om warning te verwijderen
+  cascade  _  (GCH{})      = fatal 655 "Deze constructor is niet gedefinieerd" -- SJO, 20140428:Toegevoegd om warning te verwijderen
+-}
+
    
