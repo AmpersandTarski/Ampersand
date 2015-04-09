@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     --TODO: Maybe we don't need to export these here
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
-    sepBy, sepBy1, many, many1, opt, try, expr, choice,
+    sepBy, sepBy1, many, many1, opt, try, choice,
     -- Positions
     SourcePos, sourceName, sourceLine, sourceColumn, posOrigin,
     currPos, posOf, valPosOf,
@@ -41,10 +41,6 @@ a <$ p = do { _ <- p; return a }
 
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
 p <??> q = (\x f -> f x) CA.<$> p CA.<*> (q `opt` id)
-
-expr :: AmpParser a -> AmpParser (a -> a -> a) -> AmpParser a
-expr item oper = do left <- item
-                    (oper CA.<*> return left CA.<*> item) P.<|> return left
 
 pIsThere :: AmpParser a -> AmpParser Bool
 pIsThere p = (True <$ p) `opt` False

@@ -271,7 +271,7 @@ pRelationDef = reorder <$> currPos
                        <*> optList (pKey "PRAGMA" *> many1 pString)
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
-                       <* optList (pOperator ".")
+                       <*  optList (pOperator ".")
             where reorder pos (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
                     let (prL:prM:prR:_) = pragma ++ ["","",""]
                         plug = bp1 || bp2
@@ -280,19 +280,19 @@ pRelationDef = reorder <$> currPos
 
 --- RelationNew ::= 'RELATION' Varid Sign
 pRelationNew :: AmpParser (String,P_Sign,Props)
-pRelationNew = tuple <$  pKey "RELATION"
-                     <*> pVarid
-                     <*> pSign
-               where tuple nm sgn = (nm,sgn,[])
+pRelationNew = (,,) <$  pKey "RELATION"
+                    <*> pVarid
+                    <*> pSign
+                    <*> return []
 
 --- RelationOld ::= Varid '::' ConceptRef Fun ConceptRef
 pRelationOld :: AmpParser (String,P_Sign,Props)
-pRelationOld = tuple <$> pVarid
-                     <*  pOperator "::"
-                     <*> pConceptRef
-                     <*> pFun
-                     <*> pConceptRef
-            where tuple nm src fun tgt = (nm,P_Sign src tgt,fun)
+pRelationOld = relOld <$> pVarid
+                      <*  pOperator "::"
+                      <*> pConceptRef
+                      <*> pFun
+                      <*> pConceptRef
+            where relOld nm src fun tgt = (nm,P_Sign src tgt,fun)
 
 --- Props ::= '[' PropList? ']'
 pProps :: AmpParser [Prop]
@@ -318,11 +318,11 @@ pFun  = []        <$ pOperator "*"  <|>
         
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         pMult :: (Prop,Prop) -> AmpParser [Prop]
-        pMult (ts,ui) = (++) <$> (([]    <$ pZero) <|> ([ts] <$ pOne) )
+        pMult (ts,ui) = (++) <$> ([]    <$ pZero   <|> [ts] <$ try pOne)
                              <*  pOperator ".."
-                             <*> (([ui] <$ pOne)  <|> ([]   <$ pOperator "*" )) <|>
+                             <*> ([ui] <$ try pOne <|> ([]   <$ pOperator "*" )) <|>
                         [] <$ pOperator "*"  <|>
-                        [ts,ui] <$ pOne
+                        [ts,ui] <$ try pOne
 
 --- ConceptDef ::= 'CONCEPT' ConceptName 'BYPLUG'? String ('TYPE' String)? String?
 pConceptDef :: AmpParser (String->ConceptDef)
@@ -673,8 +673,9 @@ pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
 -}
 --- Rule ::= Term ('=' Term | '|-' Term)?
 pRule :: AmpParser (Term TermPrim)
-pRule  =  expr pTerm (PEqu  <$> currPos <* pOperator "=" <|>
-                      PImp  <$> currPos <* pOperator "|-")
+pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
+                      invert PImp  <$> currPos <* pOperator "|-" <*> pTerm)
+                      
 
 {-
 pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
@@ -697,14 +698,14 @@ pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
 pTrm2 :: AmpParser (Term TermPrim)
-pTrm2   = expr pTrm3 (PDif <$> posOf pDash)
+pTrm2   = pTrm3 <??> (invert PDif <$> posOf pDash <*> pTrm3)
 
 -- The left factored version of right- and left residuals:
 --- Trm3 ::= Trm4 ('/' Trm4 | '\' Trm4 | '<>' Trm4)?
 pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  expr pTrm4 (PLrs <$> currPos <* pOperator "/"  <|>
-                      PRrs <$> currPos <* pOperator "\\" <|>
-                      PDia <$> currPos <* pOperator "<>")
+pTrm3  =  pTrm4 <??> (invert PLrs <$> currPos <* pOperator "/"  <*> pTrm4 <|>
+                      invert PRrs <$> currPos <* pOperator "\\" <*> pTrm4 <|>
+                      invert PDia <$> currPos <* pOperator "<>" <*> pTrm4 )
 
 {- by the way, a slightly different way of getting exactly the same result is:
 pTrm3 :: AmpParser (Term TermPrim)
@@ -740,6 +741,9 @@ pTrm5  =  f <$> many (valPosOf pDash) <*> pTrm6  <*> many (valPosOf (pOperator "
 pTrm6 :: AmpParser (Term TermPrim)
 pTrm6 = Prim <$> pRelationRef  <|>
         PBrk <$> currPos <*> pParens pTerm
+
+invert :: (Origin -> a -> a -> b) -> Origin -> a -> a -> b
+invert constr pos right left = constr pos left right
 
 --- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
