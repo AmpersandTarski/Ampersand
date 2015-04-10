@@ -44,7 +44,7 @@ class ExecEngine {
 	
 	public static function fixViolations($rule, $violations){
 		if(count($violations)){
-			Notifications::addLog('ExecEngine fixing rule ' . $rule['name']);
+			Notifications::addLog('ExecEngine fixing violations for rule: ' . $rule['name']);
 			
 			foreach ($violations as $violation){
 				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
@@ -76,7 +76,7 @@ class ExecEngine {
 					}
 				}
 			}
-			Notifications::addSuccess('ExecEngine fixed rule ' . $rule['name']);
+			Notifications::addSuccess('ExecEngine fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', 'ExecEngine fixed violations');
 		}
 	}
 

@@ -6,10 +6,13 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$rootScope.updateNotifications = function(notifications){
 		$rootScope.notifications = notifications;
-		$timeout(function() {
-	    	console.log('now.');
-	    	$rootScope.notifications.successes = [];
-	    }, 3000);
+		
+		if($rootScope.switchAutoHideSuccesses){
+			$timeout(function() {
+		    	console.log('Hide success messages');
+		    	$rootScope.notifications.successes = [];
+		    }, 3000);
+		}
 	}
 	
 	$rootScope.getNotifications = function(){
@@ -24,6 +27,8 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$rootScope.switchShowViolations = true;
 	$rootScope.switchShowInfos = false;
+	$rootScope.switchShowSuccesses = true;
+	$rootScope.switchAutoHideSuccesses = true;
 	
 	$rootScope.toggleShowViolations = function(){
 		$rootScope.switchShowViolations = !$rootScope.switchShowViolations;
@@ -31,6 +36,14 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$rootScope.toggleShowInfos = function(){
 		$rootScope.switchShowInfos = !$rootScope.switchShowInfos;
+	}
+	
+	$rootScope.toggleShowSuccesses = function(){
+		$rootScope.switchShowSuccesses = !$rootScope.switchShowSuccesses;
+	}
+	
+	$rootScope.toogleAutoHideSuccesses = function(){
+		$rootScope.switchAutoHideSuccesses = !$rootScope.switchAutoHideSuccesses;
 	}
 	
 });
