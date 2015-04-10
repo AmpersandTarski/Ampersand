@@ -5,7 +5,7 @@ import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..)
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1.Lattices
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Classes.ViewPoint hiding (interfaces,gens)
+import Database.Design.Ampersand.Classes.ViewPoint hiding (gens)
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc

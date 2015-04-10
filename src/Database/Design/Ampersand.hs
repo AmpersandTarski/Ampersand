@@ -34,7 +34,6 @@ module Database.Design.Ampersand
    , Association(..), flp
    , Collection(..)
    , Named(..)
-   , ProcessStructure(..)
    , ObjectDef(..)
    , Relational(..)
    , Interface(..)

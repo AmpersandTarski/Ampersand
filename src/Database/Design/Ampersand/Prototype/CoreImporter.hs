@@ -31,7 +31,6 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   , Association(..), flp
 --   , Collection(..)
 --   , Named(..)
---   , ProcessStructure(..)
 --   , Relational(..)
 --   , Interface(..)
 --   , Object(..)

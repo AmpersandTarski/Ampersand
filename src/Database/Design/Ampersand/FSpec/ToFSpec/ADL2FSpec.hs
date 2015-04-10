@@ -66,6 +66,7 @@ makeFSpec opts context
                                               filter (\x -> name rule `elem` arRules x) . ctxrrules $ context
                                    ]
               , fRoles       = nub (concatMap arRoles (ctxrrules context)++
+                                    concatMap rrRoles (ctxRRels context)++
                                     concatMap ifcRoles (ctxifcs context)
                                    ) 
               , vrules       = vRules
