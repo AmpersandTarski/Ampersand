@@ -743,27 +743,28 @@ instance ShowHSName Prop where
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
  showHSName Aut = "Aut"
+ showHSName Prop = "Prop"
 
 instance ShowHS Prop where
  showHS _ _ = showHSName
 
 instance ShowHS FilePos where
- showHS _ _ (FilePos (fn,pos,sym))
-   = "FilePos ("++show fn++","++show pos++","++show sym++")"
+ showHS _ _ pos = show pos
 
 instance ShowHSName Origin where
  showHSName ori = "Orig"++show x++show (hash x)
-   where x = case ori of
-              FileLoc l -> "FileLoc (" ++ show l++")"
-              DBLoc l   -> "DBLoc " ++ show l
-              Origin s  -> "Origin " ++ show s
+   where x :: String
+         x = case ori of
+              FileLoc l sym -> "FileLoc (" ++ show l ++ " " ++ sym ++ ")"
+              DBLoc l       -> "DBLoc " ++ show l
+              Origin s      -> "Origin " ++ show s
               OriginUnknown -> "OriginUnknown"
 
 instance ShowHS Origin where
- showHS opts indent (FileLoc l) = "FileLoc (" ++ showHS opts indent l++")"
- showHS _     _      (DBLoc l)   = "DBLoc "  ++ show l
- showHS _     _      (Origin s)  = "Origin " ++ show s
- showHS _     _    OriginUnknown = "OriginUnknown"
+ showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
+ showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
+ showHS _     _      (Origin s)   = "Origin " ++ show s
+ showHS _     _    OriginUnknown  = "OriginUnknown"
 
 instance ShowHS Block where
  showHS _ _   = show

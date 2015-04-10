@@ -422,10 +422,10 @@ chpDiagnosis fSpec
                                             " times."
                                           , "Theme", "Relations", "With reference", "Rules", "Entire context")
 
-  locnm (FileLoc(FilePos(filename,_,_))) = filename
+  locnm (FileLoc(FilePos filename _ _) _) = filename
   locnm (DBLoc str') = str'
   locnm _ = "NO FILENAME"
-  locln (FileLoc(FilePos(_,pos,_))) = show $ sourceLine pos
+  locln (FileLoc(FilePos _ line _) _) = show line
   locln (DBLoc str') = str'
   locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
 
