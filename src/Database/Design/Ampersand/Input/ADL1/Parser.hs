@@ -229,7 +229,7 @@ pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey
 pRuleDef :: AmpParser (P_Rule TermPrim)
 pRuleDef =  rebuild <$> currPos 
                     <*  pKey "RULE"
-                    <*> pMaybe (try $ pADLid <* pColon)
+                    <*> pMaybe (try pLabel)
                     <*> pRule
                     <*> many pMeaning
                     <*> many pMessage

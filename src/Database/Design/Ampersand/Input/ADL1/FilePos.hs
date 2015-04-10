@@ -33,7 +33,7 @@ addPos :: Int -> FilePos -> FilePos
 addPos n (FilePos fn line col) = FilePos fn line (col + n)
 
 addLn :: Int -> FilePos -> FilePos 
-addLn n (FilePos fn line col) = FilePos fn (line+n) col
+addLn n (FilePos fn line _) = FilePos fn (line+n) 1
 
 --Traced a have an origin, which may be unknown.
 data FilePos = FilePos FilePath Line Column deriving (Eq, Ord, Generic)
