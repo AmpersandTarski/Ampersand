@@ -682,7 +682,8 @@ pCtx2aCtx' _
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
     allRoleRules :: [A_RoleRule]
-    allRoleRules = map pRoleRule2aRoleRule (p_roleRules ++ concatMap pt_RRuls p_patterns)
+    allRoleRules = map pRoleRule2aRoleRule 
+                      (p_roleRules ++ concatMap pt_RRuls (p_patterns++p_processes))
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 -- SJ 20140211 @SJC: TODO graag een typefout genereren voor een SESSION atoom anders dan _SESSION.
 pDisAmb2Expr (_,Known x) = pure x
