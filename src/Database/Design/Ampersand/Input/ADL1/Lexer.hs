@@ -8,7 +8,7 @@ import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
-import Data.Char hiding(isSymbol, isSpace)
+import Data.Char hiding(isSymbol)
 import Data.Maybe
 import Data.List (sort)
 import Database.Design.Ampersand.Basics (fatalMsg)
@@ -201,9 +201,6 @@ scanAtom xs   = let (ch,cw,cr) = getchar xs
 -----------------------------------------------------------
 -- String clean-up functions / comments
 -----------------------------------------------------------
-
-isSpace :: Char -> Bool
-isSpace c = c == ' ' || c == '\n' || c == '\t' || c == '\r'
 
 lexNest :: Lexer -> Lexer
 lexNest c p ('-':'}':s) = c (addPos 2 p) s

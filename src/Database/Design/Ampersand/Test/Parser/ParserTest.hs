@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse, parseReparse) where
+module Database.Design.Ampersand.Test.Parser.ParserTest (parseFile, parse, parseReparse, parseScripts) where
 
 import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..))
 import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
@@ -15,6 +15,14 @@ unguard file txt result =
         Checked (p,_) -> trace ("Parsed: " ++ file)    (p, True)
         --- Checked (p,_) -> (p, True)
     where dummy = PCtx "DUMMY"  [] English Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] []
+
+-- Tries to parse all the given files
+parseScripts :: [FilePath] -> IO Bool
+parseScripts [] = return True
+parseScripts fs =
+    do parsed <- parseFile (head fs)
+       if parsed then parseScripts (tail fs)
+       else return False
 
 parseFile :: FilePath -> IO Bool
 parseFile name =

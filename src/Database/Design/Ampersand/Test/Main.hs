@@ -1,13 +1,14 @@
 module Main (main) where
 
-import Database.Design.Ampersand.Test.Parser.ParseScripts
+import Database.Design.Ampersand.Test.TestScripts
+import Database.Design.Ampersand.Test.Parser.ParserTest
 import Database.Design.Ampersand.Test.Parser.QuickChecks
 import System.Exit (ExitCode, exitFailure, exitSuccess)
 
 testFunctions :: IO [(String, IO Bool)]
-testFunctions = do scr <- scripts
+testFunctions = do scr <- getTestScripts
                    return [
-                     ("Parsing " ++ show (length scr) ++ " scripts.", testScripts scr),
+                     ("Parsing " ++ show (length scr) ++ " scripts.", parseScripts scr),
                      ("Running automatic quick checks", parserQuickChecks)]
 
 main :: IO ExitCode
