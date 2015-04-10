@@ -7,7 +7,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
-  , mkMultipleDefaultError
+  , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError
   , Guarded(..)
   , whenCheckedIO
@@ -97,7 +97,12 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
-
+mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
+                   -> String -- the reference itself. eg. "Rule 42"
+                   -> Origin -- The place where the thing is found.
+                   -> CtxError
+mkDanglingRefError entity ref orig =
+  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
 mkUndeclaredError entity objDef ref = 
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
