@@ -39,13 +39,11 @@ class Language a where
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
-class ProcessStructure a where
-  roles :: a -> [Role]        -- ^ all roles that are used in this ProcessStructure
+class Language a => ProcessStructure a where
   interfaces :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
   objDefs :: a -> [ObjectDef]
   processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
-                                       -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  maintains :: a -> [(Role,Rule)] 
+  processRules = filter isSignal . udefrules
   mayEdit :: a -> [(Role,Declaration)] 
   workFromProcessRules :: [A_Gen] -> [Population] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations gens' udp r]
@@ -77,13 +75,19 @@ rulesFromIdentity identity
             , isSignal  = False          -- This is not a signal rule
             }
 
-instance ProcessStructure a => ProcessStructure [a] where
-  roles         = concatMap roles
+instance (ProcessStructure a) => ProcessStructure [a] where
   interfaces    = concatMap interfaces
   objDefs       = concatMap objDefs
-  processRules  = concatMap processRules
-  maintains     = concatMap maintains
   mayEdit       = concatMap mayEdit
+
+instance Language a => Language [a] where
+  objectdef   = fatal 84 $ "objectdef is not defined for a list"
+  relsDefdIn  = concatMap relsDefdIn
+  udefrules   = concatMap udefrules
+  identities  = concatMap identities
+  viewDefs    = concatMap viewDefs
+  gens        = concatMap gens
+  patterns    = concatMap patterns
 
 instance Language A_Context where
   objectdef    context = Obj { objnm   = name context
@@ -111,13 +115,12 @@ instance Language A_Context where
   patterns             = ctxpats
 
 instance ProcessStructure A_Context where
-  roles        context = nub (roles (ctxpats context)++  --TODO: Make it possible to define a role outside a PATTERN or PROCESS
-                              concatMap ifcRoles (ctxifcs context)
-                             )
+--  roles        context = nub (roles (ctxpats context)++  
+--                              concatMap arRoles (ctxrrules context)++
+--                              concatMap ifcRoles (ctxifcs context)
+--                             )
   interfaces           = ctxifcs
   objDefs      context = [ifcObj s | s<-ctxifcs context]
-  processRules context = [r |r<-udefrules context, (not.null) [role | (role, rul) <-maintains context, name r == name rul ] ]
-  maintains    context = maintains (ctxpats context)
   mayEdit      context = mayEdit (ctxpats context)
 
 instance Language Pattern where
@@ -137,12 +140,8 @@ instance Language Pattern where
   patterns   pat = [pat]
 
 instance ProcessStructure Pattern where
-  roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
-                            [r | (r,_) <- prcRRels proc] )
   interfaces    _   = []
   objDefs       _   = []
-  processRules proc = [r |r<-ptrls proc, isSignal r]
-  maintains         = prcRRuls  -- says which roles maintain which rules.
   mayEdit           = prcRRels  -- says which roles may change the population of which relation.
 
 instance Language Rule where
@@ -168,8 +167,6 @@ instance Language Rule where
                        , ptgns = []  -- A rule defines no Gens.
                        , ptdcs = relsDefdIn r
                        , ptups = []
-                       , prcRRuls = []
-                       , prcRRels = []
                        , ptids = []
                        , ptvds = []
                        , ptxps = []

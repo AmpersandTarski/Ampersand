@@ -208,7 +208,7 @@ instance GenericPopulations Role where
                  [(uri fSpec, uri rol) ]
       , Pop "name" "Role" "RoleName"
                  [(uri rol, name rol) ]
-      , Pop "ruleNames" "Role" "Rule"
+      , Pop "maintains" "Role" "Rule"
                  [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
       ]
 
