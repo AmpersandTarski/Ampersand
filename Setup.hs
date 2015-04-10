@@ -18,6 +18,7 @@ import System.FilePath
 import System.IO
 import System.Locale
 
+
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
