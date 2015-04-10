@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , Meta(..)
    , MetaObj(..)
    , P_RoleRelation(..)
-   , RoleRule(..)
+   , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
    , P_Declaration(..)
@@ -45,7 +45,7 @@ import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
 import Data.Traversable
-import Data.Foldable
+import Data.Foldable (Foldable(foldMap))
 import Prelude hiding (foldr, sequence)
 import Control.Applicative
 import Data.Typeable
@@ -67,6 +67,8 @@ data P_Context
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
+         , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
@@ -102,7 +104,7 @@ instance Traced P_RoleRelation where
  origin = rr_Pos
 
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
-data RoleRule
+data P_RoleRule
    = Maintain
      { mRoles :: [Role]    -- ^ name of a role
      , mRules :: [String]    -- ^ name of a Rule
@@ -114,7 +116,7 @@ instance Named Role where
  name (Role nm) = nm
 instance Unique Role where
  showUnique = name
-instance Traced RoleRule where
+instance Traced P_RoleRule where
  origin = mPos
 
 data P_Pattern
@@ -124,7 +126,7 @@ data P_Pattern
            , pt_rls :: [(P_Rule TermPrim)]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
-           , pt_RRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
+           , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
@@ -641,28 +643,32 @@ instance Eq Label where
  l==l' = lblnm l==lblnm l'
 
 mergeContexts :: P_Context -> P_Context -> P_Context
-mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
-              (PCtx nm2 pos2 _     markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 vs2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
-  PCtx{ ctx_nm     = if null nm1 then nm2 else nm1
-      , ctx_pos    = pos1 ++ pos2
-      , ctx_lang   = lang1 -- By taking the first, we end up with the language of the top-level context
-      , ctx_markup = markup1 `orElse` markup2 `orElse` Nothing
-      , ctx_thms   = thms1 ++ thms2
-      , ctx_pats   = pats1 ++ pats2
-      , ctx_PPrcs  = pprcs1 ++ pprcs2
-      , ctx_rs     = rs1 ++ rs2
-      , ctx_ds     = ds1 ++ ds2
-      , ctx_cs     = cs1 ++ cs2
-      , ctx_ks     = ks1 ++ ks2
-      , ctx_vs     = vs1 ++ vs2
-      , ctx_gs     = gs1 ++ gs2
-      , ctx_ifcs   = ifcs1 ++ ifcs2
-      , ctx_ps     = ps1 ++ ps2
-      , ctx_pops   = pops1 ++ pops2
-      , ctx_sql    = sql1 ++ sql2
-      , ctx_php    = php1 ++ php2
-      , ctx_metas  = metas1 ++ metas2
+mergeContexts ctx1 ctx2 =
+  PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
+                        []    -> ""
+                        (x:_) -> x
+      , ctx_pos    = concatMap ctx_pos contexts
+      , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
+      , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
+      , ctx_thms   = concatMap ctx_thms contexts
+      , ctx_pats   = concatMap ctx_pats contexts
+      , ctx_PPrcs  = concatMap ctx_PPrcs contexts
+      , ctx_rs     = concatMap ctx_rs contexts
+      , ctx_ds     = concatMap ctx_ds contexts
+      , ctx_cs     = concatMap ctx_cs contexts
+      , ctx_ks     = concatMap ctx_ks contexts
+      , ctx_rrules = concatMap ctx_rrules contexts
+      , ctx_rrels  = concatMap ctx_rrels contexts
+      , ctx_vs     = concatMap ctx_vs contexts
+      , ctx_gs     = concatMap ctx_gs contexts
+      , ctx_ifcs   = concatMap ctx_ifcs contexts
+      , ctx_ps     = concatMap ctx_ps contexts
+      , ctx_pops   = concatMap ctx_pops contexts
+      , ctx_sql    = concatMap ctx_sql contexts
+      , ctx_php    = concatMap ctx_php contexts
+      , ctx_metas  = concatMap ctx_metas contexts
       }
+    where contexts = [ctx1,ctx2]
 
 -- | Left-biased choice on maybes
 orElse :: Maybe a -> Maybe a -> Maybe a

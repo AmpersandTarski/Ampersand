@@ -75,6 +75,8 @@ pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
             , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
+            , ctx_rrules = []  -- TODO: Allow MAINTAINS statements in the context
+            , ctx_rrels  = []  -- TODO: Allow EDITS statements in the context
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
@@ -153,7 +155,7 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
-             , pt_RRuls = []  -- TODO: Add RoleRule to Pattern
+             , pt_RRuls = []  -- TODO: Add P_RoleRule to Pattern
              , pt_RRels = []  -- TODO: Add P_RoleRelation to Pattern
              , pt_cds = [c nm | Pc c<-pes]
              , pt_ids = [k | Pk k<-pes]
@@ -219,7 +221,7 @@ pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> pConceptName   -- The name spac
 data ProcElem = PrR (P_Rule TermPrim)
               | PrY P_Gen
               | PrD P_Declaration
-              | PrM RoleRule
+              | PrM P_RoleRule
               | PrL P_RoleRelation
               | PrC (String->ConceptDef)
               | PrG P_Gen
@@ -586,7 +588,7 @@ pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
                             pList1Sep (pSpec ',') pNamedRel
                      where rr p roles rels = P_RR roles rels p
 
-pRoleRule :: AmpParser RoleRule
+pRoleRule :: AmpParser P_RoleRule
 pRoleRule         = rr <$> pKey_pos "ROLE"               <*>
                            pList1Sep (pSpec ',') pRole  <*
                            pKey "MAINTAINS"              <*>

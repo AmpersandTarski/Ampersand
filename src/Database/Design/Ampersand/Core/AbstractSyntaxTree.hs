@@ -30,7 +30,8 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , A_Concept(..)
  , A_Markup(..)
  , AMeaning(..)
- , RoleRelation(..)
+ , A_RoleRule(..)
+ , A_RoleRelation(..)
  , Sign(..)
  , Population(..)
  , GenR
@@ -75,6 +76,8 @@ data A_Context
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
+         , ctxrrules :: [A_RoleRule]
+         , ctxRRels :: [A_RoleRelation] -- ^ The assignment of roles to Relations (which role mayEdit what relations)
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
@@ -93,12 +96,12 @@ instance Unique A_Context where
 instance Named A_Context where
   name  = ctxnm
 
-data RoleRelation
-   = RR { rrRoles :: [String]     -- ^ name of a role
+data A_RoleRelation
+   = RR { rrRoles :: [Role]     -- ^ name of a role
         , rrRels :: [Declaration]   -- ^ name of a Relation
         , rrPos :: Origin       -- ^ position in the Ampersand script
         } deriving Show
-instance Traced RoleRelation where
+instance Traced A_RoleRelation where
    origin = rrPos
 
 data Pattern
@@ -109,8 +112,6 @@ data Pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
-           , prcRRuls :: [(Role,Rule)]    -- ^ The assignment of roles to rules.
-           , prcRRels :: [(Role,Declaration)] -- ^ The assignment of roles to Relations.
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
@@ -125,6 +126,11 @@ instance Named Pattern where
 instance Traced Pattern where
  origin = ptpos
 
+
+data A_RoleRule = A_RoleRule { arRoles :: [Role]
+                             , arRules  :: [String] -- the names of the rules 
+                             , arPos   :: Origin 
+                             } deriving (Show)
 data A_Markup =
     A_Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
              , amFormat :: PandocFormat -- Idem: no Maybe in the A-structure.

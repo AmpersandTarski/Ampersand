@@ -28,7 +28,6 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let 
      genFiles userP_Ctx >> genTables userP_Ctx
    where
     genFiles :: Guarded P_Context -> IO(Guarded ())

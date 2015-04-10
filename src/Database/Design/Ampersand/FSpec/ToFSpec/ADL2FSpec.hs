@@ -55,9 +55,20 @@ makeFSpec opts context
 
               , fDeriveProofs = deriveProofs opts context 
               , fActivities  = allActivities
-              , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
-              , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
-              , fRoles       = roles context
+              , fRoleRels    = nub [(role,decl) -- fRoleRels says which roles may change the population of which relation.
+                                   | rr <- ctxRRels context
+                                   , decl <- rrRels rr
+                                   , role <- rrRoles rr
+                                   ] 
+              , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
+                                   | rule <- ctxrs context
+                                   , role <- concatMap arRoles . 
+                                              filter (\x -> name rule `elem` arRules x) . ctxrrules $ context
+                                   ]
+              , fRoles       = nub (concatMap arRoles (ctxrrules context)++
+                                    concatMap rrRoles (ctxRRels context)++
+                                    concatMap ifcRoles (ctxifcs context)
+                                   ) 
               , vrules       = vRules
               , grules       = gRules
               , invars       = invariants context
@@ -172,9 +183,10 @@ makeFSpec opts context
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
      allProcs = [ FProc {fpProc = p
-                        ,fpActivities =[act | act<-allActivities, (not.null) (selRoles p act)]
-                        } | p<-patterns context ]
-                where selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
+                        ,fpActivities = map makeActivity (processRules p)
+                        } 
+                | p<-patterns context
+                ]
      allActivities :: [Activity]
      allActivities = map makeActivity (processRules context)
      allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.

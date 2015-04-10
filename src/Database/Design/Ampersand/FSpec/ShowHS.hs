@@ -265,11 +265,7 @@ instance ShowHS FSpec where
                 []        -> "[]"
                 [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
                 _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
-        ,     ", fRoleRuls     = " ++
-              case fRoleRuls fSpec of
-                []        -> "[]"
-                [(r,rul)] -> "[ ("++show r++", "++showHSName rul++") ]"
-                _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fSpec]++indentA++"]"
+        ,     ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
         ,wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
         ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
@@ -401,6 +397,7 @@ instance ShowHS FSpec where
 instance ShowHS Meta where
  showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val
 
+
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
  showHSName (ExternalPlug _) = fatal 336 "a PlugInfo is anonymous with respect to showHS opts"
@@ -411,15 +408,17 @@ instance ShowHS PlugInfo where
  showHS opts ind (ExternalPlug o)
   = "ExternalPlug "++showHS opts (ind++"    ") o
 
-instance ShowHS RoleRelation where
+instance ShowHS A_RoleRelation where
  showHS opts ind rr
   = "RR "++show (rrRoles rr)++" "++showHS opts (ind++"    ") (rrRels rr)++" "++showHS opts (ind++"    ") (rrPos rr)
 instance ShowHS Role where
  showHS _ ind (Role str) = ind++"Role "++show str
-instance ShowHS RoleRule where
+instance ShowHS P_RoleRule where
  showHS opts ind rs
   = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS opts (ind++"    ") (mPos rs)
-
+instance ShowHS (Role,Rule) where
+ showHS _ _ (rol,rul)
+  = "("++show rol++", "++showHSName rul++")"
 instance ShowHSName FSid where
  showHSName (FS_id nm ) = haskellIdentifier nm
 
@@ -440,16 +439,6 @@ instance ShowHS Pattern where
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
      , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
-
-     , case prcRRuls pat of
-        []          -> ", prcRRuls = [] {- no role-rule assignments -}"
-        [(rol,rul)] -> ", prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
-        rs          -> ", prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
-     , case prcRRels pat of
-        []          -> ", prcRRels = [] {- no role-relation assignments -}"
-        [(rol,rel)] -> ", prcRRels = [ ("++show rol++", "++showHS opts "" rel++") ]"
-        rs          -> ", prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS opts "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
-
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
      , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)
      , wrap ", ptxps = " indentB (showHS opts) (ptxps pat)

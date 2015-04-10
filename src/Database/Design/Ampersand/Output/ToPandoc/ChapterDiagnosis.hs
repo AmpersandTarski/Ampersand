@@ -460,36 +460,36 @@ chpDiagnosis fSpec
            procs = if null (themes fSpec) then vprocesses fSpec else [prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
 
   processrulesInPatterns :: [Block]
-  processrulesInPatterns
-   = [ case (fsLang fSpec, procs,prs) of
-        (Dutch,  [p],[])  -> Para [ Str "Alle rol-regel-koppelingen gaan over regels die binnen proces ", Quoted SingleQuote [Str (name p)], Str " gedefinieerd zijn. " ]
-        (English,[p],[])  -> Para [ Str "All role-rule assigments involve rules that are defined in process ", Quoted SingleQuote [Str (name p)], Str ". " ]
-        (Dutch,  _,[])    -> Para [ Str "Voor elk proces geldt dat alle rol-regel-koppelingen gaan over regels die binnen dat proces zijn gedefinieerd." ]
-        (English,_,[])    -> Para [ Str "The role-rule assignments in any of the described processes have been assigned to rules within that same process." ]
-        (Dutch,  _,[(p,rol,rul)])
-                          -> Para [ Str "Er is één koppeling tussen een rol en een regel van buiten het proces: "
-                                  , Str "Rol ", Quoted SingleQuote [Str (name rol)], Str " uit proces ", Quoted SingleQuote [Str (name p)], Str " is gebonden aan regel ", Quoted SingleQuote [Str (name rul)], Str " uit ", Quoted SingleQuote [Str (r_env rul)], Str "."
-                                  ]
-        (English,_,[(p,rol,rul)])
-                          -> Para [ Str "There is one role that is assigned to a rule outside the process: "
-                                  , Str "Role ", Quoted SingleQuote [Str (name rol)], Str ", defined in process ", Quoted SingleQuote [Str (name p)], Str ", is assigned to rule ", Quoted SingleQuote [Str (name rul)], Str " from ", Quoted SingleQuote [Str (r_env rul)], Str "."
-                                  ]
-        (Dutch,  [p],_)   -> Para [ Str "De volgende tabel toont welke regels in welke patterns aan een rol gekoppeld zijn. "
-                                  , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) in proces ", Quoted SingleQuote [Str (name p)], Str " zal handhaven. "
-                                  ]
-        (English,[p],_)   -> Para [ Str "The following table shows which rules from outside the process are linked to a role in the process. "
-                                  , Str "This has as consequence that these rule(s) will be maintained in the corresponding process ", Quoted SingleQuote [Str (name p)], Str ". "
-                                  ]
-        (Dutch,  _,_)     -> Para [ Str "Er zijn koppelingen tussen rollen en regels, die buiten de grenzen van het proces reiken. "
-                                  , Str "De volgende tabel toont welke regels in welke patterns aan een rol gekoppeld zijn. "
-                                  , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) in de bijbehorende processen zal handhaven."
-                                  ]
-        (English,_,_)     -> Para [ Str "There are roles assigned to rules outside the bounds of the process. "
-                                  , Str "The following table shows which rules that are defined in a pattern are linked to a role within a process."
-                                  , Str "This has as consequence that these rule(s) will be maintained in the corresponding process(es)."
-                                  ]
-     | (not.null.vprocesses) fSpec && (not.null) [rra | prc<-procs, rra<-maintains prc]
-     ]        ++
+  processrulesInPatterns = (toList $ para ("TODO: Inleiding bij de rol-regel tabel"))++
+--   = [ case (fsLang fSpec, procs,prs) of
+--        (Dutch,  [p],[])  -> Para [ Str "Alle rol-regel-koppelingen gaan over regels die binnen proces ", Quoted SingleQuote [Str (name p)], Str " gedefinieerd zijn. " ]
+--        (English,[p],[])  -> Para [ Str "All role-rule assigments involve rules that are defined in process ", Quoted SingleQuote [Str (name p)], Str ". " ]
+--        (Dutch,  _,[])    -> Para [ Str "Voor elk proces geldt dat alle rol-regel-koppelingen gaan over regels die binnen dat proces zijn gedefinieerd." ]
+--        (English,_,[])    -> Para [ Str "The role-rule assignments in any of the described processes have been assigned to rules within that same process." ]
+--        (Dutch,  _,[(p,rol,rul)])
+--                          -> Para [ Str "Er is één koppeling tussen een rol en een regel van buiten het proces: "
+--                                  , Str "Rol ", Quoted SingleQuote [Str (name rol)], Str " uit proces ", Quoted SingleQuote [Str (name p)], Str " is gebonden aan regel ", Quoted SingleQuote [Str (name rul)], Str " uit ", Quoted SingleQuote [Str (r_env rul)], Str "."
+--                                  ]
+--        (English,_,[(p,rol,rul)])
+--                          -> Para [ Str "There is one role that is assigned to a rule outside the process: "
+--                                  , Str "Role ", Quoted SingleQuote [Str (name rol)], Str ", defined in process ", Quoted SingleQuote [Str (name p)], Str ", is assigned to rule ", Quoted SingleQuote [Str (name rul)], Str " from ", Quoted SingleQuote [Str (r_env rul)], Str "."
+--                                  ]
+--        (Dutch,  [p],_)   -> Para [ Str "De volgende tabel toont welke regels in welke patterns aan een rol gekoppeld zijn. "
+--                                  , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) in proces ", Quoted SingleQuote [Str (name p)], Str " zal handhaven. "
+--                                  ]
+--        (English,[p],_)   -> Para [ Str "The following table shows which rules from outside the process are linked to a role in the process. "
+--                                  , Str "This has as consequence that these rule(s) will be maintained in the corresponding process ", Quoted SingleQuote [Str (name p)], Str ". "
+--                                  ]
+--        (Dutch,  _,_)     -> Para [ Str "Er zijn koppelingen tussen rollen en regels, die buiten de grenzen van het proces reiken. "
+--                                  , Str "De volgende tabel toont welke regels in welke patterns aan een rol gekoppeld zijn. "
+--                                  , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) in de bijbehorende processen zal handhaven."
+--                                  ]
+--        (English,_,_)     -> Para [ Str "There are roles assigned to rules outside the bounds of the process. "
+--                                  , Str "The following table shows which rules that are defined in a pattern are linked to a role within a process."
+--                                  , Str "This has as consequence that these rule(s) will be maintained in the corresponding process(es)."
+--                                  ]
+--     | (not.null.vprocesses) fSpec && (not.null) [rra | prc<-procs, rra<-maintains prc]
+--     ]        ++
 -- the table containing the role-rule assignments
      [ Table []
        ([AlignLeft]++[AlignLeft | multProcs]++[AlignLeft,AlignLeft])
@@ -500,11 +500,12 @@ chpDiagnosis fSpec
           English ->
               [[Plain [Str "role"]]]++[[Plain [Str "in process"]] | multProcs]++[[Plain [Str "rule" ]], [Plain [Str "from" ]] ]
        )
-       [ [[Plain [Str (name rol)]]]++[[Plain [Str (name p)]] | multProcs]++[[Plain [Str (name rul)]], [Plain [Str (r_env rul)]]]
-       | (p,rol,rul)<-prs
+       [ [[Plain [Str (name rol)]]]++[[Plain [Str (r_env rul)]] | multProcs]++[[Plain [Str (name rul)]], [Plain [Str (r_env rul)]]]
+       | (rol,rul)<-prs
        ]
      | length prs>1]
-     where prs = [(p,rol,rul) | p<-procs, (rol,rul)<-maintains p, name rul `notElem` map name (udefrules p) ]
+     where prs :: [( Role, Rule )]
+           prs = fRoleRuls fSpec
            multProcs = length procs>1
            procs = [fpProc fp | fp<-vprocesses fSpec
                             , null (themes fSpec) || name fp `elem` themes fSpec]  -- restrict if this is partial documentation.
