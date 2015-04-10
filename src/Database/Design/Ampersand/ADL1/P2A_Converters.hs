@@ -115,6 +115,7 @@ pCtx2aCtx' _
       , ctx_cs     = p_conceptdefs
       , ctx_ks     = p_identdefs
       , ctx_rrules = p_roleRules
+      , ctx_rrels  = p_roleRelations
       , ctx_vs     = p_viewdefs
       , ctx_gs     = p_gens
       , ctx_ifcs   = p_interfaces
@@ -124,7 +125,7 @@ pCtx2aCtx' _
       , ctx_php    = p_phpdefs
       , ctx_metas  = p_metas
       }
- = (\pats rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs
+ = (\pats rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs allRoleRelations
      -> ACtx{ ctxnm = n1
             , ctxpos = n2
             , ctxlang = deflangCtxt
@@ -137,6 +138,7 @@ pCtx2aCtx' _
             , ctxcds = allConceptDefs
             , ctxks = identdefs
             , ctxrrules = allRoleRules
+            , ctxRRels = allRoleRelations
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
             , ctxgenconcs = map (map castConcept) (concGroups ++ map (:[]) soloConcs)
@@ -155,6 +157,7 @@ pCtx2aCtx' _
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
+      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels p_patterns)
       
   where
     p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
@@ -546,23 +549,29 @@ pCtx2aCtx' _
                     }) <$> traverse namedRel2Decl tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
+    pRoleRelation2aRoleRelation :: P_RoleRelation -> Guarded A_RoleRelation
+    pRoleRelation2aRoleRelation prr
+     = (\ ds' 
+        -> RR { rrRoles = rr_Roles prr
+              , rrRels  = ds'
+              , rrPos   = rr_Pos prr
+              }) <$> traverse namedRel2Decl (rr_Rels prr)
     pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
     pRoleRule2aRoleRule prr
      = A_RoleRule { arRoles = mRoles prr
                   , arRules = mRules prr
                   , arPos   = mPos prr
                   }
-
+    
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
      = f <$> traverse (pRul2aRul (name ppat)) (pt_rls ppat)
-         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
          <*> traverse pIdentity2aIdentity (pt_ids ppat) 
          <*> traverse pPop2aPop (pt_pop ppat)
          <*> traverse pViewDef2aViewDef (pt_vds ppat) 
          <*> traverse pPurp2aPurp (pt_xps ppat)
        where
-        f rules' rels' keys' pops' views' xpls
+        f rules' keys' pops' views' xpls
            = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
              in A_Pat { ptnm  = name ppat
                       , ptpos = pt_pos ppat
@@ -571,7 +580,6 @@ pCtx2aCtx' _
                       , ptgns = map pGen2aGen (pt_gns ppat)
                       , ptdcs = decls'
                       , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
-                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                       , ptids = keys'
                       , ptvds = views'
                       , ptxps = xpls

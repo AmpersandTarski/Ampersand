@@ -177,12 +177,13 @@ instance ShowADL A_Gen where
     Isa{} -> "CLASSIFY "++showADL (genspc g)++" ISA "++showADL (gengen g)
     IsE{} -> "CLASSIFY "++showADL (genspc g)++" IS "++intercalate " /\\ " (map showADL (genrhs g))
 
-instance ShowADL RoleRelation where
+instance ShowADL A_RoleRelation where
  showADL r
   = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map showADL (rrRels r))
 
 instance ShowADL P_RoleRule where
- showADL r = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
+ showADL r 
+  = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
 
 instance ShowADL Interface where
  showADL ifc

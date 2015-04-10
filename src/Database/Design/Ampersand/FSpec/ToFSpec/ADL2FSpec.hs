@@ -55,7 +55,11 @@ makeFSpec opts context
 
               , fDeriveProofs = deriveProofs opts context 
               , fActivities  = allActivities
-              , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
+              , fRoleRels    = nub [(role,decl) -- fRoleRels says which roles may change the population of which relation.
+                                   | rr <- ctxRRels context
+                                   , decl <- rrRels rr
+                                   , role <- rrRoles rr
+                                   ] 
               , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- ctxrs context
                                    , role <- concatMap arRoles . 

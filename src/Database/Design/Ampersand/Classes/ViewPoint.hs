@@ -6,7 +6,6 @@ import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Classes.Relational  (Relational(multiplicities))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
-import Data.List
 import Data.Maybe
 
 fatal :: Int -> String -> a
@@ -44,7 +43,6 @@ class Language a => ProcessStructure a where
   objDefs :: a -> [ObjectDef]
   processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
   processRules = filter isSignal . udefrules
-  mayEdit :: a -> [(Role,Declaration)] 
   workFromProcessRules :: [A_Gen] -> [Population] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations gens' udp r]
 
@@ -78,7 +76,6 @@ rulesFromIdentity identity
 instance (ProcessStructure a) => ProcessStructure [a] where
   interfaces    = concatMap interfaces
   objDefs       = concatMap objDefs
-  mayEdit       = concatMap mayEdit
 
 instance Language a => Language [a] where
   objectdef   = fatal 84 $ "objectdef is not defined for a list"
@@ -121,7 +118,6 @@ instance ProcessStructure A_Context where
 --                             )
   interfaces           = ctxifcs
   objDefs      context = [ifcObj s | s<-ctxifcs context]
-  mayEdit      context = mayEdit (ctxpats context)
 
 instance Language Pattern where
   objectdef    pat = Obj { objnm   = name pat
@@ -142,8 +138,7 @@ instance Language Pattern where
 instance ProcessStructure Pattern where
   interfaces    _   = []
   objDefs       _   = []
-  mayEdit           = prcRRels  -- says which roles may change the population of which relation.
-
+-- TODO: ProcessStructure Pattern seems very empty. Is there a need for it?? TODO: Clean up, remove.
 instance Language Rule where
 -- TODO Split class Language. It does not feel right that objectdef and patterns are
 --      defined for Rule.

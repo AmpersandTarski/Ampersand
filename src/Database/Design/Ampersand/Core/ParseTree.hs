@@ -68,6 +68,7 @@ data P_Context
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
+         , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
@@ -657,6 +658,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_cs     = concatMap ctx_cs contexts
       , ctx_ks     = concatMap ctx_ks contexts
       , ctx_rrules = concatMap ctx_rrules contexts
+      , ctx_rrels  = concatMap ctx_rrels contexts
       , ctx_vs     = concatMap ctx_vs contexts
       , ctx_gs     = concatMap ctx_gs contexts
       , ctx_ifcs   = concatMap ctx_ifcs contexts

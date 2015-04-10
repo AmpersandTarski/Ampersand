@@ -55,7 +55,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          ,Pattern(..)
          ,Rule(..)
          ,RuleType(..)
-         ,RoleRelation(..)
+         ,A_RoleRelation(..)
          ,Population(..)
          ,Purpose(..), ExplObj(..)
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)

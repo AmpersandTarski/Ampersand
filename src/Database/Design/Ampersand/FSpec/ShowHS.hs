@@ -408,7 +408,7 @@ instance ShowHS PlugInfo where
  showHS opts ind (ExternalPlug o)
   = "ExternalPlug "++showHS opts (ind++"    ") o
 
-instance ShowHS RoleRelation where
+instance ShowHS A_RoleRelation where
  showHS opts ind rr
   = "RR "++show (rrRoles rr)++" "++showHS opts (ind++"    ") (rrRels rr)++" "++showHS opts (ind++"    ") (rrPos rr)
 instance ShowHS Role where
@@ -439,12 +439,6 @@ instance ShowHS Pattern where
      , wrap ", ptgns = " indentB (showHS opts) (ptgns pat)
      , ", ptdcs = [ " ++intercalate (indentB++", ") [showHSName d | d<-ptdcs pat] ++ concat [" {- no relations -} " | null (ptdcs pat)] ++indentB++"]"
      , wrap ", ptups = " indentB (showHS opts) (ptups pat)
-
-     , case prcRRels pat of
-        []          -> ", prcRRels = [] {- no role-relation assignments -}"
-        [(rol,rel)] -> ", prcRRels = [ ("++show rol++", "++showHS opts "" rel++") ]"
-        rs          -> ", prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS opts "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
-
      , wrap ", ptids = " indentB (showHS opts) (ptids pat)
      , wrap ", ptvds = " indentB (showHS opts) (ptvds pat)
      , wrap ", ptxps = " indentB (showHS opts) (ptxps pat)

@@ -46,6 +46,8 @@ instance MakeMeta P_Context where
          , ctx_ds    = makeMeta f (ctx_ds ctx)
          , ctx_cs    = makeMeta f (ctx_cs ctx)
          , ctx_ks    = makeMeta f (ctx_ks ctx)
+         , ctx_rrules= makeMeta f (ctx_rrules ctx)
+         , ctx_rrels = makeMeta f (ctx_rrels ctx)
          , ctx_vs    = makeMeta f (ctx_vs ctx)
          , ctx_gs    = makeMeta f (ctx_gs ctx)
          , ctx_ifcs  = makeMeta f (ctx_ifcs ctx)
