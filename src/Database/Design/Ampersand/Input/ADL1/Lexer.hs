@@ -140,7 +140,12 @@ mainLexer p cs@(c:s)
      | isDigit c
          = let (tk,_,width,s') = getNumber cs
            in  returnToken tk p mainLexer (addPos width p) s'
+       -- Ignore unexpected characters in the beginning of the file because of the UTF-8 BOM marker.
+       -- TODO: Find out the right way of handling the BOM marker.
+     | beginFile p = mainLexer p s
      | otherwise  = lexerError (UnexpectedChar c) p
+    where beginFile (FilePos _ 1 1) = True
+          beginFile _ = False
 
 -----------------------------------------------------------
 -----------------------------------------------------------
