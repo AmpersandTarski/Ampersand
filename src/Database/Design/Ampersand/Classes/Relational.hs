@@ -184,8 +184,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e     -> isImin e
      EDcD{}     -> False
      EDcI{}     -> True
-     EEps i sgn -> if isEndo sgn && i==source expr then fatal 189 (show expr++" is endo") else
-                   False
+     EEps i sgn -> False
      EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
