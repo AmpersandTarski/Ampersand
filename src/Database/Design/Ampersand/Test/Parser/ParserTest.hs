@@ -19,9 +19,9 @@ unguard file txt result =
 -- Tries to parse all the given files
 parseScripts :: [FilePath] -> IO Bool
 parseScripts [] = return True
-parseScripts fs =
-    do parsed <- parseFile (head fs)
-       if parsed then parseScripts (tail fs)
+parseScripts (f:fs) =
+    do parsed <- parseFile f
+       if parsed then parseScripts fs
        else return False
 
 parseFile :: FilePath -> IO Bool
