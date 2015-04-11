@@ -32,7 +32,8 @@ instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer to existing objects
+pCtx2aCtx opts = checkOtherAtomsInSessionConcept
+               . checkPurposes             -- Check whether all purposes refer to existing objects
                . checkDanglingRulesInRuleRoles -- Check whether all rules in MAINTAIN statements are declared
                . checkInterfaceCycles      -- Check that interface references are not cyclic
                . checkMultipleDefaultViews -- Check whether each concept has at most one default view
@@ -113,7 +114,18 @@ checkDanglingRulesInRuleRoles gCtx =
                         ] of
                      [] -> gCtx
                      errs -> Errors errs
-
+checkOtherAtomsInSessionConcept :: Guarded A_Context -> Guarded A_Context
+checkOtherAtomsInSessionConcept gCtx =
+   case gCtx of
+     Errors _  -> gCtx
+     Checked ctx -> case [mkOtherAtomInSessionError atom
+                         | pop@PCptPopu{popcpt =cpt} <- ctxpopus ctx
+                         , name cpt == "SESSION"
+                         , atom <- filter (/= "_SESSION") (popas pop)
+                         ] of
+                      [] -> gCtx
+                      errs -> Errors errs
+     
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1
@@ -170,7 +182,7 @@ pCtx2aCtx' _
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
-      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels p_patterns)
+      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels (p_patterns ++ p_processes))
       
   where
     p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
@@ -498,11 +510,9 @@ pCtx2aCtx' _
        = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
-                   (True,True) -> pure (head' (Set.toList r))
+                   (True,True) -> pure (head (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
-       where head' [] =fatal 321 ("empty list on expressions "++show ((p1,b1,e1),(p2,b2,e2)))
-             head' (a:_) = a
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb x
      = (x, case x of
@@ -670,10 +680,9 @@ pCtx2aCtx' _
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
-     = if null cs
-       then Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1}
-       else head cs
-       where cs = [cd | cd<-allConceptDefs, name cd==s]
+     = case filter (\cd -> name cd == s) allConceptDefs of
+        []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1} 
+        (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
     allRoleRules :: [A_RoleRule]

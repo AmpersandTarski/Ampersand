@@ -8,7 +8,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
-  , mkIncompatibleViewError
+  , mkIncompatibleViewError, mkOtherAtomInSessionError
   , Guarded(..)
   , whenCheckedIO
   , unguard
@@ -135,7 +135,11 @@ mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
                          ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
-    
+
+mkOtherAtomInSessionError :: String -> CtxError
+mkOtherAtomInSessionError atomValue =
+  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++atomValue++"`."
+  
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String
