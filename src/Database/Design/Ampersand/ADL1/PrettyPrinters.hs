@@ -299,12 +299,8 @@ instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp (P_Obj nm _ ctx _ _ _)) = lbl <~> ctx
-            where lbl = if null nm || nm `startsWith` "seg_" then empty
-                        else maybeQuote nm <+> text ":"
-                  startsWith [] _ = True -- An empty list would be at the beginning of every list
-                  startsWith _ [] = False -- Nothing is at the beginning of an empty list
-                  startsWith (x:xs) (y:ys)= x == y && startsWith xs ys
+    pretty (P_ViewExp (P_Obj nm _ ctx _ _ _))
+                            = maybeQuote nm <+> text ":" <~> ctx
     pretty (P_ViewText txt) = text "TXT" <+> quote txt
     pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
                         
