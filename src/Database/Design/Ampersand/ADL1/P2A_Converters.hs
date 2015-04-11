@@ -9,7 +9,7 @@ import Database.Design.Ampersand.Classes.ViewPoint hiding (gens)
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Prelude hiding (head, sequence, mapM)
+import Prelude hiding (sequence, mapM)
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
@@ -17,10 +17,6 @@ import qualified Data.Map as Map
 import Data.Function
 import Data.Maybe
 import Data.List(nub)
-
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"

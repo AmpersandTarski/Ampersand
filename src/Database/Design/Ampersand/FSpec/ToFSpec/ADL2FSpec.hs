@@ -25,8 +25,7 @@ fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
 
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
- = trace (show (expressionsIn context)) $
-       FSpec { fsName       = name context
+ =      FSpec { fsName       = name context
               , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
