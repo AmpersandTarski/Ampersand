@@ -626,9 +626,9 @@ pCtx2aCtx' _
            pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               unguard $
-                (\o -> case (findExact genLattice (mjoin (name (source (objctx o))) (name conc))) of
-                         [] -> mustBeOrdered orig (Src, (origin ojd), (objctx o)) pidt
-                         _ -> pure (IdentityExp o)
+                (\o -> case findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
+                         [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
+                         _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (name conc) (objctx o)}
                 ) <$> pObjDef2aObjDef ojd
 
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
