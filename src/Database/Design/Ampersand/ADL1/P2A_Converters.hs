@@ -262,28 +262,10 @@ pCtx2aCtx' _
        where
          leastConcepts = findExact genLattice (Atom (name c) `Meet` (Atom str))
 
-{- SJ20140216: The function castConcept is used in the type system, but looks similar to pCpt2aCpt.
-   However, castConcept makes an erroneous concept, which we should prevent in the first place.
-   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work.
-   SJC20140915: The function castConcept has an entirely different signature: it converts from a string.
-   It does not create erroneous concepts!
-   If the parser would return a P_Concept in all these places, we could unify castConcept and pCpt2aCpt.
-   So the solution would be to replace castConcept by:
-    castConcept :: P_Concept -> A_Concept
-    castConcept = pCpt2aCpt
-   and additionally:
-    genRules = [ ( Set.singleton (gen_spc x), Set.fromList (gen_concs x))
-               | x <- p_gens ++ concatMap pt_gns p_patterns ++ concatMap procGens p_processes
-               ]
-    genLattice :: Op1EqualitySystem P_Concept
-   And then solving all type errors in this file by changing the data types (e.g. p_cnme :: P_Population -> P_Concept)
-   .. seems like a lot of work => future work
--}
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
-    castConcept x
-     = PlainConcept { cptnm = x
-                    }
+    castConcept x     = PlainConcept { cptnm = x }
+
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }
