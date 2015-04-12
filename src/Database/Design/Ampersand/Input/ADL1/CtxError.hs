@@ -80,14 +80,14 @@ cannotDisambRel o exprs
      [] -> "No declarations match the relation: "++showADL o
      _  -> case o of
              (PNamedR(PNamedRel _ _ Nothing)) 
-                -> unlines $
+                -> intercalate "\n" $
                        ["Cannot disambiguate the relation: "++showADL o
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
                        ,"  Relations you may have intended:"
                        ]++
-                       ["  "++showADL e++"["++showADL (source e)++"*"++showADL (target e)++"]"
+                       ["  "++showADL e++"["++name (source e)++"*"++name (target e)++"]"
                        |e<-exprs]
-             _  -> unlines $
+             _  -> intercalate "\n" $
                        ["Cannot disambiguate: "++showADL o
                        ,"  Please add a signature."
                        ,"  You may have intended one of these:"
