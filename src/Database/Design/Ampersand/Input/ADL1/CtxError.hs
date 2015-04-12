@@ -71,11 +71,30 @@ instance GetOneGuarded Declaration where
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
   getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++(showFullOrig$origin l) | l<-lst]]
 
-cannotDisambRel :: (ShowADL a2, Association a2) => (TermPrim) -> [a2] -> Guarded a
-cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
-cannotDisambRel o@(PNamedR(PNamedRel _ _ Nothing)) lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
-cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature.\n  You may have intended one of these:"++concat ["\n  "++showADL l|l<-lst]]
-cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
+cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
+cannotDisambRel o exprs
+ = Errors [CTXE (origin o) message]
+  where 
+   message =
+    case exprs of
+     [] -> "No declarations match the relation: "++showADL o
+     _  -> case o of
+             (PNamedR(PNamedRel _ _ Nothing)) 
+                -> unlines $
+                       ["Cannot disambiguate the relation: "++showADL o
+                       ,"  Please add a signature (e.g. [A*B]) to the relation."
+                       ,"  Relations you may have intended:"
+                       ]++
+                       ["  "++showADL e++"["++showADL (source e)++"*"++showADL (target e)++"]"
+                       |e<-exprs]
+             _  -> unlines $
+                       ["Cannot disambiguate: "++showADL o
+                       ,"  Please add a signature."
+                       ,"  You may have intended one of these:"
+                       ]++
+                       ["  "++showADL e|e<-exprs]
+
+cannotDisamb :: TermPrim -> Guarded Expression
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 
 uniqueNames :: (Named a, Traced a) =>
