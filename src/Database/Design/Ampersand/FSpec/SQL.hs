@@ -49,8 +49,7 @@ selectExpr :: FSpec    -- current context
 -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 selectExpr fSpec expr
- = case -- trace ("\nExpression:"++showADL expr ++"\n  "++show expr) 
-        expr of
+ = case expr of
     EIsc{} -> 
     {- The story on the case of EIsc:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))

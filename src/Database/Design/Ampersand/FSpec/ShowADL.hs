@@ -226,8 +226,7 @@ instance ShowADL Expression where
      showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
      showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rDia, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
-      = --let c = PlainConcept "A" in trace (showchar (insParentheses (ECps (ECps (EDcI c,EDcI c),ECps (EDcI c,EDcI c))))) $
-        showchar (insParentheses expr)
+      = showchar (insParentheses expr)
         where
           showchar (EEqu (l,r)) = showchar l++equi++showchar r
           showchar (EImp (l,r)) = showchar l++impl++showchar r

@@ -354,7 +354,7 @@ makeFSpec opts context
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
-            -- 16 Aug 2011: (recur trace es) is applied once where es originates from (maxTotPaths `uni` maxInjPaths) both based on clos
+            -- 16 Aug 2011: (recur es) is applied once where es originates from (maxTotPaths `uni` maxInjPaths) both based on clos
             -- Interfaces for I[Concept] are generated only for concepts that have been analysed to be an entity.
             -- These concepts are collected in gPlugConcepts
             gPlugConcepts = [ c | InternalPlug plug@TblSQL{}<-genPlugs , (c,_)<-take 1 (cLkpTbl plug) ]

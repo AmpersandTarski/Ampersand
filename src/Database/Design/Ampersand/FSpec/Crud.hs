@@ -57,7 +57,7 @@ mkCrudInfo  allConceptsPrim allDecls allIfcs =
         
         -- crud concept together with its target concept in the surjective/total transitive closure of declarations
         crudObjs :: [(A_Concept, [A_Concept])]
-        crudObjs = trace (show transSurjClosureMap ) $
+        crudObjs = trace ("at crudObjs, (transSurjClosureMap): \n"++show transSurjClosureMap ) $
                    [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
                    | crudCncpt <- crudCncpts ]
         

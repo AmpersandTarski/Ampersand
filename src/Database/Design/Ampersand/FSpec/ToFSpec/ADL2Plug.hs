@@ -53,9 +53,7 @@ makeGeneratedSqlPlugs opts context totsurs entityDcls = gTables
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = --trace "---\nStart makeEntityTables " $
-                   --trace ("with "++show (length entityDcls)++" relations and "++show(length vsqlplugs)++" userdefined plugs.\n")
-                         (makeEntityTables opts context entityDcls (gens context) (ctxgenconcs context) (relsUsedIn vsqlplugs))
+        gPlugs   = makeEntityTables opts context entityDcls (gens context) (ctxgenconcs context) (relsUsedIn vsqlplugs)
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable context dcl totsurs
