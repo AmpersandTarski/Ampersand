@@ -47,8 +47,9 @@ quoteAll = map quote
 
 quotePurpose :: String -> Doc
 quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
-        where escapeExpl = text.escapeCommentStart.escapeExplEnd
+        where escapeExpl = text.escapeCommentStart.escapeLineComment.escapeExplEnd
               escapeCommentStart = escape "{-"
+              escapeLineComment = escape "--"
               escapeExplEnd = escape "-}"
               escape x = replace x (intersperse ' ' x)
 
