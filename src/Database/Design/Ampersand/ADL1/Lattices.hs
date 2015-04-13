@@ -52,7 +52,7 @@ getGroups (ES1 tran _ imap)
       newRev = IntMap.insert newKey newItm newRev'
       newElems = IntMap.union (IntMap.fromSet (const newKey) newItm) allElems -- overwrites some of the allElems items with the new key
 
-findExact :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> x a -- returns the empty set on a failure
+findExact :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> x a -- returns the empty set on a failure, returns all sets equivalent to "FreeLattice a" according to the equalitysystem
 findExact = findWith lookupInRevMap (\x -> fromList [x])
 findSubsets :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> [x a] -- returns a list of largest subsets
 findSubsets = findWith findSubsetInRevMap (\x -> [fromList [x]])

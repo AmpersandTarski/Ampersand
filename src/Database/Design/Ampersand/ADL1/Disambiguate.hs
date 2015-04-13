@@ -40,6 +40,14 @@ class Disambiguatable d where
       , ( [(DisambPrim,SrcOrTgt)], [(DisambPrim,SrcOrTgt)] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
       )
 
+instance Disambiguatable P_IdentDf where
+  disambInfo (P_Id o nm c []) _ = ( P_Id o nm c [], ([],[]))
+  disambInfo (P_Id o nm c (a:lst)) (x,_) = (P_Id o nm c (a':lst'), (r++nxt, []))
+       where (a', (r,_))                 = disambInfo a (nxt++x, [])
+             (P_Id _ _ _ lst', (nxt,_))  = disambInfo (P_Id o nm c lst) (x++r, [])
+instance Disambiguatable P_IdentSegmnt where
+  disambInfo (P_IdentExp v) x = (P_IdentExp v', r)
+     where (v',r) = disambInfo v x
 instance Disambiguatable P_Rule where
   disambInfo (P_Ru nm expr fps mean msg Nothing) x
    = (P_Ru nm exp' fps mean msg Nothing, rt)
@@ -145,11 +153,12 @@ instance Disambiguatable Term where
   disambInfo (Prim (a,b)) st = (Prim ((a,b), st), ([(b,Src)], [(b,Tgt)]) )
 
 data DisambPrim
- = Rel [Expression]
- | Ident
- | Vee
- | Mp1 String
- | Known Expression deriving Show  -- Here, deriving Show serves debugging purposes only.
+ = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
+ | Ident -- identity, and we know nothing about its type
+ | Vee -- vee, type unknown
+ | Mp1 String -- an atom, type unknown
+ | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
+ deriving Show  -- Here, deriving Show serves debugging purposes only.
 
 -- get concept:
 gc :: Association expr => SrcOrTgt -> expr -> String

@@ -344,13 +344,13 @@ pCtx2aCtx' _
                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
                        Nothing     -> Errors [mkUndeclaredError "interface" o ifcId]
              Just bx@(Box c _ _) ->
-               case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
+               case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- does this always return a singleton? (and if so why not a maybe?) SJC: See documentation of findExact. Answer: no.
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
                  cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
          <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
      where      
       isa :: String -> String -> Bool
-      isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
+      isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
       
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
@@ -616,26 +616,24 @@ pCtx2aCtx' _
            <$> maybeOverGuarded (typeCheckPairView orig exp') viols)
          <$> typecheckTerm expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
-    pIdentity2aIdentity
-          pidt@(P_Id { ix_pos = orig
-                 , ix_lbl = lbl
-                 , ix_cpt = pconc
-                 , ix_ats = isegs
-                 })
-     = (\isegs' ->
-       Id { idPos = orig
-          , idLbl = lbl
-          , idCpt = conc
-          , identityAts = isegs'
-          }) <$> traverse pIdentSegment2IdentSegment isegs
-     where conc = pCpt2aCpt pconc
-           pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
+    pIdentity2aIdentity pidt
+     = case disambiguate termPrimDisAmb pidt of
+           P_Id { ix_lbl = lbl
+                , ix_ats = isegs
+                } -> (\isegs' -> Id { idPos = orig
+                                    , idLbl = lbl
+                                    , idCpt = conc
+                                    , identityAts = isegs'
+                                    }) <$> traverse pIdentSegment2IdentSegment isegs
+     where conc = pCpt2aCpt (ix_cpt pidt)
+           orig = ix_pos pidt
+           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               unguard $
                 (\o -> case findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
                          [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (name conc) (objctx o)}
-                ) <$> pObjDef2aObjDef ojd
+                ) <$> pObjDefDisamb2aObjDef ojd
 
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
