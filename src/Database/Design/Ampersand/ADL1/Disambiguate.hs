@@ -42,12 +42,12 @@ class Disambiguatable d where
 
 instance Disambiguatable P_IdentDf where
   disambInfo (P_Id o nm c []) _ = ( P_Id o nm c [], ([],[]))
-  disambInfo (P_Id o nm c (a:lst)) (x,_) = (P_Id o nm c (a':lst'), (r++nxt, []))
-       where (a', (r,_))                 = disambInfo a (nxt++x, [])
-             (P_Id _ _ _ lst', (nxt,_))  = disambInfo (P_Id o nm c lst) (x++r, [])
+  disambInfo (P_Id o nm c (a:lst)) x     = (P_Id o nm c (a':lst'), (r++nxt, []))
+       where (a', (r,_))                 = disambInfo a (nxt++fst x++[(Known (EDcI (pCpt2aCpt c)),Src)], [])
+             (P_Id _ _ _ lst', (nxt,_))  = disambInfo (P_Id o nm c lst) (fst x++r, [])
 instance Disambiguatable P_IdentSegmnt where
-  disambInfo (P_IdentExp v) x = (P_IdentExp v', r)
-     where (v',r) = disambInfo v x
+  disambInfo (P_IdentExp v) x = (P_IdentExp v', rt)
+     where (v',rt) = disambInfo v x
 instance Disambiguatable P_Rule where
   disambInfo (P_Ru nm expr fps mean msg Nothing) x
    = (P_Ru nm exp' fps mean msg Nothing, rt)
