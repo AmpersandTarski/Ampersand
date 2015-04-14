@@ -8,6 +8,8 @@ Class Atom {
 	public $view;
 	public $concept;
 	
+	private $newContent; // To temporarily store changed atom content 
+	
 	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
@@ -291,7 +293,10 @@ Class Atom {
 		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
 		
 		return $patches;
+	
+	public function setNewContent($interface){
 		
+		$this->newContent = $this->getContent($interface, true, $atom->id);
 	}
 	
 	public function delete(){
