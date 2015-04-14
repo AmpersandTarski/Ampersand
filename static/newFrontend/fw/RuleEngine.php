@@ -64,7 +64,8 @@ class RuleEngine {
 					$conjunct = RuleEngine::getConjunct($conjunctId);
 					foreach ($conjunct['invariantRuleNames'] as $ruleName){
 						$rule = RuleEngine::getRule($ruleName);
-						Notifications::addInvariant("Violation of rule '".$rule['name']."'");
+						$message = empty($rule['message']) ? $rule['name'] : $rule['message'];
+						Notifications::addInvariant($message);
 					}
 					
 				}
@@ -79,7 +80,9 @@ class RuleEngine {
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				if(!empty($violations)) {
 					$invariantRulesHold = false;
-					Notifications::addInvariant("Violation of rule '".$rule['name']."'");
+					
+					$message = empty($rule['message']) ? $rule['name'] : $rule['message'];
+					Notifications::addInvariant($message);
 				}
 			}
 		}
