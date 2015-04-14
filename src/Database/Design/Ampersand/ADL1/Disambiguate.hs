@@ -1,4 +1,5 @@
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, DisambPrim(..),pCpt2aCpt) where
+{-# OPTIONS_GHC -Wall #-}
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, gc', DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Basics (Named(name), fatalMsg)
@@ -7,7 +8,7 @@ import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
 
-disambiguate :: (Traversable d, Disambiguatable d) =>
+disambiguate :: (Disambiguatable d) =>
                 (a -> (TermPrim, DisambPrim)) -- disambiguation function
                 -> d a -- object to be disambiguated
                 -> d (TermPrim, DisambPrim) -- disambiguated object
@@ -16,11 +17,8 @@ disambiguate termPrimDisAmb x = fixpoint disambiguationStep (Change (fmap termPr
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Disambiguate"
 
-findConceptOrONE :: String -> A_Concept
-findConceptOrONE "ONE" = ONE
-findConceptOrONE x = findConcept x
-
 -- TODO: Can we use Uniplate in place of disambiguatable?
+-- SJC, I don't see how. Can whoever put this TODO here call me to elaborate?
 
 findConcept :: String -> A_Concept
 -- SJC: ONE should be tokenized, so it cannot occur as a string
@@ -33,18 +31,46 @@ findConcept x =
    PlainConcept { cptnm = x
                 }
 
-class Disambiguatable d where
+-- To make something Disambiguatable, do the following:
+-- (1) Make sure the type of the Disambiguatable thing has a type variable.
+--     Suppose "Thing" should become disambiguatable, then "Thing" has "TermPrim" inside somewhere.
+--     Change "data Thing =" into "data ThingPolymorphic a =", and change occurences of "TermPrim" into "a".
+--     We changed "Thing" into "ThingPolymorphic" so we can create a type instance for "Thing":
+--     type Thing = ThingPolymorphic TermPrim
+--     This makes sure that "Thing" is the exact same type before and after this change.
+-- (2) Make ThingPolymorphic an instance of Traversable. The default "deriving Traversable" should be fine.
+-- (3) Make ThingPolymorphic an instance of Disambiguatable. It is your responsibility to prevent loops here. The instance looks like this:
+--     disambInfo (Thing1 x y z) td = (Thing1 x' y' z', (bottomUpSourceTypes,bottomUpTargetTypes))
+--      where (x',resultingTypesForX) = disambInfo x' topDownTypesForX
+--            (y',resultingTypesForY) = disambInfo y' topDownTypesForY
+--            (z',resultingTypesForZ) = disambInfo z' topDownTypesForZ
+--     The variables topDownTypesFor... may depend on td,
+--     the variables bottomUpSourceTypes and bottomUpTargetTypes may depend on resultingTypesFor...
+--     Closing the loop (at the top of the structure) is done in the function "disambiguationStep".
+--     Note that disambInfo actually performs two separate functions in one go: one to go top down, the other to go bottom up.
+--     The top-down function may use parts of the bottom-up function, but not the other way around.
+--     A nice example to look at is PCps:
+--         disambInfo (PCps o a b) (ia1,ib1) = ( PCps o a' b', (ia, ib) )
+--          where (a', (ia,ic1)) = disambInfo a (ia1,ic2) -- here ic2 is top-down, so that is ok
+--                (b', (ic2,ib)) = disambInfo b (ic1,ib1)
+
+-- this is *only* used internally!
+data D_Concept
+ = MustBe A_Concept
+ | MayBe  A_Concept
+
+class Traversable d => Disambiguatable d where
   disambInfo :: d (TermPrim,DisambPrim)
-   -> ( [(DisambPrim,SrcOrTgt)], [(DisambPrim,SrcOrTgt)] ) -- the inferred types (from the environment = top down)
-   -> ( d ((TermPrim,DisambPrim), ([(DisambPrim,SrcOrTgt)],[(DisambPrim,SrcOrTgt)])) -- only the environment for the term (top down)
-      , ( [(DisambPrim,SrcOrTgt)], [(DisambPrim,SrcOrTgt)] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
+   -> ( [D_Concept], [D_Concept] ) -- the inferred types (from the environment = top down)
+   -> ( d ((TermPrim,DisambPrim), ([D_Concept], [D_Concept])) -- only the environment for the term (top down)
+      , ( [D_Concept], [D_Concept] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
       )
 
 instance Disambiguatable P_IdentDf where
   disambInfo (P_Id o nm c []) _ = ( P_Id o nm c [], ([],[]))
-  disambInfo (P_Id o nm c (a:lst)) x     = (P_Id o nm c (a':lst'), (r++nxt, []))
-       where (a', (r,_))                 = disambInfo a (nxt++fst x++[(Known (EDcI (pCpt2aCpt c)),Src)], [])
-             (P_Id _ _ _ lst', (nxt,_))  = disambInfo (P_Id o nm c lst) (fst x++r, [])
+  disambInfo (P_Id o nm c (a:lst)) _     = (P_Id o nm c (a':lst'), (r++nxt, []))
+       where (a', (r,_))                 = disambInfo a ([MustBe (pCpt2aCpt c)], [])
+             (P_Id _ _ _ lst', (nxt,_))  = disambInfo (P_Id o nm c lst) ([MustBe (pCpt2aCpt c)], [])
 instance Disambiguatable P_IdentSegmnt where
   disambInfo (P_IdentExp v) x = (P_IdentExp v', rt)
      where (v',rt) = disambInfo v x
@@ -76,7 +102,7 @@ instance Disambiguatable P_ViewD where
                    , vd_ats  = a
                    , vd_html = h
                    }) _ = (P_Vd o s c d h (map (\x -> fst (disambInfo x (c',[]))) a), (c',[]))
-   where c' = [(Known (EDcI (pCpt2aCpt c)),Src)]
+   where c' = [MustBe (pCpt2aCpt c)]
 
 instance Disambiguatable P_ViewSegmt where
   disambInfo (P_ViewText a) _ = (P_ViewText a,([],[]))
@@ -150,7 +176,12 @@ instance Disambiguatable Term where
   disambInfo (PPrd o a b) (ia1,ib1) = ( PPrd o a' b', (ia, ib) )
    where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
          (b', (ic2,ib)) = disambInfo b (ic1,ib1)
-  disambInfo (Prim (a,b)) st = (Prim ((a,b), st), ([(b,Src)], [(b,Tgt)]) )
+  disambInfo (Prim (a,b)) st = (Prim ((a,b), st), (getConcepts Src b, getConcepts Tgt b) )
+
+getConcepts :: SrcOrTgt -> DisambPrim -> [D_Concept]
+getConcepts sot (Rel lst) = map (MayBe . gc' sot) lst
+getConcepts sot (Known e) = [MustBe (gc' sot e)]
+getConcepts _ _ = []
 
 data DisambPrim
  = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
@@ -160,17 +191,20 @@ data DisambPrim
  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
  deriving Show  -- Here, deriving Show serves debugging purposes only.
 
--- get concept:
 gc :: Association expr => SrcOrTgt -> expr -> String
-gc Src e = name (source e)
-gc Tgt e = name (target e)
+gc sot = name . gc' sot
+
+-- get concept:
+gc' :: Association expr => SrcOrTgt -> expr -> A_Concept
+gc' Src e = source e
+gc' Tgt e = target e
 
 disambiguationStep :: (Disambiguatable d, Traversable d) => d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
 disambiguationStep x = traverse performUpdate withInfo
  where (withInfo, _) = disambInfo x ([],[])
 
 performUpdate :: ((t, DisambPrim),
-                     ([(DisambPrim, SrcOrTgt)], [(DisambPrim, SrcOrTgt)]))
+                     ([D_Concept], [D_Concept]))
                      -> Change (t, DisambPrim)
 performUpdate ((t,unkn), (srcs',tgts'))
  = case unkn of
@@ -178,10 +212,10 @@ performUpdate ((t,unkn), (srcs',tgts'))
      Rel xs  -> determineBySize (\x -> if length x == length xs then pure (Rel xs) else impure (Rel x))
                 ((findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
                  `orWhenEmpty` xs)
-     Ident   -> determineBySize suggest (map (\a -> EDcI (findConceptOrONE a)) (Set.toList possibleConcs))
-     Mp1 s   -> determineBySize suggest (map (\a -> EMp1 s (findConceptOrONE a)) (Set.toList possibleConcs)) -- SJ20140211 @SJC: TODO hier moeten wellicht SESSION atomen worden uitgesloten. Kun jij deze TODO oplossen en verwijderen?
+     Ident   -> determineBySize suggest (map EDcI     (Set.toList possibleConcs))
+     Mp1 s   -> determineBySize suggest (map (EMp1 s) (Set.toList possibleConcs))
      Vee     -> determineBySize (const (pure unkn))
-                  [EDcV (Sign (findConceptOrONE a) (findConceptOrONE b)) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
+                  [EDcV (Sign a b) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
  where
    suggest [] = pure unkn
    suggest lst = impure (Rel lst) -- TODO: find out whether it is equivalent to put "pure" here (which could be faster).
@@ -192,17 +226,17 @@ performUpdate ((t,unkn), (srcs',tgts'))
    findMatch' (a,b) = findMatch (Set.toList a,Set.toList b)
    findMatch ([],[]) _ = []
    findMatch ([],tgts) lst
-    = [x | x<-lst, gc Tgt x `elem` tgts]
+    = [x | x<-lst, gc' Tgt x `elem` tgts]
    findMatch (srcs,[]) lst
-    = [x | x<-lst, gc Src x `elem` srcs]
+    = [x | x<-lst, gc' Src x `elem` srcs]
    findMatch (srcs,tgts) lst
-    = [x | x<-lst, gc Src x `elem` srcs, gc Tgt x `elem` tgts]
+    = [x | x<-lst, gc' Src x `elem` srcs, gc' Tgt x `elem` tgts]
    mustBeSrc = mustBe srcs'
    mustBeTgt = mustBe tgts'
    mayBeSrc = mayBe srcs'
    mayBeTgt = mayBe tgts'
-   mustBe xs = Set.fromList [gc sot x | (Known x, sot) <- xs]
-   mayBe  xs = Set.fromList [gc sot x | (Rel x' , sot) <- xs, x<-x']
+   mustBe xs = Set.fromList [x | (MustBe x) <- xs]
+   mayBe  xs = Set.fromList [x | (MayBe x) <- xs]
    orWhenEmptyS a b = if (Set.null a) then b else a
    orWhenEmpty a b = if (null a) then b else a
    determineBySize _   [a] = impure (t,Known a)

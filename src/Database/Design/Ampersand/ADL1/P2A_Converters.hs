@@ -3,7 +3,7 @@ where
 import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import Database.Design.Ampersand.Input.ADL1.CtxError
-import Database.Design.Ampersand.ADL1.Lattices
+import Database.Design.Ampersand.ADL1.Lattices -- used for type-checking
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Classes.ViewPoint hiding (gens)
 import Database.Design.Ampersand.Classes.ConceptStructure
@@ -27,6 +27,19 @@ instance Ord SignOrd where
 instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
+-- pCtx2aCtx has three tasks:
+-- 1) Disambiguate the structures.
+--    Disambiguation means replacing every "TermPrim" (the parsed expression) with the correct Expression (available through DisambPrim)
+--    This is done by using the function "disambiguate" on the outer-most structure.
+--    In order to do this, its data type must be polymorphic, as in "P_ViewSegmt a".
+--    After parsing, the type has TermPrim for the type variable. In our example: "P_ViewSegmt TermPrim". Note that "type P_ViewSegment = P_ViewSegmt TermPrim".
+--    After disambiguation, the type variable is (TermPrim, DisambPrim), as in "P_ViewSegmt (TermPrim, DisambPrim)"
+-- 2) Typecheck the structures.
+--    This changes the data-structure entirely, changing the P_ into the A_
+--    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
+--    Using the Applicative operations <$> and <*> causes these errors to be in parallel
+-- 3) Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
+-- Part 3 is done below, the other two are done in pCtx2aCtx'
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkOtherAtomsInSessionConcept
                . checkPurposes             -- Check whether all purposes refer to existing objects
@@ -121,7 +134,7 @@ checkOtherAtomsInSessionConcept gCtx =
                          ] of
                       [] -> gCtx
                       errs -> Errors errs
-     
+
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1
