@@ -52,24 +52,18 @@ class Notifications {
 		self::addLog($violationMessage . ' - ' . $violationMessage, 'VIOLATION');
 	}
 	
-	public static function addInfo($message, $id = null){
+	public static function addInfo($message, $id = null, $aggregatedMessage = null){
 		
-		if(isset($id)){
-			$idHash = hash('md5', $id); // ID can be integer, but also string
-			
-			// Set message of info, in case this is not done yet (use: $id for this)
-			if(empty(self::$infos[$idHash]['message'])) self::$infos[$idHash]['message'] = $id;
-			
-			// Set message of row (use: $message)
-			self::$infos[$idHash]['rows'][] = $message;
-			
-			// Add INFO also to logging
-			self::addLog(self::$infos[$idHash]['message'] .' - ' . $message, 'INFO');
+		if(isset($id)){ // ID can be integer, but also string
+			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
+			self::$infos[$id]['rows'][] = $message;
+			if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
 			
 			return $id;
 		}else{
 			self::addLog($message, 'INFO');
 			self::$infos[]['message'] = $message;
+			
 			end(self::$infos); // pointer to end of array (i.e. new  inserted element)
 			return key(self::$infos); // return key of current element
 		}
@@ -79,13 +73,15 @@ class Notifications {
 	public static function addSuccess($message, $id = null, $aggregatedMessage = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
+			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');
 			self::$successes[$id]['rows'][] = $message;
-			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');;
 			if(!is_null($aggregatedMessage)) self::$successes[$id]['message'] = $aggregatedMessage;
+			
 			return $id;
 		}else{
 			self::addLog($message, 'SUCCESS');
 			self::$successes[]['message'] = $message;
+			
 			end(self::$successes); // pointer to end of array (i.e. new  inserted element)
 			return key(self::$successes); // return key of current element
 		}
