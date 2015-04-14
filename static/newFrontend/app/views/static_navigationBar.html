@@ -28,7 +28,7 @@
 			<li class="dropdown pull-right" tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="top">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">
-					<li><a href="#" ng-repeat="role in roles" ng-click="selectRole(role.id)">{{role.label}}</a></li>
+					<li><a href="#" ng-repeat="role in roles" ng-click="selectRole(role.id)">{{role.label}} <span ng-show="role.id == roleId" class="glyphicon glyphicon-ok"></span></a></li>
 				</ul>
 			</li>
 		
@@ -50,7 +50,7 @@
 			</li>
 			
 			<li class="dropdown pull-right" tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="top">
-				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-eye-open"></span></a>
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
 				<ul class="dropdown-menu" role="menu">
 					<li><switch ng-model="$root.switchShowViolations"> Show violation messages</switch></li>
 					<li class="divider" role="presentation"></li>

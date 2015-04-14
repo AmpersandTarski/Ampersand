@@ -19,6 +19,10 @@ html {
 	
 }
 
+#header .glyphicon {
+	color				: #428bca;
+}
+
 #footer {
 	position			: absolute;
 	bottom				: 0px;
