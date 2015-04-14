@@ -116,8 +116,19 @@ Class Atom {
 
 	}
 	
-	public function patch(&$interface, $request_data){
+	public function patch(&$interface, $request_data, $requestType){
 		$database = Database::singleton();
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				break;
+				$databaseCommit = true;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
 		
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
@@ -276,8 +287,8 @@ Class Atom {
 			}
 		}
 		
-		// Close transaction => ROLLBACK or COMMIT.
-		$database->closeTransaction('Updated', false); 
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
 		
 		return $patches;
 		
