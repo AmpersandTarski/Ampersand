@@ -292,7 +292,11 @@ Class Atom {
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
 		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
 		
-		return $patches;
+		return array(	'patches' 				=> $patches
+				    ,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+				    ,	'notifications' 		=> Notifications::getAll()
+					,	'invariantRulesHold'	=> $invariantRulesHold);
+	}
 	
 	public function setNewContent($interface){
 		

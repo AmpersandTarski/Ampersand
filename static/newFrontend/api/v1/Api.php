@@ -132,19 +132,19 @@ class Api{
 	 * @param string $sessionId
 	 * @param string $atomId
 	 * @param int $roleId
+	 * @param string $requestType
+	 * 
+	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($interfaceId, $sessionId, $atomId, $roleId = null, $request_data = null){
+	public function patchAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
+			
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
+			$session->atom = new Atom($atomId, $session->interface->tgtConcept);	
 			
-			$atom = new Atom($atomId, $session->interface->tgtConcept);	
-			
-			return array_merge(array('patches' => $atom->patch($session->interface, $request_data))
-							  ,array('content' => current((array)$atom->getContent($session->interface, true, $atom->id))) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
-							  ,array('notifications' => Notifications::getAll())
-							  );
+			return $session->atom->patch($session->interface, $request_data, $requestType);
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
