@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_notificationCenterController', function ($scope, $rootScope, $routeParams, $timeout, Restangular) {
+AmpersandApp.controller('static_notificationCenterController', function ($scope, $rootScope, $route, $routeParams, $timeout, Restangular) {
 		
 	Restangular.one('notifications/all').get().then(function(data){
 		$rootScope.notifications = data;
@@ -20,6 +20,14 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 			$rootScope.updateNotifications(data);
 		});
 	}
+	
+	$scope.$on("$routeChangeSuccess", function(){
+		
+		// Hide successes, errors and infos (not process rule violations and invariant violations)
+		$rootScope.notifications.successes = [];
+		$rootScope.notifications.errors = [];
+		$rootScope.notifications.infos = [];
+	});
 	
 	$scope.closeAlert = function(alerts, index) {
 		alerts.splice(index, 1);
