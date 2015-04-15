@@ -357,7 +357,7 @@ pCtx2aCtx' _
                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
                        Nothing     -> Errors [mkUndeclaredError "interface" o ifcId]
              Just bx@(Box c _ _) ->
-               case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- does this always return a singleton? (and if so why not a maybe?) SJC: See documentation of findExact. Answer: no.
+               case findExact genLattice $ name c `mIsc` (name . target) objExpr of -- does this always return a singleton? (and if so why not a maybe?) SJC: See documentation of findExact. Answer: no.
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
                  cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
          <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
@@ -502,7 +502,7 @@ pCtx2aCtx' _
     deriv1 o x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
-             if (b1 && b2) || (gc p1 e1 == gc p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
+             if (b1 && b2) || (getConcept p1 e1 == getConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
              else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
         (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
@@ -512,13 +512,13 @@ pCtx2aCtx' _
              (\x -> (x,b1 || b2)) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
-       = case findExact genLattice (flf (gc p1 e1) (gc p2 e2)) of
+       = case findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           r  -> pure$ head r
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
+       = case findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
-          [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
+          [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
                    (True,True) -> pure (head (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
@@ -655,7 +655,7 @@ pCtx2aCtx' _
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
      = unguard $
-         (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
+         (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (getConcept s t))) of
                           [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
                           lst -> if b || and (map (name (source e) `elem`) lst)
                                  then pure (PairViewExp orig s e)
@@ -763,9 +763,15 @@ deriv' :: (Applicative f)
        -> f ((String, Bool), (String, Bool))
 deriv' (a,b) es = let (sourceOrTarget1, (e1, t1)) = resolve es a
                       (sourceOrTarget2, (e2, t2)) = resolve es b
-                  in pure ((gc sourceOrTarget1 e1, t1), (gc sourceOrTarget2 e2, t2))
+                  in pure ((getConcept sourceOrTarget1 e1, t1), (getConcept sourceOrTarget2 e2, t2))
 instance Functor TT where
   fmap f (UNI a b) = UNI (f a) (f b)
   fmap f (ISC a b) = ISC (f a) (f b)
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
+  
+-- TODO: would probably be better to return an A_Concept
+getConcept :: SrcOrTgt -> Expression -> String
+getConcept Src = name . source
+getConcept Tgt = name . target
+

@@ -1,22 +1,32 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, gc, gc', DisambPrim(..),pCpt2aCpt) where
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (Named(name), fatalMsg)
-import Prelude hiding (head, sequence, mapM)
+import Database.Design.Ampersand.Basics (fatalMsg)
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ADL1.Disambiguate"
 
 disambiguate :: (Disambiguatable d) =>
                 (TermPrim -> (TermPrim, DisambPrim)) -- disambiguation function
                 -> d TermPrim -- object to be disambiguated
                 -> d (TermPrim, DisambPrim) -- disambiguated object
 disambiguate termPrimDisAmb x = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
+  where
+   fixpoint :: (a -> Change a) -- function for computing a fixpoint
+            -> (Change a) -- has the fixpoint been reached?
+            -> a
+   fixpoint _ (Change a True)  = a
+   fixpoint f (Change a False) = fixpoint f (f a)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.Disambiguate"
+   disambiguationStep :: (Disambiguatable d) => d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
+   disambiguationStep thing = traverse performUpdate withInfo
+     where (withInfo, _) = disambInfo thing ([],[])
 
+  
 findConcept :: String -> A_Concept
 -- SJC: ONE should be tokenized, so it cannot occur as a string
 -- especially because we require that concepts are identifiable by their name
@@ -57,7 +67,7 @@ data D_Concept
  | MayBe  A_Concept
 
 class Traversable d => Disambiguatable d where
-  disambInfo :: d (TermPrim,DisambPrim)
+  disambInfo :: d (TermPrim,DisambPrim)  --the thing that is disabmiguated
    -> ( [D_Concept], [D_Concept] ) -- the inferred types (from the environment = top down)
    -> ( d ((TermPrim,DisambPrim), ([D_Concept], [D_Concept])) -- only the environment for the term (top down)
       , ( [D_Concept], [D_Concept] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
@@ -173,12 +183,12 @@ instance Disambiguatable Term where
   disambInfo (PPrd o a b) (ia1,ib1) = ( PPrd o a' b', (ia, ib) )
    where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
          (b', (ic2,ib)) = disambInfo b (ic1,ib1)
-  disambInfo (Prim (a,b)) st = (Prim ((a,b), st), (getConcepts Src b, getConcepts Tgt b) )
+  disambInfo (Prim (a,b)) st = (Prim ((a,b), st), (getDConcepts source b, getDConcepts target b) )
 
-getConcepts :: SrcOrTgt -> DisambPrim -> [D_Concept]
-getConcepts sot (Rel lst) = map (MayBe . gc' sot) lst
-getConcepts sot (Known e) = [MustBe (gc' sot e)]
-getConcepts _ _ = []
+getDConcepts :: (Expression -> A_Concept) -> DisambPrim -> [D_Concept]
+getDConcepts sot (Rel lst) = map (MayBe . sot) lst
+getDConcepts sot (Known e) = [MustBe (sot e)]
+getDConcepts _ _ = []
 
 data DisambPrim
  = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
@@ -187,18 +197,6 @@ data DisambPrim
  | Mp1 String -- an atom, type unknown
  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
  deriving Show  -- Here, deriving Show serves debugging purposes only.
-
-gc :: Association expr => SrcOrTgt -> expr -> String
-gc sot = name . gc' sot
-
--- get concept:
-gc' :: Association expr => SrcOrTgt -> expr -> A_Concept
-gc' Src e = source e
-gc' Tgt e = target e
-
-disambiguationStep :: (Disambiguatable d, Traversable d) => d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
-disambiguationStep x = traverse performUpdate withInfo
- where (withInfo, _) = disambInfo x ([],[])
 
 performUpdate :: ((t, DisambPrim),
                      ([D_Concept], [D_Concept]))
@@ -223,11 +221,11 @@ performUpdate ((t,unkn), (srcs',tgts'))
    findMatch' (a,b) = findMatch (Set.toList a,Set.toList b)
    findMatch ([],[]) _ = []
    findMatch ([],tgts) lst
-    = [x | x<-lst, gc' Tgt x `elem` tgts]
+    = [x | x<-lst, target x `elem` tgts]
    findMatch (srcs,[]) lst
-    = [x | x<-lst, gc' Src x `elem` srcs]
+    = [x | x<-lst, source x `elem` srcs]
    findMatch (srcs,tgts) lst
-    = [x | x<-lst, gc' Src x `elem` srcs, gc' Tgt x `elem` tgts]
+    = [x | x<-lst, source x `elem` srcs, target x `elem` tgts]
    mustBeSrc = mustBe srcs'
    mustBeTgt = mustBe tgts'
    mayBeSrc = mayBe srcs'
@@ -255,8 +253,3 @@ instance Applicative Change where
  (<*>) (Change f b) (Change a b2) = Change (f a) (b && b2)
  pure a = Change a True
 
-fixpoint :: (a -> Change a) -- function for computing a fixpoint
-         -> (Change a) -- has the fixpoint been reached?
-         -> a
-fixpoint _ (Change a True)  = a
-fixpoint f (Change a False) = fixpoint f (f a)
