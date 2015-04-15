@@ -51,12 +51,11 @@ parseSingleADL opts filePath =
     ; mFileContents <- readUTF8File filePath
     ; case mFileContents of
         Left err -> error $ "ERROR reading file " ++ filePath ++ ":\n" ++ err 
-                    -- TODO: would like to return an Errors value here, but this datatype currently only accommodates UUParsing Messages 
+                    -- TODO: would like to return an Errors value here, but this datatype currently only accommodates Parsing Messages 
         Right fileContents ->
-         whenCheckedIO (return $ runParser pContext filePath fileContents) $ \(ctxts,relativePaths) -> 
-               do { filePaths <- mapM normalizePath relativePaths
-                  ; return $ Checked (ctxts, filePaths)
-                  }
+             whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
+                   do filePaths <- mapM normalizePath relativePaths
+                      return (Checked (ctxts, filePaths))
     }
  where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
 
@@ -89,7 +88,7 @@ runParser parser filename input =
   let lexed = lexer [] filename input
   in case lexed of
     Left err -> Errors $ lexerErrors err
-    --TODO: Do something with the warnings
+    --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
     Right (tokens, _)  ->
         case parse parser tokens of
             Checked result -> Checked result
@@ -106,12 +105,12 @@ parseRule str
 
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String            -- ^ The string to be parsed
-               -> String            -- ^ The name of the file (used for error messages)
+               -> FilePath          -- ^ The name of the file (used for error messages)
                -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result
 parseADL1pExpr str fn =
   case runParser pTerm fn str of
       Checked result -> Right result
       Errors  msg    -> Left $ "Parse errors:\n"++show msg
-     
-parseCtx :: String -> String -> Guarded (P_Context, [String])
+
+parseCtx :: FilePath -> String -> Guarded (P_Context, [String])
 parseCtx = runParser pContext

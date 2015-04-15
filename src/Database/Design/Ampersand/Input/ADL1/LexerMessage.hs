@@ -15,8 +15,10 @@ module Database.Design.Ampersand.Input.ADL1.LexerMessage
     , isLooksLikeFloatWarningInfo
     , showLexerErrorInfo
     , showLexerWarningInfo
+    , showLexerWarnings
     ) where
 
+import Data.List (intercalate)
 import Database.Design.Ampersand.Input.ADL1.FilePos(FilePos)
 import qualified Database.Design.Ampersand.Input.ADL1.LexerTexts as Texts
 
@@ -133,7 +135,13 @@ data LexerWarningInfo
     | LooksLikeFloatNoFraction String
     | LooksLikeFloatNoDigits String
     | NestedComment FilePos
+    | UtfChar
     | CommentOperator
+
+showLexerWarnings :: [LexerWarning] -> String
+showLexerWarnings ws = intercalate "\n-----------\n" $ map showWarning ws
+            where showWarning (LexerWarning pos info) = "Warning: " ++
+                    intercalate "\n" (showLexerWarningInfo info) ++ " " ++ show pos
 
 showLexerWarningInfo :: LexerWarningInfo -> [String]
 showLexerWarningInfo info = 
@@ -142,6 +150,7 @@ showLexerWarningInfo info =
         LooksLikeFloatNoFraction digits -> Texts.lexerLooksLikeFloatNoFraction digits
         LooksLikeFloatNoDigits fraction -> Texts.lexerLooksLikeFloatNoDigits fraction
         NestedComment _                 -> Texts.lexerNestedComment
+        UtfChar                         -> Texts.lexerUtfChar
         CommentOperator                 -> Texts.lexerCommentOperator
 
 -- TODO: This is only valid for haskell.. Probably more of the warnings too!

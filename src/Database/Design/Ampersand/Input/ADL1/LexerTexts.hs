@@ -16,7 +16,7 @@ module Database.Design.Ampersand.Input.ADL1.LexerTexts(
     lexerTooManyClose, lexerUnexpectedClose, lexerStillOpenAtEOF,
     lexerCorrectFloats, lexerCorrectChars, lexerCorrectStrings,
     lexerTabCharacter, lexerLooksLikeFloatNoFraction, lexerLooksLikeFloatNoDigits,
-    lexerNestedComment, lexerCommentOperator
+    lexerUtfChar, lexerNestedComment, lexerCommentOperator
 ) where
 
 import Data.IORef
@@ -421,6 +421,16 @@ lexerLooksLikeFloatNoDigits fraction = select language
     , Dutch   :-> [ "Functie compositie (.) direct gevolgd door een getal"
                   , "Als je een reeel getal bedoelde, schrijf dan \"0." ++ fraction ++ "\""
                   , "Voeg anders een spatie in voor leesbaarheid"
+                  ]
+    ]
+
+lexerUtfChar :: [String]
+lexerUtfChar = select language
+    [ English :-> [ "Unrecognized character in the beginning of the file."
+                  , "Is it saved with encoding UTF-8 without BOM?"
+                  ]
+    , Dutch   :-> [ "Onbekend karakter in het begin van het bestand."
+                  , "Is het bestand opgeslagen met encoding UTF-8 zonder BOM?"
                   ]
     ]
 
