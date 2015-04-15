@@ -141,7 +141,7 @@ Class Atom {
 		
 		// Put current state based on differences
 		foreach ((array)$patches as $key => $patch){
-			$this->patch($patch);
+			$this->doPatch($patch, $interface);
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
@@ -154,6 +154,7 @@ Class Atom {
 	}
 	
 	public function patch($patch){
+	private function doPatch($patch, $interface){
 			
 		switch($patch['op']){ // operations
 			case "replace" :
