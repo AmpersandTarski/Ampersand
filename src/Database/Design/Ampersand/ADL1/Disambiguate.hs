@@ -2,10 +2,11 @@
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatalMsg,trace)
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
+import Data.List
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Disambiguate"
@@ -25,11 +26,12 @@ findConcept x =
 -- this is *only* used internally!
 data D_Concept
  = MustBe A_Concept
- | MayBe  A_Concept
+ | MayBe  A_Concept 
+ deriving (Show, Eq)
 -- Todo: maybe later we can have a single list of constraints, by adding SRC or TGT to D_Concept
 data Constraints = Cnstr {sourceConstraintsOf :: [D_Concept]
                          ,targetConstraintsOf :: [D_Concept]
-                         }
+                         }deriving Show
 
 class Traversable d => Disambiguatable d where
 -- To make something Disambiguatable, do the following:
@@ -137,10 +139,17 @@ instance Disambiguatable P_ViewSegmt where
 instance Disambiguatable P_SubIfc where
   disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
-  disambInfo (P_Box o cl (a:lst)) constrsx  = (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf constrsr++sourceConstraintsOf constrsnxt) [])
-   where (a', constrsr)                = disambInfo a (Cnstr (sourceConstraintsOf constrsnxt++sourceConstraintsOf constrsx) [])
-         (P_Box _ cl' lst',constrsnxt) = disambInfo (P_Box o cl lst) (Cnstr (sourceConstraintsOf constrsx++sourceConstraintsOf constrsr) [])
-
+  disambInfo (P_Box o cl (a:lst)) env1  = --trace ("---"++
+                                          --       "\nenv1: "++myshow env1++
+                                          --       "\nenvA: "++myshow envA++
+                                          --       "\nenvB: "++myshow envB++
+                                          --       "\nResultaat: "++myshow (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])++
+                                          --       "\na   : "++(show .obj_nm) a
+                                          --      ) $
+                                         (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])
+   where (a', envA)              = disambInfo a                (Cnstr (sourceConstraintsOf envB++sourceConstraintsOf env1) [])
+         (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA) [])
+         myshow cs = "Cnstr "++ (show.nub) (sourceConstraintsOf cs)++ (show.nub) (targetConstraintsOf cs)
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression
                         v
