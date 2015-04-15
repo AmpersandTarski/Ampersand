@@ -9,17 +9,13 @@ import Data.Traversable
 import qualified Data.Set as Set
 
 disambiguate :: (Disambiguatable d) =>
-                (a -> (TermPrim, DisambPrim)) -- disambiguation function
-                -> d a -- object to be disambiguated
+                (TermPrim -> (TermPrim, DisambPrim)) -- disambiguation function
+                -> d TermPrim -- object to be disambiguated
                 -> d (TermPrim, DisambPrim) -- disambiguated object
 disambiguate termPrimDisAmb x = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Disambiguate"
-
--- TODO: Can we use Uniplate in place of disambiguatable?
--- SJC, I don't see how. Can whoever put this TODO here call me to elaborate?
--- Haha! you just invited yourself to have a chat with yourself!  (see commit https://github.com/AmpersandTarski/ampersand/commit/62d03eac6ca23358a4abc9f0430c524e7d3b2faf)
 
 findConcept :: String -> A_Concept
 -- SJC: ONE should be tokenized, so it cannot occur as a string
