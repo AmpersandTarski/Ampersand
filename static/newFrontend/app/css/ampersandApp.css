@@ -43,6 +43,7 @@ html {
 /********* INTERFACES *****************/
 .interface table {
 	width				: auto;
+	margin-bottom		: 0px;	/* Overrides margin-bottom set to 20px by bootstrap.min.css */
 }
 .interface .CRUDbuttons {
 	font-size			: 14px;
