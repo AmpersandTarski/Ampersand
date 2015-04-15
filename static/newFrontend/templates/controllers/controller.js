@@ -71,6 +71,21 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
       });
   }
+
+  // Function to patch only the changed attributes of a Resource
+  \$scope.patch = function(ResourceId){
+	  // patches = someDiffPatch function(\$scope.initialVal['$interfaceName$'][ResourceId], \$scope.val['$interfaceName$'][ResourceId]) from external library // determine patches
+	  // console.log(patches);
+	  
+	  /*
+	  \$scope.val['$interfaceName$'][ResourceId]
+	  .patch(patches)
+	  .then(function(data) {
+		 \$rootScope.updateNotifications(data.notifications);
+		 \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
+	  });
+	  */
+  }
   
   // Function to add item to array of primitieve datatypes
   \$scope.addItem = function(obj, property, selected, ResourceId){
