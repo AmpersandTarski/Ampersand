@@ -50,8 +50,7 @@ parseSingleADL opts filePath =
  do { verboseLn opts $ "Reading file " ++ filePath
     ; mFileContents <- readUTF8File filePath
     ; case mFileContents of
-        Left err -> error $ "ERROR reading file " ++ filePath ++ ":\n" ++ err 
-                    -- TODO: would like to return an Errors value here, but this datatype currently only accommodates Parsing Messages 
+        Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
         Right fileContents ->
              whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
                    do filePaths <- mapM normalizePath relativePaths
@@ -89,11 +88,7 @@ runParser parser filename input =
   in case lexed of
     Left err -> Errors $ lexerErrors err
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
-    Right (tokens, _)  ->
-        case parse parser tokens of
-            Checked result -> Checked result
-            Errors  msg    -> Errors msg
-            --Errors  msg    -> trace (show tokens) $ Errors msg
+    Right (tokens, _)  -> whenChecked (parse parser tokens) Checked
 
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.

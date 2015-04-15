@@ -5,14 +5,16 @@ import Database.Design.Ampersand.Test.Parser.ParserTest (parseReparse)
 import Database.Design.Ampersand.Test.Parser.ArbitraryTree()
 import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 import Database.Design.Ampersand.Core.ParseTree (P_Context)
+import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..))
 
 import Test.QuickCheck(Args(..), quickCheckWithResult, Testable, Result(..))
 import Debug.Trace
 
 -- Tries to parse a string, and if successful, tests the result with the given function
 testParse :: String -> (P_Context -> Bool) -> Bool
-testParse text check = success && check ctx
-        where (ctx, success) = parseReparse "QuickChecks.hs" text
+testParse text check = case parseReparse "QuickChecks.hs" text of
+            Checked a -> check a
+            _  -> False
 
 -- Tests whether the parsed context is equal to the original one
 prop_pretty :: P_Context -> Bool

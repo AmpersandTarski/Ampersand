@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
-  , showErr
+  , showErr, makeError, addError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
@@ -10,7 +10,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkMultipleDefaultError
   , mkIncompatibleViewError
   , Guarded(..)
-  , whenCheckedIO
+  , whenCheckedIO, whenChecked
   , unguard
   )
 -- SJC: I consider it ill practice to export CTXE
@@ -52,6 +52,12 @@ instance Show CtxError where
 errors :: Guarded t -> [CtxError]
 errors (Checked _) = []
 errors (Errors lst) = lst
+
+makeError :: String -> Guarded a
+makeError msg = Errors [PE (Message msg)]
+
+addError :: String -> Guarded a -> Guarded b
+addError msg guard = Errors (PE (Message msg):errors guard)
 
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
@@ -235,6 +241,12 @@ whenCheckedIO ioGA fIOGB =
       case gA of
          Errors err -> return (Errors err)
          Checked a  -> fIOGB a
+
+whenChecked :: Guarded a -> (a -> Guarded b) -> Guarded b
+whenChecked ga fgb =
+      case ga of
+         Checked a  -> fgb a
+         Errors err -> Errors err
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o

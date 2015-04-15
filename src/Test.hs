@@ -1,20 +1,23 @@
 module Main (main) where
 
+import Database.Design.Ampersand.Misc.Options(getOptions,Options)
 import Database.Design.Ampersand.Test.RunAmpersand (ampersand)
 import Database.Design.Ampersand.Test.TestScripts (getTestScripts)
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseScripts)
 import Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks)
 import System.Exit (ExitCode, exitFailure, exitSuccess)
 
-testFunctions :: IO [(String, IO Bool)]
-testFunctions = do scr <- getTestScripts
-                   return [ ("Parsing " ++ show (length scr) ++ " scripts.", parseScripts scr)
-                          , ("Executing ampersand chain", ampersand scr)
-                          , ("Running automatic quick checks", parserQuickChecks)
-                          ]
+testFunctions :: Options -> IO [(String, IO Bool)]
+testFunctions opts =
+    do scr <- getTestScripts
+       return [ ("Parsing " ++ show (length scr) ++ " scripts.", parseScripts opts scr)
+              , ("Executing ampersand chain", ampersand scr)
+              , ("Running automatic quick checks", parserQuickChecks)
+              ]
 
 main :: IO ExitCode
-main = do funcs <- testFunctions
+main = do opts <- getOptions
+          funcs <- testFunctions opts
           tests funcs
     where tests :: [(String, IO Bool)] -> IO ExitCode
           tests [] = exitSuccess
