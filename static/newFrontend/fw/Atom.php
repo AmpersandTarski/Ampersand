@@ -301,6 +301,8 @@ Class Atom {
 				}
 				
 				break;
+			default :
+				throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 500);
 		}
 	}
 	
