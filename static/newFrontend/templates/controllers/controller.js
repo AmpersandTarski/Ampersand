@@ -17,6 +17,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   if(\$routeParams['new']){
     newAtom = Restangular.one(url).post().then(function (data){
       \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
+      \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName']; // copy initial data of Resource
     });
   }else
   
@@ -24,9 +25,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   if(typeof \$routeParams.resourceId != 'undefined'){
     list = Restangular.one(url, \$routeParams.resourceId).get().then(function(data){
       \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
+      \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName']; // copy initial data of Resource
     });
   }else{
-    \$scope.val['$interfaceName$'] = Restangular.all(url).getList().\$object;
+    \$scope.val['$interfaceName$'] = Restangular.all(url).getList().then(function(data){
+    	\$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
+        \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName']; // copy initial data of Resource
+    });
   }
 
 
