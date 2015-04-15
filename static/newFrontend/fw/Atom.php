@@ -153,7 +153,7 @@ Class Atom {
 					,	'invariantRulesHold'	=> $invariantRulesHold);
 	}
 	
-	public function patch(&$interface, $patch, $requestType){
+	public function patch(&$interface, $patches, $requestType){
 		$database = Database::singleton();
 		
 		switch($requestType){
@@ -167,7 +167,10 @@ Class Atom {
 				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
 		}
 		
-		$this->doPatch($patch, $interface);
+		// Patch
+		foreach ((array)$patches as $key => $patch){
+			$this->doPatch($patch, $interface);
+		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
 		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
