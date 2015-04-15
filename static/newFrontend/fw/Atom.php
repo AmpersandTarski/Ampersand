@@ -118,7 +118,7 @@ Class Atom {
 
 	}
 	
-	public function patch(&$interface, $request_data, $requestType){
+	public function put(&$interface, $request_data, $requestType){
 		$database = Database::singleton();
 		
 		switch($requestType){
@@ -134,168 +134,173 @@ Class Atom {
 		
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
-		$before = current($before); // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
 		
 		// Determine differences between current state ($before) and requested state ($request_data)
 		$patches = JsonPatch::diff($before, $request_data);
 		
-		// Patch current state based on differences
+		// Put current state based on differences
 		foreach ((array)$patches as $key => $patch){
-			switch($patch['op']){ // operations
-				case "replace" :
-					$pathArr = explode('/', $patch['path']);
-						
-					$tgtInterface = $interface;
-					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
-					
-					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-					
-					// find the right subinterface
-					while (count($pathArr)){
-						$interfaceId = array_shift($pathArr);
-						
-						// if path starts with '@' skip
-						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
-						
-						$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-						
-						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-						$tgtAtom = array_shift($pathArr); // set tgtAtom 	
-						
-					}
-					
-					// replace property value (true/false) by the srcAtomId TODO: place below within editable check.
-					if ($tgtInterface->isProperty){
-						if(!is_bool($patch['value'])) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
-						if($patch['value']){						
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
-						}else{
-							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
-						}
-						
-						break;
-					}
-					
-					// if tgtDataType is a concept (i.e. ! prim. datatype), use key of object in $patch['value']
-					if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
-					// elseif tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
-					elseif ($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
-					// else
-					else throw new Exception('Unknown variant of patch replace: ' . $patch['op'] . ' on ' . $patch['path'], 501);
-					
-					// perform editUpdate
-					if($tgtInterface->editable){
-						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
-						
-						// in case $tgtAtom is empty string -> perform remove instead of replace.
-						if($tgtAtom !== ''){
-							$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
-						}else{
-							// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
-							$tgtAtom = JsonPatch::get($before, $patch['path']);
-							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-						}					
-					}else{
-						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
-					}
-					
-					break;
-					
-				/*
-				 *
-				 * PROPERTIES are always a 'replace', so no dealing with them here
-				 */
-				case "add" :					
-					$pathArr = explode('/', $patch['path']);
-					
-					$tgtInterface = $interface;
-					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
-					
-					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-					
-					// find the right subinterface
-					while (count($pathArr)){
-						$interfaceId = array_shift($pathArr);
-						
-						// if path starts with '@' skip
-						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
-					
-						$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-					
-						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-						$tgtAtom = array_shift($pathArr); // set tgtAtom
-					
-					}
-					
-					// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
-					if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
-					
-					// perform editUpdate
-					if($tgtInterface->editable){
-						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
-					
-						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
-						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
-						
-						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-						
-					}else{
-						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
-					}
-					
-					break;
-					
-				/* 
-				 * 
-				 * PROPERTIES are always a 'replace', so no dealing with them here
-				 */
-				case "remove" :
-					$pathArr = explode('/', $patch['path']);
-					
-					$tgtInterface = $interface;
-					$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
-					
-					// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-					if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-					
-					// find the right subinterface
-					while (count($pathArr)){
-						$interfaceId = array_shift($pathArr);
-						
-						// if path starts with '@' skip
-						if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
-						
-						$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-						
-						$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-						$tgtAtom = array_shift($pathArr); // set tgtAtom
-
-					}
-					
-					// perform editDelete
-					if($tgtInterface->editable){
-						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom value is not provided, so we have to get this value to perform the editDelete function
-						// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
-						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
-						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-					}else{
-						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
-					}
-					
-					break;
-			}
+			$this->patch($patch);
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
 		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
-				    ,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
-				    ,	'notifications' 		=> Notifications::getAll()
+					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+					,	'notifications' 		=> Notifications::getAll()
 					,	'invariantRulesHold'	=> $invariantRulesHold);
+	}
+	
+	public function patch($patch){
+			
+		switch($patch['op']){ // operations
+			case "replace" :
+				$pathArr = explode('/', $patch['path']);
+					
+				$tgtInterface = $interface;
+				$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+				
+				// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+				if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
+				
+				// find the right subinterface
+				while (count($pathArr)){
+					$interfaceId = array_shift($pathArr);
+					
+					// if path starts with '@' skip
+					if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
+					
+					$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
+					
+					$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
+					$tgtAtom = array_shift($pathArr); // set tgtAtom 	
+					
+				}
+				
+				// replace property value (true/false) by the srcAtomId TODO: place below within editable check.
+				if ($tgtInterface->isProperty){
+					if(!is_bool($patch['value'])) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
+					if($patch['value']){						
+						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+					}else{
+						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+					}
+					
+					break;
+				}
+				
+				// if tgtDataType is a concept (i.e. ! prim. datatype), use key of object in $patch['value']
+				if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
+				// elseif tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+				elseif ($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
+				// else
+				else throw new Exception('Unknown variant of patch replace: ' . $patch['op'] . ' on ' . $patch['path'], 501);
+				
+				// perform editUpdate
+				if($tgtInterface->editable){
+					if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
+					
+					// in case $tgtAtom is empty string -> perform remove instead of replace.
+					if($tgtAtom !== ''){
+						$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
+						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
+					}else{
+						// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
+						$tgtAtom = JsonPatch::get($before, $patch['path']);
+						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+					}					
+				}else{
+					Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
+				}
+				
+				break;
+				
+			/*
+			 *
+			 * PROPERTIES are always a 'replace', so no dealing with them here
+			 */
+			case "add" :					
+				$pathArr = explode('/', $patch['path']);
+				
+				$tgtInterface = $interface;
+				$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+				
+				// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+				if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
+				
+				// find the right subinterface
+				while (count($pathArr)){
+					$interfaceId = array_shift($pathArr);
+					
+					// if path starts with '@' skip
+					if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
+				
+					$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
+				
+					$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
+					$tgtAtom = array_shift($pathArr); // set tgtAtom
+				
+				}
+				
+				// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+				if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
+				
+				// perform editUpdate
+				if($tgtInterface->editable){
+					if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
+				
+					// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
+					if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
+					
+					$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+					
+				}else{
+					Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
+				}
+				
+				break;
+				
+			/* 
+			 * 
+			 * PROPERTIES are always a 'replace', so no dealing with them here
+			 */
+			case "remove" :
+				$pathArr = explode('/', $patch['path']);
+				
+				$tgtInterface = $interface;
+				$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+				
+				// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+				if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
+				
+				// find the right subinterface
+				while (count($pathArr)){
+					$interfaceId = array_shift($pathArr);
+					
+					// if path starts with '@' skip
+					if(substr($interfaceId, 0, 1) == '@') break 2; // break while and switch
+					
+					$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
+					
+					$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
+					$tgtAtom = array_shift($pathArr); // set tgtAtom
+
+				}
+				
+				// perform editDelete
+				if($tgtInterface->editable){
+					// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom value is not provided, so we have to get this value to perform the editDelete function
+					// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
+					if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
+					$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+				}else{
+					Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
+				}
+				
+				break;
+		}
 	}
 	
 	public function setNewContent($interface){

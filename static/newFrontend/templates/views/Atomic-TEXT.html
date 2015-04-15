@@ -2,7 +2,7 @@
 <div class="input-group">
 $if(isEditable)$
   $if(exprIsUni)$
-  <input ng-model="val['$name$']" type="text" class="form-control input-sm" ng-blur="patch(ResourceId)">
+  <input ng-model="val['$name$']" type="text" class="form-control input-sm" ng-blur="put(ResourceId)">
   $else$
   <div ng-repeat="row in val['$name$'] track by \$index">
     <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>

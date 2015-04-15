@@ -57,10 +57,10 @@ $if(containsDATE)$  // The interface contains an editable relation to the primit
 $else$  // The interface does not contain editable relations to primitive concept DATE
 $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
-  // Patch function to update a Resource
-  \$scope.patch = function(ResourceId){
+  // Put function to update a Resource
+  \$scope.put = function(ResourceId){
     \$scope.val['$interfaceName$'][ResourceId]
-      .patch()
+      .put()
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
         \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
@@ -73,7 +73,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
       if(obj[property] === null) obj[property] = [];
       obj[property].push(selected.value);
       selected.value = '';
-      \$scope.patch(ResourceId);
+      \$scope.put(ResourceId);
     }else{
     	console.log('Empty value selected');
     }
@@ -82,7 +82,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
   //Function to remove item from array of primitieve datatypes
   \$scope.removeItem = function(obj, key, ResourceId){
     obj.splice(key, 1);
-    \$scope.patch(ResourceId);
+    \$scope.put(ResourceId);
   }
 $else$  // The interface does not contain any editable relations
 $endif$
@@ -96,14 +96,14 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
       if(obj[property] === null) obj[property] = {};
       obj[property][selected.id] = {'id': selected.id};
       selected.id = ''; // reset input field
-      \$scope.patch(ResourceId);
+      \$scope.put(ResourceId);
     }
   }
   
   // RemoveObject function to remove an item (key) from list (obj).
   \$scope.removeObject = function(obj, key, ResourceId){
     delete obj[key];
-    \$scope.patch(ResourceId);
+    \$scope.put(ResourceId);
   }
   
   // Typeahead functionality

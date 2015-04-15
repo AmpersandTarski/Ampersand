@@ -127,7 +127,7 @@ class Api{
 	}
 	
 	/**
-	 * @url PATCH interface/{interfaceId}/{atomId}
+	 * @url PUT interface/{interfaceId}/{atomId}
 	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param string $atomId
@@ -136,7 +136,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function putAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
 			
 			$session = Session::singleton($sessionId);
@@ -144,7 +144,7 @@ class Api{
 			$session->setInterface($interfaceId);
 			$session->atom = new Atom($atomId, $session->interface->tgtConcept);	
 			
-			return $session->atom->patch($session->interface, $request_data, $requestType);
+			return $session->atom->put($session->interface, $request_data, $requestType);
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
