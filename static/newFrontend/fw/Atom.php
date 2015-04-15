@@ -155,7 +155,8 @@ Class Atom {
 	
 	public function patch($patch){
 	private function doPatch($patch, $interface){
-			
+		$database = Database::singleton();
+		
 		switch($patch['op']){ // operations
 			case "replace" :
 				$pathArr = explode('/', $patch['path']);
