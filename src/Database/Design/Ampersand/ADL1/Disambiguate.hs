@@ -139,13 +139,13 @@ instance Disambiguatable P_ViewSegmt where
 instance Disambiguatable P_SubIfc where
   disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
-  disambInfo (P_Box o cl (a:lst)) env1  = --trace ("---"++
-                                          --       "\nenv1: "++myshow env1++
-                                          --       "\nenvA: "++myshow envA++
-                                          --       "\nenvB: "++myshow envB++
-                                          --       "\nResultaat: "++myshow (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])++
-                                          --       "\na   : "++(show .obj_nm) a
-                                          --      ) $
+  disambInfo (P_Box o cl (a:lst)) env1  = trace ("---"++
+                                                 "\nenv1: "++myshow env1++
+                                                 "\nenvA: "++myshow envA++
+                                                 "\nenvB: "++myshow envB++
+                                                 "\nResultaat: "++myshow (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])++
+                                                 "\na   : "++(show .obj_nm) a
+                                                ) $
                                          (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])
    where (a', envA)              = disambInfo a                (Cnstr (sourceConstraintsOf envB++sourceConstraintsOf env1) [])
          (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA) [])
