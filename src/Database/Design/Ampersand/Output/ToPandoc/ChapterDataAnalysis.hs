@@ -396,6 +396,7 @@ daRulesSection lev fSpec = theBlocks
   docRule :: LocalizedStr -> Rule -> Blocks
   docRule heading rule = mconcat $
      [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
+     , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
      , fromList $ meaning2Blocks (fsLang fSpec) rule
      , if showPredExpr (getOpts fSpec)
        then let predicate = toPredLogic rule

@@ -213,11 +213,20 @@ class Database
 			$stableCol = $isFlipped ? $tgtCol : $srcCol;
 			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
 	
-			$tableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
-			// Only if the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
-			if ($tableColumnInfo['unique']){ // note: this uniqueness is not set as an SQL table attribute
+			// ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
+			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
+			
+			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
+			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
+			// If the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
+			if ($tableStableColumnInfo['unique']){
 				
 				$this->Exe("UPDATE `$table` SET `$modifiedCol`='$modifiedAtom' WHERE `$stableCol`='$stableAtom'");
+			
+			// Elseif the modified column is unique, we do an update
+			}elseif ($tableModifiedColumnInfo['unique']){
+				
+				$this->Exe("UPDATE `$table` SET `$stableCol`='$stableAtom' WHERE `$modifiedCol`='$modifiedAtom'");
 			
 			// Otherwise, binary table, so perform a insert.
 			}else{
@@ -229,8 +238,7 @@ class Database
 			
 			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
 	
-			// ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
-			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
+			
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -243,33 +251,41 @@ class Database
 	 * editDelete(r, false, a1, A, b1, B); 
 	 * editDelete(r, true, b1, B, a1, A);
 	 */
-	public function editDelete($rel, $isFlipped, $leftAtom, $leftConcept, $rightAtom, $rightConcept){
-		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $leftAtom, $leftConcept, $rightAtom, $rightConcept)");
+	public function editDelete($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept){
+		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept)");
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
-			$srcConcept = $isFlipped ? $rightConcept : $leftConcept;
-			$tgtConcept = $isFlipped ? $leftConcept : $rightConcept;
+			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
+			$tgtConcept = $isFlipped ? $stableConcept : $modifiedConcept;
 			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
 			
-			// Determine srcAtom and tgtAtom
-			$srcAtom = $isFlipped ? $rightAtom : $leftAtom;
-			$tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
-
 			// Get table properties
 			$table = Relation::getTable($fullRelationSignature);
 			$srcCol = Relation::getSrcCol($fullRelationSignature);
 			$tgtCol = Relation::getTgtCol($fullRelationSignature);
 			
-			$tableColumnInfo = Relation::getTableColumnInfo($table, $tgtCol);
-			// If the tgtCol can be set to null, we do an update
-			if ($tableColumnInfo['null']){ // note: this uniqueness is not set as an SQL table attribute
-				$this->Exe("UPDATE `$table` SET `$tgtCol`= NULL WHERE `$srcCol`='$srcAtom' AND `$tgtCol`='$tgtAtom'");
+			// Determine which Col must be editited and which must be used in the WHERE statement
+			$stableCol = $isFlipped ? $tgtCol : $srcCol;
+			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
+					
+			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
+			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
+			
+			// If the modifiedCol can be set to null, we do an update
+			if ($tableModifiedColumnInfo['null']){
+				$this->Exe("UPDATE `$table` SET `$modifiedCol`= NULL WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$modifiedAtom'");
+			
+			// Elseif the stableCol can be set to null, we do an update
+			}elseif ($tableStableColumnInfo['null']){
+				
+				$this->Exe("UPDATE `$table` SET `$stableCol`= NULL WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$modifiedAtom'");
+			
 			// Otherwise, binary table, so perform a delete
-			} else {
-				$this->Exe("DELETE FROM `$table` WHERE `$srcCol`='$srcAtom' AND `$tgtCol`='$tgtAtom'");
+			}else{
+				$this->Exe("DELETE FROM `$table` WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$modifiedAtom'");
 			}
 			
 			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.

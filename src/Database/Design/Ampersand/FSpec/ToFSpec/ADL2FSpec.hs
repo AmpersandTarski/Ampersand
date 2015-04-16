@@ -36,7 +36,6 @@ makeFSpec opts context
               , cDefsInScope = cDefsInThemesInScope
               , gensInScope  = gensInThemesInScope
               , fsLang       = printingLanguage
-              , vprocesses   = allProcs
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
@@ -61,7 +60,7 @@ makeFSpec opts context
                                    , role <- rrRoles rr
                                    ] 
               , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- ctxrs context
+                                   | rule <- allRules context
                                    , role <- concatMap arRoles . 
                                               filter (\x -> name rule `elem` arRules x) . ctxrrules $ context
                                    ]

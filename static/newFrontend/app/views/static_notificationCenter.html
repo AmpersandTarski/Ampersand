@@ -9,7 +9,7 @@
 		
 		<div id="invariants">
 			<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
-				<strong>Invariant!</strong> {{invariant.message}}
+				<strong>Rule violation!</strong> {{invariant.message}}
 			</alert>
 		</div>
 					
@@ -17,7 +17,7 @@
 			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 					<div class="text-left">
-						<strong>Violation!</strong> {{val.ruleMessage}}
+						<strong>Rule violation!</strong> {{val.ruleMessage}}
 						<span class="badge pull-right">{{val.tuples.length}}</span>					
 					</div>
 				</div>
