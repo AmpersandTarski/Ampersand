@@ -16,7 +16,7 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Function
 import Data.Maybe
-import Data.List(nub)
+import Data.List(nub,intercalate)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
@@ -346,7 +346,11 @@ pCtx2aCtx' _
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
-     = unguard $
+     = trace ("typecheckObjDef :"++show nm++
+              "\n   ctx  :"++show ctx++
+              "\n   subs :"++show subs
+             ) $
+       unguard $
          (\(objExpr,bb) subi -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
            case subi of
              Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
@@ -356,7 +360,12 @@ pCtx2aCtx' _
                  <$> case lookupDisambIfcObj ifcId of
                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
                        Nothing     -> Errors [mkUndeclaredError "interface" o ifcId]
-             Just bx@(Box c _ _) ->
+             Just bx@(Box c _ oDefs) ->
+               trace ("BOX    : ("++name c++")\n"++
+                      "    oDefs: [ "++(intercalate 
+                      "\n           , " (map show oDefs))++
+                      "\n           ]"
+                  ) $
                case findExact genLattice $ name c `mIsc` (name . target) objExpr of -- does this always return a singleton? (and if so why not a maybe?) SJC: See documentation of findExact. Answer: no.
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
                  cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
@@ -550,7 +559,8 @@ pCtx2aCtx' _
                     -- , ifc_Name = nm
                     , ifc_Prp = prp
                     }, objDisamb)
-        = (\ tps' obj'
+        = trace ("\nobjDisamb bij ingaan pIfc2aIfc:\n"++show objDisamb) $
+          (\ tps' obj'
              -> Ifc { ifcParams = tps'
                     , ifcClass = iclass
                     , ifcArgs = args
