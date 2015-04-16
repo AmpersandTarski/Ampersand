@@ -113,7 +113,7 @@ cdAnalysis fSpec =
              in  Mult minVal maxVal
    topLevelDcls = relsDefdIn fSpec \\
                   (concatMap relsDefdIn (vpatterns fSpec))
-   allDcls = topLevelDcls ++
+   allDcls = topLevelDcls `uni`
              [ d -- restricted to those themes that must be printed.
              | d@Sgn{} <- nub . concat $
                             [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] 
