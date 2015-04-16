@@ -28,7 +28,7 @@ data D_Concept
  = MustBe A_Concept
  | MayBe  A_Concept 
  deriving (Show, Eq)
--- Todo: maybe later we can have a single list of constraints, by adding SRC or TGT to D_Concept
+
 data Constraints = Cnstr {sourceConstraintsOf :: [D_Concept]
                          ,targetConstraintsOf :: [D_Concept]
                          }deriving Show
