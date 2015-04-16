@@ -23,10 +23,11 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$scope.$on("$routeChangeSuccess", function(){
 		
-		// Hide successes, errors and infos (not process rule violations and invariant violations)
+		// Hide success-, error-, info- and invariant violation messages (not process rule violations)
 		$rootScope.notifications.successes = [];
 		$rootScope.notifications.errors = [];
 		$rootScope.notifications.infos = [];
+		$rootScope.notifications.invariants = [];
 	});
 	
 	$scope.closeAlert = function(alerts, index) {
