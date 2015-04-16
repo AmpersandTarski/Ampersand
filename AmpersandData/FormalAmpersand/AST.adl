@@ -28,7 +28,7 @@ MEANING "The name of a context."
 RELATION patterns[Context*Pattern]
 MEANING "The patterns in a context."
 RELATION concs[Context*PlainConcept]
-MEANING "A concept, mentioned anywhere in a context, is declared."
+MEANING "A concept, mentioned anywhere in a context."
 RELATION allDeclarations[Context*Declaration]
 MEANING "A relation declared in a context"
 RELATION gens[Context*Gen]
@@ -69,6 +69,7 @@ PURPOSE RULE specialization
 {+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
 If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 -}
+RELATION instanceOf[Atom*Concept] [TOT] 
 RULE specialization : instanceOf;genspc~;gengen |- instanceOf
 MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
@@ -121,7 +122,7 @@ MEANING "The source of a sign."
 RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
-VIEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
+--IEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
 RELATION sign[PairID*Sign] [UNI,TOT]
 MEANING "The sign of a relationship"
 RELATION left[PairID*AtomID] [UNI,TOT]
@@ -148,7 +149,7 @@ MEANING "Type consistency means that all pairs in a relation have the same signa
 ENDPATTERN
 
 PATTERN Declaration
-VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
+--VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
