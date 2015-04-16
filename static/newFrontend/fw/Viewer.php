@@ -56,6 +56,9 @@ class Viewer {
 		// jquery UI & bootstrap in native AngularJS
 		$this->addHtmlLine('<script src="app/lib/ui-bootstrap/ui-bootstrap-tpls-0.12.0.min.js"></script>');
 		
+		// JSON Diff and Patch library
+		$this->addHtmlLine('<script src="app/lib/jiff/jiff.js"></script>');
+		
 		
 		// CSS files
 		$files = getDirectoryList(__DIR__ . '/../app/css');
