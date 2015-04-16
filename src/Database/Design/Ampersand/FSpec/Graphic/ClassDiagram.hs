@@ -121,11 +121,13 @@ cdAnalysis fSpec =
    assocsAndAggrs = [ decl2assocOrAggr d
                     | d <- allDcls
                     , not.isPropty $ d
-               {- SJ 20150414: the following restriction prevents printing attribute-relations to empty boxes.
+               {- SJ 20150416: the following restriction prevents printing attribute-relations to empty boxes.
                -}
-                    , target d `elem` (concatMap stretch roots >- stretch (source d)) ||
-                      d `notElem` attribDcls
-                    ] 
+                    , d `notElem` attribDcls  ||
+                      ( source d `elem` nodeConcepts && target d `elem` nodeConcepts && source d/= target d )
+                    ] where family c = [c] ++ smallerConcepts (gens fSpec) c ++ largerConcepts  (gens fSpec) c
+                            nodeConcepts = concatMap family roots
+                            
 
    -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
    decl2assocOrAggr :: Declaration -> Either Association Aggregation
@@ -142,7 +144,6 @@ cdAnalysis fSpec =
              , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
              , assmean = meaning (fsLang fSpec) d
              }
-   stretch c = [c] ++ smallerConcepts (gens fSpec) c ++ largerConcepts  (gens fSpec) c
    attribDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d, isUni d || isInj d ]
    attribs = [ if isInj d then flp (EDcD d) else EDcD d | d<-attribDcls ]
    ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
