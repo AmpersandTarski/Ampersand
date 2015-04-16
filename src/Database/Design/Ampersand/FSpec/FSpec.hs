@@ -56,7 +56,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                      , cDefsInScope :: [ConceptDef]
                      , gensInScope  :: [A_Gen]
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
-                   , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
                    , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script

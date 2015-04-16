@@ -174,9 +174,8 @@ orderingByTheme fSpec
                        _     -> False
   -- | The patterns that should be taken into account for this ordering
   tms = if null (themes fSpec)
-        then (patterns fSpec) ++ map (fpProc) (vprocesses fSpec)
+        then (patterns fSpec)
         else [ pat           | pat <-patterns   fSpec, name pat  `elem` themes fSpec ]
-           ++[ (fpProc fprc) | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
   f ruls rels cpts ts
    = case ts of
        t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
@@ -306,7 +305,6 @@ relsInThemes fSpec
    , decusr d
    , (  decpat d `elem` themes fSpec
          || d `elem` relsMentionedIn [p | p<-            patterns fSpec   , name p `elem` themes fSpec]
-         || d `elem` relsMentionedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` themes fSpec]
      )
    ]
 

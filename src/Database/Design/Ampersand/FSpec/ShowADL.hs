@@ -322,7 +322,6 @@ instance ShowADL FSpec where
         else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
     ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
---    ++ (if null (vprocesses fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (vprocesses fSpec))    ++ "\n")  -- TODO implement ShowADL FProcess
     ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map showADL (conceptDefs fSpec)) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
     ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
@@ -333,7 +332,7 @@ instance ShowADL FSpec where
 --    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
     ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
     ++ "\n\nENDCONTEXT"
-    where decls = relsDefdIn fSpec >- (concatMap relsDefdIn (patterns fSpec) `uni` concatMap relsDefdIn (vprocesses fSpec))
+    where decls = relsDefdIn fSpec >- concatMap relsDefdIn (patterns fSpec)
 instance ShowADL (Maybe String) where
   showADL _ = ""
 instance ShowADL ECArule where

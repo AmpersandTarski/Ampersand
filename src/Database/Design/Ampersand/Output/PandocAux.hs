@@ -353,7 +353,7 @@ data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefNaturalLanguageConcept A_Concept
              | XRefDataAnalRule Rule
              | XRefNaturalLanguageRule Rule
-             | XRefProcessAnalysis FProcess
+             | XRefProcessAnalysis Pattern
              | XRefProcessAnalysisDeclaration Declaration
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisDeclaration Declaration

@@ -254,7 +254,6 @@ instance ShowHS FSpec where
         ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
         ,wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
         ,wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
-        ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fSpec)
         ,wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
         ,wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,     ", interfaceS    = interfaceS'"
@@ -332,11 +331,6 @@ instance ShowHS FSpec where
     (if null (vviews fSpec)     then "" else
      "\n -- *** Views (total: "++(show.length.vviews) fSpec++" views) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vviews fSpec]++"\n"
-    ) ++
-    (if null (vprocesses fSpec ) then "" else
-     "\n -- *** Processes (total: "++(show.length.vprocesses) fSpec++" processes) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vprocesses fSpec ]++"\n"++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-map fpProc (vprocesses fSpec) ]++"\n"
     ) ++
     (if null (vrules   fSpec ) then "" else
      "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++

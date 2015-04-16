@@ -112,7 +112,7 @@ cdAnalysis fSpec =
                  maxVal = if isUni r then MaxOne else MaxMany
              in  Mult minVal maxVal
    topLevelDcls = relsDefdIn fSpec \\
-                  (concatMap relsDefdIn (vpatterns fSpec) ++ concatMap relsDefdIn (map fpProc $ vprocesses fSpec))
+                  (concatMap relsDefdIn (vpatterns fSpec))
    allDcls = topLevelDcls ++
              [ d -- restricted to those themes that must be printed.
              | d@Sgn{} <- nub . concat $
