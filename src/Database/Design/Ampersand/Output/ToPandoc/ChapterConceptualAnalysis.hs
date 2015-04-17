@@ -79,13 +79,15 @@ chpConceptualAnalysis lev fSpec = (
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
      <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
-     <> (case fsLang fSpec of
-           Dutch   -> header (lev+3) "Formele regels"
-                   <> plain "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
-           English -> header (lev+3) "Formal rules"
-                   <> plain "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."
-        )
-     <> fromList [DefinitionList blocks | let blocks = map caRule (invariants pat `isc` udefrules pat), not(null blocks)]
+     <> case map caRule (invariants pat `isc` udefrules pat) of
+         []     -> plain ""
+         blocks -> (case fsLang fSpec of
+                      Dutch   -> header (lev+3) "Regels"
+                              <> plain "Deze paragraaf geeft een opsomming van de regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
+                      English -> header (lev+3) "Rules"
+                              <> plain "This section itemizes the rules with a reference to the shared language of stakeholders for the sake of traceability."
+                   )
+                   <> fromList [DefinitionList blocks]
     )
   caRelation :: Declaration -> (Inlines, [Blocks])
   caRelation d
