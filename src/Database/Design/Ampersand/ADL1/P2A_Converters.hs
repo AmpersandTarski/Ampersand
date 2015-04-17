@@ -362,13 +362,19 @@ pCtx2aCtx' _
                   "\n   bb     : "++show bb
                ) $
                trace ("BOX    : ("++name c++")\n"++
-                      "    sources of oDefs: [ "++(intercalate 
-                      "\n           , " (map (show.source.objctx) oDefs))++
-                      "\n           ]"
+                        "    sources of oDefs: [ "++(intercalate 
+                      "\n                      , " (map (show.source.objctx) oDefs))++
+                      "\n                      ]"
                   ) $
+               --TODO: HJO @ SJC: Onderstaande geeft nu een foutmelding als c niet matcht op de target van objExpr. Zoals in 
+               --  try48 duidelijk wordt, is deze test niet goed. de source van élk van de expressies in oDefs moeten matchen. 
+               -- in plaats van één test moeten er dus n tests worden gedaan. Ik krijg dat niet voor elkaar. Daarvoor is deze sourcecode voor mij te complex.
+               -- Zie jij het zitten om dit stukje aan te passen?
+               -- Daarnaast zou het me helpen als je kan vertellen wat de twee booleans in bb uitdrukken. Wat zeggen die? Dat kan ik nergens terugvinden.  
                case findExact genLattice $ name c `mIsc` (name . target) objExpr of -- does this always return a singleton? (and if so why not a maybe?) SJC: See documentation of findExact. Answer: no.
                  []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
-                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
+                 cMeet:rest     -> trace (show (cMeet:rest)) $ 
+                                   pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
          <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
      where      
       isa :: String -> String -> Bool
