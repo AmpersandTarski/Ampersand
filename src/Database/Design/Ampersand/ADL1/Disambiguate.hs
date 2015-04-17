@@ -2,11 +2,10 @@
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (fatalMsg,trace)
+import Database.Design.Ampersand.Basics (fatalMsg)
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
-import Data.List
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Disambiguate"
@@ -139,17 +138,11 @@ instance Disambiguatable P_ViewSegmt where
 instance Disambiguatable P_SubIfc where
   disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
-  disambInfo (P_Box o cl (a:lst)) env1  = trace ("---"++
-                                                 "\nenv1: "++myshow env1++
-                                                 "\nenvA: "++myshow envA++
-                                                 "\nenvB: "++myshow envB++
-                                                 "\nResultaat: "++myshow (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])++
-                                                 "\na   : "++(show .obj_nm) a
-                                                ) $
-                                         (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA++sourceConstraintsOf envB) [])
+  disambInfo (P_Box o cl (a:lst)) env1  = 
+     (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf envA++sourceConstraintsOf envB) [])
    where (a', envA)              = disambInfo a                (Cnstr (sourceConstraintsOf envB++sourceConstraintsOf env1) [])
          (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA) [])
-         myshow cs = "Cnstr "++ (show.nub) (sourceConstraintsOf cs)++ (show.nub) (targetConstraintsOf cs)
+
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression
                         v
