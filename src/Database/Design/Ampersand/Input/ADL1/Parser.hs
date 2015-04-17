@@ -13,6 +13,8 @@ import Data.Maybe
 --TODO: After converting the parser to Parsec, we had to add some try-calls.
 --We gotta check the try's to see if we can refactor them, or at least pay attention to the error messages.
 
+--TODO: Consider moving all Origins to the first argument
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
 
@@ -72,6 +74,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT") <*> pConceptName
                       CThm     <$> pPrintThemes  <|>
                       CIncl    <$> pIncludeStatement
 
+-- TODO: Move this to the parse tree, except the includes. The pContextElem delivers [Either], we can use functions lefts / rights
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CPrc P_Pattern
@@ -273,6 +276,7 @@ pRelationDef = reorder <$> currPos
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
             where reorder pos (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
+                    --TODO: Deliver a list of strings, separate them in the p2a conversion
                     let (prL:prM:prR:_) = pragma ++ ["","",""]
                         plug = bp1 || bp2
                         props = prop ++ fun
@@ -301,6 +305,7 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
         pProp :: AmpParser Prop
         pProp = choice [ p <$ pKey (show p)
+                        -- TODO: Implement/derive Enum class
                        | p <- [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut, Prop]
                        ]
 
@@ -317,6 +322,8 @@ pFun  = []        <$ pOperator "*"  <|>
                       <*> optList (pMult (Tot,Uni))
         
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
+        --- Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
+        --TODO: refactor
         pMult :: (Prop,Prop) -> AmpParser [Prop]
         pMult (ts,ui) = (++) <$> ([]    <$ pZero   <|> [ts] <$ try pOne)
                              <*  pOperator ".."
@@ -360,6 +367,7 @@ pIndex  = P_Id <$> currPos
 
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
+          --TODO: Use `opt` and remove record syntax (create optLabelProps)
           pIndAtt  = attL <$> currPos <*> try pLabelProps <*> pTerm <|>
                      P_Obj <$> return "" <*> return (Origin "pIndAtt CC664") <*> try pTerm <*> return Nothing <*> return Nothing <*> return []
               where attL p (nm, strs) attexpr =
@@ -425,6 +433,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> return True
                       <*> return Nothing
                       <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
+    --TODO:Numbering should not happen in the parser
     where ats xs = [ case viewSeg of
                          P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else viewSeg
                          _            -> viewSeg
@@ -442,6 +451,7 @@ pViewDefLegacy = P_Vd <$> currPos
               where
                 rebuild p mLbl attexpr =
                   case mLbl of
+                    --TODO: Remove record syntax, use `opt` instead of pMaybe
                     Just (nm, strs) ->
                             P_Obj { obj_nm   = nm
                                   , obj_pos  = p
@@ -545,6 +555,7 @@ pPurpose = rebuild <$> currPos
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
            = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
+              -- TODO: Maybe this separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
@@ -564,6 +575,7 @@ pPurpose = rebuild <$> currPos
 
 --- Population ::= 'POPULATION' NamedRel 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
+-- TODO: Refactor grammar, consider removing pNamedRel or adding it to the parse tree.
 pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent) <|>
               try (pcptpop <$> currPos <* pKey "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
     where
@@ -596,6 +608,7 @@ pRoleRelation      = rr <$> currPos
                      where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
+--TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
 pRoleRule :: AmpParser RoleRule
 pRoleRule         = rr <$> currPos
                        <*  pKey "ROLE"
@@ -624,15 +637,16 @@ pMeaning = rebuild <$  pKey "MEANING"
          rebuild    lang          fmt                   mkup   =
             PMeaning (P_Markup lang fmt mkup)
 
---- Message ::= 'MESSAGE' LanguageRef? TextMarkup? (String | Expl)
+--- Message ::= 'MESSAGE' Markup
 pMessage :: AmpParser PMessage
-pMessage = rebuild <$ pKey "MESSAGE"
-                   <*> pMaybe pLanguageRef
-                   <*> pMaybe pTextMarkup
-                   <*> (pString <|> pExpl)
-   where rebuild :: Maybe Lang -> Maybe PandocFormat -> String -> PMessage
-         rebuild    lang          fmt                   mkup   =
-            PMessage (P_Markup lang fmt mkup)
+pMessage = PMessage <$ pKey "MESSAGE" <*> pMarkup
+
+-- Markup ::= LanguageRef? TextMarkup? (String | Expl)
+pMarkup :: AmpParser P_Markup
+pMarkup = P_Markup
+           <$> pMaybe pLanguageRef
+           <*> pMaybe pTextMarkup
+           <*> (pString <|> pExpl)
 
 {-  Basically we would have the following expression syntax:
 pRule ::= pTrm1   "="    pTerm                           |  -- equivalence
@@ -687,14 +701,11 @@ Brackets are enforced by parsing the subexpression as pTrm5.
 In order to maintain performance standards, the parser is left factored.
 The functions pars and f have arguments 'combinator' and 'operator' only to avoid writing the same code twice.
 -}
---- Term ::= Trm2 (('\/' Trm2)* | ('\/' Trm2)*)?
+--- Term ::= Trm2 (('/\' Trm2)+ | ('\/' Trm2)+)?
 pTerm :: AmpParser (Term TermPrim)
-pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
-          where pars combinator op
-                 = g <$> currPos <* pOperator op <*> pTrm2 <*> pMaybe (pars combinator op)
-                          where g orig y Nothing  = (orig, y)
-                                g orig y (Just (org,z)) = (orig, combinator org y z)
-                f combinator (orig, y) x = combinator orig x y
+pTerm = rebuild <$> pTrm2 <*> optList (many1 (invert PIsc <$> currPos <* pOperator "/\\" <*> pTrm2) <|>
+                                       many1 (invert PUni <$> currPos <* pOperator "\\/" <*> pTrm2))
+    where rebuild = foldl (\a f -> f a)
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
@@ -719,6 +730,7 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
+--TODO: use the same construction as for pTerm
 pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
                       f PRad <$> pars PRad "!" <|>
                       f PPrd <$> pars PPrd "#")
@@ -730,6 +742,7 @@ pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
+--TODO: Separate into prefix and postfix top-level functions
 pTrm5  =  f <$> many (valPosOf pDash) <*> pTrm6  <*> many (valPosOf (pOperator "~" <|> pOperator "*" <|> pOperator "+" ))
           where f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
                 f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)
@@ -761,6 +774,7 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Sign?
 pNamedRel :: AmpParser P_NamedRel
+--TODO: Remove valPosOf
 pNamedRel = pnamedrel  <$> valPosOf pVarid <*> pMaybe pSign
                     where pnamedrel (nm, orig) = PNamedRel orig nm
 
@@ -769,9 +783,7 @@ pSign :: AmpParser P_Sign
 pSign = pBrackets sign
    where
      sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
-     mkSign :: P_Concept -> Maybe P_Concept -> P_Sign
-     mkSign src (Just tgt) = P_Sign src tgt
-     mkSign src  Nothing   = P_Sign src src
+     mkSign src mTgt = P_Sign src $ fromMaybe src mTgt
 
 --- ConceptName ::= Conid | String
 --- ConceptNameList ::= ConceptName (',' ConceptName)
