@@ -17,12 +17,10 @@ CONCEPT Purpose "" TYPE "Text"
 CONCEPT Meaning "" TYPE "Text"
 CONCEPT ConceptDefinition "" TYPE "Text"
 
-
-
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
 IDENT Context: Context(name[Context*ContextName])  
-CLASSIFY ContextName ISA Conid
+--CLASSIFY ContextName ISA Conid
 RELATION name[Context*ContextName] [UNI,TOT,INJ]
 MEANING "The name of a context."
 RELATION patterns[Context*Pattern]
@@ -39,7 +37,7 @@ PATTERN Patterns
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
 IDENT Pattern: Pattern(name[Pattern*PatternName])  --TODO: The sign for name is overspecification, but is still required, for otherwise an error will occur in the typechecker.
 
-CLASSIFY PatternName ISA Conid
+--CLASSIFY PatternName ISA Conid
 
 RELATION name[Pattern*PatternName] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
@@ -65,13 +63,13 @@ MEANING "A generalization rule refers to one more generic concept."
 RELATION genspc[Gen*PlainConcept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
 
-PURPOSE RULE specialization
-{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
-If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
--}
-RELATION instanceOf[Atom*Concept] [TOT] 
-RULE specialization : instanceOf;genspc~;gengen |- instanceOf
-MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+--PURPOSE RULE specialization
+--{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+--If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+---}
+--RELATION instanceOf[Atom*Concept] [TOT] 
+--RULE specialization : instanceOf;genspc~;gengen |- instanceOf
+--MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
 
@@ -79,7 +77,7 @@ PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
 IDENT PlainConcept: PlainConcept(name[PlainConcept*ConceptName])
 CLASSIFY PlainConcept ISA Concept
-CLASSIFY ConceptName ISA Conid
+--CLASSIFY ConceptName ISA Conid
 
 
 RELATION name[PlainConcept*ConceptName] [UNI,TOT,INJ]
@@ -153,7 +151,7 @@ PATTERN Declaration
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
-CLASSIFY DeclarationName ISA Varid
+--CLASSIFY DeclarationName ISA Varid
 RELATION name[Declaration*DeclarationName] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The name of a relation."
 RELATION sign[Declaration*Sign] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
@@ -223,7 +221,7 @@ MEANING "A relation reference refers to the relation with the same name, the sig
 
 PATTERN Rules
 IDENT Rule: Rule(name[Rule*RuleName])
-CLASSIFY RuleName ISA ADLid
+--CLASSIFY RuleName ISA ADLid
 RELATION name[Rule*RuleName] [UNI,TOT,INJ]
 MEANING "The name of a rule."
 RELATION sign[Rule*Sign] [UNI,TOT]

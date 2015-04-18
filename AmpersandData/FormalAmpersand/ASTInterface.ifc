@@ -1,11 +1,11 @@
 CONTEXT "AST Interface" IN ENGLISH
 
-INTERFACE Ampersand FOR Ampersand : I[ONE]
-BOX [ Context : V[ONE*Context];name
-    , "All patterns" : V[ONE*Context];patterns
-    , "All specializations" : V[ONE*Context];gens
-    , "All concepts" : V[ONE*Context];concs
-    , "All declarations" : V[ONE*Context];allDeclarations
+INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
+BOX [ Context : V[SESSION*Context];name
+    , "All patterns" : V[SESSION*Context];patterns
+    , "All specializations" : V[SESSION*Context];gens
+    , "All concepts" : V[SESSION*Context];concs
+    , "All declarations" : V[SESSION*Context];allDeclarations
 --    , "All expressions" : V[ONE*Context];
 --    , "All rules" : V[ONE*Context];
 --    , "All plugs" : V[ONE*Context];
@@ -17,7 +17,7 @@ BOX [ Pattern : name
 
 INTERFACE Concept FOR Ampersand : I[PlainConcept]
 BOX [ Concept : name
-    , instances : instanceOf~
+    , "atoms with this as type" : type~
     ]
 
 INTERFACE Gen FOR Ampersand : I[Gen]
@@ -25,5 +25,14 @@ BOX [ gengen : gengen
     , genspc : genspc
     ]
 
-
+INTERFACE Declaration FOR Ampersand : I[Declaration]
+BOX [ name    : name
+    , sign    : sign
+    , decprL  : decprL
+    , decprM  : decprM
+    , decprR  : decprR
+    , meaning : decmean
+    , purpose : decpurpose
+    , population: in~
+    ]
 ENDCONTEXT

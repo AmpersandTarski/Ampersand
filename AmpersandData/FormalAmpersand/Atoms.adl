@@ -1,10 +1,10 @@
-CONTEXT AST IN ENGLISH LATEX
+CONTEXT AST IN ENGLISH
 
-PURPOSE PATTERN Atoms
+PURPOSE PATTERN AtomsX  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
 {+The definition of atoms relates directly to the choice of Ampersand to use a representable heterogeneous relational algebra.
 This leads to populating relations with pairs, and making sure that the type of atoms is uniquely determined by the table in which the atom is stored.
 -}
-PATTERN Atoms
+PATTERN AtomsX
 PURPOSE CONCEPT Atom
 {+
 Atoms are used to represent data. They are stored in relations that reside within a context.
@@ -43,9 +43,10 @@ PURPOSE RULE "Def of type"
 {+Ampersand assigns precisely one type to every atom that resides in a relation.
 Note that anything that exists outside a relation, does therefore not have a type and can therefore not be an atom.
 -}
-RELATION type[Atom*Concept] [UNI,TOT]
+RELATION type[Atom*Concept] [UNI]  --HJO: Was: [UNI,TOT]
 MEANING "The concept to which this atom belongs is called the type of an atom"
 RULE "Def of type" : type = l~;in;source \/ r~;in;target
+-- HJO @Stef: Bovenstaande is niet waterdicht. Het vereist dat zowel l als r SUR zijn. Zolang dat niet is gegarandeerd, is type niet TOT. Graag aanpassen...
 RELATION src[Pair*Concept] [UNI,TOT]
 RULE "Def of src" : src = in;source
 RELATION tgt[Pair*Concept] [UNI,TOT]

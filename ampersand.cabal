@@ -18,13 +18,11 @@ bug-reports:    https://sourceforge.net/p/ampersand/tickets/
 -- we would need to specify a pattern for each extension in each subdirectory.
 data-files:     
                 AmpersandData/Examples/Delivery/Delivery.adl, 
-                AmpersandData/FormalAmpersand/ADLTool.adl, 
-                AmpersandData/FormalAmpersand/admin_interfaces.adl, 
-                AmpersandData/FormalAmpersand/AST.adl,
-                AmpersandData/FormalAmpersand/ASTInterface.ifc,
+                AmpersandData/FormalAmpersand/AST.adl, 
                 AmpersandData/FormalAmpersand/ASTdocumentation.adl, 
+                AmpersandData/FormalAmpersand/ASTInterface.ifc, 
+                AmpersandData/FormalAmpersand/Atoms.adl, 
                 AmpersandData/FormalAmpersand/FormalAmpersand.adl, 
-                AmpersandData/FormalAmpersand/FSpec.adl, 
                 AmpersandData/FormalAmpersand/Generics.adl, 
                 AmpersandData/FormalAmpersand/IS.adl, 
                 AmpersandData/FormalAmpersand/IS.ifc, 

@@ -90,8 +90,8 @@ PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
 -}
-CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
-CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
+CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation." TYPE "Text"
+CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"  TYPE "Text"
 PURPOSE CONCEPT Expression
 {+
 Ampersand uses relation algebra to formalize phrases.

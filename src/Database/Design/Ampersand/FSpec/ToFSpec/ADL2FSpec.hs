@@ -105,30 +105,30 @@ makeFSpec opts context
                                          ]
               }
    where           
-     allatoms :: [AtomID]
+     allatoms :: [Atom]
      allatoms = nub (concatMap atoms initialpops)
        where
-         atoms :: Population -> [AtomID]
+         atoms :: Population -> [Atom]
          atoms udp = case udp of
            PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
                        ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
            PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> String -> AtomID
+     mkAtom :: A_Concept -> String -> Atom
      mkAtom cpt value = 
-        AtomID { atmRoots = rootConcepts gs [cpt]
+        Atom { atmRoots = rootConcepts gs [cpt]
                , atmIn   = largerConcepts gs cpt `uni` [cpt]
                , atmVal  = value
                }
        where
          gs = gens context
-     dclLinks :: Declaration -> [PairID]
+     dclLinks :: Declaration -> [A_Pair]
      dclLinks dcl
-       = [PairID { lnkSgn = sign dcl
+       = [Pair   { lnkDcl   = dcl
                  , lnkLeft  = mkAtom (source dcl) (srcPaire p) 
                  , lnkRight = mkAtom (target dcl) (trgPaire p)
                  }
          | p <- pairsOf dcl]
-     alllinks ::  [PairID]
+     alllinks ::  [A_Pair]
      alllinks = concatMap dclLinks fSpecAllDecls
      pairsOf :: Declaration -> Pairs
      pairsOf d = case filter theDecl initialpops of
@@ -181,11 +181,6 @@ makeFSpec opts context
      allrules = allRules context
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
-     allProcs = [ FProc {fpProc = p
-                        ,fpActivities = map makeActivity (processRules p)
-                        } 
-                | p<-patterns context
-                ]
      allActivities :: [Activity]
      allActivities = map makeActivity (processRules context)
      allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
