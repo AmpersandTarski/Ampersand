@@ -41,13 +41,11 @@ IDENT Pattern: Pattern(name[Pattern*PatternName])  --TODO: The sign for name is 
 
 RELATION name[Pattern*PatternName] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
-RELATION allRules[Pattern*Rule]
+RELATION rules[Pattern*Rule]
 MEANING "The user-defined rules in a pattern."
-RELATION gens[Pattern*Gen]
-MEANING "The user-defined generalization rules in a pattern."
-RELATION ptdcs[Pattern*Declaration]
+RELATION declarations[Pattern*Declaration]
 MEANING "The relation declarations in a pattern."
-RELATION ptxps[Pattern*Purpose]
+RELATION purpose[Pattern*Purpose]
 MEANING "The purposes of a pattern."
 
 

@@ -6,8 +6,9 @@ TABS[ Context : V[SESSION*Context]
          ]
     , "Patterns" : V[SESSION*Pattern]
     COLS [ Pattern : name
-         , Rules : allRules
-         , Declarations : ptdcs
+         , Purpose : purpose
+         , Rules : rules
+         , Declarations : declarations
          ]
     , "Specializations" : V[SESSION*Gen]
     COLS [ Generic  : gengen

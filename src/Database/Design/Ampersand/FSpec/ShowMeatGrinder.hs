@@ -120,13 +120,11 @@ instance MetaPopulations Pattern where
           [(uri fSpec,uri pat)]
    , Pop "name"    "Pattern" "PatternName"
           [(uri pat, name pat)]
-   , Pop "allRules"   "Pattern" "Rule"
+   , Pop "rules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
-   , Pop "gens"   "Pattern" "Gen"
-          [(uri pat,uri x) | x <- gens pat]
-   , Pop "ptdcs"   "Pattern" "Declaration"
+   , Pop "declarations"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptxps"   "Pattern" "Purpose"
+   , Pop "purpose"   "Pattern" "Purpose"
           [(uri pat,uri x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
