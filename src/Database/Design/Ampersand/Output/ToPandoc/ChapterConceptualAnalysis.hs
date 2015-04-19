@@ -20,6 +20,9 @@ chpConceptualAnalysis lev fSpec = (
    <> --  *** For all themes, a section containing the conceptual analysis for that theme  ***
    caBlocks, pictures)
   where
+  -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l lstr = localize (fsLang fSpec) lstr
   caIntro :: Blocks
   caIntro
    = (case fsLang fSpec of
@@ -80,14 +83,14 @@ chpConceptualAnalysis lev fSpec = (
         )
      <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
      <> case map caRule (invariants pat `isc` udefrules pat) of
-         []     -> plain ""
+         []     -> mempty
          blocks -> (case fsLang fSpec of
                       Dutch   -> header (lev+3) "Regels"
                               <> plain "Deze paragraaf geeft een opsomming van de regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
                       English -> header (lev+3) "Rules"
                               <> plain "This section itemizes the rules with a reference to the shared language of stakeholders for the sake of traceability."
                    )
-                   <> fromList [DefinitionList blocks]
+                   <> definitionList blocks
     )
   caRelation :: Declaration -> (Inlines, [Blocks])
   caRelation d
@@ -145,47 +148,46 @@ chpConceptualAnalysis lev fSpec = (
     nladj Rfx = "reflexieve"
     nladj Irf = "irreflexieve"
     nladj Aut = "automatisch berekende"  
-  caRule :: Rule -> ([Inline], [[Block]])
+  caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = toList (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
-
-          in ( []
+        = let purp = (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
+          in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp
                   -- Then the rule as a requirement
-               ++ [Plain$[if null purp then Str ""
-                                       else Str "Daarom bestaat " | fsLang fSpec==Dutch]
-                      ++ [if null purp then Str ""
-                                       else Str "Therefore " | fsLang fSpec==English]
-                      ++ (toList . xRefTo . XRefNaturalLanguageRule) r
-                      ++ [if null purp then Str " is gemaakt :"
-                                       else Str ":" | fsLang fSpec==Dutch]
-                      ++ [if null purp then Str " has been made:"
-                                       else Str " exists:" | fsLang fSpec==English]
-                         ]
-               ++ meaning2Blocks (fsLang fSpec) r
+               <> plain 
+                   ( if isNull purp
+                     then (xRefTo . XRefNaturalLanguageRule) r 
+                       <> str (l (NL " is gemaakt :" ,EN " has been made:"))
+                     else str (l (NL "Daarom bestaat ", EN "Therefore "))
+                       <> (xRefTo . XRefNaturalLanguageRule) r
+                       <> str (l (NL ":", EN " exists:"))
+                   )
+               <> fromList (meaning2Blocks  (fsLang fSpec) r)
                   -- then the formal rule
-               ++ [Plain$[Str "Dit is - gebruikmakend van relaties " | fsLang fSpec==Dutch]
-                      ++ [Str "Using relations "               | fsLang fSpec==English]
-                      ++ toList (mconcat (intersperse  (str ", ") 
-                                [   xRefTo (XRefConceptualAnalysisDeclaration d) 
-                                 <> text (" ("++name d++")")
-                                | d@Sgn{}<-relsMentionedIn r])) 
-                      ++ [Str " - geformaliseerd als " | fsLang fSpec==Dutch]
-                      ++ [Str ", this is formalized as "     | fsLang fSpec==English]]
-               ++ toList (if showPredExpr (getOpts fSpec)
+               <> plain 
+                   (  str (l (NL "Dit is - gebruikmakend van relaties "
+                             ,EN "Using relations "  ))
+                    <>(mconcat (intersperse  (str ", ") 
+                          [   xRefTo (XRefConceptualAnalysisDeclaration d) 
+                           <> text (" ("++name d++")")
+                          | d@Sgn{}<-relsMentionedIn r]))  
+                    <> str (l (NL " - geformaliseerd als "
+                              ,EN ", this is formalized as "))    
+                   )
+               <> (if showPredExpr (getOpts fSpec)
                    then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
                    else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
                   )
                -- followed by a conceptual model for this rule
-               ++ (toList
-               ( case (genGraphics (getOpts fSpec), fsLang fSpec) of
-                  (True,Dutch  ) ->
-                        para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfRule r) <> " geeft een conceptueel diagram van deze regel.")
-                     <> plain (showImage (getOpts fSpec) (pictOfRule r))
-                  (True,English) ->
-                        para ("Figure " <> xRefReference (getOpts fSpec) (pictOfRule r) <> " shows a conceptual diagram of this rule.")
-                     <> plain (showImage (getOpts fSpec) (pictOfRule r))
-                  _              -> mempty))
-
-               ])
+               <> if genGraphics (getOpts fSpec)
+                  then para
+                         (   str (l (NL "Figuur ", EN "Figure "))
+                          <> xRefReference (getOpts fSpec) (pictOfRule r)
+                          <> str (l (NL " geeft een conceptueel diagram van deze regel."
+                                    ,EN " shows a conceptual diagram of this rule."))
+                         )
+                     <>plain (showImage (getOpts fSpec) (pictOfRule r))
+                  else mempty
+               ]
+             )
