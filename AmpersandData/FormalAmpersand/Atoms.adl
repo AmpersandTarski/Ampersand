@@ -1,10 +1,10 @@
 CONTEXT AST IN ENGLISH
 
-PURPOSE PATTERN AtomsX  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
+PURPOSE PROCESS AtomsX  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
 {+The definition of atoms relates directly to the choice of Ampersand to use a representable heterogeneous relational algebra.
 This leads to populating relations with pairs, and making sure that the type of atoms is uniquely determined by the table in which the atom is stored.
 -}
-PATTERN AtomsX
+PROCESS AtomsX
 PURPOSE CONCEPT Atom
 {+
 Atoms are used to represent data. They are stored in relations that reside within a context.
@@ -29,8 +29,10 @@ RELATION key [Atom*AtomID] [UNI,TOT]
 MEANING "An internal storage code for this atom, used to identify the atom within a table."
 RELATION atomvalue[Atom*AtomValue] [UNI,TOT]
 MEANING "The value by which the atom is visible to users."
-RELATION source[Relation*Concept] [UNI,TOT]
-RELATION target[Relation*Concept] [UNI,TOT]
+RELATION source[Relation*Concept] [UNI,TOT] 
+RELATION target[Relation*Concept] [UNI,TOT] 
+ROLE AmpersandIssueSolver MAINTAINS "TOT source::Relation*Concept", "TOT target::Relation*Concept" --TODO: Moet helaas nu nog een signaalregel zijn. 
+
 RELATION in[Pair*Relation] [UNI]
 RELATION l[Pair*Atom] [UNI]
 RELATION r[Pair*Atom] [UNI]
@@ -108,7 +110,7 @@ PURPOSE RULE "specialized atoms (tgt)"
 RULE "specialized atoms (tgt)" : in;target;sub |- (rght;rght~ /\ tgt;sub;tgt~);in;target
 MEANING "If a target atom is in a relation, its generalization is in the generalized relation as well."
 
-ENDPATTERN
+ENDPROCESS
 
 {-
 Edit-functionaliteit en intersectie-types.

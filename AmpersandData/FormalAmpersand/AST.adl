@@ -119,18 +119,16 @@ RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
 --IEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
-RELATION sign[PairID*Sign] [UNI,TOT]
-MEANING "The sign of a relationship"
-RELATION left[PairID*AtomID] [UNI,TOT]
-MEANING "The source of a relationship."
-RELATION right[PairID*AtomID] [UNI,TOT]
-MEANING "The target of a relationship."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RELATION sign[PairID*Sign] [UNI,TOT]
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "The sign of a relationship"
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RELATION left[PairID*AtomID] [UNI,TOT]
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "The source of a relationship."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RELATION right[PairID*AtomID] [UNI,TOT]
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "The target of a relationship."
 
-RELATION subsgn[Sign*Sign]
-MEANING "The relation subsgn represents a partial order on signatures."
 
-PURPOSE RULE "type consistency"
-{+In Ampersand, every pair has a signature.
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: PURPOSE RULE "type consistency"
+{-In Ampersand, every pair has a signature.
 For example, the pair $\langle\id{Pete},5\rangle$ may have the signature $[\id{Person},\id{Rank}]$.
 Ampersand is called a type consistent language, because every pair in a relation has the same signature as the relation itself.
 For instance, as long as $\id{Person}$ and $\id{Rank}$ are different concepts,
@@ -140,13 +138,14 @@ In a compiler, type consistency is ensured by a type system.
 In a repository, the type of any expression does not depend on the contents of the relations in it.
 As a consequence, the type of an expression can be computed based on the types of its constituent relations only.
 -}
-RULE "type consistency" : sign=in[PairID*Declaration];sign
-MEANING "Type consistency means that all pairs in a relation have the same signature."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "type consistency" : sign=in[PairID*Declaration];sign
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "Type consistency means that all pairs in a relation have the same signature."
 ENDPATTERN
 
 PATTERN Declaration
 --VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
+CLASSIFY Declaration ISA Relation
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 --CLASSIFY DeclarationName ISA Varid
@@ -175,10 +174,10 @@ MEANING "The purposes of a relation."
 RELATION in[PairID*Declaration]
 MEANING "The population of a relation."
 
-RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
-MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
-MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
-VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
 
 --RULE "typed domain": decpopu;left;cptos~;order  |- sign;src;order
 --MEANING "The atoms in the domain of a relation belong to the same class as the source of that relation."
