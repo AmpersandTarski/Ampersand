@@ -88,16 +88,14 @@ instance MakeMeta ConceptDef where
 
 instance MakeMeta P_Declaration where
   makeMeta f d
-   = P_Sgn { dec_nm   =          f (dec_nm d)
-           , dec_sign = makeMeta f (dec_sign d)
-           , dec_prps = makeMeta f (dec_prps d)
-           , dec_prL  =            (dec_prL d)
-           , dec_prM  =            (dec_prM d)
-           , dec_prR  =            (dec_prR d)
-           , dec_Mean = makeMeta f (dec_Mean d)
-           , dec_popu = makeMeta f (dec_popu d)
-           , dec_fpos = makeMeta f (dec_fpos d)
-           , dec_plug =            (dec_plug d)
+   = P_Sgn { dec_nm     =          f (dec_nm d)
+           , dec_sign   = makeMeta f (dec_sign d)
+           , dec_prps   = makeMeta f (dec_prps d)
+           , dec_pragma =          (dec_pragma d)
+           , dec_Mean   = makeMeta f (dec_Mean d)
+           , dec_popu   = makeMeta f (dec_popu d)
+           , dec_fpos   = makeMeta f (dec_fpos d)
+           , dec_plug   =            (dec_plug d)
            }
 
 instance MakeMeta P_Sign where

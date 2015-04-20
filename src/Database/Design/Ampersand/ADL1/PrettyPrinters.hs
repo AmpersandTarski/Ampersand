@@ -162,13 +162,13 @@ instance Pretty P_Pattern where
         where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
 instance Pretty P_Declaration where
-    pretty (P_Sgn nm sign prps prL prM prR mean popu _ plug) =
-        text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragma <+\> prettyhsep mean <+\> content
+    pretty (P_Sgn nm sign prps pragma mean popu _ plug) =
+        text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragmas <+\> prettyhsep mean <+\> content
         where props   = if prps == [Sym, Asy] then text "[PROP]"
                         else text "[" <> listOf prps <> text "]"
               byplug  = if plug then text "BYPLUG" else empty
-              pragma  = if all null [prL, prM, prR] then empty
-                        else text "PRAGMA" <+> quote prL <+> quote prM <+> quote prR
+              pragmas | null pragma = empty
+                      | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
               content = if null popu then empty
                         else text "=\n[" <+> commas (map prettyPair popu) <+> text "]"
 

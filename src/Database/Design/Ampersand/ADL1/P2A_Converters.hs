@@ -229,13 +229,14 @@ pCtx2aCtx' _
       -> PandocFormat   -- The default pandocFormat
       -> P_Declaration -> (Declaration, Population)
     pDecl2aDecl patNm defLanguage defFormat pd
-     = let dcl = Sgn { decnm   = dec_nm pd
+     = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
+           dcl = Sgn { decnm   = dec_nm pd
                      , decsgn  = pSign2aSign (dec_sign pd)
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                     , decprL  = dec_prL pd
-                     , decprM  = dec_prM pd
-                     , decprR  = dec_prR pd
+                     , decprL  = prL
+                     , decprM  = prM
+                     , decprR  = prR
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                      , decfpos = dec_fpos pd
                      , deciss  = True

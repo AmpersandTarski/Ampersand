@@ -131,8 +131,14 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Declaration where
-    arbitrary = P_Sgn <$> lowerId  <*> arbitrary <*> arbitrary <*> safeStr1  <*> safeStr1
-                      <*> safeStr1  <*> arbitrary <*> genPairs  <*> arbitrary <*> arbitrary
+    arbitrary = P_Sgn <$> lowerId         -- name
+                      <*> arbitrary       -- sign
+                      <*> arbitrary       -- props
+                      <*> listOf safeStr1 -- pragma. Should be tree, but the grammar allows more.
+                      <*> arbitrary       -- meaning
+                      <*> genPairs        -- pairs
+                      <*> arbitrary       -- origin
+                      <*> arbitrary       -- plug
 
 instance Arbitrary a => Arbitrary (Term a) where
     arbitrary = do lv <- choose (0,6)

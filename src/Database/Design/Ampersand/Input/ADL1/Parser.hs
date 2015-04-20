@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-enable-rewrite-rules #-} -- Disable rewrite rules to drastically improve compilation speed
 {-# LANGUAGE FlexibleContexts #-}
 module Database.Design.Ampersand.Input.ADL1.Parser(
-    AmpParser, pContext, pPopulations,pTerm, pRule
+    AmpParser, pContext, pPopulations, pTerm, pRule
 ) where
 
 import Database.Design.Ampersand.Basics (fatalMsg)
@@ -12,8 +12,6 @@ import Data.Maybe
 
 --TODO: After converting the parser to Parsec, we had to add some try-calls.
 --We gotta check the try's to see if we can refactor them, or at least pay attention to the error messages.
-
---TODO: Consider moving all Origins to the first argument
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
@@ -76,7 +74,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT") <*> pConceptName
                       CThm     <$> pPrintThemes  <|>
                       CIncl    <$> pIncludeStatement
 
--- TODO: Move this to the parse tree, except the includes. The pContextElem delivers [Either], we can use functions lefts / rights
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CPrc P_Pattern
@@ -278,11 +275,9 @@ pRelationDef = reorder <$> currPos
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
             where reorder pos (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
-                    --TODO: Deliver a list of strings, separate them in the p2a conversion
-                    let (prL:prM:prR:_) = pragma ++ ["","",""]
-                        plug = bp1 || bp2
+                    let plug = bp1 || bp2
                         props = prop ++ fun
-                    in P_Sgn nm sign props prL prM prR meanings popu pos plug
+                    in P_Sgn nm sign props pragma meanings popu pos plug
 
 --- RelationNew ::= 'RELATION' Varid Sign
 pRelationNew :: AmpParser (String,P_Sign,Props)
