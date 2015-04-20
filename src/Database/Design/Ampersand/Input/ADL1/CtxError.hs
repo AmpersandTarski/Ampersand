@@ -7,8 +7,8 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeBound
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
-  , mkMultipleDefaultError
-  , mkIncompatibleViewError
+  , mkMultipleDefaultError, mkDanglingRefError
+  , mkIncompatibleViewError, mkOtherAtomInSessionError
   , Guarded(..)
   , whenCheckedIO, whenChecked
   , unguard
@@ -80,11 +80,30 @@ instance GetOneGuarded Declaration where
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
   getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++showFullOrig (origin l) | l<-lst]]
 
-cannotDisambRel :: (ShowADL a2, Association a2) => TermPrim -> [a2] -> Guarded a
-cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
-cannotDisambRel o@(PNamedR(PNamedRel _ _ Nothing)) lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
-cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature.\n  You may have intended one of these:"++concat ["\n  "++showADL l|l<-lst]]
-cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
+cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
+cannotDisambRel o exprs
+ = Errors [CTXE (origin o) message]
+  where 
+   message =
+    case exprs of
+     [] -> "No declarations match the relation: "++showADL o
+     _  -> case o of
+             (PNamedR(PNamedRel _ _ Nothing)) 
+                -> intercalate "\n" $
+                       ["Cannot disambiguate the relation: "++showADL o
+                       ,"  Please add a signature (e.g. [A*B]) to the relation."
+                       ,"  Relations you may have intended:"
+                       ]++
+                       ["  "++showADL e++"["++name (source e)++"*"++name (target e)++"]"
+                       |e<-exprs]
+             _  -> intercalate "\n" $
+                       ["Cannot disambiguate: "++showADL o
+                       ,"  Please add a signature."
+                       ,"  You may have intended one of these:"
+                       ]++
+                       ["  "++showADL e|e<-exprs]
+
+cannotDisamb :: TermPrim -> Guarded Expression
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 
 uniqueNames :: (Named a, Traced a) =>
@@ -106,7 +125,12 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
-
+mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
+                   -> String -- the reference itself. eg. "Rule 42"
+                   -> Origin -- The place where the thing is found.
+                   -> CtxError
+mkDanglingRefError entity ref orig =
+  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
 mkUndeclaredError entity objDef ref = 
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
@@ -139,6 +163,10 @@ mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
                          ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
+
+mkOtherAtomInSessionError :: String -> CtxError
+mkOtherAtomInSessionError atomValue =
+  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++atomValue++"`."
     
 class ErrorConcept a where
   showEC :: a -> String

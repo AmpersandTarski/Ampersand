@@ -9,13 +9,14 @@ $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine
 
 class ExecEngine {
 	
-	private $defaultRoleName = 'ExecEngine'; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']
+	private static $defaultRoleName = 'ExecEngine'; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']
+	private static $roleName;
 	
 	public static function run(){
 		
 		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
 		
-		$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : $this->defaultRoleName;
+		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
 		
 		// Load the execEngine functions (security hazard :P)
 		$files = getDirectoryList(__DIR__ . '/functions');
@@ -25,7 +26,7 @@ class ExecEngine {
 			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file);
 		}
 		
-		$role = Role::getRole($roleName);
+		$role = Role::getRole(self::$roleName);
 		if($role){
 			// Get all rules that are maintained by the ExecEngine
 			foreach ($role->maintains as $ruleName){
@@ -35,7 +36,7 @@ class ExecEngine {
 				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 			}
 		}else{
-			Notifications::addError("ExecEngine role '" . $roleName . "'not found.");
+			Notifications::addError("ExecEngine role '" . self::$roleName . "'not found.");
 		}
 		
 		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------');
@@ -44,7 +45,7 @@ class ExecEngine {
 	
 	public static function fixViolations($rule, $violations){
 		if(count($violations)){
-			Notifications::addLog('ExecEngine fixing rule ' . $rule['name']);
+			Notifications::addLog('ExecEngine fixing violations for rule: ' . $rule['name']);
 			
 			foreach ($violations as $violation){
 				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
@@ -76,7 +77,7 @@ class ExecEngine {
 					}
 				}
 			}
-			Notifications::addSuccess('ExecEngine fixed rule ' . $rule['name']);
+			Notifications::addSuccess(self::$roleName . ' fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
 		}
 	}
 

@@ -9,7 +9,7 @@
 		
 		<div id="invariants">
 			<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
-				<strong>Invariant!</strong> {{invariant.message}}
+				<strong>Rule violation!</strong> {{invariant.message}}
 			</alert>
 		</div>
 					
@@ -17,7 +17,7 @@
 			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 					<div class="text-left">
-						<strong>Violation!</strong> {{val.ruleMessage}}
+						<strong>Rule violation!</strong> {{val.ruleMessage}}
 						<span class="badge pull-right">{{val.tuples.length}}</span>					
 					</div>
 				</div>
@@ -51,8 +51,20 @@
 		</div>
 		
 		<!-- Success notifications must be last in notifications center because of position:absolute -->
-		<div id=successes>
-			<alert ng-repeat="success in notifications.successes" type="success" close="closeAlert(notifications.successes, $index)">{{success.message}}</alert>
+		<div id=successes ng-show="switchShowSuccesses">			
+			<div class="panel panel-success" id="success-panel-{{key}}" ng-repeat="(key, val) in notifications.successes">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#success-list-{{key}}">
+					<div class="text-left">
+						<strong>Success!</strong> {{val.message}}
+						<button type="button" class="close" data-target="#success-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss">
+							<span aria-hidden="true">&times;</span>
+						</button>				
+					</div>
+				</div>
+				<ul class="list-group collapse" id="success-list-{{key}}">
+					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 </div>

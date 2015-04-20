@@ -9,7 +9,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Database.Design.Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, AtomID(..), PairID(..)
+          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
           , FSid(..), FProcess(..)
 --        , InsDel(..)
@@ -56,7 +56,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                      , cDefsInScope :: [ConceptDef]
                      , gensInScope  :: [A_Gen]
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
-                   , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
                    , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
@@ -93,8 +92,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
-                   , allAtoms ::     [AtomID]
-                   , allLinks ::     [PairID]
+                   , allAtoms ::     [Atom]
+                   , allLinks ::     [A_Pair]
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
@@ -107,25 +106,25 @@ instance Unique FSpec where
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
-data AtomID = AtomID { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
-                     , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                     , atmVal   :: String
-                     } deriving (Typeable,Eq)
-instance Unique AtomID where
+data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
+                 , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
+                 , atmVal   :: String
+                 } deriving (Typeable,Eq)
+instance Unique Atom where
   showUnique a = atmVal a++" in "
          ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x
              xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
 
-data PairID = PairID { lnkSgn :: Sign
-                     , lnkLeft :: AtomID
-                     , lnkRight :: AtomID
-                     } deriving (Typeable,Eq)
-instance Association PairID where
-  sign = lnkSgn
-instance Unique PairID where
-  showUnique x = uniqueShow False (lnkSgn x)
+data A_Pair = Pair { lnkDcl :: Declaration
+                   , lnkLeft :: Atom
+                   , lnkRight :: Atom
+                   } deriving (Typeable,Eq)
+instance Association A_Pair where
+  sign = sign . lnkDcl
+instance Unique A_Pair where
+  showUnique x = uniqueShow False (lnkDcl x)
               ++ uniqueShow False (lnkLeft x)
               ++ uniqueShow False (lnkRight x)
 concDefs :: FSpec -> A_Concept -> [ConceptDef]

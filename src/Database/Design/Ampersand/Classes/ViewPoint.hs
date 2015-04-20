@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..)) where
+module Database.Design.Ampersand.Classes.ViewPoint (Language(..)) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
@@ -6,7 +6,6 @@ import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Classes.Relational  (Relational(multiplicities))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
-import Data.List
 import Data.Maybe
 
 fatal :: Int -> String -> a
@@ -28,6 +27,8 @@ class Language a where
                                      --   That includes multiplicity rules and identity rules, but excludes rules that are assigned to a role.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
   invariants x  = filter (not . isSignal) (udefrules x) ++ multrules x ++ identityRules x
+  processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
+  processRules = filter isSignal . udefrules
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
@@ -39,17 +40,7 @@ class Language a where
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
 
-class ProcessStructure a where
-  roles :: a -> [Role]        -- ^ all roles that are used in this ProcessStructure
-  interfaces :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
-  objDefs :: a -> [ObjectDef]
-  processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
-                                       -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  maintains :: a -> [(Role,Rule)] 
-  mayEdit :: a -> [(Role,Declaration)] 
-  workFromProcessRules :: [A_Gen] -> [Population] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
-  workFromProcessRules gens' udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations gens' udp r]
-
+ 
 rulesFromIdentity :: IdentityDef -> [Rule]
 rulesFromIdentity identity
  = [ if null (identityAts identity) then fatal 81 ("Moving into foldr1 with empty list (identityAts identity).") else
@@ -77,13 +68,14 @@ rulesFromIdentity identity
             , isSignal  = False          -- This is not a signal rule
             }
 
-instance ProcessStructure a => ProcessStructure [a] where
-  roles         = concatMap roles
-  interfaces    = concatMap interfaces
-  objDefs       = concatMap objDefs
-  processRules  = concatMap processRules
-  maintains     = concatMap maintains
-  mayEdit       = concatMap mayEdit
+instance Language a => Language [a] where
+  objectdef   = fatal 84 $ "objectdef is not defined for a list"
+  relsDefdIn  = concatMap relsDefdIn
+  udefrules   = concatMap udefrules
+  identities  = concatMap identities
+  viewDefs    = concatMap viewDefs
+  gens        = concatMap gens
+  patterns    = concatMap patterns
 
 instance Language A_Context where
   objectdef    context = Obj { objnm   = name context
@@ -110,16 +102,6 @@ instance Language A_Context where
   gens         context = concatMap gens       (ctxpats context) ++ ctxgs context
   patterns             = ctxpats
 
-instance ProcessStructure A_Context where
-  roles        context = nub (roles (ctxpats context)++  --TODO: Make it possible to define a role outside a PATTERN or PROCESS
-                              concatMap ifcRoles (ctxifcs context)
-                             )
-  interfaces           = ctxifcs
-  objDefs      context = [ifcObj s | s<-ctxifcs context]
-  processRules context = [r |r<-udefrules context, (not.null) [role | (role, rul) <-maintains context, name r == name rul ] ]
-  maintains    context = maintains (ctxpats context)
-  mayEdit      context = mayEdit (ctxpats context)
-
 instance Language Pattern where
   objectdef    pat = Obj { objnm   = name pat
                          , objpos  = origin pat
@@ -135,15 +117,6 @@ instance Language Pattern where
   viewDefs       = ptvds
   gens           = ptgns
   patterns   pat = [pat]
-
-instance ProcessStructure Pattern where
-  roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
-                            [r | (r,_) <- prcRRels proc] )
-  interfaces    _   = []
-  objDefs       _   = []
-  processRules proc = [r |r<-ptrls proc, isSignal r]
-  maintains         = prcRRuls  -- says which roles maintain which rules.
-  mayEdit           = prcRRels  -- says which roles may change the population of which relation.
 
 instance Language Rule where
 -- TODO Split class Language. It does not feel right that objectdef and patterns are
@@ -168,8 +141,6 @@ instance Language Rule where
                        , ptgns = []  -- A rule defines no Gens.
                        , ptdcs = relsDefdIn r
                        , ptups = []
-                       , prcRRuls = []
-                       , prcRRels = []
                        , ptids = []
                        , ptvds = []
                        , ptxps = []

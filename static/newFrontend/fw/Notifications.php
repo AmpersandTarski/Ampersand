@@ -76,11 +76,12 @@ class Notifications {
 		
 	}
 	
-	public static function addSuccess($message, $id = null){
+	public static function addSuccess($message, $id = null, $aggregatedMessage = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
 			self::$successes[$id]['rows'][] = $message;
 			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');;
+			if(!is_null($aggregatedMessage)) self::$successes[$id]['message'] = $aggregatedMessage;
 			return $id;
 		}else{
 			self::addLog($message, 'SUCCESS');

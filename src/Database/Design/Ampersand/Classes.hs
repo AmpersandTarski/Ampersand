@@ -11,4 +11,4 @@ import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Classes.Relational
        (Relational(..))
 import Database.Design.Ampersand.Classes.ViewPoint
-       (Language(..), ProcessStructure(..))
+       (Language(..))

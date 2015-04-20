@@ -99,6 +99,8 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- relations
        <*> listOf arbitrary -- concepts
        <*> listOf arbitrary -- identities
+       <*> return []        -- role rules
+       <*> return []        -- role relations
        <*> listOf arbitrary -- views
        <*> listOf arbitrary -- gen definitions
        <*> listOf arbitrary -- interfaces
@@ -117,7 +119,7 @@ instance Arbitrary MetaObj where
 instance Arbitrary P_RoleRelation where
     arbitrary = P_RR <$> listOf1 arbitrary <*> listOf1 relationRef <*> arbitrary
 
-instance Arbitrary RoleRule where
+instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> listOf1 arbitrary <*> listOf1 safeStr <*> arbitrary
 
 instance Arbitrary Role where

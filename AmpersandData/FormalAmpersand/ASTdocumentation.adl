@@ -90,8 +90,8 @@ PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
 -}
-CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
-CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
+CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation." TYPE "Text"
+CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"  TYPE "Text"
 PURPOSE CONCEPT Expression
 {+
 Ampersand uses relation algebra to formalize phrases.
@@ -155,21 +155,6 @@ PURPOSE PATTERN Populations
 {+The rules that govern atoms, pairs, and populations are brought together in one pattern,
 in order to formalize them and determine their meaning.
 -}
--- Atom
-CONCEPT AtomID "An atomID is the identity of an atomic term."
-CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept." TYPE "Blob"
-CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
-PURPOSE CONCEPT Atom
-{+
-Atoms are used to represent data. They are stored in relations that reside within a context.
-\subsubsection*{Example}
-For example, the atom ``Amsterdam'' is an instance of the concept ``City''.
-\subsubsection*{Explanation}
-Atoms populate relations.
-Ampersand works with binary relations, so you will find pairs of atoms in a relation.
-In an information system, the population of relations can change because of edit actions by users in user interfaces.
-This means that pairs are inserted into and deleted from relations as time goes by.
--}
 
 CONCEPT Population "The contents of a Concept or Relation"
 PURPOSE CONCEPT Population
@@ -207,6 +192,7 @@ CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-de
 CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
 CONCEPT Declaration "A declaration is a statement saying there exists a relation."
 CONCEPT Relation "A relation is a set of pairs."
+CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."
 ENDPATTERN
 
 PURPOSE PATTERN Plugs

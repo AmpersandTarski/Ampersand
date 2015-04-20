@@ -36,7 +36,6 @@ makeFSpec opts context
               , cDefsInScope = cDefsInThemesInScope
               , gensInScope  = gensInThemesInScope
               , fsLang       = printingLanguage
-              , vprocesses   = allProcs
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
@@ -55,9 +54,20 @@ makeFSpec opts context
 
               , fDeriveProofs = deriveProofs opts context 
               , fActivities  = allActivities
-              , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
-              , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
-              , fRoles       = roles context
+              , fRoleRels    = nub [(role,decl) -- fRoleRels says which roles may change the population of which relation.
+                                   | rr <- ctxRRels context
+                                   , decl <- rrRels rr
+                                   , role <- rrRoles rr
+                                   ] 
+              , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
+                                   | rule <- allRules context
+                                   , role <- concatMap arRoles . 
+                                              filter (\x -> name rule `elem` arRules x) . ctxrrules $ context
+                                   ]
+              , fRoles       = nub (concatMap arRoles (ctxrrules context)++
+                                    concatMap rrRoles (ctxRRels context)++
+                                    concatMap ifcRoles (ctxifcs context)
+                                   ) 
               , vrules       = vRules
               , grules       = gRules
               , invars       = invariants context
@@ -95,30 +105,30 @@ makeFSpec opts context
                                          ]
               }
    where           
-     allatoms :: [AtomID]
+     allatoms :: [Atom]
      allatoms = nub (concatMap atoms initialpops)
        where
-         atoms :: Population -> [AtomID]
+         atoms :: Population -> [Atom]
          atoms udp = case udp of
            PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
                        ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
            PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> String -> AtomID
+     mkAtom :: A_Concept -> String -> Atom
      mkAtom cpt value = 
-        AtomID { atmRoots = rootConcepts gs [cpt]
+        Atom { atmRoots = rootConcepts gs [cpt]
                , atmIn   = largerConcepts gs cpt `uni` [cpt]
                , atmVal  = value
                }
        where
          gs = gens context
-     dclLinks :: Declaration -> [PairID]
+     dclLinks :: Declaration -> [A_Pair]
      dclLinks dcl
-       = [PairID { lnkSgn = sign dcl
+       = [Pair   { lnkDcl   = dcl
                  , lnkLeft  = mkAtom (source dcl) (srcPaire p) 
                  , lnkRight = mkAtom (target dcl) (trgPaire p)
                  }
          | p <- pairsOf dcl]
-     alllinks ::  [PairID]
+     alllinks ::  [A_Pair]
      alllinks = concatMap dclLinks fSpecAllDecls
      pairsOf :: Declaration -> Pairs
      pairsOf d = case filter theDecl initialpops of
@@ -171,10 +181,6 @@ makeFSpec opts context
      allrules = allRules context
      vRules = udefrules context   -- all user defined rules
      gRules = multrules context++identityRules context
-     allProcs = [ FProc {fpProc = p
-                        ,fpActivities =[act | act<-allActivities, (not.null) (selRoles p act)]
-                        } | p<-patterns context ]
-                where selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
      allActivities :: [Activity]
      allActivities = map makeActivity (processRules context)
      allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
@@ -342,7 +348,7 @@ makeFSpec opts context
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
-            -- 16 Aug 2011: (recur trace es) is applied once where es originates from (maxTotPaths `uni` maxInjPaths) both based on clos
+            -- 16 Aug 2011: (recur es) is applied once where es originates from (maxTotPaths `uni` maxInjPaths) both based on clos
             -- Interfaces for I[Concept] are generated only for concepts that have been analysed to be an entity.
             -- These concepts are collected in gPlugConcepts
             gPlugConcepts = [ c | InternalPlug plug@TblSQL{}<-genPlugs , (c,_)<-take 1 (cLkpTbl plug) ]

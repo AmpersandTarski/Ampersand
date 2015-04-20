@@ -120,13 +120,11 @@ instance MetaPopulations Pattern where
           [(uri fSpec,uri pat)]
    , Pop "name"    "Pattern" "PatternName"
           [(uri pat, name pat)]
-   , Pop "allRules"   "Pattern" "Rule"
+   , Pop "rules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
-   , Pop "gens"   "Pattern" "Gen"
-          [(uri pat,uri x) | x <- gens pat]
-   , Pop "ptdcs"   "Pattern" "Declaration"
+   , Pop "declarations"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptxps"   "Pattern" "Purpose"
+   , Pop "purpose"   "Pattern" "Purpose"
           [(uri pat,uri x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
@@ -208,17 +206,15 @@ instance GenericPopulations Role where
                  [(uri fSpec, uri rol) ]
       , Pop "name" "Role" "RoleName"
                  [(uri rol, name rol) ]
-      , Pop "ruleNames" "Role" "Rule"
+      , Pop "maintains" "Role" "Rule"
                  [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
       ]
 
-instance MetaPopulations AtomID where
- metaPops _ atm = 
-   [ Pop "atmRoot" "AtomID" "PlainConcept" 
-          [(uri atm, uri cpt) | cpt <- atmRoots atm]
-   , Pop "instanceOf" "AtomID" "PlainConcept" 
-          [(uri atm, uri cpt) | cpt <- atmIn atm]
-   , Pop "atomvalue"  "AtomID" "AtomValue"
+instance MetaPopulations Atom where
+ metaPops _ atm =
+   [ Pop "key" "Atom" "AtomID" 
+          [(uri atm, uri atm)]
+   , Pop "atomvalue"  "Atom" "AtomValue"
           [(uri atm,(show.atmVal) atm)]
    ]
 instance MetaPopulations Sign where
@@ -282,8 +278,6 @@ instance MetaPopulations Declaration where
       , Pop "decpurpose" "Declaration" "Purpose"
              [(uri dcl, showADL x) | x <- explanations dcl]
       ]
-
-
      Isn{} -> 
       [ Comment " "
       , Comment $ " Declaration `I["++name (source dcl)++"]`"
@@ -291,6 +285,16 @@ instance MetaPopulations Declaration where
              [(uri dcl,uri (sign dcl))]
       ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
+
+instance MetaPopulations A_Pair where
+ metaPops _ pair =
+      [ Pop "in" "Pair" "Relation"
+             [(uri pair, uri (lnkDcl pair))]
+      , Pop "l" "Pair" "Atom"
+             [(uri pair, uri(lnkLeft pair))]
+      , Pop "r" "Pair" "Atom"
+             [(uri pair, uri(lnkRight pair))]
+      ]
 
 instance MetaPopulations Expression where
  metaPops _ e =
@@ -399,16 +403,6 @@ instance MetaPopulations PlugInfo where
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
  
-instance MetaPopulations PairID where
- metaPops _ p =
-  [ Pop "sign" "PairID" "Sign"
-         [(uri p, uri(lnkSgn p))]
-  , Pop "left" "PairID" "AtomID"
-         [(uri p, uri(lnkLeft p))]
-  , Pop "right" "PairID" "AtomID"
-         [(uri p, uri(lnkRight p))]
-  ]
-
 instance GenericPopulations Conjunct where
  generics fSpec conj =
   [ Comment $ "Conjunct: '"++rc_id conj++"'."
@@ -454,12 +448,12 @@ class Unique a => AdlId a where
 -- must be an instance of AdlId:
 instance AdlId A_Concept
 instance AdlId A_Gen
-instance AdlId AtomID
+instance AdlId Atom
 instance AdlId ConceptDef
 instance AdlId Declaration
 instance AdlId Expression
 instance AdlId FSpec
-instance AdlId PairID
+instance AdlId A_Pair
 instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
@@ -476,7 +470,7 @@ instance AdlId (PairViewSegment Expression)
 instance AdlId Bool where
  uri = showUnique
 instance AdlId a => AdlId [a] where
-
+--instance AdlId (Declaration,Paire)
 
 
 

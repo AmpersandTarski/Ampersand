@@ -64,7 +64,8 @@ class RuleEngine {
 					$conjunct = RuleEngine::getConjunct($conjunctId);
 					foreach ($conjunct['invariantRuleNames'] as $ruleName){
 						$rule = RuleEngine::getRule($ruleName);
-						Notifications::addInvariant("Violation of rule '".$rule['name']."'");
+						$message = empty($rule['message']) ? $rule['name'] : $rule['message'];
+						Notifications::addInvariant($message);
 					}
 					
 				}
@@ -79,7 +80,9 @@ class RuleEngine {
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				if(!empty($violations)) {
 					$invariantRulesHold = false;
-					Notifications::addInvariant("Violation of rule '".$rule['name']."'");
+					
+					$message = empty($rule['message']) ? $rule['name'] : $rule['message'];
+					Notifications::addInvariant($message);
 				}
 			}
 		}
@@ -189,17 +192,19 @@ class RuleEngine {
 	public static function getSignalsFromDB($conjunctIds){
 		$db = Database::singleton();
 		
+		$result = array();
+		
 		$conjunctIds = array_unique($conjunctIds); // remove duplicates
 		
 		if (count($conjunctIds) > 0) {
 			// TODO: DB Query can be changed to WHERE `conjId` IN (<conjId1>, <conjId2>, etc)
 			$query = "SELECT * FROM `__all_signals__` WHERE " . implode(' OR ', array_map( function($conjunctId) {return "`conjId` = '$conjunctId'";}, $conjunctIds));
-			return $signals = $db->Exe($query);
+			$result = $db->Exe($query);
 		} else {
 			Notifications::addInfo("No conjunctIds provided (can be that this role does not maintain any rule)");
 		}
 		
-		return false;
+		return $result;
 		
 	}
 	

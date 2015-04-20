@@ -23,8 +23,8 @@ chpProcessAnalysis lev fSpec
  where
   pictures = [] -- Disabled the pictures, because they are not helpful. (They look like a big ball of Mud)  (map picProcessModel procs)
   procs = if null (themes fSpec)
-          then vprocesses fSpec
-          else [ prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
+          then vpatterns fSpec
+          else [ p | p<-vpatterns fSpec, name p `elem` themes fSpec ]
   processSections :: Blocks
   processSections = mconcat (procSections procs)
 
@@ -121,12 +121,12 @@ chpProcessAnalysis lev fSpec
       rolelessRels = [ d | d<-relsDefdIn fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
 -- the sections in which processes are analyzed
-  procSections :: [FProcess] -> [Blocks]
-  procSections fprocs = iterat [fp |fp<-fprocs, (not.null.udefrules.fpProc) fp] 1 declaredConcepts  declaredRelations
+  procSections :: [Pattern] -> [Blocks]
+  procSections fprocs = iterat [fp |fp<-fprocs, (not.null.udefrules) fp] 1 declaredConcepts  declaredRelations
    where
-    declaredRelations = (concatMap relsDefdIn.map fpProc.vprocesses) fSpec
-    declaredConcepts  = (concs.map fpProc.vprocesses) fSpec
-    iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
+    declaredRelations = (concatMap relsDefdIn.vpatterns) fSpec
+    declaredConcepts  = (concs.vpatterns) fSpec
+    iterat :: [Pattern] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
      = (
@@ -137,21 +137,5 @@ chpProcessAnalysis lev fSpec
          ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec(udefrules (fpProc fproc)) i seenConcepts seenDeclarations
-
---  txtProcessModel :: FProcess->Blocks
---  txtProcessModel p
---   = if not (genGraphics (getOpts fSpec)) || True -- temporarily disabled picture, because it currently is a big ball of mud, which takes too long to generate
---     then mempty
---     else
---        (case fsLang fSpec of                                     -- announce the processModel diagram
---             Dutch   -> para ( "Figuur " <> xRefReference (getOpts fSpec) pict <> " geeft het procesmodel weer.")
---             English -> para ( "Figure " <> xRefReference (getOpts fSpec) pict <> " shows the process model.")
---        ) <>
---        plain (showImage (getOpts fSpec) pict)
---     where pict = picProcessModel p
---
---  -- | the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
---  picProcessModel :: FProcess->Picture
---  picProcessModel fproc = makePicture fSpec (PTProcess fproc)
+         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec(udefrules fproc) i seenConcepts seenDeclarations
 

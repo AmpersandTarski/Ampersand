@@ -363,7 +363,6 @@ instance Motivated FSpec where
   explanations fSpec
     = fSexpls fSpec ++
       (concatMap explanations . vpatterns)  fSpec ++
-      (concatMap explanations . vprocesses) fSpec ++
       (concatMap explanations . interfaceS) fSpec
 
 instance Motivated FProcess where

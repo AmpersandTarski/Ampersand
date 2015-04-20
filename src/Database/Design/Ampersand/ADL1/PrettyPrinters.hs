@@ -111,6 +111,8 @@ instance Pretty P_Context where
                <+\> perline (ctx_ds p)
                <+\> perline (ctx_cs p)
                <+\> perline (ctx_ks p)
+               <+\> perline (ctx_rrules p)
+               <+\> perline (ctx_rrels p)
                <+\> perline (ctx_vs p)
                <+\> perline (ctx_gs p)
                <+\> perline (ctx_ifcs p)
@@ -131,7 +133,7 @@ instance Pretty P_RoleRelation where
     pretty (P_RR roles rels _) =
         text "ROLE" <+> listOf roles <+> text "EDITS" <+> listOf rels
 
-instance Pretty RoleRule where
+instance Pretty P_RoleRule where
     pretty (Maintain roles rules _) =
         text "ROLE" <+> listOf roles <+> text "MAINTAINS" <+> commas (map maybeQuote rules)
 

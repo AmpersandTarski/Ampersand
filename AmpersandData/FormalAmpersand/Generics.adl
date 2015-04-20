@@ -40,7 +40,7 @@ MEANING "When a pair in a relation is edited (created, updated or deleted), a (s
 --[Concepts]--
 RELATION allConcepts[Context*Concept] [SUR,INJ]
 -- Aanname: De smerige id van een Concept is gelijk aan de naam van dat Concept.
-RELATION cptnm[Concept*ConceptName][TOT,UNI] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
+RELATION name[Concept*ConceptName][TOT,UNI] 
 RELATION affectedInvConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Concept*ConjunctID]
@@ -121,7 +121,7 @@ RELATION violationsSQL[Conjunct*MySQLQuery] -- e.g. '/* case: (EIsc lst\\\'@(_:_
 
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
-RELATION ruleNames[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen")
+RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 
 --[
 --//RELATION generics_allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView()).

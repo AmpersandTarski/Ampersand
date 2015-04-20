@@ -204,16 +204,14 @@ chpNatLangReqs lev fSpec =
               themeName = case mTheme of
                            Nothing  -> ""
                            Just pat -> name pat
-                           --Just (PatternTheme pat) -> "Pattern "++name pat
-                           --Just (ProcessTheme prc) -> "Process "++name prc
-
+                           
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
               printIntro :: [A_Concept] -> Blocks
               printIntro [] = mempty
               printIntro ccds
                 = case fsLang fSpec of
                       Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- (patterns fSpec) ++ map (fpProc) (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- (patterns fSpec) , name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of
@@ -237,7 +235,7 @@ chpNatLangReqs lev fSpec =
                                  )
 
                       English -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- patterns fSpec ++ map fpProc (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- patterns fSpec, name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of

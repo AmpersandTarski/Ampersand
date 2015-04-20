@@ -112,18 +112,22 @@ cdAnalysis fSpec =
                  maxVal = if isUni r then MaxOne else MaxMany
              in  Mult minVal maxVal
    topLevelDcls = relsDefdIn fSpec \\
-                  (concatMap relsDefdIn (vpatterns fSpec) ++ concatMap relsDefdIn (map fpProc $ vprocesses fSpec))
-   allDcls = topLevelDcls ++
+                  (concatMap relsDefdIn (vpatterns fSpec))
+   allDcls = topLevelDcls `uni`
              [ d -- restricted to those themes that must be printed.
              | d@Sgn{} <- nub . concat $
                             [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] 
              ]
    assocsAndAggrs = [ decl2assocOrAggr d
                     | d <- allDcls
-                    , not.isPropty $ d 
-                    , target d `elem` (roots ++ concatMap (smallerConcepts (gens fSpec)) roots
-                                             ++ concatMap (largerConcepts  (gens fSpec)) roots)
-                    ] 
+                    , not.isPropty $ d
+               {- SJ 20150416: the following restriction prevents printing attribute-relations to empty boxes.
+               -}
+                    , d `notElem` attribDcls  ||
+                      ( source d `elem` nodeConcepts && target d `elem` nodeConcepts && source d/= target d )
+                    ] where family c = [c] ++ smallerConcepts (gens fSpec) c ++ largerConcepts  (gens fSpec) c
+                            nodeConcepts = concatMap family roots
+                            
 
    -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
    decl2assocOrAggr :: Declaration -> Either Association Aggregation
@@ -140,11 +144,8 @@ cdAnalysis fSpec =
              , asspurp = purposesDefinedIn fSpec (fsLang fSpec) d
              , assmean = meaning (fsLang fSpec) d
              }
-
-   nonAutoDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d ]
-   attribs = map flipWhenInj (filter isAttribRel nonAutoDcls)
-       where isAttribRel d = isUni d || isInj d
-             flipWhenInj d = if isInj d then flp (EDcD d) else EDcD d
+   attribDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d, isUni d || isInj d ]
+   attribs = [ if isInj d then flp (EDcD d) else EDcD d | d<-attribDcls ]
    ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
    roots = map (source.head) ooClasses
 

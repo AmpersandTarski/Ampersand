@@ -5,11 +5,11 @@ import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..)
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1.Lattices
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Classes.ViewPoint hiding (interfaces,gens)
+import Database.Design.Ampersand.Classes.ViewPoint hiding (gens)
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
-import Prelude hiding (head, sequence, mapM)
+import Prelude hiding (sequence, mapM)
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
@@ -17,10 +17,6 @@ import qualified Data.Map as Map
 import Data.Function
 import Data.Maybe
 import Data.List(nub)
-
-head :: [a] -> a
-head [] = fatal 30 "head must not be used on an empty list!"
-head (a:_) = a
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
@@ -32,7 +28,9 @@ instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkPurposes             -- Check whether all purposes refer to existing objects
+pCtx2aCtx opts = checkOtherAtomsInSessionConcept
+               . checkPurposes             -- Check whether all purposes refer to existing objects
+               . checkDanglingRulesInRuleRoles -- Check whether all rules in MAINTAIN statements are declared
                . checkInterfaceCycles      -- Check that interface references are not cyclic
                . checkMultipleDefaultViews -- Check whether each concept has at most one default view
                . checkUnique udefrules     -- Check uniquene names of: rules,
@@ -101,29 +99,54 @@ checkMultipleDefaultViews gCtx =
     Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
                    in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
 
+checkDanglingRulesInRuleRoles :: Guarded A_Context -> Guarded A_Context
+checkDanglingRulesInRuleRoles gCtx =
+  case gCtx of
+    Errors _  -> gCtx
+    Checked ctx -> case [mkDanglingRefError "Rule" nm (arPos rr)  
+                        | rr <- ctxrrules ctx
+                        , nm <- arRules rr
+                        , nm `notElem` map name (allRules ctx)
+                        ] of
+                     [] -> gCtx
+                     errs -> Errors errs
+checkOtherAtomsInSessionConcept :: Guarded A_Context -> Guarded A_Context
+checkOtherAtomsInSessionConcept gCtx =
+   case gCtx of
+     Errors _  -> gCtx
+     Checked ctx -> case [mkOtherAtomInSessionError atom
+                         | pop@PCptPopu{popcpt =cpt} <- ctxpopus ctx
+                         , name cpt == "SESSION"
+                         , atom <- filter (/= "_SESSION") (popas pop)
+                         ] of
+                      [] -> gCtx
+                      errs -> Errors errs
+     
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
       , ctx_markup = pandocf
-      , ctx_thms   = p_themes       --  The themes that are specified by the user to be documented.
-      , ctx_pats   = p_patterns     --  The patterns defined in this context
-      , ctx_PPrcs  = p_processes    --  The processes as defined by the parser
-      , ctx_rs     = p_rules        --  All user defined rules in this context, but outside patterns and outside processes
-      , ctx_ds     = p_declarations --  The relations declared in this context, outside the scope of patterns
-      , ctx_cs     = p_conceptdefs  --  The concept definitions defined in this context, outside the scope of patterns
-      , ctx_ks     = p_identdefs    --  The identity definitions defined in this context, outside the scope of patterns
-      , ctx_vs     = p_viewdefs     --  The view definitions defined in this context, outside the scope of patterns
-      , ctx_gs     = p_gens         --  The gen definitions defined in this context, outside the scope of patterns
-      , ctx_ifcs   = p_interfaces   --  The interfaces defined in this context, outside the scope of patterns
-      , ctx_ps     = p_purposes     --  The purposes defined in this context, outside the scope of patterns
-      , ctx_pops   = p_pops         --  The populations defined in this context, but outside patterns and outside processes
-      , ctx_sql    = p_sqldefs      --  user defined sqlplugs, taken from the Ampersand script
-      , ctx_php    = p_phpdefs      --  user defined phpplugs, taken from the Ampersand script
-      , ctx_metas  = p_metas        --  generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+      , ctx_thms   = p_themes 
+      , ctx_pats   = p_patterns
+      , ctx_PPrcs  = p_processes
+      , ctx_rs     = p_rules    
+      , ctx_ds     = p_declarations
+      , ctx_cs     = p_conceptdefs
+      , ctx_ks     = p_identdefs
+      , ctx_rrules = p_roleRules
+      , ctx_rrels  = p_roleRelations
+      , ctx_vs     = p_viewdefs
+      , ctx_gs     = p_gens
+      , ctx_ifcs   = p_interfaces
+      , ctx_ps     = p_purposes
+      , ctx_pops   = p_pops
+      , ctx_sql    = p_sqldefs
+      , ctx_php    = p_phpdefs
+      , ctx_metas  = p_metas
       }
- = (\pats _ rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs
+ = (\pats rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs allRoleRelations
      -> ACtx{ ctxnm = n1
             , ctxpos = n2
             , ctxlang = deflangCtxt
@@ -135,6 +158,8 @@ pCtx2aCtx' _
             , ctxpopus = nub (udpops++dclPops++mp1Pops rules++mp1Pops pats++mp1Pops identdefs++mp1Pops viewdefs++mp1Pops interfaces)
             , ctxcds = allConceptDefs
             , ctxks = identdefs
+            , ctxrrules = allRoleRules
+            , ctxRRels = allRoleRelations
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
             , ctxgenconcs = map (map castConcept) (concGroups ++ map (:[]) soloConcs)
@@ -145,8 +170,7 @@ pCtx2aCtx' _
             , ctxmetas = p_metas
             }
     ) <$> traverse pPat2aPat (p_patterns ++ p_processes)            --  The patterns defined in this context
-      <*> traverse pPat2aPat []         --  The processes defined in this context
-      <*> traverse (pRul2aRul [] n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
+      <*> traverse (pRul2aRul n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaceAndDisambObjs   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
@@ -154,6 +178,8 @@ pCtx2aCtx' _
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
+      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels (p_patterns ++ p_processes))
+      
   where
     p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
@@ -244,28 +270,10 @@ pCtx2aCtx' _
        where
          leastConcepts = findExact genLattice (Atom (name c) `Meet` (Atom str))
 
-{- SJ20140216: The function castConcept is used in the type system, but looks similar to pCpt2aCpt.
-   However, castConcept makes an erroneous concept, which we should prevent in the first place.
-   So it seems castConcept should be removed if possible, and pCpt2aCpt should be doing all the work.
-   SJC20140915: The function castConcept has an entirely different signature: it converts from a string.
-   It does not create erroneous concepts!
-   If the parser would return a P_Concept in all these places, we could unify castConcept and pCpt2aCpt.
-   So the solution would be to replace castConcept by:
-    castConcept :: P_Concept -> A_Concept
-    castConcept = pCpt2aCpt
-   and additionally:
-    genRules = [ ( Set.singleton (gen_spc x), Set.fromList (gen_concs x))
-               | x <- p_gens ++ concatMap pt_gns p_patterns ++ concatMap procGens p_processes
-               ]
-    genLattice :: Op1EqualitySystem P_Concept
-   And then solving all type errors in this file by changing the data types (e.g. p_cnme :: P_Population -> P_Concept)
-   .. seems like a lot of work => future work
--}
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
-    castConcept x
-     = PlainConcept { cptnm = x
-                    }
+    castConcept x     = PlainConcept { cptnm = x }
+
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
      = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }
@@ -498,11 +506,9 @@ pCtx2aCtx' _
        = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
-                   (True,True) -> pure (head' (Set.toList r))
+                   (True,True) -> pure (head (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
-       where head' [] =fatal 321 ("empty list on expressions "++show ((p1,b1,e1),(p2,b2,e2)))
-             head' (a:_) = a
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb x
      = (x, case x of
@@ -544,49 +550,54 @@ pCtx2aCtx' _
                     }) <$> traverse namedRel2Decl tps
                        <*> pObjDefDisamb2aObjDef objDisamb
 
+    pRoleRelation2aRoleRelation :: P_RoleRelation -> Guarded A_RoleRelation
+    pRoleRelation2aRoleRelation prr
+     = (\ ds' 
+        -> RR { rrRoles = rr_Roles prr
+              , rrRels  = ds'
+              , rrPos   = rr_Pos prr
+              }) <$> traverse namedRel2Decl (rr_Rels prr)
+    pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
+    pRoleRule2aRoleRule prr
+     = A_RoleRule { arRoles = mRoles prr
+                  , arRules = mRules prr
+                  , arPos   = mPos prr
+                  }
+    
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> traverse (\x -> pRul2aRul' [rol | rr <- (pt_RRuls ppat), roleName <- mRules rr, name x == roleName, rol <- mRoles rr] (pt_nm ppat) x) (pt_rls ppat)
-         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse namedRel2Decl $ rr_Rels prr) | prr <- pt_RRels ppat]
+     = f <$> traverse (pRul2aRul (name ppat)) (pt_rls ppat)
          <*> traverse pIdentity2aIdentity (pt_ids ppat) 
          <*> traverse pPop2aPop (pt_pop ppat)
          <*> traverse pViewDef2aViewDef (pt_vds ppat) 
          <*> traverse pPurp2aPurp (pt_xps ppat)
        where
-        f ruls' rels' keys' pops' views' xpls
+        f rules' keys' pops' views' xpls
            = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
              in A_Pat { ptnm  = name ppat
                       , ptpos = pt_pos ppat
                       , ptend = pt_end ppat
-                      , ptrls = map snd ruls'
+                      , ptrls = rules'
                       , ptgns = map pGen2aGen (pt_gns ppat)
                       , ptdcs = decls'
                       , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
-                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
-                      , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                       , ptids = keys'
                       , ptvds = views'
                       , ptxps = xpls
                       }
-
-    pRul2aRul':: [Role] -- list of roles for this rule
-              -> String -- environment name (pattern / proc name)
-              -> (P_Rule TermPrim) -> Guarded ([Role],Rule)  -- roles in the lhs
-    pRul2aRul' a b c = fmap ((,) a) (pRul2aRul a b c)
-    pRul2aRul :: [Role] -- list of roles for this rule
-              -> String -- environment name (pattern / proc name)
+    pRul2aRul :: String -- environment name (pattern / proc name)
               -> (P_Rule TermPrim) -> Guarded Rule
-    pRul2aRul rol env = typeCheckRul rol env . disambiguate termPrimDisAmb
-    typeCheckRul :: [Role] -- list of roles for this rule
-              -> String -- environment name (pattern / proc name)
+    pRul2aRul env = typeCheckRul env . disambiguate termPrimDisAmb
+    typeCheckRul :: 
+                 String -- environment name (pattern / proc name)
               -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
-    typeCheckRul sgl env P_Ru { rr_nm = nm
-                       , rr_exp = expr
-                       , rr_fps = orig
-                       , rr_mean = meanings
-                       , rr_msg = msgs
-                       , rr_viol = viols
-                       }
+    typeCheckRul env P_Ru { rr_nm = nm
+                          , rr_exp = expr
+                          , rr_fps = orig
+                          , rr_mean = meanings
+                          , rr_msg = msgs
+                          , rr_viol = viols
+                          }
      = unguard $ 
          (\ (exp',_) -> 
            (\ vls ->
@@ -600,7 +611,7 @@ pCtx2aCtx' _
                 , rrdcl = Nothing
                 , r_env = env
                 , r_usr = UserDefined
-                , isSignal = not (null sgl)
+                , isSignal = not . null . concatMap arRoles . filter (\x -> nm `elem` arRules x) $ allRoleRules 
                 })
            <$> maybeOverGuarded (typeCheckPairView orig exp') viols)
          <$> typecheckTerm expr
@@ -621,9 +632,9 @@ pCtx2aCtx' _
            pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               unguard $
-                (\o -> case (findExact genLattice (mjoin (name (source (objctx o))) (name conc))) of
-                         [] -> mustBeOrdered orig (Src, (origin ojd), (objctx o)) pidt
-                         _ -> pure (IdentityExp o)
+                (\o -> case findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
+                         [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
+                         _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (name conc) (objctx o)}
                 ) <$> pObjDef2aObjDef ojd
 
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
@@ -665,15 +676,15 @@ pCtx2aCtx' _
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
-     = if null cs
-       then Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1}
-       else head cs
-       where cs = [cd | cd<-allConceptDefs, name cd==s]
+     = case filter (\cd -> name cd == s) allConceptDefs of
+        []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1} 
+        (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
-
+    allRoleRules :: [A_RoleRule]
+    allRoleRules = map pRoleRule2aRoleRule 
+                      (p_roleRules ++ concatMap pt_RRuls (p_patterns++p_processes))
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
--- SJ 20140211 @SJC: TODO graag een typefout genereren voor een SESSION atoom anders dan _SESSION.
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs

@@ -2,6 +2,7 @@ CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "ASTdocumentation.adl"
 INCLUDE "ASTInterface.ifc"
+INCLUDE "Atoms.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
 1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als name, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
@@ -16,18 +17,16 @@ CONCEPT Purpose "" TYPE "Text"
 CONCEPT Meaning "" TYPE "Text"
 CONCEPT ConceptDefinition "" TYPE "Text"
 
-
-
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
 IDENT Context: Context(name[Context*ContextName])  
-CLASSIFY ContextName ISA Conid
+--CLASSIFY ContextName ISA Conid
 RELATION name[Context*ContextName] [UNI,TOT,INJ]
 MEANING "The name of a context."
 RELATION patterns[Context*Pattern]
 MEANING "The patterns in a context."
 RELATION concs[Context*PlainConcept]
-MEANING "A concept, mentioned anywhere in a context, is declared."
+MEANING "A concept, mentioned anywhere in a context."
 RELATION allDeclarations[Context*Declaration]
 MEANING "A relation declared in a context"
 RELATION gens[Context*Gen]
@@ -38,17 +37,15 @@ PATTERN Patterns
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
 IDENT Pattern: Pattern(name[Pattern*PatternName])  --TODO: The sign for name is overspecification, but is still required, for otherwise an error will occur in the typechecker.
 
-CLASSIFY PatternName ISA Conid
+--CLASSIFY PatternName ISA Conid
 
 RELATION name[Pattern*PatternName] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
-RELATION allRules[Pattern*Rule]
+RELATION rules[Pattern*Rule]
 MEANING "The user-defined rules in a pattern."
-RELATION gens[Pattern*Gen]
-MEANING "The user-defined generalization rules in a pattern."
-RELATION ptdcs[Pattern*Declaration]
+RELATION declarations[Pattern*Declaration]
 MEANING "The relation declarations in a pattern."
-RELATION ptxps[Pattern*Purpose]
+RELATION purpose[Pattern*Purpose]
 MEANING "The purposes of a pattern."
 
 
@@ -64,12 +61,13 @@ MEANING "A generalization rule refers to one more generic concept."
 RELATION genspc[Gen*PlainConcept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
 
-PURPOSE RULE specialization
-{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
-If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
--}
-RULE specialization : instanceOf;genspc~;gengen |- instanceOf
-MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+--PURPOSE RULE specialization
+--{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+--If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+---}
+--RELATION instanceOf[Atom*Concept] [TOT] 
+--RULE specialization : instanceOf;genspc~;gengen |- instanceOf
+--MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
 
@@ -77,7 +75,7 @@ PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
 IDENT PlainConcept: PlainConcept(name[PlainConcept*ConceptName])
 CLASSIFY PlainConcept ISA Concept
-CLASSIFY ConceptName ISA Conid
+--CLASSIFY ConceptName ISA Conid
 
 
 RELATION name[PlainConcept*ConceptName] [UNI,TOT,INJ]
@@ -111,23 +109,6 @@ MEANING "The (technical) type of a concept"
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
 ENDPATTERN
 
-PATTERN Atoms
-{-TODO: Documenteren! Het idee is grofweg als volgt:
-Een AtomID is een instantie van een Concept. Elk AtomId heeft een waarde. Één AtomId kan voorkomen als instantie van verschillende concepten, namelijk indien de een een generalisatie is van de ander.
-Als René instantie is van Man, Man is een specialisatie van Persoon, dan is diezelfde René ook instantie van Persoon. Er kan echter ook een René bestaan als instantie van Hond. De hond René is echter iets anders dan de Persoon René. 
--}
-RELATION atmRoot [AtomID*PlainConcept] [TOT]  -- most generic concept(s) where the AtomID is in. 
-RELATION instanceOf[AtomID*PlainConcept] [TOT]
-RELATION atomvalue[AtomID*AtomValue] [UNI,TOT]
-
-MEANING "The value of an atom."
---RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
---MEANING "An atom of a concept has a unique value within the class of that concept."
---MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
---VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
-RULE "atomID is instance of root" : atmRoot |- instanceOf
-ENDPATTERN
-
 PATTERN Sign
 VIEW Sign: Sign( TXT "[" , src;name[PlainConcept*ConceptName] , TXT "*" , trg;name[PlainConcept*ConceptName] , TXT "]" )
 
@@ -137,7 +118,7 @@ MEANING "The source of a sign."
 RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
-VIEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
+--IEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
 RELATION sign[PairID*Sign] [UNI,TOT]
 MEANING "The sign of a relationship"
 RELATION left[PairID*AtomID] [UNI,TOT]
@@ -164,11 +145,11 @@ MEANING "Type consistency means that all pairs in a relation have the same signa
 ENDPATTERN
 
 PATTERN Declaration
-VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
+--VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
-CLASSIFY DeclarationName ISA Varid
+--CLASSIFY DeclarationName ISA Varid
 RELATION name[Declaration*DeclarationName] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The name of a relation."
 RELATION sign[Declaration*Sign] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
@@ -177,8 +158,8 @@ RELATION decprps[Declaration*PropertyRule] [INJ]
 MEANING "The properties of a relation."
 
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
-SPEC PropertyRule ISA Rule
-CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+CLASSIFY PropertyRule ISA Rule
+CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
 RULE "property enum": I[Property] |- 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
 MEANING "There are eleven tokens, that can be used to define properties on a relation. -> is syntactic suger for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
 RELATION decprL[Declaration*String] [UNI]
@@ -238,7 +219,7 @@ MEANING "A relation reference refers to the relation with the same name, the sig
 
 PATTERN Rules
 IDENT Rule: Rule(name[Rule*RuleName])
-CLASSIFY RuleName ISA ADLid
+--CLASSIFY RuleName ISA ADLid
 RELATION name[Rule*RuleName] [UNI,TOT,INJ]
 MEANING "The name of a rule."
 RELATION sign[Rule*Sign] [UNI,TOT]

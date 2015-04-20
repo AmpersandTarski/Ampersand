@@ -177,12 +177,13 @@ instance ShowADL A_Gen where
     Isa{} -> "CLASSIFY "++showADL (genspc g)++" ISA "++showADL (gengen g)
     IsE{} -> "CLASSIFY "++showADL (genspc g)++" IS "++intercalate " /\\ " (map showADL (genrhs g))
 
-instance ShowADL RoleRelation where
+instance ShowADL A_RoleRelation where
  showADL r
   = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map showADL (rrRels r))
 
-instance ShowADL RoleRule where
- showADL r = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
+instance ShowADL P_RoleRule where
+ showADL r 
+  = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
 
 instance ShowADL Interface where
  showADL ifc
@@ -225,8 +226,7 @@ instance ShowADL Expression where
      showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
      showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rDia, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
-      = --let c = PlainConcept "A" in trace (showchar (insParentheses (ECps (ECps (EDcI c,EDcI c),ECps (EDcI c,EDcI c))))) $
-        showchar (insParentheses expr)
+      = showchar (insParentheses expr)
         where
           showchar (EEqu (l,r)) = showchar l++equi++showchar r
           showchar (EImp (l,r)) = showchar l++impl++showchar r
@@ -323,7 +323,6 @@ instance ShowADL FSpec where
         else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
     ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
---    ++ (if null (vprocesses fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (vprocesses fSpec))    ++ "\n")  -- TODO implement ShowADL FProcess
     ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map showADL (conceptDefs fSpec)) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
     ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
@@ -334,7 +333,7 @@ instance ShowADL FSpec where
 --    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
     ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
     ++ "\n\nENDCONTEXT"
-    where decls = relsDefdIn fSpec >- (concatMap relsDefdIn (patterns fSpec) `uni` concatMap relsDefdIn (vprocesses fSpec))
+    where decls = relsDefdIn fSpec >- concatMap relsDefdIn (patterns fSpec)
 instance ShowADL (Maybe String) where
   showADL _ = ""
 instance ShowADL ECArule where
