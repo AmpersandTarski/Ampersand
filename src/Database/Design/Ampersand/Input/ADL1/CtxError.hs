@@ -137,9 +137,9 @@ mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will 
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
                               
-mkIncompatibleInterfaceError ::  P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError 
+mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError 
 mkIncompatibleInterfaceError objDef expTgt refSrc ref = 
-  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++" at field " ++ show (name objDef) ++ 
+  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++ " at field " ++ show (name objDef) ++ 
                          ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++ 
                          ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
 
