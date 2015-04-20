@@ -223,7 +223,7 @@ generateAllDefPopQueries fSpec =
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate "\n     , " 
-                  [ "(" ++intercalate ", " (map showValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
+                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
@@ -251,7 +251,7 @@ generateAllDefPopQueries fSpec =
              = intercalate ", " 
                  [case fld of 
                     Nothing -> "NULL"
-                    Just str -> showValue str
+                    Just str -> showAsValue str
                  | fld <- record ]
 
 
@@ -607,6 +607,11 @@ genPhp generatorModule moduleName contentLines = unlines $
   ] ++ replicate 2 "" ++ contentLines ++
   [ "?>"
   ]
-showValue :: String -> String
-showValue str = "'"++str++"'"
-
+showAsValue :: String -> String
+showAsValue str = "'"++f str++"'"
+  where f :: String -> String
+        f str'= 
+          case str' of
+            []        -> []
+            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
+            (c:cs)    -> c : f cs
