@@ -89,7 +89,7 @@ chpConceptualAnalysis lev fSpec = (
                               <> plain "Deze paragraaf geeft een opsomming van de regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."
                       English -> header (lev+3) "Rules"
                               <> plain "This section itemizes the rules with a reference to the shared language of stakeholders for the sake of traceability."
-        )
+                   )
                    <> definitionList blocks
     )
   caRelation :: Declaration -> (Inlines, [Blocks])
