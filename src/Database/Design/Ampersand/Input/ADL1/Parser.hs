@@ -438,27 +438,10 @@ pViewDefLegacy = P_Vd <$> currPos
                          P_ViewHtml <$ pKey "PRIMHTML" <*> pString
           --- ViewAtt ::= LabelProps? Term
           pViewAtt :: AmpParser P_ObjectDef
-          pViewAtt = rebuild <$> currPos <*> pMaybe (try pLabelProps) <*> pTerm
-              where
-                rebuild p mLbl attexpr =
-                  case mLbl of
-                    --TODO: Remove record syntax, use `opt` instead of pMaybe
-                    Just (nm, strs) ->
-                            P_Obj { obj_nm   = nm
-                                  , obj_pos  = p
-                                  , obj_ctx  = attexpr
-                                  , obj_mView = Nothing
-                                  , obj_msub = Nothing
-                                  , obj_strs = strs
-                                  }
-                    Nothing ->
-                            P_Obj { obj_nm   = ""
-                                  , obj_pos  = p
-                                  , obj_ctx  = attexpr
-                                  , obj_mView = Nothing
-                                  , obj_msub = Nothing
-                                  , obj_strs = []
-                                  }
+          pViewAtt = rebuild <$> currPos <*> (try pLabelProps `opt` ("",[])) <*> pTerm
+              where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mView msub strs
+                    mView = Nothing
+                    msub  = Nothing
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term SubInterface
 pInterface :: AmpParser P_Interface
