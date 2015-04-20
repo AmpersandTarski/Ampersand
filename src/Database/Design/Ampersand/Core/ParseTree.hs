@@ -614,7 +614,7 @@ data Prop      = Uni          -- ^ univalent
                | Irf          -- ^ irreflexive
                | Aut          -- ^ automatically computed (NOTE: this is a hacky way to denote these until we have appropriate syntax)
                | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
-                 deriving (Eq,Ord)
+                 deriving (Eq, Ord, Enum, Bounded)
 instance Show Prop where
  showsPrec _ Uni = showString "UNI"
  showsPrec _ Inj = showString "INJ"

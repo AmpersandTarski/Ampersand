@@ -302,9 +302,7 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
         pProp :: AmpParser Prop
         pProp = choice [ p <$ pKey (show p)
-                        -- TODO: Implement/derive Enum class
-                       | p <- [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut, Prop]
-                       ]
+                       | p <- [(minBound :: Prop) ..] ]
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser [Prop]
