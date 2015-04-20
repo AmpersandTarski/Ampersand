@@ -166,11 +166,12 @@ instance Pretty P_Declaration where
         text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragmas <+\> prettyhsep mean <+\> content
         where props   = if prps == [Sym, Asy] then text "[PROP]"
                         else text "[" <> listOf prps <> text "]"
-              byplug  = if plug then text "BYPLUG" else empty
+              byplug  | plug        = text "BYPLUG"
+                      | otherwise   = empty
               pragmas | null pragma = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
-              content = if null popu then empty
-                        else text "=\n[" <+> commas (map prettyPair popu) <+> text "]"
+              content | null popu   = empty
+                      | otherwise   = text "=\n[" <+> commas (map prettyPair popu) <+> text "]"
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of

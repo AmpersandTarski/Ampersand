@@ -14,7 +14,7 @@ import Debug.Trace
 testParse :: String -> (P_Context -> Bool) -> Bool
 testParse text check = case parseReparse "QuickChecks.hs" text of
             Checked a -> check a
-            _  -> False
+            Errors e  -> trace (show e ++ "\n" ++ text) False
             -- TODO: Errors e  -> do { showErrors e; return False }
 
 -- Tests whether the parsed context is equal to the original one
