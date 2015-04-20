@@ -301,8 +301,7 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
   where --- PropList ::= Prop (',' Prop)*
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
         pProp :: AmpParser Prop
-        pProp = choice [ p <$ pKey (show p)
-                       | p <- [(minBound :: Prop) ..] ]
+        pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser [Prop]
@@ -363,16 +362,13 @@ pIndex  = P_Id <$> currPos
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
           --TODO: Use `opt` and remove record syntax (create optLabelProps)
-          pIndAtt  = attL <$> currPos <*> try pLabelProps <*> pTerm <|>
-                     P_Obj <$> return "" <*> return (Origin "pIndAtt CC664") <*> try pTerm <*> return Nothing <*> return Nothing <*> return []
-              where attL p (nm, strs) attexpr =
-                       P_Obj { obj_nm   = nm
-                             , obj_pos  = p
-                             , obj_ctx  = attexpr
-                             , obj_mView = Nothing
-                             , obj_msub = Nothing
-                             , obj_strs = strs
-                             }
+          -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
+          pIndAtt  = attL <$> currPos <*> (try pLabelProps `opt` ("",[])) <*> try pTerm
+              where mView = Nothing
+                    msub = Nothing 
+                    --TODO: What does this origin mean? It's not used, can we remove it?
+                    attL p (nm, strs) ctx = let pos = if null nm then Origin "pIndAtt CC664" else p
+                                in P_Obj nm pos ctx mView msub strs
 
 -- | A view definition looks like:
 --      VIEW onSSN: Person("social security number":ssn)
