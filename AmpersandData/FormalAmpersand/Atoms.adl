@@ -31,7 +31,7 @@ RELATION atomvalue[Atom*AtomValue] [UNI,TOT]
 MEANING "The value by which the atom is visible to users."
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
-ROLE AmpersandIssueSolver MAINTAINS "TOT source::Relation*Concept", "TOT target::Relation*Concept" --TODO: Moet helaas nu nog een signaalregel zijn. 
+ROLE Stef MAINTAINS "TOT source::Relation*Concept", "TOT target::Relation*Concept" --TODO: Moet helaas nu nog een signaalregel zijn. 
 
 RELATION in[Pair*Relation] [UNI]
 RELATION l[Pair*Atom] [UNI]
@@ -50,6 +50,7 @@ MEANING "The concept to which this atom belongs is called the type of an atom"
 RULE "Def of type" : type = l~;in;source \/ r~;in;target
 -- HJO @Stef: Bovenstaande is niet waterdicht. Het vereist dat zowel l als r SUR zijn. Zolang dat niet is gegarandeerd, is type niet TOT. Graag aanpassen...
 RELATION src[Pair*Concept] [UNI,TOT]
+ROLE Stef MAINTAINS "TOT src::Sign*Concept","TOT trg::Sign*Concept"
 RULE "Def of src" : src = in;source
 RELATION tgt[Pair*Concept] [UNI,TOT]
 RULE "Def of tgt" : tgt = in;target
