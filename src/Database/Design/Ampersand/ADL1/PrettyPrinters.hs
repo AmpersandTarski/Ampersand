@@ -100,31 +100,35 @@ prettyLabel :: String -> [[String]] -> Doc
 prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
 
 instance Pretty P_Context where
-    pretty p = text "CONTEXT" <+> quoteConcept(ctx_nm p) <~> ctx_lang p
-               <~> ctx_markup p
-               <+\> perline (ctx_metas p)
+    pretty (PCtx nm _ lang markup thms pats pprcs rs ds cs ks rrules rrels vs gs ifcs ps pops sql php metas) =
+               text "CONTEXT"
+               <+> quoteConcept nm
+               <~> lang
+               <~> markup
+               <+\> perline metas
                <+\> themes
-               <+\> perline (ctx_ps p)
-               <+\> perline (ctx_PPrcs p)
-               <+\> perline (ctx_pats p)
-               <+\> perline (ctx_rs p)
-               <+\> perline (ctx_ds p)
-               <+\> perline (ctx_cs p)
-               <+\> perline (ctx_ks p)
-               <+\> perline (ctx_rrules p)
-               <+\> perline (ctx_rrels p)
-               <+\> perline (ctx_vs p)
-               <+\> perline (ctx_gs p)
-               <+\> perline (ctx_ifcs p)
-               <+\> perline (ctx_pops p)
-               <+\> perlinePrefix "SQLPLUG" (ctx_sql p)
-               <+\> perlinePrefix "PHPPLUG" (ctx_php p)
+               <+\> perline ps
+               <+\> perline pprcs
+               <+\> perline pats
+               <+\> perline rs
+               <+\> perline ds
+               <+\> perline cs
+               <+\> perline ks
+               <+\> perline rrules
+               <+\> perline rrels
+               <+\> perline vs
+               <+\> perline gs
+               <+\> perline ifcs
+               <+\> perline pops
+               <+\> perlinePrefix "SQLPLUG" sql
+               <+\> perlinePrefix "PHPPLUG" php
                <+\> text "ENDCONTEXT"
-             where themes = if null $ ctx_thms p then empty
-                            else text "THEMES" <+> commas (map quoteConcept $ ctx_thms p)
+             where themes | null thms = empty
+                          | otherwise = text "THEMES" <+> commas (map quoteConcept thms)
 
 instance Pretty Meta where
-    pretty p = text "META" <~> mtObj p <+> quote (mtName p) <+> quote (mtVal p)
+    pretty (Meta _ obj name val) =
+        text "META" <~> obj <+> quote name <+> quote val
 
 instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
@@ -308,10 +312,10 @@ instance Pretty a => Pretty (P_ViewSegmt a) where
     pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
                         
 instance Pretty PPurpose where
-    pretty p = text "PURPOSE" <~> pexObj p <~> lang <+> refs (pexRefIDs p)
+    pretty (PRef2 _ obj markup refIds) =
+             text "PURPOSE" <~> obj <~> lang <+> refs refIds
              <+\> quotePurpose (mString markup)
-        where markup = pexMarkup p
-              lang = mFormat markup
+        where lang = mFormat markup
               refs rs = if null rs then empty
                         else text "REF" <+> quote (intercalate "; " rs)
 
@@ -334,9 +338,8 @@ instance Pretty PMessage where
     pretty (PMessage markup) = text "MESSAGE" <~> markup
 
 instance Pretty P_Concept where
-    pretty p = case p of
-        PCpt _      -> quoteConcept$ p_cptnm p
-        P_Singleton -> text "ONE"
+    pretty (PCpt name) = quoteConcept name
+    pretty P_Singleton = text "ONE"
 
 instance Pretty P_Sign where
     pretty (P_Sign src tgt) = brackets (pretty src <> maybeTgt)
