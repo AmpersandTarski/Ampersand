@@ -178,7 +178,7 @@ makeFSpec opts context
      allQuads = quadsOfRules opts allrules 
      
      allrules = map setIsSignal (allRules context)
-        where setIsSignal r = r{isSignal = null (maintainersOf r)}
+        where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
        = [role 
