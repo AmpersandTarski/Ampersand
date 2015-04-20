@@ -68,7 +68,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fRoles ::       [Role]                   -- ^ All roles mentioned in this context.
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
-                   , invars ::       [Rule]                   -- ^ All invariant rules
+                   , invariants ::       [Rule]                   -- ^ All invariant rules
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
                    , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
@@ -145,7 +145,6 @@ instance Language FSpec where
    --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?).
   relsDefdIn = vrels
   udefrules  = vrules -- only user defined rules
-  invariants = invars
   identities = vIndices
   viewDefs   = vviews
   gens       = vgens
@@ -162,7 +161,6 @@ instance Language FProcess where
   objectdef  = objectdef.fpProc
   relsDefdIn = relsDefdIn.fpProc
   udefrules  = udefrules.fpProc
-  invariants = invariants.fpProc
   identities = identities.fpProc
   viewDefs   = viewDefs.fpProc
   gens       = gens.fpProc

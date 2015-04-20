@@ -453,7 +453,7 @@ chpDiagnosis fSpec
        ]
      | not (null prs)]
      where prs = [(p,rs) | p<-procs
-                          , let rs=invariants p, not (null rs) ]
+                          , let rs=[r | r<-invariants fSpec, name p == r_env r], not (null rs) ]
            procs = if null (themes fSpec) then vpatterns fSpec else [prc | prc<-vpatterns fSpec, name prc `elem` themes fSpec ]
 
   processrulesInPatterns :: [Block]

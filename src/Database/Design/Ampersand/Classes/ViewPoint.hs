@@ -23,12 +23,12 @@ class Language a where
                                      --   used in a.)
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
-  invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
-                                     --   That includes multiplicity rules and identity rules, but excludes rules that are assigned to a role.
-                                     -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  invariants x  = filter (not . isSignal) (udefrules x) ++ multrules x ++ identityRules x
-  processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
-  processRules = filter isSignal . udefrules
+--  invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
+--                                     --   That includes multiplicity rules and identity rules, but excludes rules that are assigned to a role.
+--                                     -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
+--  invariants   = filter (not . isSignal) . allRules
+--  processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
+--  processRules = filter isSignal . allRules
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.

@@ -50,7 +50,7 @@ chpConceptualAnalysis lev fSpec = (
   -- the Picture that represents this pattern's conceptual graph
   patPicts :: Pattern -> [Picture]
   patPicts pat = pictOfPat pat :
-                (map pictOfRule (invariants pat `isc` udefrules pat))
+                (map pictOfRule (invariants fSpec `isc` udefrules pat))
   pictOfPat  :: Pattern ->  Picture
   pictOfPat  = makePicture fSpec . PTRelsUsedInPat
   pictOfRule :: Rule -> Picture
@@ -82,7 +82,7 @@ chpConceptualAnalysis lev fSpec = (
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
      <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
-     <> case map caRule (invariants pat `isc` udefrules pat) of
+     <> case map caRule (invariants fSpec `isc` udefrules pat) of
          []     -> mempty
          blocks -> (case fsLang fSpec of
                       Dutch   -> header (lev+3) "Regels"

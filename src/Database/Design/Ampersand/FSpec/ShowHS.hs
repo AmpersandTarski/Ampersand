@@ -268,7 +268,7 @@ instance ShowHS FSpec where
         ,wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
         ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
-        ,wrap ", invars        = " indentA (\_->showHSName) (invars fSpec)
+        ,wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
         ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fSpec)
         ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
         ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
