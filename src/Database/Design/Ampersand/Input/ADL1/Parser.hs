@@ -10,7 +10,7 @@ import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
 
---TODO: After converting the parser to Parsec, we had to add some try-calls.
+--TODO! After converting the parser to Parsec, we had to add some try-calls.
 --We gotta check the try's to see if we can refactor them, or at least pay attention to the error messages.
 
 fatal :: Int -> String -> a
@@ -188,7 +188,7 @@ pProcessDef = rebuild <$> currPos <* pKey "PROCESS" <*> pConceptName   -- The na
     pProcElem = PrR <$> pRuleDef      <|>
                 PrY <$> pClassify     <|>
                 PrD <$> pRelationDef  <|>
-                --TODO: Move the try deeper into the parsing chain
+                --TODO! Try to move the try deeper into the parsing chain
                 PrM <$> try pRoleRule     <|>
                 PrL <$> try pRoleRelation <|>
                 PrC <$> pConceptDef   <|>
@@ -317,7 +317,7 @@ pFun  = []        <$ pOperator "*"  <|>
         
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --- Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-        --TODO: refactor
+        --TODO! refactor
         pMult :: (Prop,Prop) -> AmpParser [Prop]
         pMult (ts,ui) = (++) <$> ([]    <$ pZero   <|> [ts] <$ try pOne)
                              <*  pOperator ".."
@@ -361,7 +361,7 @@ pIndex  = P_Id <$> currPos
 
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
-          --TODO: Use `opt` and remove record syntax (create optLabelProps)
+          --TODO! Use `opt` and remove record syntax (create optLabelProps)
           -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
           pIndAtt  = attL <$> currPos <*> (try pLabelProps `opt` ("",[])) <*> try pTerm
               where mView = Nothing
@@ -424,7 +424,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> return True
                       <*> return Nothing
                       <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
-    --TODO:Numbering should not happen in the parser
+    --TODO! Numbering should not happen in the parser
     where ats xs = [ case viewSeg of
                          P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else viewSeg
                          _            -> viewSeg
@@ -529,7 +529,7 @@ pPurpose = rebuild <$> currPos
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
            = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
-              -- TODO: Maybe this separation should not happen in the parser
+              -- TODO! Maybe this separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
@@ -549,7 +549,7 @@ pPurpose = rebuild <$> currPos
 
 --- Population ::= 'POPULATION' NamedRel 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
--- TODO: Refactor grammar, consider removing pNamedRel or adding it to the parse tree.
+-- TODO! Refactor grammar, consider removing pNamedRel or adding it to the parse tree.
 pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent) <|>
               try (pcptpop <$> currPos <* pKey "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
     where
@@ -582,7 +582,7 @@ pRoleRelation      = rr <$> currPos
                      where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
---TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
+--TODO! Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
 pRoleRule :: AmpParser P_RoleRule
 pRoleRule         = rr <$> currPos
                        <*  pKey "ROLE"
@@ -704,7 +704,7 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
---TODO: use the same construction as for pTerm
+--TODO! use the same construction as for pTerm
 pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
                       f PRad <$> pars PRad "!" <|>
                       f PPrd <$> pars PPrd "#")
@@ -716,7 +716,7 @@ pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
---TODO: Separate into prefix and postfix top-level functions
+--TODO! Separate into prefix and postfix top-level functions
 pTrm5  =  f <$> many (valPosOf pDash) <*> pTrm6  <*> many (valPosOf (pOperator "~" <|> pOperator "*" <|> pOperator "+" ))
           where f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
                 f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)
@@ -748,7 +748,7 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Sign?
 pNamedRel :: AmpParser P_NamedRel
---TODO: Remove valPosOf
+--TODO! Remove valPosOf
 pNamedRel = pnamedrel  <$> valPosOf pVarid <*> pMaybe pSign
                     where pnamedrel (nm, orig) = PNamedRel orig nm
 
