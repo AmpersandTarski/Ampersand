@@ -1,10 +1,10 @@
 CONTEXT AST IN ENGLISH
 
-PURPOSE PROCESS AtomsX  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
+PURPOSE PROCESS Atoms  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
 {+The definition of atoms relates directly to the choice of Ampersand to use a representable heterogeneous relational algebra.
 This leads to populating relations with pairs, and making sure that the type of atoms is uniquely determined by the table in which the atom is stored.
 -}
-PROCESS AtomsX
+PROCESS Atoms
 PURPOSE CONCEPT Atom
 {+
 Atoms are used to represent data. They are stored in relations that reside within a context.
@@ -55,7 +55,9 @@ RULE "Def of src" : src = in;source
 RELATION tgt[Pair*Concept] [UNI,TOT]
 RULE "Def of tgt" : tgt = in;target
 RELATION left[Pair*AtomValue] [UNI,TOT]
+ROLE Stef MAINTAINS "TOT left::Pair*AtomValue", "TOT rght::Pair*AtomValue", "TOT src::Pair*Concept", "TOT tgt::Pair*Concept"
 RULE "Def of left" : left = l;atomvalue
+ROLE Stef MAINTAINS "Def of left", "Def of rght", "Def of src", "Def of tgt", "Def of type"
 RELATION rght[Pair*AtomValue] [UNI,TOT]
 RULE "Def of rght" : rght = r;atomvalue
 
@@ -64,7 +66,7 @@ PURPOSE RULE "typed atoms"
 -}
 RULE "typed atoms" : in;in~ |- src;src~ /\ tgt;tgt~
 MEANING "Two pairs that are in the same relation have the same src and tgt concepts."
-
+ROLE Stef MAINTAINS "typed atoms"
 PURPOSE RULE "identical atoms"
 {+The value and type are used to identify an atom.
 -}

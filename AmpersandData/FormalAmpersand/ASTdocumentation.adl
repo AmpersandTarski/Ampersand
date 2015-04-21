@@ -130,9 +130,8 @@ PURPOSE PATTERN Concepts
 {+The rules that govern concepts are brought together in one pattern,
 in order to formalize concepts and determine their meaning.
 -}
-CONCEPT A_Concept "A concept is a name for a category of similar objects."
-CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
-CONCEPT PlainConcept "A concept is a name for a category of similar objects."
+--HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders --CONCEPT A_Concept "A concept is a name for a category of similar objects."
+--HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders ----CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
 PURPOSE CONCEPT PlainConcept
 {+
 In order to reason about meaning,

@@ -109,6 +109,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allRules)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
+  ++[ Comment " ", Comment $ "[InitialPopulation]--: (count="++(show.length.initialPops) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (allLinks fSpec)
   )
    where
 

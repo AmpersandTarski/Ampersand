@@ -73,6 +73,7 @@ ENDPATTERN
 
 PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
+CONCEPT PlainConcept "A concept is a name for a category of similar objects."
 IDENT PlainConcept: PlainConcept(name[PlainConcept*ConceptName])
 CLASSIFY PlainConcept ISA Concept
 --CLASSIFY ConceptName ISA Conid
