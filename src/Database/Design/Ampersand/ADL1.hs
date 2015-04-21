@@ -22,7 +22,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
          , P_Rule(..)
-         , P_IdentDef(..), P_IdentSegment(..)
+         , P_IdentDef, P_IdentSegment
          , P_ViewDef, P_ViewSegment
          , P_Population(..)
          , P_ObjectDef
