@@ -18,7 +18,7 @@ import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.Function
 import Data.Maybe
-import Data.List(nub,intercalate)
+import Data.List(nub)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
@@ -401,16 +401,18 @@ pCtx2aCtx' _
                 -> Guarded ( Expression -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original expression (in such a case, epsilons are added to the branches instead)
                            , SubInterface -- the subinterface
                            )
-    pSubi2aSubi objExpr _ o (P_InterfaceRef _ ifcId)
-      = unguard $
+    pSubi2aSubi objExpr b o x
+      = case x of
+         P_InterfaceRef{si_str = ifcId} 
+           ->  unguard $
              (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
              <$> case lookupDisambIfcObj ifcId of
                    Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                    Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
-    pSubi2aSubi _       _ _ x@(P_Box _ _ []) = const undefined <$> hasNone ([]::[P_SubIfc a]) x -- error
-    pSubi2aSubi _       _ _ (P_Box _ (Just _) _) = fatal 424$ "SJC: never saw any examples with a class for the Box, so please send me this fatal, tell me what you expected, and I'll help get it through the typechecker. Reach me at\nsjcjoosten" ++ flip (++) "gmail.com" "@" -- TODO: remove this feature from the data-structure since it is not used, or create some test cases for it
-    pSubi2aSubi objExpr b _ x@(P_Box _ Nothing l)
-     = (\lst -> (objExpr,Box (target objExpr) Nothing lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
+         P_Box{}
+           -> case si_box x of
+                []  -> const undefined <$> hasNone ([]::[P_SubIfc a]) x -- error
+                l   -> (\lst -> (objExpr,Box (target objExpr) Nothing lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
               ( case findExact genLattice (mIsc (name$ target objExpr) (name . source . objctx $ ojd)) of
