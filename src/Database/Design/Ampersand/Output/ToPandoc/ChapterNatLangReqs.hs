@@ -82,21 +82,16 @@ chpNatLangReqs lev fSpec =
 
   --TODO: Deze nieuwe functie moet de oude dpRequirementsOld vervangen, waardoor een effectieve scheiding 
   --wordt gerealiseerd van WAT er wordt afgedrukt en de VOLGORDE van afdrukken. (code disabled until it will be used, to prevent warning) 
-  {-
+  
   dpRequirementesNew :: Blocks
   dpRequirementesNew =  let (_,blocks) = foldl printTheme (newCounter,mempty)  (orderingByTheme fSpec)
                         in blocks
     where
      printTheme :: (Counter,Blocks)
-                -> ( Maybe Theme   -- A theme is about either a pattern or a process.
-                   , [Rule]        -- The rules of that theme
-                   , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
-                   , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
-                   ) -> (Counter,Blocks)
+                -> ThemeContent -> (Counter,Blocks)
      printTheme (counter,bs) themeStuff  =
         let (blocks,count') = printOneTheme themeStuff counter
         in (count',bs <> blocks)
-  -}
 
   dpRequirementsOld :: [Block]
   dpRequirementsOld = theBlocks
@@ -129,14 +124,14 @@ chpNatLangReqs lev fSpec =
            = case allThemes of
               []  -> if null still2doCPre && null still2doRelsPre && null still2doRelsPre
                      then ([],iPre)
-                     else let (a,b) = printOneTheme (Nothing, still2doRulesPre, still2doRelsPre, still2doCPre) iPre
+                     else let (a,b) = printOneTheme (Thm Nothing still2doRulesPre still2doRelsPre still2doCPre) iPre
                           in (toList a,b)
               _   -> (toList blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (thm:thms) = allThemes
            (blocksOfOneTheme,iPostFirst) = printOneTheme  thisThemeStuff iPre
            (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst thms
-           thisThemeStuff    = (Just thm, [r | r<-thisThemeRules, r_usr r == UserDefined], thisThemeRels, thisThemeCs)
+           thisThemeStuff    = Thm (Just thm) [r | r<-thisThemeRules, r_usr r == UserDefined] thisThemeRels thisThemeCs
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name thm ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ d | d <- still2doRelsPre
@@ -150,27 +145,23 @@ chpNatLangReqs lev fSpec =
       -- | printOneTheme tells the story in natural language of a single theme.
       -- For this purpose, Ampersand authors should take care in composing explanations.
       -- Each explanation should state the purpose (and nothing else).
-  printOneTheme :: ( Maybe Pattern    -- The theme to process (if any)
-                   , [Rule]         -- Rules to print in this section
-                   , [Declaration]  -- Relations to print in this section
-                   , [A_Concept]    -- Concepts, to print in this section
-                   )
+  printOneTheme :: ThemeContent
                 -> Counter      -- first free number to use for numbered items
                 -> (Blocks,Counter)-- the resulting blocks and first free number after processing of the theme.
-  printOneTheme (mTheme, rules2print, rels2print, concs2print) counter0
-    = case (mTheme, themes fSpec) of
+  printOneTheme tc counter0 -- (mTheme, rules2print, rels2print, concs2print) counter0
+    = case (themeAbout tc, themes fSpec) of
        (Nothing, _:_)
           -> ( mempty, counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
        _  -> ( (  --  *** Header of the theme: ***
-                 headerWithLabel (XRefNaturalLanguageTheme mTheme) (lev+2)
-                                 (case (mTheme,fsLang fSpec) of
+                 headerWithLabel (XRefNaturalLanguageTheme (themeAbout tc)) (lev+2)
+                                 (case (themeAbout tc,fsLang fSpec) of
                                      (Nothing, Dutch  ) -> "Losse eindjes..."
                                      (Nothing, English) -> "Loose ends..."
                                      _                  -> text themeName
                                  )
 
                <> --  *** Purpose of the theme: ***
-                  case mTheme of
+                  case themeAbout tc of
                       Nothing  -> case fsLang fSpec of
                                      Dutch   -> para $
                                                     "Deze paragraaf beschrijft de relaties en concepten die "
@@ -180,7 +171,7 @@ chpNatLangReqs lev fSpec =
                                                  <> "that have not been described in previous paragraphs."
                       Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
                 <> --  *** Introduction text of the theme: ***
-                   printIntro (filter isDefined concs2print)
+                   printIntro (filter isDefined (cptsOfTheme tc))
                 <> fromList reqdefs
                 )
              , Counter (getEisnr counter0 + length reqs)
@@ -193,15 +184,15 @@ chpNatLangReqs lev fSpec =
 
               -- sort the requirements by file position
               reqs = sortWith fst [ ((i,filenm org, linenr org,colnr org), bs)
-                                  | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++
-                                                 addIndex 2 (printRels rels2print) ++ addIndex 3 (printRules rules2print)]
+                                  | (i,org,bs)<- addIndex 0 (printConcepts (cptsOfTheme tc)) ++
+                                                 addIndex 2 (printRels (dclsOfTheme tc)) ++ addIndex 3 (printRules (rulesOfTheme tc))]
                where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
 
               -- make blocks for requirements
               reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
               reqdefs = concatMap snd reqblocks
 
-              themeName = case mTheme of
+              themeName = case themeAbout tc of
                            Nothing  -> ""
                            Just pat -> name pat
                            
@@ -214,7 +205,7 @@ chpNatLangReqs lev fSpec =
                                        , length [p |p <- (vpatterns fSpec) , name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
-                                    ([_],1) -> case mTheme of
+                                    ([_],1) -> case themeAbout tc of
                                                  Nothing  -> mempty
                                                  Just tme -> para ( "In het volgende wordt de taal geïntroduceerd ten behoeve van "
                                                                  <> (str.name) tme <> "."
@@ -238,7 +229,7 @@ chpNatLangReqs lev fSpec =
                                        , length [p |p <- vpatterns fSpec, name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
-                                    ([_],1) -> case mTheme of
+                                    ([_],1) -> case themeAbout tc of
                                                  Nothing  -> mempty
                                                  Just tme -> para ( "The sequel introduces the language of "
                                                                  <> (str.name) tme <> "."
