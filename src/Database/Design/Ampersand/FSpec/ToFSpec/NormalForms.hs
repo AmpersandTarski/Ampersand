@@ -15,7 +15,6 @@ import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Misc.Options
 import Database.Design.Ampersand.Input (parseRule)
 import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only

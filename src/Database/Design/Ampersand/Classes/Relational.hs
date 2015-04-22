@@ -7,8 +7,8 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.Basics
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Classes.Relational"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Classes.Relational"
 
 class Association r => Relational r where
     multiplicities :: r -> [Prop]
@@ -184,7 +184,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e     -> isImin e
      EDcD{}     -> False
      EDcI{}     -> True
-     EEps i sgn -> False
+     EEps{}     -> False
      EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
