@@ -25,7 +25,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , relsInThemes
     , Counter(..),newCounter,incEis
     , inlineIntercalate
-    , orderingByTheme
+    , ThemeContent(..), orderingByTheme
     , plainText
     , NLString(..)
     , ENString(..)
@@ -122,8 +122,6 @@ chptTitle lang cpt =
 
 class Xreferencable a where
   xLabel :: a  -> String
---  xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
---  xrefReference a = fatal 117 $ "--Depreciated! TODO: use xRefReference instead"
   xRefReference :: Options -> a -> Inlines
   xRefReference opts a
     | canXRefer opts = rawInline "latex" ("\\ref{"++xLabel a++"}")
@@ -140,8 +138,6 @@ instance Xreferencable Chapter where
 instance Xreferencable Picture where
   xLabel a = "figure" ++ escapeNonAlphaNum (caption a)
 
---Image [Inline] Target
---      alt.text (URL,title)
 showImage :: Options -> Picture -> Inlines
 showImage opts pict =
       case fspecFormat opts of
@@ -160,53 +156,62 @@ showImage opts pict =
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
-orderingByTheme :: FSpec -> [( Maybe Pattern   -- A theme is about either a pattern or a process.
-                            , [Rule]        -- The rules of that theme
-                            , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
-                            , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
-                            )
-                           ]
+
+data ThemeContent = 
+       Thm { themeAbout   :: Maybe Pattern -- A theme is about either a pattern or about everything outside patterns
+           , rulesOfTheme :: [Rule]        -- The rules of that theme
+           , dclsOfTheme  :: [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
+           , cptsOfTheme  :: [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
+           }
+orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
- = f (fallRules fSpec) (filter isUserDefined (relsMentionedIn fSpec)) (allConcepts fSpec) tms
+ = f (fallRules fSpec, filter isUserDefined (relsMentionedIn fSpec), allConcepts fSpec) $ 
+     [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
+        ,    null (themes fSpec)        -- all patterns if no specific themes are requested
+          || name pat  `elem` themes fSpec  -- otherwise the requested ones only
+        ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
-  -- | The patterns that should be taken into account for this ordering
-  tms = if null (themes fSpec)
-        then (vpatterns fSpec)
-        else [ pat           | pat <-vpatterns   fSpec, name pat  `elem` themes fSpec ]
-  f ruls rels cpts ts
+  
+  f :: ([Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
+  f stuff ts
    = case ts of
-       t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
-                     , (relsOfTheme,relsNotOfTheme)
-                     , (cptsOfTheme,cptsNotOfTheme)
-                     ) = partitionByTheme t ruls rels cpts
-                in (Just t, rulsOfTheme, relsOfTheme, cptsOfTheme)
-                   : f rulsNotOfTheme relsNotOfTheme cptsNotOfTheme ts'
-       []    -> [(Nothing, ruls, rels, cpts)]
+       t:ts' -> let ( thm, rest) = partitionByTheme t stuff
+                in thm : f rest ts'
+       []    -> let (ruls, rels, cpts) = stuff
+                in [Thm Nothing ruls rels cpts]
   -- | This function takes care of partitioning each of the
   --   lists in a pair of lists of elements which do and do not belong
   --   to the theme, respectively
-  partitionByTheme :: Pattern
-                   -> [Rule]
-                   -> [Declaration]
-                   -> [A_Concept]
-                   -> ( ([Rule],[Rule])
-                      , ([Declaration],[Declaration])
-                      , ([A_Concept],[A_Concept])
+  partitionByTheme :: Maybe Pattern
+                   -> ( [Rule], [Declaration], [A_Concept])
+                   -> ( ThemeContent , ( [Rule], [Declaration], [A_Concept])
                       )
-  partitionByTheme pat ruls rels cpts
-      = ((rulsOfTheme,rulsNotOfTheme), (relsOfTheme,relsNotOfTheme), (cptsOfTheme,cptsNotOfTheme))
+  partitionByTheme t (ruls, rels, cpts)
+      = ( Thm { themeAbout   = t
+              , rulesOfTheme = thmRuls
+              , dclsOfTheme  = themeDcls
+              , cptsOfTheme  = themeCpts
+              }
+        , (restRuls, restDcls, restCpts)
+        )
      where
-       (rulsOfTheme,rulsNotOfTheme) = partition isRulOfTheme ruls
-       isRulOfTheme r = r `elem` ptrls pat
-       (relsOfTheme,relsNotOfTheme) = partition isRelOfTheme rels
-       isRelOfTheme r = r `elem` (concatMap relsUsedIn rulsOfTheme)
-       (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts
-       isCptOfTheme c = c `elem` concatMap concs relsOfTheme
+       (thmRuls,restRuls) = partition rulFilter ruls
+       rulFilter r = case t of 
+                         Just pat -> r `elem` ptrls pat
+                         Nothing  -> True
+       (themeDcls,restDcls) = partition dclFilter rels
+       dclFilter r = case t of
+                         Just _   -> r `elem` (concatMap relsUsedIn thmRuls)
+                         Nothing  -> True
+       (themeCpts,restCpts) = partition cptFilter cpts
+       cptFilter c = case t of 
+                         Just _   -> c `elem` concatMap concs themeDcls
+                         Nothing  -> True
 
---GMI: What's the meaning of the Int?
+--GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
 dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
 dpRule' fSpec = dpR
