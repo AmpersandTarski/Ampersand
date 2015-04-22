@@ -59,12 +59,21 @@ chpNatLangReqs lev fSpec =
                      <> "All definitions have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
-   fromList dpRequirementsOld
---   dpRequirementesNew
+   dpRequirements
    <> --  *** Legal Refs ***
      if genLegalRefs (getOpts fSpec) then legalRefs else mempty
 
   where
+  dpRequirements :: Blocks
+  dpRequirements = blocks
+    where 
+     (_,blocks) = foldl printTheme (newCounter,mempty)  (orderingByTheme fSpec)
+     printTheme :: (Counter,Blocks)
+                -> ThemeContent -> (Counter,Blocks)
+     printTheme (counter,bs) themeStuff  =
+        let (blocks',count') = printOneTheme themeStuff counter
+        in (count',bs <> blocks')
+
   legalRefs :: Blocks
   legalRefs = (header (lev+2) sectionTitle)
             <> table caption'
@@ -80,67 +89,6 @@ chpNatLangReqs lev fSpec =
                getRefs ::FSpec ->  [LawRef]
                getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
 
-  --TODO: Deze nieuwe functie moet de oude dpRequirementsOld vervangen, waardoor een effectieve scheiding 
-  --wordt gerealiseerd van WAT er wordt afgedrukt en de VOLGORDE van afdrukken. (code disabled until it will be used, to prevent warning) 
-  
-  dpRequirementesNew :: Blocks
-  dpRequirementesNew =  let (_,blocks) = foldl printTheme (newCounter,mempty)  (orderingByTheme fSpec)
-                        in blocks
-    where
-     printTheme :: (Counter,Blocks)
-                -> ThemeContent -> (Counter,Blocks)
-     printTheme (counter,bs) themeStuff  =
-        let (blocks,count') = printOneTheme themeStuff counter
-        in (count',bs <> blocks)
-
-  dpRequirementsOld :: [Block]
-  dpRequirementsOld = theBlocks
-    where
-      (theBlocks,_) = 
-        printThemes toBeProcessedStuff newCounter
-           [pat | pat<-vpatterns fSpec, null (themes fSpec) || name pat `elem` themes fSpec ]
-      toBeProcessedStuff = ( conceptsWith
-                           , allRelsThatMustBeShown
-                           , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
-         where
-           conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)
-              = [ c
-                | c@PlainConcept{} <- concs fSpec
-                , (not.null) (concDefs fSpec c)
-                ]
-           allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ d | d <- vrels fSpec
-                , decusr d
-                , not . null $ purposesDefinedIn fSpec (fsLang fSpec) d
-                ]
-
-      printThemes :: (   [A_Concept]     -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
-                       , [Declaration]           -- all relations to be processed into this section and the sections to come
-                       , [Rule])                 -- all rules to be processed into this section and the sections to come
-                    -> Counter           -- unique definition counters
-                    -> [Pattern]         -- the patterns that must be processed into this specification
-                    -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
-      printThemes  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre allThemes
-           = case allThemes of
-              []  -> if null still2doCPre && null still2doRelsPre && null still2doRelsPre
-                     then ([],iPre)
-                     else let (a,b) = printOneTheme (Thm Nothing still2doRulesPre still2doRelsPre still2doCPre) iPre
-                          in (toList a,b)
-              _   -> (toList blocksOfOneTheme ++ blocksOfThemes,iPost)
-         where
-           (thm:thms) = allThemes
-           (blocksOfOneTheme,iPostFirst) = printOneTheme  thisThemeStuff iPre
-           (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst thms
-           thisThemeStuff    = Thm (Just thm) [r | r<-thisThemeRules, r_usr r == UserDefined] thisThemeRels thisThemeCs
-           thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name thm ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
-           rules2PrintLater  = still2doRulesPre >- thisThemeRules
-           thisThemeRels     = [ d | d <- still2doRelsPre
-                               , decpat d == name thm ||         -- all relations declared in this theme, combined
-                                 d `eleM` relsMentionedIn thisThemeRules] -- all relations used in this theme's rules
-           rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [ x==y | y <- thisThemeRels ]]
-           thisThemeCs       = [c | c <- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
-           concs2PrintLater  = still2doCPre >- thisThemeCs
-           stuff2PrintLater  = (concs2PrintLater, rels2PrintLater, rules2PrintLater)
 
       -- | printOneTheme tells the story in natural language of a single theme.
       -- For this purpose, Ampersand authors should take care in composing explanations.

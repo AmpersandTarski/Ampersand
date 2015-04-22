@@ -165,16 +165,21 @@ data ThemeContent =
            }
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
- = f (fallRules fSpec, filter isUserDefined (relsMentionedIn fSpec), allConcepts fSpec) $ 
+ = f ( filter rulMustBeShown (fallRules fSpec)
+     , filter relMustBeShown (relsMentionedIn fSpec)
+     , filter cptMustBeShown (allConcepts fSpec)) $ 
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
         ,    null (themes fSpec)        -- all patterns if no specific themes are requested
           || name pat  `elem` themes fSpec  -- otherwise the requested ones only
         ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
+  rulMustBeShown r = r_usr r == UserDefined
+  relMustBeShown d = isUserDefined d && hasPurpose d 
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
-  
+  hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  cptMustBeShown = not . null . concDefs fSpec
   f :: ([Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
   f stuff ts
    = case ts of
@@ -203,12 +208,12 @@ orderingByTheme fSpec
                          Just pat -> r `elem` ptrls pat
                          Nothing  -> True
        (themeDcls,restDcls) = partition dclFilter rels
-       dclFilter r = case t of
-                         Just _   -> r `elem` (concatMap relsUsedIn thmRuls)
+       dclFilter d = case t of
+                         Just pat -> d `elem` relsMentionedIn pat
                          Nothing  -> True
        (themeCpts,restCpts) = partition cptFilter cpts
        cptFilter c = case t of 
-                         Just _   -> c `elem` concatMap concs themeDcls
+                         Just pat -> c `elem` concs pat
                          Nothing  -> True
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
