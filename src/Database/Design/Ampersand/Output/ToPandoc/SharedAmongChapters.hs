@@ -202,7 +202,7 @@ orderingByTheme fSpec
        (rulsOfTheme,rulsNotOfTheme) = partition isRulOfTheme ruls
        isRulOfTheme r = r `elem` ptrls pat
        (relsOfTheme,relsNotOfTheme) = partition isRelOfTheme rels
-       isRelOfTheme r = r `elem` (concatMap relsDefdIn rulsOfTheme++concatMap relsUsedIn rulsOfTheme)
+       isRelOfTheme r = r `elem` (concatMap relsUsedIn rulsOfTheme)
        (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts
        isCptOfTheme c = c `elem` concatMap concs relsOfTheme
 
