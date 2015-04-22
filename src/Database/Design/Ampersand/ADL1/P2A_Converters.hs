@@ -412,7 +412,7 @@ pCtx2aCtx' _
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> hasNone ([]::[P_SubIfc a]) x -- error
-                l   -> (\lst -> (objExpr,Box (target objExpr) Nothing lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
+                l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
               ( case findExact genLattice (mIsc (name$ target objExpr) (name . source . objctx $ ojd)) of
