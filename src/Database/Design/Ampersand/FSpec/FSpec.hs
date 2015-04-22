@@ -135,14 +135,6 @@ instance ConceptStructure FSpec where
   expressionsIn fSpec = allExprs fSpec
 
 instance Language FSpec where
-  objectdef    fSpec = Obj { objnm   = name fSpec
-                           , objpos  = Origin "generated object by objectdef (Language FSpec)"
-                           , objctx  = EDcI ONE
-                           , objmView = Nothing
-                           , objmsub = Just . Box ONE Nothing $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
-                           , objstrs = []
-                           }
-   --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?).
   relsDefdIn = vrels
   udefrules  = vrules -- only user defined rules
   identities = vIndices
@@ -158,7 +150,6 @@ instance Named FProcess where
   name = name . fpProc
 
 instance Language FProcess where
-  objectdef  = objectdef.fpProc
   relsDefdIn = relsDefdIn.fpProc
   udefrules  = udefrules.fpProc
   identities = identities.fpProc
