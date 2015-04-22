@@ -20,7 +20,7 @@ Class Atom {
 		
 		// View & label
 		$this->view = $this->getView($viewId);
-		is_null($this->view) ? $this->label = $this->id : $this->label = implode($this->view); // no view? label = id
+		$this->label = is_null($this->view) ? $this->id : implode($this->view); // no view? label = id
 		
 		// JSON-LD attributes
 		$this->jsonld_id = JSONLD_ID_PATH . $concept . '/' . $this->id;
