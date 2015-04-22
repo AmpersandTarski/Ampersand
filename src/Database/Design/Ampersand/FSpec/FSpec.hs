@@ -143,14 +143,6 @@ data FProcess
 instance Named FProcess where
   name = name . fpProc
 
-instance Language FProcess where
-  relsDefdIn = relsDefdIn.fpProc
-  udefrules  = udefrules.fpProc
-  identities = identities.fpProc
-  viewDefs   = viewDefs.fpProc
-  gens       = gens.fpProc
-  patterns   = patterns.fpProc
-
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
   = Fswtch { fsbEvIn :: [Event]
