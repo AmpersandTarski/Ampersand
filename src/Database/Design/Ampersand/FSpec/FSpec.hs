@@ -11,7 +11,7 @@ are merely different ways to show FSpec.
 module Database.Design.Ampersand.FSpec.FSpec
           ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
-          , FSid(..), FProcess(..)
+          , FSid(..)
 --        , InsDel(..)
           , ECArule(..)
 --        , Event(..)
@@ -135,13 +135,6 @@ concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 instance ConceptStructure FSpec where
   concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
   expressionsIn fSpec = allExprs fSpec
-
-data FProcess
-  = FProc { fpProc :: Pattern
-          , fpActivities :: [Activity]
-          }
-instance Named FProcess where
-  name = name . fpProc
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard

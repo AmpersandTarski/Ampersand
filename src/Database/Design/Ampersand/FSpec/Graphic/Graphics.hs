@@ -23,7 +23,6 @@ fatal = fatalMsg "FSpec.Graphic.Graphics"
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
                 | PTDeclaredInPat Pattern
-                | PTProcess FProcess
                 | PTConcept A_Concept
                 | PTSwitchBoard Activity
                 | PTFinterface Activity
@@ -123,15 +122,6 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
-   PTProcess fp        -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = processModel fp
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Process model of " ++ name fp
-                                      Dutch   -> "Procesmodel van " ++ name fp
-                               }
    PTSwitchBoard act   -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = sbdotGraph (switchboardAct fSpec act)
@@ -147,7 +137,6 @@ makePicture fSpec pr =
             PTClassDiagram -> "1.0"
             PTRelsUsedInPat{}-> "0.7"
             PTDeclaredInPat{}-> "0.5"
-            PTProcess{}      -> "0.4"
             PTSwitchBoard{}  -> "0.4"
             PTIsaInPattern{} -> "0.7"
             PTSingleRule{}   -> "0.7"
@@ -167,7 +156,6 @@ pictureID pr =
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
       PTIsaInPattern  pat -> "IsasInPattern"++name pat
       PTRelsUsedInPat pat -> "RulesInPattern"++name pat
-      PTProcess fp        -> "ProcessModel"++name fp
       PTFinterface act    -> "KnowledgeGraph"++name act
       PTSwitchBoard x     -> "SwitchBoard"++name x
       PTSingleRule r      -> "SingleRule"++name r

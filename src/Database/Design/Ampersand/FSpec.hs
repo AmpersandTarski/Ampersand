@@ -15,7 +15,7 @@ module Database.Design.Ampersand.FSpec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
-       (FSpec(..), concDefs, FProcess(..), ECArule(..), plugFields, lookupCpt, metaValues)
+       (FSpec(..), concDefs, ECArule(..), plugFields, lookupCpt, metaValues)
 import Database.Design.Ampersand.FSpec.Plug
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
         Plugable(..),

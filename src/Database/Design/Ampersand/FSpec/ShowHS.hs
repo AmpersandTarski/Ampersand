@@ -440,19 +440,6 @@ instance ShowHS Pattern where
      ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
              indentB = indentA++"          " -- adding the width of ", ptrls = "
 
-instance ShowHSName FProcess where
- showHSName prc = haskellIdentifier ("fprc_"++name (fpProc prc))
-
-instance ShowHS FProcess where
- showHS opts indent prc
-  = intercalate indentA
-     [ "FProc { fpProc       = "++showHSName (fpProc prc)
-     , wrap  ", fpActivities = " indentB (showHS opts) (fpActivities prc)
-     , "      }"
-     ] where indentA = indent ++"      "     -- adding the width of "FProc "
-             indentB = indentA++"                 " -- adding the width of ", fpActivities = "
-
-
 instance ShowHS Activity where
  showHS opts indent act =
     intercalate indentA
