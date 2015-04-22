@@ -65,8 +65,8 @@ PURPOSE RULE "typed atoms"
 {+In Ampersand, the type of an atom is determined by the relation in which it is stored.
 -}
 RULE "typed atoms" : in;in~ |- src;src~ /\ tgt;tgt~
-MEANING "Two pairs that are in the same relation have the same src and tgt concepts."
-ROLE Stef MAINTAINS "typed atoms"
+MEANING "Two pairs that are in the same relation have the same src and tgt concepts." 
+ROLE Stef MAINTAINS "typed atoms"  --HJO: Deze regel houdt nu nog niet, omdat er geen rekening is gehouden met classificaties. 
 PURPOSE RULE "identical atoms"
 {+The value and type are used to identify an atom.
 -}
