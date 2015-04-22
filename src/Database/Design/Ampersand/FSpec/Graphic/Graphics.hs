@@ -180,7 +180,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         PTConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
-              rs    = [r | r<-udefrules fSpec, c `elem` concs r]
+              rs    = [r | r<-vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = [r | r@Sgn{} <- relsMentionedIn rs   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
@@ -193,7 +193,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTRelsUsedInPat pat ->
           let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r@Sgn{}<-relsDefdIn fSpec
+              xrels = nub [r | c<-orphans, r@Sgn{}<-vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
@@ -243,7 +243,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
           let gs   = fsisa fSpec
               cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
               cpts'  = concs rs
-              rs         = [r | r<-udefrules fSpec, affected r]
+              rs         = filter affected (vrules fSpec)
               affected r = (not.null) [d | d@Sgn{} <- relsMentionedIn r `isc` relsMentionedIn ifc]
               idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
               rels = [r | r@Sgn{}<-relsMentionedIn ifc, decusr r

@@ -74,8 +74,8 @@ instance GenericPopulations FSpec where
   ++   concatMap (generics fSpec) [c | c <- allConcepts fSpec, c /= ONE]
   ++[ Comment " ", Comment $ "[TableColumnInfo]--: (count="++(show.length) allSqlPlugs++")"]
   ++   concatMap (generics fSpec) allSqlPlugs
-  ++[ Comment " ", Comment $ "[Rules]--: (count="++(show.length.allRules) fSpec++")"]
-  ++   concatMap (generics fSpec) (allRules fSpec)
+  ++[ Comment " ", Comment $ "[Rules]--: (count="++(show.length.fallRules) fSpec++")"]
+  ++   concatMap (generics fSpec) (fallRules fSpec)
   ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.vconjs) fSpec++")"]
   ++   concatMap (generics fSpec) (vconjs fSpec)
   ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.fRoles) fSpec++")"]
@@ -105,8 +105,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) fSpec++")"]
-  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allRules)    fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
+  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
   ++[ Comment " ", Comment $ "[InitialPopulation]--: (count="++(show.length.initialPops) fSpec++")"]
@@ -163,7 +163,7 @@ instance GenericPopulations A_Concept where
             ]
   where
    affConjs = fromMaybe [] (lookup cpt $ allConjsPerConcept fSpec)
-   tablesAndFields = nub . concatMap (lookupCpt fSpec) $ cpt : largerConcepts (gens fSpec) cpt
+   tablesAndFields = nub . concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
    case cpt of

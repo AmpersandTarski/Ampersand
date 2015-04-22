@@ -46,6 +46,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
 
 data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+                   , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
@@ -66,9 +67,10 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles may change the population of which relation.
                    , fRoles ::       [Role]                   -- ^ All roles mentioned in this context.
+                   , fallRules ::    [Rule]
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
-                   , invariants ::       [Rule]                   -- ^ All invariant rules
+                   , invariants ::   [Rule]                   -- ^ All invariant rules
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
                    , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
@@ -133,14 +135,6 @@ concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 instance ConceptStructure FSpec where
   concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
   expressionsIn fSpec = allExprs fSpec
-
-instance Language FSpec where
-  relsDefdIn = vrels
-  udefrules  = vrules -- only user defined rules
-  identities = vIndices
-  viewDefs   = vviews
-  gens       = vgens
-  patterns   = vpatterns
 
 data FProcess
   = FProc { fpProc :: Pattern
@@ -355,10 +349,10 @@ data SqlType = SQLChar    Int
              deriving (Eq,Show)
 
 getGeneralizations :: FSpec -> A_Concept -> [A_Concept]
-getGeneralizations fSpec = largerConcepts (gens fSpec)
+getGeneralizations fSpec = largerConcepts (vgens fSpec)
 
 getSpecializations :: FSpec -> A_Concept -> [A_Concept]
-getSpecializations fSpec = smallerConcepts (gens fSpec)
+getSpecializations fSpec = smallerConcepts (vgens fSpec)
 
 -- Lookup view by id in fSpec.
 lookupView :: FSpec -> String -> ViewDef
@@ -374,7 +368,7 @@ getDefaultViewForConcept :: FSpec -> A_Concept -> Maybe ViewDef
 getDefaultViewForConcept fSpec concpt =
   case [ vd 
        | vd@Vd{vdcpt = c, vdIsDefault = True} <- vviews fSpec
-       ,  c `elem` (concpt : largerConcepts (gens fSpec) concpt) 
+       ,  c `elem` (concpt : largerConcepts (vgens fSpec) concpt) 
        ] of
     []     -> Nothing
     (vd:_) -> Just vd

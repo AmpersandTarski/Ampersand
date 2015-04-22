@@ -235,7 +235,7 @@ generateAllDefPopQueries fSpec =
       where
         populatePlug :: PlugSQL -> [String]
         populatePlug plug 
-          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
+          = case tblcontents (vgens fSpec) (initialPops fSpec) plug of
              []  -> []
              tblRecords 
                  -> [intercalate "\n           " $ 
@@ -262,7 +262,7 @@ generateSpecializations fSpec =
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
          [ [ showPhpStr (name cpt)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ]
-         | cpt <- concs fSpec, let specializations = smallerConcepts (gens fSpec) cpt,  not ( null specializations) ])
+         | cpt <- concs fSpec, let specializations = smallerConcepts (vgens fSpec) cpt,  not ( null specializations) ])
     )
 
 generateTableInfos :: FSpec -> [String]
@@ -306,7 +306,7 @@ generateTableInfos fSpec =
                            " )"
                     ]
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
+                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
               [ ")" ]
            )

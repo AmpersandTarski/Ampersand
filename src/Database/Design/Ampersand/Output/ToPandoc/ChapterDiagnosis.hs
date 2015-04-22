@@ -80,7 +80,7 @@ chpDiagnosis fSpec
      where
       ruls = if null (themes fSpec)
              then [r | r<-vrules fSpec, isSignal r ]
-             else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ]                  
+             else [r | pat<-vpatterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ]                  
       f r rul | (r,rul) `elem` maintained      = [Plain [Math InlineMath "\\surd"]]
               | (r,rul) `elem` dead            = [Plain [Math InlineMath "\\times"]]
               | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
@@ -111,7 +111,7 @@ chpDiagnosis fSpec
                 Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
                        , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
                        ]
-          | (null.fRoleRuls) fSpec && (not.null.udefrules) fSpec] ++
+          | (null.fRoleRuls) fSpec && (not.null.vrules) fSpec] ++
           [ case fsLang fSpec of
               Dutch   ->
                 Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
@@ -149,7 +149,7 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs [ d | d<-relsDefdIn fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+         ccs = concs [ d | d<-vrels fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
   unusedConceptDefs :: [Block]
   unusedConceptDefs
    = case (fsLang fSpec, unused) of
@@ -178,7 +178,7 @@ chpDiagnosis fSpec
    = case (fsLang fSpec, missing) of
       (Dutch,[])  -> [Para
                        [Str "Alle relaties in dit document zijn voorzien van een reden van bestaan (purpose)."]
-                     | (not.null.relsMentionedIn.udefrules) fSpec]
+                     | (not.null.relsMentionedIn.vrules) fSpec]
       (Dutch,[r]) -> [Para
                        [ Str "De reden waarom relatie ", r
                        , Str " bestaat wordt niet uitgelegd."
@@ -191,7 +191,7 @@ chpDiagnosis fSpec
                      ] 
       (English,[])  -> [Para
                          [Str "All relations in this document have been provided with a purpose."]
-                       | (not.null.relsMentionedIn.udefrules) fSpec]
+                       | (not.null.relsMentionedIn.vrules) fSpec]
       (English,[r]) -> [Para
                          [ Str "The purpose of relation ", r
                          , Str " remains unexplained."
@@ -213,7 +213,7 @@ chpDiagnosis fSpec
    = ( ( case (fsLang fSpec, notUsed) of
           (Dutch,[])  -> [Para
                            [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
-                         | (not.null.relsMentionedIn.udefrules) fSpec]
+                         | (not.null.relsMentionedIn.vrules) fSpec]
           (Dutch,[r]) -> [Para
                            [ Str "De relatie ", r
                            , Str " wordt in geen enkele regel gebruikt. "
@@ -224,7 +224,7 @@ chpDiagnosis fSpec
                          ] ]
           (English,[])  -> [Para
                              [Str "All relations in this document are being used in one or more rules."]
-                           | (not.null.relsMentionedIn.udefrules) fSpec]
+                           | (not.null.relsMentionedIn.vrules) fSpec]
           (English,[r]) -> [Para
                              [ Str "Relation ", r
                              , Str " is not being used in any rule. "
@@ -259,9 +259,9 @@ chpDiagnosis fSpec
      where notUsed = nub [(Math InlineMath . showMath) (EDcD d)
                          | d@Sgn{} <- relsInThemes fSpec -- only signal relations that are used or defined in the selected themes
                          , decusr d
-                         , d `notElem` (relsMentionedIn . udefrules) fSpec
+                         , d `notElem` (relsMentionedIn . vrules) fSpec
                          ]
-           pats  = [ pat | pat<-patterns fSpec
+           pats  = [ pat | pat<-vpatterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
@@ -270,7 +270,7 @@ chpDiagnosis fSpec
   missingRules
    = case (fsLang fSpec, missingPurp, missingMeaning) of
       (Dutch,[],[])    -> [ Para [Str "Alle regels in dit document zijn voorzien van een uitleg."]
-                          | (length.udefrules) fSpec>1]
+                          | (length.vrules) fSpec>1]
       (Dutch,rs,rs')   -> [Para
                            (case rs>-rs' of
                               []  -> []
@@ -315,7 +315,7 @@ chpDiagnosis fSpec
                            )
                           ]
       (English,[],[])  -> [ Para [Str "All rules in this document have been provided with a meaning and a purpose."]
-                          | (length.udefrules) fSpec>1]
+                          | (length.vrules) fSpec>1]
       (English,rs,rs') -> [Para $
                            ( case rs>-rs' of
                               []  -> []
@@ -370,8 +370,8 @@ chpDiagnosis fSpec
                   , null [m | m <- ameaMrk (rrmean r), amLang m == fsLang fSpec]
                   ]
            ruls = if null (themes fSpec)
-                  then udefrules fSpec
-                  else concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]
+                  then vrules fSpec
+                  else concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
            upC (Str str':strs) = Str (upCap str'):strs
            upC str' = str'
 
@@ -557,7 +557,7 @@ chpDiagnosis fSpec
       popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
   partofThemes r =
         or [ null (themes fSpec)
-           , r `elem` concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]
+           , r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
            ]
 
   violationReport :: Blocks

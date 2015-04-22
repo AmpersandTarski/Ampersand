@@ -167,15 +167,15 @@ orderingByTheme :: FSpec -> [( Maybe Pattern   -- A theme is about either a patt
                             )
                            ]
 orderingByTheme fSpec
- = f (allRules fSpec) (filter isUserDefined (relsMentionedIn fSpec)) (allConcepts fSpec) tms
+ = f (fallRules fSpec) (filter isUserDefined (relsMentionedIn fSpec)) (allConcepts fSpec) tms
  where
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
   -- | The patterns that should be taken into account for this ordering
   tms = if null (themes fSpec)
-        then (patterns fSpec)
-        else [ pat           | pat <-patterns   fSpec, name pat  `elem` themes fSpec ]
+        then (vpatterns fSpec)
+        else [ pat           | pat <-vpatterns   fSpec, name pat  `elem` themes fSpec ]
   f ruls rels cpts ts
    = case ts of
        t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
@@ -301,10 +301,10 @@ dpRule' fSpec = dpR
 relsInThemes :: FSpec -> [Declaration]
 relsInThemes fSpec
         -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
- = [d | d<-relsDefdIn fSpec
+ = [d | d<-vrels fSpec
    , decusr d
    , (  decpat d `elem` themes fSpec
-         || d `elem` relsMentionedIn [p | p<-            patterns fSpec   , name p `elem` themes fSpec]
+         || d `elem` relsMentionedIn [p | p<-  vpatterns fSpec   , name p `elem` themes fSpec]
      )
    ]
 

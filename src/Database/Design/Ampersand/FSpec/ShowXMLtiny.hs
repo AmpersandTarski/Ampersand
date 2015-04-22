@@ -50,7 +50,7 @@ instance XML FSpec where
           []
 --          ++ [ Elem (simpleTag "Plugs-In-Ampersand-Script")     (map mkXmlTree (vplugs f))]
 --          ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
-       ++ [ Elem (simpleTag "Patterns")     (map mkXmlTree (patterns f))]
+       ++ [ Elem (simpleTag "Patterns")     (map mkXmlTree (vpatterns f))]
        ++ [ Elem (simpleTag "InterfaceS")   (map mkXmlTree (interfaceS f))]
        ++ [ Elem (simpleTag "InterfaceG")   (map mkXmlTree (interfaceG f))]
    --    ++ [ Elem (simpleTag "Activities")   (map mkXmlTree (interfaces f))]

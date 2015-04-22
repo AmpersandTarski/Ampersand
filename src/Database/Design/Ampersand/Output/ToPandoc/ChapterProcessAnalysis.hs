@@ -57,7 +57,7 @@ chpProcessAnalysis lev fSpec
 
   roleRuleBlocks :: Blocks
   roleRuleBlocks
-   = if null (fRoleRuls fSpec) && (not.null.udefrules) fSpec then mempty else
+   = if null (fRoleRuls fSpec) && (not.null.vrules) fSpec then mempty else
       (case fsLang fSpec of
           Dutch   ->
             para ( (str.upCap.name) fSpec <> " kent regels aan rollen toe. "
@@ -118,7 +118,7 @@ chpProcessAnalysis lev fSpec
                ]
      ]
      where
-      rolelessRels = [ d | d<-relsDefdIn fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
+      rolelessRels = [ d | d<-vrels fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
 -- the sections in which processes are analyzed
   procSections :: [Pattern] -> [Blocks]

@@ -26,6 +26,7 @@ fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
  =      FSpec { fsName       = name context
+              , originalContext = context 
               , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
@@ -67,6 +68,7 @@ makeFSpec opts context
                                     concatMap rrRoles (ctxRRels context)++
                                     concatMap ifcRoles (ctxifcs context)
                                    ) 
+              , fallRules = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules

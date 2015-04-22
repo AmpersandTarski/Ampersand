@@ -44,8 +44,8 @@ chpConceptualAnalysis lev fSpec = (
                     )
      )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
-  caBlocks = mconcat (map caSection (patterns fSpec))
-  pictures = concatMap patPicts (patterns fSpec)
+  caBlocks = mconcat (map caSection (vpatterns fSpec))
+  pictures = concatMap patPicts (vpatterns fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   patPicts :: Pattern -> [Picture]

@@ -111,7 +111,7 @@ cdAnalysis fSpec =
    mults r = let minVal = if isTot r then MinOne else MinZero
                  maxVal = if isUni r then MaxOne else MaxMany
              in  Mult minVal maxVal
-   topLevelDcls = relsDefdIn fSpec \\
+   topLevelDcls = vrels fSpec \\
                   (concatMap relsDefdIn (vpatterns fSpec))
    allDcls = topLevelDcls `uni`
              [ d -- restricted to those themes that must be printed.
@@ -125,7 +125,7 @@ cdAnalysis fSpec =
                -}
                     , d `notElem` attribDcls  ||
                       ( source d `elem` nodeConcepts && target d `elem` nodeConcepts && source d/= target d )
-                    ] where family c = [c] ++ smallerConcepts (gens fSpec) c ++ largerConcepts  (gens fSpec) c
+                    ] where family c = [c] ++ smallerConcepts (vgens fSpec) c ++ largerConcepts  (vgens fSpec) c
                             nodeConcepts = concatMap family roots
                             
 

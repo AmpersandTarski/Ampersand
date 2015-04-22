@@ -269,7 +269,7 @@ instance ShowHS FSpec where
         ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
         ,wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
-        ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fSpec)
+        ,wrap ", fallRules     = " indentA (\_->showHSName) (fallRules fSpec)
         ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
         ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
         ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
@@ -283,7 +283,7 @@ instance ShowHS FSpec where
         ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
         ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
         ,     ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
-        ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fSpec)
+        ,wrap ", vpatterns     = " indentA (\_->showHSName) (vpatterns fSpec)
         ,wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
         ,wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,     ", metas         = allMetas"
@@ -375,7 +375,7 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomsOf (gens fSpec)(initialPops fSpec) c))
+                    strs = map show (sort (atomsOf (vgens fSpec)(initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
