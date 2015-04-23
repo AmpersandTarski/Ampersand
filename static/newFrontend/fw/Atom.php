@@ -67,7 +67,7 @@ Class Atom {
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
 
 			// determine value atom 
-			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$content = !is_null($tgtAtom->id);
 				
 			}elseif($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
