@@ -77,7 +77,7 @@ class ExecEngine {
 					}
 				}
 			}
-			Notifications::addSuccess(self::$roleName . ' fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
+			Notifications::addInfo(self::$roleName . ' fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
 		}
 	}
 
