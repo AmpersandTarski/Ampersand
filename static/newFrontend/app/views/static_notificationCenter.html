@@ -8,9 +8,19 @@
 		</div>
 		
 		<div id="invariants">
-			<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
-				<strong>Rule violation!</strong> {{invariant.message}}
-			</alert>
+			<div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">
+					<div class="text-left">
+						<strong>Rule violation!</strong> {{val.ruleMessage}}
+						<span class="badge pull-right">{{val.tuples.length}}</span>					
+					</div>
+				</div>
+				<ul class="list-group collapse" id="invariant-{{key}}">
+					<li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">
+						<span>{{tuple.violationMessage}}</span>
+					</li>
+				</ul>
+			</div>
 		</div>
 					
 		<div id="violations" ng-show="switchShowViolations">

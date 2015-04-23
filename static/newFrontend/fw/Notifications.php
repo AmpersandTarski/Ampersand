@@ -17,9 +17,22 @@ class Notifications {
 		self::addLog($message, 'ERROR');
 	}
 	
-	public static function addInvariant($message){
-		self::$invariants[]['message'] = $message;
-		self::addLog($message, 'INVARIANT');
+	public static function addInvariant($rule, $srcAtom, $tgtAtom){
+		$session = Session::singleton();
+		
+		$ruleHash = hash('md5', $rule['name']);
+		
+		$ruleMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
+		
+		$pairView = RuleEngine::getPairView($srcAtom, $rule['srcConcept'], $tgtAtom, $rule['tgtConcept'], $rule['pairView']);
+		
+		self::$invariants[$ruleHash]['ruleMessage'] = $ruleMessage;
+		
+		$violationMessage = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
+		
+		self::$invariants[$ruleHash]['tuples'][] = array('violationMessage' => $violationMessage);
+			
+		self::addLog($violationMessage . ' - ' . $violationMessage, 'INVARIANT');
 	}
 	
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
