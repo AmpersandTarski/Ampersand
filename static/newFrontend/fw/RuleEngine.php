@@ -108,7 +108,7 @@ class RuleEngine {
 			}
 			
 			if(count($result) == 0){
-				Notifications::addInfo("Rule '".$rule['name']."' holds", 'Rules that hold');
+				Notifications::addInfo("Rule '".$rule['name']."' holds", 'RuleEngineRulesThatHold', 'Rules that hold');
 				
 			}else{
 				$violations = $result;
