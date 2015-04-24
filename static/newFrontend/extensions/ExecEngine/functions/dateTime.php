@@ -10,14 +10,23 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
    VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
 */
-function SetToday($relation,$srcConcept,$srcAtom,$dateConcept){
-	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept)");
+function SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
+	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
 	$curdate = date('d-m-Y');
 	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
 	
+	Notifications::addLog("Today's date set to $curdate");
 	return "Today's date set to $curdate";
 }
 
+function SetTodayTime($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
+	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
+	$curdate = date('d-m-Y G:i:s');
+	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
+	
+	Notifications::addLog("Today's date set to $curdate");
+	return "Today's date set to $curdate";
+}
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
 function datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec){
