@@ -5,14 +5,12 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
 import Data.Char hiding (Space)
 import Data.List
 import Data.List.Split
-import GHC.Exts (sortWith)
 import Data.Maybe
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sortWith)
+import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Output.PandocAux
-import Text.Pandoc.Builder
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
@@ -59,21 +57,14 @@ chpNatLangReqs lev fSpec =
                      <> "All definitions have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
-   dpRequirements
+   (mconcat . map printOneTheme . orderingByTheme) fSpec
    <> --  *** Legal Refs ***
      if genLegalRefs (getOpts fSpec) then legalRefs else mempty
 
   where
-  dpRequirements :: Blocks
-  dpRequirements = blocks
-    where 
-     (_,blocks) = foldl printTheme (newCounter,mempty)  (orderingByTheme fSpec)
-     printTheme :: (Counter,Blocks)
-                -> ThemeContent -> (Counter,Blocks)
-     printTheme (counter,bs) themeStuff  =
-        let (blocks',count') = printOneTheme themeStuff counter
-        in (count',bs <> blocks')
-
+  -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l lstr = localize (fsLang fSpec) lstr
   legalRefs :: Blocks
   legalRefs = (header (lev+2) sectionTitle)
             <> table caption'
@@ -90,26 +81,25 @@ chpNatLangReqs lev fSpec =
                getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
 
 
-      -- | printOneTheme tells the story in natural language of a single theme.
-      -- For this purpose, Ampersand authors should take care in composing explanations.
-      -- Each explanation should state the purpose (and nothing else).
-  printOneTheme :: ThemeContent
-                -> Counter      -- first free number to use for numbered items
-                -> (Blocks,Counter)-- the resulting blocks and first free number after processing of the theme.
-  printOneTheme tc counter0 -- (mTheme, rules2print, rels2print, concs2print) counter0
-    = case (themeAbout tc, themes fSpec) of
-       (Nothing, _:_)
-          -> ( mempty, counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-       _  -> ( (  --  *** Header of the theme: ***
-                 headerWithLabel (XRefNaturalLanguageTheme (themeAbout tc)) (lev+2)
-                                 (case (themeAbout tc,fsLang fSpec) of
-                                     (Nothing, Dutch  ) -> "Losse eindjes..."
-                                     (Nothing, English) -> "Loose ends..."
-                                     _                  -> text themeName
-                                 )
+  -- | printOneTheme tells the story in natural language of a single theme.
+  -- For this purpose, Ampersand authors should take care in composing explanations.
+  -- Each explanation should state the purpose (and nothing else).
+  printOneTheme :: ThemeContent -> Blocks
+  printOneTheme tc 
+    | (not . null . themes) fSpec && (isNothing . patOfTheme) tc 
+        = mempty   -- The document is partial (because themes have been defined), so we don't print loose ends.
+    | otherwise 
+        =   --  *** Header of the theme: ***
+            headerWithLabel (XRefNaturalLanguageTheme (patOfTheme tc))
+                            (lev+2)
+                            (case (patOfTheme tc,fsLang fSpec) of
+                                (Nothing, Dutch  ) -> "Losse eindjes..."
+                                (Nothing, English) -> "Loose ends..."
+                                (Just pat, _     ) -> text (name pat)
+                            )
 
                <> --  *** Purpose of the theme: ***
-                  case themeAbout tc of
+                  case patOfTheme tc of
                       Nothing  -> case fsLang fSpec of
                                      Dutch   -> para $
                                                     "Deze paragraaf beschrijft de relaties en concepten die "
@@ -118,228 +108,189 @@ chpNatLangReqs lev fSpec =
                                                     "This paragraph shows remaining fact types and concepts "
                                                  <> "that have not been described in previous paragraphs."
                       Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
-                <> --  *** Introduction text of the theme: ***
-                   printIntro (filter isDefined (cptsOfTheme tc))
-                <> fromList reqdefs
-                )
-             , Counter (getEisnr counter0 + length reqs)
-             )
+               <> --  *** Introduction text of the theme: ***
+                  printIntro    (cptsOfTheme tc)
+               <> printConcepts (cptsOfTheme tc)
+               <> printRels     (dclsOfTheme tc)
+               <> printRules    (rulesOfTheme tc)
            where
-              isDefined :: A_Concept -> Bool
-              isDefined = not.null.concDefs fSpec
-              -- the concepts for which one of the relations of this theme contains a source or target definition
-              -- (these will be printed, regardless whether the concept was printed before)
-
-              -- sort the requirements by file position
-              reqs = sortWith fst [ ((i,filenm org, linenr org,colnr org), bs)
-                                  | (i,org,bs)<- addIndex 0 (printConcepts (cptsOfTheme tc)) ++
-                                                 addIndex 2 (printRels (dclsOfTheme tc)) ++ addIndex 3 (printRules (rulesOfTheme tc))]
-               where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
-
-              -- make blocks for requirements
-              reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
-              reqdefs = concatMap snd reqblocks
-
-              themeName = case themeAbout tc of
-                           Nothing  -> ""
-                           Just pat -> name pat
                            
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
-              printIntro :: [A_Concept] -> Blocks
+              printIntro :: [Numbered CptCont] -> Blocks
               printIntro [] = mempty
-              printIntro ccds
-                = case fsLang fSpec of
-                      Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- (vpatterns fSpec) , name p == themeName]
-                                       ) of
-                                    ([] ,_) -> mempty
-                                    ([_],1) -> case themeAbout tc of
-                                                 Nothing  -> mempty
-                                                 Just tme -> para ( "In het volgende wordt de taal geïntroduceerd ten behoeve van "
-                                                                 <> (str.name) tme <> "."
-                                                                  )
-                                    (cs ,1) -> para ( "Nu volgen definities van de concepten "
-                                                   <> commaNLPandoc' ("en") cs <> ".")
-                                    ([c],_) -> para ( "Deze sectie introduceert het concept " <>  c )
-                                    (cs ,_) -> para ( "Deze sectie introduceert de concepten " <>
-                                                          commaNLPandoc' "en" cs <> ". ")
-                                 ) <>
-                                 (let cs = [(c,cds) | (c)<-ccds, let cds = concDefs fSpec c,length cds>1] in
-                                   case (cs, length cs==length ccds) of
-                                    ([]       ,   _  ) -> mempty
-                                    ([(c,_)]  , False) -> para ("Eén daarvan, " <> (str.name) c <>", heeft meerdere definities. ")
-                                    (_        , False) -> para ("Daarvan hebben "<>commaNLPandoc' "en" (map (str. name . fst) cs)<> " meerdere definities. ")
-                                    ([(_,cds)], True ) -> para ("Deze heeft "<>str(count Dutch (length cds) "definitie")<>". ")
-                                    (_        , True ) -> para ("Elk daarvan heeft meerdere definities. ")
-                                 )
+              printIntro nCpts
+                = case patOfTheme tc of
+                    Nothing  -> mempty
+                    Just pat -> 
+                      ( para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
+                                               ,EN "The sequel introduces the language of ")
+                                      <> (str.name) pat <> ".")
+                      <> case  partition hasMultipleDefs (map theLoad nCpts) of
+                        ([],[]) 
+                         -> fatal 136 "Unexpected. There should be at least one concept to introduce."
+                        (multipleDefined,properDefined)
+                         -> ( if null properDefined
+                              then mempty
+                              else para 
+                                    (  (str.l) (NL "Nu volgen definities van de concepten "
+                                               ,EN "At this point, the definitions of ")
+                                    <> commaPandocAnd (fsLang fSpec) (map showCpt properDefined) 
+                                    <> (str.l) (NL "."
+                                               ,EN " are given.")
+                                    )
+                            ) <>
+                            ( if null multipleDefined
+                              then mempty
+                              else para 
+                                    (  (str.l) (NL "De concepten "
+                                               ,EN "Concepts ")
+                                    <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefined) 
+                                    <> (str.l) (NL " hebben meerdere definities. Hierdoor vallen gaten in de nummering van de definities."
+                                               ,EN " are multiple defined. Please check the diagnose for details.")
+                                    )
+                            ) 
+                      )                                    
 
-                      English -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- vpatterns fSpec, name p == themeName]
-                                       ) of
-                                    ([] ,_) -> mempty
-                                    ([_],1) -> case themeAbout tc of
-                                                 Nothing  -> mempty
-                                                 Just tme -> para ( "The sequel introduces the language of "
-                                                                 <> (str.name) tme <> "."
-                                                                  )
-                                    (cs ,1) -> para ( "At this point, the definitions of "
-                                                   <> commaEngPandoc' "and" cs <>" are given.")
-                                    ([c],_) -> para ("This section introduces concept " <> c )
-                                    (cs ,_) -> para ("This section introduces concepts " <>
-                                                       commaEngPandoc' "and" cs <> ". ")
-                                 )<>
-                                 (let cs = [(c,cds) | c <- ccds, let cds = concDefs fSpec c, length cds>1] in
-                                   case (cs, length cs==length ccds) of
-                                    ([]       ,   _  ) -> mempty
-                                    ([(c,_)]  , False) -> para ("One of these concepts, " <> (str.name) c <>", has multiple definitions. ")
-                                    (_        , False) -> para ("Of those concepts "<>commaEngPandoc' "and" (map (str. name . fst) cs)<> " have multiple definitions. ")
-                                    ([(_,cds)], True ) -> para ("It has "<>str(count English (length cds) "definition")<>". ")
-                                    (_        , True ) -> para ("Each one has several definitions. ")
-                                 )
-
-              -- | the origin of c is the origin of the head of uniquecds c
-              --   after sorting by origin the counter will be applied
-              printConcepts :: [A_Concept] -> [(Origin, Counter -> [Block])]
-              printConcepts cs = map printConcept cs
-              printConcept :: A_Concept -> (Origin, Counter -> [Block])
-              printConcept c = (case uniquecds fSpec c of
-                                  []      -> OriginUnknown
-                                  (_,x):_ -> origin x
-                               , cptBlock c
-                               )
-              -- | make a block for a concept with all its purposes and definitions
-              cptBlock :: A_Concept -> Counter -> [Block]
-              cptBlock cpt cnt = concat [amPandoc (explMarkup e) | e<-exps]
-                  ++ zipWith (cdBlock cpt)
-                       (if length (uniquecds fSpec cpt) == 1 then [(cnt, "")] else
-                          [(cnt, '.' : show i) | i <- [(1 :: Int) ..]])
-                       (uniquecds fSpec cpt)
-                  where exps = case purposeOf fSpec (fsLang fSpec) cpt of
-                                 Nothing -> []
-                                 Just ps -> ps
-              -- | make a block for a concept definition
-              cdBlock :: A_Concept -> (Counter,String) -> (String,ConceptDef) -> Block
-              cdBlock cpt (cnt,xcnt) tup 
-               = DefinitionList [( toList (definitionListItemLabel (XRefNaturalLanguageConcept cpt)
-                                            ((case fsLang fSpec of
-                                                 Dutch   -> "Definitie "
-                                                 English -> "Definition "
-                                             ) ++ show (getEisnr cnt)++xcnt++":"
-                                          ) )
-                                   
-                                 , [toList $ makeDefinition (getOpts fSpec) tup] 
-                                 )
-                                ]
-
-              makeDefinition :: Options -> (String,ConceptDef) -> Blocks
-              makeDefinition opts (nm,cd) =
-                 para
-                   ( rawInline "latex"
-                               ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
-                                "     { name={"++latexEscShw nm ++"}\n"++
-                                "     , description={"++latexEscShw (cddef cd)++"}}\n") <>
-                     
-                     case fspecFormat opts of
-                       FLatex ->   rawInline "latex" (insertAfterFirstWord refStr defStr)
-                                <> if null ref then mempty
-                                   else rawInline "latex" (latexEscShw (" ["++ref++"]"))
-                       _      ->   str (cddef cd) 
-                                <> if null ref then mempty
-                                   else str (" ["++ref++"]") 
-                   )
-                 
-               where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}"
-                     defStr = latexEscShw (cddef cd)
-                     ref = cdref cd
-                     -- by putting the ref after the first word of the definition, it aligns nicely with the definition
-                     insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
-                                                       in  fstWord ++ s ++ rest
+              showCpt :: CptCont -> Inlines
+              showCpt = text.name.cCpt
+              hasMultipleDefs :: CptCont -> Bool
+              hasMultipleDefs x = 
+                 case cCptDefs x of
+                   (_:_:_) -> True
+                   _       -> False       
+              printConcepts :: [Numbered CptCont] -> Blocks
+              printConcepts = mconcat . map printConcept
+              printConcept :: Numbered CptCont -> Blocks
+              printConcept nCpt 
+                = -- Purposes:
+                   (printPurposes . cCptPurps . theLoad) nCpt
+                 <> case (cCptDefs.theLoad) nCpt of
+                     []    -> mempty  -- There is no definition of the concept
+                     [cd] -> printCDef cd Nothing
+                     cds  -> mconcat
+                            [printCDef cd (Just ("."++ [suffx])) 
+                            |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
+                            ]
+                where
+                 printCDef :: ConceptDef -- the definition to print
+                        -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
+                        -> Blocks
+                 printCDef cDef suffx
+                   = definitionList 
+                      [(   str (l (NL"Definitie " ,EN "Definition "))
+                        <> case fspecFormat (getOpts fSpec) of
+                                            FLatex -> (str . show .theNr) nCpt
+                                            _      -> (str . name) cDef  
+                        <> str (fromMaybe "" suffx) <> ":" 
+                       , [para (   case fspecFormat (getOpts fSpec) of
+                                            FLatex -> rawInline "latex"
+                                                        ("~\\marge{\\gls{"++escapeNonAlphaNum 
+                                                              (name cDef++fromMaybe "" suffx)++"}}")
+                                            _      -> mempty
+                                <> newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
+                                <> str (cddef cDef)
+                                <> if null (cdref cDef) then mempty
+                                   else str (" ["++cdref cDef++"]")
+                               ) 
+                         ] 
+                       )
+                      ]
 
 
-
-              -- | sctds prints the requirements related to relations that are introduced in this theme.
-              printRels :: [Declaration] -> [(Origin, Counter -> [Block])]
-              printRels = map (\dcl -> (origin dcl, printRel dcl))
-              printRel :: Declaration -> Counter -> [Block]
-              printRel dcl cnt
-               = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
-                 toList (purposes2Blocks (getOpts fSpec) purps)
-                 ++
-                 [ DefinitionList [(  (toList (definitionListItemLabel (XRefNaturalLanguageDeclaration dcl)
-                                                  ((case fsLang fSpec of
-                                                        Dutch   -> "Afspraak "
-                                                        English -> "Agreement "
-                                                   )++show(getEisnr cnt)
-                                                    ++if development (getOpts fSpec) && name dcl/="" 
-                                                      then (" ("++name dcl++")") 
-                                                      else ""
-                                                  )
-                                              )
-                                      )
-                                   , [ meaning2Blocks (fsLang fSpec) dcl]
+              printRels :: [Numbered DeclCont] -> Blocks
+              printRels = mconcat . map printRel
+              printRel :: Numbered DeclCont -> Blocks
+              printRel nDcl
+               =   (printPurposes . cDclPurps . theLoad) nDcl
+                <> definitionList [( definitionListItemLabel 
+                                         (XRefNaturalLanguageDeclaration dcl)
+                                         (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
+                                          ++if development (getOpts fSpec)
+                                            then (" ("++name nDcl++")") 
+                                            else ""
+                                         )
+                                   , case (cDclMeaning . theLoad) nDcl of
+                                      Nothing -> fatal 241 "Declarations without meaning should not be printed here. (see issue AmpersandTarski/ampersand/issues/44)"
+                                      Just m  -> [printMeaning m]
                                    )
                                   ] 
-                 ]++
-                 ( case (fsLang fSpec, length samplePop) of
-                        (_      , 0) -> []
-                        (Dutch  , 1) -> [Para [Str "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"]]
-                        (English, 1) -> [Para [Str "A phrase that can be formed is for instance:"]]
-                        (Dutch  , _) -> [Para [Str "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
-                        (English, _) -> [Para [Str "Phrases that can be made are for instance:"]]
-                 ) ++
-                 sampleSentences
-                 where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
-                       samplePop = (take 3 . fullContents (vgens fSpec) (initialPops fSpec) . EDcD) dcl
-                       sampleSentences =
-                         [ Para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
-                         | p <-samplePop
-                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (srcPaire p)
-                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (trgPaire p)
-                         ] ++
-                         (if null samplePop then [] else [Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\medskip"]])
+                <> case samples of
+                      []  -> mempty
+                      [_] -> para ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
+                                           ,EN "A phrase that can be formed is for instance:")
+                                  )
+                      _   -> para ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
+                                            ,EN "Phrases that can be made are for instance:")
+                                  )
+                <> if null samples then mempty
+                   else bulletList [ para $ mkSentence dcl sample
+                                   | sample <- samples]
+                 
+                 where dcl = cDcl . theLoad $ nDcl
+                       samples = take 3 . cDclPairs . theLoad $ nDcl
+--                       sampleSentences =
+--                         [ para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
+--                         | p <-samplePop
+--                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (srcPaire p)
+--                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (trgPaire p)
+--                         ] 
 
-              printRules :: [Rule] -> [(Origin,Counter -> [Block])]
-              printRules = map (\rul -> (origin rul, printRule rul))
+              printRules :: [Numbered RuleCont] -> Blocks
+              printRules = mconcat . map printRule
 
-  printRule :: Rule -> Counter -> [Block]
-  printRule rul cnt
-   =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
-      toList (purposes2Blocks (getOpts fSpec) purps)
-      ++
-      [ DefinitionList [(toList (definitionListItemLabel (XRefNaturalLanguageRule rul)
-                                  ((case fsLang fSpec of
+  printRule :: Numbered RuleCont -> Blocks
+  printRule nRul
+   =  (printPurposes . cRulPurps . theLoad) nRul
+    <> definitionList [(definitionListItemLabel
+                            (XRefNaturalLanguageRule . cRul . theLoad $ nRul)
+                            ((case fsLang fSpec of
                                         Dutch   -> "Afspraak "
                                         English -> "Agreement "
-                                   )++show(getEisnr cnt)
-                                    ++if development (getOpts fSpec) && name rul/="" 
-                                      then (" ("++name rul++")")
+                                   )++show (theNr nRul)
+                                    ++if development (getOpts fSpec)  
+                                      then (" ("++name nRul++")")
                                       else ""
-                               )  )
-                        , [ meaning2Blocks (fsLang fSpec) rul]
+                                )
+                        , case (cRulMeaning . theLoad) nRul of
+                            Nothing -> fatal 284 "It is very odd to have a rule without a meaning."
+                            Just m  -> [printMeaning m]
                         ) 
                        ]
-      | not (null$meaning2Blocks (fsLang fSpec) rul)]
-   where purps = purposesDefinedIn fSpec (fsLang fSpec) rul
+      
 
-  mkSentence :: Bool -> Declaration -> String -> String -> [Inline]
-  mkSentence isDev decl srcAtom tgtAtom
+  mkSentence :: Declaration -> Paire -> Inlines
+  mkSentence  decl pair -- srcAtom tgtAtom
    = case decl of
        Sgn{} | null (prL++prM++prR)
-                  -> [str' (upCap srcAtom), Space] ++ devShow (source decl) ++ [Str "corresponds",Space,Str "to",Space,str' tgtAtom, Space] ++ devShow (target decl) ++[Str "in",Space,Str "relation",Space,str' (name decl),Str "."]
+                  ->    (latexSpecial . upCap) srcAtom
+                     <> devShow (source decl) 
+                     <> (str.l) (NL " correspondeert met ", EN " corresponds to ")
+                     <> latexSpecial tgtAtom
+                     <> devShow (target decl)
+                     <> (str.l) (NL " in de relatie ",EN " in relation ")
+                     <> latexSpecial (name decl)
+                     <> "."
              | otherwise
-                  -> leftHalf prL ++ rightHalf
-                    where prL = decprL decl
-                          prM = decprM decl
-                          prR = decprR decl
-                          leftHalf ""    = devShow (source decl)
-                          leftHalf prLft = [str' (upCap prLft), Space] ++ devShow (source decl)
-                          rightHalf = [str' srcAtom,Space,str' prM, Space] ++ devShow (target decl) ++ [str' tgtAtom]++(if null prR then [] else [Space,str' prR]) ++ [str' "."]
+                  ->    if null prL then mempty
+                        else latexSpecial (upCap prL++" ")
+                     <> devShow (source decl)
+                     <> latexSpecial (srcAtom++" "++prM++" ")
+                     <> devShow (target decl)
+                     <> latexSpecial (tgtAtom)
+                     <> if null prR then mempty
+                        else latexSpecial (" "++prR)
+                     <> "."
 
-       Isn{}     -> devShow (source decl) ++ [str' (upCap srcAtom),Space,Str "equals",Space,str' tgtAtom,Str "."]
-       Vs{}      -> [Str "True"]
-   where str' = if fspecFormat (getOpts fSpec)==FLatex then RawInline (Text.Pandoc.Builder.Format "latex") . latexEscShw else Str
-         devShow c | isDev     = [Str "(", str' $ name c, Str ") "] -- only show the concept when --dev option is given
-                   | otherwise = []
+       Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
+       Vs{}      -> fatal 300 "Vs  is not supposed to be here expected here."
+   where srcAtom = srcPaire pair
+         tgtAtom = trgPaire pair
+         prL = decprL decl
+         prM = decprM decl
+         prR = decprR decl
+         latexSpecial = if fspecFormat (getOpts fSpec)==FLatex then rawInline "latex" . latexEscShw else str
+         devShow c = if (development (getOpts fSpec)) then str $ "("++name c++")" else mempty
+                   
 
 -- TODO: fix showing/not showing based on relation
 -- TODO: what about relations in the target view?
@@ -415,3 +366,9 @@ instance Ord ArticleOfLaw where
 unscanRef :: [Either String Int] -> String
 unscanRef scannedRef = concat $ map (either id show) scannedRef
              
+             
+printPurposes :: [Purpose] -> Blocks
+printPurposes  = fromList . concat . map (amPandoc . explMarkup) 
+
+printMeaning :: A_Markup -> Blocks
+printMeaning = fromList . amPandoc
