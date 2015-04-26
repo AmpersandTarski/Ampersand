@@ -195,10 +195,14 @@ instance Named DeclCont where
   name = name . cDcl
 instance Named CptCont where
   name = name . cCpt
-
+data Counters 
+  = Counter { pNr :: Int --Theme number
+            , definitionNr :: Int --For Concepts
+            , agreementNr  :: Int --For declarations andrules 
+            }
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
- = f ( (1,1,1,1) --initial numbers of theme, rules,declarations, concepts
+ = f ( Counter 1 1 1 --the initial numbers of the countes
      , (sortWith origin . filter rulMustBeShown . fallRules)       fSpec
      , (sortWith origin . filter relMustBeShown . relsMentionedIn) fSpec
      , (sortBy conceptOrder . filter cptMustBeShown . allConcepts)     fSpec
@@ -230,21 +234,17 @@ orderingByTheme fSpec
                        _     -> False
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning = isJust . meaning (fsLang fSpec)
-  
   cptMustBeShown = not . null . concDefs fSpec
   f :: 
-   ((Int, Int, Int, Int), [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
+   (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
   f stuff ts
    = case ts of
        t:ts' -> let ( thm, rest) = partitionByTheme t stuff
                 in thm : f rest ts'
-       []    -> let ((pNr,rNr,dNr,cNr), ruls, dcls, cpts) = stuff
-                in [Thm { themeNr      = pNr
-                        , patOfTheme   = Nothing
-                        , rulesOfTheme = setNumbers rNr rul2rulCont ruls
-                        , dclsOfTheme  = setNumbers dNr dcl2dclCont dcls
-                        , cptsOfTheme  = setNumbers cNr cpt2cptCont cpts
-                        }]
+       []    -> case stuff of
+                  (_,[],[],[]) -> []
+                  _ -> fatal 247 "No stuff should be left over."
+
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
     = CRul { cRul      = rul
@@ -290,19 +290,20 @@ orderingByTheme fSpec
   --   lists in a pair of lists of elements which do and do not belong
   --   to the theme, respectively
   partitionByTheme :: Maybe Pattern
-                   -> ( (Int, Int, Int, Int), [Rule], [Declaration], [A_Concept])
-                   -> ( ThemeContent , ( (Int, Int, Int, Int) ,[Rule], [Declaration], [A_Concept])
+                   -> ( Counters, [Rule], [Declaration], [A_Concept])
+                   -> ( ThemeContent , ( Counters ,[Rule], [Declaration], [A_Concept])
                       )
-  partitionByTheme t ((pNr,rNr,dNr,cNr), ruls, rels, cpts)
-      = ( Thm { themeNr      = pNr
+  partitionByTheme t (cnt, ruls, rels, cpts)
+      = ( Thm { themeNr      = pNr cnt
               , patOfTheme   = t
-              , rulesOfTheme = setNumbers rNr rul2rulCont thmRuls
-              , dclsOfTheme  = setNumbers dNr dcl2dclCont themeDcls
-              , cptsOfTheme  = setNumbers cNr cpt2cptCont themeCpts
+              , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont thmRuls
+              , dclsOfTheme  = setNumbers (agreementNr cnt) dcl2dclCont themeDcls
+              , cptsOfTheme  = setNumbers (definitionNr cnt) cpt2cptCont themeCpts
               }
-        , ((pNr+1,rNr+length thmRuls
-                 ,dNr+length themeDcls
-                 ,cNr+length themeCpts)
+        , (Counter {pNr = pNr cnt +1
+                   ,definitionNr = definitionNr cnt + length themeCpts
+                   ,agreementNr = agreementNr cnt + length themeDcls + length thmRuls
+                   }
           , restRuls, restDcls, restCpts)
         )
      where

@@ -259,23 +259,25 @@ chpNatLangReqs lev fSpec =
   mkSentence  decl pair -- srcAtom tgtAtom
    = case decl of
        Sgn{} | null (prL++prM++prR)
-                  ->    (latexSpecial . upCap) srcAtom
+                  ->    (atomShow . upCap) srcAtom
                      <> devShow (source decl) 
-                     <> (str.l) (NL " correspondeert met ", EN " corresponds to ")
-                     <> latexSpecial tgtAtom
+                     <> (pragmaShow.l) (NL " correspondeert met ", EN " corresponds to ")
+                     <> atomShow tgtAtom
                      <> devShow (target decl)
-                     <> (str.l) (NL " in de relatie ",EN " in relation ")
-                     <> latexSpecial (name decl)
+                     <> (pragmaShow.l) (NL " in de relatie ",EN " in relation ")
+                     <> atomShow (name decl)
                      <> "."
              | otherwise
                   ->    (if null prL then mempty
-                         else latexSpecial (upCap prL++" "))
+                         else pragmaShow (upCap prL) <> " ")
                      <> devShow (source decl)
-                     <> latexSpecial (srcAtom++" "++prM++" ")
+                     <> atomShow srcAtom <> " "
+                     <> (if null prM then mempty
+                         else pragmaShow prM <> " ")
                      <> devShow (target decl)
-                     <> latexSpecial (tgtAtom)
+                     <> atomShow tgtAtom
                      <> (if null prR then mempty
-                         else latexSpecial (" "++prR))
+                         else " " <> pragmaShow prR)
                      <> "."
 
        Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
@@ -285,8 +287,9 @@ chpNatLangReqs lev fSpec =
          prL = decprL decl
          prM = decprM decl
          prR = decprR decl
-         latexSpecial = str -- if fspecFormat (getOpts fSpec)==FLatex then rawInline "latex" . latexEscShw else str
-         devShow c = if (development (getOpts fSpec)) then str $ "("++name c++")" else mempty
+         atomShow = str
+         pragmaShow = emph . str
+         devShow c = if (development (getOpts fSpec)) then "("<> (str.name) c <> ")" else mempty
                    
 
 
