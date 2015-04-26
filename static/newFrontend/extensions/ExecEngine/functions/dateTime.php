@@ -9,24 +9,19 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    ROLE ExecEngine MAINTAINS "Initialize today's date"
    RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
    VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
+   
+   For $formatSpec see http://php.net/manual/en/function.date.php
+   Default is 'd-m-Y' -> e.g: "01-01-2015", other examples include time, like 'd-m-Y G:i:s' -> e.g.: "01-01-2015 1:00:00"
 */
 function SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
 	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
-	$curdate = date('d-m-Y');
+	$curdate = date($formatSpec);
 	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
 	
 	Notifications::addLog("Today's date set to $curdate");
 	return "Today's date set to $curdate";
 }
 
-function SetTodayTime($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
-	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
-	$curdate = date('d-m-Y G:i:s');
-	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
-	
-	Notifications::addLog("Today's date set to $curdate");
-	return "Today's date set to $curdate";
-}
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
 function datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec){
