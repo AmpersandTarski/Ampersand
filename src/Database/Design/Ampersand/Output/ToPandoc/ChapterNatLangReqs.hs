@@ -1,24 +1,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
+module Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs (
+      chpNatLangReqs
+ ) where
 
 import Data.Char hiding (Space)
 import Data.List
 import Data.List.Split
 import Data.Maybe
-import Database.Design.Ampersand.Basics
+--import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
 
-{- TODO: This module needs to be rewritten from scratch. Instead of deciding on the fly what should be included,
-         a datastructure needs to be added to the fSpec, which contains per theme the concepts, rules and relations
-         that need to be printed.
--}
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***
@@ -122,40 +117,48 @@ chpNatLangReqs lev fSpec =
                 = case patOfTheme tc of
                     Nothing  -> mempty
                     Just pat -> 
-                      ( para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
-                                               ,EN "The sequel introduces the language of ")
-                                      <> (str.name) pat <> ".")
-                      <> case  partition hasMultipleDefs (map theLoad nCpts) of
-                        ([],[]) 
-                         -> fatal 136 "Unexpected. There should be at least one concept to introduce."
-                        (multipleDefined,properDefined)
-                         -> ( if null properDefined
-                              then mempty
-                              else para 
-                                    (  (str.l) (NL "Nu volgen definities van de concepten "
+                      (  (para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
+                                       ,EN "The sequel introduces the language of ")
+                              <> (str.name) pat <> "."))
+                      <> case nCpts of
+                          [] 
+                            -> fatal 136 "Unexpected. There should be at least one concept to introduce."
+                          [x]
+                            -> para(   (str.l) (NL "Nu volgt de definitie van concept "
+                                               ,EN "At this point, the definition of ")
+                                    <> (showCpt x) 
+                                    <> (str.l) (NL "."
+                                               ,EN " is given.")
+                                   )
+                          _ 
+                            -> para(   (str.l) (NL "Nu volgen definities van de concepten "
                                                ,EN "At this point, the definitions of ")
-                                    <> commaPandocAnd (fsLang fSpec) (map showCpt properDefined) 
+                                    <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
                                     <> (str.l) (NL "."
                                                ,EN " are given.")
                                     )
-                            ) <>
-                            ( if null multipleDefined
-                              then mempty
-                              else para 
-                                    (  (str.l) (NL "De concepten "
-                                               ,EN "Concepts ")
-                                    <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefined) 
-                                    <> (str.l) (NL " hebben meerdere definities. Hierdoor vallen gaten in de nummering van de definities."
-                                               ,EN " are multiple defined. Please check the diagnose for details.")
-                                    )
-                            ) 
+                      <> case filter hasMultipleDefs nCpts of
+                          []  -> mempty
+                          [x] -> para(  (str.l) (NL "Het concept "
+                                                ,EN "Concept ")
+                                     <> showCpt x 
+                                     <> (str.l) (NL " heeft meerdere definities."
+                                                ,EN " is multiple defined.")
+                                     )
+                          multipleDefineds
+                              -> para(  (str.l) (NL "De concepten "
+                                                ,EN "Concepts ")
+                                     <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
+                                     <> (str.l) (NL " hebben meerdere definities."
+                                                ,EN " are multiple defined.")
+                                     )
                       )                                    
 
-              showCpt :: CptCont -> Inlines
-              showCpt = text.name.cCpt
-              hasMultipleDefs :: CptCont -> Bool
+              showCpt :: Numbered CptCont -> Inlines
+              showCpt = emph.text.name.cCpt.theLoad
+              hasMultipleDefs :: Numbered CptCont -> Bool
               hasMultipleDefs x = 
-                 case cCptDefs x of
+                 case cCptDefs (theLoad x) of
                    (_:_:_) -> True
                    _       -> False       
               printConcepts :: [Numbered CptCont] -> Blocks
@@ -216,24 +219,18 @@ chpNatLangReqs lev fSpec =
                                   ] 
                 <> case samples of
                       []  -> mempty
-                      [_] -> para ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
-                                           ,EN "A phrase that can be formed is for instance:")
-                                  )
-                      _   -> para ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
+                      [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
+                                            ,EN "A phrase that can be formed is for instance:")
+                                   )
+                      _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
                                             ,EN "Phrases that can be made are for instance:")
-                                  )
+                                                )
                 <> if null samples then mempty
-                   else bulletList [ para $ mkSentence dcl sample
+                   else bulletList [ plain $ mkSentence dcl sample
                                    | sample <- samples]
                  
                  where dcl = cDcl . theLoad $ nDcl
                        samples = take 3 . cDclPairs . theLoad $ nDcl
---                       sampleSentences =
---                         [ para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
---                         | p <-samplePop
---                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (srcPaire p)
---                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (trgPaire p)
---                         ] 
 
               printRules :: [Numbered RuleCont] -> Blocks
               printRules = mconcat . map printRule
@@ -271,14 +268,14 @@ chpNatLangReqs lev fSpec =
                      <> latexSpecial (name decl)
                      <> "."
              | otherwise
-                  ->    if null prL then mempty
-                        else latexSpecial (upCap prL++" ")
+                  ->    (if null prL then mempty
+                         else latexSpecial (upCap prL++" "))
                      <> devShow (source decl)
                      <> latexSpecial (srcAtom++" "++prM++" ")
                      <> devShow (target decl)
                      <> latexSpecial (tgtAtom)
-                     <> if null prR then mempty
-                        else latexSpecial (" "++prR)
+                     <> (if null prR then mempty
+                         else latexSpecial (" "++prR))
                      <> "."
 
        Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
@@ -288,44 +285,10 @@ chpNatLangReqs lev fSpec =
          prL = decprL decl
          prM = decprM decl
          prR = decprR decl
-         latexSpecial = if fspecFormat (getOpts fSpec)==FLatex then rawInline "latex" . latexEscShw else str
+         latexSpecial = str -- if fspecFormat (getOpts fSpec)==FLatex then rawInline "latex" . latexEscShw else str
          devShow c = if (development (getOpts fSpec)) then str $ "("++name c++")" else mempty
                    
 
--- TODO: fix showing/not showing based on relation
--- TODO: what about relations in the target view?
--- TODO: move these to some auxiliaries or utils
-showViewAtom :: FSpec -> Maybe Declaration -> A_Concept -> String -> String
-showViewAtom fSpec mDec cncpt atom =
-  case mapMaybe (getView fSpec) (cncpt : largerConcepts (vgens fSpec) cncpt) of
-    []    -> atom
-    view:_ -> case mDec of
-              Nothing -> concatMap showViewSegment (vdats view)
-              Just md -> if (not.null) [() | ViewExp objDef <- vdats view, EDcD d<-[objctx objDef], d==md]
-                         then atom
-                         else concatMap showViewSegment (vdats view)
-             -- if we are showing one of the view relations, don't expand the view
-     where showViewSegment (ViewText str') = str'
-           showViewSegment (ViewHtml str') = str'
-           showViewSegment (ViewExp objDef) =
-             case [ trgPaire p | p <- fullContents (vgens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
-               []         -> ""
-               viewAtom:_ -> viewAtom
-        -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]
-
-{-
-getIdentity :: FSpec -> A_Concept -> Maybe IdentityDef
-getIdentity fSpec cncpt =
-  case filter ((== cncpt) .  idCpt) (vIndices fSpec) of
-    []         -> Nothing
-    identity:_ -> Just identity
--}
-
-getView :: FSpec -> A_Concept -> Maybe ViewDef
-getView fSpec cncpt =
-  case filter ((== cncpt) .  vdcpt) (vviews fSpec) of
-    []       -> Nothing
-    viewDef:_ -> Just viewDef
 
 data LawRef = LawRef { lawRef :: String}
 data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String
@@ -335,8 +298,6 @@ toLawRef:: String -> Maybe LawRef
 toLawRef s = case s of
               [] -> Nothing
               _  -> (Just . LawRef) s
-getLaw :: ArticleOfLaw -> Inlines
-getLaw x = (str.aOlLaw) x
 
 -- the article is everything but the law (and we also drop any trailing commas)
 getArticlesOfLaw :: LawRef -> [ArticleOfLaw]

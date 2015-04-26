@@ -701,8 +701,8 @@ texOnly_flip :: String
 texOnly_flip = "\\smallsmile "
 
 newGlossaryEntry :: String -> String -> Inlines
-newGlossaryEntry nm text = 
+newGlossaryEntry nm cnt = 
   rawInline "latex"
     ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
      "     { name={"++latexEscShw nm ++"}\n"++
-     "     , description={"++latexEscShw (text)++"}}\n") 
+     "     , description={"++latexEscShw (cnt)++"}}\n") 

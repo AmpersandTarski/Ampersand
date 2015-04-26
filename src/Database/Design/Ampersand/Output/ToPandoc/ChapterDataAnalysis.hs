@@ -3,7 +3,6 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAna
 
 import Database.Design.Ampersand.ADL1 hiding (Association)
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
-import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Database.Design.Ampersand.Output.PredLogic

@@ -10,6 +10,8 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Database.Design.Ampersand.FSpec
     , module Database.Design.Ampersand.Misc
     , module Database.Design.Ampersand.Core.AbstractSyntaxTree
+    , module Database.Design.Ampersand.ADL1
+    , module Database.Design.Ampersand.Output.PandocAux
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -32,11 +34,11 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , ENString(..)
     , LocalizedStr
     , localize
-    )
+    , sortWith)
 where
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta,sortWith)
-import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.ADL1 hiding (Meta)
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec
 import Text.Pandoc
