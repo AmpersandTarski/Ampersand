@@ -1,5 +1,19 @@
 <div class="container-fluid">
-	<div id="notificationCenter" ng-controller="static_notificationCenterController">
+	<div id="notificationCenter" ng-controller="static_notificationCenterController">		
+		<div id="infos" ng-show="switchShowInfos">			
+			<div class="panel panel-info" id="info-panel-{{key}}" ng-repeat="(key, val) in notifications.infos">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-list-{{key}}">
+					<div class="text-left">
+						<strong>Info!</strong> {{val.message}}
+						<span class="badge pull-right">{{val.rows.length}}</span>				
+					</div>
+				</div>
+				<ul class="list-group collapse" id="info-list-{{key}}">
+					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
+				</ul>
+			</div>
+		</div>
+		
 		<div id="errors">
 			<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
 				<strong>Error!</strong> {{error.message}}
@@ -8,9 +22,19 @@
 		</div>
 		
 		<div id="invariants">
-			<alert ng-repeat="invariant in notifications.invariants" type="danger" close="closeAlert(notifications.invariants, $index)">
-				<strong>Rule violation!</strong> {{invariant.message}}
-			</alert>
+			<div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">
+					<div class="text-left">
+						<strong>Rule violation!</strong> {{val.ruleMessage}}
+						<span class="badge pull-right">{{val.tuples.length}}</span>					
+					</div>
+				</div>
+				<ul class="list-group collapse" id="invariant-{{key}}">
+					<li class="list-group-item" ng-repeat="tuple in val.tuples track by $index">
+						<span>{{tuple.violationMessage}}</span>
+					</li>
+				</ul>
+			</div>
 		</div>
 					
 		<div id="violations" ng-show="switchShowViolations">
@@ -36,22 +60,8 @@
 			</div>
 		</div>
 		
-		<div id="infos" ng-show="switchShowInfos">
-			<div class="panel panel-info" ng-repeat="(key, val) in notifications.infos">
-				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-{{key}}">
-					<div class="text-left">
-						<strong>Info!</strong> {{val.message}}
-						<span class="badge pull-right">{{val.rows.length}}</span>					
-					</div>
-				</div>
-				<ul class="list-group collapse" id="info-{{key}}">
-					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
-				</ul>
-			</div>
-		</div>
-		
 		<!-- Success notifications must be last in notifications center because of position:absolute -->
-		<div id=successes ng-show="switchShowSuccesses">			
+		<div id="successes" ng-show="switchShowSuccesses">			
 			<div class="panel panel-success" id="success-panel-{{key}}" ng-repeat="(key, val) in notifications.successes">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#success-list-{{key}}">
 					<div class="text-left">

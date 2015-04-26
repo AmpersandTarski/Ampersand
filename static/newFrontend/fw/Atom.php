@@ -48,6 +48,7 @@ Class Atom {
 	 */
 	public function getContent($interface, $rootElement = true, $tgtAtom = null){
 		$database = Database::singleton();
+		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
 			$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
@@ -66,7 +67,7 @@ Class Atom {
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
 
 			// determine value atom 
-			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$content = !is_null($tgtAtom->id);
 				
 			}elseif($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
@@ -80,6 +81,7 @@ Class Atom {
 														, '@label' => $tgtAtom->label
 				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
+														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces(null, $interface->tgtConcept))
 													 	, 'id' => $tgtAtom->id));
 				
 			}else{ // TgtConcept of interface is primitive datatype

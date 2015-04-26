@@ -44,9 +44,23 @@ class Concept {
 	}
 	
 	public static function createNewAtom($concept){
-		$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-		$atomId = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
-		
+		if(strpos($concept, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
+			$database = Database::singleton();
+			$tableInfo = Concept::getConceptTableInfo($concept);
+			
+			$table = $tableInfo[0]['table'];
+			$col = $tableInfo[0]['cols'][0];
+			
+			$query = "SELECT MAX($col) as 'MAX' FROM $table";
+			$result = array_column($database->Exe($query), 'MAX');
+			
+			if(empty($result)) $atomId = 1;
+			else $atomId = $result[0] + 1;
+				
+		}else{
+			$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+			$atomId = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
+		}
 		return $atomId;
 	}
 	

@@ -60,22 +60,22 @@ class InterfaceObject {
 		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
 		
 		// Set datatype of tgtConcept
-		switch($this->tgtConcept){
+		switch(strtolower($this->tgtConcept)){ // matching case-insensitive, because template filenames in windows are case-insensitive
 			// <input> types
-			case "TEXT":
-				$this->tgtDataType = "text";		// relation to TEXT concept
+			case "text":
+				$this->tgtDataType = "text";		// relation to TEXT, Text, TExt, etc concept
 				break;
-			case "DATE":
-				$this->tgtDataType = "date";		// relation to DATE concept
+			case "date":
+				$this->tgtDataType = "date";		// relation to DATE, Date, DAte, etc concept
 				break;
-			case "BOOL":
-				$this->tgtDataType = "checkbox";	// relation to BOOL concept
+			case "bool":
+				$this->tgtDataType = "checkbox";	// relation to BOOL, etc concept
 				break;
-			case "PASSWORD":
-				$this->tgtDataType = "password"; 	// relation to PASSWORD concept
+			case "password":
+				$this->tgtDataType = "password"; 	// relation to PASSWORD, etc concept
 				break;
-			case "BLOB":
-				$this->tgtDataType = "textarea"; 	// relation to BLOB concept
+			case "blob":
+				$this->tgtDataType = "textarea"; 	// relation to BLOB, etc concept
 				break;
 			default:
 				$this->tgtDataType = "concept"; 	// relation to other concept
