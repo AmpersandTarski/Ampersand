@@ -115,6 +115,7 @@ pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
  where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN'
+--TODO! PROCESS and PATTERN should have the same semantic value.
 pPatternDef :: AmpParser P_Pattern
 pPatternDef = rebuild <$> currPos
                       <*  pKey "PATTERN"
@@ -336,7 +337,7 @@ pConceptDef       = Cd <$> currPos
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
-pGenDef :: AmpParser P_Gen -- TODO: SPEC is obsolete syntax. Should disappear!
+pGenDef :: AmpParser P_Gen -- TODO! SPEC is obsolete syntax. Should disappear!
 pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef -- 
           where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
                 key = pKey "CLASSIFY" <|> pKey "SPEC"
@@ -789,7 +790,7 @@ pLabel = pADLid <* pColon
 --- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
 pContent :: AmpParser Pairs
 pContent      = try (pBrackets (pRecord `sepBy` pComma))   <|>
-                try (pBrackets (pRecordObs `sepBy` pSemi)) --obsolete
+                try (pBrackets (pRecordObs `sepBy` pSemi))
     where
     --- RecordList ::= Record (',' Record)*
     --- Record ::= String '*' String
@@ -798,7 +799,7 @@ pContent      = try (pBrackets (pRecord `sepBy` pComma))   <|>
     --- RecordObsList ::= RecordObsList (';' RecordObsList)
     --- RecordObs ::= '(' String ',' String ')'
     pRecordObs :: AmpParser Paire
-    pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString) --obsolete
+    pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
 
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
