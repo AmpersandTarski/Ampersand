@@ -321,8 +321,8 @@ Class Atom {
 					$query = "SELECT DISTINCT `tgt` FROM (".$viewSegment['expSQL'].") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
 					$tgtAtoms = array_column($database->Exe($query), 'tgt');
 					
-					$txt = count($tgtAtoms) ? $tgtAtoms[0] : $this->id; // this can happen in a create-new interface when the view fields have not yet beenfilled out, while the atom is shown
-					$viewStrs[$viewSegment['label']] = htmlSpecialChars($txt);
+					$txt = count($tgtAtoms) ? htmlSpecialChars($tgtAtoms[0]) : null;
+					$viewStrs[$viewSegment['label']] = $txt;
 				}
 			}
 			return $viewStrs;
