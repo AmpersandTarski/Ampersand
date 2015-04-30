@@ -192,7 +192,7 @@ class Database
 		$table = $tableInfo[0]['table'];
 		$conceptCol = $tableInfo[0]['cols'][0];
 		
-		$query = "/* Check if atom exists */ SELECT $conceptCol FROM $table WHERE $conceptCol = '$atomId'";
+		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomId'";
 		$result = $this->Exe($query);
 		
 		if(empty($result)) return false;
