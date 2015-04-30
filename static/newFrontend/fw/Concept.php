@@ -37,10 +37,6 @@ class Concept {
 		// Query all atoms in table
 		return $existingAtoms = array_column($database->Exe("SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL"), $firstConceptCol); // no need to filter duplicates and NULLs
 		
-	}	
-	
-	public static function isAtomInConcept($atom, $concept) {
-		return in_array(strtolower($atom), array_map('strtolower', (array)Concept::getAllAtomIds($concept))); // in_array is case sensitive ("true" != "TRUE"), but Mysql is case insensitive for Primary keys. Therefore first to lowercase.
 	}
 	
 	public static function createNewAtom($concept){
