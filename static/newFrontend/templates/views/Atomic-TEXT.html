@@ -8,7 +8,7 @@ $if(isEditable)$
     <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
     <span>{{row}}</span>
   </div>
-  <div my-showonhover-box>
+  <div my-showonhover-box ng-controller="addItemController">
     <input ng-model="selected.value" type="text" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(val, '$name$', selected, ResourceId)">
   </div>
   $endif$$else$$if(exprIsUni)$
