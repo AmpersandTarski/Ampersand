@@ -1,10 +1,10 @@
 name:           ampersand
-version:        3.0.3
+version:        3.1.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
-homepage:       ampersand.sourceforge.net
+homepage:       http://wiki.ampersand.nl
 category:       Database Design
 stability:      alpha
 cabal-version:  >= 1.10
@@ -13,7 +13,7 @@ build-type:     Custom
 license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
-bug-reports:    https://sourceforge.net/p/ampersand/tickets/
+bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 -- Recursive patterns such as static/* are not allowed in data-files. Hence we cannot use them for static files, as
 -- we would need to specify a pattern for each extension in each subdirectory.
 data-files:     
