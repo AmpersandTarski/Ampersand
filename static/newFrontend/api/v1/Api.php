@@ -113,7 +113,7 @@ class Api{
 				}
 			}else{
 		
-				$atom = new Atom($atomId, $session->interface-srcConcept);
+				$atom = new Atom($atomId, $session->interface->srcConcept);
 				$result = $atom->getContent($session->interface);
 			}
 			
