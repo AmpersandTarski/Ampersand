@@ -12,7 +12,7 @@ Class Atom {
 	private $jsonld_id;
 	private $jsonld_type;
 		
-	public function __construct($id, $concept = null, $viewId = null){
+	public function __construct($id, $concept, $viewId = null){
 		
 		// Ampersand attributes
 		$this->id = $id;
