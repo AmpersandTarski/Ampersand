@@ -111,13 +111,15 @@ class Api{
 					$atom = new Atom($atomId, $session->interface->srcConcept);
 					$result = array_merge($result, (array)$atom->getContent($session->interface));
 				}
+				
+				if(empty($result)) Notifications::addInfo("No results found");
 			}else{
 		
 				$atom = new Atom($atomId, $session->interface->srcConcept);
+				if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
+				
 				$result = $atom->getContent($session->interface);
-			}
-			
-			if(empty($result)) throw new Exception('Resource not found', 404);
+			}			
 	
 			return array_values($result); // array_values transforms assoc array to non-assoc array
 		
