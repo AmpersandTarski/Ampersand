@@ -140,6 +140,7 @@ class Api{
 			$session->setInterface($interfaceId);
 			
 			$atom = new Atom($atomId, $session->interface->tgtConcept);	
+			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
 			
 			return array_merge(array('patches' => $atom->patch($session->interface, $request_data))
 							  ,array('content' => current((array)$atom->getContent($session->interface, true, $atom->id))) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
@@ -167,6 +168,7 @@ class Api{
 			// TODO: insert check if Atom may be deleted with this interface
 			
 			$atom = new Atom($atomId, $session->interface->tgtConcept);
+			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
 			$atom->delete();
 			
 			return array('notifications' => Notifications::getAll());
@@ -195,6 +197,7 @@ class Api{
 			$concept = $session->interface->srcConcept;
 			$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
 			$atom = new Atom($atomId, $concept);
+			if(!$atom->atomExists()) throw new Exception("Atom '$atomId' not created", 500);
 			
 			return array_values($atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
 		
@@ -260,6 +263,7 @@ class Api{
     public function getConceptAtom($concept, $atomId){
     	try{
     		$atom = new Atom($atomId, $concept);
+    		if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
     		return $atom->getAtom();
     		
     	}catch(Exception $e){
@@ -282,13 +286,15 @@ class Api{
 	}
 
 	/**
-	 * @url DELETE resource/{concept}/{atom}
+	 * @url DELETE resource/{concept}/{atomId}
 	 * @status 204
 	 */
-	function deleteConceptAtom($concept, $atom){ 
+	function deleteConceptAtom($concept, $atomId){ 
 		try{
 			$database = Database::singleton();
-			$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+			$atom = new Atom($atomId, $concept);
+			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
+			$atom->delete();
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
