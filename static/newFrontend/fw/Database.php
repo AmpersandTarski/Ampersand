@@ -184,6 +184,9 @@ class Database
 		}
 	}
 	
+	/* 
+	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
+	 */
 	public function atomExists($atomId, $concept){
 		$tableInfo = Concept::getConceptTableInfo($concept);
 		$table = $tableInfo[0]['table'];

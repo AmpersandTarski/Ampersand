@@ -30,6 +30,9 @@ Class Atom {
 
 	}
 	
+	/*
+	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
+	 */
 	public function atomExists(){
 		return $this->database->atomExists($this->id, $this->concept);
 	}
