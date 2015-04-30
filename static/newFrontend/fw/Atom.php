@@ -234,7 +234,7 @@ Class Atom {
 						if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
 					
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
-						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
+						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value");
 						
 						$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						
