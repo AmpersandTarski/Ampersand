@@ -42,7 +42,8 @@ class Session {
 				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroySession($expiredSessionAtom);
 
 				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
-				if (!Concept::isAtomInConcept(session_id(), 'SESSION')){ 
+				$sessionAtom = new Atom(session_id(), 'SESSION');
+				if (!$sessionAtom->atomExists()){ 
 					$this->database->addAtomToConcept(session_id(), 'SESSION');
 					$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
 				}

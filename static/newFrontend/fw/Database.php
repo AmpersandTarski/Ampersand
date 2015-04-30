@@ -157,7 +157,7 @@ class Database
 				$conceptCols = $conceptTableInfo['cols'];   // We insert the new atom in each of them.
 	
 				// If $newAtom is not in $concept
-				if(!Concept::isAtomInConcept($newAtom, $concept)) { 
+				if(!$this->atomExists($newAtom, $concept)){ 
 					// Create query string: `<col1>`, `<col2>`, etc
 					$allConceptCols = '`' . implode('`, `', $conceptCols) . '`';
 					
