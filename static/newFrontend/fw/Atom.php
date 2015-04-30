@@ -30,6 +30,10 @@ Class Atom {
 
 	}
 	
+	public function atomExists(){
+		return $this->database->atomExists($this->id, $this->concept);
+	}
+	
 	public function getAtom($interface = null){
 		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = API_INTERFACES_PATH . $interfaceId . '/' . $this->id;
 		
