@@ -11,8 +11,10 @@ Class Atom {
 	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
+	private $database;
 		
 	public function __construct($id, $concept, $viewId = null){
+		$this->database = Database::singleton();
 		
 		// Ampersand attributes
 		$this->id = $id;
@@ -47,15 +49,14 @@ Class Atom {
 	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
 	 */
 	public function getContent($interface, $rootElement = true, $tgtAtom = null){
-		$database = Database::singleton();
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
 			$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
-			$tgtAtoms = array_column($database->Exe($query), 'tgt');
+			$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 		}else{
 			// Make sure that atom is in db (not necessarily the case: e.g. new atom)
-			$database->addAtomToConcept($this->id, $this->concept);
+			$this->database->addAtomToConcept($this->id, $this->concept);
 			
 			$tgtAtoms[] = $tgtAtom;
 		}
@@ -119,7 +120,6 @@ Class Atom {
 	}
 	
 	public function patch(&$interface, $request_data){
-		$database = Database::singleton();
 		
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
@@ -158,9 +158,9 @@ Class Atom {
 					if ($tgtInterface->isProperty){
 						if(!is_bool($patch['value'])) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
 						if($patch['value']){						
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+							$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
 						}else{
-							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+							$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
 						}
 						
 						break;
@@ -180,11 +180,11 @@ Class Atom {
 						// in case $tgtAtom is empty string -> perform remove instead of replace.
 						if($tgtAtom !== ''){
 							$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
-							$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
+							$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
 						}else{
 							// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 							$tgtAtom = JsonPatch::get($before, $patch['path']);
-							$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+							$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						}					
 					}else{
 						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
@@ -229,7 +229,7 @@ Class Atom {
 						// in case $tgtAtom is null (result of empty array in array_shift) -> provide error.
 						if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
 						
-						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+						$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 						
 					}else{
 						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
@@ -269,7 +269,7 @@ Class Atom {
 						// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom value is not provided, so we have to get this value to perform the editDelete function
 						// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
 						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
-						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+						$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}else{
 						Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
 					}
@@ -279,28 +279,25 @@ Class Atom {
 		}
 		
 		// Close transaction => ROLLBACK or COMMIT.
-		$database->closeTransaction('Updated', false); 
+		$this->database->closeTransaction('Updated', false); 
 		
 		return $patches;
 		
 	}
 	
-	public function delete(){
-		$database = Database::singleton();
-		
+	public function delete(){		
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
 		
-		$database->deleteAtom($this->id, $this->concept);
+		$this->database->deleteAtom($this->id, $this->concept);
 		
 		// Close transaction => ROLLBACK or COMMIT.
-		$database->closeTransaction('Atom deleted', false);
+		$this->database->closeTransaction('Atom deleted', false);
 		
 		return;
 		
 	}
 	
 	private function getView($viewId = null){
-		$database = Database::singleton();
 		$view = Concept::getView($this->concept, $viewId);
 		
 		if(empty($view) || $this->id == ''){
@@ -319,7 +316,7 @@ Class Atom {
 				
 				}else{
 					$query = "SELECT DISTINCT `tgt` FROM (".$viewSegment['expSQL'].") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
-					$tgtAtoms = array_column($database->Exe($query), 'tgt');
+					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 					
 					$txt = count($tgtAtoms) ? htmlSpecialChars($tgtAtoms[0]) : null;
 					$viewStrs[$viewSegment['label']] = $txt;
