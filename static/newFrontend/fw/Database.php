@@ -4,7 +4,6 @@ ini_set("display_errors", 1); // TODO: error handling instellen
 
 require_once (__DIR__ . '/../localSettings.php');
 
-// TODO: change to mysqli
 class Database
 {	
 	private $db_link;
@@ -29,8 +28,9 @@ class Database
 		$this->db_pass = $DB_pass;
 		$this->db_name = $DB_name;
 		
-		// Connect to mysql
-		$this->connect();
+		// Connect to MYSQL database
+		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
+		if ($this->db_link->connect_error) throw new Exception($this->db_link->connect_error, 500);
 		
 		// Select DB
 		try{
@@ -60,24 +60,19 @@ class Database
 		$this->installDB();	
 	}
 	
-	private function connect(){
-		$this->db_link = mysql_connect($this->db_host, $this->db_user, $this->db_pass);
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
-		
-	}
-	
 	private function createDB(){
 		$this->Exe("CREATE DATABASE $this->db_name DEFAULT CHARACTER SET UTF8");
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
 	}
 	private function dropDB(){
 		$this->Exe("DROP DATABASE $this->db_name");
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		
 	}
 	
 	private function selectDB(){
-		mysql_select_db($this->db_name, $this->db_link);
-		if (mysql_error()) throw new Exception(mysql_error(), 500);
+		$this->db_link->select_db($this->db_name);
+		
+		if ($this->db_link->error) throw new Exception($this->db_link->error, 500);
 		
 		// Set sql_mode to ANSI
 		$this->Exe("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
@@ -115,28 +110,22 @@ class Database
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
-		$result = mysql_query($query,$this->db_link);
+		$result = $this->db_link->query($query);
 		Notifications::addLog($query, 'QUERY');
 
-		if (mysql_error()) throw new Exception(mysql_error(). " in query:" . $query, 500);
+		if ($this->db_link->error) throw new Exception($this->db_link->error . " in query:" . $query, 500);
 
 		if ($result === false) return false;
-		if ($result === true) return true;
-
-		$resultarray = array();
-		while(($resultarray[] = mysql_fetch_array($result)) || array_pop($resultarray)); // or mysql_fetch_assoc()??
-		return $resultarray;
+		elseif ($result === true) return true;
+		
+		$arr = array();
+		while($row = mysqli_fetch_array($result)){
+			$arr[] = $row;
+		}
+		return $arr;
 		
 	}
-
-	public static function Escape($item){
-		if (is_object($item) OR is_array($item)) die("Escape item is not a variable but an object or array.");
-		return mysql_escape_string($item);
-	}
 	
-	public function error(){
-		return mysql_error($this->db_link);
-	}
 
 // =============================== CHANGES TO DATABASE ===========================================================
 	
