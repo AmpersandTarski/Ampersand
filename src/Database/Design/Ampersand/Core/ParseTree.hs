@@ -14,6 +14,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
+   , Representation(..), Domain(..)
    , P_Population(..)
 
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
@@ -69,6 +70,7 @@ data P_Context
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
          , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
+         , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
@@ -129,6 +131,7 @@ data P_Pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: [Representation] -- ^ The domain into which concepts is represented
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
@@ -146,7 +149,6 @@ data ConceptDef
          , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
          , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
          , cddef :: String   -- ^ The textual definition of this concept.
-         , cdtyp :: String   -- ^ The (SQL) type of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
          }   deriving (Show,Eq,Typeable)
@@ -157,6 +159,21 @@ instance Traced ConceptDef where
  origin = cdpos
 instance Named ConceptDef where
  name = cdcpt
+
+data Representation
+  = Repr { reprpos  :: Origin
+         , reprcpts  :: [String]  -- ^ the concepts 
+         , reprdom :: Domain     -- the domain
+         } deriving (Show)
+instance Traced Representation where
+ origin = reprpos
+         
+data Domain 
+  = Alphanumeric | BigAlphanumeric | HugeAalphanumeric | Password
+  | Binary | BigBinary | HugeBinary 
+  | Date | DateTime 
+  | Boolean | Numeric | AutoIncrement
+     deriving (Show, Eq, Ord)
 
 data P_Declaration =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
@@ -668,6 +685,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_ks     = concatMap ctx_ks contexts
       , ctx_rrules = concatMap ctx_rrules contexts
       , ctx_rrels  = concatMap ctx_rrels contexts
+      , ctx_reprs  = concatMap ctx_reprs contexts
       , ctx_vs     = concatMap ctx_vs contexts
       , ctx_gs     = concatMap ctx_gs contexts
       , ctx_ifcs   = concatMap ctx_ifcs contexts

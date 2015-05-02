@@ -5,11 +5,9 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-import Database.Design.Ampersand.Core.Poset as Poset hiding (sortWith)
-import Prelude hiding (Ord(..))
+import GHC.Exts (sortWith,groupWith)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
@@ -17,8 +15,6 @@ import Database.Design.Ampersand.FSpec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
-import GHC.Exts (sortWith)
---import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2Plug"
@@ -88,8 +84,8 @@ makeLinkTable context dcl totsurs =
              , columns = ( -- The source field:
                            Fld { fldname = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , fldexpr = srcExpr
-                               , fldtype = sqlTypeOf context (target srcExpr)
-                               , flduse  = if suitableAsKey (sqlTypeOf context (target srcExpr))
+                               , fldtype = domain2SqlType   . representationOf context . source $ srcExpr
+                               , flduse  = if suitableAsKey . representationOf context . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
                                , fldnull = isTot trgExpr
@@ -98,8 +94,8 @@ makeLinkTable context dcl totsurs =
                          , -- The target field:
                            Fld { fldname = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , fldexpr = trgExpr
-                               , fldtype = sqlTypeOf context (target trgExpr)
-                               , flduse  = if suitableAsKey (sqlTypeOf context (target trgExpr))
+                               , fldtype = domain2SqlType   . representationOf context . target $ trgExpr
+                               , flduse  = if suitableAsKey . representationOf context . target $ trgExpr
                                            then ForeignKey (target trgExpr)
                                            else PlainAttr
                                , fldnull = isSur trgExpr
@@ -125,24 +121,25 @@ makeLinkTable context dcl totsurs =
      | otherwise                = EDcD dcl
 unquote :: String -> String
 unquote str 
-  | length str < 2 = str
+  | length str Prelude.< 2 = str
   | head str == '"' && last str == '"' = reverse . tail . reverse .tail $ str 
   | otherwise = str
       
-suitableAsKey :: SqlType -> Bool
+suitableAsKey :: Domain -> Bool
 suitableAsKey st =
   case st of
-    SQLChar{}    -> True
-    SQLBlob      -> False
-    SQLPass      -> False
-    SQLSingle    -> True
-    SQLDouble    -> True
-    SQLText      -> False
-    SQLuInt{}    -> True
-    SQLsInt{}    -> True
-    SQLId{}      -> True
-    SQLVarchar{} -> True
-    SQLBool{}    -> True
+    Alphanumeric      -> True
+    BigAlphanumeric   -> True
+    HugeAalphanumeric -> False
+    Password          -> False
+    Binary            -> False
+    BigBinary         -> False
+    HugeBinary        -> False
+    Date              -> True
+    DateTime          -> True
+    Boolean           -> True
+    Numeric           -> True
+    AutoIncrement     -> True
 
 -----------------------------------------
 --rel2fld
@@ -173,11 +170,11 @@ rel2fld context
         e
  = Fld { fldname = fldName
        , fldexpr = e
-       , fldtype = sqlTypeOf context (target e)
+       , fldtype = domain2SqlType (representationOf context (target e))
        , flduse  =
           let f expr =
                  case expr of
-                    EDcI c   -> if suitableAsKey (sqlTypeOf context c)
+                    EDcI c   -> if suitableAsKey (representationOf context c)
                                 then TableKey ((not.maybenull) e) c
                                 else PlainAttr
                     EDcD _   -> PlainAttr
@@ -227,7 +224,7 @@ rel2fld context
    -- then the fldexpr defines the relation between this kernel field and this kernel field (fldnull=not(isTot I) and flduniq=isInj I)
    -- otherwise it is the relation between this kernel field and some other kernel field)
    maybenull expr
-    | length(map target kernel) > length(nub(map target kernel))
+    | length(map target kernel) Prelude.> length(nub(map target kernel))
        = fatal 146 $"more than one kernel field for the same concept:\n    expr = " ++(show expr)++
            intercalate "\n  *** " ( "" : (map (name.target) kernel))
     | otherwise = case expr of
@@ -444,29 +441,61 @@ makeUserDefinedSqlPlug context obj
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
-   sqltp att = head $ [sqlTypeOf' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
-                      ++[SQLVarchar 255]
+   sqltp _ = fatal 448 "The Sql type of a user defined plug has bitrotteted. The syntax should support a Representation."
 
-sqlTypeOf :: A_Context -> A_Concept -> SqlType
-sqlTypeOf _ ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
-sqlTypeOf context c
-    = case nub [ cdtyp cdef | cdef<-ctxcds context, name c==name cdef ] of
-       [str] -> sqlTypeOf' str
-       []    -> sqlTypeOf' ""
-       _     -> fatal 396 ("Multiple SQL types defined for concept "++name c)
+--sqlTypeOf :: A_Context -> A_Concept -> SqlType
+--sqlTypeOf _ ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
+--sqlTypeOf context c
+--    = case nub [ cdtyp cdef | cdef<-ctxcds context, name c==name cdef ] of
+--       [str] -> sqlTypeOf' str
+--       []    -> sqlTypeOf' ""
+--       _     -> fatal 396 ("Multiple SQL types defined for concept "++name c)
+--
+domain2SqlType :: Domain -> SqlType
+domain2SqlType dom 
+ = case dom of
+     Alphanumeric      -> SQLVarchar 255
+     BigAlphanumeric   -> SQLText
+     HugeAalphanumeric -> SQLMediumText
+     Password          -> SQLVarchar 255
+     Binary            -> SQLBlob
+     BigBinary         -> SQLMediumBlob
+     HugeBinary        -> SQLLongBlob
+     Date              -> SQLDate
+     DateTime          -> SQLDateTime
+     Boolean           -> SQLBool
+     Numeric           -> SQLFloat
+     AutoIncrement     -> SQLSerial
+  
+--sqlTypeOf' :: String -> SqlType
+--sqlTypeOf' str = case str of
+--       ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
+--       "Pass" -> SQLPass
+--       ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
+--       "Blob" -> SQLBlob
+--       "Text" -> SQLText
+--       "Single" -> SQLSingle
+--       "Double" -> SQLDouble
+--       ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
+--       ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
+--       "Id" -> SQLId
+--       ('B':'o':'o':'l':_) -> SQLBool
+--       "" -> SQLVarchar 255
+--       _ -> fatal 335 ("Unknown type: "++str)
 
-sqlTypeOf' :: String -> SqlType
-sqlTypeOf' str = case str of
-       ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
-       "Pass" -> SQLPass
-       ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
-       "Blob" -> SQLBlob
-       "Text" -> SQLText
-       "Single" -> SQLSingle
-       "Double" -> SQLDouble
-       ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
-       ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
-       "Id" -> SQLId
-       ('B':'o':'o':'l':_) -> SQLBool
-       "" -> SQLVarchar 255
-       _ -> fatal 335 ("Unknown type: "++str)
+representationOf :: A_Context -> A_Concept -> Domain
+representationOf context cpt = 
+  case cpt of 
+    ONE -> fatal 493 "ONE has no representation, or does it?"
+    PlainConcept{}
+        ->  case groupWith reprdom . filter isAboutThisCpt . ctxreprs $ context of
+              [] ->  Alphanumeric  --The default value, when no representation is specified
+              [rs] -> case rs of   
+                         []  -> fatal 498 "This should be impossible with groupWith"
+                         r: _ ->reprdom r
+              _ -> fatal 500 $ "There are multiple Domains for "++show cpt++". That should have been checked earlier!"
+  where
+    isAboutThisCpt :: Representation -> Bool 
+    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
+
+    

@@ -165,20 +165,24 @@ instance Object PlugSQL where
  contextOf p = EDcI (concept p)
 
 fldauto::SqlField->Bool -- is the field auto increment?
-fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f -- && isIdent (fldexpr f)
-
+fldauto f = case fldtype f of
+              SQLSerial -> if not (fldnull f) && flduniq f
+                           then True
+                           else fatal 171 "AutoIncrement is not allowed at this place." --TODO: build check in P2Aconverters
+              _         -> False
+              
 showSQL :: SqlType -> String
-showSQL (SQLChar    n) = "CHAR("++show n++")"
-showSQL (SQLBlob     ) = "BLOB"
-showSQL (SQLPass     ) = "VARCHAR(255)"
-showSQL (SQLSingle   ) = "FLOAT" -- todo
-showSQL (SQLDouble   ) = "FLOAT"
-showSQL (SQLText     ) = "TEXT"
-showSQL (SQLuInt    n) = "INT("++show n++") UNSIGNED"
-showSQL (SQLsInt    n) = "INT("++show n++")"
-showSQL (SQLId       ) = "INT"
+showSQL (SQLFloat   ) = "FLOAT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
+showSQL (SQLText     ) = "TEXT"
+showSQL (SQLMediumText     ) = "MEDIUMTEXT"
+showSQL (SQLBlob     ) = "BLOB"
+showSQL (SQLMediumBlob     ) = "MEDIUMBLOB"
+showSQL (SQLLongBlob     ) = "LONGBLOB"
+showSQL (SQLDate     ) = "DATE"
+showSQL (SQLDateTime ) = "DATETIME"
 showSQL (SQLBool     ) = "BOOLEAN"
+showSQL (SQLSerial   ) = "SERIAL"
 
 -- Every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL (which has one column only)
 -- isPlugIndex refers to UNIQUE key -- TODO: this is wrong

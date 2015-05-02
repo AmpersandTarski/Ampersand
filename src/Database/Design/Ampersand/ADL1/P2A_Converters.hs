@@ -44,6 +44,7 @@ instance Eq SignOrd where
 -- Part 3 is done below, the other two are done in pCtx2aCtx'
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkOtherAtomsInSessionConcept
+               . checkMultipleRepresentationsOfConcepts
                . checkPurposes             -- Check whether all purposes refer to existing objects
                . checkDanglingRulesInRuleRoles -- Check whether all rules in MAINTAIN statements are declared
                . checkInterfaceCycles      -- Check that interface references are not cyclic
@@ -137,6 +138,19 @@ checkOtherAtomsInSessionConcept gCtx =
                       [] -> gCtx
                       errs -> Errors errs
 
+checkMultipleRepresentationsOfConcepts :: Guarded A_Context -> Guarded A_Context
+checkMultipleRepresentationsOfConcepts gCtx =
+   case gCtx of 
+     Errors _ -> gCtx
+     Checked ctx -> case [ mkMultipleRepresentationsForConceptError cpt (filter (isAbout cpt) (ctxreprs ctx))
+                         | cpt <- nub . concatMap reprcpts . ctxreprs $ ctx
+                         , (length . nub . map reprdom . filter (isAbout cpt) . ctxreprs) ctx > 1
+                         ] of
+                      []   -> gCtx
+                      errs -> Errors errs
+   where
+    isAbout :: String -> Representation -> Bool 
+    isAbout cpt rep = cpt `elem` reprcpts rep                 
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1
@@ -152,6 +166,7 @@ pCtx2aCtx' _
       , ctx_ks     = p_identdefs
       , ctx_rrules = p_roleRules
       , ctx_rrels  = p_roleRelations
+      , ctx_reprs  = p_representations
       , ctx_vs     = p_viewdefs
       , ctx_gs     = p_gens
       , ctx_ifcs   = p_interfaces
@@ -175,6 +190,7 @@ pCtx2aCtx' _
             , ctxks = identdefs
             , ctxrrules = allRoleRules
             , ctxRRels = allRoleRelations
+            , ctxreprs = allRepresentations
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
             , ctxgenconcs = map (map castConcept) (concGroups ++ map (:[]) soloConcs)
@@ -695,13 +711,16 @@ pCtx2aCtx' _
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
      = case filter (\cd -> name cd == s) allConceptDefs of
-        []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1} 
+        []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdref="", cdfrom=n1} 
         (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
                       (p_roleRules ++ concatMap pt_RRuls (p_patterns++p_processes))
+    allRepresentations :: [Representation]
+    allRepresentations = p_representations++concatMap pt_Reprs (p_patterns++p_processes)
+
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x

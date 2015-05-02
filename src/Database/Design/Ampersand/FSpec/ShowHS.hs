@@ -174,17 +174,7 @@ instance ShowHS SqlFieldUsage where
  showHS _ _ PlainAttr                 = "PlainAttr "
 
 instance ShowHS SqlType where
- showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i
- showHS _ indent SQLBlob        = indent++"SQLBlob   "
- showHS _ indent SQLPass        = indent++"SQLPass   "
- showHS _ indent SQLSingle      = indent++"SQLSingle "
- showHS _ indent SQLDouble      = indent++"SQLDouble "
- showHS _ indent SQLText        = indent++"SQLText   "
- showHS _ indent (SQLuInt i)    = indent++"SQLuInt   "++show i
- showHS _ indent (SQLsInt i)    = indent++"SQLsInt   "++show i
- showHS _ indent SQLId          = indent++"SQLId     "
- showHS _ indent (SQLVarchar i) = indent++"SQLVarchar "++show i
- showHS _ indent SQLBool        = indent++"SQLBool   "
+ showHS _ indent sqltype = indent ++ show sqltype
 
 instance ShowHSName Quad where
  showHSName q
@@ -690,7 +680,7 @@ instance ShowHS Declaration where
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName c = show c
 instance ShowHS Char where

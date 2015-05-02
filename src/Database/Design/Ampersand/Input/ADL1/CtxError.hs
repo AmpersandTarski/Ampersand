@@ -8,7 +8,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
-  , mkIncompatibleViewError, mkOtherAtomInSessionError
+  , mkIncompatibleViewError, mkOtherAtomInSessionError, mkMultipleRepresentationsForConceptError
   , Guarded(..)
   , whenCheckedIO
   , unguard
@@ -25,7 +25,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
-import Data.List  (intercalate)
+import Data.List  (intercalate,nub)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
 import UU.Parsing (Message(..),Action(..))
@@ -130,6 +130,16 @@ mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
   CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++ 
                       concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)       
+
+mkMultipleRepresentationsForConceptError :: String -> [Representation] -> CtxError
+mkMultipleRepresentationsForConceptError cpt rs =
+  case rs of 
+    _:r:_  
+      -> CTXE (origin r)
+          $ "Multiple representations for concept "++show cpt++". ("
+               ++(intercalate ", " . map show . nub . map reprdom) rs ++
+                  concatMap (("\n    "++ ) . show . origin ) rs
+    _ -> fatal 142 "There are no multiple representations."
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"

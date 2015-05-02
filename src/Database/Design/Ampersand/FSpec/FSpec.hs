@@ -320,17 +320,29 @@ instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
   expressionsIn   f = expressionsIn   (fldexpr f)
 
-data SqlType = SQLChar    Int
-             | SQLBlob              -- cannot compare, but can show (as a file)
-             | SQLPass              -- password, encrypted: cannot show, but can compare
-             | SQLSingle
-             | SQLDouble
-             | SQLText              -- cannot compare, but can show (as a text)
-             | SQLuInt    Int
-             | SQLsInt    Int
-             | SQLId                -- autoincrement integer
+data SqlType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-types.html
              | SQLVarchar Int
-             | SQLBool              -- exists y/n
+             | SQLText
+             | SQLMediumText
+             | SQLBlob
+             | SQLMediumBlob
+             | SQLLongBlob
+             | SQLDate     -- MySQL retrieves and displays DATE values in 'YYYY-MM-DD' format
+             | SQLDateTime -- MySQL retrieves and displays DATETIME values in 'YYYY-MM-DD HH:MM:SS' format
+             | SQLBool
+             | SQLSerial   -- SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+             
+--HJO, 20150501: below are the types that used to be there. (may be removed in near future)
+--             SQLBlob              -- cannot compare, but can show (as a file)
+--             | SQLPass              -- password, encrypted: cannot show, but can compare
+--             | SQLSingle
+--             | SQLDouble
+--             | SQLText              -- cannot compare, but can show (as a text)
+--             | SQLuInt    Int
+--             | SQLsInt    Int
+--             | SQLId                -- autoincrement integer
+--             | SQLVarchar Int
+--             | SQLBool              -- exists y/n
              deriving (Eq,Show)
 
 getGeneralizations :: FSpec -> A_Concept -> [A_Concept]

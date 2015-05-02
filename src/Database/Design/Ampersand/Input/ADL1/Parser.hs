@@ -34,7 +34,6 @@ keywordstxt       = [ "INCLUDE"
                     , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                     , "RELATION", "MEANING", "CONCEPT", "IDENT"
                     , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
-                    , "KEY" -- HJO, 20130605: Obsolete. Only useful as long as the old prototype generator is still in use.
                     , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                     , "CLASSIFY"
                     , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
@@ -42,6 +41,10 @@ keywordstxt       = [ "INCLUDE"
                     , "ONE"
                     , "BYPLUG"
                     , "ROLE", "EDITS", "MAINTAINS"
+                    -- Keywords for Domains:
+                    , "Alphanumeric", "BigAlphanumeric", "HugeAalphanumeric", "Password"
+                    , "Binary", "BigBinary", "HugeBinary"
+                    , "Date", "DateTime", "Boolean", "Numeric"
                     ]
 keywordsops :: [String]
 keywordsops       = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
@@ -77,6 +80,7 @@ pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = []  -- TODO: Allow MAINTAINS statements in the context
             , ctx_rrels  = []  -- TODO: Allow EDITS statements in the context
+            , ctx_reprs  = [r | CRep r<-ces] 
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
@@ -95,6 +99,7 @@ pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConceptName
                       CCfy     <$> pClassify     <|>
                       CRel     <$> pRelationDef  <|>
                       CCon     <$> pConceptDef   <|>
+                      CRep     <$> pRepresentation <|>
                       CGen     <$> pGenDef       <|>
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
@@ -113,6 +118,7 @@ data ContextElement = CMeta Meta
                     | CCfy P_Gen
                     | CRel P_Declaration
                     | CCon (String->ConceptDef)
+                    | CRep Representation
                     | CGen P_Gen
                     | CIndx P_IdentDef
                     | CView P_ViewDef
@@ -157,6 +163,7 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
              , pt_dcs = [d | Pd d<-pes]
              , pt_RRuls = []  -- TODO: Add P_RoleRule to Pattern
              , pt_RRels = []  -- TODO: Add P_RoleRelation to Pattern
+             , pt_Reprs = [r | Prep r<-pes]
              , pt_cds = [c nm | Pc c<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
@@ -169,6 +176,7 @@ pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spac
                Pd <$> pRelationDef  <|>
                Pc <$> pConceptDef   <|>
                Pg <$> pGenDef       <|>
+               Prep <$> pRepresentation <|>
                Pk <$> pIndex        <|>
                Pv <$> pViewDef      <|>
                Pe <$> pPurpose      <|>
@@ -179,6 +187,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pd P_Declaration
              | Pc (String->ConceptDef)
              | Pg P_Gen
+             | Prep Representation
              | Pk P_IdentDef
              | Pv P_ViewDef
              | Pe PPurpose
@@ -199,6 +208,7 @@ pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> pConceptName   -- The name spac
               , pt_dcs  = [d  | PrD d <-pes]
               , pt_RRuls = [rr | PrM rr<-pes]
               , pt_RRels = [rr | PrL rr<-pes]
+              , pt_Reprs = [r  | PrRep r<-pes]
               , pt_cds   = [cd nm | PrC cd<-pes]
               , pt_ids   = [ix | PrI ix<-pes]
               , pt_vds   = [vd | PrV vd<-pes]
@@ -211,6 +221,7 @@ pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> pConceptName   -- The name spac
                 PrD <$> pRelationDef  <|>
                 PrM <$> pRoleRule     <|>
                 PrL <$> pRoleRelation <|>
+                PrRep <$> pRepresentation <|>
                 PrC <$> pConceptDef   <|>
                 PrG <$> pGenDef       <|>
                 PrI <$> pIndex        <|>
@@ -223,6 +234,7 @@ data ProcElem = PrR (P_Rule TermPrim)
               | PrD P_Declaration
               | PrM P_RoleRule
               | PrL P_RoleRelation
+              | PrRep Representation
               | PrC (String->ConceptDef)
               | PrG P_Gen
               | PrI P_IdentDef
@@ -341,8 +353,30 @@ pConceptDef       = Cd <$> pKey_pos "CONCEPT"
                        <*> pConceptName           -- the concept name
                        <*> ((True <$ pKey "BYPLUG") `opt` False)
                        <*> pString                -- the definition text
-                       <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
+                  --     <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
+
+pRepresentation :: AmpParser Representation
+pRepresentation 
+  = Repr <$> pKey_pos "REPRESENT"
+         <*> pList1Sep (pSpec ',') pConceptName  -- the concept names
+         <*  pKey "TYPE"
+         <*> pDomain
+
+pDomain :: AmpParser Domain
+pDomain = k Alphanumeric      "Alphanumeric"
+      <|> k BigAlphanumeric   "BigAlphanumeric"
+      <|> k HugeAalphanumeric "HugeAalphanumeric"
+      <|> k Password          "Password"
+      <|> k Binary            "Binary"
+      <|> k BigBinary         "BigBinary"
+      <|> k HugeBinary        "HugeBinary"
+      <|> k Date              "Date"
+      <|> k DateTime          "DateTime"
+      <|> k Boolean           "Boolean"
+      <|> k Numeric           "Numeric"
+  where
+   k dom str = f <$> pKey str where f _ = dom
 
 pGenDef :: AmpParser P_Gen
 pGenDef           = rebuild <$> pKey_pos "SPEC"     <*> pConceptRef <* pKey "ISA" <*> pConceptRef <|>  -- SPEC is obsolete syntax. Should disappear!
