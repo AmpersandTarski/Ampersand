@@ -16,8 +16,10 @@ Ampersand works with binary relations, so you will find pairs of atoms in a rela
 In an information system, the population of relations can change because of edit actions by users in user interfaces.
 This means that pairs are inserted into and deleted from relations as time goes by.
 -}
-CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept." TYPE "Blob"
-CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
+CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept." 
+REPRESENT Atom TYPE BigAlphanumeric
+CONCEPT AtomValue "An atom is the value of an atomic term." 
+REPRESENT AtomValue TYPE BigAlphanumeric
 PURPOSE CONCEPT AtomID
 {+In order to represent atoms in a database, an identifier is used.
 This may even be an unintelligible, internal code that is never shown to a user.

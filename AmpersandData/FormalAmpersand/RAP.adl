@@ -86,7 +86,8 @@ inileft::PairID*Atom
 MEANING IN ENGLISH "The initial source of a relationship from the initial population of a relation from a rule specification file."
 iniright::PairID*Atom
 MEANING IN ENGLISH "The initial target of a relationship from the initial population of a relation from a rule specification file."
-CONCEPT ErrorMessage "An error message is a description of an error." TYPE "Blob"
+CONCEPT ErrorMessage "An error message is a description of an error." 
+REPRESENT ErrorMessage TYPE Text
 KEY ParseError: ParseError(TXT "Click here for error details.")
 parseerror   :: File * ParseError[UNI]
 MEANING IN ENGLISH "The parse error resulting from the parser of the Ampersand compiler when the rule specification file was loaded for the first time."

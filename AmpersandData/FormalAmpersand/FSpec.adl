@@ -23,7 +23,8 @@ MEANING IN ENGLISH "The violations of a rule."
 ENDPATTERN
 
 PATTERN Misc
-CONCEPT PragmaSentence "An example sentence using the pragma of a relation declaration." TYPE "Blob"
+CONCEPT PragmaSentence "An example sentence using the pragma of a relation declaration." 
+REPRESENT PragmaSentence TYPE BigAlphanumeric
 decexample :: Declaration * PragmaSentence
 MEANING IN ENGLISH "An example sentence using the pragma of a relation."
 ENDPATTERN
