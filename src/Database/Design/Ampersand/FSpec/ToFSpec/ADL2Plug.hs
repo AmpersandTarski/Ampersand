@@ -128,18 +128,18 @@ unquote str
 suitableAsKey :: Domain -> Bool
 suitableAsKey st =
   case st of
-    Alphanumeric      -> True
-    BigAlphanumeric   -> True
-    HugeAalphanumeric -> False
-    Password          -> False
-    Binary            -> False
-    BigBinary         -> False
-    HugeBinary        -> False
-    Date              -> True
-    DateTime          -> True
-    Boolean           -> True
-    Numeric           -> True
-    AutoIncrement     -> True
+    Alphanumeric     -> True
+    BigAlphanumeric  -> True
+    HugeAlphanumeric -> False
+    Password         -> False
+    Binary           -> False
+    BigBinary        -> False
+    HugeBinary       -> False
+    Date             -> True
+    DateTime         -> True
+    Boolean          -> True
+    Numeric          -> True
+    AutoIncrement    -> True
 
 -----------------------------------------
 --rel2fld
@@ -443,46 +443,22 @@ makeUserDefinedSqlPlug context obj
    sqltp :: ObjectDef -> SqlType
    sqltp _ = fatal 448 "The Sql type of a user defined plug has bitrotteted. The syntax should support a Representation."
 
---sqlTypeOf :: A_Context -> A_Concept -> SqlType
---sqlTypeOf _ ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
---sqlTypeOf context c
---    = case nub [ cdtyp cdef | cdef<-ctxcds context, name c==name cdef ] of
---       [str] -> sqlTypeOf' str
---       []    -> sqlTypeOf' ""
---       _     -> fatal 396 ("Multiple SQL types defined for concept "++name c)
---
 domain2SqlType :: Domain -> SqlType
 domain2SqlType dom 
  = case dom of
-     Alphanumeric      -> SQLVarchar 255
-     BigAlphanumeric   -> SQLText
-     HugeAalphanumeric -> SQLMediumText
-     Password          -> SQLVarchar 255
-     Binary            -> SQLBlob
-     BigBinary         -> SQLMediumBlob
-     HugeBinary        -> SQLLongBlob
-     Date              -> SQLDate
-     DateTime          -> SQLDateTime
-     Boolean           -> SQLBool
-     Numeric           -> SQLFloat
-     AutoIncrement     -> SQLSerial
+     Alphanumeric     -> SQLVarchar 255
+     BigAlphanumeric  -> SQLText
+     HugeAlphanumeric -> SQLMediumText
+     Password         -> SQLVarchar 255
+     Binary           -> SQLBlob
+     BigBinary        -> SQLMediumBlob
+     HugeBinary       -> SQLLongBlob
+     Date             -> SQLDate
+     DateTime         -> SQLDateTime
+     Boolean          -> SQLBool
+     Numeric          -> SQLFloat
+     AutoIncrement    -> SQLSerial
   
---sqlTypeOf' :: String -> SqlType
---sqlTypeOf' str = case str of
---       ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
---       "Pass" -> SQLPass
---       ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
---       "Blob" -> SQLBlob
---       "Text" -> SQLText
---       "Single" -> SQLSingle
---       "Double" -> SQLDouble
---       ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
---       ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
---       "Id" -> SQLId
---       ('B':'o':'o':'l':_) -> SQLBool
---       "" -> SQLVarchar 255
---       _ -> fatal 335 ("Unknown type: "++str)
-
 representationOf :: A_Context -> A_Concept -> Domain
 representationOf context cpt = 
   case cpt of 

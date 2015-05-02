@@ -169,7 +169,7 @@ instance Traced Representation where
  origin = reprpos
          
 data Domain 
-  = Alphanumeric | BigAlphanumeric | HugeAalphanumeric | Password
+  = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
   | Binary | BigBinary | HugeBinary 
   | Date | DateTime 
   | Boolean | Numeric | AutoIncrement

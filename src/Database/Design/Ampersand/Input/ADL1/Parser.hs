@@ -43,9 +43,9 @@ keywordstxt       = [ "INCLUDE"
                     , "BYPLUG"
                     , "ROLE", "EDITS", "MAINTAINS"
                     -- Keywords for Domains:
-                    , "Alphanumeric", "BigAlphanumeric", "HugeAalphanumeric", "Password"
+                    , "Alphanumeric", "BigAlphanumeric", "HugeAlphanumeric", "Password"
                     , "Binary", "BigBinary", "HugeBinary"
-                    , "Date", "DateTime", "Boolean", "Numeric"
+                    , "Date", "DateTime", "Boolean", "Numeric", "AutoIncrement"
                     ]
 keywordsops :: [String]
 keywordsops       = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
@@ -365,17 +365,18 @@ pRepresentation
          <*> pDomain
 
 pDomain :: AmpParser Domain
-pDomain = k Alphanumeric      "Alphanumeric"
-      <|> k BigAlphanumeric   "BigAlphanumeric"
-      <|> k HugeAalphanumeric "HugeAalphanumeric"
-      <|> k Password          "Password"
-      <|> k Binary            "Binary"
-      <|> k BigBinary         "BigBinary"
-      <|> k HugeBinary        "HugeBinary"
-      <|> k Date              "Date"
-      <|> k DateTime          "DateTime"
-      <|> k Boolean           "Boolean"
-      <|> k Numeric           "Numeric"
+pDomain = k Alphanumeric     "Alphanumeric"
+      <|> k BigAlphanumeric  "BigAlphanumeric"
+      <|> k HugeAlphanumeric "HugeAlphanumeric"
+      <|> k Password         "Password"
+      <|> k Binary           "Binary"
+      <|> k BigBinary        "BigBinary"
+      <|> k HugeBinary       "HugeBinary"
+      <|> k Date             "Date"
+      <|> k DateTime         "DateTime"
+      <|> k Boolean          "Boolean"
+      <|> k Numeric          "Numeric"
+      <|> k AutoIncrement    "AutoIncrement"
   where
    k dom str = f <$> pKey str where f _ = dom
 
