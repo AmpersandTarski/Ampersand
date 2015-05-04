@@ -59,7 +59,8 @@ Class Atom {
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
-			$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
+			$idEsc = $this->database->escape($this->id);
+			$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 			$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 		}else{
 			// Make sure that atom is in db (not necessarily the case: e.g. new atom)
@@ -322,7 +323,8 @@ Class Atom {
 					$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
 				
 				}else{
-					$query = "SELECT DISTINCT `tgt` FROM (".$viewSegment['expSQL'].") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
+					$idEsc = $this->database->escape($this->id);
+					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 					
 					$txt = count($tgtAtoms) ? htmlSpecialChars($tgtAtoms[0]) : null;

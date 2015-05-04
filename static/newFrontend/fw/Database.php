@@ -32,6 +32,9 @@ class Database
 		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
 		if ($this->db_link->connect_error) throw new Exception($this->db_link->connect_error, 500);
 		
+		// Set sql_mode to ANSI
+		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+		
 		// Select DB
 		try{
 			$this->selectDB();
@@ -74,8 +77,6 @@ class Database
 		
 		if ($this->db_link->error) throw new Exception($this->db_link->error, 500);
 		
-		// Set sql_mode to ANSI
-		$this->Exe("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
 	}
 	
 	private function installDB(){
@@ -109,7 +110,6 @@ class Database
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
-		//TODO: add mysql_real_escape_string() on query and remove addslashes() elsewhere
 		$result = $this->db_link->query($query);
 		Notifications::addLog($query, 'QUERY');
 
@@ -126,6 +126,16 @@ class Database
 		
 	}
 	
+	/*
+	 * See:
+	 * - http://php.net/manual/en/language.types.string.php#language.types.string.parsing
+	 * - http://php.net/manual/en/mysqli.real-escape-string.php
+	 * 
+	 */
+	public function escape($param){
+		return $this->db_link->real_escape_string($param);
+	}
+	
 
 // =============================== CHANGES TO DATABASE ===========================================================
 	
@@ -139,21 +149,23 @@ class Database
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
+			// Currently every concept is only in 1 table. However the 'conceptTables' in Generics returns an array, therefore 'foreach'
 			foreach (Concept::getConceptTableInfo($concept) as $conceptTableInfo) {  
 				
 				// Get table properties
 				$conceptTable = $conceptTableInfo['table']; 
-				$conceptCols = $conceptTableInfo['cols'];   // We insert the new atom in each of them.
+				$conceptCols = $conceptTableInfo['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 	
 				// If $newAtom is not in $concept
 				if(!$this->atomExists($newAtom, $concept)){ 
 					// Create query string: `<col1>`, `<col2>`, etc
 					$allConceptCols = '`' . implode('`, `', $conceptCols) . '`';
 					
+					$newAtomEsc = $this->escape($newAtom);
 					// Create query string: '<newAtom>', '<newAtom', etc
-					$newAtomsArray = array_fill(0, count($conceptCols), $newAtom);
+					$newAtomsArray = array_fill(0, count($conceptCols), $newAtomEsc);
 					$allValues = "'".implode("', '", $newAtomsArray)."'";
-	
+					
 					$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
 					
 					if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
@@ -181,13 +193,13 @@ class Database
 		$table = $tableInfo[0]['table'];
 		$conceptCol = $tableInfo[0]['cols'][0];
 		
-		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomId'";
+		$atomIdEsc = $this->escape($atomId);
+		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomIdEsc'";
 		$result = $this->Exe($query);
 		
 		if(empty($result)) return false;
 		else return true;
-	}
-	
+	}	
 	
 	/* How to use editUpdate:
 	 * r :: A * B
@@ -218,33 +230,38 @@ class Database
 			$stableCol = $isFlipped ? $tgtCol : $srcCol;
 			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
 	
-			// ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
+			// Ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
 			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
 			
+			// Escape atoms for use in query
+			$modifiedAtomEsc = $this->escape($modifiedAtom); 
+			$stableAtomEsc = $this->escape($stableAtom);
+			$originalAtomEsc = $this->escape($originalAtomEsc);
+			
+			// Get database table information
 			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
 			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
+			
 			// If the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
 			if ($tableStableColumnInfo['unique']){
 				
-				$this->Exe("UPDATE `$table` SET `$modifiedCol`='$modifiedAtom' WHERE `$stableCol`='$stableAtom'");
+				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 			
 			// Elseif the modified column is unique, we do an update
 			}elseif ($tableModifiedColumnInfo['unique']){
 				
-				$this->Exe("UPDATE `$table` SET `$stableCol`='$stableAtom' WHERE `$modifiedCol`='$modifiedAtom'");
+				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Otherwise, binary table, so perform a insert.
 			}else{
-				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtom', '$modifiedAtom')");
+				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
 				
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
-				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$originalAtom'");			
+				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$originalAtomEsc'");			
 			}
 			
 			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
 	
-			
-			
 		}catch(Exception $e){
 			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
@@ -275,22 +292,27 @@ class Database
 			// Determine which Col must be editited and which must be used in the WHERE statement
 			$stableCol = $isFlipped ? $tgtCol : $srcCol;
 			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
+			
+			// Escape atoms for use in query
+			$modifiedAtomEsc = $this->escape($modifiedAtom);
+			$stableAtomEsc = $this->escape($stableAtom);
 					
+			// Get database table information
 			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
 			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
 			
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
-				$this->Exe("UPDATE `$table` SET `$modifiedCol`= NULL WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$modifiedAtom'");
+				$this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
 				
-				$this->Exe("UPDATE `$table` SET `$stableCol`= NULL WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$modifiedAtom'");
+				$this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
-				$this->Exe("DELETE FROM `$table` WHERE `$stableCol`='$stableAtom' AND `$modifiedCol`='$modifiedAtom'");
+				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			}
 			
 			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
@@ -313,18 +335,19 @@ class Database
 			if (!isset($this->transaction)) $this->startTransaction();
 			
 			global $tableColumnInfo;
-	
+			
+			$atomEsc = $this->escape($atom);
 			foreach ($tableColumnInfo as $table => $tableInfo){
 				foreach ($tableInfo as $column => $fieldInfo) {
 					// TODO: could be optimized by doing one query per table. But deleting per column yields the same result (unlike adding)
 					if ($fieldInfo['concept'] == $concept) {
 						
 						// If the field can be null, we set all occurrences to null
-						if ($fieldInfo['null']) $this->Exe("UPDATE `$table` SET `$column`=NULL WHERE `$column`='$atom'");
+						if ($fieldInfo['null']) $this->Exe("UPDATE `$table` SET `$column` = NULL WHERE `$column` = '$atomEsc'");
 						
 						// Otherwise, we remove the entire row for each occurrence
 						else 
-							$this->Exe("DELETE FROM `$table` WHERE `$column` = '$atom'");
+							$this->Exe("DELETE FROM `$table` WHERE `$column` = '$atomEsc'");
 					}
 				}
 			}

@@ -35,7 +35,8 @@ class Concept {
 		$firstConceptCol = $conceptTableInfo[0]['cols'][0]; // for lookup, we just take the first table and its first column
 		
 		// Query all atoms in table
-		return $existingAtoms = array_column($database->Exe("SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL"), $firstConceptCol); // no need to filter duplicates and NULLs
+		$query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
+		return $existingAtoms = array_column($database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
 		
 	}
 	
@@ -47,7 +48,7 @@ class Concept {
 			$table = $tableInfo[0]['table'];
 			$col = $tableInfo[0]['cols'][0];
 			
-			$query = "SELECT MAX($col) as 'MAX' FROM $table";
+			$query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
 			$result = array_column($database->Exe($query), 'MAX');
 			
 			if(empty($result)) $atomId = 1;

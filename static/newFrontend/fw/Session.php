@@ -22,20 +22,11 @@ class Session {
 		session_start();
 		Notifications::addLog('Session id: ' . session_id(), 'SESSION');
 		
-		// Database connection for within this class
-		try {
-			
+		try {			
 			$this->database = Database::singleton();
 			
 			// AMPERSAND SESSION
 			if (array_key_exists('SESSION', $allConcepts)){ // Only execute following code when concept SESSION is used by adl script
-				
-				try {
-					$this->database->Exe("SELECT * FROM `__SessionTimeout__` WHERE false");
-				} catch (Exception $e) {
-					Notifications::addError('Cannot access database. Make sure the MySQL server is running, or <a href="installer/" class="alert-link">create a new database</a>');
-					return;
-				}
 				
 				// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
 				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');

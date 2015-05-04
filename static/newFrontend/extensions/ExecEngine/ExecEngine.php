@@ -97,7 +97,8 @@ class ExecEngine {
 				$atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
 				
 				// quering the expression
-				$query = "SELECT DISTINCT `tgt` FROM (".$segment['expSQL'].") AS results WHERE src='".addslashes($atom)."'"; // SRC of TGT kunnen door een expressie gevolgd worden
+				$atomEsc = $database->escape($atom);
+				$query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '$atomEsc'"; // SRC of TGT kunnen door een expressie gevolgd worden
 				$rows = $database->Exe($query);
 				
 				// returning the result
