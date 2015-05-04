@@ -141,8 +141,14 @@ class Api{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
-			$atom = new Atom($atomId, $session->interface->tgtConcept);	
-			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
+			// TODO: insert check if Atom may be updated with this interface
+			
+			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)){
+				// TODO: insert check if Atom may be created with this interface
+				$session->database->addAtomToConcept($atomId, $session->interface->tgtConcept);
+			}
+			
+			$atom = new Atom($atomId, $session->interface->tgtConcept);
 			
 			return array_merge(array('patches' => $atom->patch($session->interface, $request_data))
 							  ,array('content' => current((array)$atom->getContent($session->interface, true, $atom->id))) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
