@@ -90,7 +90,7 @@ Class Atom {
 														, '@label' => $tgtAtom->label
 				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
-														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces(null, $interface->tgtConcept))
+														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept))
 													 	, 'id' => $tgtAtom->id));
 				
 			}else{ // TgtConcept of interface is primitive datatype

@@ -362,8 +362,8 @@ class Api{
     		$session = Session::singleton();
     		$session->setRole($roleId);
     		
-    		return array ('top' => $session->role->getInterfaces(true)
-    					 ,'new' => $session->role->getInterfaces(false));
+    		return array ('top' => $session->role->getInterfacesForNavBar()
+    					 ,'new' => $session->role->getInterfacesToCreateAtom());
     		
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());
