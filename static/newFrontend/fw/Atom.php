@@ -248,11 +248,19 @@ Class Atom {
 					
 					// in case $tgtAtom is empty string -> perform remove instead of replace.
 					if($tgtAtom !== ''){
-						$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
+						try{
+							$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
+						}catch(Exception $e){
+							Notifications::addError($e->getMessage());
+						}
 						$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
 					}else{
 						// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
-						$tgtAtom = JsonPatch::get($before, $patch['path']);
+						try{
+							$tgtAtom = JsonPatch::get($before, $patch['path']);
+						}catch(Exception $e){
+							Notifications::addError($e->getMessage());
+						}
 						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 					}					
 				}else{
@@ -337,7 +345,11 @@ Class Atom {
 				if($tgtInterface->editable){
 					// in case of 'remove' for a link to a non-concept (i.e. datatype), the final $tgtAtom value is not provided, so we have to get this value to perform the editDelete function
 					// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
-					if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
+					try{
+						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
+					}catch(Exception $e){
+						Notifications::addError($e->getMessage());
+					}
 					$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 				}else{
 					Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
