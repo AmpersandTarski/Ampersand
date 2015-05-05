@@ -13,8 +13,10 @@ Class Atom {
 	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
+	private $database;
 		
-	public function __construct($id, $concept = null, $viewId = null){
+	public function __construct($id, $concept, $viewId = null){
+		$this->database = Database::singleton();
 		
 		// Ampersand attributes
 		$this->id = $id;
@@ -28,6 +30,13 @@ Class Atom {
 		$this->jsonld_id = JSONLD_ID_PATH . $concept . '/' . $this->id;
 		$this->jsonld_type = JSONLD_TYPE_PATH . $concept;
 
+	}
+	
+	/*
+	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
+	 */
+	public function atomExists(){
+		return $this->database->atomExists($this->id, $this->concept);
 	}
 	
 	public function getAtom($interface = null){
@@ -49,14 +58,15 @@ Class Atom {
 	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
 	 */
 	public function getContent($interface, $rootElement = true, $tgtAtom = null){
-		$database = Database::singleton();
+		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
-			$query = "SELECT DISTINCT `tgt` FROM (".$interface->expressionSQL.") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
-			$tgtAtoms = array_column($database->Exe($query), 'tgt');
+			$idEsc = $this->database->escape($this->id);
+			$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+			$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 		}else{
 			// Make sure that atom is in db (not necessarily the case: e.g. new atom)
-			$database->addAtomToConcept($this->id, $this->concept);
+			$this->database->addAtomToConcept($this->id, $this->concept);
 			
 			$tgtAtoms[] = $tgtAtom;
 		}
@@ -68,7 +78,7 @@ Class Atom {
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
 
 			// determine value atom 
-			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$content = !is_null($tgtAtom->id);
 				
 			}elseif($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
@@ -82,6 +92,7 @@ Class Atom {
 														, '@label' => $tgtAtom->label
 				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
+														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept))
 													 	, 'id' => $tgtAtom->id));
 				
 			}else{ // TgtConcept of interface is primitive datatype
@@ -216,7 +227,7 @@ Class Atom {
 					}else{
 						$database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
 					}
-					
+						
 					break;
 				}
 				
@@ -234,7 +245,7 @@ Class Atom {
 					// in case $tgtAtom is empty string -> perform remove instead of replace.
 					if($tgtAtom !== ''){
 						$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
-						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
+						$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
 					}else{
 						// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 						$tgtAtom = JsonPatch::get($before, $patch['path']);
@@ -337,24 +348,22 @@ Class Atom {
 	public function setNewContent($interface){
 		
 		$this->newContent = $this->getContent($interface, true, $atom->id);
+
 	}
 	
-	public function delete(){
-		$database = Database::singleton();
-		
+	public function delete(){		
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
 		
-		$database->deleteAtom($this->id, $this->concept);
+		$this->database->deleteAtom($this->id, $this->concept);
 		
 		// Close transaction => ROLLBACK or COMMIT.
-		$database->closeTransaction('Atom deleted', false);
+		$this->database->closeTransaction('Atom deleted', false);
 		
 		return;
 		
 	}
 	
 	private function getView($viewId = null){
-		$database = Database::singleton();
 		$view = Concept::getView($this->concept, $viewId);
 		
 		if(empty($view) || $this->id == ''){
@@ -372,11 +381,12 @@ Class Atom {
 					$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
 				
 				}else{
-					$query = "SELECT DISTINCT `tgt` FROM (".$viewSegment['expSQL'].") AS results WHERE src='".addslashes($this->id)."' AND `tgt` IS NOT NULL";
-					$tgtAtoms = array_column($database->Exe($query), 'tgt');
+					$idEsc = $this->database->escape($this->id);
+					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 					
-					$txt = count($tgtAtoms) ? $tgtAtoms[0] : $this->id; // this can happen in a create-new interface when the view fields have not yet beenfilled out, while the atom is shown
-					$viewStrs[$viewSegment['label']] = htmlSpecialChars($txt);
+					$txt = count($tgtAtoms) ? htmlSpecialChars($tgtAtoms[0]) : null;
+					$viewStrs[$viewSegment['label']] = $txt;
 				}
 			}
 			return $viewStrs;
