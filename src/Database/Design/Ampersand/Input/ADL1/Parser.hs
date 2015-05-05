@@ -164,9 +164,12 @@ data PatElem = Pr (P_Rule TermPrim)
 
 --- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
 pProcessDef :: AmpParser P_Pattern
-pProcessDef = rebuild <$> currPos <* pKey "PROCESS" <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
+pProcessDef = rebuild <$> currPos 
+                      <*  pKey "PROCESS" 
+                      <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                       <*> many pProcElem
-                      <*> currPos <* pKey "ENDPROCESS"
+                      <*> currPos 
+                      <*  pKey "ENDPROCESS"
    where
     rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
@@ -705,15 +708,10 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
---TODO! use the same construction as for pTerm
-pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|>
-                      f PRad <$> pars PRad "!" <|>
-                      f PPrd <$> pars PPrd "#")
-          where pars combinator op
-                 = g <$> currPos <* pOperator op <*> pTrm5 <*> pMaybe (pars combinator op)
-                          where g orig y Nothing  = (orig, y)
-                                g orig y (Just (org,z)) = (orig, combinator org y z)
-                f combinator (orig, y) x = combinator orig x y
+pTrm4 = rebuild <$> pTrm5 <*> optList (many1 (invert PCps <$> currPos <* pOperator ";" <*> pTrm5) <|>
+                                       many1 (invert PRad <$> currPos <* pOperator "!" <*> pTrm5) <|>
+                                       many1 (invert PPrd <$> currPos <* pOperator "#" <*> pTrm5))
+    where rebuild = foldl (\a f -> f a)
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
