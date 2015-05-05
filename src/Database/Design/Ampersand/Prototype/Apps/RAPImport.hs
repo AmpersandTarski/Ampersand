@@ -263,15 +263,15 @@ makeRAPPops fSpec usrfiles pics
     ,makepopu ("ptxps","Pattern","Blob")        [(patid p, nonsid (aMarkup2String (explMarkup ex)))
                                                                                   | p<-patterns fSpec, ex<-explanations fSpec, explForObj p (explObj ex)]
     --RAP only knows PATTERN elements from a PROCESS, and reduces a PROCESS to a PATTERN with a name PROCESS_<name>
-    ,makepopu ("ptpic","Pattern","Image")       [(prcid p    , imageid pic)       | pic<-pics, pType pic==PTProcess, p<-vprocesses fs, name p==origName pic]
-    ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), prcid p)         | p<-vprocesses fs]
-    ,makepopu ("ptnm","Pattern","Conid")        [(prcid p      , nonsid ("PROCESS_"++name p)) | p<-vprocesses fs]
-    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, r<-rules (fpProc p)]
-    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vprocesses fs, d<-relsDefdIn (fpProc p),decusr d, pr<-rapmults d, let r=rulefromProp pr d]
-    ,makepopu ("ptgns","Pattern","Gen")         [(prcid p      , genid g)         | p<-vprocesses fs, g<-gens (fpProc p)]
-    ,makepopu ("ptdcs","Pattern","Declaration") [(prcid p      , decid d)         | p<-vprocesses fs, d<-relsDefdIn (fpProc p),decusr d]
+    ,makepopu ("ptpic","Pattern","Image")       [(prcid p    , imageid pic)       | pic<-pics, pType pic==PTProcess, p<-vpatterns fs, name p==origName pic]
+    ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), prcid p)         | p<-vpatterns fs]
+    ,makepopu ("ptnm","Pattern","Conid")        [(prcid p      , nonsid ("PROCESS_"++name p)) | p<-vpatterns fs]
+    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vpatterns fs, r<-rules p]
+    ,makepopu ("ptrls","Pattern","Rule")        [(prcid p      , ruleid r)        | p<-vpatterns fs, d<-relsDefdIn p,decusr d, pr<-rapmults d, let r=rulefromProp pr d]
+    ,makepopu ("ptgns","Pattern","Gen")         [(prcid p      , genid g)         | p<-vpatterns fs, g<-gens p]
+    ,makepopu ("ptdcs","Pattern","Declaration") [(prcid p      , decid d)         | p<-vpatterns fs, d<-relsDefdIn p,decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(prcid p, nonsid (aMarkup2String (explMarkup ex)))
-                                                                                  | p<-vprocesses fs, ex<-explanations fs, explForObj (fpProc p) (explObj ex)]
+                                                                                  | p<-vpatterns fs, ex<-explanations fs, explForObj p (explObj ex)]
     ,makepopu ("decnm","Declaration","Varid")               [(decid d , nonsid(name d))   | d<-userdeclarations]
     ,makepopu ("decsgn","Declaration","Sign")               [(decid d , sgnid (sign d))   | d<-userdeclarations]
     ,makepopu ("decprps","Declaration","PropertyRule")      [(decid d , ruleid r)         | d<-userdeclarations, p<-rapmults d, let r=rulefromProp p d]

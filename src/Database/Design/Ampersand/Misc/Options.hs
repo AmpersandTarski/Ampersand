@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..),FileFormat(..)
-        ,DocTheme(..),allFSpecFormats,helpNVersionTexts)
+        ,DocTheme(..),helpNVersionTexts)
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import Database.Design.Ampersand.Misc.Languages (Lang(..))
@@ -113,7 +113,7 @@ getOptions =
                        return (utcToLocalTime timeZone utcTime)
       env <- getEnvironment
       let usage = "\nType '"++ progName++" --help' for usage info."
-      let (actions, fNames, errors) = getOpt Permute (each options) args
+      let (actions, fNames, errors) = getOpt Permute (map fst options) args
       when ((not.null) errors) (error $ concat errors ++ usage)
       let fName = case fNames of
                    []  -> error ("Please supply the name of an ampersand file" ++ usage)
@@ -199,11 +199,18 @@ getOptions =
            (createDirectoryIfMissing True (dirPrototype opts))
       return opts
 
-data DisplayMode = Public | Hidden
+data DisplayMode = Public | Hidden deriving Eq
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
 allFSpecFormats :: String
-allFSpecFormats = show (map (tail . show) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument, Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile])
+allFSpecFormats = "["++intercalate ", " 
+    ((sort . map f) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, 
+                FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument
+                , Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile]) ++"]"
+    where f:: Show a => a -> String
+          f fmt = case show fmt of
+                    _:h:t -> toUpper h : map toLower t
+                    x     -> x 
 
 data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
@@ -213,22 +220,10 @@ data DocTheme = DefaultTheme   -- Just the functional specification
               | DesignerTheme   -- Output for non-students
                  deriving (Show, Eq)
 
-usageInfo' :: Options -> String
--- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
-usageInfo' opts = usageInfo (infoHeader (progrName opts)) (if verboseP opts then each options else publics options)
-
-infoHeader :: String -> String
-infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
-
-publics :: [(a, DisplayMode) ] -> [a]
-publics opts = [o | (o,Public)<-opts]
-each :: [(a, DisplayMode) ] -> [a]
-each opts = [o |(o,_) <- opts]
 
 type OptionDef = OptDescr (Options -> IO Options)
 options :: [(OptionDef, DisplayMode) ]
-options = map pp
-          [ (Option ['v']   ["version"]
+options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{showVersion = True}))
                "show version and exit."
             , Public)
@@ -310,7 +305,7 @@ options = map pp
                                                  _     -> fileformat opts
                                   }
                        ) "FORMAT")
-               ("format of import file (format=ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)).")
+               ("format of import file (FORMAT=ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)).")
             , Public)
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> return opts{namespace = nm}
@@ -339,7 +334,7 @@ options = map pp
                                     ('T':'E':'X':'T': _ ) -> Ftextile
                                     _                     -> fspecFormat opts}
                        ) "FORMAT")
-               ("generate a functional specification document in specified format (format="++allFSpecFormats++").")
+               ("generate a functional specification document in specified format (FORMAT="++allFSpecFormats++").")
             , Public)
           , (Option []        ["refresh"]
                (OptArg (\r opts -> return
@@ -494,16 +489,46 @@ options = map pp
                "Use the new frontend."
             , Hidden)
           ]
-     where pp :: (OptionDef, DisplayMode) -> (OptionDef, DisplayMode)
-           pp (Option a b' c d,e) = (Option a b' c d',e)
-              where d' =  afkappen [] [] (words d) 40
-                    afkappen :: [[String]] -> [String] -> [String] -> Int -> String
-                    afkappen regels []    []   _ = intercalate "\n" (map unwords regels)
-                    afkappen regels totnu []   b = afkappen (regels++[totnu]) [] [] b
-                    afkappen regels totnu (w:ws) b
-                          | length (unwords totnu) < b - length w = afkappen regels (totnu++[w]) ws b
-                          | otherwise                             = afkappen (regels++[totnu]) [w] ws b
 
+usageInfo' :: Options -> String
+-- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.
+usageInfo' opts = 
+  infoHeader (progrName opts) ++"\n"++
+    (concat . sort . map publishOption) [od | (od,x) <- options, verboseP opts || x == Public] 
+
+infoHeader :: String -> String
+infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
+
+
+publishOption:: OptDescr a -> String
+publishOption (Option shorts longs args expl) 
+  = unlines (
+    [ "  "++intercalate ", " ["--"++l | l <-longs] 
+      ++case args of
+         NoArg _      -> "" 
+         ReqArg _ str -> "="++str
+         OptArg _ str -> "[="++str++"]"
+      ++case intercalate ", " [ "-"++[c] | c <- shorts] of
+          []  -> []
+          xs  -> " ("++xs++")"
+    ] 
+    ) ++unlines (map (replicate 10 ' '++) (lines (limit 65 expl)))
+  where
+   limit :: Int -> String -> String
+   limit i = intercalate "\n" . map (singleLine i . words) . lines
+   singleLine :: Int -> [String] -> String 
+   singleLine i wrds = 
+     case fillUpto i "" wrds of
+       (str, []) -> str
+       (str, rest) -> str ++ "\n"++ singleLine i rest
+   fillUpto :: Int -> String -> [String] -> (String, [String])
+   fillUpto i "" (w:ws) = fillUpto i w ws
+   fillUpto _ str [] = (str, [])
+   fillUpto i str (w:ws) = let nstr = str++" "++w
+                           in if length nstr > i 
+                           then (str, w:ws)
+                           else fillUpto i nstr ws 
+     
 envdirPrototype :: String
 envdirPrototype = "CCdirPrototype"
 envdirOutput :: String

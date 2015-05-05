@@ -62,6 +62,7 @@ data FileOrDir = File | Dir deriving Show
 -- Files/directories that will be copied to the prototype, if present in $adlSourceDir/includes/
 allowedIncludeSubDirs :: [Include]
 allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
+                        , Include Dir  "views"             "app/views"
                         , Include Dir  "css"               "app/css"
                         , Include Dir  "js"                "app/js"
                         , Include Dir  "images"            "app/images"

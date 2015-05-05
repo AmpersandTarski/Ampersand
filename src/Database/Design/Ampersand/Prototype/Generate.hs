@@ -223,7 +223,7 @@ generateAllDefPopQueries fSpec =
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate "\n     , " 
-                  [ "(" ++intercalate ", " (map showValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
+                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
@@ -235,7 +235,7 @@ generateAllDefPopQueries fSpec =
       where
         populatePlug :: PlugSQL -> [String]
         populatePlug plug 
-          = case tblcontents (gens fSpec) (initialPops fSpec) plug of
+          = case tblcontents (vgens fSpec) (initialPops fSpec) plug of
              []  -> []
              tblRecords 
                  -> [intercalate "\n           " $ 
@@ -251,7 +251,7 @@ generateAllDefPopQueries fSpec =
              = intercalate ", " 
                  [case fld of 
                     Nothing -> "NULL"
-                    Just str -> showValue str
+                    Just str -> showAsValue str
                  | fld <- record ]
 
 
@@ -262,7 +262,7 @@ generateSpecializations fSpec =
   addToLastLine ";"
     (indent 4 (blockParenthesize "(" ")" ","
          [ [ showPhpStr (name cpt)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ]
-         | cpt <- concs fSpec, let specializations = smallerConcepts (gens fSpec) cpt,  not ( null specializations) ])
+         | cpt <- concs fSpec, let specializations = smallerConcepts (vgens fSpec) cpt,  not ( null specializations) ])
     )
 
 generateTableInfos :: FSpec -> [String]
@@ -306,7 +306,7 @@ generateTableInfos fSpec =
                            " )"
                     ]
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c
+                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
               [ ")" ]
            )
@@ -607,6 +607,11 @@ genPhp generatorModule moduleName contentLines = unlines $
   ] ++ replicate 2 "" ++ contentLines ++
   [ "?>"
   ]
-showValue :: String -> String
-showValue str = "'"++str++"'"
-
+showAsValue :: String -> String
+showAsValue str = "'"++f str++"'"
+  where f :: String -> String
+        f str'= 
+          case str' of
+            []        -> []
+            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
+            (c:cs)    -> c : f cs

@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
   (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
-  , makeAllConjs, conjuncts, allConjuncts
+  , makeAllConjs, conjuncts
   ) where
   
 import Data.Set (Set)
@@ -15,7 +15,6 @@ import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Misc.Options
 import Database.Design.Ampersand.Input (parseRule)
 import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
@@ -1715,9 +1714,6 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
   isEDcI EDcI{} = True
   isEDcI _ = False
 
-
-allConjuncts :: Options -> A_Context -> [Conjunct]
-allConjuncts opts context = makeAllConjs opts (allRules context)
 
 makeAllConjs :: Options -> [Rule] -> [Conjunct]
 makeAllConjs opts allRls =

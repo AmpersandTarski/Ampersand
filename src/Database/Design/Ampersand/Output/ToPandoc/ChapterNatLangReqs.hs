@@ -103,7 +103,7 @@ chpNatLangReqs lev fSpec =
     where
       (theBlocks,_) = 
         printThemes toBeProcessedStuff newCounter
-           [pat | pat<-patterns fSpec, null (themes fSpec) || name pat `elem` themes fSpec ]
+           [pat | pat<-vpatterns fSpec, null (themes fSpec) || name pat `elem` themes fSpec ]
       toBeProcessedStuff = ( conceptsWith
                            , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
@@ -114,7 +114,7 @@ chpNatLangReqs lev fSpec =
                 , (not.null) (concDefs fSpec c)
                 ]
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ d | d <- relsDefdIn fSpec
+              = [ d | d <- vrels fSpec
                 , decusr d
                 , not . null $ purposesDefinedIn fSpec (fsLang fSpec) d
                 ]
@@ -204,16 +204,14 @@ chpNatLangReqs lev fSpec =
               themeName = case mTheme of
                            Nothing  -> ""
                            Just pat -> name pat
-                           --Just (PatternTheme pat) -> "Pattern "++name pat
-                           --Just (ProcessTheme prc) -> "Process "++name prc
-
+                           
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
               printIntro :: [A_Concept] -> Blocks
               printIntro [] = mempty
               printIntro ccds
                 = case fsLang fSpec of
                       Dutch   -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- (patterns fSpec) ++ map (fpProc) (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- (vpatterns fSpec) , name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of
@@ -237,7 +235,7 @@ chpNatLangReqs lev fSpec =
                                  )
 
                       English -> (case ([(emph.str.unCap) cname | cname<-map name ccds]
-                                       , length [p |p <- patterns fSpec ++ map fpProc (vprocesses fSpec), name p == themeName]
+                                       , length [p |p <- vpatterns fSpec, name p == themeName]
                                        ) of
                                     ([] ,_) -> mempty
                                     ([_],1) -> case mTheme of
@@ -352,7 +350,7 @@ chpNatLangReqs lev fSpec =
                  ) ++
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
-                       samplePop = (take 3 . fullContents (gens fSpec) (initialPops fSpec) . EDcD) dcl
+                       samplePop = (take 3 . fullContents (vgens fSpec) (initialPops fSpec) . EDcD) dcl
                        sampleSentences =
                          [ Para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
                          | p <-samplePop
@@ -409,7 +407,7 @@ chpNatLangReqs lev fSpec =
 -- TODO: move these to some auxiliaries or utils
 showViewAtom :: FSpec -> Maybe Declaration -> A_Concept -> String -> String
 showViewAtom fSpec mDec cncpt atom =
-  case mapMaybe (getView fSpec) (cncpt : largerConcepts (gens fSpec) cncpt) of
+  case mapMaybe (getView fSpec) (cncpt : largerConcepts (vgens fSpec) cncpt) of
     []    -> atom
     view:_ -> case mDec of
               Nothing -> concatMap showViewSegment (vdats view)
@@ -420,7 +418,7 @@ showViewAtom fSpec mDec cncpt atom =
      where showViewSegment (ViewText str') = str'
            showViewSegment (ViewHtml str') = str'
            showViewSegment (ViewExp objDef) =
-             case [ trgPaire p | p <- fullContents (gens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
+             case [ trgPaire p | p <- fullContents (vgens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
                []         -> ""
                viewAtom:_ -> viewAtom
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]

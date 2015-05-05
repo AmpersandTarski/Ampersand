@@ -9,12 +9,16 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    ROLE ExecEngine MAINTAINS "Initialize today's date"
    RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
    VIOLATION (TXT "{EX} SetToday;sessionToday;SESSION;", SRC I, TXT ";Date;", TGT sessionToday)
+   
+   For $formatSpec see http://php.net/manual/en/function.date.php
+   Default is 'd-m-Y' -> e.g: "01-01-2015", other examples include time, like 'd-m-Y G:i:s' -> e.g.: "01-01-2015 1:00:00"
 */
-function SetToday($relation,$srcConcept,$srcAtom,$dateConcept){
-	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept)");
-	$curdate = date('d-m-Y');
+function SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
+	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
+	$curdate = date($formatSpec);
 	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
 	
+	Notifications::addLog("Today's date set to $curdate");
 	return "Today's date set to $curdate";
 }
 

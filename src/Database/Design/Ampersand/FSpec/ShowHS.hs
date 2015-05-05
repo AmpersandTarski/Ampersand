@@ -254,7 +254,6 @@ instance ShowHS FSpec where
         ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
         ,wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
         ,wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
-        ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fSpec)
         ,wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
         ,wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,     ", interfaceS    = interfaceS'"
@@ -269,8 +268,8 @@ instance ShowHS FSpec where
         ,wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
         ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
-        ,wrap ", invars        = " indentA (\_->showHSName) (invars fSpec)
-        ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fSpec)
+        ,wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
+        ,wrap ", fallRules     = " indentA (\_->showHSName) (fallRules fSpec)
         ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
         ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
         ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
@@ -284,7 +283,7 @@ instance ShowHS FSpec where
         ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
         ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
         ,     ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
-        ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fSpec)
+        ,wrap ", vpatterns     = " indentA (\_->showHSName) (vpatterns fSpec)
         ,wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
         ,wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,     ", metas         = allMetas"
@@ -333,11 +332,6 @@ instance ShowHS FSpec where
      "\n -- *** Views (total: "++(show.length.vviews) fSpec++" views) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vviews fSpec]++"\n"
     ) ++
-    (if null (vprocesses fSpec ) then "" else
-     "\n -- *** Processes (total: "++(show.length.vprocesses) fSpec++" processes) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vprocesses fSpec ]++"\n"++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-map fpProc (vprocesses fSpec) ]++"\n"
-    ) ++
     (if null (vrules   fSpec ) then "" else
      "\n -- *** User defined rules (total: "++(show.length.vrules) fSpec++" rules) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vrules     fSpec ]++"\n"
@@ -381,7 +375,7 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomsOf (gens fSpec)(initialPops fSpec) c))
+                    strs = map show (sort (atomsOf (vgens fSpec)(initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
@@ -445,19 +439,6 @@ instance ShowHS Pattern where
      , "}"
      ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
              indentB = indentA++"          " -- adding the width of ", ptrls = "
-
-instance ShowHSName FProcess where
- showHSName prc = haskellIdentifier ("fprc_"++name (fpProc prc))
-
-instance ShowHS FProcess where
- showHS opts indent prc
-  = intercalate indentA
-     [ "FProc { fpProc       = "++showHSName (fpProc prc)
-     , wrap  ", fpActivities = " indentB (showHS opts) (fpActivities prc)
-     , "      }"
-     ] where indentA = indent ++"      "     -- adding the width of "FProc "
-             indentB = indentA++"                 " -- adding the width of ", fpActivities = "
-
 
 instance ShowHS Activity where
  showHS opts indent act =

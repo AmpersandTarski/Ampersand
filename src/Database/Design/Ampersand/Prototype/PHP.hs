@@ -118,7 +118,7 @@ populateTablesPHP fSpec =
   where
     fillSignalTable []          = []
     fillSignalTable conjSignals =
-      [ "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++ quote (getTableName signalTableSpec)
+      [ "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++ quote (getTableName signalTableSpec)
                                                                     ++" (`conjId`, `src`, `tgt`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
@@ -136,9 +136,9 @@ populateTablesWithPopsPHP fSpec pops =
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
-         = case tblcontents (gens fSpec) pops plug of
+         = case tblcontents (vgens fSpec) pops plug of
                [] -> []
-               tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT IGNORE INTO "++quote (name plug)
+               tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
                                                            ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
                                                            ++phpIndent 16 )

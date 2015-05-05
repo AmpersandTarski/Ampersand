@@ -13,7 +13,7 @@ $if(isEditable)$
     <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
     <span>{{row | date : 'dd-MM-yyyy'}}</span>
   </div>
-  <div my-showonhover-box class="input-group">
+  <div my-showonhover-box class="input-group" ng-controller="addItemController">
     <input ng-model="selected.value" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker['new-$name$'].open" ng-blur="addItem(val, '$name$', selected, ResourceId)"/>
     <span class="input-group-btn">
       <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, 'new-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>

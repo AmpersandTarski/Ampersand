@@ -29,7 +29,7 @@ class Role {
 		
 		// Interfaces that are accessible by this role
 		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
-			if (InterfaceObject::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = $interfaceId;
+			if (InterfaceObject::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = new InterfaceObject($interfaceId);
 		}		
 	}
 		
@@ -53,40 +53,40 @@ class Role {
 		return false; // when $roleName is not found in $allRoles
 	}
 	
-	public function getInterfaces($topLevel = null, $srcConcept = null){ // $topLevel: true, false, null (=all), $srcConcept: <concept> or null (=all)
+	public function getInterfaces($srcConcept = null){ // $srcConcept: <concept> or null (=all)
 		$interfaces = array();
-		
-		foreach($this->interfaces as $interfaceId){
-			$interface = new InterfaceObject($interfaceId);
-			
-			if(isset($topLevel)){
-				switch ($topLevel){
-					case true :
-						if($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') 
-							$interfaces[] = $interface;
-						break;
-					case false :
-						if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
-						break;
-				}
-			}else{
-				if(isset($srcConcept)){ // TODO: moet dit niet het tgtConcept zijn??
-					if($interface->srcConcept == $srcConcept 
-						|| in_array($srcConcept, Concept::getSpecializations($interface->srcConcept)) ) {
-						
-						$interfaces[] = $interface;
-					}
-				}else{
+		foreach($this->interfaces as $interface){
+			if(isset($srcConcept)){
+				if($interface->srcConcept == $srcConcept 
+					|| in_array($srcConcept, Concept::getSpecializations($interface->srcConcept)) ) {
+					
 					$interfaces[] = $interface;
 				}
+			}else{
+				$interfaces[] = $interface;
 			}
 		}
-		
+		return $interfaces;
+	}
+	
+	public function getInterfacesForNavBar(){
+		$interfaces = array();
+		foreach($this->interfaces as $interface){
+			if($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') $interfaces[] = $interface;
+		}
+		return $interfaces;
+	}
+	
+	public function getInterfacesToCreateAtom(){
+		$interfaces = array();
+		foreach($this->interfaces as $interface){
+			if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+		}
 		return $interfaces;
 	}
 	
 	public function isInterfaceForRole($interfaceId){
-		return in_array($interfaceId, $this->interfaces);
+		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->interfaces));
 	}
 	
 	public function getViolations(){

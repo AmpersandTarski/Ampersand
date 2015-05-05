@@ -26,6 +26,7 @@ fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
  =      FSpec { fsName       = name context
+              , originalContext = context 
               , getOpts      = opts
               , fspos        = ctxpos context
               , themes       = themesInScope
@@ -36,7 +37,6 @@ makeFSpec opts context
               , cDefsInScope = cDefsInThemesInScope
               , gensInScope  = gensInThemesInScope
               , fsLang       = printingLanguage
-              , vprocesses   = allProcs
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
@@ -61,17 +61,17 @@ makeFSpec opts context
                                    , role <- rrRoles rr
                                    ] 
               , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
-                                   | rule <- ctxrs context
-                                   , role <- concatMap arRoles . 
-                                              filter (\x -> name rule `elem` arRules x) . ctxrrules $ context
+                                   | rule <- allrules
+                                   , role <- maintainersOf rule
                                    ]
               , fRoles       = nub (concatMap arRoles (ctxrrules context)++
                                     concatMap rrRoles (ctxRRels context)++
                                     concatMap ifcRoles (ctxifcs context)
                                    ) 
-              , vrules       = vRules
-              , grules       = gRules
-              , invars       = invariants context
+              , fallRules = allrules
+              , vrules       = filter      isUserDefined  allrules
+              , grules       = filter (not.isUserDefined) allrules
+              , invariants   = filter (not.isSignal)      allrules
               , vconjs       = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
@@ -106,30 +106,30 @@ makeFSpec opts context
                                          ]
               }
    where           
-     allatoms :: [AtomID]
+     allatoms :: [Atom]
      allatoms = nub (concatMap atoms initialpops)
        where
-         atoms :: Population -> [AtomID]
+         atoms :: Population -> [Atom]
          atoms udp = case udp of
            PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
                        ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
            PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> String -> AtomID
+     mkAtom :: A_Concept -> String -> Atom
      mkAtom cpt value = 
-        AtomID { atmRoots = rootConcepts gs [cpt]
+        Atom { atmRoots = rootConcepts gs [cpt]
                , atmIn   = largerConcepts gs cpt `uni` [cpt]
                , atmVal  = value
                }
        where
          gs = gens context
-     dclLinks :: Declaration -> [PairID]
+     dclLinks :: Declaration -> [A_Pair]
      dclLinks dcl
-       = [PairID { lnkSgn = sign dcl
+       = [Pair   { lnkDcl   = dcl
                  , lnkLeft  = mkAtom (source dcl) (srcPaire p) 
                  , lnkRight = mkAtom (target dcl) (trgPaire p)
                  }
          | p <- pairsOf dcl]
-     alllinks ::  [PairID]
+     alllinks ::  [A_Pair]
      alllinks = concatMap dclLinks fSpecAllDecls
      pairsOf :: Declaration -> Pairs
      pairsOf d = case filter theDecl initialpops of
@@ -172,23 +172,27 @@ makeFSpec opts context
                    | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
 
-     allConjs = allConjuncts opts context
+     allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
      fSpecAllConjsPerConcept = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
-     allQuads = quadsOfContext opts context 
+     allQuads = quadsOfRules opts allrules 
      
-     allrules = allRules context
-     vRules = udefrules context   -- all user defined rules
-     gRules = multrules context++identityRules context
-     allProcs = [ FProc {fpProc = p
-                        ,fpActivities = map makeActivity (processRules p)
-                        } 
-                | p<-patterns context
-                ]
+     allrules = map setIsSignal (allRules context)
+        where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
+     maintainersOf :: Rule -> [Role]
+     maintainersOf r 
+       = [role 
+         | role <- concatMap arRoles . filter (\x -> name r `elem` arRules x) . ctxrrules $ context
+         ]
+     isUserDefined rul =
+       case r_usr rul of
+         UserDefined  -> True
+         Multiplicity -> False
+         Identity     -> False
      allActivities :: [Activity]
-     allActivities = map makeActivity (processRules context)
+     allActivities = map makeActivity (filter isSignal allrules)
      allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration

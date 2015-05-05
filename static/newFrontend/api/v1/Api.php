@@ -111,13 +111,15 @@ class Api{
 					$atom = new Atom($atomId, $session->interface->srcConcept);
 					$result = array_merge($result, (array)$atom->getContent($session->interface));
 				}
+				
+				if(empty($result)) Notifications::addInfo("No results found");
 			}else{
 		
-				$atom = new Atom($atomId, $session->interface-srcConcept);
+				$atom = new Atom($atomId, $session->interface->srcConcept);
+				if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
+				
 				$result = $atom->getContent($session->interface);
-			}
-			
-			if(empty($result)) throw new Exception('Resource not found', 404);
+			}			
 	
 			return array_values($result); // array_values transforms assoc array to non-assoc array
 		
@@ -167,7 +169,15 @@ class Api{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);	
+
+			// TODO: insert check if Atom may be updated with this interface
+			
+			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)){
+				// TODO: insert check if Atom may be created with this interface
+				$session->database->addAtomToConcept($atomId, $session->interface->tgtConcept);
+			}
+			
+			$atom = new Atom($atomId, $session->interface->tgtConcept);
 			
 			return $session->atom->put($session->interface, $request_data, $requestType);
 		
@@ -192,6 +202,7 @@ class Api{
 			// TODO: insert check if Atom may be deleted with this interface
 			
 			$atom = new Atom($atomId, $session->interface->tgtConcept);
+			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
 			$atom->delete();
 			
 			return array('notifications' => Notifications::getAll());
@@ -220,6 +231,7 @@ class Api{
 			$concept = $session->interface->srcConcept;
 			$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
 			$atom = new Atom($atomId, $concept);
+			if(!$atom->atomExists()) throw new Exception("Atom '$atomId' not created", 500);
 			
 			return array_values($atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
 		
@@ -285,6 +297,7 @@ class Api{
     public function getConceptAtom($concept, $atomId){
     	try{
     		$atom = new Atom($atomId, $concept);
+    		if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
     		return $atom->getAtom();
     		
     	}catch(Exception $e){
@@ -307,13 +320,15 @@ class Api{
 	}
 
 	/**
-	 * @url DELETE resource/{concept}/{atom}
+	 * @url DELETE resource/{concept}/{atomId}
 	 * @status 204
 	 */
-	function deleteConceptAtom($concept, $atom){ 
+	function deleteConceptAtom($concept, $atomId){ 
 		try{
 			$database = Database::singleton();
-			$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+			$atom = new Atom($atomId, $concept);
+			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
+			$atom->delete();
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
@@ -373,8 +388,8 @@ class Api{
     		$session = Session::singleton();
     		$session->setRole($roleId);
     		
-    		return array ('top' => $session->role->getInterfaces(true)
-    					 ,'new' => $session->role->getInterfaces(false));
+    		return array ('top' => $session->role->getInterfacesForNavBar()
+    					 ,'new' => $session->role->getInterfacesToCreateAtom());
     		
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());

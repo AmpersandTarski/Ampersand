@@ -45,7 +45,7 @@ class RuleEngine {
 	 * 		false: don't cache conjuncts (is used by ExecEngine)
 	 * 		default: true
 	 */
-	public static function checkInvariantRules($allInvariantConjuctsIds = null, $cacheConjuncts = true){		
+	public static function checkInvariantRules($invariantConjuctsIds = null, $cacheConjuncts = true){		
 		$invariantRulesHold = true; // default
 		
 		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions 
@@ -54,17 +54,18 @@ class RuleEngine {
 		Notifications::addLog('------------------------- CHECKING INVARIANT RULES -------------------------');
 		
 		// If $allInvariantConjuctsIds is provided (i.e. not null, which is something different than an empty array), check only those invariant conjuncts
-		if(!is_null($allInvariantConjuctsIds)) {
-			Notifications::addLog("Checking all provided conjuncts");
-			foreach ((array)$allInvariantConjuctsIds as $conjunctId){
+		if(!is_null($invariantConjuctsIds)) {
+			Notifications::addLog("Checking provided conjuncts");
+			foreach ((array)$invariantConjuctsIds as $conjunctId){
 				$violations = RuleEngine::checkConjunct($conjunctId, $cacheConjuncts);
-				if(!empty($violations)) {
+				
+				foreach ((array)$violations as $violation){
 					$invariantRulesHold = false;
 					
 					$conjunct = RuleEngine::getConjunct($conjunctId);
 					foreach ($conjunct['invariantRuleNames'] as $ruleName){
 						$rule = RuleEngine::getRule($ruleName);
-						Notifications::addInvariant("Violation of rule '".$rule['name']."'");
+						Notifications::addInvariant($rule, $violation['src'], $violation['tgt']);
 					}
 					
 				}
@@ -77,9 +78,11 @@ class RuleEngine {
 				$rule = RuleEngine::getRule($ruleName);
 			
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
-				if(!empty($violations)) {
+				
+				foreach ((array)$violations as $violation){
 					$invariantRulesHold = false;
-					Notifications::addInvariant("Violation of rule '".$rule['name']."'");
+					Notifications::addInvariant($rule, $violation['src'], $violation['tgt']);
+					
 				}
 			}
 		}
@@ -105,7 +108,7 @@ class RuleEngine {
 			}
 			
 			if(count($result) == 0){
-				Notifications::addInfo("Rule '".$rule['name']."' holds", 'Rules that hold');
+				Notifications::addInfo("Rule '".$rule['name']."' holds", 'RuleEngineRulesThatHold', 'Rules that hold');
 				
 			}else{
 				$violations = $result;
@@ -189,17 +192,19 @@ class RuleEngine {
 	public static function getSignalsFromDB($conjunctIds){
 		$db = Database::singleton();
 		
+		$result = array();
+		
 		$conjunctIds = array_unique($conjunctIds); // remove duplicates
 		
 		if (count($conjunctIds) > 0) {
 			// TODO: DB Query can be changed to WHERE `conjId` IN (<conjId1>, <conjId2>, etc)
 			$query = "SELECT * FROM `__all_signals__` WHERE " . implode(' OR ', array_map( function($conjunctId) {return "`conjId` = '$conjunctId'";}, $conjunctIds));
-			return $signals = $db->Exe($query);
+			$result = $db->Exe($query);
 		} else {
 			Notifications::addInfo("No conjunctIds provided (can be that this role does not maintain any rule)");
 		}
 		
-		return false;
+		return $result;
 		
 	}
 	
@@ -234,7 +239,8 @@ class RuleEngine {
 				$atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
 	
 				// quering the expression
-				$query = "SELECT DISTINCT `tgt` FROM (".$segment['expSQL'].") AS results WHERE src='".addslashes($atom)."'"; // SRC of TGT kunnen door een expressie gevolgd worden
+				$atomEsc = $database->escape($atom);
+				$query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '$atomEsc'"; // SRC of TGT kunnen door een expressie gevolgd worden
 				$rows = $database->Exe($query);
 	
 				// returning the result

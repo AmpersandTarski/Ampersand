@@ -23,8 +23,8 @@ fillAtlas fSpec = odbcinstall fSpec dsnatlas
 picturesForAtlas :: FSpec -> [Picture]
 picturesForAtlas fSpec
    = map (makePicture fSpec)
-         ( [PTRelsUsedInPat pat   | pat <- patterns fSpec] ++
-           [PTSingleRule userRule | userRule <- udefrules fSpec]++
+         ( [PTRelsUsedInPat pat   | pat <- vpatterns fSpec] ++
+           [PTSingleRule userRule | userRule <- vrules fSpec]++
            [PTConcept cpt         | cpt <- concs fSpec]
          )
 
@@ -46,7 +46,7 @@ selectdecl conn fSpec dclName
          therel ::String -> String -> String -> Declaration
          therel relname relsource reltarget
           = theonly [ d |
-                       d<-relsDefdIn fSpec
+                       d<-vrels fSpec
                       ,relname==name d
                       ,null relsource || relsource==name(source d)
                       ,null reltarget || reltarget==name(target d)]
