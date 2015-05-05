@@ -10,6 +10,7 @@ Editable relations: [$editableRelations;separator=", "$]
 AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
   
   \$scope.val = {};
+  \$scope.initialVal = {};
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
   url = 'interface/$interfaceName$';
   
@@ -28,7 +29,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
       \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
     });
   }else{
-    \$scope.val['$interfaceName$'] = Restangular.all(url).getList().then(function(data){
+    atom = Restangular.all(url).getList().then(function(data){
     	\$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
         \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
     });

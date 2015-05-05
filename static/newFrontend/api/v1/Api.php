@@ -177,7 +177,7 @@ class Api{
 				$session->database->addAtomToConcept($atomId, $session->interface->tgtConcept);
 			}
 			
-			$atom = new Atom($atomId, $session->interface->tgtConcept);
+			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
 			
 			return $session->atom->put($session->interface, $request_data, $requestType);
 		
