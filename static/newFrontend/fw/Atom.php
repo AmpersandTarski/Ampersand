@@ -161,7 +161,9 @@ Class Atom {
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
 					,	'notifications' 		=> Notifications::getAll()
-					,	'invariantRulesHold'	=> $invariantRulesHold);
+					,	'invariantRulesHold'	=> $invariantRulesHold
+					,	'requestType'			=> $requestType
+					);
 	}
 	
 	public function patch(&$interface, $patches, $requestType){
@@ -193,10 +195,12 @@ Class Atom {
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
 					,	'notifications' 		=> Notifications::getAll()
-					,	'invariantRulesHold'	=> $invariantRulesHold);		
+					,	'invariantRulesHold'	=> $invariantRulesHold
+					,	'requestType'			=> $requestType
+					);
 	}
 	
-	private function doPatch($patch, $interface){
+	private function doPatch($patch, $interface, $before){
 		$database = Database::singleton();
 		
 		switch($patch['op']){ // operations
