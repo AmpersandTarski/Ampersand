@@ -92,7 +92,9 @@ class Concept {
 		// (we have an array rather than a single column because of generalizations) 
 		// TODO: still the right solution?, because generalizations/specializations are in one table
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept not defined in \$allConcepts (Generics.php)", 500);
+		if(empty($allConcepts[$concept]['conceptTables'][0]['table'])) throw new Exception("No database table defined for concept $concept in \$allConcepts (Generics.php)", 500);
+		if(empty($allConcepts[$concept]['conceptTables'][0]['cols'])) throw new Exception("No columns defined for concept $concept in \$allConcepts (Generics.php)", 500);
 		
 		return $allConcepts[$concept]['conceptTables'][0]; // return only first item in array, because there are never more than one.
 	}
