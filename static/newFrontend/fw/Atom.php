@@ -152,7 +152,7 @@ Class Atom {
 		
 		// Put current state based on differences
 		foreach ((array)$patches as $key => $patch){
-			$this->doPatch($patch, $interface);
+			$this->doPatch($patch, $interface, $before);
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
@@ -178,9 +178,13 @@ Class Atom {
 				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
 		}
 		
+		// Get current state of atom
+		$before = $this->getContent($interface, true, $this->id);
+		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+		
 		// Patch
 		foreach ((array)$patches as $key => $patch){
-			$this->doPatch($patch, $interface);
+			$this->doPatch($patch, $interface, $before);
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
