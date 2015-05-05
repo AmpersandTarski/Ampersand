@@ -148,35 +148,31 @@ class Database
 		try{
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
-			
-			// Currently every concept is only in 1 table. However the 'conceptTables' in Generics returns an array, therefore 'foreach'
-			foreach (Concept::getConceptTableInfo($concept) as $conceptTableInfo) {  
-				
+
+			// If $newAtom is not in $concept
+			if(!$this->atomExists($newAtom, $concept)){
 				// Get table properties
-				$conceptTable = $conceptTableInfo['table']; 
+				$conceptTableInfo = Concept::getConceptTableInfo($concept);
+				$conceptTable = $conceptTableInfo['table'];
 				$conceptCols = $conceptTableInfo['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
-	
-				// If $newAtom is not in $concept
-				if(!$this->atomExists($newAtom, $concept)){ 
-					// Create query string: `<col1>`, `<col2>`, etc
-					$allConceptCols = '`' . implode('`, `', $conceptCols) . '`';
-					
-					$newAtomEsc = $this->escape($newAtom);
-					// Create query string: '<newAtom>', '<newAtom', etc
-					$newAtomsArray = array_fill(0, count($conceptCols), $newAtomEsc);
-					$allValues = "'".implode("', '", $newAtomsArray)."'";
-					
-					$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
-					
-					if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
-					
-					Notifications::addLog("Atom $newAtom added into concept $concept");
-				}else{
-					Notifications::addLog("Atom $newAtom already in concept $concept");
-				}
 				
+				// Create query string: `<col1>`, `<col2>`, etc
+				$allConceptCols = '`' . implode('`, `', $conceptCols) . '`';
+				
+				$newAtomEsc = $this->escape($newAtom);
+				// Create query string: '<newAtom>', '<newAtom', etc
+				$newAtomsArray = array_fill(0, count($conceptCols), $newAtomEsc);
+				$allValues = "'".implode("', '", $newAtomsArray)."'";
+				
+				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
+				
+				if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+				
+				Notifications::addLog("Atom $newAtom added into concept $concept");
+			}else{
+				Notifications::addLog("Atom $newAtom already in concept $concept");
 			}
-		
+			
 			return $newAtom;
 			
 		}catch(Exception $e){
@@ -190,8 +186,8 @@ class Database
 	 */
 	public function atomExists($atomId, $concept){
 		$tableInfo = Concept::getConceptTableInfo($concept);
-		$table = $tableInfo[0]['table'];
-		$conceptCol = $tableInfo[0]['cols'][0];
+		$table = $tableInfo['table'];
+		$conceptCol = $tableInfo['cols'][0];
 		
 		$atomIdEsc = $this->escape($atomId);
 		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomIdEsc'";

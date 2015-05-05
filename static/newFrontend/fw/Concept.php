@@ -28,11 +28,8 @@ class Concept {
 		$database = Database::singleton();
 		
 		$conceptTableInfo = Concept::getConceptTableInfo($concept);
-		$conceptTable = $conceptTableInfo[0]['table'];
-		
-		// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary col for checking the existence of a concept
-		// TODO: check if this also works with the ISA solution?
-		$firstConceptCol = $conceptTableInfo[0]['cols'][0]; // for lookup, we just take the first table and its first column
+		$conceptTable = $conceptTableInfo['table'];
+		$firstConceptCol = $conceptTableInfo['cols'][0]; // We can query an arbitrary concept col for checking the existence of an atom
 		
 		// Query all atoms in table
 		$query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
@@ -45,8 +42,8 @@ class Concept {
 			$database = Database::singleton();
 			$tableInfo = Concept::getConceptTableInfo($concept);
 			
-			$table = $tableInfo[0]['table'];
-			$col = $tableInfo[0]['cols'][0];
+			$table = $tableInfo['table'];
+			$col = $tableInfo['cols'][0];
 			
 			$query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
 			$result = array_column($database->Exe($query), 'MAX');
@@ -97,7 +94,7 @@ class Concept {
 		
 		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
 		
-		return (array)$allConcepts[$concept]['conceptTables'];
+		return $allConcepts[$concept]['conceptTables'][0]; // return only first item in array, because there are never more than one.
 	}
 	
 	public static function getAffectedSigConjuncts($concept){
