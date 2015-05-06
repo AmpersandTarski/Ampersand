@@ -137,8 +137,8 @@ Class Atom {
 				$databaseCommit = false;
 				break;
 			case 'promise' :
-				break;
 				$databaseCommit = true;
+				break;
 			default :
 				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
 		}
@@ -367,7 +367,7 @@ Class Atom {
 	
 	public function setNewContent($interface){
 		
-		$this->newContent = $this->getContent($interface, true, $atom->id);
+		$this->newContent = $this->getContent($interface, true, $this->id);
 
 	}
 	
