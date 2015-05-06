@@ -5,7 +5,7 @@
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
       $subObjects:{subObj|<th>$subObj.subObjLabel$</th>
       }$
-      $if(isRoot)$<th></th><!-- delete resource-->$endif$
+      $if(isRoot)$<th></th><!-- delete/save resource-->$endif$
     </tr>
   </thead>
   <tbody $if(isEditable)$ng-init="parent = val['$name$']"$endif$>
@@ -20,6 +20,7 @@ $subObj.subObjContents$
       }$
       $if(isRoot)$<!-- DELETE ATOM -->
       <td>
+        <button type="button" class="btn btn-primary btn-xs" ng-if="showSaveButton" ng-click="put(ResourceId, 'promise')">Save</button>
         <a my-showonhover-box href="" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>
       </td>$endif$
     </tr>

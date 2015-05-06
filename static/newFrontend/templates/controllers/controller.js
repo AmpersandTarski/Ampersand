@@ -11,6 +11,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   
   \$scope.val = {};
   \$scope.initialVal = {};
+  \$scope.showSaveButton = false; // default hide save button
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
   url = 'interface/$interfaceName$';
   
@@ -64,12 +65,20 @@ $else$  // The interface does not contain editable relations to primitive concep
 $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
   // Put function to update a Resource
-  \$scope.put = function(ResourceId){
+  \$scope.put = function(ResourceId, requestType){
+	requestType = requestType || 'feedback'; // this does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
     \$scope.val['$interfaceName$'][ResourceId]
-      .put()
+      .put({'requestType' : requestType})
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
         \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
+        
+        // show/hide save button
+        if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
+        	\$scope.showSaveButton = true;
+        }else{
+        	\$scope.showSaveButton = false;
+        }
       });
   }
 
