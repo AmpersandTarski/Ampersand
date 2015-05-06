@@ -250,15 +250,15 @@ Class Atom {
 				if($tgtInterface->editable){
 					if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true); // convert true and false into "true" and "false" strings
 					
-					// in case $tgtAtom is empty string -> perform remove instead of replace.
-					if($tgtAtom !== ''){
+					// in case $tgtAtom is provided (i.e. not empty string and not null) -> perform editUpdate
+					if($tgtAtom !== '' && !is_null($tgtAtom)){
 						try{
 							$originalAtom = $tgtInterface->univalent ? null : JsonPatch::get($before, $patch['path']);
 						}catch(Exception $e){
 							Notifications::addError($e->getMessage());
 						}
 						$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept, $originalAtom);
-					}else{
+					}else{ // else (i.e. empty string or null) -> perform editDelete
 						// the final $tgtAtom is not provided, so we have to get this value to perform the editDelete function
 						try{
 							$tgtAtom = JsonPatch::get($before, $patch['path']);
