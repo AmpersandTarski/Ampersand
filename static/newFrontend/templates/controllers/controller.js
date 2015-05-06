@@ -7,7 +7,7 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location) {
   
   \$scope.val = {};
   \$scope.initialVal = {};
@@ -35,6 +35,16 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
     });
   }
+  
+  \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
+    console.log("location changing to:" + next);
+    if(\$scope.showSaveButton){
+    	confirmed = confirm("You have unsaved edits. Do you wish to leave?");
+        if (event && !confirmed) { 
+          event.preventDefault();
+        }
+    }
+  });
 
 
   // The function below is only necessary if the interface allows to delete the complete atom,
