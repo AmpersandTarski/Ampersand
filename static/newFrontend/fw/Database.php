@@ -1,7 +1,4 @@
 <?php
-error_reporting(E_ALL ^ E_DEPRECATED ^ E_NOTICE);
-ini_set("display_errors", 1); // TODO: error handling instellen
-
 require_once (__DIR__ . '/../localSettings.php');
 
 class Database
