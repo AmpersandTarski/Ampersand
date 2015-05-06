@@ -418,14 +418,14 @@ class Database
 		unset($this->affectedConcepts, $this->affectedRelations);
 		$this->affectedConcepts = array(); $this->affectedRelations = array();
 		
+		$session->atom->setNewContent($session->interface);
+		
 		if($invariantRulesHold && $databaseCommit){
-			$session->atom->setNewContent($session->interface);
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
 		}elseif($invariantRulesHold){
-			$session->atom->setNewContent($session->interface);
 			$this->rollbackTransaction(); // rollback database transaction
-			// Notifications::addInfo($succesMessage);
+			Notifications::addInfo($succesMessage);
 		}else{
 			$this->rollbackTransaction(); // rollback database transaction
 		}
