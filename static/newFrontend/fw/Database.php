@@ -383,7 +383,7 @@ class Database
 	 * 		false: check only InvariantRules that are relevant for the interface of the current session.
 	 * 		default: true
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = false){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = false, $setNewContent = true){
 		$session = Session::singleton();
 		
 		Notifications::addLog('========================= CLOSING TRANSACTION =========================');
@@ -415,7 +415,7 @@ class Database
 		unset($this->affectedConcepts, $this->affectedRelations);
 		$this->affectedConcepts = array(); $this->affectedRelations = array();
 		
-		$session->atom->setNewContent($session->interface);
+		if($setNewContent) $session->atom->setNewContent($session->interface); // e.g. not needed in Atom::delete() function
 		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
