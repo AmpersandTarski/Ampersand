@@ -66,7 +66,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         .remove()
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
-          \$scope.val['All_32_elements'].splice(ResourceId, 1); // remove from array
+          \$location.url('/');
         });
     }
   }
