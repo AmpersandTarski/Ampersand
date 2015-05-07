@@ -143,7 +143,7 @@ makeFSpec opts context
                         PCptPopu{} -> False
 
 
-     fSpecAllConcepts = concs context -- `uni` [ONE]
+     fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
      fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
      
