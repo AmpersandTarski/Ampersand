@@ -9,6 +9,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError, mkMultipleRepresentationsForConceptError
+  , mkUnmatchedAtomValue
   , Guarded(..)
   , whenCheckedIO
   , unguard
@@ -120,6 +121,12 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> String -- the reference itself. eg. "Rule 42"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
+mkUnmatchedAtomValue :: Domain  -> PAtomValue -> CtxError
+mkUnmatchedAtomValue dom val = 
+ case val of 
+  (PAVString orig str) ->
+      CTXE orig $ "Unmatched value: `"++str++"` does not match "++show dom++"."
+  _   ->  fatal 129 $ "Currently not supported. "++show val  
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError

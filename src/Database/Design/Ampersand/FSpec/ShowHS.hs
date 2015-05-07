@@ -365,7 +365,7 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomsOf (vgens fSpec)(initialPops fSpec) c))
+                    strs = map show (sort (atomValuesOf (vgens fSpec)(initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
@@ -568,12 +568,12 @@ instance ShowHS ViewSegment where
 instance ShowHS Population where
  showHS _ indent pop
   = case pop of
-      PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
+      ARelPopu{} -> "ARelPopu { popdcl = "++showHSName (popdcl pop)
           ++indent++"         , popps  = [ "++intercalate
            (indent++"                    , ") (map show (popps pop))
           ++indent++"                    ]"
           ++indent++"         }"
-      PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
+      ACptPopu{} -> "ACptPopu { popcpt = "++showHSName (popcpt pop)
           ++indent++"         , popas  = [ "++intercalate
            (indent++"                    , ") (map show (popas pop))
           ++indent++"                    ]"

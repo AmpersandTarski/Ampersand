@@ -301,9 +301,8 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
 
 atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
 atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
- = [ P_TRelPop { p_rnme  = rnm
+ = [ P_RelPopu { p_nmdr  = PNamedRel OriginUnknown rnm (Just rsgn)
                , p_orig  = OriginUnknown
-               , p_type  = rsgn
                , p_popps = rpop
                }
    | (rid,rnm)<-r_decnm

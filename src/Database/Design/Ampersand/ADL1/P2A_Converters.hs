@@ -131,7 +131,7 @@ checkOtherAtomsInSessionConcept gCtx =
    case gCtx of
      Errors _  -> gCtx
      Checked ctx -> case [mkOtherAtomInSessionError atom
-                         | pop@PCptPopu{popcpt =cpt} <- ctxpopus ctx
+                         | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
                          , name cpt == "SESSION"
                          , atom <- filter (/= "_SESSION") (popas pop)
                          ] of
@@ -185,7 +185,13 @@ pCtx2aCtx' _
             , ctxpats = pats
             , ctxrs = rules
             , ctxds = ctxDecls
-            , ctxpopus = nub (udpops++dclPops++mp1Pops rules++mp1Pops pats++mp1Pops identdefs++mp1Pops viewdefs++mp1Pops interfaces)
+            , ctxpopus = nub (udpops
+                            ++dclPops
+                            ++mp1Pops contextInfo rules
+                            ++mp1Pops contextInfo pats
+                            ++mp1Pops contextInfo identdefs
+                            ++mp1Pops contextInfo viewdefs
+                            ++mp1Pops contextInfo interfaces)
             , ctxcds = allConceptDefs
             , ctxks = identdefs
             , ctxrrules = allRoleRules
@@ -212,6 +218,12 @@ pCtx2aCtx' _
       <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels (p_patterns ++ p_processes))
       
   where
+    contextInfo :: ContextInfo
+    contextInfo = 
+      CI { ctxiGens = map pGen2aGen p_gens
+         , ctxiRepresents = allRepresentations
+         }
+
     p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
     -- story about genRules and genLattice
@@ -274,7 +286,7 @@ pCtx2aCtx' _
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
-       in (dcl, PRelPopu { popdcl = dcl, popps = dec_popu pd})
+       in (dcl, ARelPopu { popdcl = dcl, popps = dec_popu pd})
 
     pSign2aSign :: P_Sign -> Sign
     pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -304,17 +316,55 @@ pCtx2aCtx' _
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x     = PlainConcept { cptnm = x }
-
+    
     pPop2aPop :: P_Population -> Guarded Population
-    pPop2aPop P_CptPopu { p_cnme = cnm, p_popas = ps }
-     = pure PCptPopu{ popcpt = castConcept cnm, popas = ps }
-    pPop2aPop orig@(P_RelPopu { p_rnme = rnm, p_popps = ps })
-     = fmap (\dcl -> PRelPopu { popdcl = dcl, popps = ps})
-            (findDecl orig rnm)
-    pPop2aPop orig@(P_TRelPop { p_rnme = rnm, p_type = tp, p_popps = ps })
-     = fmap (\dcl -> PRelPopu { popdcl = dcl, popps = ps})
-            (findDeclTyped orig rnm (pSign2aSign tp))
+    pPop2aPop = pPop2aPop' contextInfo
+    pPop2aPop' :: ContextInfo -> P_Population -> Guarded Population
+    pPop2aPop' ci pop = 
+     case pop of
+       P_RelPopu{}
+         -> (\dcl
+              -> ARelPopu { popdcl = dcl
+                          , popps = case traverse (pAtomPair2aAtomPair dcl) (p_popps pop) of
+                                       Checked aps -> aps
+                                       Errors err -> fatal 330 "TODO"
+                          }
+               ) <$> namedRel2Decl (p_nmdr pop)
+       P_CptPopu{}
+         -> undefined
 
+--     
+--     case pop of 
+--       P_CptPopu { p_cnme = cnm, p_popas = ps } 
+--         -> pure ACptPopu{ popcpt = castConcept cnm
+--                         , popas  = ps }
+--       P_RelPopu { p_rnme = rnm, p_popps = ps }
+--         -> fmap (\dcl -> ARelPopu { popdcl = dcl, popps = ps})
+--            (findDecl pop rnm)
+--       P_TRelPop { p_rnme = rnm, p_type = tp, p_popps = ps }
+--         -> fmap (\dcl -> ARelPopu { popdcl = dcl, popps = ps})
+--            (findDeclTyped pop rnm (pSign2aSign tp))
+      where
+      -- f :: [PAtomValue] -> [AAtomValue]
+       f ps = undefined 
+    pAtomPair2aAtomPair :: Declaration -> PAtomPair -> Guarded AAtomPair
+    pAtomPair2aAtomPair dcl pp = 
+       case ( string2AtomValue domLeft  (strOf (ppLeft  pp))
+            , string2AtomValue domRight (strOf (ppRight pp))
+            ) of
+          (Left l, Left r) -> pure (mkAtomPair l r)
+          _  -> fatal 350 $ "Todo"      
+        where
+         domLeft = representationOf contextInfo (source dcl)
+         domRight = representationOf contextInfo (target dcl) 
+    strOf :: PAtomValue -> String
+    strOf (PAVString str) = str
+    strOf _ = fatal 348 $ "currently unsupported type."
+    pAtomValue2aAtomValue ::A_Concept -> PAtomValue -> Guarded AAtomValue
+    pAtomValue2aAtomValue cpt pav =
+       case string2AtomValue (representationOf contextInfo cpt) (strOf pav) of
+         Left aav -> pure aav 
+         Right msg -> Errors [err]
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = pObjDefDisamb2aObjDef $ disambiguate termPrimDisAmb x
 
@@ -616,7 +666,7 @@ pCtx2aCtx' _
                       , ptrls = rules'
                       , ptgns = map pGen2aGen (pt_gns ppat)
                       , ptdcs = decls'
-                      , ptups = pops' ++ [ dp | dp@PRelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@PCptPopu{}<-dPops, (not.null.popas) cp ]
+                      , ptups = pops' ++ [ dp | dp@ARelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@ACptPopu{}<-dPops, (not.null.popas) cp ]
                       , ptids = keys'
                       , ptvds = views'
                       , ptxps = xpls

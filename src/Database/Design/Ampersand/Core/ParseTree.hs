@@ -16,7 +16,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), Domain(..)
    , P_Population(..)
-
+   , PAtomPair(..), PAtomValue(..),GenericNumber(..), mkPair
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -39,12 +39,10 @@ module Database.Design.Ampersand.Core.ParseTree (
    , Prop(..), Props
    -- Inherited stuff:
    , module Database.Design.Ampersand.Input.ADL1.FilePos
-   , module Database.Design.Ampersand.ADL1.Pair
    , gen_concs
   ) where
 import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
 import Data.Traversable
 import Data.Foldable (Foldable(foldMap))
 import Prelude hiding (foldr, sequence)
@@ -183,7 +181,7 @@ data P_Declaration =
             , dec_prM :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_prR :: String
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
-            , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
+            , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving Show -- for debugging and testing only
@@ -195,6 +193,23 @@ instance Named P_Declaration where
  name = dec_nm
 instance Traced P_Declaration where
  origin = dec_fpos
+
+data PAtomPair 
+  = PPair { pppos :: Origin
+          , ppLeft  :: PAtomValue
+          , ppRight :: PAtomValue
+          } deriving Show
+data PAtomValue
+  = PAVString Origin String
+  | PAVNumeric GenericNumber
+  | PAVBoolean Bool deriving Show
+data GenericNumber
+  = Original String deriving Show
+mkPair :: Origin -> String -> String -> PAtomPair
+mkPair o l r 
+   = PPair { pppos = o
+           , ppLeft  = PAVString o l
+           , ppRight = PAVString o r}
 
 data TermPrim
    = PI Origin                              -- ^ identity element without a type
@@ -411,24 +426,18 @@ data P_Markup =
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_rnme ::  String  -- the name of a relation
+  = P_RelPopu { p_nmdr :: P_NamedRel  -- the named relation
               , p_orig ::  Origin  -- the origin
-              , p_popps :: Pairs   -- the contents
-              }
-  | P_TRelPop { p_rnme ::  String  -- the name of a relation
-              , p_type ::  P_Sign  -- the signature of the relation
-              , p_orig ::  Origin  -- the origin
-              , p_popps :: Pairs   -- the contents
+              , p_popps :: [PAtomPair]   -- the contents
               }
   | P_CptPopu { p_cnme ::  String  -- the name of a concept
               , p_orig ::  Origin  -- the origin
-              , p_popas :: [String]   -- atoms in the initial population of that concept
+              , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
     deriving Show
 
 instance Named P_Population where
- name P_RelPopu{p_rnme = nm} = nm
- name P_TRelPop{p_rnme = nm} = nm
+ name P_RelPopu{p_nmdr = nr} = name nr
  name P_CptPopu{p_cnme = nm} = nm
 
 instance Traced P_Population where

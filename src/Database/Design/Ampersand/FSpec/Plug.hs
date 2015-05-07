@@ -16,7 +16,7 @@ module Database.Design.Ampersand.FSpec.Plug
      )
 where
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes (fullContents,atomsOf,Relational(..))
+import Database.Design.Ampersand.Classes (fullContents,atomValuesOf,Relational(..))
 import Database.Design.Ampersand.Basics
 import Data.List
 import GHC.Exts (sortWith)
@@ -264,13 +264,13 @@ eLkpTbl p = clos1 [([r],s,t)|(r,s,t)<-mLkpTbl p]
 
 
 -- | tblcontents is meant to compute the contents of an entity table.
---   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.
-type TblRecord = [Maybe String]
-tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
-tblcontents gs udp plug
+--   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
+type TblRecord = [Maybe AAtomValue]
+tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [TblRecord]
+tblcontents ci ps plug
    = case plug of
-     ScalarSQL{} -> [[Just x] | x<-atomsOf gs udp (cLkp plug)]
-     BinSQL{}    -> [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gs udp (mLkp plug)]
+     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
+     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other,
@@ -282,19 +282,19 @@ tblcontents gs udp plug
          f:fs -> transpose
                  ( map Just cAtoms
                  : [case fExp of
-                       EDcI c -> [ if a `elem` atomsOf gs udp c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents gs udp) fExp | a<-cAtoms ]
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
                    | fld<-fs, let fExp=fldexpr fld
                    ]
                  )
                  where
-                   cAtoms = (atomsOf gs udp . source . fldexpr) f
+                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
                    lkp a pairs
-                    = case [ p | p<-pairs, a==srcPaire p ] of
+                    = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
-                       [p] -> Just (trgPaire p)
-                       ps -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
-                               "Looking for: '"++a++"'.\n"++
+                       [p] -> Just (apRight p)
+                       ps' -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++show a++"'.\n"++
                                "Multiple values in one field: \n"++
-                               "  [ "++intercalate "\n  , " (map show ps)++"\n  ]")
+                               "  [ "++intercalate "\n  , " (map show ps')++"\n  ]")
                        

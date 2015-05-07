@@ -598,23 +598,17 @@ pPopulation :: AmpParser P_Population
 pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
               pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pString <* pSpec ']')
     where
-      prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
-      prelpop orig (PNamedRel _ nm mSgn)  contents =
-        case mSgn of Nothing  -> P_RelPopu { p_rnme   = nm
-                                           , p_orig   = orig
-                                           , p_popps  = contents
-                                           }
-                     Just sgn -> P_TRelPop { p_rnme   = nm
-                                           , p_type   = sgn
-                                           , p_orig   = orig
-                                           , p_popps  = contents
-                                           }
-                                           
+      prelpop :: Origin -> P_NamedRel -> [PAtomPair] -> P_Population
+      prelpop orig nrel contents =
+         P_RelPopu { p_nmdr   = nrel
+                   , p_orig   = orig
+                   , p_popps  = contents
+                   }
       pcptpop :: Origin -> String -> [String] -> P_Population
       pcptpop    orig      cnm       contents
        = P_CptPopu { p_cnme   = cnm
                    , p_orig   = orig
-                   , p_popas  = contents
+                   , p_popas  = map (PAVString orig) contents
                    }
 
 pRoleRelation :: AmpParser P_RoleRelation
@@ -815,13 +809,18 @@ pLabel       = lbl <$> pADLid_val_pos <*  pKey ":"
                where lbl :: (String, Origin) -> Label
                      lbl (nm,pos') = Lbl nm pos' []
 
-pContent :: AmpParser Pairs
+pContent :: AmpParser [PAtomPair]
 pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
                 <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
     where
-    pRecord = mkPair<$> pString <* pKey "*" <*> pString
-    pRecordObs = mkPair<$ pSpec '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete
-
+    build1 :: String -> Origin -> String -> PAtomPair
+    build1 l o s = mkPair o l s 
+    pRecord = build1 <$> pString <*> pKey_pos "*" <*> pString
+    pRecord, pRecordObs :: AmpParser PAtomPair
+    build2 :: Origin -> String -> String -> PAtomPair
+    build2 = mkPair
+    pRecordObs = build2 <$> pSpec_pos '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete
+ 
 pADLid :: AmpParser String
 pADLid            = pVarid <|> pConid <|> pString
 

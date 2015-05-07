@@ -33,7 +33,6 @@ module Database.Design.Ampersand.FSpec.FSpec
           
 import Data.List
 import Data.Typeable
-import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -96,8 +95,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
                    , allAtoms ::     [Atom]
                    , allLinks ::     [A_Pair]
-                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
+                   , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,[AAtomPair])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
                    , allSigns      :: [Sign]                  -- ^ All Signs in the fSpec
                    } deriving Typeable

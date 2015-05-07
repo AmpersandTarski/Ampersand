@@ -1,10 +1,10 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-module Database.Design.Ampersand.ADL1.Pair
-                    ( Paire(..),Pairs
-                    , mkPair
-                    )
+module Database.Design.Ampersand.ADL1.Pair()
+           --         ( Paire(..),Pairs
+           --         , mkPair
+           --         )
 where
 import Data.Typeable
 import Database.Design.Ampersand.Basics

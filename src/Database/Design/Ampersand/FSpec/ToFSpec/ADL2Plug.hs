@@ -459,19 +459,5 @@ domain2SqlType dom
      Numeric          -> SQLFloat
      AutoIncrement    -> SQLSerial
   
-representationOf :: A_Context -> A_Concept -> Domain
-representationOf context cpt = 
-  case cpt of 
-    ONE -> fatal 493 "ONE has no representation, or does it?"
-    PlainConcept{}
-        ->  case groupWith reprdom . filter isAboutThisCpt . ctxreprs $ context of
-              [] ->  Alphanumeric  --The default value, when no representation is specified
-              [rs] -> case rs of   
-                         []  -> fatal 498 "This should be impossible with groupWith"
-                         r: _ ->reprdom r
-              _ -> fatal 500 $ "There are multiple Domains for "++show cpt++". That should have been checked earlier!"
-  where
-    isAboutThisCpt :: Representation -> Bool 
-    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
 
     

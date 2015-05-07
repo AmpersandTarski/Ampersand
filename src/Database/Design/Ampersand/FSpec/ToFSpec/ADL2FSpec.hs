@@ -111,9 +111,9 @@ makeFSpec opts context
        where
          atoms :: Population -> [Atom]
          atoms udp = case udp of
-           PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
+           ARelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
                        ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
-           PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
+           ACptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
      mkAtom :: A_Concept -> String -> Atom
      mkAtom cpt value = 
         Atom { atmRoots = rootConcepts gs [cpt]
@@ -139,8 +139,8 @@ makeFSpec opts context
         where
           theDecl :: Population -> Bool
           theDecl p = case p of
-                        PRelPopu{} -> popdcl p == d
-                        PCptPopu{} -> False
+                        ARelPopu{} -> popdcl p == d
+                        ACptPopu{} -> False
 
 
      fSpecAllConcepts = concs context -- `uni` [ONE]
@@ -162,14 +162,14 @@ makeFSpec opts context
       = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
            , ifcControls = makeIfcControls (ifcParams ifc) allConjs
            }
-     initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
+     initialpops = [ ARelPopu{ popdcl = popdcl (head eqclass)
                              , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
                              }
-                   | eqclass<-eqCl popdcl [ pop | pop@PRelPopu{}<-populations ] ] ++
-                   [ PCptPopu{ popcpt = popcpt (head eqclass)
+                   | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
+                   [ ACptPopu{ popcpt = popcpt (head eqclass)
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
-                   | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
+                   | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
 
      allConjs = makeAllConjs opts allrules
