@@ -3,9 +3,7 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Output.PandocAux
 import Data.List
 import System.FilePath
 

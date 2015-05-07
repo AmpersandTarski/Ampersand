@@ -10,6 +10,8 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Database.Design.Ampersand.FSpec
     , module Database.Design.Ampersand.Misc
     , module Database.Design.Ampersand.Core.AbstractSyntaxTree
+    , module Database.Design.Ampersand.ADL1
+    , module Database.Design.Ampersand.Output.PandocAux
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -23,19 +25,20 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , lclForLang
     , dpRule'
     , relsInThemes
-    , Counter(..),newCounter,incEis
+ --   , Counter(..),newCounter,incEis
     , inlineIntercalate
-    , orderingByTheme
+    , ThemeContent(..), orderingByTheme
+    , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
     , NLString(..)
     , ENString(..)
     , LocalizedStr
     , localize
-    )
+    , sortWith)
 where
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
-import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta,sortWith)
+import Database.Design.Ampersand.ADL1 hiding (Meta)
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec
 import Text.Pandoc
@@ -44,9 +47,12 @@ import qualified Text.Pandoc.Builder as  BuggyBuilder
 import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Output.PandocAux
-import Data.List             (intercalate,partition)
+import Data.List      --       (intercalate,partition)
 import Data.Monoid
+import Data.Maybe
+import Data.Ord
 import System.Locale
+import GHC.Exts(sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
@@ -122,8 +128,6 @@ chptTitle lang cpt =
 
 class Xreferencable a where
   xLabel :: a  -> String
---  xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
---  xrefReference a = fatal 117 $ "--Depreciated! TODO: use xRefReference instead"
   xRefReference :: Options -> a -> Inlines
   xRefReference opts a
     | canXRefer opts = rawInline "latex" ("\\ref{"++xLabel a++"}")
@@ -140,8 +144,6 @@ instance Xreferencable Chapter where
 instance Xreferencable Picture where
   xLabel a = "figure" ++ escapeNonAlphaNum (caption a)
 
---Image [Inline] Target
---      alt.text (URL,title)
 showImage :: Options -> Picture -> Inlines
 showImage opts pict =
       case fspecFormat opts of
@@ -160,53 +162,160 @@ showImage opts pict =
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
-orderingByTheme :: FSpec -> [( Maybe Pattern   -- A theme is about either a pattern or a process.
-                            , [Rule]        -- The rules of that theme
-                            , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
-                            , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
-                            )
-                           ]
+
+data ThemeContent = 
+       Thm { themeNr      :: Int
+           , patOfTheme   :: Maybe Pattern -- A theme is about either a pattern or about everything outside patterns
+           , rulesOfTheme :: [Numbered RuleCont] -- The (numbered) rules of that theme
+           , dclsOfTheme  :: [Numbered DeclCont] -- The (numbered) relations that are used in a rule of this theme, but not in any rule of a previous theme.
+           , cptsOfTheme  :: [Numbered CptCont]   -- The (numbered) concepts that are used in a rule of this theme, but not in any rule of a previous theme.
+           }
+data Numbered t =
+ Nr { theNr   :: Int
+    , theLoad :: t
+    }   
+instance Named t => Named (Numbered t) where
+ name = name . theLoad    
+data RuleCont = CRul { cRul  :: Rule
+                     , cRulPurps :: [Purpose] 
+                     , cRulMeaning :: Maybe A_Markup
+                     } 
+data DeclCont = CDcl { cDcl  :: Declaration
+                     , cDclPurps :: [Purpose] 
+                     , cDclMeaning :: Maybe A_Markup
+                     , cDclPairs :: [Paire]
+                     } 
+data CptCont  = CCpt { cCpt  :: A_Concept
+                     , cCptDefs :: [ConceptDef]
+                     , cCptPurps :: [Purpose] 
+                     } 
+instance Named RuleCont where
+  name = name . cRul
+instance Named DeclCont where
+  name = name . cDcl
+instance Named CptCont where
+  name = name . cCpt
+data Counters 
+  = Counter { pNr :: Int --Theme number
+            , definitionNr :: Int --For Concepts
+            , agreementNr  :: Int --For declarations andrules 
+            }
+orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
- = f (fallRules fSpec) (filter isUserDefined (relsMentionedIn fSpec)) (allConcepts fSpec) tms
+ = f ( Counter 1 1 1 --the initial numbers of the countes
+     , (sortWith origin . filter rulMustBeShown . fallRules)       fSpec
+     , (sortWith origin . filter relMustBeShown . relsMentionedIn) fSpec
+     , (sortBy conceptOrder . filter cptMustBeShown . allConcepts)     fSpec
+     ) $ 
+     [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
+        ,    null (themes fSpec)        -- all patterns if no specific themes are requested
+          || name pat  `elem` themes fSpec  -- otherwise the requested ones only
+        ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
+  conceptOrder :: A_Concept -> A_Concept -> Ordering 
+  conceptOrder a b =
+  -- The sorting of Concepts is done by the origin of its first definition if there is one. 
+  -- Concepts without definition are placed last, and sorted by name.
+   case (originOfFirstCDef a, originOfFirstCDef b) of
+     (Just origA, Just origB) -> compare origA origB
+     (Just _    , Nothing   ) -> LT
+     (Nothing   , Just _    ) -> GT
+     (Nothing   , Nothing   ) -> comparing name a b
+  originOfFirstCDef :: A_Concept -> Maybe Origin
+  originOfFirstCDef cpt 
+    = case sortWith origin $ concDefs fSpec cpt of
+        [] -> Nothing
+        cd :_ -> Just (origin cd)
+        
+  rulMustBeShown r = r_usr r == UserDefined && hasMeaning r
+  relMustBeShown d = isUserDefined d && hasPurpose d 
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
-  -- | The patterns that should be taken into account for this ordering
-  tms = if null (themes fSpec)
-        then (vpatterns fSpec)
-        else [ pat           | pat <-vpatterns   fSpec, name pat  `elem` themes fSpec ]
-  f ruls rels cpts ts
+  hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasMeaning = isJust . meaning (fsLang fSpec)
+  cptMustBeShown = not . null . concDefs fSpec
+  f :: 
+   (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
+  f stuff ts
    = case ts of
-       t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
-                     , (relsOfTheme,relsNotOfTheme)
-                     , (cptsOfTheme,cptsNotOfTheme)
-                     ) = partitionByTheme t ruls rels cpts
-                in (Just t, rulsOfTheme, relsOfTheme, cptsOfTheme)
-                   : f rulsNotOfTheme relsNotOfTheme cptsNotOfTheme ts'
-       []    -> [(Nothing, ruls, rels, cpts)]
+       t:ts' -> let ( thm, rest) = partitionByTheme t stuff
+                in thm : f rest ts'
+       []    -> case stuff of
+                  (_,[],[],[]) -> []
+                  _ -> fatal 247 "No stuff should be left over."
+
+  rul2rulCont :: Rule -> RuleCont
+  rul2rulCont rul
+    = CRul { cRul      = rul
+           , cRulPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) rul
+           , cRulMeaning = meaning (fsLang fSpec) rul
+           }
+  dcl2dclCont :: Declaration -> DeclCont
+  dcl2dclCont dcl
+    = CDcl { cDcl      = dcl
+           , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
+           , cDclMeaning = meaning (fsLang fSpec) dcl
+           , cDclPairs =
+                  case filter theDecl (initialPops fSpec) of
+                    []    -> []
+                    [pop] -> popps pop
+                    _     -> fatal 273 "Multiple entries found in populationTable"
+           } 
+   where
+     theDecl :: Population -> Bool
+     theDecl p = case p of
+                   PRelPopu{} -> popdcl p == dcl
+                   PCptPopu{} -> False
+
+  cpt2cptCont :: A_Concept -> CptCont
+  cpt2cptCont cpt 
+    = CCpt { cCpt      = cpt
+           , cCptDefs  = sortWith origin $ concDefs fSpec cpt
+           , cCptPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) cpt
+           }
+
+
+  setNumbers :: Int           -- ^ the initial number
+             -> (t -> a)      -- ^ the constructor function
+             -> [t]           -- ^ a list of things that are numberd        
+             -> [Numbered a] 
+  setNumbers i construct items =
+    case items of 
+      []     -> []
+      (x:xs) ->  Nr { theNr   = i
+                    , theLoad = construct x
+                    }:setNumbers (i+1) construct xs
   -- | This function takes care of partitioning each of the
   --   lists in a pair of lists of elements which do and do not belong
   --   to the theme, respectively
-  partitionByTheme :: Pattern
-                   -> [Rule]
-                   -> [Declaration]
-                   -> [A_Concept]
-                   -> ( ([Rule],[Rule])
-                      , ([Declaration],[Declaration])
-                      , ([A_Concept],[A_Concept])
+  partitionByTheme :: Maybe Pattern
+                   -> ( Counters, [Rule], [Declaration], [A_Concept])
+                   -> ( ThemeContent , ( Counters ,[Rule], [Declaration], [A_Concept])
                       )
-  partitionByTheme pat ruls rels cpts
-      = ((rulsOfTheme,rulsNotOfTheme), (relsOfTheme,relsNotOfTheme), (cptsOfTheme,cptsNotOfTheme))
+  partitionByTheme t (cnt, ruls, rels, cpts)
+      = ( Thm { themeNr      = pNr cnt
+              , patOfTheme   = t
+              , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont thmRuls
+              , dclsOfTheme  = setNumbers (agreementNr cnt) dcl2dclCont themeDcls
+              , cptsOfTheme  = setNumbers (definitionNr cnt) cpt2cptCont themeCpts
+              }
+        , (Counter {pNr = pNr cnt +1
+                   ,definitionNr = definitionNr cnt + length themeCpts
+                   ,agreementNr = agreementNr cnt + length themeDcls + length thmRuls
+                   }
+          , restRuls, restDcls, restCpts)
+        )
      where
-       (rulsOfTheme,rulsNotOfTheme) = partition isRulOfTheme ruls
-       isRulOfTheme r = r `elem` ptrls pat
-       (relsOfTheme,relsNotOfTheme) = partition isRelOfTheme rels
-       isRelOfTheme r = r `elem` (concatMap relsUsedIn rulsOfTheme)
-       (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts
-       isCptOfTheme c = c `elem` concatMap concs relsOfTheme
-
---GMI: What's the meaning of the Int?
+       (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
+       (themeDcls,restDcls) = partition (inThisTheme relsMentionedIn) rels
+       (themeCpts,restCpts) = partition (inThisTheme concs) cpts
+       inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
+       inThisTheme allElemsOf x
+         = case t of
+             Nothing -> True
+             Just pat -> x `elem` allElemsOf pat
+--GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
 dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
 dpRule' fSpec = dpR
@@ -307,19 +416,6 @@ relsInThemes fSpec
          || d `elem` relsMentionedIn [p | p<-  vpatterns fSpec   , name p `elem` themes fSpec]
      )
    ]
-
-data Counter = Counter { --getConc :: Int
-                    --     getDecl :: Int
-                    --   , getRule :: Int
-                        getEisnr:: Int
-                       }
-newCounter :: Counter
-newCounter = Counter 1
-incEis :: Counter -> Counter
---incConc x = x{getConc = getConc x + 1}
---incDecl x = x{getDecl = getDecl x + 1}
---incRule x = x{getRule = getRule x + 1}
-incEis x = x{getEisnr = getEisnr x + 1}
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps
