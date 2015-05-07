@@ -1,7 +1,7 @@
 <!-- BOX<TABS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 <div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
-   $if(isRoot)$<div g-if="showSaveButton">
     <button type="button" class="btn btn-primary" ng-if="showSaveButton" ng-click="put(ResourceId, 'promise')">Save</button>
+   $if(isRoot)$<div class="row" ng-if="showSaveButton[ResourceId]">
   </div>$endif$
   <tabset>
     $subObjects:{subObj|<!-- BOX<TABS> CHILD: "$subObj.subObjLabel$" -->

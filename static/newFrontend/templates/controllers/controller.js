@@ -11,7 +11,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   
   \$scope.val = {};
   \$scope.initialVal = {};
-  \$scope.showSaveButton = false; // default hide save button
+  \$scope.showSaveButton = {}; // initialize showSaveButton object
+  
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
   url = 'interface/$interfaceName$';
   
@@ -38,7 +39,15 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   
   \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
     console.log("location changing to:" + next);
-    if(\$scope.showSaveButton){
+    
+    checkRequired = false; // default
+    for(var item in \$scope.showSaveButton) { // iterate over all properties (resourceIds) in showSaveButton object
+      if(\$scope.showSaveButton.hasOwnProperty( item ) ) { // only checks its own properties, not inherited ones
+        if(\$scope.showSaveButton[item] == true) checkRequired = true; // if item is not saved, checkRequired before location change
+      }
+    }
+    
+    if(checkRequired){ // if checkRequired (see above)
     	confirmed = confirm("You have unsaved edits. Do you wish to leave?");
         if (event && !confirmed) { 
           event.preventDefault();
@@ -85,9 +94,9 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
-        	\$scope.showSaveButton = true;
+        	\$scope.showSaveButton[ResourceId] = true;
         }else{
-        	\$scope.showSaveButton = false;
+        	\$scope.showSaveButton[ResourceId] = false;
         }
       });
   }

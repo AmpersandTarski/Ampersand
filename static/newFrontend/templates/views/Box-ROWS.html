@@ -5,8 +5,8 @@
       <a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a>
       <a href="" class="pull-right CRUDbuttons" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>
     </legend>
-    <div class="row" ng-if="showSaveButton">
       <button type="button" class="btn btn-primary" ng-if="showSaveButton" ng-click="put(ResourceId, 'promise')">Save</button>
+    <div class="row" ng-if="showSaveButton[ResourceId]">
     </div>
   $endif$
     $subObjects:{subObj|<!-- BOX<ROWS> CHILD: "$subObj.subObjLabel$" -->
