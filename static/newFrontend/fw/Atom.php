@@ -377,7 +377,7 @@ Class Atom {
 		$this->database->deleteAtom($this->id, $this->concept);
 		
 		// Close transaction => ROLLBACK or COMMIT.
-		$this->database->closeTransaction('Atom deleted', false);
+		$this->database->closeTransaction('Atom deleted', false, true);
 		
 		return;
 		

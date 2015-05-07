@@ -201,9 +201,9 @@ class Api{
 		
 			// TODO: insert check if Atom may be deleted with this interface
 			
-			$atom = new Atom($atomId, $session->interface->tgtConcept);
-			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
-			$atom->delete();
+			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)) throw new Exception("Resource '$atomId' not found", 404);
+			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
+			$session->atom->delete();
 			
 			return array('notifications' => Notifications::getAll());
 		
