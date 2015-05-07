@@ -66,7 +66,7 @@ instance ConceptStructure a => ConceptStructure [a] where
   expressionsIn = foldr ((uni) . expressionsIn) []
 
 instance ConceptStructure A_Context where
-  concs ctx = foldr uni []
+  concs ctx = foldr uni [ONE]  -- ONE is allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ (concs.ctxpats) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx

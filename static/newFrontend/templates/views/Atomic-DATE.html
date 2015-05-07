@@ -3,7 +3,7 @@
 $if(isEditable)$
   $if(exprIsUni)$
   <div class="input-group">
-    <input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="patch(ResourceId)"/>
+    <input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="put(ResourceId)"/>
     <span class="input-group-btn">
       <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, key+'-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
     </span>

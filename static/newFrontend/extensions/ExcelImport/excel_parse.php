@@ -1,5 +1,4 @@
 <?php
-error_reporting(E_ALL);
 
 require_once (__DIR__ . '/../../fw/includes.php');
 require_once (__DIR__ . '/ExcelImport.php');
@@ -17,4 +16,3 @@ $result = array('notifications' => $result, 'files' => $_FILES);
 print json_encode($result);
 
 ?>
-

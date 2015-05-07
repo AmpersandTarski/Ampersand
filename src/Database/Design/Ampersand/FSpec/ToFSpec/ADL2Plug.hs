@@ -2,7 +2,7 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (showPlug
   ,makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
-  )
+  ,representationOf)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import GHC.Exts (sortWith,groupWith)
@@ -140,7 +140,7 @@ suitableAsKey st =
     Boolean          -> True
     Numeric          -> True
     AutoIncrement    -> True
-
+    DomainOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
 -----------------------------------------
 --rel2fld
 -----------------------------------------
@@ -458,6 +458,20 @@ domain2SqlType dom
      Boolean          -> SQLBool
      Numeric          -> SQLFloat
      AutoIncrement    -> SQLSerial
-  
+     DomainOfOne      -> fatal 461 $ "ONE is not represented in SQL" 
+representationOf :: A_Context -> A_Concept -> Domain
+representationOf context cpt = 
+  case cpt of 
+    ONE -> DomainOfOne
+    PlainConcept{}
+        ->  case groupWith reprdom . filter isAboutThisCpt . ctxreprs $ context of
+              [] ->  Alphanumeric  --The default value, when no representation is specified
+              [rs] -> case rs of   
+                         []  -> fatal 498 "This should be impossible with groupWith"
+                         r: _ ->reprdom r
+              _ -> fatal 500 $ "There are multiple Domains for "++show cpt++". That should have been checked earlier!"
+  where
+    isAboutThisCpt :: Representation -> Bool 
+    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
 
     

@@ -170,7 +170,8 @@ data Domain
   = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
   | Binary | BigBinary | HugeBinary 
   | Date | DateTime 
-  | Boolean | Numeric | AutoIncrement
+  | Boolean | Numeric | AutoIncrement 
+  | DomainOfOne --special domain for the special concept ONE.
      deriving (Show, Eq, Ord)
 
 data P_Declaration =

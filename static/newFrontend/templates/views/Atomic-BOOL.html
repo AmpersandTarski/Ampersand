@@ -3,7 +3,7 @@
   $if(exprIsUni)$
   <div class="checkbox">
     <label>
-      <input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="patch(ResourceId)"/>
+      <input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="put(ResourceId)"/>
     </label>
   </div>
   $else$
