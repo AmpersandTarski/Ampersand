@@ -83,6 +83,7 @@ makeFSpec opts context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
+              , allConceptDomains = [(c,representationOf context c) | c<-fSpecAllConcepts]
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
               , vgens        = gens context
@@ -143,7 +144,7 @@ makeFSpec opts context
                         PCptPopu{} -> False
 
 
-     fSpecAllConcepts = concs context -- `uni` [ONE]
+     fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
      fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
      
