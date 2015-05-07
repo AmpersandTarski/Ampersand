@@ -7,9 +7,12 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$routeParams, Restangular, \$location) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location) {
   
   \$scope.val = {};
+  \$scope.initialVal = {};
+  \$scope.showSaveButton = {}; // initialize showSaveButton object
+  
   // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
   url = 'interface/$interfaceName$';
   
@@ -17,6 +20,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   if(\$routeParams['new']){
     newAtom = Restangular.one(url).post().then(function (data){
       \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
+      \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
     });
   }else
   
@@ -24,10 +28,32 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   if(typeof \$routeParams.resourceId != 'undefined'){
     list = Restangular.one(url, \$routeParams.resourceId).get().then(function(data){
       \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
+      \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
     });
   }else{
-    \$scope.val['$interfaceName$'] = Restangular.all(url).getList().\$object;
+    atom = Restangular.all(url).getList().then(function(data){
+    	\$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
+        \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
+    });
   }
+  
+  \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
+    console.log("location changing to:" + next);
+    
+    checkRequired = false; // default
+    for(var item in \$scope.showSaveButton) { // iterate over all properties (resourceIds) in showSaveButton object
+      if(\$scope.showSaveButton.hasOwnProperty( item ) ) { // only checks its own properties, not inherited ones
+        if(\$scope.showSaveButton[item] == true) checkRequired = true; // if item is not saved, checkRequired before location change
+      }
+    }
+    
+    if(checkRequired){ // if checkRequired (see above)
+    	confirmed = confirm("You have unsaved edits. Do you wish to leave?");
+        if (event && !confirmed) { 
+          event.preventDefault();
+        }
+    }
+  });
 
 
   // The function below is only necessary if the interface allows to delete the complete atom,
@@ -40,7 +66,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         .remove()
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
-          \$location.url('/');
+          \$scope.val['$interfaceName$'].splice(ResourceId, 1); // remove from array
         });
     }
   }
@@ -57,14 +83,37 @@ $if(containsDATE)$  // The interface contains an editable relation to the primit
 $else$  // The interface does not contain editable relations to primitive concept DATE
 $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
-  // Patch function to update a Resource
-  \$scope.patch = function(ResourceId){
+  // Put function to update a Resource
+  \$scope.put = function(ResourceId, requestType){
+	requestType = requestType || 'feedback'; // this does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
     \$scope.val['$interfaceName$'][ResourceId]
-      .patch()
+      .put({'requestType' : requestType})
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
         \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
+        
+        // show/hide save button
+        if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
+        	\$scope.showSaveButton[ResourceId] = true;
+        }else{
+        	\$scope.showSaveButton[ResourceId] = false;
+        }
       });
+  }
+
+  // Function to patch only the changed attributes of a Resource
+  \$scope.patch = function(ResourceId){
+	  patches = diff(\$scope.initialVal['$interfaceName$'][ResourceId], \$scope.val['$interfaceName$'][ResourceId]) // determine patches
+	  console.log(patches);
+	  
+	  /*
+	  \$scope.val['$interfaceName$'][ResourceId]
+	  .patch(patches)
+	  .then(function(data) {
+		 \$rootScope.updateNotifications(data.notifications);
+		 \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
+	  });
+	  */
   }
   
   // Function to add item to array of primitieve datatypes
@@ -73,7 +122,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
       if(obj[property] === null) obj[property] = [];
       obj[property].push(selected.value);
       selected.value = '';
-      \$scope.patch(ResourceId);
+      \$scope.put(ResourceId);
     }else{
     	console.log('Empty value selected');
     }
@@ -82,7 +131,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
   //Function to remove item from array of primitieve datatypes
   \$scope.removeItem = function(obj, key, ResourceId){
     obj.splice(key, 1);
-    \$scope.patch(ResourceId);
+    \$scope.put(ResourceId);
   }
 $else$  // The interface does not contain any editable relations
 $endif$
@@ -96,14 +145,14 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
       if(obj[property] === null) obj[property] = {};
       obj[property][selected.id] = {'id': selected.id};
       selected.id = ''; // reset input field
-      \$scope.patch(ResourceId);
+      \$scope.put(ResourceId);
     }
   }
   
   // RemoveObject function to remove an item (key) from list (obj).
   \$scope.removeObject = function(obj, key, ResourceId){
     delete obj[key];
-    \$scope.patch(ResourceId);
+    \$scope.put(ResourceId);
   }
   
   // Typeahead functionality

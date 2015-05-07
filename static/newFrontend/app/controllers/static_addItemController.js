@@ -1,5 +1,5 @@
 AmpersandApp.controller('addItemController', function($scope){
 	
-	$scope.selected = {}; // an empty object for temporary storing the typeahead selection
+	$scope.selected = { value : ''}; // an empty object for temporary storing the input values
 	
 });

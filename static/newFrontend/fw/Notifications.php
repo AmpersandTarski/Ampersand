@@ -51,10 +51,10 @@ class Notifications {
 		
 		// Make links to interfaces
 		$links = array();
-		foreach ($session->role->getInterfaces(null, $rule['srcConcept']) as $interface){
+		foreach ($session->role->getInterfaces($rule['srcConcept']) as $interface){
 			$links[] = '#/' . $interface->id . '/' . $srcAtom;
 		}
-		foreach ($session->role->getInterfaces(null, $rule['tgtConcept']) as $interface){
+		foreach ($session->role->getInterfaces($rule['tgtConcept']) as $interface){
 			$links[] = '#/' . $interface->id . '/' . $tgtAtom;
 		}
 		$links = array_unique($links);
@@ -68,13 +68,15 @@ class Notifications {
 	public static function addInfo($message, $id = null, $aggregatedMessage = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
+			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
 			self::$infos[$id]['rows'][] = $message;
-			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');;
 			if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
+			
 			return $id;
 		}else{
 			self::addLog($message, 'INFO');
 			self::$infos[]['message'] = $message;
+			
 			end(self::$infos); // pointer to end of array (i.e. new  inserted element)
 			return key(self::$infos); // return key of current element
 		}
@@ -84,13 +86,15 @@ class Notifications {
 	public static function addSuccess($message, $id = null, $aggregatedMessage = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
+			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');
 			self::$successes[$id]['rows'][] = $message;
-			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');;
 			if(!is_null($aggregatedMessage)) self::$successes[$id]['message'] = $aggregatedMessage;
+			
 			return $id;
 		}else{
 			self::addLog($message, 'SUCCESS');
 			self::$successes[]['message'] = $message;
+			
 			end(self::$successes); // pointer to end of array (i.e. new  inserted element)
 			return key(self::$successes); // return key of current element
 		}
