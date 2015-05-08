@@ -14,42 +14,40 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
- = ( (chptHeader (fsLang fSpec) Diagnosis) <>
-     fromList
-     (
-     diagIntro ++             -- an introductory text
-     roleomissions ++         -- tells which role-rule, role-interface, and role-relation assignments are missing
-     roleRuleTable ++         -- gives an overview of rule-rule assignments
-     missingConceptDefs ++    -- tells which concept definitions have been declared without a purpose
-     toList missingRels ++           -- tells which relations have been declared without a purpose and/or without a meaning
-     unusedConceptDefs ++     -- tells which concept definitions are not used in any relation
-     relsNotUsed ++           -- tells which relations are not used in any rule
-     missingRules ++          -- tells which rule definitions are missing
-     ruleRelationRefTable ++  -- table that shows percentages of relations and rules that have references
-     invariantsInProcesses ++ --
-     processrulesInPatterns++ --
+ = (  chptHeader (fsLang fSpec) Diagnosis
+   <> diagIntro                       -- an introductory text
+   <> fromList roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
+   <> fromList roleRuleTable          -- gives an overview of rule-rule assignments
+   <> fromList missingConceptDefs     -- tells which concept definitions have been declared without a purpose
+   <>  missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
+   <> fromList unusedConceptDefs      -- tells which concept definitions are not used in any relation
+   <> fromList relsNotUsed            -- tells which relations are not used in any rule
+   <> fromList missingRules           -- tells which rule definitions are missing
+   <> fromList ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
+   <> fromList invariantsInProcesses  --
+   <> fromList processrulesInPatterns --
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
-     wipReport++              -- sums up the work items (i.e. the violations of process rules)
-     toList violationReport          -- sums up the violations caused by the population of this script.
-     )
+   <> fromList wipReport              -- sums up the work items (i.e. the violations of process rules)
+   <> violationReport          -- sums up the violations caused by the population of this script.
+     
    , pics )
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
   l lstr = localize (fsLang fSpec) lstr
-  diagIntro :: [Block]
+  diagIntro :: Blocks
   diagIntro =
     case fsLang fSpec of
-      Dutch   -> [Para
-                  [ Str "Dit hoofdstuk geeft een analyse van het Ampersand-script van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                  , Str "Deze analyse is bedoeld voor de auteurs van dit script. "
-                  , Str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren. "
-                  ]]
-      English -> [Para
-                  [ Str "This chapter provides an analysis of the Ampersand script of ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                  , Str "This analysis is intended for the authors of this script. "
-                  , Str "It can be used to complete the script or to improve possible flaws. "
-                  ]]
+      Dutch   -> para (
+                   str "Dit hoofdstuk geeft een analyse van het Ampersand-script van " <> (singleQuoted.str.name) fSpec <> ". "<>
+                   str "Deze analyse is bedoeld voor de auteur(s) van dit script. " <>
+                   str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
+                  )
+      English -> para (
+                   str "This chapter provides an analysis of the Ampersand script of " <> (singleQuoted.str.name) fSpec <> ". "<>
+                   str "This analysis is intended for the author(s) of this script. " <>
+                   str "It can be used to complete the script or to improve possible flaws."
+                  )
 
   roleRuleTable :: [Block]
   roleRuleTable
