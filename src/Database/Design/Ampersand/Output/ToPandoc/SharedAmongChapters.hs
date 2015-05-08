@@ -227,11 +227,12 @@ orderingByTheme fSpec
         [] -> Nothing
         cd :_ -> Just (origin cd)
         
-  rulMustBeShown r = r_usr r == UserDefined && hasMeaning r
+  rulMustBeShown r = r_usr r == UserDefined && (hasMeaning r || hasPurpose r)
   relMustBeShown d = isUserDefined d && hasPurpose d 
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
+  hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning = isJust . meaning (fsLang fSpec)
   cptMustBeShown = not . null . concDefs fSpec
