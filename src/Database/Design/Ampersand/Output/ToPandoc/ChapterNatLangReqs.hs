@@ -184,12 +184,12 @@ chpNatLangReqs lev fSpec =
                                     FLatex -> (str . show .theNr) nCpt
                                     _      -> (str . name) cDef  
                 <> str (fromMaybe "" suffx) <> ":" 
-               , [para (   case fspecFormat (getOpts fSpec) of
+               , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
+                        <> (case fspecFormat (getOpts fSpec) of
                                     FLatex -> rawInline "latex"
                                                 ("~\\marge{\\gls{"++escapeNonAlphaNum 
                                                       (name cDef++fromMaybe "" suffx)++"}}")
-                                    _      -> mempty
-                        <> newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
+                                    _      -> mempty)
                         <> str (cddef cDef)
                         <> if null (cdref cDef) then mempty
                            else str (" ["++cdref cDef++"]")
