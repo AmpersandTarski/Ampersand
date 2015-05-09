@@ -92,171 +92,168 @@ chpNatLangReqs lev fSpec =
                                 (Nothing, English) -> "Loose ends..."
                                 (Just pat, _     ) -> text (name pat)
                             )
-
-               <> --  *** Purpose of the theme: ***
-                  case patOfTheme tc of
-                      Nothing  -> case fsLang fSpec of
-                                     Dutch   -> para $
-                                                    "Deze paragraaf beschrijft de relaties en concepten die "
-                                                 <> "niet in voorgaande secties zijn beschreven."
-                                     English -> para $
-                                                    "This paragraph shows remaining fact types and concepts "
-                                                 <> "that have not been described in previous paragraphs."
-                      Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
-               <> --  *** Introduction text of the theme: ***
-                  printIntro    (cptsOfTheme tc)
-               <> printConcepts (cptsOfTheme tc)
-               <> printRels     (dclsOfTheme tc)
-               <> printRules    (rulesOfTheme tc)
-           where
+          <> --  *** Purpose of the theme: ***
+             (case patOfTheme tc of
+                 Nothing  -> 
+                   (para.str.l) 
+                     (NL "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."
+                     ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
+                     )
+                 Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
+             )
+          <> printIntro    (cptsOfTheme tc)
+          <> (mconcat . map printConcept . cptsOfTheme ) tc
+          <> (mconcat . map printRel     . dclsOfTheme ) tc
+          <> (mconcat . map printRule    . rulesOfTheme) tc
+      where
                            
 -- The following paragraph produces an introduction of one theme (i.e. pattern or process).
-              printIntro :: [Numbered CptCont] -> Blocks
-              printIntro [] = mempty
-              printIntro nCpts
-                = case patOfTheme tc of
-                    Nothing  -> mempty
-                    Just pat -> 
-                      (  (para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
-                                       ,EN "The sequel introduces the language of ")
-                              <> (str.name) pat <> "."))
-                      <> case nCpts of
-                          [] 
-                            -> fatal 136 "Unexpected. There should be at least one concept to introduce."
-                          [x]
-                            -> para(   (str.l) (NL "Nu volgt de definitie van concept "
-                                               ,EN "At this point, the definition of ")
-                                    <> (showCpt x) 
-                                    <> (str.l) (NL "."
-                                               ,EN " is given.")
-                                   )
-                          _ 
-                            -> para(   (str.l) (NL "Nu volgen definities van de concepten "
-                                               ,EN "At this point, the definitions of ")
-                                    <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
-                                    <> (str.l) (NL "."
-                                               ,EN " are given.")
-                                    )
-                      <> case filter hasMultipleDefs nCpts of
-                          []  -> mempty
-                          [x] -> para(  (str.l) (NL "Het concept "
-                                                ,EN "Concept ")
-                                     <> showCpt x 
-                                     <> (str.l) (NL " heeft meerdere definities."
-                                                ,EN " is multiple defined.")
-                                     )
-                          multipleDefineds
-                              -> para(  (str.l) (NL "De concepten "
-                                                ,EN "Concepts ")
-                                     <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
-                                     <> (str.l) (NL " hebben meerdere definities."
-                                                ,EN " are multiple defined.")
-                                     )
-                      )                                    
+       printIntro :: [Numbered CptCont] -> Blocks
+       printIntro [] = mempty
+       printIntro nCpts
+         = case patOfTheme tc of
+             Nothing  -> mempty
+             Just pat -> 
+               ((para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
+                                 ,EN "The sequel introduces the language of ")
+                              <> (str.name) pat <> ".")
+                )<>
+                ( case nCpts of
+                   [] 
+                     -> fatal 136 "Unexpected. There should be at least one concept to introduce."
+                   [x]
+                     -> para(   (str.l) (NL "Nu volgt de definitie van concept "
+                                        ,EN "At this point, the definition of ")
+                             <> (showCpt x) 
+                             <> (str.l) (NL "."
+                                        ,EN " is given.")
+                            )
+                   _ 
+                     -> para(   (str.l) (NL "Nu volgen definities van de concepten "
+                                        ,EN "At this point, the definitions of ")
+                             <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
+                             <> (str.l) (NL "."
+                                        ,EN " are given.")
+                             )
+               )<>
+               ( case filter hasMultipleDefs nCpts of
+                   []  -> mempty
+                   [x] -> para(  (str.l) (NL "Het concept "
+                                         ,EN "Concept ")
+                              <> showCpt x 
+                              <> (str.l) (NL " heeft meerdere definities."
+                                         ,EN " is multiple defined.")
+                              )
+                   multipleDefineds
+                       -> para(  (str.l) (NL "De concepten "
+                                         ,EN "Concepts ")
+                              <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
+                              <> (str.l) (NL " hebben meerdere definities."
+                                         ,EN " are multiple defined.")
+                              )
+               )
+              )                                    
+         where
+           showCpt :: Numbered CptCont -> Inlines
+           showCpt = emph.text.name.cCpt.theLoad
+           hasMultipleDefs :: Numbered CptCont -> Bool
+           hasMultipleDefs x = 
+              case cCptDefs (theLoad x) of
+                (_:_:_) -> True
+                _       -> False       
 
-              showCpt :: Numbered CptCont -> Inlines
-              showCpt = emph.text.name.cCpt.theLoad
-              hasMultipleDefs :: Numbered CptCont -> Bool
-              hasMultipleDefs x = 
-                 case cCptDefs (theLoad x) of
-                   (_:_:_) -> True
-                   _       -> False       
-              printConcepts :: [Numbered CptCont] -> Blocks
-              printConcepts = mconcat . map printConcept
-              printConcept :: Numbered CptCont -> Blocks
-              printConcept nCpt 
-                = -- Purposes:
-                   (printPurposes . cCptPurps . theLoad) nCpt
-                 <> case (cCptDefs.theLoad) nCpt of
-                     []    -> mempty  -- There is no definition of the concept
-                     [cd] -> printCDef cd Nothing
-                     cds  -> mconcat
-                            [printCDef cd (Just ("."++ [suffx])) 
-                            |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
-                            ]
-                where
-                 printCDef :: ConceptDef -- the definition to print
-                        -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
-                        -> Blocks
-                 printCDef cDef suffx
-                   = definitionList 
-                      [(   str (l (NL"Definitie " ,EN "Definition "))
-                        <> case fspecFormat (getOpts fSpec) of
-                                            FLatex -> (str . show .theNr) nCpt
-                                            _      -> (str . name) cDef  
-                        <> str (fromMaybe "" suffx) <> ":" 
-                       , [para (   case fspecFormat (getOpts fSpec) of
-                                            FLatex -> rawInline "latex"
-                                                        ("~\\marge{\\gls{"++escapeNonAlphaNum 
-                                                              (name cDef++fromMaybe "" suffx)++"}}")
-                                            _      -> mempty
-                                <> newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
-                                <> str (cddef cDef)
-                                <> if null (cdref cDef) then mempty
-                                   else str (" ["++cdref cDef++"]")
-                               ) 
-                         ] 
-                       )
-                      ]
+  printConcept :: Numbered CptCont -> Blocks
+  printConcept nCpt 
+        = -- Purposes:
+           (printPurposes . cCptPurps . theLoad) nCpt
+         <> case (cCptDefs.theLoad) nCpt of
+             []    -> mempty  -- There is no definition of the concept
+             [cd] -> printCDef cd Nothing
+             cds  -> mconcat
+                    [printCDef cd (Just ("."++ [suffx])) 
+                    |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
+                    ]
+        where
+         printCDef :: ConceptDef -- the definition to print
+                -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
+                -> Blocks
+         printCDef cDef suffx
+           = definitionList 
+              [(   str (l (NL"Definitie " ,EN "Definition "))
+                <> case fspecFormat (getOpts fSpec) of
+                                    FLatex -> (str . show .theNr) nCpt
+                                    _      -> (str . name) cDef  
+                <> str (fromMaybe "" suffx) <> ":" 
+               , [para (   case fspecFormat (getOpts fSpec) of
+                                    FLatex -> rawInline "latex"
+                                                ("~\\marge{\\gls{"++escapeNonAlphaNum 
+                                                      (name cDef++fromMaybe "" suffx)++"}}")
+                                    _      -> mempty
+                        <> newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
+                        <> str (cddef cDef)
+                        <> if null (cdref cDef) then mempty
+                           else str (" ["++cdref cDef++"]")
+                       ) 
+                 ] 
+               )
+              ]
 
-
-              printRels :: [Numbered DeclCont] -> Blocks
-              printRels = mconcat . map printRel
-              printRel :: Numbered DeclCont -> Blocks
-              printRel nDcl
-               =   (printPurposes . cDclPurps . theLoad) nDcl
-                <> definitionList [( definitionListItemLabel 
-                                         (XRefNaturalLanguageDeclaration dcl)
-                                         (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
-                                          ++if development (getOpts fSpec)
-                                            then (" ("++name nDcl++")") 
-                                            else ""
-                                         )
-                                   , case (cDclMeaning . theLoad) nDcl of
-                                      Nothing -> fatal 241 "Declarations without meaning should not be printed here. (see issue AmpersandTarski/ampersand/issues/44)"
-                                      Just m  -> [printMeaning m]
-                                   )
-                                  ] 
-                <> case samples of
-                      []  -> mempty
-                      [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
-                                            ,EN "A phrase that can be formed is for instance:")
-                                   )
-                      _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
-                                            ,EN "Phrases that can be made are for instance:")
-                                                )
-                <> if null samples then mempty
-                   else bulletList [ plain $ mkSentence dcl sample
-                                   | sample <- samples]
-                 
-                 where dcl = cDcl . theLoad $ nDcl
-                       samples = take 3 . cDclPairs . theLoad $ nDcl
-
-              printRules :: [Numbered RuleCont] -> Blocks
-              printRules = mconcat . map printRule
+  printRel :: Numbered DeclCont -> Blocks
+  printRel nDcl
+       =   (printPurposes . cDclPurps . theLoad) nDcl
+        <> definitionList [( definitionListItemLabel 
+                                 (XRefNaturalLanguageDeclaration dcl)
+                                 (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
+                                  ++if development (getOpts fSpec)
+                                    then (" ("++name nDcl++")") 
+                                    else ""
+                                 )
+                           , case (cDclMeaning . theLoad) nDcl of
+                              Nothing -> fatal 241 "Declarations without meaning should not be printed here. (see issue AmpersandTarski/ampersand/issues/44)"
+                              Just m  -> [printMeaning m]
+                           )
+                          ] 
+        <> case samples of
+              []  -> mempty
+              [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"
+                                    ,EN "A phrase that can be formed is for instance:")
+                           )
+              _   -> plain ((str.l) (NL "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"
+                                    ,EN "Phrases that can be made are for instance:")
+                                        )
+        <> if null samples then mempty
+           else bulletList [ plain $ mkPhrase dcl sample
+                           | sample <- samples]
+         
+         where dcl = cDcl . theLoad $ nDcl
+               samples = take 3 . cDclPairs . theLoad $ nDcl
 
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul
    =  (printPurposes . cRulPurps . theLoad) nRul
-    <> definitionList [(definitionListItemLabel
-                            (XRefNaturalLanguageRule . cRul . theLoad $ nRul)
-                            ((case fsLang fSpec of
-                                        Dutch   -> "Afspraak "
-                                        English -> "Agreement "
-                                   )++show (theNr nRul)
-                                    ++if development (getOpts fSpec)  
-                                      then (" ("++name nRul++")")
-                                      else ""
-                                )
-                        , case (cRulMeaning . theLoad) nRul of
-                            Nothing -> fatal 284 "It is very odd to have a rule without a meaning."
-                            Just m  -> [printMeaning m]
-                        ) 
-                       ]
+    <> case (cRulMeaning . theLoad) nRul of
+        Nothing 
+          -> mempty
+        Just m
+          -> definitionList 
+               [(definitionListItemLabel
+                   (XRefNaturalLanguageRule . cRul . theLoad $ nRul)
+                   ((case fsLang fSpec of
+                       Dutch   -> "Afspraak "
+                       English -> "Agreement "
+                    )++
+                    show (theNr nRul)++
+                    if development (getOpts fSpec)  
+                    then (" ("++name nRul++")")
+                    else ""
+                   )
+                , [printMeaning m]
+                ) 
+               ]
       
 
-  mkSentence :: Declaration -> Paire -> Inlines
-  mkSentence  decl pair -- srcAtom tgtAtom
+  mkPhrase :: Declaration -> Paire -> Inlines
+  mkPhrase decl pair -- srcAtom tgtAtom
    = case decl of
        Sgn{} | null (prL++prM++prR)
                   ->    (atomShow . upCap) srcAtom
