@@ -415,7 +415,7 @@ class Database
 		unset($this->affectedConcepts, $this->affectedRelations);
 		$this->affectedConcepts = array(); $this->affectedRelations = array();
 		
-		if($setNewContent) $session->atom->setNewContent($session->interface); // e.g. not needed in Atom::delete() function
+		if($setNewContent && isset($session->atom)) $session->atom->setNewContent($session->interface); // e.g. not needed in Atom::delete() function
 		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction

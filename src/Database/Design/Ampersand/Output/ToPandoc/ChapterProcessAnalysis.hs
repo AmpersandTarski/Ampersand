@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Data.List
-import Database.Design.Ampersand.Output.PandocAux
 
 --DESCR -> the process analysis contains a section for each process in the fSpec
 -- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.

@@ -14,12 +14,17 @@ AmpersandApp.config(function($routeProvider) {
 				controller: 'static_installerController',
 				templateUrl: 'app/views/static_installer.html'
 			})
+		.when('/404',
+			{
+				templateUrl: 'app/views/static_404.html'
+			})
 		// here, you can add other stuff (e.g. DndTree)
 		//.when('/<interfaceId>/:resourceId?',
  		//	{
 		//		controller: 'DndTreeController',
 		//		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
 		//	})
+		.otherwise({redirectTo: '/404'});
 });
 
 AmpersandApp.config(function(RestangularProvider) {

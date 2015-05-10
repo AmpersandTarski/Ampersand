@@ -3,7 +3,6 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 
 chpGlossary :: Int -> FSpec ->  Blocks
