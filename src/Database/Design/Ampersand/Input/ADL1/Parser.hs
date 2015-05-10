@@ -42,7 +42,7 @@ keywordstxt       = [ "INCLUDE"
                     , "ONE"
                     , "BYPLUG"
                     , "ROLE", "EDITS", "MAINTAINS"
-                    -- Keywords for Domains:
+                    -- Keywords for ConceptType:
                     , "Alphanumeric", "BigAlphanumeric", "HugeAlphanumeric", "Password"
                     , "Binary", "BigBinary", "HugeBinary"
                     , "Date", "DateTime", "Boolean", "Numeric", "AutoIncrement"
@@ -362,10 +362,11 @@ pRepresentation
   = Repr <$> pKey_pos "REPRESENT"
          <*> pList1Sep (pSpec ',') pConceptName  -- the concept names
          <*  pKey "TYPE"
-         <*> pDomain
+         <*> pConceptType
 
-pDomain :: AmpParser Domain
-pDomain = k Alphanumeric     "Alphanumeric"
+pConceptType :: AmpParser ConceptType
+pConceptType
+        = k Alphanumeric     "Alphanumeric"
       <|> k BigAlphanumeric  "BigAlphanumeric"
       <|> k HugeAlphanumeric "HugeAlphanumeric"
       <|> k Password         "Password"

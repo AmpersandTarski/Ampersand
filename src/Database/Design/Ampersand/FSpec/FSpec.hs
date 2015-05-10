@@ -77,7 +77,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
-                   , allConceptDomains :: [(A_Concept,Domain)]
+                   , allConceptTypes :: [(A_Concept,ConceptType)]
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
@@ -100,6 +100,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allViolations ::  [(Rule,[AAtomPair])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
                    , allSigns      :: [Sign]                  -- ^ All Signs in the fSpec
+                   , contextInfo   :: ContextInfo     
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'

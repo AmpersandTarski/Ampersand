@@ -83,7 +83,7 @@ makeFSpec opts context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
-              , allConceptDomains = [(c,representationOf context c) | c<-fSpecAllConcepts]
+              , allConceptTypes = [(c,representationOf context c) | c<-fSpecAllConcepts]
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
               , vgens        = gens context

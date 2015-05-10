@@ -133,11 +133,13 @@ checkOtherAtomsInSessionConcept gCtx =
      Checked ctx -> case [mkOtherAtomInSessionError atom
                          | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
                          , name cpt == "SESSION"
-                         , atom <- filter (/= "_SESSION") (popas pop)
+                         , atom <- filter isTheOnlyPermittedSessionValue (popas pop)
                          ] of
                       [] -> gCtx
                       errs -> Errors errs
-
+        where isTheOnlyPermittedSessionValue :: AAtomValue -> Bool
+              isTheOnlyPermittedSessionValue (AAVString _ str) = str == "_SESSION"
+              isTheOnlyPermittedSessionValue _                 = False
 checkMultipleRepresentationsOfConcepts :: Guarded A_Context -> Guarded A_Context
 checkMultipleRepresentationsOfConcepts gCtx =
    case gCtx of 
@@ -176,7 +178,7 @@ pCtx2aCtx' _
       , ctx_php    = p_phpdefs
       , ctx_metas  = p_metas
       }
- = (\pats rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs allRoleRelations
+ = (\pats rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs allRoleRelations declsAndPops
      -> ACtx{ ctxnm = n1
             , ctxpos = n2
             , ctxlang = deflangCtxt
@@ -184,9 +186,9 @@ pCtx2aCtx' _
             , ctxthms = p_themes
             , ctxpats = pats
             , ctxrs = rules
-            , ctxds = ctxDecls
+            , ctxds = map fst declsAndPops
             , ctxpopus = nub (udpops
-                            ++dclPops
+                            ++map snd declsAndPops
                             ++mp1Pops contextInfo rules
                             ++mp1Pops contextInfo pats
                             ++mp1Pops contextInfo identdefs
@@ -216,6 +218,7 @@ pCtx2aCtx' _
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
       <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels (p_patterns ++ p_processes))
+      <*> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) p_declarations
       
   where
     contextInfo :: ContextInfo
@@ -246,11 +249,21 @@ pCtx2aCtx' _
 
     deffrmtCtxt = fromMaybe ReST pandocf
 
-    (decls,dclPops)= unzip dps
-    (ctxDecls,_ ) = unzip ctxDecls'
-    dps = ctxDecls'++patDecls
-    ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
-    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns ++p_processes , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
+--    decls  = map fst declsAndPops ++concatMap ptdcs pats
+    decls = case f of
+             Checked ds -> ds
+             Errors err -> fatal 253 $ "there are errors."++show err
+      where f = (\declsWithPops pats 
+                  -> map fst declsWithPops ++ concatMap ptdcs pats
+                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) p_declarations
+                  <*> traverse pPat2aPat (p_patterns ++ p_processes)
+
+
+--    dclPops= ctxDclPops++patDclPops
+--    (ctxDecls,_ ) =  ctxDecls'
+--    dps = ctxDecls'++patDecls
+--    (ctxDecls,ctxDclPops) = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
+--    (patDecls,patDclPops) = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns ++p_processes , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
 
 -- In order to find declarations efficiently, a Map is constructed to search declarations by name.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
@@ -270,13 +283,13 @@ pCtx2aCtx' _
          String         -- The name of the pattern
       -> Lang           -- The default language
       -> PandocFormat   -- The default pandocFormat
-      -> P_Declaration -> (Declaration, Population)
+      -> P_Declaration -> Guarded (Declaration,Population)
     pDecl2aDecl patNm defLanguage defFormat pd
      = let dcl = Sgn { decnm   = dec_nm pd
                      , decsgn  = pSign2aSign (dec_sign pd)
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                     , decprL  = dec_prL pd
+                      , decprL  = dec_prL pd
                      , decprM  = dec_prM pd
                      , decprR  = dec_prR pd
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
@@ -286,7 +299,10 @@ pCtx2aCtx' _
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
-       in (dcl, ARelPopu { popdcl = dcl, popps = dec_popu pd})
+       in (\aps -> (dcl,ARelPopu { popdcl = dcl
+                                 , popps = aps
+                                 })
+          ) <$> traverse (pAtomPair2aAtomPair dcl) (dec_popu pd)
 
     pSign2aSign :: P_Sign -> Sign
     pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -347,24 +363,22 @@ pCtx2aCtx' _
       where
       -- f :: [PAtomValue] -> [AAtomValue]
        f ps = undefined 
+
     pAtomPair2aAtomPair :: Declaration -> PAtomPair -> Guarded AAtomPair
     pAtomPair2aAtomPair dcl pp = 
-       case ( string2AtomValue domLeft  (strOf (ppLeft  pp))
-            , string2AtomValue domRight (strOf (ppRight pp))
-            ) of
-          (Left l, Left r) -> pure (mkAtomPair l r)
-          _  -> fatal 350 $ "Todo"      
-        where
-         domLeft = representationOf contextInfo (source dcl)
-         domRight = representationOf contextInfo (target dcl) 
-    strOf :: PAtomValue -> String
-    strOf (PAVString str) = str
-    strOf _ = fatal 348 $ "currently unsupported type."
+     (\l r ->
+       mkAtomPair l r
+     ) <$> pAtomValue2aAtomValue (source dcl) (ppLeft  pp)
+       <*> pAtomValue2aAtomValue (target dcl) (ppRight pp)
+
     pAtomValue2aAtomValue ::A_Concept -> PAtomValue -> Guarded AAtomValue
     pAtomValue2aAtomValue cpt pav =
-       case string2AtomValue (representationOf contextInfo cpt) (strOf pav) of
-         Left aav -> pure aav 
-         Right msg -> Errors [err]
+       case string2AtomValue typ (strOf pav) of
+         Just aav -> pure aav 
+         Nothing -> Errors [mkIncompatibleAtomValueError pav typ cpt]
+         where typ = representationOf contextInfo cpt
+               strOf (PAVString _ str) = str
+
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = pObjDefDisamb2aObjDef $ disambiguate termPrimDisAmb x
 
@@ -657,20 +671,20 @@ pCtx2aCtx' _
          <*> traverse pPop2aPop (pt_pop ppat)
          <*> traverse pViewDef2aViewDef (pt_vds ppat) 
          <*> traverse pPurp2aPurp (pt_xps ppat)
+         <*> traverse (pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt) (pt_dcs ppat)
        where
-        f rules' keys' pops' views' xpls
-           = let (decls',dPops) = unzip [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
-             in A_Pat { ptnm  = name ppat
-                      , ptpos = pt_pos ppat
-                      , ptend = pt_end ppat
-                      , ptrls = rules'
-                      , ptgns = map pGen2aGen (pt_gns ppat)
-                      , ptdcs = decls'
-                      , ptups = pops' ++ [ dp | dp@ARelPopu{}<-dPops, (not.null.popps) dp ] ++ [ cp | cp@ACptPopu{}<-dPops, (not.null.popas) cp ]
-                      , ptids = keys'
-                      , ptvds = views'
-                      , ptxps = xpls
-                      }
+        f rules' keys' pops' views' xpls declsAndPops
+           = A_Pat { ptnm  = name ppat
+                   , ptpos = pt_pos ppat
+                   , ptend = pt_end ppat
+                   , ptrls = rules'
+                   , ptgns = map pGen2aGen (pt_gns ppat)
+                   , ptdcs = map fst declsAndPops
+                   , ptups = pops' ++ map snd declsAndPops
+                   , ptids = keys'
+                   , ptvds = views'
+                   , ptxps = xpls
+                   }
     pRul2aRul :: String -- environment name (pattern / proc name)
               -> (P_Rule TermPrim) -> Guarded Rule
     pRul2aRul env = typeCheckRul env . disambiguate termPrimDisAmb

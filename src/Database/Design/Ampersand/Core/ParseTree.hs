@@ -14,7 +14,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
-   , Representation(..), Domain(..)
+   , Representation(..), ConceptType(..)
    , P_Population(..)
    , PAtomPair(..), PAtomValue(..),GenericNumber(..), mkPair
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
@@ -129,7 +129,7 @@ data P_Pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
-           , pt_Reprs :: [Representation] -- ^ The domain into which concepts is represented
+           , pt_Reprs :: [Representation] -- ^ The type into which concepts is represented
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
@@ -161,17 +161,17 @@ instance Named ConceptDef where
 data Representation
   = Repr { reprpos  :: Origin
          , reprcpts  :: [String]  -- ^ the concepts 
-         , reprdom :: Domain     -- the domain
+         , reprdom :: ConceptType     -- the type of the concept the atom is in
          } deriving (Show)
 instance Traced Representation where
  origin = reprpos
          
-data Domain 
+data ConceptType 
   = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
   | Binary | BigBinary | HugeBinary 
   | Date | DateTime 
   | Boolean | Numeric | AutoIncrement 
-  | DomainOfOne --special domain for the special concept ONE.
+  | TypeOfOne --special type for the special concept ONE.
      deriving (Show, Eq, Ord)
 
 data P_Declaration =
@@ -202,8 +202,10 @@ data PAtomPair
           } deriving Show
 data PAtomValue
   = PAVString Origin String
-  | PAVNumeric GenericNumber
-  | PAVBoolean Bool deriving Show
+-- TODO: Later add parsers for:
+--  | PAVNumeric Origin GenericNumber
+--  | PAVBoolean Origin Bool 
+  deriving Show
 data GenericNumber
   = Original String deriving Show
 mkPair :: Origin -> String -> String -> PAtomPair

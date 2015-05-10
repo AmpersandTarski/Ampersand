@@ -84,7 +84,7 @@ makeLinkTable context dcl totsurs =
              , columns = ( -- The source field:
                            Fld { fldname = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , fldexpr = srcExpr
-                               , fldtype = domain2SqlType   . representationOf context . source $ srcExpr
+                               , fldtype = conceptType2SqlType . representationOf context . source $ srcExpr
                                , flduse  = if suitableAsKey . representationOf context . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
@@ -94,7 +94,7 @@ makeLinkTable context dcl totsurs =
                          , -- The target field:
                            Fld { fldname = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , fldexpr = trgExpr
-                               , fldtype = domain2SqlType   . representationOf context . target $ trgExpr
+                               , fldtype = conceptType2SqlType . representationOf context . target $ trgExpr
                                , flduse  = if suitableAsKey . representationOf context . target $ trgExpr
                                            then ForeignKey (target trgExpr)
                                            else PlainAttr
@@ -125,7 +125,7 @@ unquote str
   | head str == '"' && last str == '"' = reverse . tail . reverse .tail $ str 
   | otherwise = str
       
-suitableAsKey :: Domain -> Bool
+suitableAsKey :: ConceptType -> Bool
 suitableAsKey st =
   case st of
     Alphanumeric     -> True
@@ -140,7 +140,7 @@ suitableAsKey st =
     Boolean          -> True
     Numeric          -> True
     AutoIncrement    -> True
-    DomainOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
+    TypeOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
 -----------------------------------------
 --rel2fld
 -----------------------------------------
@@ -170,7 +170,7 @@ rel2fld context
         e
  = Fld { fldname = fldName
        , fldexpr = e
-       , fldtype = domain2SqlType (representationOf context (target e))
+       , fldtype = conceptType2SqlType (representationOf context (target e))
        , flduse  =
           let f expr =
                  case expr of
@@ -443,8 +443,8 @@ makeUserDefinedSqlPlug context obj
    sqltp :: ObjectDef -> SqlType
    sqltp _ = fatal 448 "The Sql type of a user defined plug has bitrotteted. The syntax should support a Representation."
 
-domain2SqlType :: Domain -> SqlType
-domain2SqlType dom 
+conceptType2SqlType :: ConceptType -> SqlType
+conceptType2SqlType dom 
  = case dom of
      Alphanumeric     -> SQLVarchar 255
      BigAlphanumeric  -> SQLText
@@ -458,18 +458,18 @@ domain2SqlType dom
      Boolean          -> SQLBool
      Numeric          -> SQLFloat
      AutoIncrement    -> SQLSerial
-     DomainOfOne      -> fatal 461 $ "ONE is not represented in SQL" 
-representationOf :: A_Context -> A_Concept -> Domain
+     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
+representationOf :: A_Context -> A_Concept -> ConceptType
 representationOf context cpt = 
   case cpt of 
-    ONE -> DomainOfOne
+    ONE -> TypeOfOne
     PlainConcept{}
         ->  case groupWith reprdom . filter isAboutThisCpt . ctxreprs $ context of
               [] ->  Alphanumeric  --The default value, when no representation is specified
               [rs] -> case rs of   
                          []  -> fatal 498 "This should be impossible with groupWith"
                          r: _ ->reprdom r
-              _ -> fatal 500 $ "There are multiple Domains for "++show cpt++". That should have been checked earlier!"
+              _ -> fatal 500 $ "There are multiple conceptTypes for "++show cpt++". That should have been checked earlier!"
   where
     isAboutThisCpt :: Representation -> Bool 
     isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 

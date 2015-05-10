@@ -365,11 +365,11 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomValuesOf (vgens fSpec)(initialPops fSpec) c))
+                    strs = map show (sort (atomValuesOf (contextInfo fSpec) (initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
-              showViolatedRule :: String -> (Rule,Pairs) -> String
+              showViolatedRule :: String -> (Rule,[AAtomPair]) -> String
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++

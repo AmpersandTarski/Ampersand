@@ -32,7 +32,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
- , Representation(..), Domain(..)
+ , Representation(..), ConceptType(..)
  , Sign(..)
  , Population(..)
  , GenR
@@ -53,7 +53,7 @@ import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), Domain(..)
+                                                , SrcOrTgt(..), isSrc , Representation(..), ConceptType(..)
                                                 )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
@@ -509,7 +509,7 @@ data AAtomPair
           }deriving(Show,Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
-string2AtomValue :: Domain -> String -> Maybe AAtomValue
+string2AtomValue :: ConceptType -> String -> Maybe AAtomValue
 string2AtomValue dom str
   = case dom of 
      Alphanumeric     -> Just (AAVString Alphanumeric str) 
@@ -531,17 +531,18 @@ string2AtomValue dom str
                                        Right r -> Just (AAVNumeric Numeric (Rational r))
                                        Left _  -> Nothing
      AutoIncrement    -> Nothing
+     TypeOfOne        -> Nothing
 data AAtomValue
-  = AAVString  { aavdom :: Domain
+  = AAVString  { aavdom :: ConceptType
                , aavstr :: String
                }
-  | AAVNumeric { aavdom :: Domain
+  | AAVNumeric { aavdom :: ConceptType
                , aavnum :: GenericNumber
                }
-  | AAVBoolean { aavdom :: Domain
+  | AAVBoolean { aavdom :: ConceptType
                , aavbool :: Bool
                }
-  | AAVDate { aavdom :: Domain
+  | AAVDate { aavdom :: ConceptType
             , aadateYear ::  Int
             , aadateMonth :: Int
             , aadateDay   :: Int
@@ -820,7 +821,7 @@ data ContextInfo =
   CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
      , ctxiRepresents :: [Representation] -- a list containing all user defined Representations in the context
      }
-representationOf :: ContextInfo -> A_Concept -> Domain
+representationOf :: ContextInfo -> A_Concept -> ConceptType
 representationOf ci cpt = 
 -- TODO: Fix this function, to take care of classifications
   case cpt of 
@@ -831,7 +832,7 @@ representationOf ci cpt =
               [rs] -> case rs of   
                          []  -> fatal 498 "This should be impossible with eqClass"
                          r: _ ->reprdom r
-              _ -> fatal 500 $ "There are multiple Domains for "++show cpt++". That should have been checked earlier!"
+              _ -> fatal 500 $ "There are multiple ConceptTypes for "++show cpt++". That should have been checked earlier!"
   where
     isAboutThisCpt :: Representation -> Bool 
     isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 

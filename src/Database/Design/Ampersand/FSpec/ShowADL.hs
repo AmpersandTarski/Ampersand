@@ -345,7 +345,7 @@ instance ShowADL P_Population where
 showPPaire :: PAtomPair -> String
 showPPaire p = showPAtom (ppLeft p)++", "++ showPAtom (ppRight p)
 showAPaire :: AAtomPair -> String
-showAPaire p = showAAtom (apLeft p)++", "++ showAAtom (apRight p)
+showAPaire p = showADL (apLeft p)++", "++ showADL (apRight p)
 instance ShowADL PAtomPair where
  showADL p = "("++showPAtom (ppLeft p)++","++ showPAtom (ppRight p)++")"
 instance ShowADL [PAtomPair] where
@@ -367,26 +367,27 @@ instance ShowADL Population where
     where indent = "   "
           showContent = case pop of
                           ARelPopu{} -> map showAPaire (popps pop)
-                          ACptPopu{} -> map showAAtom  (popas pop)
+                          ACptPopu{} -> map showADL (popas pop)
 
 -- showADL (ARelPopu r pairs)
 --  = "POPULATION "++showADL r++" CONTAINS\n"++
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
+
 showPAtom :: PAtomValue -> String
 showPAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
   where x = case at of
               PAVString _ str -> str
-              PAVNumeric (Original str) -> str
-              PAVBoolean b -> show b
-showAAtom :: AAtomValue -> String
-showAAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
+--              PAVNumeric (Original str) -> str
+--              PAVBoolean b -> show b
+instance ShowADL AAtomValue where
+ showADL at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
   where x = case at of
-              AAVString str -> str
-              AAVNumeric (Integer i) -> show i
-              AAVNumeric (Rational r) -> show r
-              AAVBoolean b -> show b
+              AAVString _ str -> str
+              AAVNumeric _ (Integer i) -> show i
+              AAVNumeric _ (Rational r) -> show r
+              AAVBoolean _ b -> show b
               AAVDate{} -> fshow 4 (aadateYear at)++"-"++fshow 2 (aadateMonth at)++"-"++fshow 2 (aadateDay at)
               AtomValueOfONE -> "1"
         fshow len int = reverse . take len . reverse $ show int ++ repeat '0'

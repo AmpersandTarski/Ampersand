@@ -308,8 +308,8 @@ generateTableInfos fSpec =
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
                   | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
-              [ ", 'type' => '"++(maybe (fatal 311 ("Unknown domain for concept "++show (name c)))
-                                        show . lookup c . allConceptDomains) fSpec++"'" ]++
+              [ ", 'type' => '"++(maybe (fatal 311 ("Unknown conceptType for concept "++show (name c)))
+                                        show . lookup c . allConceptTypes) fSpec++"'" ]++
               [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
               [ ")" ]
            )
@@ -318,7 +318,7 @@ generateTableInfos fSpec =
                  Nothing    -> []
                  Just conjs -> conjs
                affInvConjs = filterFrontEndInvConjuncts affConjs
-               affSigConjs = filterFrontEndSigConjuncts affConjs 
+               affSigConjs = filterFrontEndSigConjuncts affConjs
 
          ]
     ) ++
