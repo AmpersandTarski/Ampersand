@@ -1,17 +1,17 @@
-CONTEXT AST IN ENGLISH
+CONTEXT AST IN ENGLISH LATEX
 
 PURPOSE PROCESS Atoms  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
-{+The definition of atoms relates directly to the choice of Ampersand to use a representable heterogeneous relational algebra.
-This leads to populating relations with pairs, and making sure that the type of atoms is uniquely determined by the table in which the atom is stored.
+{+Atoms are defined so that they comply with Ampersand's choice to use a representable heterogeneous relational algebra.
 -}
 PROCESS Atoms
 PURPOSE CONCEPT Atom
 {+
-Atoms are used to represent data. They are stored in relations that reside within a context.
-\subsubsection*{Example}
+Atoms are used to represent data.
+
 For example, the atom ``Amsterdam'' is an instance of the concept ``City''.
-\subsubsection*{Explanation}
-Atoms populate relations.
+
+Atoms populate relations, which means that a relation contains pairs of atoms.
+In fact a relation may be regarded as a set of pairs of atoms.
 Ampersand works with binary relations, so you will find pairs of atoms in a relation.
 In an information system, the population of relations can change because of edit actions by users in user interfaces.
 This means that pairs are inserted into and deleted from relations as time goes by.
@@ -50,7 +50,7 @@ MEANING "The concept to which this atom belongs is called the type of an atom"
 RULE "Def of type" : type = l~;in;source \/ r~;in;target
 -- HJO @Stef: Bovenstaande is niet waterdicht. Het vereist dat zowel l als r SUR zijn. Zolang dat niet is gegarandeerd, is type niet TOT. Graag aanpassen...
 RELATION src[Pair*Concept] [UNI,TOT]
-ROLE Stef MAINTAINS "TOT src::Sign*Concept","TOT trg::Sign*Concept"
+--ROLE Stef MAINTAINS "TOT src::Sign*Concept","TOT trg::Sign*Concept"
 RULE "Def of src" : src = in;source
 RELATION tgt[Pair*Concept] [UNI,TOT]
 RULE "Def of tgt" : tgt = in;target
