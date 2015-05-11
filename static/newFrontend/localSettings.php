@@ -26,7 +26,7 @@ $DB_name = $dbName; // from Generics.php
  */
 
 // Enable ExecEngine
-// require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
+require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
 $ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
 	
 	// Config params for SendEmail function of ExecEngine (now using Gmail) 
