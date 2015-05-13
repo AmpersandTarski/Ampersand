@@ -115,7 +115,6 @@ pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
  where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN'
---TODO! PROCESS and PATTERN should have the same semantic value.
 pPatternDef :: AmpParser P_Pattern
 pPatternDef = rebuild <$> currPos
                       <*  pKey "PATTERN"
@@ -132,87 +131,67 @@ pPatternDef = rebuild <$> currPos
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
-             , pt_RRuls = []  -- TODO: Add P_RoleRule to Pattern
-             , pt_RRels = []  -- TODO: Add P_RoleRelation to Pattern
+             , pt_RRuls = [rr | Pm rr<-pes]
+             , pt_RRels = [rr | Pl rr<-pes]
              , pt_cds = [c nm | Pc c<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
              , pt_pop = [p | Pp p<-pes]
              }
-    --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
-    pPatElem :: AmpParser PatElem
-    pPatElem = Pr <$> pRuleDef      <|>
-               Py <$> pClassify     <|>
-               Pd <$> pRelationDef  <|>
-               Pc <$> pConceptDef   <|>
-               Pg <$> pGenDef       <|>
-               Pk <$> pIndex        <|>
-               Pv <$> pViewDef      <|>
-               Pe <$> pPurpose      <|>
-               Pp <$> pPopulation
+
+--- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
+pProcessDef :: AmpParser P_Pattern
+pProcessDef = rebuild <$> currPos
+                      <*  pKey "PROCESS"
+                      <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
+                      <*> many pPatElem
+                      <*> currPos
+                      <*  pKey "ENDPROCESS"
+  where
+    rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
+    rebuild pos' nm pes end
+     = P_Pat { pt_nm  = nm
+             , pt_pos = pos'
+             , pt_end = end
+             , pt_rls = [r | Pr r<-pes]
+             , pt_gns = [g | Pg g<-pes]
+             , pt_dcs = [d | Pd d<-pes]
+             , pt_RRuls = [rr | Pm rr<-pes]
+             , pt_RRels = [rr | Pl rr<-pes]
+             , pt_cds = [c nm | Pc c<-pes]
+             , pt_ids = [k | Pk k<-pes]
+             , pt_vds = [v | Pv v<-pes]
+             , pt_xps = [e | Pe e<-pes]
+             , pt_pop = [p | Pp p<-pes]
+             }			 
+
+--- PatElem used by PATTERN and PROCESS
+--- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
+pPatElem :: AmpParser PatElem
+pPatElem = Pr <$> pRuleDef          <|>
+           Py <$> pClassify         <|>
+           Pd <$> pRelationDef      <|>
+           Pm <$> try pRoleRule     <|>
+           Pl <$> try pRoleRelation <|>
+           Pc <$> pConceptDef       <|>
+           Pg <$> pGenDef           <|>
+           Pk <$> pIndex            <|>
+           Pv <$> pViewDef          <|>
+           Pe <$> pPurpose          <|>
+           Pp <$> pPopulation
 
 data PatElem = Pr (P_Rule TermPrim)
              | Py P_Gen
              | Pd P_Declaration
+             | Pm P_RoleRule
+             | Pl P_RoleRelation
              | Pc (String -> ConceptDef)
              | Pg P_Gen
              | Pk P_IdentDef
              | Pv P_ViewDef
              | Pe PPurpose
-             | Pp P_Population
-
---- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
-pProcessDef :: AmpParser P_Pattern
-pProcessDef = rebuild <$> currPos 
-                      <*  pKey "PROCESS" 
-                      <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
-                      <*> many pProcElem
-                      <*> currPos 
-                      <*  pKey "ENDPROCESS"
-   where
-    rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Pattern
-    rebuild pos' nm pes end
-      = P_Pat { pt_nm    = nm
-              , pt_pos   = pos'
-              , pt_end   = end
-              , pt_rls = [rr | PrR rr<-pes]
-              , pt_gns  = [g  | PrG g <-pes]
-              , pt_dcs  = [d  | PrD d <-pes]
-              , pt_RRuls = [rr | PrM rr<-pes]
-              , pt_RRels = [rr | PrL rr<-pes]
-              , pt_cds   = [cd nm | PrC cd<-pes]
-              , pt_ids   = [ix | PrI ix<-pes]
-              , pt_vds   = [vd | PrV vd<-pes]
-              , pt_xps   = [e  | PrE e <-pes]
-              , pt_pop   = [p  | PrP p <-pes]
-              }
-    --- ProcElem ::= RuleDef | Classify | RelationDef | RoleRule | RoleRelation | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
-    pProcElem :: AmpParser ProcElem
-    pProcElem = PrR <$> pRuleDef      <|>
-                PrY <$> pClassify     <|>
-                PrD <$> pRelationDef  <|>
-                --TODO! Try to move the try deeper into the parsing chain
-                PrM <$> try pRoleRule     <|>
-                PrL <$> try pRoleRelation <|>
-                PrC <$> pConceptDef   <|>
-                PrG <$> pGenDef       <|>
-                PrI <$> pIndex        <|>
-                PrV <$> pViewDef      <|>
-                PrE <$> pPurpose      <|>
-                PrP <$> pPopulation
-
-data ProcElem = PrR (P_Rule TermPrim)
-              | PrY P_Gen
-              | PrD P_Declaration
-              | PrM P_RoleRule
-              | PrL P_RoleRelation
-              | PrC (String->ConceptDef)
-              | PrG P_Gen
-              | PrI P_IdentDef
-              | PrV P_ViewDef
-              | PrE PPurpose
-              | PrP P_Population
+             | Pp P_Population 
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
@@ -340,7 +319,11 @@ pConceptDef       = Cd <$> currPos
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
-pGenDef :: AmpParser P_Gen -- TODO! SPEC is obsolete syntax. Should disappear!
+pGenDef :: AmpParser P_Gen 
+-- pGenDef = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <* pKey "ISA") <*> pConceptRef -- 
+--          where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
+
+--Old version 
 pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef -- 
           where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
                 key = pKey "CLASSIFY" <|> pKey "SPEC"
