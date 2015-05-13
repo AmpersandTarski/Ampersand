@@ -172,8 +172,8 @@ pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
            Py <$> pClassify         <|>
            Pd <$> pRelationDef      <|>
-           Pm <$> try pRoleRule     <|>
-           Pl <$> try pRoleRelation <|>
+           Pm <$> pRoleRule         <|>
+           Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
            Pg <$> pGenDef           <|>
            Pk <$> pIndex            <|>
@@ -561,21 +561,21 @@ pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* 
 
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
-pRoleRelation      = rr <$> currPos
+pRoleRelation      = try (rr <$> currPos
                         <*  pKey "ROLE"
                         <*> pRole `sepBy1` pComma
                         <*  pKey "EDITS"
-                        <*> pNamedRel `sepBy1` pComma
+                        <*> pNamedRel `sepBy1` pComma)
                      where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO! Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
 pRoleRule :: AmpParser P_RoleRule
-pRoleRule         = rr <$> currPos
+pRoleRule         = try (rr <$> currPos
                        <*  pKey "ROLE"
                        <*> pRole `sepBy1` pComma
                        <*  pKey "MAINTAINS"
-                       <*> pADLid `sepBy1` pComma
+                       <*> pADLid `sepBy1` pComma)
                     where rr p roles rulIds = Maintain roles rulIds p
 
 --- Role ::= ADLid
