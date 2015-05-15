@@ -17,7 +17,7 @@ AmpersandApp.controller('ExcelImportController', function ($scope, $rootScope, F
 	if (typeof $rootScope.uploader == 'undefined') {
 
 		$rootScope.uploader = new FileUploader({
-			 url: 'extensions/ExcelImport/excel_parse.php'
+			 url: 'extensions/ExcelImport/api/import'
 		});
 	}
 	
