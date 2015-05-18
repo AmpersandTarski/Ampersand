@@ -7,18 +7,71 @@ CONCEPT Interface "An interface is an input/output mechanism that presents a res
 IDENT Interface: Interface(ifcObj;objnm)
 CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
-RELATION attributes[ObjectDef*ObjectDef] [INJ,SUR]
-MEANING "Every object definition has a number of object definitions, each of which serves as an attribute."
+{-Han,
+ifcParams contain the editable relations. This needs to be enhanced to ifcInputs and ifcOutputs.
+So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
+ifcOutputs has to be added yet.
+-}
+RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
+MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
+RELATION ifcOutputs[Interface*Relation]
+MEANING "This relation contains the relations that can be edited by the computer for restoring invariants."
+RELATION ifcClass[Interface*String] [UNI]
+RELATION ifcRoles[Interface*Role]
+MEANING "This relation contains the roles for which an interface is available (empty means: available for all roles)."
 RELATION ifcObj[Interface*ObjectDef] [UNI,TOT,INJ]
 MEANING "Every interface has precisely one object definition, which defines the structure of objects to be changed by transactions of this interface."
+RELATION ifcQuads[Interface*Quad]
+MEANING "All quads that are needed to perform computations for maintaining rules in an interface are registered."
+RELATION ifcControls[Interface*Conjunct]
+MEANING "All conjuncts that must be evaluated after a transation are registered."
+RELATION ifcPos[Interface*Origin] [UNI,TOT]
+MEANING "The position in the file (filename, line- and column number)."
+RELATION ifcPrp[Interface*String] [UNI]
+MEANING "The purpose of each interface is being registered."
+RELATION viol[Interface*Rule]
+MEANING "All rules that can be violated by an interface are included in viol."
+
 RELATION objnm[ObjectDef*String] [UNI,TOT]
 MEANING "Every object definition has a name."
+RELATION objpos[ObjectDef*Origin] [UNI,TOT]
+MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
 RELATION objctx[ObjectDef*Expression] [UNI,TOT]
 MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
+RELATION objmView[ObjectDef*View] [UNI]
+MEANING "An object definition can have a view that should be used for this object (e.g. TABS, COLS, etc.)."
+RELATION usedIn[Relation*Expression]
+MEANING "If a relation is used in an expression, this is registered in usedIn."
+RELATION rrexp[Rule*Expression]
+MEANING "The expression, of which a rule consists, is accessible via the relation rrexp."
+
+RULE violatableByInterface : viol = (ifcInputs\/ifcOutputs);usedIn;rrexp~
+MEANING "An interface can possibly violate any rule that uses an input- or output relation of that interface."
 RELATION getExpressionRelation[Expression*Relation] [UNI]
 MEANING "An Expression that is equivalent to a Relation, allows that relation to be edited."
+
+RULE checkExpressionRelation : getExpressionRelation |- (usedIn~;-I;usedIn/\I);getExpressionRelation
+MEANING "An editable expression contains one relation only."
+
+RULE "possible inputs" : ifcInputs |- ifcObj;(attIn~;attObj)+;objctx;getExpressionRelation
+MEANING "Allow only those input relations that have an editable field inside the interface."
+MESSAGE "Unusable input relation in interface:"
+VIOLATION (TXT "Relation ", TGT I, TXT " has no editable field in interface ", SRC I)
 RULE "accessible relations" : V[Context*Interface];ifcObj;objctx;getExpressionRelation
 MEANING "For every relation that is potentially editable, there exists an interface through which it can be accessed."
+ENDPATTERN
+
+PATTERN InterfaceSession
+RELATION sessAtom[SESSION*Atom] [UNI,TOT]
+MEANING "Each session has a root atom, from which all data in the current interface is accessible."
+RELATION sessIfc[SESSION*Interface] [UNI,TOT]
+MEANING "Each session has a current interface."
+RELATION sessionRole[SESSION*Role] [UNI,TOT]
+MEANING "The current role of the session user is registered with the session a user is in."
+RULE "Current role" : sessIfc |- sessionRole;ifcRoles~ \/ -(V;ifcRoles~)
+MEANING "Each session has a current interface, which is linked to one of the roles allowed for that interface, or to any interface if no roles are specified."
+RULE "Current atom" : sessIfc |- sessAtom;right~;in;(ifcObj;objctx)~
+MEANING "Each session has a current interface, which is linked to one of the roles allowed for that interface, or to any interface if no roles are specified."
 ENDPATTERN
 
 PATTERN InterfaceSemantics
@@ -26,26 +79,39 @@ CONCEPT Transaction "A transaction is an instance of an interface, which is bein
 CONCEPT Object "An object is an instance of an ObjectDef."  -- Objects reside in the front end.
 CONCEPT Act "An act is an event that inserts or deletes a set of pairs in a relation."   -- Acts occur in the front end.
 
-RELATION transactionObject[Transaction*Object] [UNI,TOT]
-MEANING "Each Ampersand transaction has a transaction object, in which the front end administers the progress of a transaction."
-RELATION inst[Transaction*Interface] [UNI,TOT]
-MEANING "Because each transaction is an instance of an interface, we need to know that interface."
-RELATION root[Object*Atom] [UNI,TOT]
-MEANING "Each object has a root atom, from which all data in the interface is accessible by walking over pairs."
+CLASSIFY Object ISA Pair
 RELATION inst[Object*ObjectDef] [UNI,TOT]
 MEANING "Because each object is an instance of an ObjectDef, we need to know that ObjectDef."
 RELATION left[Pair*Atom] [UNI,TOT]
 RELATION right[Pair*Atom] [UNI,TOT]
 RELATION in[Pair*Expression]
 MEANING "The combination of a pair and an expression yields a statement, which makes sense to users."
+RULE "atoms in objects" : inst;objctx = I[Object];in
+MEANING "An object is a pair of atoms that is in the object expression"
+
+RELATION attIn[Attribute*ObjectDef] [UNI,TOT]
+MEANING "Every attribute belongs to an ObjectDef."
+RELATION attObj[Attribute*ObjectDef] [UNI,TOT]
+MEANING "Every attribute represents an ObjectDef (inside another Objectdef)."
+RULE "attributes in objects" : left~;inst[Object*ObjectDef];attObj~;attIn = right~;inst[Object*ObjectDef]
+MEANING "A left atom in an attribute ob an object is the right atom in that object's instance."
+RULE "attributes with unique names" : objnm;objnm~ /\ attIn~;attIn |- I[ObjectDef]
+MEANING "Every attribute within one object definition has a unique name."
+
+RELATION transactionObject[Transaction*Object] [UNI,TOT]
+MEANING "Each Ampersand transaction has a transaction object, in which the front end administers the progress of a transaction."
+RELATION inst[Transaction*Interface] [UNI,TOT]
+MEANING "Because each transaction is an instance of an interface, we need to know that interface."
 RELATION delta[Act*Pair]
 MEANING "The pairs that are inserted or deleted by an act are known as the delta."
 RELATION changes[Act*Relation] [UNI,TOT]
 MEANING "The relation affected by an act."
-RULE "left atom in Interface" : root~;inst;attributes;objctx;in~;left |- I[Atom]
-MEANING "The root atom of an object is the left atom of the attribute pairs in that object."
-RULE "right atom in Interface" : root~;inst;objctx;in~;right |- I[Atom]
-MEANING "The root atom of an object is the right atom of a pair in the object expression."
+RELATION inQ[Quad*Act] [UNI,TOT]
+MEANING "The act that causes a Quad to fire."
+RELATION outQ[Quad*Act]
+MEANING "The acts that can be caused by a Quad firing."
+RULE quadsInInterface : ifcQuads = ifcInputs;changes~;inQ~ /\ ifcOutputs;changes~;outQ~
+MEANING "An interface contains those quads that are fired by its inputs and that produce changes in its outputs."
 ENDPATTERN
 
 
