@@ -39,7 +39,7 @@ class (Typeable e, Eq e) => Unique e where
 -- | this is the implementation of the abstract data type. It mustn't be exported
 data UniqueObj a = 
        UniqueObj { theThing :: a
-                 , theShow  :: (a -> String)
+                 , theShow ::  (a -> String)
                  } deriving (Typeable)
 
 instance Unique a => Unique [a] where

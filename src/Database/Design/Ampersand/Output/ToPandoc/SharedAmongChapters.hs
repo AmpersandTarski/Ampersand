@@ -164,28 +164,28 @@ showImage opts pict =
 --   that isn't handled in a specific theme.
 
 data ThemeContent = 
-       Thm { themeNr      :: Int
-           , patOfTheme   :: Maybe Pattern -- A theme is about either a pattern or about everything outside patterns
+       Thm { themeNr ::      Int
+           , patOfTheme ::   Maybe Pattern -- A theme is about either a pattern or about everything outside patterns
            , rulesOfTheme :: [Numbered RuleCont] -- The (numbered) rules of that theme
-           , dclsOfTheme  :: [Numbered DeclCont] -- The (numbered) relations that are used in a rule of this theme, but not in any rule of a previous theme.
-           , cptsOfTheme  :: [Numbered CptCont]   -- The (numbered) concepts that are used in a rule of this theme, but not in any rule of a previous theme.
+           , dclsOfTheme ::  [Numbered DeclCont] -- The (numbered) relations that are used in a rule of this theme, but not in any rule of a previous theme.
+           , cptsOfTheme ::  [Numbered CptCont]   -- The (numbered) concepts that are used in a rule of this theme, but not in any rule of a previous theme.
            }
 data Numbered t =
- Nr { theNr   :: Int
+ Nr { theNr ::   Int
     , theLoad :: t
     }   
 instance Named t => Named (Numbered t) where
  name = name . theLoad    
-data RuleCont = CRul { cRul  :: Rule
+data RuleCont = CRul { cRul ::  Rule
                      , cRulPurps :: [Purpose] 
                      , cRulMeaning :: Maybe A_Markup
                      } 
-data DeclCont = CDcl { cDcl  :: Declaration
+data DeclCont = CDcl { cDcl ::  Declaration
                      , cDclPurps :: [Purpose] 
                      , cDclMeaning :: Maybe A_Markup
                      , cDclPairs :: [Paire]
                      } 
-data CptCont  = CCpt { cCpt  :: A_Concept
+data CptCont  = CCpt { cCpt ::  A_Concept
                      , cCptDefs :: [ConceptDef]
                      , cCptPurps :: [Purpose] 
                      } 
@@ -198,7 +198,7 @@ instance Named CptCont where
 data Counters 
   = Counter { pNr :: Int --Theme number
             , definitionNr :: Int --For Concepts
-            , agreementNr  :: Int --For declarations andrules 
+            , agreementNr ::  Int --For declarations andrules 
             }
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec

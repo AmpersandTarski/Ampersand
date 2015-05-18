@@ -320,7 +320,7 @@ dSteps drs x = dStps x
            flatLst :: [RTerm] -> RTerm
            flatLst = combLst rCombinator . flat isrComb
 
-  dStepSets  :: (RTerm -> Bool) -> (Set RTerm -> RTerm) -> Set RTerm -> [DerivStep]
+  dStepSets ::  (RTerm -> Bool) -> (Set RTerm -> RTerm) -> Set RTerm -> [DerivStep]
   dStepSets isrComb rCombinator s
   -- We try to perform a rewrite on the top level, i.e. on some subset of RTerms from s.
   -- Then, we add rewrites on any of the subexpressins in s.

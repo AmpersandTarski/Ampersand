@@ -201,18 +201,17 @@ chpNatLangReqs lev fSpec =
   printRel :: Numbered DeclCont -> Blocks
   printRel nDcl
        =   (printPurposes . cDclPurps . theLoad) nDcl
-        <> definitionList [( definitionListItemLabel 
-                                 (XRefNaturalLanguageDeclaration dcl)
-                                 (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
-                                  ++if development (getOpts fSpec)
-                                    then (" ("++name nDcl++")") 
-                                    else ""
-                                 )
-                           , case (cDclMeaning . theLoad) nDcl of
-                              Nothing -> fatal 241 "Declarations without meaning should not be printed here. (see issue AmpersandTarski/ampersand/issues/44)"
-                              Just m  -> [printMeaning m]
-                           )
-                          ] 
+        <> case (cDclMeaning . theLoad) nDcl of
+              Just m -> definitionList [( definitionListItemLabel 
+                                           (XRefNaturalLanguageDeclaration dcl)
+                                              (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
+                                               ++if development (getOpts fSpec)
+                                                 then (" ("++name nDcl++")") 
+                                                 else ""
+                                              )
+                                        , [printMeaning m]
+                                        )]
+              _      -> mempty
         <> case samples of
               []  -> mempty
               [_] -> plain ((str.l) (NL "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"

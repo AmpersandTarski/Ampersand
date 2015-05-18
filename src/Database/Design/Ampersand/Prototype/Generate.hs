@@ -159,7 +159,7 @@ data TableSpecNew
   = TableSpec { tsCmnt :: [String]
               , tsName :: String
               , tsflds :: [SqlField]
-              , tsKey  :: [String]
+              , tsKey ::  [String]
               , tsEngn :: String
               }
 data FieldSpecNew

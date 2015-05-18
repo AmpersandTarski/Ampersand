@@ -50,7 +50,7 @@ chpConceptualAnalysis lev fSpec = (
   patPicts :: Pattern -> [Picture]
   patPicts pat = pictOfPat pat :
                 (map pictOfRule (invariants fSpec `isc` udefrules pat))
-  pictOfPat  :: Pattern ->  Picture
+  pictOfPat ::  Pattern ->  Picture
   pictOfPat  = makePicture fSpec . PTRelsUsedInPat
   pictOfRule :: Rule -> Picture
   pictOfRule = makePicture fSpec . PTSingleRule
