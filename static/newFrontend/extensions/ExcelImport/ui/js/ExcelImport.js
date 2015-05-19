@@ -17,13 +17,18 @@ AmpersandApp.controller('ExcelImportController', function ($scope, $rootScope, F
 	if (typeof $rootScope.uploader == 'undefined') {
 
 		$rootScope.uploader = new FileUploader({
-			 url: 'extensions/ExcelImport/excel_parse.php'
+			 url: 'extensions/ExcelImport/api/import'
 		});
 	}
 	
 	$rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
 		$rootScope.notifications = response.notifications;
         console.info('onSuccessItem', fileItem, response, status, headers);
+    };
+    
+    $rootScope.uploader.onErrorItem = function(item, response, status, headers){
+    	$rootScope.notifications.errors.push( {'message' : response.error.code + ' ' + response.error.message} );	
+    	
     };
     
 });

@@ -1,9 +1,11 @@
+{-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE LambdaCase #-}
 module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
 import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import Database.Design.Ampersand.Input.ADL1.CtxError
-import Database.Design.Ampersand.ADL1.Lattices
+import Database.Design.Ampersand.ADL1.Lattices -- used for type-checking
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Classes.ViewPoint hiding (gens)
 import Database.Design.Ampersand.Classes.ConceptStructure
@@ -27,6 +29,19 @@ instance Ord SignOrd where
 instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
 
+-- pCtx2aCtx has three tasks:
+-- 1) Disambiguate the structures.
+--    Disambiguation means replacing every "TermPrim" (the parsed expression) with the correct Expression (available through DisambPrim)
+--    This is done by using the function "disambiguate" on the outer-most structure.
+--    In order to do this, its data type must be polymorphic, as in "P_ViewSegmt a".
+--    After parsing, the type has TermPrim for the type variable. In our example: "P_ViewSegmt TermPrim". Note that "type P_ViewSegment = P_ViewSegmt TermPrim".
+--    After disambiguation, the type variable is (TermPrim, DisambPrim), as in "P_ViewSegmt (TermPrim, DisambPrim)"
+-- 2) Typecheck the structures.
+--    This changes the data-structure entirely, changing the P_ into the A_
+--    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
+--    Using the Applicative operations <$> and <*> causes these errors to be in parallel
+-- 3) Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
+-- Part 3 is done below, the other two are done in pCtx2aCtx'
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts = checkOtherAtomsInSessionConcept
                . checkPurposes             -- Check whether all purposes refer to existing objects
@@ -121,7 +136,7 @@ checkOtherAtomsInSessionConcept gCtx =
                          ] of
                       [] -> gCtx
                       errs -> Errors errs
-     
+
 pCtx2aCtx' :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx' _
  PCtx { ctx_nm     = n1
@@ -325,7 +340,10 @@ pCtx2aCtx' _
      where c = name (vd_cpt o)
     typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
     typeCheckViewSegment _ P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
-
+    
+    isa :: String -> String -> Bool
+    isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
+    
     typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
     typecheckObjDef o@(P_Obj { obj_nm = nm
                              , obj_pos = orig
@@ -335,23 +353,14 @@ pCtx2aCtx' _
                              , obj_strs = ostrs
                              })
      = unguard $
-         (\(objExpr,bb) subi -> -- TODO: where is the tuple of  booleans (bb) documented? (so we can use a more appropriate name)
-           case subi of
-             Nothing -> obj (objExpr,bb) Nothing <$ typeCheckViewAnnotation objExpr mView -- TODO: move upward when we allow view annotations for boxes (and refs) as well
-             Just (InterfaceRef ifcId) ->
-               unguard $
-                 (\(refIfcExpr,_) -> (\objExprEps -> obj (objExprEps,bb) (Just $ InterfaceRef ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
-                 <$> case lookupDisambIfcObj ifcId of
-                       Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces
-                       Nothing     -> Errors [mkUndeclaredError "interface" o ifcId]
-             Just bx@(Box c _ _) ->
-               case findExact genLattice $ name c `mIsc` gc Tgt objExpr of -- TODO: does this always return a singleton? (and if so why not a maybe?)
-                 []          -> mustBeOrdered o (Src, c, fromJust subs) (Tgt, target objExpr, objExpr)
-                 cMeet:_     -> pure $ obj (addEpsilonRight' cMeet objExpr, bb) (Just bx))
-         <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs
+        (\ (objExpr,(srcBounded,tgtBounded)) ->
+            (\case
+               Just (newExpr,subStructures) -> obj (newExpr,srcBounded) (Just subStructures)
+               Nothing -> obj (objExpr,srcBounded) Nothing
+            )
+            <$> maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
+        ) <$> typecheckTerm ctx
      where      
-      isa :: String -> String -> Bool
-      isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- TODO: shouldn't this Atom be called a Concept?
       
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
@@ -368,24 +377,8 @@ pCtx2aCtx' _
                      in  if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr]
           Nothing -> Errors [mkUndeclaredError "view" o viewId] 
      
-      lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
-      lookupDisambIfcObj ifcId =
-        case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs, ifc_Name vd == ifcId ] of
-          []          -> Nothing
-          disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
       
-      typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
-      typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
-        let expTarget = target objExpr
-            expTargetStr = name expTarget
-            ifcSource = source ifcExpr
-            ifcSourceStr = name ifcSource
-            refIsCompatible = expTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` expTargetStr
-        in  if refIsCompatible 
-            then pure $ addEpsilonRight' ifcSourceStr objExpr 
-            else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
-            
-      obj (e,(sr,_)) s
+      obj (e,sr) s
        = ( Obj { objnm = nm
                , objpos = orig
                , objctx = e
@@ -402,21 +395,48 @@ pCtx2aCtx' _
     addEpsilon s t e
      = addEpsilonLeft' s (addEpsilonRight' t e)
 
-    pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
-    pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
-    pSubi2aSubi o@(P_Box _ _ []) = hasNone [] o
-    pSubi2aSubi o@(P_Box _ cl l)
-     = unguard $
-         (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
-                    [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
-                    r -> case [ objctx a
-                              | (a,False) <- lst
-                              , not ((name . source . objctx $ a) `elem` r)
-                              ] of
-                              [] -> pure (Box (castConcept (head r)) cl (map fst lst))
-                              lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst'])
-         <$> traverse typecheckObjDef l <* uniqueNames l
-
+    pSubi2aSubi :: Expression -- Expression of the surrounding
+                -> Bool -- Whether the surrounding is bounded
+                -> P_ObjDef a -- name of where the error occured!
+                -> P_SubIfc (TermPrim, DisambPrim) -- Subinterface to check
+                -> Guarded ( Expression -- In the case of a "Ref", we do not change the type of the subinterface with epsilons, this is to change the type of our surrounding instead. In the case of "Box", this is simply the original expression (in such a case, epsilons are added to the branches instead)
+                           , SubInterface -- the subinterface
+                           )
+    pSubi2aSubi objExpr b o x
+      = case x of
+         P_InterfaceRef{si_str = ifcId} 
+           ->  unguard $
+             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
+             <$> case lookupDisambIfcObj ifcId of
+                   Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                   Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+         P_Box{}
+           -> case si_box x of
+                []  -> const undefined <$> hasNone ([]::[P_SubIfc a]) x -- error
+                l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
+     where matchWith _ (ojd,exprBound)
+            = if b || exprBound then
+              ( case findExact genLattice (mIsc (name$ target objExpr) (name . source . objctx $ ojd)) of
+                    [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
+                    (r:_) -> pure (ojd{objctx=addEpsilonLeft' r (objctx ojd)})
+              )
+              else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
+    typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
+    typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
+      let expTarget = target objExpr
+          expTargetStr = name expTarget
+          ifcSource = source ifcExpr
+          ifcSourceStr = name ifcSource
+          refIsCompatible = expTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` expTargetStr
+      in  if refIsCompatible 
+          then pure $ addEpsilonRight' ifcSourceStr objExpr 
+          else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
+    lookupDisambIfcObj :: String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
+    lookupDisambIfcObj ifcId =
+      case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs, ifc_Name vd == ifcId ] of
+        []          -> Nothing
+        disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
+    
     typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
     typecheckTerm tct
      = case tct of
@@ -490,7 +510,7 @@ pCtx2aCtx' _
     deriv1 o x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
-             if (b1 && b2) || (gc p1 e1 == gc p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
+             if (b1 && b2) || (getConcept p1 e1 == getConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
              else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
         (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
@@ -500,13 +520,13 @@ pCtx2aCtx' _
              (\x -> (x,b1 || b2)) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
-       = case findExact genLattice (flf (gc p1 e1) (gc p2 e2)) of
+       = case findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           r  -> pure$ head r
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
+       = case findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
-          [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
+          [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
                    (True,True) -> pure (head (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
@@ -617,26 +637,24 @@ pCtx2aCtx' _
            <$> maybeOverGuarded (typeCheckPairView orig exp') viols)
          <$> typecheckTerm expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
-    pIdentity2aIdentity
-          pidt@(P_Id { ix_pos = orig
-                 , ix_lbl = lbl
-                 , ix_cpt = pconc
-                 , ix_ats = isegs
-                 })
-     = (\isegs' ->
-       Id { idPos = orig
-          , idLbl = lbl
-          , idCpt = conc
-          , identityAts = isegs'
-          }) <$> traverse pIdentSegment2IdentSegment isegs
-     where conc = pCpt2aCpt pconc
-           pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
+    pIdentity2aIdentity pidt
+     = case disambiguate termPrimDisAmb pidt of
+           P_Id { ix_lbl = lbl
+                , ix_ats = isegs
+                } -> (\isegs' -> Id { idPos = orig
+                                    , idLbl = lbl
+                                    , idCpt = conc
+                                    , identityAts = isegs'
+                                    }) <$> traverse pIdentSegment2IdentSegment isegs
+     where conc = pCpt2aCpt (ix_cpt pidt)
+           orig = ix_pos pidt
+           pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               unguard $
                 (\o -> case findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
                          [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (name conc) (objctx o)}
-                ) <$> pObjDef2aObjDef ojd
+                ) <$> pObjDefDisamb2aObjDef ojd
 
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
@@ -645,7 +663,7 @@ pCtx2aCtx' _
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
      = unguard $
-         (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
+         (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (getConcept s t))) of
                           [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
                           lst -> if b || and (map (name (source e) `elem`) lst)
                                  then pure (PairViewExp orig s e)
@@ -753,9 +771,15 @@ deriv' :: (Applicative f)
        -> f ((String, Bool), (String, Bool))
 deriv' (a,b) es = let (sourceOrTarget1, (e1, t1)) = resolve es a
                       (sourceOrTarget2, (e2, t2)) = resolve es b
-                  in pure ((gc sourceOrTarget1 e1, t1), (gc sourceOrTarget2 e2, t2))
+                  in pure ((getConcept sourceOrTarget1 e1, t1), (getConcept sourceOrTarget2 e2, t2))
 instance Functor TT where
   fmap f (UNI a b) = UNI (f a) (f b)
   fmap f (ISC a b) = ISC (f a) (f b)
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
+  
+-- TODO: would probably be better to return an A_Concept
+getConcept :: SrcOrTgt -> Expression -> String
+getConcept Src = name . source
+getConcept Tgt = name . target
+

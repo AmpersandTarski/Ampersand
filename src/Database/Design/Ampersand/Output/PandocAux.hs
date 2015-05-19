@@ -9,7 +9,6 @@ module Database.Design.Ampersand.Output.PandocAux
       , pandocEqnArrayWithLabel
       , pandocEquation
       , pandocEquationWithLabel
-      , uniquecds
       , count
       , ShowMath(..)
       , latexEscShw, escapeNonAlphaNum
@@ -17,6 +16,7 @@ module Database.Design.Ampersand.Output.PandocAux
       , texOnly_Id
       , texOnly_fun
       , texOnly_rel
+      , newGlossaryEntry
       )
 where
 import Database.Design.Ampersand.ADL1
@@ -350,7 +350,6 @@ count    lang    n      x
 ------ Symbolic referencing ---------------------------------
 data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefPredicateXpression Rule
-             | XRefNaturalLanguageConcept A_Concept
              | XRefDataAnalRule Rule
              | XRefNaturalLanguageRule Rule
              | XRefProcessAnalysis Pattern
@@ -369,7 +368,6 @@ xRefRawLabel x
  = case x of
      XRefNaturalLanguageDeclaration d -> "natLangDcl:"++(escapeNonAlphaNum.fullName) d
      XRefPredicateXpression r     -> "pex:"++(escapeNonAlphaNum.name) r
-     XRefNaturalLanguageConcept c -> "natLangCpt:"++(escapeNonAlphaNum.name) c
      XRefDataAnalRule r           -> "dataAnalRule:"++(escapeNonAlphaNum.name) r
      XRefNaturalLanguageRule r    -> "natLangRule:"++(escapeNonAlphaNum.name) r
      XRefProcessAnalysis p        -> "prcAnal:"++(escapeNonAlphaNum.name) p
@@ -646,29 +644,6 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/Ampersand/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-uniquecds :: FSpec -> A_Concept -> [(String,ConceptDef)]
-uniquecds fSpec c
- = [ (if length cDefs==1 then cdcpt cd else cdcpt cd++show i , cd)
-   | let cDefs=concDefs fSpec c
-   , (i,cd)<-zip [(1::Integer)..] cDefs ]
--- was: [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
-
---makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
---makeDefinition opts i nm lbl defin ref =
---  case fspecFormat opts of
---    FLatex ->  [ Para ( [ RawInline (Text.Pandoc.Builder.Format "latex") $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
---                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ lbl ++ "\n" | i == 0] ++
---                        [ RawInline (Text.Pandoc.Builder.Format "latex") $ insertAfterFirstWord refStr defStr] ++
---                        [ RawInline (Text.Pandoc.Builder.Format "latex") (latexEscShw (" ["++ref++"]")) | not (null ref) ]
---                      )
---               ]
---    _      ->  [ Para ( Str defin : [ Str (" ["++ref++"]") | not (null ref) ] )
---               ]
--- where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}"
---       defStr = latexEscShw defin
---       -- by putting the ref after the first word of the definition, it aligns nicely with the definition
---       insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
---                                         in  fstWord ++ s ++ rest
 
 ---------------------------
 --- LaTeX related stuff ---
@@ -724,3 +699,10 @@ texOnly_dia = " \\Diamond "
 
 texOnly_flip :: String
 texOnly_flip = "\\smallsmile "
+
+newGlossaryEntry :: String -> String -> Inlines
+newGlossaryEntry nm cnt = 
+  rawInline "latex"
+    ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
+     "     { name={"++latexEscShw nm ++"}\n"++
+     "     , description={"++latexEscShw (cnt)++"}}\n") 

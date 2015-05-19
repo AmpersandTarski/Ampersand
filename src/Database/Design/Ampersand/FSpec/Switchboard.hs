@@ -24,8 +24,8 @@ data SwitchBdDiagram
 instance Named SwitchBdDiagram where
    name = sbName
 
-processModel :: FProcess -> DotGraph String
-processModel fp
+processModel :: [Activity] -> DotGraph String
+processModel acts
  = DotGraph { strictGraph = False
             , directedGraph = True
             , graphID = Just (Str (fromString "Process Model"))
@@ -40,7 +40,7 @@ processModel fp
       activityNodes = [ DotNode { nodeID         = "act_"++name a
                                 , nodeAttributes = [Style [SItem Filled []], FillColor [WC(X11Color Orange) Nothing], Label (StrLabel (fromString (name a)))]
                                 }
-                      | a<-fpActivities fp]
+                      | a<-acts]
       edges         = nub
                       [ DotEdge { fromNode = "act_"++name from
                                 , toNode   = "act_"++name to
@@ -49,8 +49,8 @@ processModel fp
                       | (from,to,e,d) <- allEdges
                       ]
       allEdges  = nub[(from,to,e,d) | (e,d,from)<-eventsOut, (e',d',to)<-eventsIn, e==e', d==d']
-      eventsIn  = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, let On e d = ecaTriggr eca]
-      eventsOut = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, (e,d)<-(nub.evs.ecaAction) eca]
+      eventsIn  = [(e,d,act) | act<-acts, eca<-actEcas act, let On e d = ecaTriggr eca]
+      eventsOut = [(e,d,act) | act<-acts, eca<-actEcas act, (e,d)<-(nub.evs.ecaAction) eca]
                   where evs :: PAclause -> [(InsDel,Declaration)]
                         evs clause
                           = case clause of

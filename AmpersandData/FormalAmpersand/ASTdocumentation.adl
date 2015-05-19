@@ -130,9 +130,8 @@ PURPOSE PATTERN Concepts
 {+The rules that govern concepts are brought together in one pattern,
 in order to formalize concepts and determine their meaning.
 -}
-CONCEPT A_Concept "A concept is a name for a category of similar objects."
-CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
-CONCEPT PlainConcept "A concept is a name for a category of similar objects."
+--HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders --CONCEPT A_Concept "A concept is a name for a category of similar objects."
+--HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders ----CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
 PURPOSE CONCEPT PlainConcept
 {+
 In order to reason about meaning,
@@ -183,13 +182,13 @@ CONCEPT CptPopu "The content of a concept"
 CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
 CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
 CONCEPT String "A string is a pString expected to be less than 256 characters."
-CONCEPT Conid "A conid is an identifier starting with an uppercase"
-CONCEPT Varid "A varid is an identifier starting with a lowercase"
-CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
+--HJO20150420: Uitgezet: CONCEPT Conid "A conid is an identifier starting with an uppercase"
+--HJO20150420: Uitgezet: CONCEPT Varid "A varid is an identifier starting with a lowercase"
+--HJO20150420: Uitgezet: CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
 CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
 CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
-CONCEPT Property "..->.. or UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
 CONCEPT Declaration "A declaration is a statement saying there exists a relation."
 CONCEPT Relation "A relation is a set of pairs."
 CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."

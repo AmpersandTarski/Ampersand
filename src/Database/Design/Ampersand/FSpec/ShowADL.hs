@@ -315,25 +315,6 @@ instance ShowADL A_Context where
     ++ (if null (ctxphp context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxphp context)) ++ "\n")
     ++ "\n\nENDCONTEXT"
 
-instance ShowADL FSpec where
- showADL fSpec
-  = "CONTEXT " ++name fSpec
-    ++ (if null (map ifcObj [] {- map fsv_ifcdef (fActivities fSpec) -})
-        then ""
-        else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
-    ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
-    ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
-    ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map showADL (conceptDefs fSpec)) ++ "\n")
-    ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
-    ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
-    ++ (if null decls then "" else "\n"++intercalate "\n"   (map showADL decls) ++ "\n")
-    ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
-    ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")
-    ++ "-- TODO: Populations are not shown..\n" --TODO.
---    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
-    ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
-    ++ "\n\nENDCONTEXT"
-    where decls = relsDefdIn fSpec >- concatMap relsDefdIn (patterns fSpec)
 instance ShowADL (Maybe String) where
   showADL _ = ""
 instance ShowADL ECArule where

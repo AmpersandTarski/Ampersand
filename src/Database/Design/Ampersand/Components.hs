@@ -54,7 +54,7 @@ generateAmpersandOutput fSpec =
 --    So the answer is: we assume a correct implementation with unambiguous expressions only.
 doGenADL :: FSpec -> IO()
 doGenADL fSpec =
- do { writeFile outputFile (showADL fSpec)
+ do { writeFile outputFile . showADL . originalContext $ fSpec
     ; verboseLn (getOpts fSpec) $ ".adl-file written to " ++ outputFile ++ "."
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))

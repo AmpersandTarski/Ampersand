@@ -18,6 +18,7 @@ import System.FilePath
 import System.IO
 import System.Locale
 
+
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
@@ -185,10 +186,10 @@ staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "module "++staticFileModuleName++" where"
   , ""
-  , "data StaticFile = SF { isNewFrontend     :: Bool"
-  , "                     , filePath          :: FilePath -- relative path, including extension"
-  , "                     , timeStamp         :: Integer  -- unix epoch time"
-  , "                     , contentString     :: String"
+  , "data StaticFile = SF { isNewFrontend :: Bool"
+  , "                     , filePath ::      FilePath -- relative path, including extension"
+  , "                     , timeStamp ::     Integer  -- unix epoch time"
+  , "                     , contentString :: String"
   , "                     }"
   , ""
   , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 

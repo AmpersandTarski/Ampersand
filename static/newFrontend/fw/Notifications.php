@@ -17,9 +17,22 @@ class Notifications {
 		self::addLog($message, 'ERROR');
 	}
 	
-	public static function addInvariant($message){
-		self::$invariants[]['message'] = $message;
-		self::addLog($message, 'INVARIANT');
+	public static function addInvariant($rule, $srcAtom, $tgtAtom){
+		$session = Session::singleton();
+		
+		$ruleHash = hash('md5', $rule['name']);
+		
+		$ruleMessage = $rule['message'] ? $rule['message'] : "Violation of rule '".$rule['name']."'";
+		
+		$pairView = RuleEngine::getPairView($srcAtom, $rule['srcConcept'], $tgtAtom, $rule['tgtConcept'], $rule['pairView']);
+		
+		self::$invariants[$ruleHash]['ruleMessage'] = $ruleMessage;
+		
+		$violationMessage = empty($pairView['violationMessage']) ? $srcAtom . " - " . $tgtAtom : $pairView['violationMessage'];
+		
+		self::$invariants[$ruleHash]['tuples'][] = array('violationMessage' => $violationMessage);
+			
+		self::addLog($violationMessage . ' - ' . $violationMessage, 'INVARIANT');
 	}
 	
 	public static function addViolation($rule, $srcAtom, $tgtAtom){
@@ -38,10 +51,10 @@ class Notifications {
 		
 		// Make links to interfaces
 		$links = array();
-		foreach ($session->role->getInterfaces(null, $rule['srcConcept']) as $interface){
+		foreach ($session->role->getInterfaces($rule['srcConcept']) as $interface){
 			$links[] = '#/' . $interface->id . '/' . $srcAtom;
 		}
-		foreach ($session->role->getInterfaces(null, $rule['tgtConcept']) as $interface){
+		foreach ($session->role->getInterfaces($rule['tgtConcept']) as $interface){
 			$links[] = '#/' . $interface->id . '/' . $tgtAtom;
 		}
 		$links = array_unique($links);
@@ -52,24 +65,18 @@ class Notifications {
 		self::addLog($violationMessage . ' - ' . $violationMessage, 'VIOLATION');
 	}
 	
-	public static function addInfo($message, $id = null){
+	public static function addInfo($message, $id = null, $aggregatedMessage = null){
 		
-		if(isset($id)){
-			$idHash = hash('md5', $id); // ID can be integer, but also string
-			
-			// Set message of info, in case this is not done yet (use: $id for this)
-			if(empty(self::$infos[$idHash]['message'])) self::$infos[$idHash]['message'] = $id;
-			
-			// Set message of row (use: $message)
-			self::$infos[$idHash]['rows'][] = $message;
-			
-			// Add INFO also to logging
-			self::addLog(self::$infos[$idHash]['message'] .' - ' . $message, 'INFO');
+		if(isset($id)){ // ID can be integer, but also string
+			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
+			self::$infos[$id]['rows'][] = $message;
+			if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
 			
 			return $id;
 		}else{
 			self::addLog($message, 'INFO');
 			self::$infos[]['message'] = $message;
+			
 			end(self::$infos); // pointer to end of array (i.e. new  inserted element)
 			return key(self::$infos); // return key of current element
 		}
@@ -79,13 +86,15 @@ class Notifications {
 	public static function addSuccess($message, $id = null, $aggregatedMessage = null){
 		
 		if(isset($id)){ // ID can be integer, but also string
+			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');
 			self::$successes[$id]['rows'][] = $message;
-			self::addLog(self::$successes[$id]['message'] .' - ' . $message, 'SUCCESS');;
 			if(!is_null($aggregatedMessage)) self::$successes[$id]['message'] = $aggregatedMessage;
+			
 			return $id;
 		}else{
 			self::addLog($message, 'SUCCESS');
 			self::$successes[]['message'] = $message;
+			
 			end(self::$successes); // pointer to end of array (i.e. new  inserted element)
 			return key(self::$successes); // return key of current element
 		}

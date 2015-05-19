@@ -1,10 +1,8 @@
 module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FPA
-import Database.Design.Ampersand.FSpec.Plug ()
 import Database.Design.Ampersand.Basics (fatalMsg)
 
 fatal :: Int -> String -> a
@@ -24,7 +22,7 @@ instance Statistics a => Statistics [a] where
 
 instance Statistics FSpec where
   nInterfaces fSpec = length (fActivities fSpec) --TODO -> check correctness
-  nPatterns   fSpec = nPatterns (patterns fSpec)
+  nPatterns   fSpec = nPatterns (vpatterns fSpec)
   nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)]
                 --       + sum [fPoints (fpa plug) | InternalPlug plug <- plugInfos fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...

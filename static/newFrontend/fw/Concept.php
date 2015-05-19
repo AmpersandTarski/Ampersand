@@ -28,25 +28,33 @@ class Concept {
 		$database = Database::singleton();
 		
 		$conceptTableInfo = Concept::getConceptTableInfo($concept);
-		$conceptTable = $conceptTableInfo[0]['table'];
-		
-		// invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary col for checking the existence of a concept
-		// TODO: check if this also works with the ISA solution?
-		$firstConceptCol = $conceptTableInfo[0]['cols'][0]; // for lookup, we just take the first table and its first column
+		$conceptTable = $conceptTableInfo['table'];
+		$firstConceptCol = $conceptTableInfo['cols'][0]; // We can query an arbitrary concept col for checking the existence of an atom
 		
 		// Query all atoms in table
-		return $existingAtoms = array_column($database->Exe("SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL"), $firstConceptCol); // no need to filter duplicates and NULLs
+		$query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
+		return $existingAtoms = array_column($database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
 		
-	}	
-	
-	public static function isAtomInConcept($atom, $concept) {
-		return in_array(strtolower($atom), array_map('strtolower', (array)Concept::getAllAtomIds($concept))); // in_array is case sensitive ("true" != "TRUE"), but Mysql is case insensitive for Primary keys. Therefore first to lowercase.
 	}
 	
 	public static function createNewAtom($concept){
-		$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-		$atomId = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
-		
+		if(strpos($concept, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
+			$database = Database::singleton();
+			$tableInfo = Concept::getConceptTableInfo($concept);
+			
+			$table = $tableInfo['table'];
+			$col = $tableInfo['cols'][0];
+			
+			$query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
+			$result = array_column($database->Exe($query), 'MAX');
+			
+			if(empty($result)) $atomId = 1;
+			else $atomId = $result[0] + 1;
+				
+		}else{
+			$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+			$atomId = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
+		}
 		return $atomId;
 	}
 	
@@ -84,9 +92,11 @@ class Concept {
 		// (we have an array rather than a single column because of generalizations) 
 		// TODO: still the right solution?, because generalizations/specializations are in one table
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept not defined in \$allConcepts (Generics.php)", 500);
+		if(empty($allConcepts[$concept]['conceptTables'][0]['table'])) throw new Exception("No database table defined for concept $concept in \$allConcepts (Generics.php)", 500);
+		if(empty($allConcepts[$concept]['conceptTables'][0]['cols'])) throw new Exception("No columns defined for concept $concept in \$allConcepts (Generics.php)", 500);
 		
-		return (array)$allConcepts[$concept]['conceptTables'];
+		return $allConcepts[$concept]['conceptTables'][0]; // return only first item in array, because there are never more than one.
 	}
 	
 	public static function getAffectedSigConjuncts($concept){

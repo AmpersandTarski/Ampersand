@@ -11,7 +11,7 @@ are merely different ways to show FSpec.
 module Database.Design.Ampersand.FSpec.FSpec
           ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
-          , FSid(..), FProcess(..)
+          , FSid(..)
 --        , InsDel(..)
           , ECArule(..)
 --        , Event(..)
@@ -46,6 +46,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
 
 data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+                   , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
@@ -54,7 +55,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                      , declsInScope :: [Declaration]
                      , concsInScope :: [A_Concept]
                      , cDefsInScope :: [ConceptDef]
-                     , gensInScope  :: [A_Gen]
+                     , gensInScope ::  [A_Gen]
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
@@ -66,9 +67,10 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles may change the population of which relation.
                    , fRoles ::       [Role]                   -- ^ All roles mentioned in this context.
+                   , fallRules ::    [Rule]
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
-                   , invars ::       [Rule]                   -- ^ All invariant rules
+                   , invariants ::   [Rule]                   -- ^ All invariant rules
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
                    , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
@@ -95,9 +97,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allAtoms ::     [Atom]
                    , allLinks ::     [A_Pair]
                    , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
-                   , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
-                   , allSigns      :: [Sign]                  -- ^ All Signs in the fSpec
+                   , allViolations :: [(Rule,[Paire])]        -- ^ All invariant rules with violations.
+                   , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
+                   , allSigns ::     [Sign]                   -- ^ All Signs in the fSpec
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'
@@ -107,8 +109,8 @@ metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
-                 , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                 , atmVal   :: String
+                 , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
+                 , atmVal ::   String
                  } deriving (Typeable,Eq)
 instance Unique Atom where
   showUnique a = atmVal a++" in "
@@ -133,40 +135,6 @@ concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 instance ConceptStructure FSpec where
   concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
   expressionsIn fSpec = allExprs fSpec
-
-instance Language FSpec where
-  objectdef    fSpec = Obj { objnm   = name fSpec
-                           , objpos  = Origin "generated object by objectdef (Language FSpec)"
-                           , objctx  = EDcI ONE
-                           , objmView = Nothing
-                           , objmsub = Just . Box ONE Nothing $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
-                           , objstrs = []
-                           }
-   --REMARK: in the fSpec we do not distinguish between the disjoint relation declarations and rule declarations (yet?).
-  relsDefdIn = vrels
-  udefrules  = vrules -- only user defined rules
-  invariants = invars
-  identities = vIndices
-  viewDefs   = vviews
-  gens       = vgens
-  patterns   = vpatterns
-
-data FProcess
-  = FProc { fpProc :: Pattern
-          , fpActivities :: [Activity]
-          }
-instance Named FProcess where
-  name = name . fpProc
-
-instance Language FProcess where
-  objectdef  = objectdef.fpProc
-  relsDefdIn = relsDefdIn.fpProc
-  udefrules  = udefrules.fpProc
-  invariants = invariants.fpProc
-  identities = identities.fpProc
-  viewDefs   = viewDefs.fpProc
-  gens       = gens.fpProc
-  patterns   = patterns.fpProc
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
@@ -366,10 +334,10 @@ data SqlType = SQLChar    Int
              deriving (Eq,Show)
 
 getGeneralizations :: FSpec -> A_Concept -> [A_Concept]
-getGeneralizations fSpec = largerConcepts (gens fSpec)
+getGeneralizations fSpec = largerConcepts (vgens fSpec)
 
 getSpecializations :: FSpec -> A_Concept -> [A_Concept]
-getSpecializations fSpec = smallerConcepts (gens fSpec)
+getSpecializations fSpec = smallerConcepts (vgens fSpec)
 
 -- Lookup view by id in fSpec.
 lookupView :: FSpec -> String -> ViewDef
@@ -385,7 +353,7 @@ getDefaultViewForConcept :: FSpec -> A_Concept -> Maybe ViewDef
 getDefaultViewForConcept fSpec concpt =
   case [ vd 
        | vd@Vd{vdcpt = c, vdIsDefault = True} <- vviews fSpec
-       ,  c `elem` (concpt : largerConcepts (gens fSpec) concpt) 
+       ,  c `elem` (concpt : largerConcepts (vgens fSpec) concpt) 
        ] of
     []     -> Nothing
     (vd:_) -> Just vd

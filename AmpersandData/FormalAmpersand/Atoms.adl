@@ -1,17 +1,17 @@
-CONTEXT AST IN ENGLISH
+CONTEXT AST IN ENGLISH LATEX
 
-PURPOSE PATTERN AtomsX  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
-{+The definition of atoms relates directly to the choice of Ampersand to use a representable heterogeneous relational algebra.
-This leads to populating relations with pairs, and making sure that the type of atoms is uniquely determined by the table in which the atom is stored.
+PURPOSE PROCESS Atoms  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
+{+Atoms are defined so that they comply with Ampersand's choice to use a representable heterogeneous relational algebra.
 -}
-PATTERN AtomsX
+PROCESS Atoms
 PURPOSE CONCEPT Atom
 {+
-Atoms are used to represent data. They are stored in relations that reside within a context.
-\subsubsection*{Example}
+Atoms are used to represent data.
+
 For example, the atom ``Amsterdam'' is an instance of the concept ``City''.
-\subsubsection*{Explanation}
-Atoms populate relations.
+
+Atoms populate relations, which means that a relation contains pairs of atoms.
+In fact a relation may be regarded as a set of pairs of atoms.
 Ampersand works with binary relations, so you will find pairs of atoms in a relation.
 In an information system, the population of relations can change because of edit actions by users in user interfaces.
 This means that pairs are inserted into and deleted from relations as time goes by.
@@ -29,8 +29,10 @@ RELATION key [Atom*AtomID] [UNI,TOT]
 MEANING "An internal storage code for this atom, used to identify the atom within a table."
 RELATION atomvalue[Atom*AtomValue] [UNI,TOT]
 MEANING "The value by which the atom is visible to users."
-RELATION source[Relation*Concept] [UNI,TOT]
-RELATION target[Relation*Concept] [UNI,TOT]
+RELATION source[Relation*Concept] [UNI,TOT] 
+RELATION target[Relation*Concept] [UNI,TOT] 
+ROLE Stef MAINTAINS "TOT source::Relation*Concept", "TOT target::Relation*Concept" --TODO: Moet helaas nu nog een signaalregel zijn. 
+
 RELATION in[Pair*Relation] [UNI]
 RELATION l[Pair*Atom] [UNI]
 RELATION r[Pair*Atom] [UNI]
@@ -48,11 +50,14 @@ MEANING "The concept to which this atom belongs is called the type of an atom"
 RULE "Def of type" : type = l~;in;source \/ r~;in;target
 -- HJO @Stef: Bovenstaande is niet waterdicht. Het vereist dat zowel l als r SUR zijn. Zolang dat niet is gegarandeerd, is type niet TOT. Graag aanpassen...
 RELATION src[Pair*Concept] [UNI,TOT]
+--ROLE Stef MAINTAINS "TOT src::Sign*Concept","TOT trg::Sign*Concept"
 RULE "Def of src" : src = in;source
 RELATION tgt[Pair*Concept] [UNI,TOT]
 RULE "Def of tgt" : tgt = in;target
 RELATION left[Pair*AtomValue] [UNI,TOT]
+ROLE Stef MAINTAINS "TOT left::Pair*AtomValue", "TOT rght::Pair*AtomValue", "TOT src::Pair*Concept", "TOT tgt::Pair*Concept"
 RULE "Def of left" : left = l;atomvalue
+ROLE Stef MAINTAINS "Def of left", "Def of rght", "Def of src", "Def of tgt", "Def of type"
 RELATION rght[Pair*AtomValue] [UNI,TOT]
 RULE "Def of rght" : rght = r;atomvalue
 
@@ -60,8 +65,8 @@ PURPOSE RULE "typed atoms"
 {+In Ampersand, the type of an atom is determined by the relation in which it is stored.
 -}
 RULE "typed atoms" : in;in~ |- src;src~ /\ tgt;tgt~
-MEANING "Two pairs that are in the same relation have the same src and tgt concepts."
-
+MEANING "Two pairs that are in the same relation have the same src and tgt concepts." 
+ROLE Stef MAINTAINS "typed atoms"  --HJO: Deze regel houdt nu nog niet, omdat er geen rekening is gehouden met classificaties. 
 PURPOSE RULE "identical atoms"
 {+The value and type are used to identify an atom.
 -}
@@ -108,7 +113,7 @@ PURPOSE RULE "specialized atoms (tgt)"
 RULE "specialized atoms (tgt)" : in;target;sub |- (rght;rght~ /\ tgt;sub;tgt~);in;target
 MEANING "If a target atom is in a relation, its generalization is in the generalized relation as well."
 
-ENDPATTERN
+ENDPROCESS
 
 {-
 Edit-functionaliteit en intersectie-types.

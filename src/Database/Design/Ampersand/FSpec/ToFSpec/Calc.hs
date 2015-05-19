@@ -2,8 +2,8 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Calc
             ( deriveProofs
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
-            , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc'
-            , quadsOfContext
+            , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd --TODO: this shouldt be here!
+            , quadsOfRules
           --  , testInterface
             ) where
 
@@ -183,7 +183,7 @@ deriveProofs opts context
 -}
    where
 --    visible _  = True -- We take all quads into account.
-    quads  = quadsOfContext opts context -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
+    quads  = quadsOfRules opts (allRules context) -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
 --    interText :: (Data.String.IsString a, Data.Monoid.Monoid a) => a -> [a] -> a
     interText _ [] = ""
     interText inbetween (xs:xss) = xs<>inbetween<>interText inbetween xss
@@ -770,10 +770,13 @@ commaNLPandoc  _  [a]  = [a]
 commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
 commaNLPandoc  _  []   = []
    
-   
-quadsOfContext :: Options -> A_Context -> [Quad]
-quadsOfContext opts context 
-  = makeAllQuads (converse [ (conj, rc_orgRules conj) | conj <- allConjuncts opts context ])
+commaPandocAnd :: Lang -> [Inlines] -> Inlines
+commaPandocAnd Dutch = commaEngPandoc' "en"
+commaPandocAnd English = commaNLPandoc' "and"
+
+quadsOfRules :: Options -> [Rule] -> [Quad]
+quadsOfRules opts rules 
+  = makeAllQuads (converse [ (conj, rc_orgRules conj) | conj <- makeAllConjs opts rules ])
 
         -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
         -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),

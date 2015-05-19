@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Output.PandocAux
 import Data.List (intersperse )
 
 fatal :: Int -> String -> a
@@ -44,14 +43,14 @@ chpConceptualAnalysis lev fSpec = (
                     )
      )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
-  caBlocks = mconcat (map caSection (patterns fSpec))
-  pictures = concatMap patPicts (patterns fSpec)
+  caBlocks = mconcat (map caSection (vpatterns fSpec))
+  pictures = concatMap patPicts (vpatterns fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   patPicts :: Pattern -> [Picture]
   patPicts pat = pictOfPat pat :
-                (map pictOfRule (invariants pat `isc` udefrules pat))
-  pictOfPat  :: Pattern ->  Picture
+                (map pictOfRule (invariants fSpec `isc` udefrules pat))
+  pictOfPat ::  Pattern ->  Picture
   pictOfPat  = makePicture fSpec . PTRelsUsedInPat
   pictOfRule :: Rule -> Picture
   pictOfRule = makePicture fSpec . PTSingleRule
@@ -82,7 +81,7 @@ chpConceptualAnalysis lev fSpec = (
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
      <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
-     <> case map caRule (invariants pat `isc` udefrules pat) of
+     <> case map caRule (invariants fSpec `isc` udefrules pat) of
          []     -> mempty
          blocks -> (case fsLang fSpec of
                       Dutch   -> header (lev+3) "Regels"

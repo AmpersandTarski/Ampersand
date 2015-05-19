@@ -23,7 +23,6 @@ fatal = fatalMsg "FSpec.Graphic.Graphics"
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
                 | PTDeclaredInPat Pattern
-                | PTProcess FProcess
                 | PTConcept A_Concept
                 | PTSwitchBoard Activity
                 | PTFinterface Activity
@@ -123,15 +122,6 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
-   PTProcess fp        -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = processModel fp
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Process model of " ++ name fp
-                                      Dutch   -> "Procesmodel van " ++ name fp
-                               }
    PTSwitchBoard act   -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = sbdotGraph (switchboardAct fSpec act)
@@ -147,7 +137,6 @@ makePicture fSpec pr =
             PTClassDiagram -> "1.0"
             PTRelsUsedInPat{}-> "0.7"
             PTDeclaredInPat{}-> "0.5"
-            PTProcess{}      -> "0.4"
             PTSwitchBoard{}  -> "0.4"
             PTIsaInPattern{} -> "0.7"
             PTSingleRule{}   -> "0.7"
@@ -167,7 +156,6 @@ pictureID pr =
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
       PTIsaInPattern  pat -> "IsasInPattern"++name pat
       PTRelsUsedInPat pat -> "RulesInPattern"++name pat
-      PTProcess fp        -> "ProcessModel"++name fp
       PTFinterface act    -> "KnowledgeGraph"++name act
       PTSwitchBoard x     -> "SwitchBoard"++name x
       PTSingleRule r      -> "SingleRule"++name r
@@ -180,7 +168,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         PTConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
-              rs    = [r | r<-udefrules fSpec, c `elem` concs r]
+              rs    = [r | r<-vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
                   , csRels = [r | r@Sgn{} <- relsMentionedIn rs   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
@@ -193,7 +181,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTRelsUsedInPat pat ->
           let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r@Sgn{}<-relsDefdIn fSpec
+              xrels = nub [r | c<-orphans, r@Sgn{}<-vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
@@ -243,7 +231,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
           let gs   = fsisa fSpec
               cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
               cpts'  = concs rs
-              rs         = [r | r<-udefrules fSpec, affected r]
+              rs         = filter affected (vrules fSpec)
               affected r = (not.null) [d | d@Sgn{} <- relsMentionedIn r `isc` relsMentionedIn ifc]
               idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
               rels = [r | r@Sgn{}<-relsMentionedIn ifc, decusr r

@@ -15,7 +15,7 @@ module Database.Design.Ampersand.FSpec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
-       (FSpec(..), concDefs, FProcess(..), ECArule(..), plugFields, lookupCpt, metaValues)
+       (FSpec(..), concDefs, ECArule(..), plugFields, lookupCpt, metaValues)
 import Database.Design.Ampersand.FSpec.Plug
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
         Plugable(..),
@@ -30,7 +30,7 @@ import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
 import Database.Design.Ampersand.FSpec.Graphic.Graphics
        (makePicture,writePicture,Picture(..), PictureReq(..),imagePath)
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-       (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc')
+       (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd)
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
        (makeFSpec)
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms

@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Data.List
-import Database.Design.Ampersand.Output.PandocAux
 
 --DESCR -> the process analysis contains a section for each process in the fSpec
 -- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
@@ -57,7 +56,7 @@ chpProcessAnalysis lev fSpec
 
   roleRuleBlocks :: Blocks
   roleRuleBlocks
-   = if null (fRoleRuls fSpec) && (not.null.udefrules) fSpec then mempty else
+   = if null (fRoleRuls fSpec) && (not.null.vrules) fSpec then mempty else
       (case fsLang fSpec of
           Dutch   ->
             para ( (str.upCap.name) fSpec <> " kent regels aan rollen toe. "
@@ -118,7 +117,7 @@ chpProcessAnalysis lev fSpec
                ]
      ]
      where
-      rolelessRels = [ d | d<-relsDefdIn fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
+      rolelessRels = [ d | d<-vrels fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
 -- the sections in which processes are analyzed
   procSections :: [Pattern] -> [Blocks]

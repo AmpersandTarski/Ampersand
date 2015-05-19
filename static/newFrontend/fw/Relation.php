@@ -10,11 +10,18 @@ class Relation {
 		
 		foreach($allRelations as $key => $relationInfo){
 			// Match relationName with relation name as specified in Ampersand script.
-			if($relationInfo['name'] == $relationName && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
+			// Includes support for specializations.
+			if($relationInfo['name'] == $relationName 
+					&& ($relationInfo['srcConcept'] == $srcConcept || in_array($srcConcept, Concept::getSpecializations($relationInfo['srcConcept'])))
+					&& ($relationInfo['tgtConcept'] == $tgtConcept || in_array($tgtConcept, Concept::getSpecializations($relationInfo['tgtConcept'])))
+					)
 				return $key; // return fullRelationSignature
 						
 			// Match relationName with fullRelationSignature (format: 'rel_<relationName>_<srcConcept>_<tgtConcept>')
-			if($key == $relationName && $relationInfo['srcConcept'] == $srcConcept && $relationInfo['tgtConcept'] == $tgtConcept)
+			if($key == $relationName 
+					&& ($relationInfo['srcConcept'] == $srcConcept || in_array($srcConcept, Concept::getSpecializations($relationInfo['srcConcept'])))
+					&& ($relationInfo['tgtConcept'] == $tgtConcept || in_array($tgtConcept, Concept::getSpecializations($relationInfo['tgtConcept'])))
+					)
 				return $key; // return fullRelationSignature
 		}
 		

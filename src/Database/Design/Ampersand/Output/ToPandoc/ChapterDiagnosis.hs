@@ -3,11 +3,10 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Output.PandocAux
 import Data.List
 import System.FilePath
+import Data.Maybe
 
 
 fatal :: Int -> String -> a
@@ -15,39 +14,40 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
- = ( (chptHeader (fsLang fSpec) Diagnosis) <>
-     fromList
-     (
-     diagIntro ++             -- an introductory text
-     roleomissions ++         -- tells which role-rule, role-interface, and role-relation assignments are missing
-     roleRuleTable ++         -- gives an overview of rule-rule assignments
-     missingConceptDefs ++    -- tells which concept definitions have been declared without a purpose
-     missingRels ++           -- tells which relations have been declared without a purpose
-     unusedConceptDefs ++     -- tells which concept definitions are not used in any relation
-     relsNotUsed ++           -- tells which relations are not used in any rule
-     missingRules ++          -- tells which rule definitions are missing
-     ruleRelationRefTable ++  -- table that shows percentages of relations and rules that have references
-     invariantsInProcesses ++ --
-     processrulesInPatterns++ --
+ = (  chptHeader (fsLang fSpec) Diagnosis
+   <> diagIntro                       -- an introductory text
+   <> fromList roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
+   <> fromList roleRuleTable          -- gives an overview of rule-rule assignments
+   <> fromList missingConceptDefs     -- tells which concept definitions have been declared without a purpose
+   <>  missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
+   <> fromList unusedConceptDefs      -- tells which concept definitions are not used in any relation
+   <> fromList relsNotUsed            -- tells which relations are not used in any rule
+   <> fromList missingRules           -- tells which rule definitions are missing
+   <> fromList ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
+   <> fromList invariantsInProcesses  --
+   <> fromList processrulesInPatterns --
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
-     wipReport++              -- sums up the work items (i.e. the violations of process rules)
-     toList violationReport          -- sums up the violations caused by the population of this script.
-     )
+   <> fromList wipReport              -- sums up the work items (i.e. the violations of process rules)
+   <> violationReport          -- sums up the violations caused by the population of this script.
+     
    , pics )
   where
-  diagIntro :: [Block]
+  -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l lstr = localize (fsLang fSpec) lstr
+  diagIntro :: Blocks
   diagIntro =
     case fsLang fSpec of
-      Dutch   -> [Para
-                  [ Str "Dit hoofdstuk geeft een analyse van het Ampersand-script van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                  , Str "Deze analyse is bedoeld voor de auteurs van dit script. "
-                  , Str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren. "
-                  ]]
-      English -> [Para
-                  [ Str "This chapter provides an analysis of the Ampersand script of ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                  , Str "This analysis is intended for the authors of this script. "
-                  , Str "It can be used to complete the script or to improve possible flaws. "
-                  ]]
+      Dutch   -> para (
+                   str "Dit hoofdstuk geeft een analyse van het Ampersand-script van " <> (singleQuoted.str.name) fSpec <> ". "<>
+                   str "Deze analyse is bedoeld voor de auteur(s) van dit script. " <>
+                   str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
+                  )
+      English -> para (
+                   str "This chapter provides an analysis of the Ampersand script of " <> (singleQuoted.str.name) fSpec <> ". "<>
+                   str "This analysis is intended for the author(s) of this script. " <>
+                   str "It can be used to complete the script or to improve possible flaws."
+                  )
 
   roleRuleTable :: [Block]
   roleRuleTable
@@ -80,7 +80,7 @@ chpDiagnosis fSpec
      where
       ruls = if null (themes fSpec)
              then [r | r<-vrules fSpec, isSignal r ]
-             else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ]                  
+             else [r | pat<-vpatterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ]                  
       f r rul | (r,rul) `elem` maintained      = [Plain [Math InlineMath "\\surd"]]
               | (r,rul) `elem` dead            = [Plain [Math InlineMath "\\times"]]
               | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
@@ -111,7 +111,7 @@ chpDiagnosis fSpec
                 Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
                        , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
                        ]
-          | (null.fRoleRuls) fSpec && (not.null.udefrules) fSpec] ++
+          | (null.fRoleRuls) fSpec && (not.null.vrules) fSpec] ++
           [ case fsLang fSpec of
               Dutch   ->
                 Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
@@ -149,7 +149,7 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs [ d | d<-relsDefdIn fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+         ccs = concs [ d | d<-vrels fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
   unusedConceptDefs :: [Block]
   unusedConceptDefs
    = case (fsLang fSpec, unused) of
@@ -173,39 +173,61 @@ chpDiagnosis fSpec
                      ]
    where unused = [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (allConcepts fSpec)]
 
-  missingRels :: [Block]
+  missingRels :: Blocks
   missingRels
-   = case (fsLang fSpec, missing) of
-      (Dutch,[])  -> [Para
-                       [Str "Alle relaties in dit document zijn voorzien van een reden van bestaan (purpose)."]
-                     | (not.null.relsMentionedIn.udefrules) fSpec]
-      (Dutch,[r]) -> [Para
-                       [ Str "De reden waarom relatie ", r
-                       , Str " bestaat wordt niet uitgelegd."
-                     ] ]
-      (Dutch,rs)  -> [Para $
-                       [ Str "Relaties "]++commaNLPandoc (Str "en") rs++
-                       [ Str " zijn niet voorzien van een reden van bestaan (purpose), en daardoor niet opgenomen als afspraak in hoofdstuk "]++
-                       (toList $ xRefReference (getOpts fSpec) SharedLang)++
-                       [ Str "."]
-                     ] 
-      (English,[])  -> [Para
-                         [Str "All relations in this document have been provided with a purpose."]
-                       | (not.null.relsMentionedIn.udefrules) fSpec]
-      (English,[r]) -> [Para
-                         [ Str "The purpose of relation ", r
-                         , Str " remains unexplained."
-                       ] ]
-      (English,rs)  -> [Para $
-                         [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
-                         [ Str " is not documented. Hence, they are not contained as agreement in chapter "]++
-                       (toList $ xRefReference (getOpts fSpec) SharedLang)++
-                       [ Str "."]
-                     ] 
-     where missing = [(Math InlineMath . showMath) (EDcD d)
-                     | d@Sgn{} <- relsInThemes fSpec
-                     , null (purposesDefinedIn fSpec (fsLang fSpec) d)
-                     ]
+   = case bothMissing ++ purposeOnlyMissing ++ meaningOnlyMissing of
+      [] -> (para.str.l) (NL "Alle relaties in dit document zijn voorzien van zowel een reden van bestaan (purpose) als een betekenis (meaning)."
+                         ,EN "All relations in this document have been provided with a purpose as well as a meaning.")
+      _ ->(case bothMissing of
+            []  -> mempty
+            [d] -> para (   (str.l) (NL "Van de relatie ",EN "The relation ")
+                         <> showDcl d
+                         <> (str.l) (NL " ontbreekt zowel de betekenis (meaning) als de reden van bestaan (purpose)."
+                                    ,EN " lacks both a purpose as well as a meaning.")
+                        )
+            ds  -> para (   (str.l) (NL "Van de relaties ",EN "The relations ")
+                          <> commaPandocAnd (fsLang fSpec) (map showDcl ds) 
+                          <>(str.l) (NL " ontbreken zowel de betekenis (meaning) als de reden van bestaan (purpose)."
+                                    ,EN " all lack both a purpose and a meaning.")
+                        )
+          )<>
+          (case purposeOnlyMissing of
+            []  -> mempty
+            [d] -> para (   (str.l) (NL "De reden waarom relatie ",EN "The purpose of relation ")
+                         <> showDcl d
+                         <> (str.l) (NL " bestaat wordt niet uitgelegd."
+                                    ,EN " remains unexplained.")
+                        )
+            ds  -> para (   (str.l) (NL "Relaties ",EN "The purpose of relations ")
+                          <> commaPandocAnd (fsLang fSpec) (map showDcl ds) 
+                          <>(str.l) (NL " zijn niet voorzien van een reden van bestaan (purpose)."
+                                    ,EN " is not documented.")
+                        )
+          )<>
+          (case meaningOnlyMissing of
+            []  -> mempty
+            [d] -> para (   (str.l) (NL "De betekenis van relatie ",EN "The meaning of relation ")
+                         <> showDcl d
+                         <> (str.l) (NL " is niet gedocumenteerd."
+                                    ,EN " is not documented.")
+                        )
+            ds  -> para (   (str.l) (NL "De betekenis van relaties ",EN "The meaning of relations ")
+                          <> commaPandocAnd (fsLang fSpec) (map showDcl ds) 
+                          <>(str.l) (NL " zijn niet gedocumenteerd."
+                                    ,EN " is not documented.")
+                        )
+          )
+     where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Declaration]
+           bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
+           purposeOnlyMissing = filter (not . hasPurpose) . filter (      hasMeaning) $ decls
+           meaningOnlyMissing = filter (      hasPurpose) . filter (not . hasMeaning) $ decls
+           decls = allDecls fSpec  -- A restriction on only themes that the user wants the document for is not supported, 
+                                   -- because it is possible that declarations from other themes are required in the
+                                   -- generated document. 
+           showDcl = math . showMath . EDcD
+  hasPurpose :: Motivated a => a -> Bool
+  hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasMeaning = isJust . meaning (fsLang fSpec)
 
   relsNotUsed :: [Block]
   pics :: [Picture]
@@ -213,7 +235,7 @@ chpDiagnosis fSpec
    = ( ( case (fsLang fSpec, notUsed) of
           (Dutch,[])  -> [Para
                            [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
-                         | (not.null.relsMentionedIn.udefrules) fSpec]
+                         | (not.null.relsMentionedIn.vrules) fSpec]
           (Dutch,[r]) -> [Para
                            [ Str "De relatie ", r
                            , Str " wordt in geen enkele regel gebruikt. "
@@ -224,7 +246,7 @@ chpDiagnosis fSpec
                          ] ]
           (English,[])  -> [Para
                              [Str "All relations in this document are being used in one or more rules."]
-                           | (not.null.relsMentionedIn.udefrules) fSpec]
+                           | (not.null.relsMentionedIn.vrules) fSpec]
           (English,[r]) -> [Para
                              [ Str "Relation ", r
                              , Str " is not being used in any rule. "
@@ -259,9 +281,9 @@ chpDiagnosis fSpec
      where notUsed = nub [(Math InlineMath . showMath) (EDcD d)
                          | d@Sgn{} <- relsInThemes fSpec -- only signal relations that are used or defined in the selected themes
                          , decusr d
-                         , d `notElem` (relsMentionedIn . udefrules) fSpec
+                         , d `notElem` (relsMentionedIn . vrules) fSpec
                          ]
-           pats  = [ pat | pat<-patterns fSpec
+           pats  = [ pat | pat<-vpatterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
@@ -270,7 +292,7 @@ chpDiagnosis fSpec
   missingRules
    = case (fsLang fSpec, missingPurp, missingMeaning) of
       (Dutch,[],[])    -> [ Para [Str "Alle regels in dit document zijn voorzien van een uitleg."]
-                          | (length.udefrules) fSpec>1]
+                          | (length.vrules) fSpec>1]
       (Dutch,rs,rs')   -> [Para
                            (case rs>-rs' of
                               []  -> []
@@ -315,7 +337,7 @@ chpDiagnosis fSpec
                            )
                           ]
       (English,[],[])  -> [ Para [Str "All rules in this document have been provided with a meaning and a purpose."]
-                          | (length.udefrules) fSpec>1]
+                          | (length.vrules) fSpec>1]
       (English,rs,rs') -> [Para $
                            ( case rs>-rs' of
                               []  -> []
@@ -370,8 +392,8 @@ chpDiagnosis fSpec
                   , null [m | m <- ameaMrk (rrmean r), amLang m == fsLang fSpec]
                   ]
            ruls = if null (themes fSpec)
-                  then udefrules fSpec
-                  else concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]
+                  then vrules fSpec
+                  else concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
            upC (Str str':strs) = Str (upCap str'):strs
            upC str' = str'
 
@@ -453,7 +475,7 @@ chpDiagnosis fSpec
        ]
      | not (null prs)]
      where prs = [(p,rs) | p<-procs
-                          , let rs=invariants p, not (null rs) ]
+                          , let rs=[r | r<-invariants fSpec, name p == r_env r], not (null rs) ]
            procs = if null (themes fSpec) then vpatterns fSpec else [prc | prc<-vpatterns fSpec, name prc `elem` themes fSpec ]
 
   processrulesInPatterns :: [Block]
@@ -557,7 +579,7 @@ chpDiagnosis fSpec
       popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
   partofThemes r =
         or [ null (themes fSpec)
-           , r `elem` concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]
+           , r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
            ]
 
   violationReport :: Blocks

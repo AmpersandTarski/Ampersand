@@ -3,7 +3,7 @@
 module Database.Design.Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.FSpec(FSpec(..),FProcess(..), Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
+import Database.Design.Ampersand.FSpec.FSpec(FSpec(..),Activity(..)) 
 import Database.Design.Ampersand.Basics
 import Text.Pandoc
 
@@ -364,11 +364,6 @@ instance Motivated FSpec where
     = fSexpls fSpec ++
       (concatMap explanations . vpatterns)  fSpec ++
       (concatMap explanations . interfaceS) fSpec
-
-instance Motivated FProcess where
---  meaning l fp = meaning l (proc fp)
-  explForObj fp = explForObj (fpProc fp)
-  explanations fp = explanations (fpProc fp)
 
 -- Ampersand allows multiple purposes for everything.
 -- The diagnosis report must make mention of this (so the user will notice if (s)he reads the diagnosis).

@@ -18,7 +18,7 @@ module Database.Design.Ampersand.Core.ParseTree (
 
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
-   , P_IdentDef(..) , P_IdentSegment(..)
+   , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
    , P_ViewDef , P_ViewSegment, ViewHtmlTemplate(..) {-, ViewTextTemplate-}
    , P_ViewD(..) , P_ViewSegmt(..)
 
@@ -62,7 +62,7 @@ data P_Context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_PPrcs ::  [P_Pattern]      -- ^ The processes as defined by the parser
-         , ctx_rs ::     [(P_Rule TermPrim)]         -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_rs ::     [P_Rule TermPrim]         -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -122,7 +122,7 @@ data P_Pattern
    = P_Pat { pt_nm :: String            -- ^ Name of this pattern
            , pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           , pt_rls :: [P_Rule TermPrim]-- ^ The user defined rules in this pattern
+           , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
@@ -458,21 +458,30 @@ instance Named (P_ObjDef a) where
 instance Traced (P_ObjDef a) where
  origin = obj_pos
 
-data P_IdentDef =
+type P_IdentDef = P_IdentDf TermPrim -- this is what is returned by the parser, but we need to change the "TermPrim" for disambiguation
+data P_IdentDf a = -- so this is the parametric data-structure
          P_Id { ix_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-              , ix_ats :: [P_IdentSegment] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
+              , ix_ats :: [P_IdentSegmnt a] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
               } deriving (Show)
-instance Named P_IdentDef where
+instance Named (P_IdentDf a) where
  name = ix_lbl
-instance Eq P_IdentDef where identity==identity' = origin identity==origin identity'
-
-instance Traced P_IdentDef where
+instance Eq (P_IdentDf a) where identity==identity' = origin identity==origin identity'
+instance Traced (P_IdentDf a) where
  origin = ix_pos
+instance Functor P_IdentDf where fmap = fmapDefault
+instance Foldable P_IdentDf where foldMap = foldMapDefault
+instance Traversable P_IdentDf where
+  traverse f (P_Id a b c lst) = P_Id a b c <$> traverse (traverse f) lst
+instance Functor P_IdentSegmnt where fmap = fmapDefault
+instance Foldable P_IdentSegmnt where foldMap = foldMapDefault
+instance Traversable P_IdentSegmnt where
+  traverse f (P_IdentExp x) = P_IdentExp <$> traverse f x
 
-data P_IdentSegment
-              = P_IdentExp  { ks_obj :: P_ObjectDef }
+type P_IdentSegment = P_IdentSegmnt TermPrim
+data P_IdentSegmnt a
+              = P_IdentExp  { ks_obj :: P_ObjDef a}
                 deriving (Eq, Show)
                 
 type P_ViewDef = P_ViewD TermPrim

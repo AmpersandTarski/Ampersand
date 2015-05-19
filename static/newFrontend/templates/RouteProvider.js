@@ -9,5 +9,4 @@ AmpersandApp.config( function (\$routeProvider) {
            , templateUrl: 'generics/app/views/$interfaceName$.html'
            \}
          )}$
-    .otherwise({redirectTo: '/'});
 });

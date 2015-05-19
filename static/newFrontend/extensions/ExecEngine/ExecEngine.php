@@ -36,7 +36,7 @@ class ExecEngine {
 				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 			}
 		}else{
-			Notifications::addError("ExecEngine role '" . self::$roleName . "'not found.");
+			Notifications::addInfo("ExecEngine role '" . self::$roleName . "' not found.");
 		}
 		
 		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------');
@@ -77,7 +77,7 @@ class ExecEngine {
 					}
 				}
 			}
-			Notifications::addSuccess(self::$roleName . ' fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
+			Notifications::addInfo(self::$roleName . ' fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
 		}
 	}
 
@@ -97,7 +97,8 @@ class ExecEngine {
 				$atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
 				
 				// quering the expression
-				$query = "SELECT DISTINCT `tgt` FROM (".$segment['expSQL'].") AS results WHERE src='".addslashes($atom)."'"; // SRC of TGT kunnen door een expressie gevolgd worden
+				$atomEsc = $database->escape($atom);
+				$query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '$atomEsc'"; // SRC of TGT kunnen door een expressie gevolgd worden
 				$rows = $database->Exe($query);
 				
 				// returning the result

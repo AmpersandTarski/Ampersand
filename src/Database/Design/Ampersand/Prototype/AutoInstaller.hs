@@ -27,7 +27,7 @@ odbcinstall fSpec dsn =
       verboseLn (getOpts fSpec) "Creating tables..."
       _ <- creates conn (historyTableSpec : sessionTableSpec : [plug2TableSpec p |InternalPlug p<-plugInfos fSpec])
       verboseLn (getOpts fSpec) "Populating tables..."
-      _ <- inserts conn (gens fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
+      _ <- inserts conn (vgens fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
       commit conn
       verboseLn (getOpts fSpec) "Committed."
       disconnect conn

@@ -282,11 +282,11 @@ instance Pretty a => Pretty (P_SubIfc a) where
             where box_type Nothing  = text "BOX"
                   box_type (Just x) = text x -- ROWS, COLS, TABS
 
-instance Pretty P_IdentDef where
+instance Pretty a => Pretty (P_IdentDf a) where
     pretty (P_Id _ lbl cpt ats) =
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
-instance Pretty P_IdentSegment where
+instance Pretty a => Pretty (P_IdentSegmnt a) where
     pretty (P_IdentExp (P_Obj nm _ ctx mView _ strs)) =
               if null nm
               then pretty ctx -- no label

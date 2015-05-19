@@ -60,7 +60,7 @@ rulefromProp prp d@Sgn{} =
         , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
         , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
         , r_usr = Multiplicity
-        , isSignal = False
+        , isSignal = fatal 63 "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
         s = name (source d)
