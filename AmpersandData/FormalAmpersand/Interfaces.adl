@@ -6,10 +6,6 @@ INCLUDE "Interfaces.doc"
 
 PATTERN Interfaces
 CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
-{-RJ: Data exists only within a context, which, at least conceptually, can exist not only in a computer system, but also in a human system. One functionality of Interfaces is to convert/translate data from one context (that is governed by specific rules/relations/presentations) to another context (governed by another set of rules/relations/presentations). Another functionality of Interfaces is to support transactions (as modeled e.g. by DEMO).
-An Interface can be seen as a context in its own right, using (importing, referring to) concepts and relations of the (both) contexts that it connects, and having rules of its own for governing 'translations' and ensuring that messages sent to either context are in line with what that contexts expects (and: can test using its invariants).
-The concepts and relations defined in this pattern describe the contexts of Interfaces at a meta level.
--}
 IDENT Interface: Interface(ifcObj;objnm)
 CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
