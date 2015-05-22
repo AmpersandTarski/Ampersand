@@ -121,7 +121,6 @@ instance Traced P_RoleRule where
 data P_Pattern
    = P_Pat { pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
            , pt_nm :: String            -- ^ Name of this pattern
-           , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
@@ -132,6 +131,7 @@ data P_Pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
+           , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
            }   deriving (Show)       -- for debugging purposes
 
 instance Named P_Pattern where

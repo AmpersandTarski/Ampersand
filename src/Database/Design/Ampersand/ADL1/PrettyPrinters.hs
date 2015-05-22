@@ -145,7 +145,7 @@ instance Pretty Role where
     pretty (Role name) = maybeQuote name
 
 instance Pretty P_Pattern where
-    pretty (P_Pat _ nm _ rls gns dcs rruls rrels cds ids vds xps pop) =
+    pretty (P_Pat _ nm rls gns dcs rruls rrels cds ids vds xps pop _) =
           text keyword
           <+>  quoteConcept nm
           <+\> perline rls

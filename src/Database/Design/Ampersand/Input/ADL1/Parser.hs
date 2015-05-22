@@ -127,7 +127,6 @@ pPatternDef = rebuild <$> currPos
     rebuild pos' nm pes end
      = P_Pat { pt_pos = pos'
              , pt_nm  = nm
-             , pt_end = end
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
@@ -138,6 +137,7 @@ pPatternDef = rebuild <$> currPos
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
              , pt_pop = [p | Pp p<-pes]
+             , pt_end = end
              }
 
 --- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
@@ -153,7 +153,6 @@ pProcessDef = rebuild <$> currPos
     rebuild pos' nm pes end
      = P_Pat { pt_pos = pos'
              , pt_nm  = nm
-             , pt_end = end
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
@@ -164,6 +163,7 @@ pProcessDef = rebuild <$> currPos
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
              , pt_pop = [p | Pp p<-pes]
+             , pt_end = end
              }			 
 
 --- PatElem used by PATTERN and PROCESS

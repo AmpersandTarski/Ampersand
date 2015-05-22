@@ -249,7 +249,6 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                              r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = P_Pat { pt_pos = DBLoc "Atlas(Pattern)"
          , pt_nm  = pnm
-         , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
                     | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
          , pt_gns = [PGen{ gen_fp = DBLoc "Atlas(Isa)"
@@ -277,6 +276,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     , (rid',rpurp)<-r_decpurpose, rid==rid', not(null rpurp)
                     , let rnm = geta r_decnm rid (error "while geta r_decnm for rpurp.")]
          , pt_pop = []
+         , pt_end = DBLoc "Atlas(Pattern)"
          }
 
 atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term TermPrim)] -> (P_Rule TermPrim)

@@ -62,7 +62,6 @@ instance MakeMeta P_Pattern where
   makeMeta f p
    = P_Pat { pt_pos = makeMeta f (pt_pos p)
            , pt_nm  =            (pt_nm p)
-           , pt_end = makeMeta f (pt_end p)
            , pt_rls = makeMeta f (pt_rls p)
            , pt_gns = makeMeta f (pt_gns p)
            , pt_dcs = makeMeta f (pt_dcs p)
@@ -73,6 +72,7 @@ instance MakeMeta P_Pattern where
            , pt_vds = makeMeta f (pt_vds p)
            , pt_xps = makeMeta f (pt_xps p)
            , pt_pop = makeMeta f (pt_pop p)
+           , pt_end = makeMeta f (pt_end p)
            }
 
 instance MakeMeta ConceptDef where
