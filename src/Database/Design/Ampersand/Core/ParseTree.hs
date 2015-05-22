@@ -591,9 +591,9 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
                   , gen_spc :: P_Concept         -- ^ Left hand side concept expression
                   , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
                   }
-            | PGen{ gen_spc :: P_Concept      -- ^ specific concept
+            | PGen{ gen_fp  :: Origin         -- ^ the position of the GEN-rule
+                  , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  , gen_fp  :: Origin         -- ^ the position of the GEN-rule
                   }
 gen_concs :: P_Gen -> [P_Concept]
 gen_concs (P_Cy {gen_rhs=x}) = x

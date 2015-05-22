@@ -315,13 +315,11 @@ pConceptDef       = Cd <$> currPos
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen
--- pGenDef = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
---          where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
+-- pGenDef = try (PGen <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
 
 --Old version
-pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
-          where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
-                key = pKey "CLASSIFY" <|> pKey "SPEC"
+pGenDef = try (PGen <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
+          where key = pKey "CLASSIFY" <|> pKey "SPEC"
 
 -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].

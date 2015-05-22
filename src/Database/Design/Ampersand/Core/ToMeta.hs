@@ -171,9 +171,9 @@ instance MakeMeta P_Gen where
                      , gen_spc = makeMeta f (gen_spc gen)
                      , gen_rhs = makeMeta f (gen_rhs gen)
                      }
-      PGen{} -> PGen { gen_spc = makeMeta f (gen_spc gen)
+      PGen{} -> PGen { gen_fp  = makeMeta f (gen_fp gen)
+                     , gen_spc = makeMeta f (gen_spc gen)
                      , gen_gen = makeMeta f (gen_gen gen)
-                     , gen_fp  = makeMeta f (gen_fp gen)
                      }
 instance MakeMeta P_Interface where
   makeMeta f ifc

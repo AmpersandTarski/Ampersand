@@ -352,7 +352,7 @@ instance Pretty P_Sign where
 
 instance Pretty P_Gen where
     pretty p = case p of
-            PGen spc gen _ -> text "CLASSIFY" <~> spc <+> text "ISA" <~> gen
+            PGen _ spc gen -> text "CLASSIFY" <~> spc <+> text "ISA" <~> gen
             P_Cy _ spc rhs -> text "CLASSIFY" <~> spc <+> text "IS"  <+> separate "/\\" rhs
 
 instance Pretty Lang where
