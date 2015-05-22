@@ -694,7 +694,6 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Sign?
 pNamedRel :: AmpParser P_NamedRel
---TODO! Remove valPosOf
 pNamedRel = PNamedRel  <$> currPos <*> pVarid <*> pMaybe pSign
 
 --- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
