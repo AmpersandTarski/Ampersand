@@ -332,9 +332,8 @@ pIndex  = P_Id <$> currPos
 
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
-          --TODO! Use `opt` and remove record syntax (create optLabelProps)
           -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
-          pIndAtt  = attL <$> currPos <*> (try pLabelProps `opt` ("",[])) <*> try pTerm
+          pIndAtt  = attL <$> currPos <*> optLabelProps <*> try pTerm
               where mView = Nothing
                     msub = Nothing
                     --TODO: What does this origin mean? It's not used, can we remove it?
@@ -409,7 +408,7 @@ pViewDefLegacy = P_Vd <$> currPos
                          P_ViewHtml <$ pKey "PRIMHTML" <*> pString
           --- ViewAtt ::= LabelProps? Term
           pViewAtt :: AmpParser P_ObjectDef
-          pViewAtt = rebuild <$> currPos <*> (try pLabelProps `opt` ("",[])) <*> pTerm
+          pViewAtt = rebuild <$> currPos <*> optLabelProps <*> pTerm
               where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mView msub strs
                     mView = Nothing
                     msub  = Nothing
@@ -726,6 +725,9 @@ pLabelProps = (,) <$> pADLid
                   <*> optList pArgs
                   <*  posOf pColon
               where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
+
+optLabelProps :: AmpParser (String, [[String]])
+optLabelProps = try pLabelProps `opt` ("",[])
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
