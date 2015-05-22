@@ -250,9 +250,9 @@ instance Pretty ConceptDef where
 
 instance Pretty P_Population where
     pretty p = case p of
-                P_RelPopu nm    _ cs -> text "POPULATION" <+> maybeQuote (takeQuote nm)        <+> text "CONTAINS" <+> contents cs
-                P_TRelPop nm tp _ cs -> text "POPULATION" <+> maybeQuote (takeQuote nm) <~> tp <+> text "CONTAINS" <+> contents cs
-                P_CptPopu nm    _ ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> list (quoteAll ps)
+                P_RelPopu _ nm    cs -> text "POPULATION" <+> maybeQuote (takeQuote nm)        <+> text "CONTAINS" <+> contents cs
+                P_TRelPop _ nm tp cs -> text "POPULATION" <+> maybeQuote (takeQuote nm) <~> tp <+> text "CONTAINS" <+> contents cs
+                P_CptPopu _ nm    ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> list (quoteAll ps)
                where contents = list . map prettyPair
 
 instance Pretty P_Interface where

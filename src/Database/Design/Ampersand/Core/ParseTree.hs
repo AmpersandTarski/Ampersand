@@ -392,17 +392,17 @@ data P_Markup =
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_rnme ::  String  -- the name of a relation
-              , p_orig ::  Origin  -- the origin
+  = P_RelPopu { p_orig ::  Origin  -- the origin
+              , p_rnme ::  String  -- the name of a relation
               , p_popps :: Pairs   -- the contents
               }
-  | P_TRelPop { p_rnme ::  String  -- the name of a relation
+  | P_TRelPop { p_orig ::  Origin  -- the origin
+              , p_rnme ::  String  -- the name of a relation
               , p_type ::  P_Sign  -- the signature of the relation
-              , p_orig ::  Origin  -- the origin
               , p_popps :: Pairs   -- the contents
               }
-  | P_CptPopu { p_cnme ::  String  -- the name of a concept
-              , p_orig ::  Origin  -- the origin
+  | P_CptPopu { p_orig ::  Origin  -- the origin
+              , p_cnme ::  String  -- the name of a concept
               , p_popas :: [String]   -- atoms in the initial population of that concept
               }
     deriving Show

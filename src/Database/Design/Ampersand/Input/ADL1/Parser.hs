@@ -6,6 +6,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser(
 
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
+--TODO! Remove or at least simplify the parsing lib
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
@@ -353,7 +354,7 @@ pIndex  = P_Id <$> currPos
 
 --- ViewDef ::= FancyViewDef | ViewDefLegacy
 pViewDef :: AmpParser P_ViewDef
-pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces a bit of harmless backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
+pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
 --- FancyViewDef ::= 'VIEW' pLabel ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
@@ -502,7 +503,7 @@ pPurpose = rebuild <$> currPos
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
            = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
-              -- TODO! Maybe this separation should not happen in the parser
+              -- TODO! This separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
@@ -523,26 +524,12 @@ pPurpose = rebuild <$> currPos
 --- Population ::= 'POPULATION' NamedRel 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
 pPopulation :: AmpParser P_Population
 -- TODO! Refactor grammar, consider removing pNamedRel or adding it to the parse tree.
-pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* pKey "CONTAINS" <*> pContent) <|>
-              try (pcptpop <$> currPos <* pKey "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
-    where
-      prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
-      prelpop orig (PNamedRel _ nm mSgn)  contents =
-        case mSgn of Nothing  -> P_RelPopu { p_rnme   = nm
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
-                     Just sgn -> P_TRelPop { p_rnme   = nm
-                   , p_type   = sgn
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
-      pcptpop :: Origin -> String -> [String] -> P_Population
-      pcptpop    orig      cnm       contents
-       = P_CptPopu { p_cnme   = cnm
-                   , p_orig   = orig
-                   , p_popas  = contents
-                   }
+pPopulation = try (prelpop   <$> currPos <* pKey "POPULATION" <*> pNamedRel   ) <* pKey "CONTAINS" <*> pContent <|>
+              try (P_CptPopu <$> currPos <* pKey "POPULATION" <*> pConceptName) <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma)
+    where prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
+          prelpop orig (PNamedRel _ nm mSgn) = case mSgn of
+                               Nothing    -> P_RelPopu orig nm
+                               Just ptype -> P_TRelPop orig nm ptype
 
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
@@ -712,15 +699,13 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
 --- NamedRel ::= Varid Sign?
 pNamedRel :: AmpParser P_NamedRel
 --TODO! Remove valPosOf
-pNamedRel = pnamedrel  <$> valPosOf pVarid <*> pMaybe pSign
-                    where pnamedrel (nm, orig) = PNamedRel orig nm
+pNamedRel = PNamedRel  <$> currPos <*> pVarid <*> pMaybe pSign
 
 --- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser P_Sign
 pSign = pBrackets sign
-   where
-     sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
-     mkSign src mTgt = P_Sign src $ fromMaybe src mTgt
+   where sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
+         mkSign src mTgt = P_Sign src (fromMaybe src mTgt)
 
 --- ConceptName ::= Conid | String
 --- ConceptNameList ::= ConceptName (',' ConceptName)

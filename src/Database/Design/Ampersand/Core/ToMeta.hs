@@ -221,17 +221,17 @@ instance MakeMeta PMessage where
 instance MakeMeta P_Population where
   makeMeta f pop 
    = case pop of
-      P_RelPopu{} -> P_RelPopu { p_rnme  =          f (p_rnme pop)
-                               , p_orig  = makeMeta f (p_orig pop)
+      P_RelPopu{} -> P_RelPopu { p_orig  = makeMeta f (p_orig pop)
+                               , p_rnme  =          f (p_rnme pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }
-      P_TRelPop{} -> P_TRelPop { p_rnme  =          f (p_rnme pop)
+      P_TRelPop{} -> P_TRelPop { p_orig  = makeMeta f (p_orig pop)
+                               , p_rnme  =          f (p_rnme pop)
                                , p_type  = makeMeta f (p_type pop)
-                               , p_orig  = makeMeta f (p_orig pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }
-      P_CptPopu{} -> P_CptPopu { p_cnme  =          f (p_rnme pop)
-                               , p_orig  = makeMeta f (p_orig pop)
+      P_CptPopu{} -> P_CptPopu { p_orig  = makeMeta f (p_orig pop)
+                               , p_cnme  =          f (p_rnme pop)
                                , p_popas =            (p_popas pop)
                                }
 

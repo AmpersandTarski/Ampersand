@@ -229,9 +229,9 @@ instance Arbitrary Paire where
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          P_RelPopu <$> lowerId <*> arbitrary <*> genPairs,
-          P_TRelPop <$> lowerId <*> arbitrary <*> arbitrary <*> genPairs,
-          P_CptPopu <$> lowerId <*> arbitrary <*> listOf safeStr
+          P_RelPopu <$> arbitrary <*> lowerId <*> genPairs,
+          P_TRelPop <$> arbitrary <*> lowerId <*> arbitrary <*> genPairs,
+          P_CptPopu <$> arbitrary <*> lowerId <*> listOf safeStr
         ]
 
 instance Arbitrary P_Interface where
