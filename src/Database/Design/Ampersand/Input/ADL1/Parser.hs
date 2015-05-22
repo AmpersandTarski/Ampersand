@@ -12,9 +12,6 @@ import Data.List
 import Data.Maybe
 import Control.Applicative(pure)
 
---TODO! After converting the parser to Parsec, we had to add some try-calls.
---We gotta check the try's to see if we can refactor them, or at least pay attention to the error messages.
-
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
 
@@ -710,49 +707,48 @@ pSign = pBrackets sign
 --- ConceptName ::= Conid | String
 --- ConceptNameList ::= ConceptName (',' ConceptName)
 pConceptName ::   AmpParser String
-pConceptName    = pConid <|> pString
+pConceptName = pConid <|> pString
 
 --- ConceptRef ::= ConceptName
 pConceptRef ::    AmpParser P_Concept
-pConceptRef     = PCpt <$> pConceptName
+pConceptRef = PCpt <$> pConceptName
 
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: AmpParser P_Concept
-pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
+pConceptOneRef = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 
 --  (SJ) Why does a label have (optional) strings?
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
 --  (SJ April 15th, 2013) Since KEY has been replaced by IDENT and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
 --- LabelProps ::= ADLid ('{' ADLidListList '}')? ':'
 pLabelProps :: AmpParser (String, [[String]])
-pLabelProps       = (,) <$> pADLid
-                        <*> optList pArgs
-                        <*  posOf pColon
-                    where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
+pLabelProps = (,) <$> pADLid
+                  <*> optList pArgs
+                  <*  posOf pColon
+              where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
 pLabel = pADLid <* pColon
 
---- Content ::= '[' RecordList? ']' | '[' RecordObsList? ']'
+--- Content ::= '[' (RecordList | RecordObsList)? ']'
 pContent :: AmpParser Pairs
-pContent      = try (pBrackets (pRecord `sepBy` pComma))   <|>
-                try (pBrackets (pRecordObs `sepBy` pSemi))
-    where
-    --- RecordList ::= Record (',' Record)*
-    --- Record ::= String '*' String
-    pRecord :: AmpParser Paire
-    pRecord = mkPair<$> pString <* pOperator "*" <*> pString
-    --- RecordObsList ::= RecordObsList (';' RecordObsList)
-    --- RecordObs ::= '(' String ',' String ')'
-    pRecordObs :: AmpParser Paire
-    pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
+pContent = try (pBrackets (pRecord `sepBy` pComma))  <|>
+           try (pBrackets (pRecordObs `sepBy` pSemi))
+    where --- RecordList ::= Record (',' Record)*
+          --- Record ::= String '*' String
+          pRecord :: AmpParser Paire
+          pRecord = mkPair <$> pString <* pOperator "*" <*> pString
+          --- RecordObsList ::= RecordObsList (';' RecordObsList)
+          --- RecordObs ::= '(' String ',' String ')'
+          pRecordObs :: AmpParser Paire
+          pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
 
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser String
-pADLid            = pVarid <|> pConid <|> pString
+pADLid = pVarid <|> pConid <|> pString
 
 pMaybe :: AmpParser a -> AmpParser (Maybe a)
 pMaybe p = Just <$> p <|> pSucceed Nothing
