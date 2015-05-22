@@ -123,15 +123,15 @@ instance MakeMeta a => MakeMeta (P_Rule a) where
 instance MakeMeta P_RoleRule where
   makeMeta f rr
    = Maintain
-          { mRoles =            (mRoles rr)
+          { mPos   = makeMeta f (mPos rr)
+          , mRoles =            (mRoles rr)
           , mRules =            (mRules rr)
-          , mPos   = makeMeta f (mPos rr)
           }
 instance MakeMeta P_RoleRelation where
   makeMeta f rr
-   = P_RR { rr_Roles =            (rr_Roles rr)
+   = P_RR { rr_Pos   = makeMeta f (rr_Pos rr)
+          , rr_Roles =            (rr_Roles rr)
           , rr_Rels  = makeMeta f (rr_Rels rr)
-          , rr_Pos   = makeMeta f (rr_Pos rr)
           }
 
 instance MakeMeta P_IdentDef where

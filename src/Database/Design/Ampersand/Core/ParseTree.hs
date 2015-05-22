@@ -94,9 +94,9 @@ data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for 
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
-   = P_RR { rr_Roles :: [Role]      -- ^ list of roles
+   = P_RR { rr_Pos :: Origin      -- ^ position in the Ampersand script
+          , rr_Roles :: [Role]      -- ^ list of roles
           , rr_Rels :: [P_NamedRel] -- ^ list of named relations
-          , rr_Pos :: Origin      -- ^ position in the Ampersand script
           } deriving (Show)       -- deriving Show is just for debugging
 instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
 instance Traced P_RoleRelation where
@@ -105,9 +105,9 @@ instance Traced P_RoleRelation where
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
-     { mRoles :: [Role]    -- ^ name of a role
+     { mPos :: Origin      -- ^ position in the Ampersand script
+     , mRoles :: [Role]    -- ^ name of a role
      , mRules :: [String]  -- ^ name of a Rule
-     , mPos :: Origin      -- ^ position in the Ampersand script
      } deriving (Eq, Show) -- deriving (Eq, Show) is just for debugging
 
 data Role = Role String deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging

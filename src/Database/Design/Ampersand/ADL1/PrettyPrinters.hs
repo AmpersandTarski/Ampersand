@@ -134,11 +134,11 @@ instance Pretty MetaObj where
     pretty ContextMeta = empty -- for the context meta we don't need a keyword
 
 instance Pretty P_RoleRelation where
-    pretty (P_RR roles rels _) =
+    pretty (P_RR _ roles rels) =
         text "ROLE" <+> listOf roles <+> text "EDITS" <+> listOf rels
 
 instance Pretty P_RoleRule where
-    pretty (Maintain roles rules _) =
+    pretty (Maintain _ roles rules) =
         text "ROLE" <+> listOf roles <+> text "MAINTAINS" <+> commas (map maybeQuote rules)
 
 instance Pretty Role where

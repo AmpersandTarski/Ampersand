@@ -117,10 +117,10 @@ instance Arbitrary MetaObj where
     arbitrary = return ContextMeta
 
 instance Arbitrary P_RoleRelation where
-    arbitrary = P_RR <$> listOf1 arbitrary <*> listOf1 relationRef <*> arbitrary
+    arbitrary = P_RR <$> arbitrary <*> listOf1 arbitrary <*> listOf1 relationRef
 
 instance Arbitrary P_RoleRule where
-    arbitrary = Maintain <$> listOf1 arbitrary <*> listOf1 safeStr <*> arbitrary
+    arbitrary = Maintain <$> arbitrary <*> listOf1 arbitrary <*> listOf1 safeStr
 
 instance Arbitrary Role where
     arbitrary = Role <$> safeStr

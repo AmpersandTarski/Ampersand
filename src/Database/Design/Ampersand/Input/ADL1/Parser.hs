@@ -546,22 +546,20 @@ pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* 
 
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
-pRoleRelation = try (rr <$> currPos
-                        <*  pKey "ROLE"
-                        <*> pRole `sepBy1` pComma
-                        <*  pKey "EDITS")
+pRoleRelation = try (P_RR <$> currPos
+                          <*  pKey "ROLE"
+                          <*> pRole `sepBy1` pComma
+                          <*  pKey "EDITS")
                     <*> pNamedRel `sepBy1` pComma
-                where rr p roles rels = P_RR roles rels p
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
 --TODO! Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
 pRoleRule :: AmpParser P_RoleRule
-pRoleRule = try (rr <$> currPos
-                    <*  pKey "ROLE"
-                    <*> pRole `sepBy1` pComma
-                    <*  pKey "MAINTAINS")
+pRoleRule = try (Maintain <$> currPos
+                          <*  pKey "ROLE"
+                          <*> pRole `sepBy1` pComma
+                          <*  pKey "MAINTAINS")
                 <*> pADLid `sepBy1` pComma
-            where rr p roles rulIds = Maintain roles rulIds p
 
 --- Role ::= ADLid
 --- RoleList ::= Role (',' Role)*
