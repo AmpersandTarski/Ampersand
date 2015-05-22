@@ -164,7 +164,7 @@ pProcessDef = rebuild <$> currPos
              , pt_xps = [e | Pe e<-pes]
              , pt_pop = [p | Pp p<-pes]
              , pt_end = end
-             }			 
+             }
 
 --- PatElem used by PATTERN and PROCESS
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
@@ -182,7 +182,7 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pp <$> pPopulation
 
 data PatElem = Pr (P_Rule TermPrim)
-             | Py P_Gen
+             | Py P_Gen -- TODO: Py is not used
              | Pd P_Declaration
              | Pm P_RoleRule
              | Pl P_RoleRelation
@@ -191,7 +191,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pk P_IdentDef
              | Pv P_ViewDef
              | Pe PPurpose
-             | Pp P_Population 
+             | Pp P_Population
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
@@ -212,7 +212,7 @@ pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey
 
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
-pRuleDef =  rebuild <$> currPos 
+pRuleDef =  rebuild <$> currPos
                     <*  pKey "RULE"
                     <*> pMaybe (try pLabel)
                     <*> pRule
@@ -230,7 +230,7 @@ pRuleDef =  rebuild <$> currPos
                           }
                  rulid (FileLoc pos _) = "rule@" ++ show (show pos)
                  rulid _ = fatal 226 "pRuleDef is expecting a file location."
-                 
+
                  --- Violation ::= 'VIOLATION' PairView
                  pViolation :: AmpParser (PairView (Term TermPrim))
                  pViolation = id <$ pKey "VIOLATION" <*> pPairView
@@ -242,7 +242,7 @@ pRuleDef =  rebuild <$> currPos
                  --- PairViewSegmentList  ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
-                 pPairViewSegment = PairViewExp  <$> posOf (pKey "SRC") <*> return Src <*> pTerm 
+                 pPairViewSegment = PairViewExp  <$> posOf (pKey "SRC") <*> return Src <*> pTerm
                                 <|> PairViewExp  <$> posOf (pKey "TGT") <*> return Tgt <*> pTerm
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
@@ -297,7 +297,7 @@ pFun  = []        <$ pOperator "*"  <|>
         pMults = (++) <$> optList (pMult (Sur,Inj))
                       <*  pDash
                       <*> optList (pMult (Tot,Uni))
-        
+
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --- Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
         --TODO! refactor
@@ -319,12 +319,12 @@ pConceptDef       = Cd <$> currPos
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
-pGenDef :: AmpParser P_Gen 
--- pGenDef = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <* pKey "ISA") <*> pConceptRef -- 
+pGenDef :: AmpParser P_Gen
+-- pGenDef = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
 --          where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
 
---Old version 
-pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef -- 
+--Old version
+pGenDef = try (rebuild <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
           where rebuild p spc gen = PGen { gen_spc = spc, gen_gen = gen, gen_fp = p}
                 key = pKey "CLASSIFY" <|> pKey "SPEC"
 
@@ -352,7 +352,7 @@ pIndex  = P_Id <$> currPos
           -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
           pIndAtt  = attL <$> currPos <*> (try pLabelProps `opt` ("",[])) <*> try pTerm
               where mView = Nothing
-                    msub = Nothing 
+                    msub = Nothing
                     --TODO: What does this origin mean? It's not used, can we remove it?
                     attL p (nm, strs) ctx = let pos = if null nm then Origin "pIndAtt CC664" else p
                                 in P_Obj nm pos ctx mView msub strs
@@ -377,7 +377,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
                       <*> pBraces ((P_ViewExp <$> pViewObj) `sepBy1` pComma)
-                      <*> pMaybe pHtmlView 
+                      <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos nm cpt isDef ats html =
             P_Vd { vd_pos = pos
@@ -387,7 +387,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_html = html
                  , vd_ats = ats
                  }
-          
+
           --- ViewObjList ::= ViewObj (',' ViewObj)*
           --- ViewObj ::= Label Term
           pViewObj :: AmpParser P_ObjectDef
@@ -397,9 +397,9 @@ pFancyViewDef  = mkViewDef <$> currPos
                            <*> return Nothing
                            <*> return Nothing
                            <*> return []
-                          
+
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
-          pHtmlView :: AmpParser ViewHtmlTemplate                 
+          pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
 
 --- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentList ')'
@@ -551,7 +551,6 @@ pPopulation = try (prelpop <$> currPos <* pKey "POPULATION" <*> pNamedRel    <* 
                    , p_orig   = orig
                    , p_popps  = contents
                    }
-                                           
       pcptpop :: Origin -> String -> [String] -> P_Population
       pcptpop    orig      cnm       contents
        = P_CptPopu { p_cnme   = cnm
@@ -651,7 +650,7 @@ pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
 pRule :: AmpParser (Term TermPrim)
 pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
                       invert PImp  <$> currPos <* pOperator "|-" <*> pTerm)
-                      
+
 
 {-
 pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
