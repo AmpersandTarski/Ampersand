@@ -126,7 +126,7 @@ instance Arbitrary Role where
     arbitrary = Role <$> safeStr
 
 instance Arbitrary P_Pattern where
-    arbitrary = P_Pat <$> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary
 

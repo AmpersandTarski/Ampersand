@@ -135,7 +135,7 @@ makeFailedPops imperr script opts usrfiles
                              eid = terrid i fid
                              (cx,es) = typeCheck nc []
                              nc = PCtx (ctx_nm c) (ctx_pos c) (ctx_lang c) (ctx_markup c) []
-                                       [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats c]
+                                       [P_Pat (pt_pos p) (pt_nm p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats c]
                                        [] [] [] [] [] [] [] [] [] [] [] [] False
 
 {-
@@ -158,7 +158,7 @@ te_origname :: TypeError * String [UNI]
 --      Errors x ->  [makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))]]
 --   where (cx,_,_) = typeCheck nc []
 --         nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) []
---                   [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
+--                   [P_Pat (pt_pos p) (pt_nm p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
 --                   [] [] [] [] [] [] [] [] [] [] [] [] []
 {-makeCtxErrorPops eid c (Cxes xs) = []
 makeCtxErrorPops eid c (CxeOrig cxe t nm o)

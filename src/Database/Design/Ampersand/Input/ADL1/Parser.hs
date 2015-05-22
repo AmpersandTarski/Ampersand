@@ -125,8 +125,8 @@ pPatternDef = rebuild <$> currPos
   where
     rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
-     = P_Pat { pt_nm  = nm
-             , pt_pos = pos'
+     = P_Pat { pt_pos = pos'
+             , pt_nm  = nm
              , pt_end = end
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]
@@ -151,8 +151,8 @@ pProcessDef = rebuild <$> currPos
   where
     rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
-     = P_Pat { pt_nm  = nm
-             , pt_pos = pos'
+     = P_Pat { pt_pos = pos'
+             , pt_nm  = nm
              , pt_end = end
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [g | Pg g<-pes]

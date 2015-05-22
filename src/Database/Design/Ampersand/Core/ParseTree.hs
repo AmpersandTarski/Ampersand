@@ -119,8 +119,8 @@ instance Traced P_RoleRule where
  origin = mPos
 
 data P_Pattern
-   = P_Pat { pt_nm :: String            -- ^ Name of this pattern
-           , pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
+   = P_Pat { pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm :: String            -- ^ Name of this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern

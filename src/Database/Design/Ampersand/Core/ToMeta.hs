@@ -60,8 +60,8 @@ instance MakeMeta P_Context where
 
 instance MakeMeta P_Pattern where
   makeMeta f p
-   = P_Pat { pt_nm  =            (pt_nm p)
-           , pt_pos = makeMeta f (pt_pos p)
+   = P_Pat { pt_pos = makeMeta f (pt_pos p)
+           , pt_nm  =            (pt_nm p)
            , pt_end = makeMeta f (pt_end p)
            , pt_rls = makeMeta f (pt_rls p)
            , pt_gns = makeMeta f (pt_gns p)

@@ -247,8 +247,8 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                              r_cptnm
                              r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
                              r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
- = P_Pat { pt_nm  = pnm
-         , pt_pos = DBLoc "Atlas(Pattern)"
+ = P_Pat { pt_pos = DBLoc "Atlas(Pattern)"
+         , pt_nm  = pnm
          , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
                     | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
