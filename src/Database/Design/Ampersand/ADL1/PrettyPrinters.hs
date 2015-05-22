@@ -230,7 +230,7 @@ instance Pretty SrcOrTgt where
     pretty Tgt = text "TGT"
 
 instance Pretty a => Pretty (P_Rule a) where
-    pretty (P_Ru nm expr _ mean msg viol) =
+    pretty (P_Ru _ nm expr mean msg viol) =
                 text "RULE" <+> name <~>
                 expr <+\>
                 perline mean <+\>

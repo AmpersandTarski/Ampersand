@@ -215,7 +215,7 @@ instance Arbitrary SrcOrTgt where
     arbitrary = elements[Src, Tgt]
 
 instance Arbitrary a => Arbitrary (P_Rule a) where
-    arbitrary = P_Ru <$> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = P_Ru <$> arbitrary <*> safeStr <*> ruleTerm  <*> arbitrary <*> arbitrary
                      <*> arbitrary
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 

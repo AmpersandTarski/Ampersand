@@ -281,9 +281,9 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
 
 atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term TermPrim)] -> (P_Rule TermPrim)
 atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
- = P_Ru { rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
+ = P_Ru { rr_fps  = DBLoc "Atlas(Rule)"
+        , rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
         , rr_exp  = geta r_exprvalue eid (error "while geta r_exprvalue.")
-        , rr_fps  = DBLoc "Atlas(Rule)"
         , rr_mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_rrmean rid ""))]
         , rr_msg  = []
         , rr_viol = Nothing

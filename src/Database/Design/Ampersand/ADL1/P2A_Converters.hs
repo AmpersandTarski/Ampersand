@@ -612,9 +612,9 @@ pCtx2aCtx' _
     typeCheckRul :: 
                  String -- environment name (pattern / proc name)
               -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
-    typeCheckRul env P_Ru { rr_nm = nm
+    typeCheckRul env P_Ru { rr_fps = orig
+                          , rr_nm = nm
                           , rr_exp = expr
-                          , rr_fps = orig
                           , rr_mean = meanings
                           , rr_msg = msgs
                           , rr_viol = viols

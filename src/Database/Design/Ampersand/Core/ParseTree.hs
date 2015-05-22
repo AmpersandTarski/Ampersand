@@ -362,9 +362,9 @@ instance Functor PairView where fmap = fmapDefault
 instance Foldable PairView where foldMap = foldMapDefault
 
 data P_Rule a  =
-   P_Ru { rr_nm ::   String            -- ^ Name of this rule
+   P_Ru { rr_fps ::  Origin            -- ^ Position in the Ampersand file
+        , rr_nm ::   String            -- ^ Name of this rule
         , rr_exp ::  Term a            -- ^ The rule expression
-        , rr_fps ::  Origin            -- ^ Position in the Ampersand file
         , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
         , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rr_viol :: Maybe (PairView (Term a))  -- ^ Custom presentation for violations, currently only in a single language
@@ -375,8 +375,8 @@ instance Traced (P_Rule a) where
 instance Functor P_Rule where fmap = fmapDefault
 instance Foldable P_Rule where foldMap = foldMapDefault
 instance Traversable P_Rule where
- traverse f (P_Ru nm expr fps mean msg viol)
-  = (\e v -> P_Ru nm e fps mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
+ traverse f (P_Ru fps nm expr mean msg viol)
+  = (\e v -> P_Ru fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
 instance Named (P_Rule a) where
  name = rr_nm

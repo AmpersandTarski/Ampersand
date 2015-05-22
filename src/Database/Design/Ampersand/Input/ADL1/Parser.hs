@@ -207,23 +207,14 @@ pClassify = try (P_Cy <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey "I
 
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
-pRuleDef =  rebuild <$> currPos
-                    <*  pKey "RULE"
-                    <*> pMaybe (try pLabel)
-                    <*> pRule
-                    <*> many pMeaning
-                    <*> many pMessage
-                    <*> pMaybe pViolation
-               where
-                 rebuild po mn rexp mean msg mViolation
-                   = P_Ru { rr_nm   = fromMaybe (rulid po) mn
-                          , rr_exp  = rexp
-                          , rr_fps  = po
-                          , rr_mean = mean
-                          , rr_msg  = msg
-                          , rr_viol = mViolation
-                          }
-                 rulid (FileLoc pos _) = "rule@" ++ show (show pos)
+pRuleDef =  P_Ru <$> currPos
+                 <*  pKey "RULE"
+                 <*> (try pLabel <|> rulid <$> currPos)
+                 <*> pRule
+                 <*> many pMeaning
+                 <*> many pMessage
+                 <*> pMaybe pViolation
+           where rulid (FileLoc pos _) = "rule@" ++ show (show pos)
                  rulid _ = fatal 226 "pRuleDef is expecting a file location."
 
                  --- Violation ::= 'VIOLATION' PairView
@@ -315,9 +306,6 @@ pConceptDef       = Cd <$> currPos
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen
--- pGenDef = try (PGen <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
-
---Old version
 pGenDef = try (PGen <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConceptRef --
           where key = pKey "CLASSIFY" <|> pKey "SPEC"
 

@@ -112,9 +112,9 @@ instance MakeMeta P_Concept where
         
 instance MakeMeta a => MakeMeta (P_Rule a) where
   makeMeta f rul
-   = P_Ru { rr_nm   =            (rr_nm rul)
+   = P_Ru { rr_fps  = makeMeta f (rr_fps rul)
+          , rr_nm   =            (rr_nm rul)
           , rr_exp  = makeMeta f (rr_exp rul)
-          , rr_fps  = makeMeta f (rr_fps rul)
           , rr_mean = makeMeta f (rr_mean rul)
           , rr_msg  = makeMeta f (rr_msg rul)
           , rr_viol = makeMeta f (rr_viol rul)
