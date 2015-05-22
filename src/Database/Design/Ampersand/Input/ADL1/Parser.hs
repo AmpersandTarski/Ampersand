@@ -570,13 +570,11 @@ pPrintThemes = pKey "THEMES"
 
 --- Meaning ::= 'MEANING' LanguageRef? TextMarkup? (String | Expl)
 pMeaning :: AmpParser PMeaning
-pMeaning = rebuild <$  pKey "MEANING"
-                   <*> pMaybe pLanguageRef
-                   <*> pMaybe pTextMarkup
-                   <*> (pString <|> pExpl)
-   where rebuild :: Maybe Lang -> Maybe PandocFormat -> String -> PMeaning
-         rebuild    lang          fmt                   mkup   =
-            PMeaning (P_Markup lang fmt mkup)
+pMeaning = PMeaning <$> (
+           P_Markup <$  pKey "MEANING"
+                    <*> pMaybe pLanguageRef
+                    <*> pMaybe pTextMarkup
+                    <*> (pString <|> pExpl))
 
 --- Message ::= 'MESSAGE' Markup
 pMessage :: AmpParser PMessage
