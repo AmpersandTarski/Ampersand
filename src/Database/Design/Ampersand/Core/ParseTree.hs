@@ -587,9 +587,9 @@ instance Show P_Sign where
   showsPrec _ sgn =
       showString (   "[" ++ show (pSrc sgn)++"*"++show (pTgt sgn) ++ "]" )
 
-data P_Gen =  P_Cy{ gen_spc :: P_Concept         -- ^ Left hand side concept expression
+data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand file
+                  , gen_spc :: P_Concept         -- ^ Left hand side concept expression
                   , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
-                  , gen_fp ::  Origin            -- ^ Position in the Ampersand file
                   }
             | PGen{ gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept

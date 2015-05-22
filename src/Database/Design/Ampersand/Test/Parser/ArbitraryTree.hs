@@ -307,7 +307,7 @@ instance Arbitrary P_Sign where
 instance Arbitrary P_Gen where
     arbitrary =
         oneof [
-            P_Cy <$> concept <*> listOf1 arbitrary <*> arbitrary,
+            P_Cy <$> arbitrary <*> concept <*> listOf1 arbitrary,
             PGen <$> concept <*> concept <*> arbitrary
         ]
         where concept = PCpt <$> upperId

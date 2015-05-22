@@ -167,9 +167,9 @@ instance MakeMeta a => MakeMeta (P_ViewSegmt a) where
 instance MakeMeta P_Gen where
   makeMeta f gen
    = case gen of 
-      P_Cy{} -> P_Cy { gen_spc = makeMeta f (gen_spc gen)
+      P_Cy{} -> P_Cy { gen_fp  = makeMeta f (gen_fp gen)
+                     , gen_spc = makeMeta f (gen_spc gen)
                      , gen_rhs = makeMeta f (gen_rhs gen)
-                     , gen_fp  = makeMeta f (gen_fp gen)
                      }
       PGen{} -> PGen { gen_spc = makeMeta f (gen_spc gen)
                      , gen_gen = makeMeta f (gen_gen gen)

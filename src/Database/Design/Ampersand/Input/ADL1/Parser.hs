@@ -9,6 +9,7 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
+import Control.Applicative(pure)
 
 --TODO! After converting the parser to Parsec, we had to add some try-calls.
 --We gotta check the try's to see if we can refactor them, or at least pay attention to the error messages.
@@ -195,20 +196,14 @@ data PatElem = Pr (P_Rule TermPrim)
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
-pClassify = try (rebuild <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey "IS")
+pClassify = try (P_Cy <$> currPos <* pKey "CLASSIFY" <*> pConceptRef <*  pKey "IS")
                     <*> pCterm
                where
-                 rebuild po lhs rhs
-                   = P_Cy { gen_spc  = lhs             --  Left hand side concept expression
-                          , gen_rhs  = rhs             --  Right hand side concept expression
-                          , gen_fp   = po
-                          }
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
                  pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
-                 pCterm1 = single <$> pConceptRef                        <|>
+                 pCterm1 = pure   <$> pConceptRef                        <|>
                            id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
-                 single x = [x]
 
 --- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
