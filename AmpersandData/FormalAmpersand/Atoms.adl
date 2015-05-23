@@ -1,5 +1,5 @@
 CONTEXT AST IN ENGLISH LATEX
-
+-- RJ:My motivation for contributing to the documentation of files such as this is drastically reduced when any contributions I made are reverted without any comments - either in the file or or in the commit where the changes are undone.
 PURPOSE PROCESS Atoms  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
 {+Atoms are defined so that they comply with Ampersand's choice to use a representable heterogeneous relational algebra.
 -}
