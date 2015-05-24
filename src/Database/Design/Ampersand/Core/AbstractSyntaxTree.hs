@@ -34,7 +34,6 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , A_RoleRelation(..)
  , Sign(..)
  , Population(..)
- , GenR
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
@@ -46,13 +45,11 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
 )where
-import qualified Prelude
-import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..)
                                                 , SrcOrTgt(..), isSrc)
-import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
+import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
@@ -728,30 +725,5 @@ class Association rel where
   isEndo :: rel  -> Bool
   isEndo s        = source s == target s
 
-{-
-  --  a <= b means that concept a is more specific than b and b is more generic than a. For instance 'Elephant' <= 'Animal'
-  --  The generalization relation <= between concepts is a partial order.
-  --  Partiality reflects the fact that not every pair of concepts of a specification need be related.
-  --  Although meets, joins and sorting of all concepts may be meaningless, within classes of comparable concepts it is meaningfull.
-  --  See Core.Poset to see how these functions are defined for the meaningfull cases only.
-  --  Core.Poset is based and partly copied from http://hackage.haskell.org/package/altfloat-0.3.1 intended to sort floats and more
-  --  A partial order is by definition reflexive, antisymmetric, and transitive
-  --  For every concept a and b in Ampersand, the following rule holds: a<b || b<a || a==b || a <==> b || a<\=> b
-  --  Every concept drags around the same partial order represented by
-  --   + a compare function (A_Concept->A_Concept->Ordering)
-  --   + and a list of comparable classes [[A_Concept]]
--}
-type GenR = ( A_Concept -> A_Concept -> Ordering      --  gE: the ordering relation, which yields EQ, LT, GT, CP, or NC
-            , [[A_Concept]]                           --  join classes. Each class corresponds to a (scalar, binary or wide) entity later on in the database generator.
-            , [(A_Concept,A_Concept)]                 --  the smallest set of pairs that produces the ordering relation gE
-            , A_Concept -> A_Concept -> [A_Concept]   --  c `elem` (a `meets` b) means that c<=q and c<=b
-            , A_Concept -> A_Concept -> [A_Concept]   --  c `elem` (a `joins` b) means that c>=q and c>=b
-            )
-
-{- not used, but may be handy for debugging
-showOrder :: A_Concept -> String
-showOrder x = "\nComparability classes:"++ind++intercalate ind (map show classes)
- where (_,classes,_,_,_) = cptgE x; ind = "\n   "
--}
 
   
