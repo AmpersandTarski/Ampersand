@@ -32,13 +32,13 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
- , Representation(..), ConceptType(..)
+ , Representation(..), ConceptType(..), contextInfoOf
  , Sign(..)
  , Population(..)
  , GenR
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..),GenericNumber(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
+ , AAtomPair(..), AAtomValue(..),showVal,GenericNumber(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -120,7 +120,7 @@ data Pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable, Show)    -- Show for debugging purposes
+           }   deriving (Typeable)    -- Show for debugging purposes
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
@@ -501,12 +501,12 @@ data Population -- The user defined populations
              }
   | ACptPopu { popcpt :: A_Concept
              , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
-             } deriving (Show, Eq)
+             } deriving (Eq)
 
 data AAtomPair 
   = APair { apLeft  :: AAtomValue
           , apRight :: AAtomValue
-          }deriving(Show,Eq,Prelude.Ord)
+          }deriving(Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 string2AtomValue :: ConceptType -> String -> Maybe AAtomValue
@@ -547,7 +547,20 @@ data AAtomValue
             , aadateMonth :: Int
             , aadateDay   :: Int
             }
-  | AtomValueOfONE deriving (Show,Eq,Prelude.Ord)
+  | AtomValueOfONE deriving (Eq,Prelude.Ord)
+showVal :: AAtomValue -> String
+showVal val = 
+  case val of
+   AAVString{} -> aavstr val
+   AAVNumeric{} -> show (aavnum val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> showLen 4 (aadateYear val)++
+                   showLen 2 (aadateMonth val)++
+                   showLen 2 (aadateDay val)
+   AtomValueOfONE{} -> "1"
+  where
+   showLen i x =
+    replicate (i-length (show x)) '0'++show x
 data GenericNumber =
     Integer Integer
   | Rational Rational
@@ -836,4 +849,8 @@ representationOf ci cpt =
   where
     isAboutThisCpt :: Representation -> Bool 
     isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
-     
+contextInfoOf :: A_Context -> ContextInfo
+contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
+                       , ctxiRepresents = ctxreprs ctx
+                       }
+

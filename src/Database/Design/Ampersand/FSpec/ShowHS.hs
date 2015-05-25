@@ -365,7 +365,7 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomValuesOf (contextInfo fSpec) (initialPops fSpec) c))
+                    strs = map showVal (sort (atomValuesOf (contextInfo fSpec) (initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
@@ -373,7 +373,7 @@ instance ShowHS FSpec where
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
-                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
+                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showVal.apLeft) p++", "++(show.showVal.apRight) p++")"
                                                                    in showPair) ps++
                       indent'++" )"
                      ]
@@ -569,13 +569,15 @@ instance ShowHS Population where
  showHS _ indent pop
   = case pop of
       ARelPopu{} -> "ARelPopu { popdcl = "++showHSName (popdcl pop)
-          ++indent++"         , popps  = [ "++intercalate
-           (indent++"                    , ") (map show (popps pop))
+--TODOFIX
+--          ++indent++"         , popps  = [ "++intercalate
+--           (indent++"                    , ") (map show (popps pop))
           ++indent++"                    ]"
           ++indent++"         }"
       ACptPopu{} -> "ACptPopu { popcpt = "++showHSName (popcpt pop)
-          ++indent++"         , popas  = [ "++intercalate
-           (indent++"                    , ") (map show (popas pop))
+--TODOFIX
+--          ++indent++"         , popas  = [ "++intercalate
+--           (indent++"                    , ") (map show (popas pop))
           ++indent++"                    ]"
           ++indent++"         }"
 

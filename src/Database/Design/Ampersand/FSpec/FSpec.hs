@@ -28,7 +28,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , getGeneralizations, getSpecializations
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..)
+          , Language(..),AAtomValue,showVal
           ) where
           
 import Data.List
@@ -111,10 +111,10 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                 , atmVal   :: String
+                 , atmVal   :: AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where
-  showUnique a = atmVal a++" in "
+  showUnique a = showVal (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x

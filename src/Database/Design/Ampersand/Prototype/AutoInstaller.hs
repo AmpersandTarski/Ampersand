@@ -27,7 +27,7 @@ odbcinstall fSpec dsn =
       verboseLn (getOpts fSpec) "Creating tables..."
       _ <- creates conn (historyTableSpec : sessionTableSpec : [plug2TableSpec p |InternalPlug p<-plugInfos fSpec])
       verboseLn (getOpts fSpec) "Populating tables..."
-      _ <- inserts conn (vgens fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
+      _ <- inserts conn (contextInfo fSpec)(initialPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
       commit conn
       verboseLn (getOpts fSpec) "Committed."
       disconnect conn
@@ -41,20 +41,19 @@ drops conn (x:xs)  =
       drops conn xs
 
 --insert population
-inserts :: (IConnection conn) => conn -> [A_Gen] -> [Population] -> [PlugSQL] -> IO Integer
+inserts :: (IConnection conn) => conn -> ContextInfo -> [Population] -> [PlugSQL] -> IO Integer
 inserts _ _ _ [] = return 1
-inserts conn a_gens udp (plug:plugs) =
+inserts conn ci udp (plug:plugs) =
    do stmt<- prepare conn
              ("INSERT INTO "++quote (name plug)++" ("++intercalate "," [quote (fldname f)++" " |f<-plugFields plug]++")"
                                 ++" VALUES ("++placeholders(plugFields plug)++")")
-      executeMany stmt [ map toSql tblRecord | tblRecord<-tblcontents a_gens udp plug]
-      inserts conn a_gens udp plugs
+      executeMany stmt [ map (toSql.fmap showVal) tblRecord | tblRecord<-tblcontents ci udp plug]
+      inserts conn ci udp plugs
    where
    placeholders :: [a] -> String
    placeholders [] = []
    placeholders (_:[]) = "?"
    placeholders (_:xs) = "?," ++ placeholders xs
-
 --create tables
 creates :: (IConnection conn) => conn -> [TableSpec] -> IO Integer
 creates _ [] = return 1

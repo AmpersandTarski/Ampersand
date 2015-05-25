@@ -101,21 +101,25 @@ doGenProto fSpec =
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
     }
- where reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
-       reportViolations viols =
-         let ruleNamesAndViolStrings = [ (name r, showADL p) | (r,p) <- viols ]
+ where reportViolations :: [(Rule,[AAtomPair])] -> IO()
+       reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
+       reportViolations viols = 
+         let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
                           
+       showprs :: [AAtomPair] -> String
+       showprs aprs = "["++intercalate ", " (map showpr aprs)++"]"
+       showpr :: AAtomPair -> String
+       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )" 
        reportSignals []        = verboseLn (getOpts fSpec) "No signals for the initial population."
        reportSignals conjViols = verboseLn (getOpts fSpec) $ "Signals for initial population:\n" ++ intercalate "\n"
          [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
-             showADL viols
+             showprs viols
          | (conj, viols) <- conjViols
          ]
-
 ruleTest :: FSpec -> String -> IO ()
 ruleTest fSpec ruleName =
  case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
@@ -127,6 +131,6 @@ ruleTest fSpec ruleName =
                   ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
                   ; putStrLn $ showContents ruleComplement
                   }
- where showContents rule = let pairs = [ "("++srcPaire v++"," ++trgPaire v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
+ where showContents rule = let pairs = [ "("++(show.showVal.apLeft) v++"," ++(show.showVal.apRight) v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
                            in  "[" ++ intercalate ", " pairs ++ "]"
               

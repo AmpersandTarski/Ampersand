@@ -217,7 +217,7 @@ instance MetaPopulations Atom where
    [ Pop "key" "Atom" "AtomID" 
           [(uri atm, uri atm)]
    , Pop "atomvalue"  "Atom" "AtomValue"
-          [(uri atm,(show.atmVal) atm)]
+          [(uri atm,(show.showVal.atmVal) atm)]
    ]
 --instance MetaPopulations Sign where
 -- metaPops _ sgn =

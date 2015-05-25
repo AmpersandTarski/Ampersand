@@ -293,8 +293,8 @@ tblcontents ci ps plug
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       ps' -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
-                               "Looking for: '"++show a++"'.\n"++
-                               "Multiple values in one field: \n"++
-                               "  [ "++intercalate "\n  , " (map show ps')++"\n  ]")
+                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++showVal a++"'.\n"++
+                               "Multiple values in one field. \n"
+                               )
                        

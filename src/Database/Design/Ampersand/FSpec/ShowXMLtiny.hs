@@ -61,7 +61,7 @@ instance XML FSpec where
        ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh]
        ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (fSexpls f))]
               )
-          where violation2XmlTree :: (Rule,[Paire]) -> XTree
+          where violation2XmlTree :: (Rule,[AAtomPair]) -> XTree
                 violation2XmlTree (r,ps) =
                   Elem (Tag "Violation" [] )
                    (
@@ -249,11 +249,12 @@ instance XML Declaration where
       prM = decprM d
       prR = decprR d
 
-instance XML Paire where
-  mkTag p = Tag "link" atts
+instance XML AAtomPair where
+  mkTag p = Tag "pair" atts
              where
-                atts = mkAttr "from" (srcPaire p)
-                       :[mkAttr "to"   (trgPaire p)]
+                atts = [ mkAttr "left"  ((show.showVal.apLeft)  p)
+                       , mkAttr "right" ((show.showVal.apRight) p)
+                       ]
   mkXmlTree p = Elem (mkTag p) []
 
 instance XML ConceptDef where

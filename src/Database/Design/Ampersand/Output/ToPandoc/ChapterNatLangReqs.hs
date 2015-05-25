@@ -350,12 +350,12 @@ chpNatLangReqs lev fSpec =
                  ) ++
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (fsLang fSpec) dcl
-                       samplePop = (take 3 . fullContents (vgens fSpec) (initialPops fSpec) . EDcD) dcl
+                       samplePop = (take 3 . fullContents (contextInfo fSpec) (initialPops fSpec) . EDcD) dcl
                        sampleSentences =
                          [ Para $ mkSentence (development (getOpts fSpec)) dcl srcViewAtom tgtViewAtom
                          | p <-samplePop
-                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (srcPaire p)
-                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (trgPaire p)
+                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) (apLeft p)
+                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) (apRight p)
                          ] ++
                          (if null samplePop then [] else [Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\medskip"]])
 
@@ -405,22 +405,22 @@ chpNatLangReqs lev fSpec =
 -- TODO: fix showing/not showing based on relation
 -- TODO: what about relations in the target view?
 -- TODO: move these to some auxiliaries or utils
-showViewAtom :: FSpec -> Maybe Declaration -> A_Concept -> String -> String
+showViewAtom :: FSpec -> Maybe Declaration -> A_Concept -> AAtomValue -> String
 showViewAtom fSpec mDec cncpt atom =
   case mapMaybe (getView fSpec) (cncpt : largerConcepts (vgens fSpec) cncpt) of
-    []    -> atom
+    []    -> showVal atom
     view:_ -> case mDec of
               Nothing -> concatMap showViewSegment (vdats view)
               Just md -> if (not.null) [() | ViewExp objDef <- vdats view, EDcD d<-[objctx objDef], d==md]
-                         then atom
+                         then showVal atom
                          else concatMap showViewSegment (vdats view)
              -- if we are showing one of the view relations, don't expand the view
      where showViewSegment (ViewText str') = str'
            showViewSegment (ViewHtml str') = str'
            showViewSegment (ViewExp objDef) =
-             case [ trgPaire p | p <- fullContents (vgens fSpec) (initialPops fSpec) (objctx objDef), atom == srcPaire p ] of
+             case [ apRight p | p <- fullContents (contextInfo fSpec) (initialPops fSpec) (objctx objDef), atom == apLeft p ] of
                []         -> ""
-               viewAtom:_ -> viewAtom
+               viewAtom:_ -> showVal viewAtom
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]
 
 {-

@@ -89,8 +89,8 @@ quote s = "`"++s++"`"
 --          quo (c:s')    = c: quo s'
 --          quo []       = []
 -- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks
-sqlAtomQuote :: String->String
-sqlAtomQuote s = "'"++sAQ s++"'"
+sqlAtomQuote :: AAtomValue->String
+sqlAtomQuote s = "'"++sAQ (showVal s)++"'"
  where sAQ ('\'':s') = "\\'" ++ sAQ s'
        sAQ ('\\':s') = "\\\\" ++ sAQ s'
        sAQ (c:s')    = c: sAQ s'

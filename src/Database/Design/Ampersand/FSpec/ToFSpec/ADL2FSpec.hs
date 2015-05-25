@@ -83,7 +83,7 @@ makeFSpec opts context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
-              , allConceptTypes = [(c,representationOf context c) | c<-fSpecAllConcepts]
+              , allConceptTypes = [(c,representationOf contextinfo c) | c<-fSpecAllConcepts]
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
               , vgens        = gens context
@@ -98,24 +98,26 @@ makeFSpec opts context
               , allLinks     = alllinks
               , allViolations  = [ (r,vs)
                                  | r <- allrules, not (isSignal r)
-                                 , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+                                 , let vs = ruleviolations contextinfo initialpops r, not (null vs) ]
               , allExprs     = expressionsIn context
               , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
-                                         , let viols = conjunctViolations (gens context) initialpops conj
+                                         , let viols = conjunctViolations contextinfo initialpops conj
                                          , not $ null viols
                                          ]
+              , contextInfo = contextinfo
               }
    where           
+     contextinfo = contextInfoOf context
      allatoms :: [Atom]
      allatoms = nub (concatMap atoms initialpops)
        where
          atoms :: Population -> [Atom]
          atoms udp = case udp of
-           ARelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
-                       ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
+           ARelPopu{} ->  map (mkAtom ((source.popdcl) udp).apLeft) (popps udp)
+                       ++ map (mkAtom ((target.popdcl) udp).apRight) (popps udp)
            ACptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> String -> Atom
+     mkAtom :: A_Concept -> AAtomValue -> Atom
      mkAtom cpt value = 
         Atom { atmRoots = rootConcepts gs [cpt]
                , atmIn   = largerConcepts gs cpt `uni` [cpt]
@@ -126,13 +128,13 @@ makeFSpec opts context
      dclLinks :: Declaration -> [A_Pair]
      dclLinks dcl
        = [Pair   { lnkDcl   = dcl
-                 , lnkLeft  = mkAtom (source dcl) (srcPaire p) 
-                 , lnkRight = mkAtom (target dcl) (trgPaire p)
+                 , lnkLeft  = mkAtom (source dcl) (apLeft p) 
+                 , lnkRight = mkAtom (target dcl) (apRight p)
                  }
          | p <- pairsOf dcl]
      alllinks ::  [A_Pair]
      alllinks = concatMap dclLinks fSpecAllDecls
-     pairsOf :: Declaration -> Pairs
+     pairsOf :: Declaration -> [AAtomPair]
      pairsOf d = case filter theDecl initialpops of
                     []    -> []
                     [pop] -> popps pop

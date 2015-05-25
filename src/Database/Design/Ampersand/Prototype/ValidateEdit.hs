@@ -33,8 +33,8 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; putStrLn $ "Executing php script "++ phpDir </> phpScript
             ; _ <- executePHP (Just phpDir) phpScript [editScript] -- TODO: escape
             
-            ; let expectedConceptTables  = [ (c,atoms) | ACptPopu c atoms <- afterPops ]
-            ; let expectedRelationTables = [ (d,pairs) | ARelPopu d pairs <- afterPops ]
+            ; let expectedConceptTables  = [ (c,map showVal atoms) | ACptPopu c atoms <- afterPops ]
+            ; let expectedRelationTables = [ (d,map showVals pairs) | ARelPopu d pairs <- afterPops ]
             ; let actualConcepts = [ c | c<- allConcepts fSpec, c /= ONE, name c /= "SESSION" ] -- TODO: are these the right concepts and decls?
             ; let actualRelations = allDecls fSpec            --
             ; actualConceptTables <- mapM (getSqlConceptTable fSpec) actualConcepts
@@ -78,7 +78,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; return  isValid
             }
     }
-
+  where showVals p = ((showVal.apLeft) p, (showVal.apRight) p)
 createTempDatabase :: FSpec -> [Population] -> IO ()
 createTempDatabase fSpec pops =
  do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
@@ -101,13 +101,13 @@ getSqlConceptTable fSpec c =
     ; return (c, map fst atomsDummies)
     }
 
-getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [Paire])
+getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String,String)])
 getSqlRelationTable fSpec d =
  do { let query = prettySQLQuery fSpec 0 d
  
     --; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
     ; pairs <- performQuery (getOpts fSpec) tempDbName query
-    ; return (d, [mkPair src tgt | (src,tgt) <-pairs])
+    ; return (d, pairs)
     }
 -- TODO: are we going to use this data type?
 

@@ -104,7 +104,6 @@ executable ampersand
                      Database.Design.Ampersand.ADL1.Expression,
                      Database.Design.Ampersand.ADL1.Lattices,
                      Database.Design.Ampersand.ADL1.P2A_Converters,
-                     Database.Design.Ampersand.ADL1.Pair,
                      Database.Design.Ampersand.ADL1.Rule,
                      Database.Design.Ampersand.Basics,
                      Database.Design.Ampersand.Basics.Auxiliaries,
