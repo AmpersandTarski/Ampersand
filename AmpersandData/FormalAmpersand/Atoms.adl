@@ -107,9 +107,9 @@ RULE "target type" : r~;in;target |- pop
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
 --VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
-RULE "garbage" : pop |- l~;in;source \/ r~;in;target
+--RULE "garbage" : pop |- l~;in;source \/ r~;in;target
 --VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS garbage, "source type", "target type"
+ROLE ExecEngine MAINTAINS "source type", "target type"
 ENDPROCESS
 
 INTERFACE Atoms : '_SESSION'
