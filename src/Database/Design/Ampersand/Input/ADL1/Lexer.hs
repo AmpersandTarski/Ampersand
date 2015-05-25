@@ -3,6 +3,8 @@ module Database.Design.Ampersand.Input.ADL1.Lexer (
     keywords, operators, symbols, lexer
 ) where
 
+--TODO! Haddock comments to the lexer
+
 import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad

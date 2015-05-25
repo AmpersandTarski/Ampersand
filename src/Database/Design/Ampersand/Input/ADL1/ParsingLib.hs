@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.ParsingLib(
-    pSucceed, AmpParser, pIsThere, optList,
+    AmpParser, pIsThere, optList,
     -- Operators
     --TODO: Maybe we don't need to export these here
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
-    sepBy, sepBy1, many, many1, opt, try, choice,
+    sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
     -- Positions
     currPos, posOf, valPosOf,
     -- Basic parsers
@@ -20,6 +20,8 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne, pInteger
 ) where
 
+--TODO! Haddock comments to the parsing lib
+
 import Control.Monad.Identity (Identity)
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
@@ -32,10 +34,10 @@ import Text.Parsec.Pos (newPos)
 type AmpParser a = P.ParsecT [Token] FilePos Identity a
 
 -----------------------------------------------------------
--- Operators
+-- Useful functions
 -----------------------------------------------------------
 
--- TODO: Use Parsec operators
+-- TODO! Use Parsec operators
 infixl 4 <$
 (<$) :: a -> AmpParser b -> AmpParser a
 a <$ p = do { _ <- p; return a }
@@ -49,9 +51,34 @@ pIsThere p = (True <$ p) `opt` False
 optList :: AmpParser [a] -> AmpParser [a]
 optList p = p `opt` []
 
-----------------------------------------------------------------------------------
--- Functions copied from Lexer after decision to split lexer and parser
-----------------------------------------------------------------------------------
+pMaybe :: AmpParser a -> AmpParser (Maybe a)
+pMaybe p = Just CA.<$> p <|> P.parserReturn Nothing
+
+--TODO! Remove `opt` and use Parsec's option instead.
+opt ::  AmpParser a -> a -> AmpParser a
+a `opt` b = P.option b a
+
+-----------------------------------------------------------
+-- Keywords & operators
+-----------------------------------------------------------
+pKey :: String -> AmpParser String
+pKey key = match (LexKeyword key)
+
+pOperator :: String -> AmpParser String
+pOperator op = match (LexOperator op)
+
+pDash :: AmpParser String
+pDash = pOperator "-"
+
+pSemi :: AmpParser String
+pSemi = pOperator ";"
+
+pColon :: AmpParser String
+pColon = pOperator ":"
+
+-----------------------------------------------------------
+-- Token parsers
+-----------------------------------------------------------
 
 check :: (Lexeme -> Maybe a) -> AmpParser a
 check predicate = tokenPrim showTok nextPos matchTok
@@ -67,37 +94,6 @@ check predicate = tokenPrim showTok nextPos matchTok
 
 match :: Lexeme -> AmpParser String
 match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <?> show lx
-
-pSucceed :: a -> AmpParser a
-pSucceed = P.parserReturn
-
-opt ::  AmpParser a -> a -> AmpParser a
-a `opt` b = P.option b a
-
------------------------------------------------------------
--- Keywords
------------------------------------------------------------
-pKey :: String -> AmpParser String
-pKey key = match (LexKeyword key)
-
------------------------------------------------------------
--- Operators
------------------------------------------------------------
-pOperator :: String -> AmpParser String
-pOperator op = match (LexOperator op)
-
-pDash :: AmpParser String
-pDash = pOperator "-"
-
-pSemi :: AmpParser String
-pSemi = pOperator ";"
-
-pColon :: AmpParser String
-pColon = pOperator ":"
-
------------------------------------------------------------
--- Other token parsers
------------------------------------------------------------
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String

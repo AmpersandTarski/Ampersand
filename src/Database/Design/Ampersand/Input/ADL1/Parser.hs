@@ -4,6 +4,8 @@ module Database.Design.Ampersand.Input.ADL1.Parser(
     AmpParser, pContext, pPopulations, pTerm, pRule
 ) where
 
+--TODO! Haddock comments to the parser
+
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
 --TODO! Remove or at least simplify the parsing lib
@@ -113,7 +115,7 @@ pTextMarkup = ReST     <$ pKey "REST"     <|>
 --- Meta ::= 'META' String String
 pMeta :: AmpParser Meta
 pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
- where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
+ where pMetaObj = return ContextMeta -- for the context meta we don't need a keyword
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN'
 pPatternDef :: AmpParser P_Pattern
@@ -750,6 +752,3 @@ pContent = try (pBrackets (pRecord `sepBy` pComma))  <|>
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser String
 pADLid = pVarid <|> pConid <|> pString
-
-pMaybe :: AmpParser a -> AmpParser (Maybe a)
-pMaybe p = Just <$> p <|> pSucceed Nothing
