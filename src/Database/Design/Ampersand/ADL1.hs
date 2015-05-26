@@ -8,7 +8,7 @@ module Database.Design.Ampersand.ADL1
 where
 import Database.Design.Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
-         , Paire, Pairs, mkPair , srcPaire, trgPaire
+         , mkPair
          , Label(..)
          , FilePos(..), Origin(..), Pos(..), Traced(..)
          , Prop(..)
@@ -58,6 +58,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          ,A_RoleRelation(..)
          ,Population(..)
          ,Purpose(..), ExplObj(..)
+         , AAtomPair(..), AAtomValue(..),GenericNumber(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Database.Design.Ampersand.ADL1.Expression

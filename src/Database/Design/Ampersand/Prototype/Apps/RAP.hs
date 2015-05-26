@@ -301,27 +301,26 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
 
 atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
 atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
- = [ P_TRelPop { p_rnme  = rnm
+ = [ P_RelPopu { p_nmdr  = PNamedRel OriginUnknown rnm (Just rsgn)
                , p_orig  = OriginUnknown
-               , p_type  = rsgn
-               , p_popps = rpop
+               , p_popps = [] --rpop
                }
    | (rid,rnm)<-r_decnm
    , let rsgn = atlas2sign rid r_decsgn r_src r_trg r_cptnm
-   , let rpop = [makepair pid | (rid',pid)<-r_decpopu, rid==rid']
+   , let rpop = [] -- [makepair pid | (rid',pid)<-r_decpopu, rid==rid']
    ]
    ++
    [P_CptPopu { p_cnme=geta r_cptnm (fst(head cl)) (error "while geta r_cptnm for CptPopu.")
               , p_orig  = OriginUnknown
-              , p_popas=[a | (_,aid)<-cl, let a=geta r_atomvalue aid (error "while geta r_atomvalue of aid.")]
+              , p_popas=[]--[a | (_,aid)<-cl, let a=geta r_atomvalue aid (error "while geta r_atomvalue of aid.")]
               }
    | cl<-eqCl fst r_cptos, not (null cl)]
    where
-   makepair pid = mkPair src trg
-         where lid = geta r_left pid (error "while geta r_left.")
-               rid = geta r_right pid (error "while geta r_right.")
-               src = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
-               trg = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
+--   makepair pid = mkPair src trg
+--         where lid = geta r_left pid (error "while geta r_left.")
+--               rid = geta r_right pid (error "while geta r_right.")
+--               src = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
+--               trg = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
 
 atlas2decl :: AtomVal -> Int -> Lang
               -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> P_Declaration

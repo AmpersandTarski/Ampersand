@@ -28,12 +28,11 @@ module Database.Design.Ampersand.FSpec.FSpec
           , getGeneralizations, getSpecializations
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..)
+          , Language(..),AAtomValue,showVal
           ) where
           
 import Data.List
 import Data.Typeable
-import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -78,7 +77,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
-                   , allConceptDomains :: [(A_Concept,Domain)]
+                   , allConceptTypes :: [(A_Concept,ConceptType)]
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
@@ -97,10 +96,11 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
                    , allAtoms ::     [Atom]
                    , allLinks ::     [A_Pair]
-                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[Paire])]       -- ^ All invariant rules with violations.
+                   , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,[AAtomPair])]       -- ^ All invariant rules with violations.
                    , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
                    , allSigns      :: [Sign]                  -- ^ All Signs in the fSpec
+                   , contextInfo   :: ContextInfo     
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'
@@ -111,10 +111,10 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                 , atmVal   :: String
+                 , atmVal   :: AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where
-  showUnique a = atmVal a++" in "
+  showUnique a = showVal (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x

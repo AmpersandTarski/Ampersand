@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Classes
    , module Database.Design.Ampersand.Classes.ViewPoint
    ) where
 import Database.Design.Ampersand.Classes.Populated
-       (fullContents,atomsOf)
+       (fullContents,atomValuesOf)
 import Database.Design.Ampersand.Classes.ConceptStructure
        (ConceptStructure(..))
 import Database.Design.Ampersand.Classes.Relational

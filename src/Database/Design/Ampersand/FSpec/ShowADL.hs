@@ -329,54 +329,68 @@ instance ShowADL P_Population where
  showADL pop
   = "POPULATION "++name pop
   ++ case pop of
-        P_TRelPop{} -> "["++(name.pSrc.p_type) pop++"*"++(name.pTgt.p_type) pop++"]"
+        P_RelPopu{p_nmdr = PNamedRel _ _ (Just sgn)} -> "["++(name.pSrc) sgn++"*"++(name.pTgt) sgn++"]"
         _ -> ""
   ++ " CONTAINS\n"
   ++ if (case pop of
             P_RelPopu{} -> null (p_popps pop)
-            P_TRelPop{} -> null (p_popps pop)
             P_CptPopu{} -> null (p_popas pop)
         )
      then ""
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          P_RelPopu{} -> map showPaire (p_popps pop)
-                          P_TRelPop{} -> map showPaire (p_popps pop)
-                          P_CptPopu{} -> map showAtom  (p_popas pop)
-showPaire :: Paire -> String
-showPaire p = showAtom (srcPaire p)++", "++ showAtom (trgPaire p)
-instance ShowADL Paire where
- showADL p = "("++showAtom (srcPaire p)++","++ showAtom (trgPaire p)++")"
-instance ShowADL Pairs where
+                          P_RelPopu{} -> map showPPaire (p_popps pop)
+                          P_CptPopu{} -> map showPAtom  (p_popas pop)
+showPPaire :: PAtomPair -> String
+showPPaire p = showPAtom (ppLeft p)++", "++ showPAtom (ppRight p)
+showAPaire :: AAtomPair -> String
+showAPaire p = showADL (apLeft p)++", "++ showADL (apRight p)
+instance ShowADL PAtomPair where
+ showADL p = "("++showPAtom (ppLeft p)++","++ showPAtom (ppRight p)++")"
+instance ShowADL [PAtomPair] where
  showADL ps = "["++intercalate ", " (map showADL ps)++"]"
   
 instance ShowADL Population where
  showADL pop
   = "POPULATION "
   ++ case pop of
-        PRelPopu{} -> (name.popdcl) pop++(show.sign.popdcl) pop
-        PCptPopu{} -> (name.popcpt) pop
+        ARelPopu{} -> (name.popdcl) pop++(show.sign.popdcl) pop
+        ACptPopu{} -> (name.popcpt) pop
   ++ " CONTAINS\n"
   ++ if (case pop of
-            PRelPopu{} -> null (popps pop)
-            PCptPopu{} -> null (popas pop)
+            ARelPopu{} -> null (popps pop)
+            ACptPopu{} -> null (popas pop)
         )
      then ""
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          PRelPopu{} -> map showPaire (popps pop)
-                          PCptPopu{} -> map showAtom  (popas pop)
+                          ARelPopu{} -> map showAPaire (popps pop)
+                          ACptPopu{} -> map showADL (popas pop)
 
--- showADL (PRelPopu r pairs)
+-- showADL (ARelPopu r pairs)
 --  = "POPULATION "++showADL r++" CONTAINS\n"++
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
-showAtom :: String -> String
-showAtom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
+showPAtom :: PAtomValue -> String
+showPAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
+  where x = case at of
+              PAVString _ str -> str
+--              PAVNumeric (Original str) -> str
+--              PAVBoolean b -> show b
+instance ShowADL AAtomValue where
+ showADL at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
+  where x = case at of
+              AAVString _ str -> str
+              AAVNumeric _ (Integer i) -> show i
+              AAVNumeric _ (Rational r) -> show r
+              AAVBoolean _ b -> show b
+              AAVDate{} -> fshow 4 (aadateYear at)++"-"++fshow 2 (aadateMonth at)++"-"++fshow 2 (aadateDay at)
+              AtomValueOfONE -> "1"
+        fshow len int = reverse . take len . reverse $ show int ++ repeat '0'
 instance ShowADL TermPrim where
  showADL (PI _)                                   = "I"
  showADL (Pid _ c)                                = "I["++showADL c++"]"

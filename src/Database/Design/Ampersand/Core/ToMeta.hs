@@ -230,16 +230,11 @@ instance MakeMeta PMessage where
 instance MakeMeta P_Population where
   makeMeta f pop 
    = case pop of
-      P_RelPopu{} -> P_RelPopu { p_rnme  =          f (p_rnme pop)
+      P_RelPopu{} -> P_RelPopu { p_nmdr  = makeMeta f (p_nmdr pop)
                                , p_orig  = makeMeta f (p_orig pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }
-      P_TRelPop{} -> P_TRelPop { p_rnme  =          f (p_rnme pop)
-                               , p_type  = makeMeta f (p_type pop)
-                               , p_orig  = makeMeta f (p_orig pop)
-                               , p_popps = makeMeta f (p_popps pop)
-                               }
-      P_CptPopu{} -> P_CptPopu { p_cnme  =          f (p_rnme pop)
+      P_CptPopu{} -> P_CptPopu { p_cnme  =          f (p_cnme pop)
                                , p_orig  = makeMeta f (p_orig pop)
                                , p_popas =            (p_popas pop)
                                }
@@ -317,7 +312,7 @@ instance MakeMeta P_NamedRel where
   makeMeta f (PNamedRel o nm      sgn)
             = PNamedRel o (f nm) (makeMeta f sgn)
    
-instance MakeMeta Paire where
+instance MakeMeta PAtomPair where
   makeMeta _ = id
 instance MakeMeta Origin where
   makeMeta _ = id

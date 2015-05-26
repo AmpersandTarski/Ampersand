@@ -8,7 +8,9 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
-  , mkIncompatibleViewError, mkOtherAtomInSessionError, mkMultipleRepresentationsForConceptError
+  , mkIncompatibleViewError, mkOtherAtomInSessionError
+  , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
+  , mkUnmatchedAtomValue
   , Guarded(..)
   , whenCheckedIO
   , unguard
@@ -120,6 +122,11 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> String -- the reference itself. eg. "Rule 42"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
+mkUnmatchedAtomValue :: ConceptType  -> PAtomValue -> CtxError
+mkUnmatchedAtomValue ct val = 
+ case val of 
+  (PAVString orig str) ->
+      CTXE orig $ "Unmatched value: `"++str++"` does not match "++show ct++"."
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
@@ -140,6 +147,12 @@ mkMultipleRepresentationsForConceptError cpt rs =
                ++(intercalate ", " . map show . nub . map reprdom) rs ++
                   concatMap (("\n    "++ ) . show . origin ) rs
     _ -> fatal 142 "There are no multiple representations."
+
+mkIncompatibleAtomValueError :: PAtomValue -> ConceptType -> A_Concept -> CtxError
+mkIncompatibleAtomValueError pav t cpt=
+  case pav of 
+    PAVString o str -> CTXE o $ show str++" isn't a valid "++show t++
+                                ", which is the type of "++name cpt++"."
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
@@ -165,9 +178,9 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
                          ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
 
-mkOtherAtomInSessionError :: String -> CtxError
+mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
-  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++atomValue++"`."
+  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++showADL atomValue++"`."
   
 class ErrorConcept a where
   showEC :: a -> String

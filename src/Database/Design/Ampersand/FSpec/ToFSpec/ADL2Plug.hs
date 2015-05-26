@@ -5,7 +5,7 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   ,representationOf)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-import GHC.Exts (sortWith,groupWith)
+import GHC.Exts (sortWith)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.ShowADL
@@ -52,7 +52,7 @@ makeGeneratedSqlPlugs opts context totsurs entityDcls = gTables
         gPlugs   = makeEntityTables opts context entityDcls (gens context) (ctxgenconcs context) (relsUsedIn vsqlplugs)
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
-        gLinkTables = [ makeLinkTable context dcl totsurs
+        gLinkTables = [ makeLinkTable (contextInfoOf context) dcl totsurs
                       | dcl<-entityDcls
                       , Inj `notElem` multiplicities dcl
                       , Uni `notElem` multiplicities dcl]
@@ -72,8 +72,8 @@ makeGeneratedSqlPlugs opts context totsurs entityDcls = gTables
 -- a relation r (or r~) is stored in the trgFld of this plug
 
 -- | Make a binary sqlplug for a relation that is neither inj nor uni
-makeLinkTable :: A_Context -> Declaration -> [Expression] -> PlugSQL
-makeLinkTable context dcl totsurs =
+makeLinkTable :: ContextInfo -> Declaration -> [Expression] -> PlugSQL
+makeLinkTable ci dcl totsurs =
   case dcl of
     Sgn{}
      | isInj dcl || isUni dcl
@@ -84,8 +84,8 @@ makeLinkTable context dcl totsurs =
              , columns = ( -- The source field:
                            Fld { fldname = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , fldexpr = srcExpr
-                               , fldtype = domain2SqlType   . representationOf context . source $ srcExpr
-                               , flduse  = if suitableAsKey . representationOf context . source $ srcExpr
+                               , fldtype = conceptType2SqlType . representationOf ci . source $ srcExpr
+                               , flduse  = if suitableAsKey . representationOf ci . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
                                , fldnull = isTot trgExpr
@@ -94,8 +94,8 @@ makeLinkTable context dcl totsurs =
                          , -- The target field:
                            Fld { fldname = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , fldexpr = trgExpr
-                               , fldtype = domain2SqlType   . representationOf context . target $ trgExpr
-                               , flduse  = if suitableAsKey . representationOf context . target $ trgExpr
+                               , fldtype = conceptType2SqlType . representationOf ci . target $ trgExpr
+                               , flduse  = if suitableAsKey . representationOf ci . target $ trgExpr
                                            then ForeignKey (target trgExpr)
                                            else PlainAttr
                                , fldnull = isSur trgExpr
@@ -125,11 +125,11 @@ unquote str
   | head str == '"' && last str == '"' = reverse . tail . reverse .tail $ str 
   | otherwise = str
       
-suitableAsKey :: Domain -> Bool
+suitableAsKey :: ConceptType -> Bool
 suitableAsKey st =
   case st of
     Alphanumeric     -> True
-    BigAlphanumeric  -> True
+    BigAlphanumeric  -> False
     HugeAlphanumeric -> False
     Password         -> False
     Binary           -> False
@@ -140,7 +140,7 @@ suitableAsKey st =
     Boolean          -> True
     Numeric          -> True
     AutoIncrement    -> True
-    DomainOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
+    TypeOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
 -----------------------------------------
 --rel2fld
 -----------------------------------------
@@ -159,22 +159,22 @@ suitableAsKey st =
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
 
 -- | Create field for TblSQL or ScalarSQL plugs
-rel2fld :: A_Context
+rel2fld :: ContextInfo
         -> [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r)) that may be represented as attributes of this entity.
         -> [Expression] -- ^ all relations (in the form either EDcD r or EFlp (EDcD r)) that are defined as attributes by the user.
         -> Expression   -- ^ either EDcD r, EDcI c or EFlp (EDcD r), representing the relation from some kernel field k1 to f1
         -> SqlField
-rel2fld context
+rel2fld ci
         kernel
         plugAtts
         e
  = Fld { fldname = fldName
        , fldexpr = e
-       , fldtype = domain2SqlType (representationOf context (target e))
+       , fldtype = conceptType2SqlType (representationOf ci (target e))
        , flduse  =
           let f expr =
                  case expr of
-                    EDcI c   -> if suitableAsKey (representationOf context c)
+                    EDcI c   -> if suitableAsKey (representationOf ci c)
                                 then TableKey ((not.maybenull) e) c
                                 else PlainAttr
                     EDcD _   -> PlainAttr
@@ -298,7 +298,7 @@ makeEntityTables :: Options
                 -> [PlugSQL]
 makeEntityTables opts context allDcls isas conceptss exclusions
  = sortWith ((0-).length.plugFields)
-    (map kernel2Plug kernelsWithAttributes)
+    (map (kernel2Plug (contextInfoOf context)) kernelsWithAttributes)
    where
     diagnostics
       = "\nallDcls:" ++     concat ["\n  "++showHSName r           | r<-allDcls]++
@@ -340,8 +340,8 @@ makeEntityTables opts context allDcls isas conceptss exclusions
            where (attsOfK,otherAtts) = partition belongsInK atts
                  belongsInK att = source att `elem` kernel
     -- | converts a kernel into a plug
-    kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
-    kernel2Plug (kernel, attsAndIsaRels)
+    kernel2Plug :: ContextInfo -> ([A_Concept],[Expression]) -> PlugSQL
+    kernel2Plug ci (kernel, attsAndIsaRels)
      =  TblSQL
              { sqlname = unquote . name . head $ kernel -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
              , fields  = map fld plugMors      -- Each field comes from a relation.
@@ -354,14 +354,22 @@ makeEntityTables opts context allDcls isas conceptss exclusions
                   isISA _        = False
           mainkernel = map EDcI kernel
           plugMors :: [Expression]
-          plugMors = mainkernel++atts
+          plugMors = let exprs = mainkernel++atts in
+                     if (suitableAsKey . representationOf ci . target . head) exprs
+                     then exprs
+                     else -- TODO: make a nice user error of the following:
+                          fatal 360 $ "The concept `"++(name .target .head) exprs++"` would be used as primary key of its table. \n"
+                                     ++"  However, its representation ("
+                                     ++(show . representationOf ci . target . head) exprs
+                                     ++") is not suitable as a key." 
+                     
           conceptLookuptable :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r) | r <-mainkernel]
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
                                   [(e,lookupC (source e),fld e) | e <-plugMors]
           lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-          fld a                 = rel2fld context mainkernel atts a
+          fld a                 = rel2fld (contextInfoOf context) mainkernel atts a
           isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]
     -- attRels contains all relations that will be attribute of a kernel.
     -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
@@ -400,7 +408,7 @@ makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeUserDefinedSqlPlug context obj
  | null(attributes obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = unquote . name $ obj
-                , sqlColumn = rel2fld context [EDcI c] [] (EDcI c)
+                , sqlColumn = rel2fld (contextInfoOf context) [EDcI c] [] (EDcI c)
                 , cLkp      = c
                 }
  | null(attributes obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
@@ -436,15 +444,15 @@ makeUserDefinedSqlPlug context obj
      = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
    plugfields            = [fld r tp | (r,tp)<-plugMors]
-   fld r tp              = (rel2fld context (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype
+   fld r tp              = (rel2fld (contextInfoOf context) (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
    sqltp _ = fatal 448 "The Sql type of a user defined plug has bitrotteted. The syntax should support a Representation."
 
-domain2SqlType :: Domain -> SqlType
-domain2SqlType dom 
+conceptType2SqlType :: ConceptType -> SqlType
+conceptType2SqlType dom 
  = case dom of
      Alphanumeric     -> SQLVarchar 255
      BigAlphanumeric  -> SQLText
@@ -458,20 +466,5 @@ domain2SqlType dom
      Boolean          -> SQLBool
      Numeric          -> SQLFloat
      AutoIncrement    -> SQLSerial
-     DomainOfOne      -> fatal 461 $ "ONE is not represented in SQL" 
-representationOf :: A_Context -> A_Concept -> Domain
-representationOf context cpt = 
-  case cpt of 
-    ONE -> DomainOfOne
-    PlainConcept{}
-        ->  case groupWith reprdom . filter isAboutThisCpt . ctxreprs $ context of
-              [] ->  Alphanumeric  --The default value, when no representation is specified
-              [rs] -> case rs of   
-                         []  -> fatal 498 "This should be impossible with groupWith"
-                         r: _ ->reprdom r
-              _ -> fatal 500 $ "There are multiple Domains for "++show cpt++". That should have been checked earlier!"
-  where
-    isAboutThisCpt :: Representation -> Bool 
-    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
+     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
 
-    

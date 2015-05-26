@@ -77,10 +77,9 @@ rapfiles opts usrfiles
 type RAPRelation = (String,String,String)
 makepopu :: RAPRelation -> [(ConceptIdentifier,ConceptIdentifier)] -> P_Population
 makepopu (r,src,trg) xys
- = P_TRelPop
-         { p_rnme  = r
+ = P_RelPopu
+         { p_nmdr  = PNamedRel (Origin "RAPImport.hs") r (Just (P_Sign (PCpt src) (PCpt trg)))
          , p_orig  = Origin "RAPImport.hs"
-         , p_type  = P_Sign (PCpt src) (PCpt trg)
          , p_popps = [mkPair (getid x) (getid y) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
          }
 
@@ -330,8 +329,8 @@ makeRAPPops fSpec usrfiles pics
    userdeclarations = filter decusr (relsDefdIn fSpec)
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (island,x)
    atoms = [(island , c , x)
-           | island<-islands, c<-island, x<-atomsOf (initialPops fSpec) c
-           , x `notElem` concat [atomsOf (initialPops fSpec) s | s<-island, s < c]]
+           | island<-islands, c<-island, x<-atomValuesOf (initialPops fSpec) c
+           , x `notElem` concat [atomValuesOf (initialPops fSpec) s | s<-island, s < c]]
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
    isanm island = intercalate "/" (map name (maxima island))
    --get the concept from the fSpec, not the isa-order, because the one in the isa-order is not populated

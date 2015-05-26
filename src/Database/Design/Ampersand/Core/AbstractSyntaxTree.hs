@@ -32,12 +32,13 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
- , Representation(..), Domain(..)
+ , Representation(..), ConceptType(..), contextInfoOf
  , Sign(..)
  , Population(..)
  , GenR
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
+ , AAtomPair(..), AAtomValue(..),showVal,GenericNumber(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -51,8 +52,8 @@ import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
-                                                , PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), Domain(..)
+                                                , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
+                                                , SrcOrTgt(..), isSrc , Representation(..), ConceptType(..)
                                                 )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
@@ -62,7 +63,8 @@ import Data.List (intercalate,nub,delete)
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
-
+import Data.Char (toUpper)
+import Text.Read
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
 
@@ -118,7 +120,7 @@ data Pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable, Show)    -- Show for debugging purposes
+           }   deriving (Typeable)    -- Show for debugging purposes
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
@@ -494,13 +496,82 @@ instance Traced Purpose where
   origin = explPos
 
 data Population -- The user defined populations
-  = PRelPopu { popdcl :: Declaration
-             , popps ::  Pairs     -- The user-defined pairs that populate the relation
+  = ARelPopu { popdcl :: Declaration
+             , popps ::  [AAtomPair]     -- The user-defined pairs that populate the relation
              }
-  | PCptPopu { popcpt :: A_Concept
-             , popas ::  [String]  -- The user-defined atoms that populate the concept
-             } deriving (Show, Eq)
+  | ACptPopu { popcpt :: A_Concept
+             , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
+             } deriving (Eq)
 
+data AAtomPair 
+  = APair { apLeft  :: AAtomValue
+          , apRight :: AAtomValue
+          }deriving(Eq,Prelude.Ord)
+mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
+mkAtomPair = APair
+string2AtomValue :: ConceptType -> String -> Maybe AAtomValue
+string2AtomValue dom str
+  = case dom of 
+     Alphanumeric     -> Just (AAVString Alphanumeric str) 
+     BigAlphanumeric  -> Just (AAVString BigAlphanumeric str)
+     HugeAlphanumeric -> Just (AAVString HugeAlphanumeric str)
+     Password         -> Just (AAVString Password str)
+     Binary           -> Nothing
+     BigBinary        -> Nothing
+     HugeBinary       -> Nothing
+     Date             -> Nothing
+     DateTime         -> Nothing
+     Boolean 
+           | map toUpper str `elem` ["TRUE", "YES","WAAR", "JA", "WEL"]      -> Just (AAVBoolean Boolean True)
+           | map toUpper str `elem` ["FALSE", "NO", "ONWAAR", "NEE", "NIET"] -> Just (AAVBoolean Boolean False)
+           | otherwise -> Nothing
+     Numeric          -> case readEither str of 
+                           Right i -> Just (AAVNumeric Numeric (Integer i))
+                           Left _  -> case readEither str of
+                                       Right r -> Just (AAVNumeric Numeric (Rational r))
+                                       Left _  -> Nothing
+     AutoIncrement    -> Nothing
+     TypeOfOne        -> Nothing
+data AAtomValue
+  = AAVString  { aavdom :: ConceptType
+               , aavstr :: String
+               }
+  | AAVNumeric { aavdom :: ConceptType
+               , aavnum :: GenericNumber
+               }
+  | AAVBoolean { aavdom :: ConceptType
+               , aavbool :: Bool
+               }
+  | AAVDate { aavdom :: ConceptType
+            , aadateYear ::  Int
+            , aadateMonth :: Int
+            , aadateDay   :: Int
+            }
+  | AtomValueOfONE deriving (Eq,Prelude.Ord)
+showVal :: AAtomValue -> String
+showVal val = 
+  case val of
+   AAVString{} -> aavstr val
+   AAVNumeric{} -> show (aavnum val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> showLen 4 (aadateYear val)++
+                   showLen 2 (aadateMonth val)++
+                   showLen 2 (aadateDay val)
+   AtomValueOfONE{} -> "1"
+  where
+   showLen i x =
+    replicate (i-length (show x)) '0'++show x
+data GenericNumber =
+    Integer Integer
+  | Rational Rational
+ {- | Double Double -} -- not yet implemented
+     deriving (Show, Prelude.Ord)
+instance Eq GenericNumber where  -- This might need rethinking! see https://wiki.haskell.org/Generic_number_type
+ Integer a  == Integer b  = a            == b
+ Integer a  == Rational b = toRational a == b
+ Rational a == Rational b = a            == b
+ Rational a == Integer b  = Integer b == Rational a -- the opposite condition
+ 
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
              | ExplRule String
@@ -757,4 +828,29 @@ showOrder x = "\nComparability classes:"++ind++intercalate ind (map show classes
  where (_,classes,_,_,_) = cptgE x; ind = "\n   "
 -}
 
-  
+-- Convenient data structure to hold information about concepts and their populations
+--  in a context. 
+data ContextInfo =
+  CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
+     , ctxiRepresents :: [Representation] -- a list containing all user defined Representations in the context
+     }
+representationOf :: ContextInfo -> A_Concept -> ConceptType
+representationOf ci cpt = 
+-- TODO: Fix this function, to take care of classifications
+  case cpt of 
+    ONE -> TypeOfOne
+    PlainConcept{}
+        ->  case eqCl reprdom . filter isAboutThisCpt . ctxiRepresents $ ci of
+              [] ->  Alphanumeric  --The default value, when no representation is specified
+              [rs] -> case rs of   
+                         []  -> fatal 498 "This should be impossible with eqClass"
+                         r: _ ->reprdom r
+              _ -> fatal 500 $ "There are multiple ConceptTypes for "++show cpt++". That should have been checked earlier!"
+  where
+    isAboutThisCpt :: Representation -> Bool 
+    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
+contextInfoOf :: A_Context -> ContextInfo
+contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
+                       , ctxiRepresents = ctxreprs ctx
+                       }
+

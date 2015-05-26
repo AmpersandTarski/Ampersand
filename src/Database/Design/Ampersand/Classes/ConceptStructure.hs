@@ -31,14 +31,16 @@ class ConceptStructure a where
   expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a
   
   -- | mp1Pops draws the population from singleton expressions.
-  mp1Pops :: a -> [Population]
-  mp1Pops struc
-   = [ PCptPopu{ popcpt = cpt (head cl)
+  mp1Pops :: ContextInfo -> a -> [Population]
+  mp1Pops ci struc
+   = [ ACptPopu{ popcpt = cpt (head cl)
                , popas = map atm cl } 
      | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
      where cpt (EMp1 _ c) = c
            cpt _          = fatal 31 "cpt error"
-           atm (EMp1 a _) = a
+           atm (EMp1 a c) = case string2AtomValue (representationOf ci c) a of
+                             Just av -> av
+                             Nothing -> fatal 43 "Could not convert the string. That should have been checked earlier."
            atm _          = fatal 31 "atm error"
            
 prim2rel :: Expression -> Declaration
@@ -172,8 +174,8 @@ instance ConceptStructure (PairView Expression) where
   expressionsIn (PairView ps) = expressionsIn ps
 
 instance ConceptStructure Population where
-  concs pop@PRelPopu{} = concs (popdcl pop)
-  concs pop@PCptPopu{} = concs (popcpt pop)
+  concs pop@ARelPopu{} = concs (popdcl pop)
+  concs pop@ACptPopu{} = concs (popcpt pop)
   expressionsIn _    = []
 
 instance ConceptStructure Purpose where
