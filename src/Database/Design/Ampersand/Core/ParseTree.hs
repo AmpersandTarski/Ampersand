@@ -312,15 +312,15 @@ instance Traced TermPrim where
    Pfull orig _ _ -> orig
    PNamedR r      -> origin r
    
-instance Named TermPrim where
- name e = case e of
-   PI _        -> "I"
-   Pid _ _     -> "I"
-   Patm _ s _  -> s
-   PVee _      -> "V"
-   Pfull _ _ _ -> "V"
-   PNamedR r   -> name r
-   
+--instance Named TermPrim where
+-- name e = case e of
+--   PI _        -> "I"
+--   Pid _ _     -> "I"
+--   Patm _ s _  -> s
+--   PVee _      -> "V"
+--   Pfull _ _ _ -> "V"
+--   PNamedR r   -> name r
+--   
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
 
