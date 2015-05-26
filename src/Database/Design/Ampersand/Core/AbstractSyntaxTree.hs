@@ -838,7 +838,7 @@ representationOf :: ContextInfo -> A_Concept -> ConceptType
 representationOf ci cpt = 
 -- TODO: Fix this function, to take care of classifications
   case cpt of 
-    ONE -> fatal 493 "ONE has no representation, or does it?"
+    ONE -> TypeOfOne
     PlainConcept{}
         ->  case eqCl reprdom . filter isAboutThisCpt . ctxiRepresents $ ci of
               [] ->  Alphanumeric  --The default value, when no representation is specified

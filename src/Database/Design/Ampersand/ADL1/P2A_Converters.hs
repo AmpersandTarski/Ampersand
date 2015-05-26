@@ -133,13 +133,13 @@ checkOtherAtomsInSessionConcept gCtx =
      Checked ctx -> case [mkOtherAtomInSessionError atom
                          | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
                          , name cpt == "SESSION"
-                         , atom <- filter isTheOnlyPermittedSessionValue (popas pop)
+                         , atom <- filter isPermittedSessionValue (popas pop)
                          ] of
                       [] -> gCtx
                       errs -> Errors errs
-        where isTheOnlyPermittedSessionValue :: AAtomValue -> Bool
-              isTheOnlyPermittedSessionValue (AAVString _ str) = str == "_SESSION"
-              isTheOnlyPermittedSessionValue _                 = False
+        where isPermittedSessionValue :: AAtomValue -> Bool
+              isPermittedSessionValue (AAVString _ str) = str == "_SESSION" || str == "'_SESSION'" --TODO: Remove one of these, elaborate on string values
+              isPermittedSessionValue _                 = False
 checkMultipleRepresentationsOfConcepts :: Guarded A_Context -> Guarded A_Context
 checkMultipleRepresentationsOfConcepts gCtx =
    case gCtx of 
