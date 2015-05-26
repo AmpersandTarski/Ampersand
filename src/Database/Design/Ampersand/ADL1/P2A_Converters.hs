@@ -253,10 +253,10 @@ pCtx2aCtx' _
     decls = case f of
              Checked ds -> ds
              Errors err -> fatal 253 $ "there are errors."++show err
-      where f = (\declsWithPops pats 
-                  -> map fst declsWithPops ++ concatMap ptdcs pats
-                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) p_declarations
-                  <*> traverse pPat2aPat (p_patterns ++ p_processes)
+      where f = (\declsWithPops -- pats 
+                  -> map fst declsWithPops -- ++ concatMap ptdcs pats
+                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) (p_declarations  ++ concatMap pt_dcs (p_patterns ++ p_processes))
+            --      <*> traverse pPat2aPat (p_patterns ++ p_processes)
 
 
 --    dclPops= ctxDclPops++patDclPops
