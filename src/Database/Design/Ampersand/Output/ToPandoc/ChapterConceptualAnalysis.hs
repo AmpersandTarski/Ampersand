@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Output.PandocAux
 import Data.List (intersperse )
 
 fatal :: Int -> String -> a
