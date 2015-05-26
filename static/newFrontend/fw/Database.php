@@ -94,7 +94,7 @@ class Database
 		}
 		Notifications::addLog('========= END OF INSTALLER ==========');
 		
-		$this->closeTransaction('Database reset to initial state', true);
+		$this->closeTransaction('Database reset to initial state', true, true, false);
 	}
 	
 	/*

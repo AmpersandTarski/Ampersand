@@ -54,7 +54,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                      , declsInScope :: [Declaration]
                      , concsInScope :: [A_Concept]
                      , cDefsInScope :: [ConceptDef]
-                     , gensInScope  :: [A_Gen]
+                     , gensInScope ::  [A_Gen]
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
@@ -97,9 +97,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allAtoms ::     [Atom]
                    , allLinks ::     [A_Pair]
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations ::  [(Rule,[AAtomPair])]       -- ^ All invariant rules with violations.
-                   , allExprs      :: [Expression]            -- ^ All expressions in the fSpec
-                   , allSigns      :: [Sign]                  -- ^ All Signs in the fSpec
+                   , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
+                   , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
+                   , allSigns ::     [Sign]                   -- ^ All Signs in the fSpec
                    , contextInfo   :: ContextInfo     
                    } deriving Typeable
 instance Eq FSpec where
@@ -110,7 +110,7 @@ metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
-                 , atmIn    :: [A_Concept] -- all concepts the atom is in. (Based on generalizations)
+                 , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
                  , atmVal   :: AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where

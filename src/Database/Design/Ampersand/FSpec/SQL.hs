@@ -574,7 +574,7 @@ selectDeclaration fSpec dcl =
 
 
 selectExists, selectNotExists
-     :: TableRef      -- ^ tables
+     :: TableRef        -- ^ tables
      -> Maybe ValueExpr -- ^ the (optional) WHERE clause
      -> ValueExpr
 selectNotExists tbl whr = PrefixOp [Name "NOT"] $ selectExists tbl whr
@@ -600,9 +600,9 @@ data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source field and table
                          , bseTbl :: [TableRef]      -- ^ tables
                          , bseWhr :: Maybe ValueExpr -- ^ the (optional) WHERE clause
                          }
-                  | BCQE { bcqeOper :: CombineOp      -- ^ The combine operator 
-                         , bcqe0    :: BinQueryExpr    -- ^ Left  expression
-                         , bcqe1    :: BinQueryExpr    -- ^ Right expression
+                  | BCQE { bcqeOper :: CombineOp     -- ^ The combine operator 
+                         , bcqe0 ::    BinQueryExpr  -- ^ Left  expression
+                         , bcqe1 ::    BinQueryExpr  -- ^ Right expression
                          }
                   | BQEComment [Comment] BinQueryExpr
                                

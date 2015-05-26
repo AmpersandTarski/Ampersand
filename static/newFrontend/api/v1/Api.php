@@ -233,7 +233,7 @@ class Api{
 			$atom = new Atom($atomId, $concept);
 			if(!$atom->atomExists()) throw new Exception("Atom '$atomId' not created", 500);
 			
-			return array_values($atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
+			return array_values((array)$atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());

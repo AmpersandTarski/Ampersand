@@ -36,7 +36,7 @@ class ExecEngine {
 				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 			}
 		}else{
-			Notifications::addError("ExecEngine role '" . self::$roleName . "'not found.");
+			Notifications::addInfo("ExecEngine role '" . self::$roleName . "' not found.");
 		}
 		
 		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------');

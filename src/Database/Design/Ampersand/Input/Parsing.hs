@@ -24,7 +24,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
 
 -- Parse an Ampersand file and all transitive includes
-parseADL  :: Options -> FilePath -> IO (Guarded P_Context)
+parseADL ::  Options -> FilePath -> IO (Guarded P_Context)
 parseADL opts filePath =
   whenCheckedIO (parseSingleADL opts filePath) $ \(ctxt, filePaths) ->
     whenCheckedIO (parseADLs opts [filePath] filePaths) $ \ctxts ->

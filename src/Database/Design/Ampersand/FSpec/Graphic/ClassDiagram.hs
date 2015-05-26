@@ -459,7 +459,7 @@ data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the
                                , assmean ::    Maybe A_Markup   -- ^ meaning, if available.
                                } deriving Show
 data Aggregation    = OOAggr   { aggDel :: Deleting             --
-                               , aggChild  :: A_Concept         --
+                               , aggChild ::  A_Concept         --
                                , aggParent :: A_Concept         --
                                } deriving (Show, Eq)
 data Generalization = OOGener  { genAgen :: A_Gen               --

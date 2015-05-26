@@ -1,11 +1,16 @@
 --[Introduction]--
-This is the README file for the plugin 'ImportExcelFiles', which allows you to import a population into a (running) Ampersand prototype, where this population is specified in an Excel file.
+This is the README file for the 'ImportExcelFiles' frontend extension, which allows you to import a population into a (running) Ampersand prototype, where this population is specified in an Excel file.
 
---[Plugin installation]--
-This is done automatically [Michiel: please verify!] 
+This README applies to the Ampersand tooling in the new framework (at least from May 2015)
 
---[Plugin use]--
-When you have a prototype running for an Ampersand context, you can import data for that prototype from an Excel file, which effectively adds the population specified in the Excel file to the population that is currently already in the database.
+--[Installation]--
+Nothing special is required for installation; this extension is enabled by default 
+
+In the menu bar, there are some icons at the right hand side. One of them is a square containing 3x3 squares. This is the selector for extensions. Click on the icon, and select the extension 'Excel Import'.
+A page is shown in which you may specify excel files and upload them. This is quite self-explanatory.
+
+--[Using the extension]--
+When you have a prototype running for an Ampersand context, you can import data for that prototype from an Excel file, which effectively adds the population specified in the Excel file to the population that is currently already in the database. This section describes how to construct an Excel file that can be used to do this.
 
 Let us consider a small (useless) Ampersand model, defined as follows:
 
@@ -14,7 +19,8 @@ Let us consider a small (useless) Ampersand model, defined as follows:
    rAC :: A*C
    sAB :: A->B
 
-A usable Excel file consists of one Excel page (tab), that contains a sequence of so-called 'blocks'.
+A usable Excel file consists of a single Excel page (tab, i.e. the first page/tab).
+This page contains a sequence of so-called 'blocks'.
 Here is an example for the above defined model (the '|' character denotes a cell boundary and any (sequence of) adjacent spaces are here for readability and should not be entered in a real excel file):
 
   | [A's] |  rAA  |  rAB  |  rAC  |  rAC  |  rAC  |  sAB  |
@@ -27,16 +33,17 @@ Here is an example for the above defined model (the '|' character denotes a cell
 A 'block' consists of 2 header rows followed by lines of data. A 'block' terminates whenever a next block starts or the end of file is reached. Empty lines are disregarded.
 
 Every cell in the leftmost column whose contents starts with the character '[' is the first cell in the first header row of a block.
-The contents of this cell is further disregarded. Subsequent cells in the first header row must either be empty, or  names of relations that are known in your Ampersand model.
+The contents of this cell is further disregarded. Subsequent cells in the first header row must either be empty, or contain the name of a relations that is known in your Ampersand model.
 
 The second header row only contains names of concepts, or empty cells. 
 The first cell (in the second header row) must contain the source (left) concept of all relations specified in the first header row.
 In the example, all relations in the first header row have source concept 'A'
 Every subsequent cell (in the second header row) must either be empty or contain the target (right) concept of the relation that is specified in the same column in the first header row.
 
-Every subsequent row in this block is called a data row. Cells in a data row are either empty or non-empty. If a non-empty cell contains a formula, this formula is evaluated to obtain the cell contents. If a non-empty does not contain a formula, its contents is obtained as is. From here on, when we talk about 'the contents of a cell', the obtained value from (evaluating the expressin in) that cell is meant. 
+Every subsequent row in this block is called a data row. Cells in a data row are either empty or non-empty. If a non-empty cell contains a formula, this formula is evaluated to obtain the cell contents. If a non-empty does not contain a formula, its contents is obtained as is. From here on, when we talk about 'the contents of a cell', the obtained value from (evaluating the expressin in) that cell is meant.
+
 Data rows are interpreted as follows:
-- When the first cell in a data row is empty, the content of all other cells in that row is disregarded (you may use it as comment fields)
+- When the first cell in a data row is empty, the content of all other cells in that row is disregarded (you may use such cells to include comments, computations, or whatever else you like)
 - When the first cell in a data row is not empty, the content of all other non-empty cells and the content of the first cell may define a pair (srcAtom,tgtAtom) that is to be inserted into the population of the Ampersand model, where
   - 'srcAtom' is the contents of the first cell
   - 'tgtAtom' is the contents of a non-empty cell
@@ -66,10 +73,14 @@ This means that the example is equivalent with the following population specific
    POPULATION sAB CONTAINS [ ("alfa3"), ("beta1") ] 
 
 --[NOTES]--
-1) You need NOT know about the internals of the database to use this plugin.
+1) You need NOT know about the internals of the database to use this plugin (at least, that's the idea).
 2) You may specify formulae instead of texts. The result of the formula will be read (and converted to text) before being inserted into the database. This allows for dynamic construction of identifiers, precomputation of tables, date adaptations to the date of today, etc.
-3) If you use '&' in the first column, the (dirty) identifier for the atom will be automatically generated. If you use '&' in a subsequent column, this will be replaced with the (dirty) identifier for the source atom (which you can use e.g. to populate property-relations)
+3) If you use '&' in the first column, the (dirty) identifier for the atom will be automatically generated. If you use '&' in a subsequent column, this will be replaced with the (dirty) identifier for the source atom (which you can use e.g. to populate property-relations). Note that as we also support formulae, you may use those to achieve the same result (and excercise control over the actual dirty identifiers used)
 4) It is possible to store all sorts of data in the spreadsheet that will not interfere with the database population. The contents of the following cells is disregarded and can therefore be used for other purposes:
 - cells in a row whose first cell is empty.
 - cells in a column where the cell that specifies the relation name or the TGT concept is empty.
 - cells that are on other sheets than sheet 1.
+5) When you use something like 'CLASSIFY X ISA Y' in your model, and want to populate an atom 'xy', then you should populate it in the block where 'X's are populated. In this block, you can not only populate relations that have source concept X, but also relations that have source concept Y.
+6) When you use something like 'CLASSIFY X ISA Y' in your model, every atom that is an element of X must be defined (i.e.: its first appearance must be) in the block where 'X's are populated. Further down, it is allowed to add attributes to this atom in a block where 'Y's are populated
+
+That's it, Folks!
