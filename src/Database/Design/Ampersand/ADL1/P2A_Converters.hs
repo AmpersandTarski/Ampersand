@@ -253,11 +253,10 @@ pCtx2aCtx' _
     decls = case f of
              Checked ds -> ds
              Errors err -> fatal 253 $ "there are errors."++show err
-      where f = (\declsWithPops -- pats 
+      where f = (\declsWithPops
                   -> map fst declsWithPops -- ++ concatMap ptdcs pats
                 ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) (p_declarations  ++ concatMap pt_dcs (p_patterns ++ p_processes))
-            --      <*> traverse pPat2aPat (p_patterns ++ p_processes)
-
+ 
 
 --    dclPops= ctxDclPops++patDclPops
 --    (ctxDecls,_ ) =  ctxDecls'
@@ -334,35 +333,24 @@ pCtx2aCtx' _
     castConcept x     = PlainConcept { cptnm = x }
     
     pPop2aPop :: P_Population -> Guarded Population
-    pPop2aPop = pPop2aPop' contextInfo
-    pPop2aPop' :: ContextInfo -> P_Population -> Guarded Population
-    pPop2aPop' ci pop = 
+    pPop2aPop pop = 
      case pop of
        P_RelPopu{}
-         -> (\dcl
-              -> ARelPopu { popdcl = dcl
-                          , popps = case traverse (pAtomPair2aAtomPair dcl) (p_popps pop) of
-                                       Checked aps -> aps
-                                       Errors err -> fatal 330 "TODO"
-                          }
-               ) <$> namedRel2Decl (p_nmdr pop)
+         -> unguard $
+             (\dcl
+               -> (\aps
+                    -> ARelPopu { popdcl = dcl
+                                , popps = aps
+                                }
+                  ) <$> traverse (pAtomPair2aAtomPair dcl) (p_popps pop)
+             ) <$> namedRel2Decl (p_nmdr pop)
        P_CptPopu{}
-         -> undefined
-
---     
---     case pop of 
---       P_CptPopu { p_cnme = cnm, p_popas = ps } 
---         -> pure ACptPopu{ popcpt = castConcept cnm
---                         , popas  = ps }
---       P_RelPopu { p_rnme = rnm, p_popps = ps }
---         -> fmap (\dcl -> ARelPopu { popdcl = dcl, popps = ps})
---            (findDecl pop rnm)
---       P_TRelPop { p_rnme = rnm, p_type = tp, p_popps = ps }
---         -> fmap (\dcl -> ARelPopu { popdcl = dcl, popps = ps})
---            (findDeclTyped pop rnm (pSign2aSign tp))
-      where
-      -- f :: [PAtomValue] -> [AAtomValue]
-       f ps = undefined 
+         -> let cpt = castConcept (p_cnme pop) in  
+            (\vals
+              -> ACptPopu { popcpt = cpt
+                          , popas  = vals
+                          }
+              ) <$> traverse (pAtomValue2aAtomValue cpt) (p_popas pop)
 
     pAtomPair2aAtomPair :: Declaration -> PAtomPair -> Guarded AAtomPair
     pAtomPair2aAtomPair dcl pp = 
@@ -624,8 +612,8 @@ pCtx2aCtx' _
     disambNamedRel (PNamedRel _ r (Just s)) = [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
 
     namedRel2Decl :: P_NamedRel -> Guarded Declaration
-    namedRel2Decl o@(PNamedRel _ r Nothing)  = getOneExactly o [ dc | dc <- (Map.elems $ findDecls r)]
-    namedRel2Decl o@(PNamedRel _ r (Just s)) = getOneExactly o [ dc | dc <- (findDeclsTyped r (pSign2aSign s))]
+    namedRel2Decl o@(PNamedRel _ r Nothing)  = findDecl o r
+    namedRel2Decl o@(PNamedRel _ r (Just s)) = findDeclTyped o r (pSign2aSign s)
 
     pIfc2aIfc :: (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc (P_Ifc { ifc_Params = tps
