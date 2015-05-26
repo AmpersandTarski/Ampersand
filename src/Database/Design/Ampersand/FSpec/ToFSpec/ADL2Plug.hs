@@ -5,7 +5,7 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   ,representationOf)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-import GHC.Exts (sortWith,groupWith)
+import GHC.Exts (sortWith)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.ShowADL
@@ -129,7 +129,7 @@ suitableAsKey :: ConceptType -> Bool
 suitableAsKey st =
   case st of
     Alphanumeric     -> True
-    BigAlphanumeric  -> True
+    BigAlphanumeric  -> False
     HugeAlphanumeric -> False
     Password         -> False
     Binary           -> False
@@ -298,7 +298,7 @@ makeEntityTables :: Options
                 -> [PlugSQL]
 makeEntityTables opts context allDcls isas conceptss exclusions
  = sortWith ((0-).length.plugFields)
-    (map kernel2Plug kernelsWithAttributes)
+    (map (kernel2Plug (contextInfoOf context)) kernelsWithAttributes)
    where
     diagnostics
       = "\nallDcls:" ++     concat ["\n  "++showHSName r           | r<-allDcls]++
@@ -340,8 +340,8 @@ makeEntityTables opts context allDcls isas conceptss exclusions
            where (attsOfK,otherAtts) = partition belongsInK atts
                  belongsInK att = source att `elem` kernel
     -- | converts a kernel into a plug
-    kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
-    kernel2Plug (kernel, attsAndIsaRels)
+    kernel2Plug :: ContextInfo -> ([A_Concept],[Expression]) -> PlugSQL
+    kernel2Plug ci (kernel, attsAndIsaRels)
      =  TblSQL
              { sqlname = unquote . name . head $ kernel -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
              , fields  = map fld plugMors      -- Each field comes from a relation.
@@ -354,7 +354,15 @@ makeEntityTables opts context allDcls isas conceptss exclusions
                   isISA _        = False
           mainkernel = map EDcI kernel
           plugMors :: [Expression]
-          plugMors = mainkernel++atts
+          plugMors = let exprs = mainkernel++atts in
+                     if (suitableAsKey . representationOf ci . target . head) exprs
+                     then exprs
+                     else -- TODO: make a nice user error of the following:
+                          fatal 360 $ "The concept `"++(name .target .head) exprs++"` would be used as primary key of its table. \n"
+                                     ++"  However, its representation ("
+                                     ++(show . representationOf ci . target . head) exprs
+                                     ++") is not suitable as a key." 
+                     
           conceptLookuptable :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r) | r <-mainkernel]
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
