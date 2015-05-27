@@ -548,7 +548,7 @@ data AAtomValue
 showVal :: AAtomValue -> String
 showVal val = 
   case val of
-   AAVString{} -> aavstr val
+   AAVString{}  -> show (aavstr val)
    AAVNumeric{} -> show (aavnum val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showLen 4 (aadateYear val)++
@@ -562,7 +562,10 @@ data GenericNumber =
     Integer Integer
   | Rational Rational
  {- | Double Double -} -- not yet implemented
-     deriving (Show, Prelude.Ord)
+     deriving (Prelude.Ord)
+instance Show GenericNumber where
+  show (Integer i) = show i
+  show (Rational r) = show r
 instance Eq GenericNumber where  -- This might need rethinking! see https://wiki.haskell.org/Generic_number_type
  Integer a  == Integer b  = a            == b
  Integer a  == Rational b = toRational a == b
