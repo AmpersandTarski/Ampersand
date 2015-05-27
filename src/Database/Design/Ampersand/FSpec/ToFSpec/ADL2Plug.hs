@@ -84,7 +84,7 @@ makeLinkTable ci dcl totsurs =
              , columns = ( -- The source field:
                            Fld { fldname = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , fldexpr = srcExpr
-                               , fldtype = conceptType2SqlType . representationOf ci . source $ srcExpr
+                               , fldtype = tType2SqlType . representationOf ci . source $ srcExpr
                                , flduse  = if suitableAsKey . representationOf ci . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
@@ -94,7 +94,7 @@ makeLinkTable ci dcl totsurs =
                          , -- The target field:
                            Fld { fldname = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , fldexpr = trgExpr
-                               , fldtype = conceptType2SqlType . representationOf ci . target $ trgExpr
+                               , fldtype = tType2SqlType . representationOf ci . target $ trgExpr
                                , flduse  = if suitableAsKey . representationOf ci . target $ trgExpr
                                            then ForeignKey (target trgExpr)
                                            else PlainAttr
@@ -125,7 +125,7 @@ unquote str
   | head str == '"' && last str == '"' = reverse . tail . reverse .tail $ str 
   | otherwise = str
       
-suitableAsKey :: ConceptType -> Bool
+suitableAsKey :: TType -> Bool
 suitableAsKey st =
   case st of
     Alphanumeric     -> True
@@ -170,7 +170,7 @@ rel2fld ci
         e
  = Fld { fldname = fldName
        , fldexpr = e
-       , fldtype = conceptType2SqlType (representationOf ci (target e))
+       , fldtype = tType2SqlType (representationOf ci (target e))
        , flduse  =
           let f expr =
                  case expr of
@@ -448,11 +448,11 @@ makeUserDefinedSqlPlug context obj
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-   sqltp :: ObjectDef -> SqlType
+   sqltp :: ObjectDef -> SqlTType
    sqltp _ = fatal 448 "The Sql type of a user defined plug has bitrotteted. The syntax should support a Representation."
 
-conceptType2SqlType :: ConceptType -> SqlType
-conceptType2SqlType dom 
+tType2SqlType :: TType -> SqlTType
+tType2SqlType dom 
  = case dom of
      Alphanumeric     -> SQLVarchar 255
      BigAlphanumeric  -> SQLText

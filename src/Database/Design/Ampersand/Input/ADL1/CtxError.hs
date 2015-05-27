@@ -122,7 +122,7 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> String -- the reference itself. eg. "Rule 42"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
-mkUnmatchedAtomValue :: ConceptType  -> PAtomValue -> CtxError
+mkUnmatchedAtomValue :: TType  -> PAtomValue -> CtxError
 mkUnmatchedAtomValue ct val = 
  case val of 
   (PAVString orig str) ->
@@ -148,7 +148,7 @@ mkMultipleRepresentationsForConceptError cpt rs =
                   concatMap (("\n    "++ ) . show . origin ) rs
     _ -> fatal 142 "There are no multiple representations."
 
-mkIncompatibleAtomValueError :: PAtomValue -> ConceptType -> A_Concept -> CtxError
+mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> CtxError
 mkIncompatibleAtomValueError pav t cpt=
   case pav of 
     PAVString o str -> CTXE o $ show str++" isn't a valid "++show t++

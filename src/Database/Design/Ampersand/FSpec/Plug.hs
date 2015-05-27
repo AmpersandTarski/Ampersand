@@ -6,7 +6,7 @@ module Database.Design.Ampersand.FSpec.Plug
      (Plugable(..), PlugInfo(..)
      ,SqlField(..)
      ,SqlFieldUsage(..)
-     ,SqlType(..)
+     ,SqlTType(..)
      ,showSQL
      ,plugpath
 
@@ -171,7 +171,7 @@ fldauto f = case fldtype f of
                            else fatal 171 "AutoIncrement is not allowed at this place." --TODO: build check in P2Aconverters
               _         -> False
               
-showSQL :: SqlType -> String
+showSQL :: SqlTType -> String
 showSQL (SQLFloat   ) = "FLOAT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLText     ) = "TEXT"

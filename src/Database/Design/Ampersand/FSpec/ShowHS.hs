@@ -173,7 +173,7 @@ instance ShowHS SqlFieldUsage where
  showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
  showHS _ _ PlainAttr                 = "PlainAttr "
 
-instance ShowHS SqlType where
+instance ShowHS SqlTType where
  showHS _ indent sqltype = indent ++ show sqltype
 
 instance ShowHSName Quad where

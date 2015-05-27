@@ -17,7 +17,7 @@ where
 import Database.Design.Ampersand.FSpec.FSpec
        (FSpec(..), concDefs, ECArule(..), plugFields, lookupCpt, metaValues,AAtomValue,showVal)
 import Database.Design.Ampersand.FSpec.Plug
-       (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
+       (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlTType(..), tblcontents,
         Plugable(..),
         showSQL, fldauto)
 import Database.Design.Ampersand.FSpec.ShowHS

@@ -42,7 +42,7 @@ keywordstxt       = [ "INCLUDE"
                     , "ONE"
                     , "BYPLUG"
                     , "ROLE", "EDITS", "MAINTAINS"
-                    -- Keywords for ConceptType:
+                    -- Keywords for TType:
                     , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
                     , "BINARY", "BIGBINARY", "HUGEBINARY"
                     , "DATE", "DATETIME", "BOOLEAN", "NUMERIC", "AUTOINCREMENT"
@@ -362,10 +362,10 @@ pRepresentation
   = Repr <$> pKey_pos "REPRESENT"
          <*> pList1Sep (pSpec ',') pConceptName  -- the concept names
          <*  pKey "TYPE"
-         <*> pConceptType
+         <*> pAdlTType
 
-pConceptType :: AmpParser ConceptType
-pConceptType
+pAdlTType :: AmpParser TType
+pAdlTType
         = k Alphanumeric     "ALPHANUMERIC"
       <|> k BigAlphanumeric  "BIGALPHANUMERIC"
       <|> k HugeAlphanumeric "HUGEALPHANUMERIC"
@@ -379,7 +379,7 @@ pConceptType
       <|> k Numeric          "NUMERIC"
       <|> k AutoIncrement    "AUTOINCREMENT"
   where
-   k dom str = f <$> pKey str where f _ = dom
+   k tt str = f <$> pKey str where f _ = tt
 
 pGenDef :: AmpParser P_Gen
 pGenDef           = rebuild <$> pKey_pos "SPEC"     <*> pConceptRef <* pKey "ISA" <*> pConceptRef <|>  -- SPEC is obsolete syntax. Should disappear!

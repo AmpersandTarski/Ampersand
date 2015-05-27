@@ -23,7 +23,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlField(..)
           , Object(..)
           , PlugInfo(..)
-          , SqlType(..)
+          , SqlTType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations
           , lookupView, getDefaultViewForConcept
@@ -77,7 +77,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
-                   , allConceptTypes :: [(A_Concept,ConceptType)]
+                   , allTTypes :: [(A_Concept,TType)]
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
@@ -306,7 +306,7 @@ data SqlFieldUsage = TableKey Bool A_Concept  -- The field is the (primary) key 
 
 data SqlField = Fld { fldname :: String
                     , fldexpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-                    , fldtype :: SqlType
+                    , fldtype :: SqlTType
                     , flduse ::  SqlFieldUsage
                     , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
                     , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
@@ -321,7 +321,7 @@ instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
   expressionsIn   f = expressionsIn   (fldexpr f)
 
-data SqlType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-types.html
+data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-types.html
              | SQLVarchar Int
              | SQLText
              | SQLMediumText

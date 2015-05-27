@@ -16,7 +16,7 @@ import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version f
 --   , P_Population(..)
 --   , FSpec(..)
 --   , ObjectDef(..)
---   , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
+--   , PlugSQL(..), SqlField(..), SqlTType(..), PlugInfo(..)
 --   , Relation(..)
 --   , Rule(..)
 --   , Prop(..)

@@ -14,7 +14,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
-   , Representation(..), ConceptType(..)
+   , Representation(..), TType(..)
    , P_Population(..)
    , PAtomPair(..), PAtomValue(..),GenericNumber(..), mkPair
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
@@ -161,12 +161,12 @@ instance Named ConceptDef where
 data Representation
   = Repr { reprpos  :: Origin
          , reprcpts  :: [String]  -- ^ the concepts 
-         , reprdom :: ConceptType     -- the type of the concept the atom is in
+         , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Show)
 instance Traced Representation where
  origin = reprpos
          
-data ConceptType 
+data TType 
   = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
   | Binary | BigBinary | HugeBinary 
   | Date | DateTime 

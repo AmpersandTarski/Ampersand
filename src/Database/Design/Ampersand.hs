@@ -18,7 +18,7 @@ module Database.Design.Ampersand
    , Expression(..)
    , Population(..)
    , FSpec(..), concDefs
-   , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
+   , PlugSQL(..), SqlField(..), SqlTType(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)
    , Prop(..), RuleOrigin(..)
