@@ -355,7 +355,7 @@ makeEntityTables opts context allDcls isas conceptss exclusions
           mainkernel = map EDcI kernel
           plugMors :: [Expression]
           plugMors = let exprs = mainkernel++atts in
-                     if (suitableAsKey . representationOf ci . target . head) exprs
+                     if (suitableAsKey . representationOf ci . target . head) exprs || True --TODO: This check might not be required here. 
                      then exprs
                      else -- TODO: make a nice user error of the following:
                           fatal 360 $ "The concept `"++(name .target .head) exprs++"` would be used as primary key of its table. \n"
