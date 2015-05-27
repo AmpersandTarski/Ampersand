@@ -43,9 +43,9 @@ keywordstxt       = [ "INCLUDE"
                     , "BYPLUG"
                     , "ROLE", "EDITS", "MAINTAINS"
                     -- Keywords for ConceptType:
-                    , "Alphanumeric", "BigAlphanumeric", "HugeAlphanumeric", "Password"
-                    , "Binary", "BigBinary", "HugeBinary"
-                    , "Date", "DateTime", "Boolean", "Numeric", "AutoIncrement"
+                    , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
+                    , "BINARY", "BIGBINARY", "HUGEBINARY"
+                    , "DATE", "DATETIME", "BOOLEAN", "NUMERIC", "AUTOINCREMENT"
                     ]
 keywordsops :: [String]
 keywordsops       = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
@@ -366,18 +366,18 @@ pRepresentation
 
 pConceptType :: AmpParser ConceptType
 pConceptType
-        = k Alphanumeric     "Alphanumeric"
-      <|> k BigAlphanumeric  "BigAlphanumeric"
-      <|> k HugeAlphanumeric "HugeAlphanumeric"
-      <|> k Password         "Password"
-      <|> k Binary           "Binary"
-      <|> k BigBinary        "BigBinary"
-      <|> k HugeBinary       "HugeBinary"
-      <|> k Date             "Date"
-      <|> k DateTime         "DateTime"
-      <|> k Boolean          "Boolean"
-      <|> k Numeric          "Numeric"
-      <|> k AutoIncrement    "AutoIncrement"
+        = k Alphanumeric     "ALPHANUMERIC"
+      <|> k BigAlphanumeric  "BIGALPHANUMERIC"
+      <|> k HugeAlphanumeric "HUGEALPHANUMERIC"
+      <|> k Password         "PASSWORD"
+      <|> k Binary           "BINARY"
+      <|> k BigBinary        "BIGBINARY"
+      <|> k HugeBinary       "HUGEBINARY"
+      <|> k Date             "DATE"
+      <|> k DateTime         "DATETIME"
+      <|> k Boolean          "BOOLEAN"
+      <|> k Numeric          "NUMERIC"
+      <|> k AutoIncrement    "AUTOINCREMENT"
   where
    k dom str = f <$> pKey str where f _ = dom
 
