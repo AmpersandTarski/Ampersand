@@ -2,8 +2,10 @@ CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "Interfaces.doc"
 
+-- RJ: I wish you guys would use relation names that are easily interpretable by people that do not know about the Haskell stuff behind all this. Use 'ifcPurpose' rather than 'ifcPrp', and use something like 'ifcViolatableRules' rather than 'viol'. More or less self explanatory naming is considered a good practice. Use it.
+
 PATTERN Interfaces
-CONCEPT Interface "An interface is an input/output mechanism that presents a restricted view of the data to a limited number of roles in the world outside the system." 
+CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
 IDENT Interface: Interface(ifcObj;objnm)
 CONCEPT ObjectDef "An ObjectDef is the (recursive) structure that corresponds with a BOX in an Ampersand script." 
 
@@ -16,41 +18,47 @@ RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
 RELATION ifcOutputs[Interface*Relation]
 MEANING "This relation contains the relations that can be edited by the computer for restoring invariants."
-RELATION ifcClass[Interface*String] [UNI]
+{- Replace ifcInputs and ifcOutputs with:
+CONCEPT ContextRelation "a relation in a specific context"
+RELATION ifcRelation[Interface*ContextRelation]
+MEANING "This relation contains the relations in either of the contexts that the Interface connects and whose population may be modified within a transaction.
+-}
+RELATION ifcClass[Interface*String] [UNI] --RJ: What is this for?
 RELATION ifcRoles[Interface*Role]
 MEANING "This relation contains the roles for which an interface is available (empty means: available for all roles)."
 RELATION ifcObj[Interface*ObjectDef] [UNI,TOT,INJ]
 MEANING "Every interface has precisely one object definition, which defines the structure of objects to be changed by transactions of this interface."
-RELATION ifcQuads[Interface*Quad]
+RELATION ifcQuads[Interface*Quad] -- RJ: What is a Quad?
 MEANING "All quads that are needed to perform computations for maintaining rules in an interface are registered."
-RELATION ifcControls[Interface*Conjunct]
+RELATION ifcControls[Interface*Conjunct] -- RJ: Why not call this 'ifcConjuncts'?
 MEANING "All conjuncts that must be evaluated after a transation are registered."
 RELATION ifcPos[Interface*Origin] [UNI,TOT]
 MEANING "The position in the file (filename, line- and column number)."
-RELATION ifcPrp[Interface*String] [UNI]
+RELATION ifcPrp[Interface*String] [UNI] -- RJ: use more self-explanatory (longer) name, please
 MEANING "The purpose of each interface is being registered."
-RELATION viol[Interface*Rule]
+RELATION viol[Interface*Rule] -- RJ: use more self-explanatory (longer) name, please
 MEANING "All rules that can be violated by an interface are included in viol."
 
-RELATION objnm[ObjectDef*String] [UNI,TOT]
+RELATION objnm[ObjectDef*String] [UNI,TOT] -- RJ: use more self-explanatory (longer) name, please
 MEANING "Every object definition has a name."
 RELATION objpos[ObjectDef*Origin] [UNI,TOT]
 MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
-RELATION objctx[ObjectDef*Expression] [UNI,TOT]
+RELATION objctx[ObjectDef*Expression] [UNI,TOT] -- RJ: Why not call this thing 'objExpr(ession)'?
 MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
-RELATION objmView[ObjectDef*View] [UNI]
+RELATION objmView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
 MEANING "An object definition can have a view that should be used for this object (e.g. TABS, COLS, etc.)."
 RELATION usedIn[Relation*Expression]
 MEANING "If a relation is used in an expression, this is registered in usedIn."
-RELATION rrexp[Rule*Expression]
+RELATION rrexp[Rule*Expression] -- RJ: use more self-explanatory (longer) name, please
 MEANING "The expression, of which a rule consists, is accessible via the relation rrexp."
 
 RULE violatableByInterface : viol = (ifcInputs\/ifcOutputs);usedIn;rrexp~
-MEANING "An interface can possibly violate any rule that uses an input- or output relation of that interface."
-RELATION getExpressionRelation[Expression*Relation] [UNI]
+MEANING "An interface may violate any rule that uses an input- or output relation of that interface."
+RELATION getExpressionRelation[Expression*Relation] [UNI] -- RJ: use a more self-explanatory name, please
 MEANING "An Expression that is equivalent to a Relation, allows that relation to be edited."
 
 RULE checkExpressionRelation : getExpressionRelation |- (usedIn~;-I;usedIn/\I);getExpressionRelation
+-- How is that different from: usedIn~;getExpressionRelation |- I
 MEANING "An editable expression contains one relation only."
 
 RULE "possible inputs" : ifcInputs |- ifcObj;(attIn~;attObj)+;objctx;getExpressionRelation

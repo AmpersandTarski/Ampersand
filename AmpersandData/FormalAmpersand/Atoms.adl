@@ -1,147 +1,102 @@
 CONTEXT AST IN ENGLISH LATEX
 
-PURPOSE PROCESS Atoms  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
-{+Atoms are defined so that they comply with Ampersand's choice to use a representable heterogeneous relational algebra.
--}
-PROCESS Atoms
-PURPOSE CONCEPT Atom
-{+
-Atoms are used to represent data.
+PROCESS "Equality on Atoms"
+RELATION repr[Atom*Representation] [UNI,TOT]
+--MEANING "Every atom has a representation, which identifies that atom." --@Stef: Onjuist! twee atomen met dezelfde representatie maar in 
+                                                                       -- verschillende, niet in dezelfde typologie opgenomen concepten, 
+                                                                       -- willen we niet zien als gelijke atomen.
+MEANING "Every atom has a single representation in the information system that 'knows' about that atom" --@Stef: Door te beperken tot een enkel
+                                                                       -- informatiesysteem mogen we deze relatie voorzien van de properties [UNI,TOT].
 
-For example, the atom ``Amsterdam'' is an instance of the concept ``City''.
+RELATION pop[Atom*Concept] [TOT] 
+MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
 
-Atoms populate relations, which means that a relation contains pairs of atoms.
-In fact a relation may be regarded as a set of pairs of atoms.
-Ampersand works with binary relations, so you will find pairs of atoms in a relation.
-In an information system, the population of relations can change because of edit actions by users in user interfaces.
-This means that pairs are inserted into and deleted from relations as time goes by.
--}
-CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept." TYPE "Blob"
-CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
-PURPOSE CONCEPT AtomID
-{+In order to represent atoms in a database, an identifier is used.
-This may even be an unintelligible, internal code that is never shown to a user.
-Its sole purpose is to identify an atom within the table that represents the database.
--}
-CONCEPT AtomID "An atomID is the identity of an atomic term."
+RELATION eq[Atom*Atom] [UNI,TOT,SUR,INJ,SYM,TRN,RFX]
+MEANING "Equality is defined on atoms."  -- @Stef, graag toevoegen ", as represented in an information system."
+                                         -- Immers, er bestaat geen gelijkheidsrelatie tussen atomen in verschillende
+                                         -- informatiesystemen. Dat is ook niet waar we het hier over willen hebben. 
 
-RELATION key [Atom*AtomID] [UNI,TOT]
-MEANING "An internal storage code for this atom, used to identify the atom within a table."
-RELATION atomvalue[Atom*AtomValue] [UNI,TOT]
-MEANING "The value by which the atom is visible to users."
+RELATION name[Concept*String] [UNI,TOT] --@Stef, Deze relatie doet in dit pattern niet ter zake.
+MEANING "Every concept has a name, which identifies that concept."
+
+RELATION sub[Concept*Concept]
+MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is an element of concept $g$ as well."
+
+
+RULE "FOUTequality on Atoms" : eq = repr;repr~ -- @Stef: Fout! Deze meaning en formele expressie matchen niet. Naast de representatie moet er
+                                               -- ook op een of andere manier verwantschap zijn met concepten. Twee atomen, waarvan de concepten
+                                               -- niet verwant zijn met ISA-relaties, zijn nooit aan elkaar gelijk. Twee atomen, waarvan de concepten
+                                               -- wél verwant zijn (direct of indirect), zijn gelijk indien de representaties van beide atomen gelijk zijn. 
+                                               -- Dit vraagt om een nieuw concept, dat we inmiddels kennen als 'kernel', of 'conceptgroep': Typologie
+MEANING "Two atoms are equal if their representations are equal and they share the same concept."
+                                               -- Hieronder definieer ik enkele relaties en regels, om de equivalentie van atomen mee te beschrijven.
+                                               -- (documentatie heb ik nog maar even gelaten voor wat het is. TODO.)
+RELATION in[Atom*Typology] 
+MEANING "Every atom is in exactly one typology"
+
+RELATION partOf[Concept*Typology] 
+MEANING "Every concept is part of exactly one typology"
+
+RULE "typologies" : sub;partOf |- partOf
+MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
+
+RULE "equality on Atoms" : eq = repr;repr~;in;in~ -- @Stef: Dit is precies waar we naar op zoek zijn. De hond "Fikkie" is iets anders dan de kat "Fikkie",
+                                               -- totdat het concept hond en het concept kat onderdeel zijn van dezelfde typologie. Dan blijkt plotseling
+                                               -- dat we het over hetzelfde 'Dier' hebben...
+
+RULE "specialization" : pop;sub |- pop
+MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+ROLE ExecEngine MAINTAINS specialization
+
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
-ROLE Stef MAINTAINS "TOT source::Relation*Concept", "TOT target::Relation*Concept" --TODO: Moet helaas nu nog een signaalregel zijn. 
 
-RELATION in[Pair*Relation] [UNI]
-RELATION l[Pair*Atom] [UNI]
-RELATION r[Pair*Atom] [UNI]
-RELATION sub[Concept*Concept]
-MEANING "s sub g means that each element of concept s is an element of concept g as well."
+RELATION in[Pair*Relation] [UNI,TOT]
+RELATION l[Pair*Atom] [UNI,TOT]
+RELATION r[Pair*Atom] [UNI,TOT]
 
+RULE "source type" : l~;in;source |- pop
+MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RULE "target type" : r~;in;target |- pop
+MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+ROLE ExecEngine MAINTAINS "source type", "target type"
 
--- The following are derivable relations
-PURPOSE RULE "Def of type"
-{+Ampersand assigns precisely one type to every atom that resides in a relation.
-Note that anything that exists outside a relation, does therefore not have a type and can therefore not be an atom.
--}
-RELATION type[Atom*Concept] [UNI]  --HJO: Was: [UNI,TOT]
-MEANING "The concept to which this atom belongs is called the type of an atom"
-RULE "Def of type" : type = l~;in;source \/ r~;in;target
--- HJO @Stef: Bovenstaande is niet waterdicht. Het vereist dat zowel l als r SUR zijn. Zolang dat niet is gegarandeerd, is type niet TOT. Graag aanpassen...
-RELATION src[Pair*Concept] [UNI,TOT]
---ROLE Stef MAINTAINS "TOT src::Sign*Concept","TOT trg::Sign*Concept"
-RULE "Def of src" : src = in;source
-RELATION tgt[Pair*Concept] [UNI,TOT]
-RULE "Def of tgt" : tgt = in;target
-RELATION left[Pair*AtomValue] [UNI,TOT]
-ROLE Stef MAINTAINS "TOT left::Pair*AtomValue", "TOT rght::Pair*AtomValue", "TOT src::Pair*Concept", "TOT tgt::Pair*Concept"
-RULE "Def of left" : left = l;atomvalue
-ROLE Stef MAINTAINS "Def of left", "Def of rght", "Def of src", "Def of tgt", "Def of type"
-RELATION rght[Pair*AtomValue] [UNI,TOT]
-RULE "Def of rght" : rght = r;atomvalue
-
-PURPOSE RULE "typed atoms"
-{+In Ampersand, the type of an atom is determined by the relation in which it is stored.
--}
-RULE "typed atoms" : in;in~ |- src;src~ /\ tgt;tgt~
-MEANING "Two pairs that are in the same relation have the same src and tgt concepts." 
-ROLE Stef MAINTAINS "typed atoms"  --HJO: Deze regel houdt nu nog niet, omdat er geen rekening is gehouden met classificaties. 
-PURPOSE RULE "identical atoms"
-{+The value and type are used to identify an atom.
--}
-RULE "identical atoms" : atomvalue;atomvalue~ /\ type;type~ |- I[Atom]
-MEANING "Two atoms that have the same atomvalue and type are identical."
-
-{-The atomvalue and the location of an atom identify it.
-Here is the derivation:
-   atomvalue;atomvalue~ /\ l~;in;in~;l
-|-   { typed atoms }
-   atomvalue;atomvalue~ /\ l~;src;src~;l
-|-   { Def of src }
-   atomvalue;atomvalue~ /\ l~;in;source;source~;in~;l
-|-   { Def of type }
-   atomvalue;atomvalue~ /\ type;type~
-|-   { identical atoms }
-   I[Atom]
-So atomvalue;atomvalue~ /\ l~;in;in~;l |- I[Atom], which proves the point.
-Similarly, it can be proven that atomvalue;atomvalue~ /\ r~;in;in~;r |- I[Atom].
--}
-
-{-The relation src is univalent, because both in and source are univalent
-Here is the derivation:
-   src~;src
-|-   { Def of src }
-   source~;in~;in;source
-|-   { in~;in |- I, because in is univalent }
-   source~;source
-|-   { source~;source |- I, because in is univalent }
-   I[Atom]
-So src~;src |- I[Atom], which means that src is univalent.
-Similarly, tgt is univalent
--}
-
-PURPOSE RULE "specialized atoms (src)"
-{+The value and type are used to identify an atom.
--}
-RULE "specialized atoms (src)" : in;source;sub |- (left;left~ /\ src;sub;src~);in;source
-MEANING "If a source atom is in a relation, its generalization is in the generalized relation as well."
-
-PURPOSE RULE "specialized atoms (tgt)"
-{+The value and type are used to identify an atom.
--}
-RULE "specialized atoms (tgt)" : in;target;sub |- (rght;rght~ /\ tgt;sub;tgt~);in;target
-MEANING "If a target atom is in a relation, its generalization is in the generalized relation as well."
-
+-- RULE "garbage" : pop |- l~;in;source \/ r~;in;target
+-- VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+-- ROLE ExecEngine MAINTAINS garbage
 ENDPROCESS
 
-{-
-Edit-functionaliteit en intersectie-types.
+INTERFACE Overview : '_SESSION'
+TABS[ atoms : V[SESSION*Atom]
+      COLS [ repr : repr
+           , pop  : pop
+           ]
+    , concepts :V[SESSION*Concept]
+      COLS [ name             : I
+           , generalizations  : sub
+           , specializations  : sub~
+           ]
+    ]
 
-De gebruiker van een Ampersand prototype kan in bepaalde gevallen een nieuw atoom maken door de naam van dat atoom in een veld in te vullen.
-Daarbij hoeft zij niet aan te geven tot welk concept dit atoom behoort, omdat de compiler aan elk veld in elke interface precies 1 concept toekent. 
-Het typesysteem zorgt dat dit concept eenduidig bepaald is. En dus hoeft de software van de user interface geen dynamische typetoekenning te doen.
+VIEW Atom : Atom(repr,TXT ":",pop)
 
-Toch?
+INTERFACE Atom(repr,pop) : I[Atom]
+COLS [ repr : repr
+     , pop  : pop
+     ]
 
-Stel ik heb een editbaar veld van het type Limoen, en een ander editbaar veld van het type Sinaasappel.
-Stel verder dat:
+VIEW Concept : Concept(name)
 
-CLASSIFY Limoen ISA Citrus
-CLASSIFY Sinaasappel ISA Citrus
+INTERFACE newConcept(name) : I[Concept]
+COLS [ name             : name
+     ]
 
-Omdat Citrus een generiek type is van Limoen, wordt het (door de gebruiker ingegeven) atoom l1 in de conceptentabel van Limoen en in de conceptentabel van Citrus opgenomen.
-Omdat Citrus ook een generiek type is van Sinaasappel, kan de gebruiker hetzelfde atoom l1 gebruiken om een sinaasappel te maken. Op vergelijkbare wijze wordt dit atoom opgenomen in de conceptentabel van Sinaasappel en van Citrus.
-Omdat l1 als sleutelveld in Citrus wordt gebruikt, zijn de limoen l1 en de sinaasappel l1 plotseling elkaars alias geworden.
-En dat mag alleen als er een intersectietype SchizoFruit bestaat, waarvoor CLASSIFY SchizoFruit IS Limoen/\Sinaasappel.
-Ziehier een probleem.
-
-Dit probleem heeft waarneembare consequenties voor de gebruiker.
-Stel je voor dat er een relatie "naam[Citrus*Tekst]" bestaat, waarvan bijvoorbeeld ("l1", "balletje") een element is. Dan geldt zowel voor de sinaasappel als voor de limoen dat de naam van l1 "balletje" is. Er is dus feitelijk sprake van een intersectie-type, zonder dat dat in het script is medegedeeld aan Ampersand.
-
-Dit probleem moet worden opgelost aan de database-kant, omdat we de auteur van de frontend hiermee niet willen lastigvallen. De implementatie zal dus moeten afdwingen dat limoenen en citroenen altijd een verschillende key hebben.
-Dit kan door het toevoegen van de regel:
-RULE type;(sub;sub~ /\ -(sub~;sub));type~ |- -(key;key~)
--}
-
+INTERFACE mkISA(sub) : I[Concept]
+COLS [ name             : name
+     , generalizations  : sub
+     , specializations  : sub~
+     ]
 ENDCONTEXT

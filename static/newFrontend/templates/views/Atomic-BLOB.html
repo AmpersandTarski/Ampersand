@@ -14,9 +14,9 @@ $if(isEditable)$
   $endif$
 $else$
   $if(exprIsUni)$
-  <div style="max-width: 200px;">{{val['$name$']}}</div>
+  <div>{{val['$name$']}}</div>
   $else$
-  <div ng-repeat="row in val['$name$'] track by \$index" style="max-width: 200px;">
+  <div ng-repeat="row in val['$name$'] track by \$index">
     {{row}}
   </div>
   $endif$
