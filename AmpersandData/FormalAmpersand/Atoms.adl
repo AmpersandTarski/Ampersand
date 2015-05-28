@@ -90,7 +90,7 @@ COLS [ repr : repr
 
 VIEW Concept : Concept(name)
 
-INTERFACE newConcept(name) : I[Concept]
+INTERFACE newConcept(name[Concept*String]) : I[Concept]
 COLS [ name             : name
      ]
 

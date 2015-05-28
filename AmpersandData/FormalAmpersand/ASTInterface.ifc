@@ -42,8 +42,6 @@ TABS[ Context : V[SESSION*Context]
 INTERFACE Atoms FOR Stef : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
-         , key    : key
-         , atomvalue : atomvalue
          ]
     , Pairs  : V[SESSION*Pair]
     COLS [ "Pair" : I
@@ -70,7 +68,6 @@ BOX [ Pattern : name
 
 INTERFACE Concept FOR Ampersand : I[PlainConcept]
 BOX [ Concept : name
-    , "atoms with this as type" : type~
     ]
 
 INTERFACE Gen FOR Ampersand : I[Gen]
