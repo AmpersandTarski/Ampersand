@@ -36,7 +36,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          )
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
-         ,Sign(..),showSign,GenR()
+         ,Sign(..),showSign
          , (<==>),meet,join
          ,A_Context(..)
          ,Association(..)

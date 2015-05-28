@@ -2,8 +2,14 @@ CONTEXT RAP IN ENGLISH LATEX
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
 PURPOSE PATTERN Interfaces
-{+
-This pattern defines the structure of interfaces.
+{+One purpose of Interfaces is to convert/translate data from one context (that is governed by specific rules/relations/presentations)
+to another context (governed by another set of rules/relations/presentations).
+Data exists only within a context, which, at least conceptually, can exist not only in a computer system, but also in a human system.
+Another functionality of Interfaces is to support transactions (as modeled e.g. by DEMO).
+An Interface can be seen as a context in its own right.
+It uses (e.g. by importing, referring to) concepts and relations of the (both) contexts that it connects.
+It has rules of its own for governing 'translations' and to ensure that messages sent to either context are in line with what that contexts expects (and: can test using its invariants).
+The concepts and relations defined in this pattern describe the contexts of Interfaces at a meta level.
 -}
 
 PURPOSE CONCEPT Interface

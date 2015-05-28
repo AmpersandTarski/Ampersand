@@ -229,7 +229,7 @@ Class Atom {
 				
 				// replace property value (true/false) by the srcAtomId TODO: place below within editable check.
 				if ($tgtInterface->isProperty){
-					if(!is_bool($patch['value'])) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
+					if(!(is_bool($patch['value']) || is_null($patch['value']))) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
 					if($patch['value']){						
 						$database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
 					}else{
