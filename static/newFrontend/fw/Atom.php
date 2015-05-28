@@ -397,6 +397,49 @@ Class Atom {
 		
 	}
 	
+	public function post(&$interface, $request_data, $requestType){
+		$database = Database::singleton();
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				$databaseCommit = true;
+				break;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
+		
+		// Get current state of atom
+		$before = $this->getContent($interface, true, $this->id);
+		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+		
+		// Determine differences between current state ($before) and requested state ($request_data)
+		$patches = JsonPatch::diff($before, $request_data);
+		
+		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
+		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
+		
+		// Put current state based on differences
+		foreach ((array)$patches as $key => $patch){
+			
+			//if($patch['op'] == 'remove') break; 
+			
+			$this->doPatch($patch, $interface, $before);
+		}
+		
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
+		
+		return array(	'patches' 				=> $patches
+					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+					,	'notifications' 		=> Notifications::getAll()
+					,	'invariantRulesHold'	=> $invariantRulesHold
+					,	'requestType'			=> $requestType
+					);
+	}
+	
 	private function getView($viewId = null){
 		$view = Concept::getView($this->concept, $viewId);
 		
