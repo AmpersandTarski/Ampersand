@@ -40,7 +40,7 @@ Class Atom {
 	}
 	
 	public function getAtom($interface = null){
-		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = API_INTERFACES_PATH . $interfaceId . '/' . $this->id;
+		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = $this->jsonld_id . '/' . $interfaceId;
 		
 		$result =  array('@id' => $this->jsonld_id
 						,'@label' => $this->label
