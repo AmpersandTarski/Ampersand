@@ -175,6 +175,8 @@ pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
            Py <$> pClassify         <|>
            Pd <$> pRelationDef      <|>
+		   -- the syntax of pRoleRule and pRoleRelation shows an ambiguity
+		   -- Syntax review can be considered
            Pm <$> pRoleRule         <|>
            Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
