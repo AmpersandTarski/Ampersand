@@ -291,7 +291,7 @@ pFun  = []        <$ pOperator "*"  <|>
 
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
         --- Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-        --TODO! refactor
+        --TODO: refactor
         pMult :: (Prop,Prop) -> AmpParser [Prop]
         pMult (ts,ui) = (++) <$> ([]    <$ pZero   <|> [ts] <$ try pOne)
                              <*  pOperator ".."
@@ -335,7 +335,7 @@ pIndex  = P_Id <$> currPos
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
           -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
-          pIndAtt  = attL <$> currPos <*> optLabelProps <*> try pTerm
+          pIndAtt  = attL <$> currPos <*> try optLabelProps <*> try pTerm
               where mView = Nothing
                     msub = Nothing
                     --TODO: What does this origin mean? It's not used, can we remove it?
@@ -396,7 +396,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> return True
                       <*> return Nothing
                       <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
-    --TODO! Numbering should not happen in the parser
+    --TODO: Numbering should not happen in the parser
     where ats xs = [ case viewSeg of
                          P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else viewSeg
                          _            -> viewSeg
@@ -728,7 +728,7 @@ pLabelProps = (,) <$> pADLid
               where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
 
 optLabelProps :: AmpParser (String, [[String]])
-optLabelProps = try pLabelProps `opt` ("",[])
+optLabelProps = pLabelProps `opt` ("",[])
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
