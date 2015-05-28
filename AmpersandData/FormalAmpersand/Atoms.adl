@@ -31,10 +31,10 @@ RULE "FOUTequality on Atoms" : eq = repr;repr~ -- @Stef: Fout! Deze meaning en f
 MEANING "Two atoms are equal if their representations are equal and they share the same concept."
                                                -- Hieronder definieer ik enkele relaties en regels, om de equivalentie van atomen mee te beschrijven.
                                                -- (documentatie heb ik nog maar even gelaten voor wat het is. TODO.)
-RELATION in[Atom*Typology] 
+RELATION in[Atom*Typology] [UNI,TOT]
 MEANING "Every atom is in exactly one typology"
 
-RELATION partOf[Concept*Typology] 
+RELATION partOf[Concept*Typology] [UNI,TOT]
 MEANING "Every concept is part of exactly one typology"
 
 RULE "typologies" : sub;partOf |- partOf
