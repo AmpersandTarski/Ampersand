@@ -240,22 +240,6 @@ class Api{
 		}
 	}
 	
-	/**************************** CONTEXT ****************************/
-	
-	/**
-	 * @url GET context/{interfaceId}
-	 */
-	public function getInterface($interfaceId){
-		throw new RestException(501);
-		try{			
-			$interface = new InterfaceObject($interfaceId);
-			
-			return $interface;
-		}catch(Exception $e){
-       		throw new RestException($e->getCode(), $e->getMessage());
-       	}
-	}
-	
 
 	/**************************** CONCEPTS ****************************/
     /**
@@ -398,7 +382,7 @@ class Api{
     
 	/**
      * @url GET interfaces
-	 * @url GET interfaces/{interfaceId}
+	 * @url GET interface/{interfaceId}
 	 * @param string $interfaceId
 	 * @param int $roleId
      */
