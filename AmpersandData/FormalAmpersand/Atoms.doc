@@ -1,7 +1,7 @@
 CONTEXT AST IN ENGLISH LATEX
 INCLUDE "Atoms.adl"
 
-PURPOSE PROCESS Atoms
+PURPOSE PROCESS "Equality on Atoms"
 {+Here is a problem: Since an information system cannot store tomatoes, it must work with representations of tomatoes.
 In fact, representations are the only things an information system can work with.
 In order to unleash the available logical power of relational algebra to its maximum, Ampersand is restricted to {\em representable} relation algebras.
