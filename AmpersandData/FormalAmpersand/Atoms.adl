@@ -1,7 +1,7 @@
 CONTEXT AST IN ENGLISH LATEX
 
-PROCESS Atoms
-RELATION repr[Atom*TType] [UNI,TOT]
+PROCESS "Equality on Atoms"
+RELATION repr[Atom*Representation] [UNI,TOT]
 MEANING "Every atom has a representation, which identifies that atom."
 
 RELATION pop[Atom*Concept] [TOT] 
@@ -10,7 +10,7 @@ MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of co
 RELATION eq[Atom*Atom] [UNI,TOT,SUR,INJ,SYM,TRN,RFX]
 MEANING "Equality is defined on atoms."
 
-RELATION name[Concept*String] [UNI,TOT,INJ]
+RELATION name[Concept*String] [UNI,TOT]
 MEANING "Every concept has a name, which identifies that concept."
 
 RELATION sub[Concept*Concept]
@@ -21,7 +21,7 @@ MEANING "Two atoms are equal if their representations are equal and they share t
 
 RULE "specialization" : pop;sub |- pop
 MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
---VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS specialization
 
 RELATION source[Relation*Concept] [UNI,TOT] 
@@ -33,16 +33,18 @@ RELATION r[Pair*Atom] [UNI,TOT]
 
 RULE "source type" : l~;in;source |- pop
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 RULE "target type" : r~;in;target |- pop
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
---VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-
---RULE "garbage" : pop |- l~;in;source \/ r~;in;target
---VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS "source type", "target type"
+
+-- RULE "garbage" : pop |- l~;in;source \/ r~;in;target
+-- VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+-- ROLE ExecEngine MAINTAINS garbage
 ENDPROCESS
 
-INTERFACE Atoms : '_SESSION'
+INTERFACE Overview : '_SESSION'
 TABS[ atoms : V[SESSION*Atom]
       COLS [ repr : repr
            , pop  : pop
