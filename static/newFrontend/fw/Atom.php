@@ -371,15 +371,29 @@ Class Atom {
 
 	}
 	
-	public function delete(){		
+	public function delete($requestType){	
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				$databaseCommit = true;
+				break;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
 		
 		$this->database->deleteAtom($this->id, $this->concept);
 		
-		// Close transaction => ROLLBACK or COMMIT.
-		$this->database->closeTransaction('Atom deleted', false, true, false);
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $this->database->closeTransaction('Atom deleted', false, $databaseCommit, false);
 		
-		return;
+		return array('notifications' 		=> Notifications::getAll()
+					,'invariantRulesHold'	=> $invariantRulesHold
+					,'requestType'			=> $requestType
+		);
 		
 	}
 	
