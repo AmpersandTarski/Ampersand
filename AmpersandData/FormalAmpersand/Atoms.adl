@@ -1,81 +1,24 @@
 CONTEXT AST IN ENGLISH LATEX
--- RJ:My motivation for contributing to the documentation of files such as this is drastically reduced when any contributions I made are reverted without any comments - either in the file or or in the commit where the changes are undone.
-PURPOSE PROCESS Atoms  --HJO: Door een of andere onverklaarbare reden mag je hier geen Atoms van maken, want dat wordt gezien als iets dubbel??
-{+Atoms are defined so that they comply with Ampersand's choice to use a representable heterogeneous relational algebra.
--}
+
 PROCESS Atoms
-PURPOSE CONCEPT Atom
-{+
-Atoms are used to represent data.
-For example, the atom ``{\tt Amsterdam}'' can be used as a data element to represent the capital city of the Netherlands.
--}
-CONCEPT Atom "An atom is an indivisible (unstructured) data element, and an instance of a specific concept."
-PURPOSE RELATION repr
-{+
-Every atom has a representation. In the current version of Ampersand, every atom is represented by a finite list of UTF-8 characters.
-In future versions, other types of representation will become possible.
-Whatever the choice, Ampersand relies on the representation to identify the atom.
-For that reason, every atom has a representation (\id{TOT}) and the representation identifies that atom (\id{INJ}).
--}
-RELATION repr[Atom*TType] [TOT,INJ]
+RELATION repr[Atom*TType] [UNI,TOT]
 MEANING "Every atom has a representation, which identifies that atom."
-PURPOSE RELATION pop
-{+
-Concepts can be populated with atoms, which gives them meaning.
-Ampersand uses relation algebra to reason without mentioning atoms.
-As a consequence, Ampersand can serve as a modeling language that reasons about populations of concepts and relations.
--}
+
 RELATION pop[Atom*Concept] [TOT] 
 MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
-PURPOSE RELATION eq
-{+
-For working with atoms, Ampersand only uses equality on atoms.
-The value of the representation will be used in the future for computations,
-but it is not used to define the semantics of the current version of Ampersand.
--}
+
 RELATION eq[Atom*Atom] [UNI,TOT,SUR,INJ,SYM,TRN,RFX]
 MEANING "Equality is defined on atoms."
+
+RELATION name[Concept*String] [UNI,TOT,INJ]
+MEANING "Every concept has a name, which identifies that concept."
+
 RELATION sub[Concept*Concept]
 MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is an element of concept $g$ as well."
 
-PURPOSE RULE "equality on Atoms"
-{+
-Equality is defined for the purpose of static type checking.
-So, the type system must guarantee that two atoms are not compared for equality unless they are part of the same population.
-Under that condition, equality on atoms may be implemented on runtime without looking at the type.
-This property must therefore be proven for Ampersand's type system.
-
-\begin{verbatim}
-RULE "equality on Atoms" : eq = repr;repr~ /\ pop;(sub\/sub~)*;pop~
-MEANING "Two atoms are equal if their representations are equal and they share the same concept."
-\end{verbatim}
--}
 RULE "equality on Atoms" : eq = repr;repr~
 MEANING "Two atoms are equal if their representations are equal and they share the same concept."
 
-PURPOSE RULE "specialization"
-{+Specialization is required in order to facilitate the reuse of code, made by others.
-Ampersand defines specialization to allow for static type checking.
-This has an odd consequence.
-Suppose we have
-
-\begin{verbatim}
-CLASSIFY Lemon ISA Citrus
-CLASSIFY Orange ISA Citrus
-\end{verbatim}
-
-Suppose we have an interface with two editable fields: one expecting a Lemon and the other expecting an Orange.
-Now let's do the following exercise: fill in \verb#l1# in the field that expects a lemon and fill in the same atom in the field that expects an orange.
-The definition of equality now says that the Orange \verb#l1# and the Lemon \verb#l1# are the same atom.
-Adding the following rule to the Ampersand script will prevent that:
-
-\begin{verbatim}
-RULE -(I[Orange] /\ I[Lemon]) 
-\end{verbatim}
-
-The behaviour of specialization is characterized by a rule that says that something specific (e.g. a person) has all the properties of the generic thing from which it is a specialization (e.g. a mammal).
-The natural language logic, that states that every person is a mammal is thus reflected in Ampersand.
--}
 RULE "specialization" : pop;sub |- pop
 MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
 --VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
@@ -84,23 +27,10 @@ ROLE ExecEngine MAINTAINS specialization
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
-PURPOSE CONCEPT Pair
-{+
-In order to populate relations, atoms are assembled in pairs.
-In fact, a relation may be regarded as a set of pairs of atoms.
-In an information system, the population of relations can change because of edit actions by users in user interfaces.
-This means that pairs are inserted into and deleted from relations as time goes by.
--}
-CONCEPT Pair "A pair is something that contains two atoms."
 RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
--- The following are derivable relations
-PURPOSE RULE "source type"
-{+In order to know to which concept an atom belongs, we must look at the relation in which a concept resides.
-Note that atoms cannot exist outside a population, since pop is a total relation.
--}
 RULE "source type" : l~;in;source |- pop
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
 RULE "target type" : r~;in;target |- pop
@@ -113,19 +43,33 @@ ROLE ExecEngine MAINTAINS "source type", "target type"
 ENDPROCESS
 
 INTERFACE Atoms : '_SESSION'
-BOX [ atoms : V[SESSION*Atom]
+TABS[ atoms : V[SESSION*Atom]
+      COLS [ repr : repr
+           , pop  : pop
+           ]
+    , concepts :V[SESSION*Concept]
+      COLS [ name             : I
+           , generalizations  : sub
+           , specializations  : sub~
+           ]
     ]
 
-INTERFACE Atom(repr,pop) : I[Atom]
-COLS [ repr : repr  
-     , pop  : pop         
-     ]                    
+VIEW Atom : Atom(repr,TXT ":",pop)
 
+INTERFACE Atom(repr,pop) : I[Atom]
+COLS [ repr : repr
+     , pop  : pop
+     ]
+
+VIEW Concept : Concept(name)
+
+INTERFACE newConcept(name) : I[Concept]
+COLS [ name             : name
+     ]
+
+INTERFACE mkISA(sub) : I[Concept]
+COLS [ name             : name
+     , generalizations  : sub
+     , specializations  : sub~
+     ]
 ENDCONTEXT
-{-
-    pop
-|-  {  a |- a;(b \/ I) , so let a=pop  and  b-sub+ }
-    pop;(sub+ \/ I)
-=   {  sub+ \/ I  =  sub* }
-    pop;sub*
--}

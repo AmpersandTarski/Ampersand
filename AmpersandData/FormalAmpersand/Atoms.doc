@@ -1,0 +1,89 @@
+CONTEXT AST IN ENGLISH LATEX
+INCLUDE "Atoms.adl"
+
+PURPOSE PROCESS Atoms
+{+Here is a problem: Since an information system cannot store tomatoes, it must work with representations of tomatoes.
+In fact, representations are the only things an information system can work with.
+In order to unleash the available logical power of relational algebra to its maximum, Ampersand is restricted to {\em representable} relation algebras.
+In this pattern, we describe the behaviour of atoms in relation to their representation,
+-}
+
+PURPOSE CONCEPT Atom
+{+To assert that a thing exists is a feature of any information system.
+Ampersand uses atoms for that purpose.
+Atoms are to information systems what numbers are for arithmetic: they can be represented in various ways, but they are the basic, unstructured thing around which everything else is built.
+For example, an atom with representation ``{\tt Amsterdam}'' can be used to assert that something exists that is called ``Amsterdam''.
+The word `atom' is used to indicate that atoms are indivisible and do not contain any structure (that is: not within the world of Ampersand).
+-}
+CONCEPT Atom "An atom is an indivisible thing that exists in a context."
+PURPOSE RELATION repr
+{+
+Every atom has a representation. In the current version of Ampersand, every atom is represented by a finite list of UTF-8 characters.
+In future versions, other types of representation will become possible.
+Whatever the choice, Ampersand relies on the representation to identify the atom.
+For that reason, every atom has a representation (\id{TOT}) and the representation identifies that atom (\id{INJ}).
+-}
+PURPOSE RELATION pop
+{+
+Concepts can be populated with atoms, which gives them meaning.
+Ampersand uses relation algebra to reason without mentioning atoms.
+As a consequence, Ampersand can serve as a modeling language that reasons about populations of concepts and relations.
+-}
+PURPOSE RELATION eq
+{+
+For working with atoms, Ampersand only uses equality on atoms.
+The value of the representation will be used in the future for computations,
+but it is not used to define the semantics of the current version of Ampersand.
+-}
+
+PURPOSE RULE "equality on Atoms"
+{+
+Equality is defined for the purpose of static type checking.
+So, the type system must guarantee that two atoms are not compared for equality unless they are part of the same population.
+Under that condition, equality on atoms may be implemented on runtime without looking at the type.
+This property must therefore be proven for Ampersand's type system.
+
+\begin{verbatim}
+RULE "equality on Atoms" : eq = repr;repr~ /\ pop;(sub\/sub~)*;pop~
+MEANING "Two atoms are equal if their representations are equal and they share the same concept."
+\end{verbatim}
+-}
+PURPOSE RULE "specialization"
+{+Specialization is required in order to facilitate the reuse of code, made by others.
+Ampersand defines specialization to allow for static type checking.
+This has an odd consequence.
+Suppose we have
+
+\begin{verbatim}
+CLASSIFY Lemon ISA Citrus
+CLASSIFY Orange ISA Citrus
+\end{verbatim}
+
+Suppose we have an interface with two editable fields: one expecting a Lemon and the other expecting an Orange.
+Now let's do the following exercise: fill in \verb#l1# in the field that expects a lemon and fill in the same atom in the field that expects an orange.
+The definition of equality now says that the Orange \verb#l1# and the Lemon \verb#l1# are the same atom.
+Adding the following rule to the Ampersand script will prevent that:
+
+\begin{verbatim}
+RULE -(I[Orange] /\ I[Lemon]) 
+\end{verbatim}
+
+The behaviour of specialization is characterized by a rule that says that something specific (e.g. a person) has all the properties of the generic thing from which it is a specialization (e.g. a mammal).
+The natural language logic, that states that every person is a mammal is thus reflected in Ampersand.
+-}
+
+PURPOSE CONCEPT Pair
+{+
+In order to populate relations, atoms are assembled in pairs.
+In fact, a relation may be regarded as a set of pairs of atoms.
+In an information system, the population of relations can change because of edit actions by users in user interfaces.
+This means that pairs are inserted into and deleted from relations as time goes by.
+-}
+CONCEPT Pair "A pair is something that contains two atoms."
+-- The following are derivable relations
+PURPOSE RULE "source type"
+{+In order to know to which concept an atom belongs, we must look at the relation in which a concept resides.
+Note that atoms cannot exist outside a population, since pop is a total relation.
+-}
+
+ENDCONTEXT
