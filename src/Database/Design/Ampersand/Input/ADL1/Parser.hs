@@ -338,7 +338,7 @@ pIndex  = P_Id <$> currPos
           --- IndAtt ::= LabelProps Term | Term
           pIndAtt :: AmpParser P_ObjectDef
           -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
-          pIndAtt  = attL <$> currPos <*> try optLabelProps <*> try pTerm
+          pIndAtt  = attL <$> currPos <*> optLabelProps <*> try pTerm
               where mView = Nothing
                     msub = Nothing
                     --TODO: What does this origin mean? It's not used, can we remove it?
@@ -730,8 +730,9 @@ pLabelProps = (,) <$> pADLid
                   <*  posOf pColon
               where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
 
+--TODO: move the try to where it's being used.
 optLabelProps :: AmpParser (String, [[String]])
-optLabelProps = pLabelProps `opt` ("",[])
+optLabelProps = try pLabelProps `opt` ("",[])
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String

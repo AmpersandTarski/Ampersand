@@ -51,22 +51,8 @@ data LexerErrorInfo
     = UnterminatedComment
 	| UnterminatedPurpose
     | UnterminatedAtom
-    | UnterminatedInfix
-    | MissingExponentDigits
     | UnexpectedChar Char
-    | UnexpectedInfixKeyword String
-    | UnexpectedInfixChar Char	
-    | IllegalEscapeInChar
-    | EmptyChar
-    | IllegalCharInChar
-    | NonTerminatedChar (Maybe String)
-    | EOFInChar
-
-    | EOFInString
-    | IllegalEscapeInString
-    | NewLineInString
-    | IllegalCharInString
-
+    | NonTerminatedString String
     | TooManyClose Char
         -- In UnexpectedClose, first char is the closing bracket we see, 
         -- second char is the closing bracket we would like to see first
@@ -81,28 +67,8 @@ showLexerErrorInfo info =
         UnterminatedComment          -> [ Texts.lexerUnterminatedComment               ]
         UnterminatedPurpose          -> [ Texts.lexerUnterminatedPurpose               ]
         UnterminatedAtom             -> [ Texts.lexerUnterminatedAtom                  ]
-        UnterminatedInfix            -> [ Texts.lexerUnterminatedInfix                 ]
-        MissingExponentDigits        -> [ Texts.lexerMissingExponentDigits 
-                                        , correctFloats 
-                                        ]
         UnexpectedChar c             -> [ Texts.lexerUnexpectedChar c                  ]
-        UnexpectedInfixKeyword s     -> [ Texts.lexerUnexpectedInfixKeyword s          ]   
-        UnexpectedInfixChar c        -> [ Texts.lexerUnexpectedInfixChar c             ]   		
-        IllegalEscapeInChar          -> [ Texts.lexerIllegalEscapeInChar, correctChars ]
-        EmptyChar                    -> [ Texts.lexerEmptyChar, correctChars           ]
-        IllegalCharInChar            -> [ Texts.lexerIllegalCharInChar, correctChars   ]
-        NonTerminatedChar mn         -> [ Texts.lexerNonTerminatedChar
-                                        , correctChars
-                                        ] ++ case mn of
-                                               Nothing -> []
-                                               Just name -> [ Texts.lexerInfixHint name ]
-        EOFInChar                      -> [ Texts.lexerEOFInChar, correctChars]
-        
-        EOFInString                    -> [ Texts.lexerEOFInString,              correctStrings ]
-        IllegalEscapeInString          -> [ Texts.lexerIllegalEscapeInString,    correctStrings ]
-        NewLineInString                -> [ Texts.lexerNewLineInString,          correctStrings ]
-        IllegalCharInString            -> [ Texts.lexerIllegalCharInString,      correctStrings]
-                
+        NonTerminatedString _        -> [ Texts.lexerNonTerminatedString, correctStrings ]
         TooManyClose c                 -> [ Texts.lexerTooManyClose c ]
         UnexpectedClose c1 _ c2        ->   Texts.lexerUnexpectedClose c1 c2
         StillOpenAtEOF [b]             -> [ Texts.lexerStillOpenAtEOF [ show (snd b) ] ]
@@ -110,9 +76,7 @@ showLexerErrorInfo info =
             -- 'reverse' because positions will be sorted and brackets are
             -- reported in reversed order
 
-correctFloats, correctChars, correctStrings :: String
-correctFloats  = Texts.lexerCorrectFloats
-correctChars   = Texts.lexerCorrectChars 
+correctStrings :: String
 correctStrings = Texts.lexerCorrectStrings
 
 {-

@@ -10,11 +10,10 @@ module Database.Design.Ampersand.Input.ADL1.LexerTexts(
     parserImportDeclaration, parserDeclaration,
     lexerUnterminatedComment, lexerUnterminatedPurpose, lexerUnterminatedAtom, lexerUnterminatedInfix,
     lexerMissingExponentDigits, lexerUnexpectedInfixKeyword, lexerUnexpectedInfixChar, lexerUnexpectedChar,
-    lexerIllegalEscapeInChar, lexerEmptyChar, lexerIllegalCharInChar, lexerNonTerminatedChar,
+    lexerIllegalEscapeInChar, lexerEmptyChar, lexerIllegalCharInChar, lexerNonTerminatedString,
     lexerInfixHint, lexerEOFInChar, lexerEOFInString,
     lexerIllegalEscapeInString, lexerNewLineInString, lexerIllegalCharInString,
-    lexerTooManyClose, lexerUnexpectedClose, lexerStillOpenAtEOF,
-    lexerCorrectFloats, lexerCorrectChars, lexerCorrectStrings,
+    lexerTooManyClose, lexerUnexpectedClose, lexerStillOpenAtEOF, lexerCorrectStrings,
     lexerTabCharacter, lexerLooksLikeFloatNoFraction, lexerLooksLikeFloatNoDigits,
     lexerUtfChar, lexerNestedComment, lexerCommentOperator
 ) where
@@ -304,10 +303,10 @@ lexerIllegalCharInChar = select language
     , Dutch   :-> "Niet toegestaan teken in letter constante"
     ]
 
-lexerNonTerminatedChar :: String
-lexerNonTerminatedChar = select language
+lexerNonTerminatedString :: String
+lexerNonTerminatedString = select language
     [ English :-> "Unterminated string literal"
-    , Dutch   :-> "Niet afgesloten letter constante"
+    , Dutch   :-> "String niet afgesloten"
     ]
 
 lexerInfixHint :: String -> String
@@ -370,18 +369,6 @@ lexerStillOpenAtEOF [s] = select language
 lexerStillOpenAtEOF xs = select language
     [ English :-> "The following brackets are never closed: " ++ commasAnd xs
     , Dutch   :-> "De volgende haakjes worden nergens gesloten: " ++ kommasEn xs
-    ]
-
-lexerCorrectFloats :: String
-lexerCorrectFloats = select language
-    [ English :-> "Correct examples of Floats: 3.14 0.2 4e-13 5E+1 6.7e1"
-    , Dutch   :-> "Correcte voorbeelden van reeele getallen: 3.14 0.2 4e-13 5E+1 6.7e1"
-    ]
-
-lexerCorrectChars :: String
-lexerCorrectChars = select language
-    [ English :-> "Correct examples of Chars: 'a' '\\n' '&'"
-    , Dutch   :-> "Correcte voorbeelden van letters: 'a' '\\n' '&'"
     ]
 
 lexerCorrectStrings :: String

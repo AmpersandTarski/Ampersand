@@ -1,12 +1,33 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
-module Database.Design.Ampersand.Input.ADL1.Lexer (
-    keywords, operators, symbols, lexer
+module Database.Design.Ampersand.Input.ADL1.Lexer
+    ( keywords
+    , operators
+    , symbols
+    , lexer
+    -- LexerMessage
+    , LexerError(..)
+    , LexerErrorInfo(..)
+    , LexerWarning(..)
+    , LexerWarningInfo(..)
+    , keepOneTabWarning
+    , isLooksLikeFloatWarningInfo
+    , showLexerErrorInfo
+    , showLexerWarningInfo
+    , showLexerWarnings
+    -- LexerToken
+    , Token(..)
+    , Lexeme(..)
+    , lexemeText
+    , initPos
+    , Filename
+    , FilePos(..)
 ) where
 
 --TODO! Haddock comments to the lexer
 
 import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
+--TODO! I don't think that LexerMonad is being used! Also LexerMessage is maybe not being used.
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
@@ -92,7 +113,7 @@ mainLexer p ('{':'+':s) = lexExpl mainLexer (addPos 2 p) s
 mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
     in if null rest || head rest /= '"'
-                              then lexerError (NonTerminatedChar (Just s)) p
+                              then lexerError (NonTerminatedString s) p
                               else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
@@ -102,25 +123,6 @@ mainLexer p ('\'':ss)
        in if null rest || head rest /= '\''
              then lexerError UnterminatedAtom p
              else returnToken (LexAtom s) p mainLexer (addPos (swidth+2) p) (tail rest)
-
------------------------------------------------------------
--- Handling infix operators
------------------------------------------------------------
-
---TODO: What are infix operators? Isn't this only for Haskell?
-mainLexer p ('`':ss)
-     = case ss of
-         []    -> lexerError UnterminatedInfix p
-         (c:s) -> let res | isIdStart c || isUpper c =
-                                   let (name,p1,rest) = scanIdent (addPos 2 p) s
-                                       ident = c:name
-                                       tokens | null rest ||
-                                                head rest /= '`' = lexerError UnterminatedInfix p
-                                              | iskw ident       = lexerError (UnexpectedInfixKeyword ident) p
-                                              | otherwise        = returnToken (LexOperator ident) p mainLexer (addPos 1 p1) (tail rest)
-                                   in tokens
-                          | otherwise =  lexerError (UnexpectedInfixChar c) p
-                  in res
 
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars

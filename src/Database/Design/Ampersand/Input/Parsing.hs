@@ -13,8 +13,6 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.Input.ADL1.Lexer
-import Database.Design.Ampersand.Input.ADL1.LexerMessage
-import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.Parser
 import Database.Design.Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8

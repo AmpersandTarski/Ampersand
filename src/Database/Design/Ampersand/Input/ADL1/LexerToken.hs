@@ -1,7 +1,11 @@
-module Database.Design.Ampersand.Input.ADL1.LexerToken (
-    Token(..), Lexeme(..), lexemeText,
-    initPos, Filename, FilePos(..)
-) where
+module Database.Design.Ampersand.Input.ADL1.LexerToken
+    ( Token(..)
+    , Lexeme(..)
+    , lexemeText
+    , initPos
+    , Filename
+    , FilePos(..)
+    ) where
 
 import Database.Design.Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
 import Text.Parsec()
