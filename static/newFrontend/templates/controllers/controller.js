@@ -63,7 +63,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.deleteResource = function (ResourceId){
     if(confirm('Are you sure?')){
       \$scope.val['$interfaceName$'][ResourceId]
-        .remove()
+        .remove({ 'requestType' : 'promise'})
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
           \$scope.val['$interfaceName$'].splice(ResourceId, 1); // remove from array
