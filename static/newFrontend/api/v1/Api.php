@@ -225,27 +225,31 @@ class Api{
 	}
 	
 	/**
-	 * @url POST interface/{interfaceId}
+	 * @url POST resource/{concept}/{srcAtomId}/{interfaceId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param int $roleId
+	 * @param string $requestType
+	 * 
+	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($interfaceId, $sessionId, $roleId = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
-			$session = Session::singleton($sessionId);
-			$db = Database::singleton();
-			
+			$session = Session::singleton($sessionId);			
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
 			// TODO: insert check if Atom may be created with this interface
 			
-			$concept = $session->interface->srcConcept;
-			$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
-			$atom = new Atom($atomId, $concept);
-			if(!$atom->atomExists()) throw new Exception("Atom '$atomId' not created", 500);
+			$concept = $session->interface->tgtConcept;
+			$newAtomId = $session->database->addAtomToConcept(Concept::createNewAtom($concept), $concept);
+			$session->atom = new Atom($newAtomId, $concept);
 			
-			return array_values((array)$atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
+			if(!$session->atom->atomExists()) throw new Exception("Resource not created", 500);
+			
+			return $session->atom->post($session->interface, $request_data, $requestType);
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
