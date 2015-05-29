@@ -195,13 +195,18 @@ class Api{
 	}
 	
 	/**
-	 * @url DELETE interface/{interfaceId}/{atomId}
+	 * @url DELETE resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
+	 * @param string $requestType
+	 * 
+	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($interfaceId, $sessionId, $atomId, $roleId = null){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback'){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -209,11 +214,10 @@ class Api{
 		
 			// TODO: insert check if Atom may be deleted with this interface
 			
-			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)) throw new Exception("Resource '$atomId' not found", 404);
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
-			$session->atom->delete();
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
+			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
 			
-			return array('notifications' => Notifications::getAll());
+			return $session->atom->delete($requestType);
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
