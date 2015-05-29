@@ -161,30 +161,31 @@ class Api{
 	}
 	
 	/**
-	 * @url PUT interface/{interfaceId}/{atomId}
+	 * @url PUT resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
-			
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 
 			// TODO: insert check if Atom may be updated with this interface
 			
-			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)){
+			if(!$session->database->atomExists($tgtAtomId, $session->interface->tgtConcept)){
 				// TODO: insert check if Atom may be created with this interface
-				$session->database->addAtomToConcept($atomId, $session->interface->tgtConcept);
+				$session->database->addAtomToConcept($tgtAtomId, $session->interface->tgtConcept);
 			}
 			
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
 			
 			return $session->atom->put($session->interface, $request_data, $requestType);
 		
