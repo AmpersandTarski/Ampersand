@@ -13,28 +13,19 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.initialVal = {};
   \$scope.showSaveButton = {}; // initialize showSaveButton object
   
-  // URL to the interface API. 'http://pathToApp/api/v1/' is already configured elsewhere.
-  url = 'interface/$interfaceName$';
+  // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
-    newAtom = Restangular.one(url).post().then(function (data){
-      \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
-      \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
-    });
-  }else
+	\$scope.val['$interfaceName$'] = Restangular.one('resource/SESSION', \$rootScope.session.id).all('$interfaceName$').post({}).\$object;
+    
+  // Elseif resourceId is provided
+  }else if(typeof \$routeParams.resourceId != 'undefined'){
+    \$scope.val['$interfaceName$'] = Restangular.one('resource/$source$', \$routeParams.resourceId).getList('$interfaceName$').\$object;
   
-  // Checks if resourceId is provided, and if so does a get() else a getList()
-  if(typeof \$routeParams.resourceId != 'undefined'){
-    list = Restangular.one(url, \$routeParams.resourceId).get().then(function(data){
-      \$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
-      \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
-    });
+  // Else use session.id
   }else{
-    atom = Restangular.all(url).getList().then(function(data){
-    	\$scope.val['$interfaceName$'] = Restangular.restangularizeCollection('', data, url);
-        \$scope.initialVal['$interfaceName$'] = \$scope.val['$interfaceName$']; // copy initial data of Resource
-    });
+	\$scope.val['$interfaceName$'] = Restangular.one('resource/$source$', \$rootScope.session.id).getList('$interfaceName$').\$object;
   }
   
   \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
@@ -90,7 +81,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
       .put({'requestType' : requestType})
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
-        \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
+        \$scope.val['$interfaceName$'][ResourceId] = \$.extend(\$scope.val['$interfaceName$'][ResourceId], data.content);
         
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
