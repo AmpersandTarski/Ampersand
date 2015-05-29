@@ -91,14 +91,16 @@ class Api{
 
 	/**************************** OBJECTINTERFACES ****************************/
 	/**
-	 * @url GET interface/{interfaceId}
-	 * @url GET interface/{interfaceId}/{atomId}
+	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}
+	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function getAtom($interfaceId, $sessionId = null, $atomId = null, $roleId = null){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -106,22 +108,22 @@ class Api{
 		
 			$result = array();
 			
-			if(is_null($atomId)) {
-				foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
-					$atom = new Atom($atomId, $session->interface->srcConcept);
-					$result = array_merge($result, (array)$atom->getContent($session->interface));
-				}
-				
-				if(empty($result)) Notifications::addInfo("No results found");
-			}else{
-		
-				$atom = new Atom($atomId, $session->interface->srcConcept);
-				if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
-				
-				$result = $atom->getContent($session->interface);
-			}			
+			if($session->interface->srcConcept != $concept) throw new Exception("Concept '$concept' cannot be used as source concept for interface '".$session->interface->label."'", 400);
+			
+			$atom = new Atom($srcAtomId, $concept);
+			if(!$atom->atomExists()) throw new Exception("Resource '$srcAtomId' not found", 404);
+			
+			$result = (array)$atom->getContent($session->interface, true, $tgtAtomId);
+			
+			if(empty($result)) Notifications::addInfo("No results found");			
 	
-			return array_values($result); // array_values transforms assoc array to non-assoc array
+			if(is_null($tgtAtomId)){
+				// return array of atoms (i.e. tgtAtoms of the interface given srcAtomId)
+				return array_values($result); // array_values transforms assoc array to non-assoc array
+			}else{
+				// return 1 atom (i.e. tgtAtomId)
+				return current($result);
+			}
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
