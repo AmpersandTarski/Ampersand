@@ -131,22 +131,27 @@ class Api{
 	}
 	
 	/**
-	 * @url PATCH interface/{interfaceId}/{atomId}
+	 * @url PATCH resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
 	 * @param string $requestType
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
-				
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
+			
+			// TODO: insert check if Atom may be patched  with this interface
+			
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
+			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
 				
 			return $session->atom->patch($session->interface, $request_data, $requestType);
 	
