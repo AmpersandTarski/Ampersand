@@ -1,51 +1,50 @@
 CONTEXT AST IN ENGLISH LATEX
 
 PROCESS "Equality on Atoms"
-RELATION repr[Atom*Representation] [UNI,TOT]
---MEANING "Every atom has a representation, which identifies that atom." --@Stef: Onjuist! twee atomen met dezelfde representatie maar in 
-                                                                       -- verschillende, niet in dezelfde typologie opgenomen concepten, 
-                                                                       -- willen we niet zien als gelijke atomen.
-MEANING "Every atom has a single representation in the information system that 'knows' about that atom" --@Stef: Door te beperken tot een enkel
-                                                                       -- informatiesysteem mogen we deze relatie voorzien van de properties [UNI,TOT].
+{-RJ: The modifications I have made this time attempt to simplify the model, where I have taken the various telco-discussions and comments into account. 
 
+In order to ensure that readers can distinguish between possibly different meanings of a term that is both defined in AST and in the dictionary, I use capitalized words to refer to Concepts that are, should be, or should have been defined in AST. 
+-}
+
+PURPOSE CONCEPT Atom
+{+The Oxford Dictionary uses the term 'entity' to refer to tangible things (e.g. a chair) and well as intangible things (e.g. an idea, or a number) that exist in the real world. We interpret the term 'universe' to refer to the collection of all such entities. Note that these terms are highly philosophical.
+
+In order for knowledge/reasoning/information systems (in Ampersand: Contexts) to reason about stuff in the real world, a perception ('mental image', idea) of that universe is needed. This (highly philosophical) idea is necessary to explain differences between how we reasoning about the real world and what actually happens in that real world: after all, the reasoning is done on the **perceived** entities rather than the entities that have an actual existence. Note that the perception of an entity is itself something that exists, and hence an entity as well.
+
+Within a Context, we want to talk and reason about any perception (of an entity) that exists within that Context. To do so, every perception must not only be referrable (named), but also distinguishable from all other such perceptions.-}
+CONCEPT Atom "a representation, within a specific Context, of a real-world entity that within that Context is perceived to exist"
+
+PURPOSE RELATION pop
+{+In order to talk about (perceptions of) real world entities that share (perceived) similar properties, or in order to specify rules, it must be possible to classify Atoms. We use the term 'Concept' to refer to a class of Atoms. We say that 'an Atom is in the population of some Concept' or alternatively 'an Atom is an element of some Concept' iff the Atom belongs to (or: is an instance of) that class.-}
 RELATION pop[Atom*Concept] [TOT] 
 MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
-
-RELATION eq[Atom*Atom] [UNI,TOT,SUR,INJ,SYM,TRN,RFX]
-MEANING "Equality is defined on atoms."  -- @Stef, graag toevoegen ", as represented in an information system."
-                                         -- Immers, er bestaat geen gelijkheidsrelatie tussen atomen in verschillende
-                                         -- informatiesystemen. Dat is ook niet waar we het hier over willen hebben. 
-
-RELATION name[Concept*String] [UNI,TOT] --@Stef, Deze relatie doet in dit pattern niet ter zake.
-MEANING "Every concept has a name, which identifies that concept."
 
 RELATION sub[Concept*Concept]
 MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is an element of concept $g$ as well."
 
-
-RULE "FOUTequality on Atoms" : eq = repr;repr~ -- @Stef: Fout! Deze meaning en formele expressie matchen niet. Naast de representatie moet er
-                                               -- ook op een of andere manier verwantschap zijn met concepten. Twee atomen, waarvan de concepten
-                                               -- niet verwant zijn met ISA-relaties, zijn nooit aan elkaar gelijk. Twee atomen, waarvan de concepten
-                                               -- wél verwant zijn (direct of indirect), zijn gelijk indien de representaties van beide atomen gelijk zijn. 
-                                               -- Dit vraagt om een nieuw concept, dat we inmiddels kennen als 'kernel', of 'conceptgroep': Typologie
-MEANING "Two atoms are equal if their representations are equal and they share the same concept."
-                                               -- Hieronder definieer ik enkele relaties en regels, om de equivalentie van atomen mee te beschrijven.
-                                               -- (documentatie heb ik nog maar even gelaten voor wat het is. TODO.)
-RELATION in[Atom*Typology] [UNI,TOT]
-MEANING "Every atom is in exactly one typology"
-
+CONCEPT Typology "a hierarchy of Concepts"
 RELATION partOf[Concept*Typology] [UNI,TOT]
 MEANING "Every concept is part of exactly one typology"
 
 RULE "typologies" : sub;partOf |- partOf
 MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
 
-RULE "equality on Atoms" : eq = repr;repr~;in;in~ -- @Stef: Dit is precies waar we naar op zoek zijn. De hond "Fikkie" is iets anders dan de kat "Fikkie",
-                                               -- totdat het concept hond en het concept kat onderdeel zijn van dezelfde typologie. Dan blijkt plotseling
-                                               -- dat we het over hetzelfde 'Dier' hebben...
+PURPOSE RULE "Integrity of Atoms and populations"
+{+It must be ensured that the representations of ((different) perceptions of) (different) real world entities can be properly distinguished. Any pair of Atoms in the same Concept are distinct (per definition). Thus, we need a rule that expresses when two Atoms that are in different Concepts represent the same (perception of) a real world entity.
+-}
+RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
+MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
+
+-- RJ: Onderstaande relatie en regel kunenn weg, omdat we een (nieuwe) regel "Integrity of Atoms and populations" hebben.
+--RELATION eq[Atom*Atom] [UNI,TOT,SUR,INJ,SYM,TRN,RFX]
+--MEANING "Within one Context, two Atoms can be equivalent, i.e. refer to the same real world entity."
+--RULE "equivalence of Atoms" : eq = Irepr;repr~;in;in~
+-- @Stef: Dit is precies waar we naar op zoek zijn. De hond "Fikkie" is iets anders dan de kat "Fikkie",
+-- totdat het concept hond en het concept kat onderdeel zijn van dezelfde typologie. Dan blijkt plotseling
+-- dat we het over hetzelfde 'Dier' hebben...
 
 RULE "specialization" : pop;sub |- pop
-MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
+MEANING "An Atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS specialization
 
@@ -82,6 +81,8 @@ TABS[ atoms : V[SESSION*Atom]
     ]
 
 VIEW Atom : Atom(repr,TXT ":",pop)
+RELATION repr[Atom*String] [UNI,TOT,INJ]
+MEANING "Every atom has a representation, which identifies that concept."
 
 INTERFACE Atom(repr,pop) : I[Atom]
 COLS [ repr : repr
@@ -89,13 +90,15 @@ COLS [ repr : repr
      ]
 
 VIEW Concept : Concept(name)
+RELATION name[Concept*String] [UNI,TOT,INJ]
+MEANING "Every concept has a name, which identifies that concept."
 
 INTERFACE newConcept(name[Concept*String]) : I[Concept]
-COLS [ name             : name
+COLS [ name             : I
      ]
 
 INTERFACE mkISA(sub) : I[Concept]
-COLS [ name             : name
+COLS [ name             : I
      , generalizations  : sub
      , specializations  : sub~
      ]
