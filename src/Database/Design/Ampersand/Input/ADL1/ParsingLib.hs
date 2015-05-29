@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     AmpParser, pIsThere, optList,
     -- Operators
-    --TODO: Maybe we don't need to export these here
+    --TODO: Maybe we shouldn't export these here, but import in the parser directly
     (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,

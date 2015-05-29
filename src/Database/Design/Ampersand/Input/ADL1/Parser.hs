@@ -173,6 +173,7 @@ pProcessDef = rebuild <$> currPos
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
 pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
+           -- TODO: Py is not read out
            Py <$> pClassify         <|>
            Pd <$> pRelationDef      <|>
            Pm <$> pRoleRule         <|>
@@ -185,7 +186,7 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pp <$> pPopulation
 
 data PatElem = Pr (P_Rule TermPrim)
-             | Py P_Gen -- TODO: Py is not used
+             | Py P_Gen
              | Pd P_Declaration
              | Pm P_RoleRule
              | Pl P_RoleRelation
