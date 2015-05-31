@@ -2,3 +2,6 @@
 language: haskell
 
 before_install: sudo apt-get install unixodbc-dev
+
+ghc: 7.8
+
