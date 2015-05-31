@@ -75,7 +75,7 @@ executable ampersand
                      HDBC-odbc == 2.3.*,
                      HStringTemplate == 0.7.*,
                      SpreadsheetML == 0.1.*,
-                     base >= 4.6 && < 5.0,
+                     base >= 4.7 && < 5.0,
                      bytestring == 0.10.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
