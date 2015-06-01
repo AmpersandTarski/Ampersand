@@ -7,11 +7,12 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout) {
   
   \$scope.val = {};
   \$scope.initialVal = {};
   \$scope.showSaveButton = {}; // initialize showSaveButton object
+  \$scope.resourceStatusColor = {}; // initialize object for resource status colors
   
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
   
@@ -96,16 +97,21 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
         	\$scope.showSaveButton[ResourceId] = true;
+        	\$scope.resourceStatusColor[ResourceId] = 'warning';
         }else if(data.invariantRulesHold && data.requestType == 'promise'){
 			\$scope.showSaveButton[ResourceId] = false;
+			\$scope.resourceStatusColor[ResourceId] = 'success';
+			\$timeout(function() {
+				\$scope.resourceStatusColor[ResourceId] = 'default';
+		    }, 3000);
 			
 			// If this atom was updated with the 'new' interface, change url
 			var location = \$location.search();
-			console.log(location);
 			if(location['new']){
 				\$location.url('/$interfaceName$/' + data.content.id);
 			}
 		}else{
+			\$scope.resourceStatusColor[ResourceId] = 'danger';
         	\$scope.showSaveButton[ResourceId] = false;
         }
       });
