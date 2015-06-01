@@ -19,7 +19,7 @@ REPRESENT ConceptDefinition TYPE BigAlphanumeric
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-IDENT Context: Context(name[Context*ContextName])  
+IDENT Context: Context(name)  
 --CLASSIFY ContextName ISA Conid
 RELATION name[Context*ContextName] [UNI,TOT,INJ]
 MEANING "The name of a context."
@@ -35,7 +35,7 @@ ENDPATTERN
 
 PATTERN Patterns
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-IDENT Pattern: Pattern(name[Pattern*PatternName])  --TODO: The sign for name is overspecification, but is still required, for otherwise an error will occur in the typechecker.
+IDENT Pattern: Pattern(name)
 
 --CLASSIFY PatternName ISA Conid
 
@@ -74,7 +74,7 @@ ENDPATTERN
 PATTERN Concept
 CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
 CONCEPT PlainConcept "A concept is a name for a category of similar objects."
-IDENT PlainConcept: PlainConcept(name[PlainConcept*ConceptName])
+IDENT PlainConcept: PlainConcept(name)
 CLASSIFY PlainConcept ISA Concept
 --CLASSIFY ConceptName ISA Conid
 
@@ -218,7 +218,7 @@ MEANING "A relation reference refers to the relation with the same name, the sig
 -}ENDPATTERN
 
 PATTERN Rules
-IDENT Rule: Rule(name[Rule*RuleName])
+IDENT Rule: Rule(name)
 --CLASSIFY RuleName ISA ADLid
 RELATION name[Rule*RuleName] [UNI,TOT,INJ]
 MEANING "The name of a rule."
