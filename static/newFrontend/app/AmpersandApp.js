@@ -31,10 +31,6 @@ AmpersandApp.config(function(RestangularProvider) {
 	
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
     
-    RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
-        return data;
-    });
-    
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     
 });
@@ -66,6 +62,26 @@ AmpersandApp.run(function(Restangular, $rootScope){
     	
     	return false; // error handled
     });
+	
+	// The responseInterceptor is called after we get each response from the server
+	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
+		var newResponse;
+		
+		// Extract the response for a POST call
+		if (operation === "post") {
+			// First the newResponse will be data.content, which contains the new Resource
+			newData = data.content;
+			
+			// Then we update the notifications
+			$rootScope.updateNotifications(data.notifications);
+
+		// Else, just return the "regular" response as there's no object wrapping it 
+		}else{
+			newData = data;
+		}
+		
+		return newData;
+	});
 	
 });
 
