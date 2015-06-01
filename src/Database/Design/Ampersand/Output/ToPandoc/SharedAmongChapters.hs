@@ -52,6 +52,7 @@ import Data.Monoid
 import Data.Maybe
 import Data.Ord
 import System.Locale
+import System.FilePath
 import GHC.Exts(sortWith)
 
 fatal :: Int -> String -> a
@@ -149,7 +150,7 @@ showImage opts pict =
       case fspecFormat opts of
          FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
-   <> image (imagePath opts pict) (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
+   <> image fileOnly (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
    <> case fspecFormat opts of
          FLatex  -> rawInline "latex" "}\n"
                   <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n")
@@ -158,7 +159,9 @@ showImage opts pict =
    <> case fspecFormat opts of
          FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
          _       -> mempty
-
+  where
+    fileOnly = (snd . splitFileName . imagePath opts) pict
+    
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
