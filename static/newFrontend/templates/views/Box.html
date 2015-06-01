@@ -1,5 +1,5 @@
 <!-- BOX<> "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
-<div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
+<div class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id"$endif$>
   $if(isRoot)$<fieldset>
     <legend>
       <a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a>

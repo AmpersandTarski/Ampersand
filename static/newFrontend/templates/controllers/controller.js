@@ -62,13 +62,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   }
   
   // Delete function to delete a complete Resource
-  \$scope.deleteResource = function (ResourceId){
+  \$scope.deleteResource = function (resourceId){
     if(confirm('Are you sure?')){
-      \$scope.val['$interfaceName$'][ResourceId]
+      var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
+      \$scope.val['$interfaceName$'][resourceIndex]
         .remove({ 'requestType' : 'promise'})
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
-          \$scope.val['$interfaceName$'].splice(ResourceId, 1); // remove from array
+          \$scope.val['$interfaceName$'].splice(resourceIndex, 1); // remove from array
         });
     }
   }
@@ -86,23 +87,26 @@ $else$  // The interface does not contain editable relations to primitive concep
 $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
   // Put function to update a Resource
-  \$scope.put = function(ResourceId, requestType){
+  \$scope.put = function(resourceId, requestType){
+	
+	var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
+	
 	requestType = requestType || 'feedback'; // set default requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
-    \$scope.val['$interfaceName$'][ResourceId]
+    \$scope.val['$interfaceName$'][resourceIndex]
       .put({'requestType' : requestType})
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
-        \$scope.val['$interfaceName$'][ResourceId] = \$.extend(\$scope.val['$interfaceName$'][ResourceId], data.content);
+        \$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
         
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
-        	\$scope.showSaveButton[ResourceId] = true;
-        	\$scope.resourceStatusColor[ResourceId] = 'warning';
+        	\$scope.showSaveButton[resourceId] = true;
+        	\$scope.resourceStatusColor[resourceId] = 'warning';
         }else if(data.invariantRulesHold && data.requestType == 'promise'){
-			\$scope.showSaveButton[ResourceId] = false;
-			\$scope.resourceStatusColor[ResourceId] = 'success';
+			\$scope.showSaveButton[resourceId] = false;
+			\$scope.resourceStatusColor[resourceId] = 'success';
 			\$timeout(function() {
-				\$scope.resourceStatusColor[ResourceId] = 'default';
+				\$scope.resourceStatusColor[resourceId] = 'default';
 		    }, 3000);
 			
 			// If this atom was updated with the 'new' interface, change url
@@ -111,64 +115,56 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 				\$location.url('/$interfaceName$/' + data.content.id);
 			}
 		}else{
-			\$scope.resourceStatusColor[ResourceId] = 'danger';
-        	\$scope.showSaveButton[ResourceId] = false;
+			\$scope.resourceStatusColor[resourceId] = 'danger';
+        	\$scope.showSaveButton[resourceId] = false;
         }
       });
   }
 
   // Function to patch only the changed attributes of a Resource
-  \$scope.patch = function(ResourceId){
-	  patches = diff(\$scope.initialVal['$interfaceName$'][ResourceId], \$scope.val['$interfaceName$'][ResourceId]) // determine patches
-	  console.log(patches);
-	  
-	  /*
-	  \$scope.val['$interfaceName$'][ResourceId]
-	  .patch(patches)
-	  .then(function(data) {
-		 \$rootScope.updateNotifications(data.notifications);
-		 \$scope.val['$interfaceName$'][ResourceId] = Restangular.restangularizeElement('', data.content, url);
-	  });
-	  */
+  \$scope.patch = function(resourceId){
+	  var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
+	  //patches = diff(\$scope.initialVal['$interfaceName$'][resourceIndex], \$scope.val['$interfaceName$'][resourceIndex]) // determine patches
+	  console.log('not yet implemented');
   }
   
   // Function to add item to array of primitieve datatypes
-  \$scope.addItem = function(obj, property, selected, ResourceId){
+  \$scope.addItem = function(obj, property, selected, resourceId){
     if(selected.value != ''){
       if(obj[property] === null) obj[property] = [];
       obj[property].push(selected.value);
       selected.value = '';
-      \$scope.put(ResourceId);
+      \$scope.put(resourceId);
     }else{
     	console.log('Empty value selected');
     }
   }
   
   //Function to remove item from array of primitieve datatypes
-  \$scope.removeItem = function(obj, key, ResourceId){
+  \$scope.removeItem = function(obj, key, resourceId){
     obj.splice(key, 1);
-    \$scope.put(ResourceId);
+    \$scope.put(resourceId);
   }
 $else$  // The interface does not contain any editable relations
 $endif$
 $if(containsEditableNonPrim)$  // The interface contains at least 1 editable relation to a non-primitive concept
   // AddObject function to add a new item (val) to a certain property (property) of an object (obj)
   // Also needed by addModal function.
-  \$scope.addObject = function(obj, property, selected, ResourceId){
+  \$scope.addObject = function(obj, property, selected, resourceId){
     if(selected.id === undefined || selected.id == ''){
       console.log('selected id is undefined');
     }else{
       if(obj[property] === null) obj[property] = {};
       obj[property][selected.id] = {'id': selected.id};
       selected.id = ''; // reset input field
-      \$scope.put(ResourceId);
+      \$scope.put(resourceId);
     }
   }
   
   // RemoveObject function to remove an item (key) from list (obj).
-  \$scope.removeObject = function(obj, key, ResourceId){
+  \$scope.removeObject = function(obj, key, resourceId){
     delete obj[key];
-    \$scope.put(ResourceId);
+    \$scope.put(resourceId);
   }
   
   // Typeahead functionality
@@ -180,4 +176,12 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   }$
 $else$  // The interface does not contain editable relations to non-primitive concepts
 $endif$
+
+  function _getResourceIndex(itemId, items){
+    var index;
+    items.some(function(item, idx){
+      return (item.id === itemId) && (index = idx)
+    });
+    return index;
+  }
 });

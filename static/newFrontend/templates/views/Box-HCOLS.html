@@ -9,7 +9,7 @@
     </tr>
   </thead>
   <tbody $if(isEditable)$ng-init="parent = val['$name$']"$endif$>
-    <tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
+    <tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id"$endif$>
       $if(isEditable)$<td>
         <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
       </td>$endif$

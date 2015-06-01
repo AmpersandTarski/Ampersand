@@ -5,11 +5,11 @@
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
       $subObjects:{subObj|<th>$subObj.subObjLabel$</th>
       }$
-      $if(isRoot)$<th></th><!-- delete/save resource-->$endif$
+      $if(isRoot)$<th><button type="button" class="btn btn-success btn-xs" ng-click="addNewResource()">Add</button></th><!-- delete/save/add resource-->$endif$
     </tr>
   </thead>
   <tbody $if(isEditable)$ng-init="parent = val['$name$']"$endif$>
-    <tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index" ng-class="resourceStatusColor[ResourceId]"$endif$>
+    <tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="resourceStatusColor[ResourceId]"$endif$>
       $if(isEditable)$<td>
         <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
       </td>$endif$
