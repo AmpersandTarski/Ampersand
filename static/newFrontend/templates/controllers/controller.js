@@ -17,7 +17,10 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
-	\$scope.val['$interfaceName$'] = Restangular.one('resource/SESSION', \$rootScope.session.id).all('$interfaceName$').post({}).\$object;
+	\$scope.val['$interfaceName$'] = Restangular.one('resource/SESSION', \$rootScope.session.id).all('$interfaceName$'); // requestless URL build
+	\$scope.val['$interfaceName$'].post({}).then(function(newItem) { // POST
+		\$scope.val['$interfaceName$'].push(newItem); // Add to collection
+	});
     
   // Elseif resourceId is provided
   }else if(typeof \$routeParams.resourceId != 'undefined'){
@@ -86,7 +89,16 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
         	\$scope.showSaveButton[ResourceId] = true;
-        }else{
+        }else if(data.invariantRulesHold && data.requestType == 'promise'){
+			\$scope.showSaveButton[ResourceId] = false;
+			
+			// If this atom was updated with the 'new' interface, change url
+			var location = \$location.search();
+			console.log(location);
+			if(location['new']){
+				\$location.url('/$interfaceName$/' + data.content.id);
+			}
+		}else{
         	\$scope.showSaveButton[ResourceId] = false;
         }
       });
