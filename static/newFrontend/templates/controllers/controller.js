@@ -79,7 +79,7 @@ $endif$
 $if(containsEditable)$  // The interface contains at least 1 editable relation
   // Put function to update a Resource
   \$scope.put = function(ResourceId, requestType){
-	requestType = requestType || 'feedback'; // this does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
+	requestType = requestType || 'feedback'; // set default requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
     \$scope.val['$interfaceName$'][ResourceId]
       .put({'requestType' : requestType})
       .then(function(data) {
