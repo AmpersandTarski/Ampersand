@@ -50,9 +50,16 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   });
 
 
-  // The function below is only necessary if the interface allows to delete the complete atom,
+  // The functions below are only necessary if the interface allows to add/delete the complete atom,
   // but since this cannot be specified yet in Ampersand we always include it.
 
+  // Function to add a new Resource
+  \$scope.addNewResource = function (){
+    \$scope.val['$interfaceName$'].post({}).then(function(newItem) { // POST
+      \$scope.val['$interfaceName$'].push(newItem); // Add to collection
+    });
+  }
+  
   // Delete function to delete a complete Resource
   \$scope.deleteResource = function (ResourceId){
     if(confirm('Are you sure?')){
