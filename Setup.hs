@@ -23,7 +23,7 @@ main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
 -- Before each build, generate a BuildInfo_Generated module that exports the project version from cabal,
--- the current svn revision number and the build time.
+-- the current revision number and the build time.
 --
 -- Note that in order for this Setup.hs to be used by cabal, the build-type should be Custom.
 
