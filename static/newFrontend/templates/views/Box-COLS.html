@@ -5,7 +5,7 @@
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
       $subObjects:{subObj|<th>$subObj.subObjLabel$</th>
       }$
-      $if(isRoot)$<th><button type="button" class="btn btn-success btn-xs" ng-click="addNewResource()">Add</button></th><!-- delete/save/add resource-->$endif$
+      $if(isRoot)$<th></th><!-- delete/save resource-->$endif$
     </tr>
   </thead>
   <tbody $if(isEditable)$ng-init="parent = val['$name$']"$endif$>
