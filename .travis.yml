@@ -7,8 +7,14 @@ before_install:
   - cd dontTouch
   - git submodule init
   - git submodule update
-  - ls
+  - ls -alrt
   - cd "${ORIGINALDIR}"
 
 ghc: 7.8
+
+after_script:
+  - echo "${TRAVIS_TEST_RESULT}"
+  - cat "${TRAVIS_TEST_RESULT}"
+
+
 
