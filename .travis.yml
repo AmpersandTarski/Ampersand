@@ -4,7 +4,7 @@ language: haskell
 before_install: 
   - sudo apt-get install unixodbc-dev
   - ORIGINALDIR="$(pwd)"
-  - ls dontTouch
+  - cd dontTouch
   - git submodule init
   - git submodule update
   - ls
