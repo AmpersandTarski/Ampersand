@@ -191,7 +191,7 @@ testAmpersandScripts
  = do 
     walk baseDir $$ myVisitor
  where
-    baseDir = "dontTouch" </>  "ampersand-models" </> "INDOORS"
+    baseDir = "dontTouch" </>  "ampersand-models" 
 
 -- Produces directory data
 walk :: FilePath -> Source IO DirData
