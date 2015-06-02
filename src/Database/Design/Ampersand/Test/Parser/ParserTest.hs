@@ -19,7 +19,7 @@ parseScripts opts (f:fs) =
      do parsed <- parseADL opts f
         case parsed of
             Checked _ -> do { putStrLn ("Parsed: " ++ f); parseScripts opts fs }
-            Errors  e -> do { showErrors e; return False }
+            Errors  e -> do { putStrLn ("Cannot parse: " ++ f); showErrors e; return False }
 
 printErrLn :: Show a => a -> IO ()
 printErrLn a = hPutStrLn stderr (show a)

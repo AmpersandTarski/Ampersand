@@ -27,7 +27,6 @@ getFiles ext dir =
                 do ms <- getFiles ext d
                    return $ ms ++ rs
 
-
 models :: [FilePath]
 models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
          , baseDir </> "Bugs/Current/Other/Bug335_Kl0Kl1.adl"
@@ -90,18 +89,13 @@ models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
          , baseDir </> "Misc/ArchiTest5.adl"
          , baseDir </> "Misc/ArchiTest4.adl"
          , baseDir </> "Misc/ArchiTest3.adl"
-         , baseDir </> "NVWA DTV/Urenpools.adl"
-         , baseDir </> "NVWA DTV/Tijdverantwoordingen.adl"
          , baseDir </> "NVWA DTV/Periodeverantwoordingen.adl"
          , baseDir </> "NVWA DTV/OnregelmatigeDiensten.adl"
          , baseDir </> "NVWA DTV/Onderbrekingen.adl"
          , baseDir </> "NVWA DTV/Login.adl"
-         , baseDir </> "NVWA DTV/Kennismotor.adl"
          , baseDir </> "NVWA DTV/expTijdsduur.adl"
-         , baseDir </> "NVWA DTV/DTV.adl"
          , baseDir </> "RAPRelatedPatterns/UIservices.adl"
          , baseDir </> "ServiceDesk/case.adl"
-         --, baseDir </> "Session/Session.adl"
          , baseDir </> "Simple/DeliverySimpleOPA.adl"
          , baseDir </> "Simple/DeliverySimple.adl"
          , baseDir </> "Simple/Delivery.adl"
@@ -171,8 +165,10 @@ models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
          ]
   where
     baseDir = "dontTouch" </> "ampersand-models"
+
 getTestScripts :: IO [FilePath]
 getTestScripts =
      do fs <- getFiles ".adl" "ArchitectureAndDesign"
+        ss <- return[] -- getFiles ".adl" "dontTouch/ampersand-models/Tests/ShouldSucceed"
         ds <- return[] -- getFiles ".adl" "AmpersandData/FormalAmpersand"
-        return $ fs ++ ds ++ models
+        return $ fs ++ ss ++ ds ++ models
