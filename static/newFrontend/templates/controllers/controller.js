@@ -12,7 +12,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.val = {};
   \$scope.initialVal = {};
   \$scope.showSaveButton = {}; // initialize showSaveButton object
-  \$scope.resourceStatusColor = {}; // initialize object for resource status colors
+  \$scope.resourceStatus = {}; // initialize object for resource status colors
   
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
   
@@ -101,12 +101,12 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
         	\$scope.showSaveButton[resourceId] = true;
-        	\$scope.resourceStatusColor[resourceId] = 'warning';
+        	setResourceStatus(resourceId, 'warning');
         }else if(data.invariantRulesHold && data.requestType == 'promise'){
 			\$scope.showSaveButton[resourceId] = false;
-			\$scope.resourceStatusColor[resourceId] = 'success';
+			setResourceStatus(resourceId, 'success');
 			\$timeout(function() {
-				\$scope.resourceStatusColor[resourceId] = 'default';
+				setResourceStatus(resourceId, 'default');
 		    }, 3000);
 			
 			// If this atom was updated with the 'new' interface, change url
@@ -115,7 +115,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 				\$location.url('/$interfaceName$/' + data.content.id);
 			}
 		}else{
-			\$scope.resourceStatusColor[resourceId] = 'danger';
+			setResourceStatus(resourceId, 'danger');
         	\$scope.showSaveButton[resourceId] = false;
         }
       });
@@ -183,5 +183,10 @@ $endif$
       return (item.id === itemId) && (index = idx)
     });
     return index;
+  }
+  
+  function setResourceStatus(resourceId, status){
+    \$scope.resourceStatus[resourceId] = {'warning' : false, 'danger' : false, 'default' : false, 'success' : false}; // set all to false
+    \$scope.resourceStatus[resourceId][status] = true; // set new status    
   }
 });
