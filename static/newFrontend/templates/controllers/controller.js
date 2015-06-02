@@ -11,7 +11,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   
   \$scope.val = {};
   \$scope.initialVal = {};
-  \$scope.showSaveButton = {}; // initialize showSaveButton object
+  \$scope.showSaveButton = {}; // initialize object for show/hide save button
+  \$scope.showCancelButton = {}; // initialize object for show/hide cancel button
   \$scope.resourceStatus = {}; // initialize object for resource status colors
   
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
@@ -101,9 +102,11 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         // show/hide save button
         if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
         	\$scope.showSaveButton[resourceId] = true;
+        	\$scope.showCancelButton[resourceId] = true;
         	setResourceStatus(resourceId, 'warning');
         }else if(data.invariantRulesHold && data.requestType == 'promise'){
 			\$scope.showSaveButton[resourceId] = false;
+			\$scope.showCancelButton[resourceId] = false;
 			setResourceStatus(resourceId, 'success');
 			\$timeout(function() {
 				setResourceStatus(resourceId, 'default');
@@ -117,8 +120,23 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 		}else{
 			setResourceStatus(resourceId, 'danger');
         	\$scope.showSaveButton[resourceId] = false;
+        	\$scope.showCancelButton[resourceId] = true;
         }
       });
+  }
+
+  // Function to cancel edits and reset resource data
+  \$scope.cancel = function(resourceId){
+	  
+	  var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
+	  \$scope.val['$interfaceName$'][resourceIndex]
+	  	.get()
+	  	.then(function(data) {
+	  		\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.plain());
+	  		setResourceStatus(resourceId, 'default');
+	  		\$scope.showSaveButton[resourceId] = false;
+	  		\$scope.showCancelButton[resourceId] = false;
+	  	});
   }
 
   // Function to patch only the changed attributes of a Resource

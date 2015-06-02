@@ -1,7 +1,10 @@
 <!-- BOX<ROWS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 <div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{'panel-default' : resourceStatus[ResourceId]['default'], 'panel-warning' : resourceStatus[ResourceId]['warning'], 'panel-danger' : resourceStatus[ResourceId]['danger'], 'panel-success' : resourceStatus[ResourceId]['success']}"$endif$>
   $if(isRoot)$<div class="panel-heading">
-    <button type="button" class="btn btn-warning pull-right" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
+    <div class="pull-right">
+      <button type="button" class="btn btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
+      <button type="button" class="btn btn-danger" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
+    </div>
     <h4><a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a></h4>
   </div>
   <div class="panel-body">
