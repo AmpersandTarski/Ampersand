@@ -233,7 +233,9 @@ Test-Suite ampersand-test
                      time >=1.4 && <1.5,
                      simple-sql-parser,
                      utf8-string,
-                     wl-pprint
+                     wl-pprint,
+                     transformers >=0.3 && <0.4,
+                     conduit >=1.2 && <1.3
   other-modules:     
                      Database.Design.Ampersand.Misc.Options,
                      Database.Design.Ampersand.Test.Parser.ArbitraryPandoc,

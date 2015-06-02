@@ -1,9 +1,16 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-module Database.Design.Ampersand.Test.TestScripts (getTestScripts) where
-import System.Directory
-import System.FilePath
-import Control.Monad
+module Database.Design.Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
+
 import Data.List(sort)
+import Data.Char(toUpper)
+import System.FilePath ((</>),takeExtension)
+import Control.Monad (filterM, forM_, foldM)
+import System.IO.Error (tryIOError)
+import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
+import Control.Monad.Trans.Class (lift)
+import Data.Conduit
+import Database.Design.Ampersand.Test.RunAmpersand (ampersand)
+import Database.Design.Ampersand.Input.ADL1.CtxError
 
 endswith :: String -> String -> Bool
 endswith a b = drop (length a - length b) a == b
@@ -172,3 +179,76 @@ getTestScripts =
         ss <- return[] -- getFiles ".adl" "dontTouch/ampersand-models/Tests/ShouldSucceed"
         ds <- return[] -- getFiles ".adl" "AmpersandData/FormalAmpersand"
         return $ fs ++ ss ++ ds ++ models
+
+
+
+data DirContent = DirList [FilePath] [FilePath]
+                | DirError IOError
+data DirData = DirData FilePath DirContent
+
+testAmpersandScripts :: IO ()
+testAmpersandScripts
+ = do 
+    walk baseDir $$ myVisitor
+ where
+    baseDir = ".." </> "ampersand-models" </> "INDOORS"
+
+-- Produces directory data
+walk :: FilePath -> Source IO DirData
+walk path = do 
+    result <- lift $ tryIOError listdir
+    case result of
+        Right dl
+            -> case dl of 
+                DirList subdirs _
+                 -> do
+                     yield (DirData path dl)
+                     forM_ subdirs (walk . (path </>))
+                DirError err 
+                 -> yield (DirData path (DirError err))
+        Left err
+            -> yield (DirData path (DirError err))
+
+  where
+    listdir = do
+        entries <- getDirectoryContents path >>= filterHidden
+        subdirs <- filterM isDir entries
+        files <- filterM isFile entries
+        return $ DirList subdirs (filter isRelevant files)
+        where 
+            isFile entry = doesFileExist (path </> entry)
+            isDir entry = doesDirectoryExist (path </> entry)
+            filterHidden paths = return $ filter (not.isHidden) paths
+            isRelevant f = map toUpper (takeExtension f) `elem` [".ADL"]  
+            isHidden dir = head dir == '.'
+            
+-- Consume directories
+myVisitor :: Sink DirData IO ()
+myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
+  where
+    loop :: Int -> ConduitM DirData a IO ()
+    loop n = do
+        lift $ putStrLn $ ">> " ++ show n ++ ". directory visited:"
+        mr <- await
+        case mr of
+            Nothing     -> return ()
+            Just r      -> lift (process r) >> loop (n + 1)
+    process (DirData path (DirError err)) = do
+        putStrLn $ "I've tried to look in " ++ path ++ "."
+        putStrLn $ "    There was an error: "
+        putStrLn $ "       " ++ show err
+
+    process (DirData path (DirList dirs files)) = do
+        putStrLn $ "I've looked in " ++ path ++ "."
+        putStrLn $ "    There was " ++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
+        forM_ files (runATest path) 
+     
+runATest :: FilePath -> FilePath -> IO()
+runATest path file = do
+       [(f,errs)] <- ampersand [path </> file]
+       putStrLn $ f ++": "++ case errs of
+                             [] -> "OK."
+                             _  -> "FAILED:"
+       mapM_ putStrLn (map showErr errs)
+       
+ 
