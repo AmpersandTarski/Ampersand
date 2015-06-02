@@ -522,11 +522,11 @@ pPurpose = rebuild <$> currPos
                   PRef2Interface   <$ pKey "INTERFACE" <*> pADLid       <|>
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
---- Population ::= 'POPULATION' NamedRel 'CONTAINS' Content | 'POPULATION' ConceptName 'CONTAINS' '[' ValueList ']'
+--- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
 pPopulation :: AmpParser P_Population
--- TODO! Refactor grammar, consider removing pNamedRel or adding it to the parse tree.
-pPopulation = try (prelpop   <$> currPos <* pKey "POPULATION" <*> pNamedRel   ) <* pKey "CONTAINS" <*> pContent <|>
-              try (P_CptPopu <$> currPos <* pKey "POPULATION" <*> pConceptName) <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma)
+pPopulation = pKey "POPULATION" *> (
+                  prelpop   <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
+                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
     where prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
           prelpop orig (PNamedRel _ nm mSgn) = case mSgn of
                                Nothing    -> P_RelPopu orig nm
