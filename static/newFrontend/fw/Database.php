@@ -244,8 +244,7 @@ class Database
 			// Elseif the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
 			elseif ($tableStableColumnInfo['unique']){
 				
-				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");	
-			}
+				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 			// Otherwise, binary table, so perform a insert.
 			}else{
 				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");

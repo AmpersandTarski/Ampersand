@@ -84,7 +84,7 @@ TABS[ atoms : V[SESSION*Atom]
     ]
 
 VIEW Atom : Atom(pop;name,TXT ":",repr)
-RELATION repr[Atom*TEXT] [UNI,TOT]
+RELATION repr[Atom*TEXT] [UNI,TOT,INJ]
 MEANING "Every atom has a representation, which identifies that concept."
 
 INTERFACE Atom(repr,pop) : I[Atom]
@@ -94,7 +94,7 @@ COLS [ ID : I
      ]
 
 VIEW Concept : Concept(name)
-RELATION name[Concept*TEXT] [UNI,TOT]
+RELATION name[Concept*TEXT] [UNI,TOT,INJ]
 MEANING "Every concept has a name, which identifies that concept."
 
 INTERFACE newConcept(name[Concept*TEXT]) : I[Concept]
