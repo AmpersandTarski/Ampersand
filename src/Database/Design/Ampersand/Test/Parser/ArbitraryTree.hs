@@ -94,7 +94,6 @@ instance Arbitrary P_Context where
        <*> arbitrary  -- markup
        <*> listOf upperId -- themes
        <*> listOf arbitrary -- patterns
-       <*> listOf arbitrary -- processes
        <*> listOf arbitrary -- rules
        <*> listOf arbitrary -- relations
        <*> listOf arbitrary -- concepts

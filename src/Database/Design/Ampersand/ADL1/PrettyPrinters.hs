@@ -100,7 +100,7 @@ prettyLabel :: String -> [[String]] -> Doc
 prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup thms pats pprcs rs ds cs ks rrules rrels vs gs ifcs ps pops sql php metas) =
+    pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels vs gs ifcs ps pops sql php metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -108,7 +108,6 @@ instance Pretty P_Context where
                <+\> perline metas
                <+\> themes
                <+\> perline ps
-               <+\> perline pprcs
                <+\> perline pats
                <+\> perline rs
                <+\> perline ds
