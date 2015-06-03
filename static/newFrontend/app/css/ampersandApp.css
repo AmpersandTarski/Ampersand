@@ -66,6 +66,11 @@ fieldset {
 	margin-bottom		: 15px;
 }
 
+.interface .panel-heading {
+	padding-top			: 1px;
+	padding-bottom		: 1px;
+}
+
 .wordwrap {
 	/* source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
 	white-space			: pre-wrap;		/* CSS3 */
@@ -119,22 +124,22 @@ input .ng-invalid .ng-dirty {
 	z-index				: 999;
 }
 
-.alert {
-	margin-bottom		:	2px;
+#notificationCenter .alert {
+	margin-bottom		: 2px;
 	padding-top			: 5px;
 	padding-bottom		: 5px;
 }
 
-.panel {
-	margin-bottom		:	2px;
+#notificationCenter .panel {
+	margin-bottom		: 2px;
 }
 
-.panel-heading {
+#notificationCenter .panel-heading {
 	padding-top			: 5px;
 	padding-bottom		: 5px;
 }
 
-.panel .list-group-item {
+#notificationCenter .panel .list-group-item {
 	padding-top			: 5px;
 	padding-bottom		: 5px;
 }

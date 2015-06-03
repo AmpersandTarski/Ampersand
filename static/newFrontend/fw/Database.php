@@ -232,19 +232,19 @@ class Database
 			$originalAtomEsc = $this->escape($originalAtomEsc);
 			
 			// Get database table information
-			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
-			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
+			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol); // unique=true, null=true
+			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol); // unique=true, null=false
 			
-			// If the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
-			if ($tableStableColumnInfo['unique']){
+			// If the modified column is unique, we do an update
+			// This is placed first, because of INJ constraints
+			if ($tableModifiedColumnInfo['unique']){
+			
+				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
+			}
+			// Elseif the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
+			elseif ($tableStableColumnInfo['unique']){
 				
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
-			
-			// Elseif the modified column is unique, we do an update
-			}elseif ($tableModifiedColumnInfo['unique']){
-				
-				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
-			
 			// Otherwise, binary table, so perform a insert.
 			}else{
 				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");

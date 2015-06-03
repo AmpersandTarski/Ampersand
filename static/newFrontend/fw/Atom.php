@@ -40,7 +40,7 @@ Class Atom {
 	}
 	
 	public function getAtom($interface = null){
-		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = API_INTERFACES_PATH . $interfaceId . '/' . $this->id;
+		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = $this->jsonld_id . '/' . $interfaceId;
 		
 		$result =  array('@id' => $this->jsonld_id
 						,'@label' => $this->label
@@ -371,16 +371,73 @@ Class Atom {
 
 	}
 	
-	public function delete(){		
+	public function delete($requestType){	
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				$databaseCommit = true;
+				break;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
 		
 		$this->database->deleteAtom($this->id, $this->concept);
 		
-		// Close transaction => ROLLBACK or COMMIT.
-		$this->database->closeTransaction('Atom deleted', false, true, false);
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $this->database->closeTransaction('Atom deleted', false, $databaseCommit, false);
 		
-		return;
+		return array('notifications' 		=> Notifications::getAll()
+					,'invariantRulesHold'	=> $invariantRulesHold
+					,'requestType'			=> $requestType
+		);
 		
+	}
+	
+	public function post(&$interface, $request_data, $requestType){
+		$database = Database::singleton();
+		
+		switch($requestType){
+			case 'feedback' :
+				$databaseCommit = false;
+				break;
+			case 'promise' :
+				$databaseCommit = true;
+				break;
+			default :
+				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
+		
+		// Get current state of atom
+		$before = $this->getContent($interface, true, $this->id);
+		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+		
+		// Determine differences between current state ($before) and requested state ($request_data)
+		$patches = JsonPatch::diff($before, $request_data);
+		
+		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
+		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
+		
+		// Put current state based on differences
+		foreach ((array)$patches as $key => $patch){
+			
+			//if($patch['op'] == 'remove') break; 
+			
+			$this->doPatch($patch, $interface, $before);
+		}
+		
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $database->closeTransaction('Updated', false, $databaseCommit);
+		
+		return array(	'patches' 				=> $patches
+					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+					,	'notifications' 		=> Notifications::getAll()
+					,	'invariantRulesHold'	=> $invariantRulesHold
+					,	'requestType'			=> $requestType
+					);
 	}
 	
 	private function getView($viewId = null){
