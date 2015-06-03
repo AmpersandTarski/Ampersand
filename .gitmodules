@@ -1,0 +1,3 @@
+[submodule "dontTouch/ampersand-models"]
+	path = dontTouch/ampersand-models
+	url = https://github.com/AmpersandTarski/ampersand-models.git
