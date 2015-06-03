@@ -9,8 +9,7 @@ define ('API_PATH', 'http://localhost/' . $contextName . '/api/v1/'); // $contex
 
 define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
 define ('JSONLD_ID_PATH', API_PATH . 'resource/');
-define ('JSONLD_CONTEXT_PATH', API_PATH . 'context/');
-define ('API_INTERFACES_PATH', API_PATH . 'interface/');
+define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
