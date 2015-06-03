@@ -213,7 +213,7 @@ pClassify = try (P_Cy <$> currPos
                  pCterm1 = pure   <$> pConceptRef <|>
                            id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
 
---- RuleDef ::= 'RULE' (ADLid ':')? Rule Meaning* Message* Violation?
+--- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
 pRuleDef =  P_Ru <$> currPos
                  <*  pKey "RULE"
@@ -275,9 +275,9 @@ pRelationOld = relOld <$> pVarid
 --- Props ::= '[' PropList? ']'
 pProps :: AmpParser [Prop]
 pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
-  where --- PropList ::= Prop (',' Prop)*
+        --- PropList ::= Prop (',' Prop)*
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'AUT' | 'PROP'
-        pProp :: AmpParser Prop
+  where pProp :: AmpParser Prop
         pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
@@ -286,15 +286,14 @@ pFun  = []        <$ pOperator "*"  <|>
         [Uni,Tot] <$ pOperator "->" <|>
         [Sur,Inj] <$ pOperator "<-" <|>
         pBrackets pMults
-  where --- Mults ::= Mult '-' Mult
-        pMults :: AmpParser [Prop]
+        --- Mults ::= Mult '-' Mult
+  where pMults :: AmpParser [Prop]
         pMults = (++) <$> optList (pMult (Sur,Inj))
                       <*  pDash
                       <*> optList (pMult (Tot,Uni))
 
         --- Mult ::= ('0' | '1') '..' ('1' | '*') | '*' | '1'
-        --- Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
-        --TODO: refactor
+        --TODO: refactor to Mult ::= '0' '..' ('1' | '*') | '1'('..' ('1' | '*'))? | '*'
         pMult :: (Prop,Prop) -> AmpParser [Prop]
         pMult (ts,ui) = (++) <$> ([]    <$ pZero   <|> [ts] <$ try pOne)
                              <*  pOperator ".."
@@ -335,7 +334,7 @@ pIndex  = P_Id <$> currPos
           pIndSegment :: AmpParser P_IdentSegment
           pIndSegment = P_IdentExp <$> pIndAtt
 
-          --- IndAtt ::= LabelProps Term | Term
+          --- IndAtt ::= LabelProps? Term
           pIndAtt :: AmpParser P_ObjectDef
           -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
           pIndAtt  = attL <$> currPos <*> optLabelProps <*> try pTerm
@@ -357,7 +356,7 @@ pIndex  = P_Id <$> currPos
 pViewDef :: AmpParser P_ViewDef
 pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' pLabel ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' Label ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
 pFancyViewDef  = mkViewDef <$> currPos
                       <*  pKey "VIEW"
@@ -510,7 +509,7 @@ pPurpose = rebuild <$> currPos
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
                                      Nothing -> [t]
                                      Just i  -> take i t : splitOn s (drop (i+length s) t)
-       --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' RelSign | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
+       --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
                   PRef2Declaration <$ pKey "RELATION"  <*> pNamedRel    <|>
@@ -685,7 +684,7 @@ pTrm6 = Prim <$> pRelationRef  <|>
 invert :: (Origin -> t -> t -> r) -> Origin -> t -> t -> r
 invert constructor position rightTerm leftTerm = constructor position leftTerm rightTerm
 
---- RelationRef ::= RelSign | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
+--- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
@@ -742,9 +741,9 @@ pLabel = pADLid <* pColon
 pContent :: AmpParser Pairs
 pContent = try (pBrackets (pRecord `sepBy` pComma))  <|>
            try (pBrackets (pRecordObs `sepBy` pSemi))
-    where --- RecordList ::= Record (',' Record)*
+          --- RecordList ::= Record (',' Record)*
           --- Record ::= String '*' String
-          pRecord :: AmpParser Paire
+    where pRecord :: AmpParser Paire
           pRecord = mkPair <$> pString <* pOperator "*" <*> pString
           --- RecordObsList ::= RecordObsList (';' RecordObsList)
           --- RecordObs ::= '(' String ',' String ')'
