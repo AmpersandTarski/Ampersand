@@ -4,10 +4,8 @@ language: haskell
 before_install: 
   - sudo apt-get install unixodbc-dev
   - ORIGINALDIR="$(pwd)"
-  - cd dontTouch
-  - git submodule init
-  - git submodule update
-  - ls -alrt
+  - git clone --bare git://github.com/AmpersandTarski/ampersand-models.git
+  - ls -alRt
   - cd "${ORIGINALDIR}"
 
 ghc: 7.8
