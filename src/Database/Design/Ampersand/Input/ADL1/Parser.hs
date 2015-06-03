@@ -131,7 +131,7 @@ pPatternDef = rebuild <$> currPos
      = P_Pat { pt_pos = pos'
              , pt_nm  = nm
              , pt_rls = [r | Pr r<-pes]
-             , pt_gns = [g | Pg g<-pes]
+             , pt_gns = [y | Py y<-pes] ++ [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
@@ -157,7 +157,7 @@ pProcessDef = rebuild <$> currPos
      = P_Pat { pt_pos = pos'
              , pt_nm  = nm
              , pt_rls = [r | Pr r<-pes]
-             , pt_gns = [g | Pg g<-pes]
+             , pt_gns = [y | Py y<-pes] ++ [g | Pg g<-pes]
              , pt_dcs = [d | Pd d<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
@@ -173,7 +173,6 @@ pProcessDef = rebuild <$> currPos
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
 pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
-           -- TODO: Py is not read out
            Py <$> pClassify         <|>
            Pd <$> pRelationDef      <|>
 		   -- the syntax of pRoleRule and pRoleRelation shows an ambiguity
