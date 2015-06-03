@@ -19,8 +19,7 @@ main :: IO ExitCode
 main = do opts <- getOptions
           funcs <- testFunctions opts
           testAmpersandScripts
-          exitSuccess
-      --    tests funcs
+          tests funcs
     where tests :: [(String, IO Bool)] -> IO ExitCode
           tests [] = exitSuccess
           tests ((msg,test):xs) =
