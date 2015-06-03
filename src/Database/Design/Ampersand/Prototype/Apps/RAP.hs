@@ -206,7 +206,6 @@ makectx opts r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
                                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
                      |p<-r_ptnm]
-       , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
        , ctx_cs    = [{- TODO: Han, please fix this:

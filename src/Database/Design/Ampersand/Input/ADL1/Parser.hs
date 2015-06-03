@@ -37,10 +37,9 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_pos    = [pos]
             , ctx_lang   = lang
             , ctx_markup = fmt
-            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional specification. (For partial documents.)
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
-            , ctx_PPrcs  = [p | CPrc p<-ces]       -- The processes as defined by the parser
-            , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
+            , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
             , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
@@ -61,7 +60,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
     pContextElement :: AmpParser ContextElement
     pContextElement = CMeta    <$> pMeta         <|>
                       CPat     <$> pPatternDef   <|>
-                      CPrc     <$> pProcessDef   <|>
+                      CPat     <$> pProcessDef   <|>
                       CRul     <$> pRuleDef      <|>
                       CCfy     <$> pClassify     <|>
                       CRel     <$> pRelationDef  <|>
@@ -79,7 +78,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
 
 data ContextElement = CMeta Meta
                     | CPat P_Pattern
-                    | CPrc P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy P_Gen
                     | CRel P_Declaration
@@ -175,8 +173,8 @@ pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
            Py <$> pClassify         <|>
            Pd <$> pRelationDef      <|>
-		   -- the syntax of pRoleRule and pRoleRelation shows an ambiguity
-		   -- Syntax review can be considered
+                   -- the syntax of pRoleRule and pRoleRelation shows an ambiguity
+                   -- Syntax review can be considered
            Pm <$> pRoleRule         <|>
            Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
