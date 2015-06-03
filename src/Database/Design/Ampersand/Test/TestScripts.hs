@@ -249,6 +249,6 @@ runATest path file = do
        putStrLn $ f ++": "++ case errs of
                              [] -> "OK."
                              _  -> "FAILED:"
-       mapM_ putStrLn (map showErr errs)
+       mapM_ putStrLn (map showErr (take 1 errs))  --for now, only show the first error
        
  
