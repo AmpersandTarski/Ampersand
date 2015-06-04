@@ -111,10 +111,10 @@ COLS [ name             : I
 POPULATION sub CONTAINS [ ( "Asub_", "Agen_") ]
 POPULATION sub CONTAINS [ ( "Bsub_", "Bgen_") ]
 
-POPULATION name CONTAINS [ ( "Asub_", "Asub") ]
-POPULATION name CONTAINS [ ( "Agen_", "Agen") ]
-POPULATION name CONTAINS [ ( "Bsub_", "Bsub") ]
-POPULATION name CONTAINS [ ( "Bgen_", "Bgen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
 
 POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
