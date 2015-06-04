@@ -1,10 +1,11 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Database.Design.Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
-import Data.List(sort)
+import Data.List(sort,isInfixOf)
 import Data.Char(toUpper)
 import System.FilePath ((</>),takeExtension)
-import Control.Monad (filterM, forM_, foldM)
+import Control.Monad (filterM, forM_, foldM,when)
+import Control.Exception.Base
 import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
 import Control.Monad.Trans.Class (lift)
@@ -191,7 +192,8 @@ testAmpersandScripts
  = do 
     walk baseDir $$ myVisitor
  where
-    baseDir = "ampersand-models" </> "Tests"
+    baseDir = -- ".." </> --Enable this line for local testing, Disable for testing at Travis-ci 
+       "ampersand-models"
 
 -- Produces directory data
 walk :: FilePath -> Source IO DirData
@@ -228,7 +230,7 @@ myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
   where
     loop :: Int -> ConduitM DirData a IO ()
     loop n = do
-        lift $ putStrLn $ ">> " ++ show n ++ ". directory visited:"
+        lift $ putStr $ ">> " ++ show n ++ ". "
         mr <- await
         case mr of
             Nothing     -> return ()
@@ -239,16 +241,31 @@ myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
         putStrLn $ "       " ++ show err
 
     process (DirData path (DirList dirs files)) = do
-        putStrLn $ "I've looked in " ++ path ++ "."
-        putStrLn $ "    There was " ++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
+        putStrLn $ path ++ ". ("++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " relevant file(s):"
         forM_ files (runATest path) 
      
 runATest :: FilePath -> FilePath -> IO()
-runATest path file = do
-       [(f,errs)] <- ampersand [path </> file]
-       putStrLn $ f ++": "++ case errs of
-                             [] -> "OK."
-                             _  -> "FAILED:"
-       mapM_ putStrLn (map showErr (take 1 errs))  --for now, only show the first error
-       
+runATest path file =
+  catch (runATest' path file) showError
+   where 
+     showError :: SomeException -> IO()
+     showError err
+       = do putStrLn "***** ERROR: Fatal error was thrown: *****"
+            putStrLn $ (path </> file)
+            putStrLn $ show err
+            putStrLn "******************************************"
+        
+runATest' :: FilePath -> FilePath -> IO()
+runATest' path file = do
+       [(_,errs)] <- ampersand [path </> file]
+       putStrLn 
+         ( file ++": "++
+           case (shouldFail,errs) of
+                  (False, []) -> "OK.  => Pass"
+                  (False, _ ) -> "Fail => NOT PASSED:"
+                  (True , []) -> "Ok.  => NOT PASSED"
+                  (True , _ ) -> "Fail => Pass"
+         )
+       when (not shouldFail) $ mapM_ putStrLn (map showErr (take 1 errs))  --for now, only show the first error
+    where shouldFail = "SHOULDFAIL" `isInfixOf` map toUpper (path </> file)
  
