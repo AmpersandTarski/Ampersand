@@ -301,6 +301,7 @@ instance ShowADL ConceptDef where
 instance ShowADL A_Context where
  showADL context
   = "CONTEXT " ++name context
+    ++ " " ++ (showADL (ctxlang context))
     ++ (if null (ctxmetas context) then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxmetas context))++ "\n")
     ++ (if null (ctxifcs context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxifcs context)) ++ "\n")
     ++ (if null (ctxpats context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxpats context)) ++ "\n")

@@ -41,7 +41,6 @@ instance MakeMeta P_Context where
          , ctx_markup= makeMeta f (ctx_markup ctx)
          , ctx_thms  =            (ctx_thms ctx)
          , ctx_pats  = makeMeta f (ctx_pats ctx)
-         , ctx_PPrcs = makeMeta f (ctx_PPrcs ctx)
          , ctx_rs    = makeMeta f (ctx_rs ctx)
          , ctx_ds    = makeMeta f (ctx_ds ctx)
          , ctx_cs    = makeMeta f (ctx_cs ctx)
@@ -60,9 +59,8 @@ instance MakeMeta P_Context where
 
 instance MakeMeta P_Pattern where
   makeMeta f p
-   = P_Pat { pt_nm  =            (pt_nm p)
-           , pt_pos = makeMeta f (pt_pos p)
-           , pt_end = makeMeta f (pt_end p)
+   = P_Pat { pt_pos = makeMeta f (pt_pos p)
+           , pt_nm  =            (pt_nm p)
            , pt_rls = makeMeta f (pt_rls p)
            , pt_gns = makeMeta f (pt_gns p)
            , pt_dcs = makeMeta f (pt_dcs p)
@@ -73,6 +71,7 @@ instance MakeMeta P_Pattern where
            , pt_vds = makeMeta f (pt_vds p)
            , pt_xps = makeMeta f (pt_xps p)
            , pt_pop = makeMeta f (pt_pop p)
+           , pt_end = makeMeta f (pt_end p)
            }
 
 instance MakeMeta ConceptDef where
@@ -88,16 +87,14 @@ instance MakeMeta ConceptDef where
 
 instance MakeMeta P_Declaration where
   makeMeta f d
-   = P_Sgn { dec_nm   =          f (dec_nm d)
-           , dec_sign = makeMeta f (dec_sign d)
-           , dec_prps = makeMeta f (dec_prps d)
-           , dec_prL  =            (dec_prL d)
-           , dec_prM  =            (dec_prM d)
-           , dec_prR  =            (dec_prR d)
-           , dec_Mean = makeMeta f (dec_Mean d)
-           , dec_popu = makeMeta f (dec_popu d)
-           , dec_fpos = makeMeta f (dec_fpos d)
-           , dec_plug =            (dec_plug d)
+   = P_Sgn { dec_nm     =          f (dec_nm d)
+           , dec_sign   = makeMeta f (dec_sign d)
+           , dec_prps   = makeMeta f (dec_prps d)
+           , dec_pragma =          (dec_pragma d)
+           , dec_Mean   = makeMeta f (dec_Mean d)
+           , dec_popu   = makeMeta f (dec_popu d)
+           , dec_fpos   = makeMeta f (dec_fpos d)
+           , dec_plug   =            (dec_plug d)
            }
 
 instance MakeMeta P_Sign where
@@ -114,9 +111,9 @@ instance MakeMeta P_Concept where
         
 instance MakeMeta a => MakeMeta (P_Rule a) where
   makeMeta f rul
-   = P_Ru { rr_nm   =            (rr_nm rul)
+   = P_Ru { rr_fps  = makeMeta f (rr_fps rul)
+          , rr_nm   =            (rr_nm rul)
           , rr_exp  = makeMeta f (rr_exp rul)
-          , rr_fps  = makeMeta f (rr_fps rul)
           , rr_mean = makeMeta f (rr_mean rul)
           , rr_msg  = makeMeta f (rr_msg rul)
           , rr_viol = makeMeta f (rr_viol rul)
@@ -125,15 +122,15 @@ instance MakeMeta a => MakeMeta (P_Rule a) where
 instance MakeMeta P_RoleRule where
   makeMeta f rr
    = Maintain
-          { mRoles =            (mRoles rr)
+          { mPos   = makeMeta f (mPos rr)
+          , mRoles =            (mRoles rr)
           , mRules =            (mRules rr)
-          , mPos   = makeMeta f (mPos rr)
           }
 instance MakeMeta P_RoleRelation where
   makeMeta f rr
-   = P_RR { rr_Roles =            (rr_Roles rr)
+   = P_RR { rr_Pos   = makeMeta f (rr_Pos rr)
+          , rr_Roles =            (rr_Roles rr)
           , rr_Rels  = makeMeta f (rr_Rels rr)
-          , rr_Pos   = makeMeta f (rr_Pos rr)
           }
 
 instance MakeMeta P_IdentDef where
@@ -169,13 +166,13 @@ instance MakeMeta a => MakeMeta (P_ViewSegmt a) where
 instance MakeMeta P_Gen where
   makeMeta f gen
    = case gen of 
-      P_Cy{} -> P_Cy { gen_spc = makeMeta f (gen_spc gen)
+      P_Cy{} -> P_Cy { gen_fp  = makeMeta f (gen_fp gen)
+                     , gen_spc = makeMeta f (gen_spc gen)
                      , gen_rhs = makeMeta f (gen_rhs gen)
-                     , gen_fp  = makeMeta f (gen_fp gen)
                      }
-      PGen{} -> PGen { gen_spc = makeMeta f (gen_spc gen)
+      PGen{} -> PGen { gen_fp  = makeMeta f (gen_fp gen)
+                     , gen_spc = makeMeta f (gen_spc gen)
                      , gen_gen = makeMeta f (gen_gen gen)
-                     , gen_fp  = makeMeta f (gen_fp gen)
                      }
 instance MakeMeta P_Interface where
   makeMeta f ifc
@@ -223,17 +220,17 @@ instance MakeMeta PMessage where
 instance MakeMeta P_Population where
   makeMeta f pop 
    = case pop of
-      P_RelPopu{} -> P_RelPopu { p_rnme  =          f (p_rnme pop)
-                               , p_orig  = makeMeta f (p_orig pop)
+      P_RelPopu{} -> P_RelPopu { p_orig  = makeMeta f (p_orig pop)
+                               , p_rnme  =          f (p_rnme pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }
-      P_TRelPop{} -> P_TRelPop { p_rnme  =          f (p_rnme pop)
+      P_TRelPop{} -> P_TRelPop { p_orig  = makeMeta f (p_orig pop)
+                               , p_rnme  =          f (p_rnme pop)
                                , p_type  = makeMeta f (p_type pop)
-                               , p_orig  = makeMeta f (p_orig pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }
-      P_CptPopu{} -> P_CptPopu { p_cnme  =          f (p_rnme pop)
-                               , p_orig  = makeMeta f (p_orig pop)
+      P_CptPopu{} -> P_CptPopu { p_orig  = makeMeta f (p_orig pop)
+                               , p_cnme  =          f (p_rnme pop)
                                , p_popas =            (p_popas pop)
                                }
 

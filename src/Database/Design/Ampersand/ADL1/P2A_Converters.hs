@@ -145,7 +145,6 @@ pCtx2aCtx' _
       , ctx_markup = pandocf
       , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
-      , ctx_PPrcs  = p_processes
       , ctx_rs     = p_rules    
       , ctx_ds     = p_declarations
       , ctx_cs     = p_conceptdefs
@@ -184,8 +183,8 @@ pCtx2aCtx' _
             , ctxphp = phpdefs
             , ctxmetas = p_metas
             }
-    ) <$> traverse pPat2aPat (p_patterns ++ p_processes)            --  The patterns defined in this context
-      <*> traverse (pRul2aRul n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
+    ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
+      <*> traverse (pRul2aRul n1) p_rules       --  All user defined rules in this context, but outside patterns
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaceAndDisambObjs   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
@@ -193,7 +192,7 @@ pCtx2aCtx' _
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
-      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels (p_patterns ++ p_processes))
+      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels p_patterns)
       
   where
     p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
@@ -202,7 +201,7 @@ pCtx2aCtx' _
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
     genRules = [ ( Set.singleton (name (gen_spc x)), Set.fromList (map name (gen_concs x)))
-               | x <- p_gens ++ concatMap pt_gns (p_patterns ++ p_processes)
+               | x <- p_gens ++ concatMap pt_gns p_patterns
                ]
     genLattice :: Op1EqualitySystem String
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
@@ -222,7 +221,7 @@ pCtx2aCtx' _
     (ctxDecls,_ ) = unzip ctxDecls'
     dps = ctxDecls'++patDecls
     ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
-    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns ++p_processes , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
+    patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
 
 -- In order to find declarations efficiently, a Map is constructed to search declarations by name.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
@@ -244,13 +243,14 @@ pCtx2aCtx' _
       -> PandocFormat   -- The default pandocFormat
       -> P_Declaration -> (Declaration, Population)
     pDecl2aDecl patNm defLanguage defFormat pd
-     = let dcl = Sgn { decnm   = dec_nm pd
+     = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
+           dcl = Sgn { decnm   = dec_nm pd
                      , decsgn  = pSign2aSign (dec_sign pd)
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                     , decprL  = dec_prL pd
-                     , decprM  = dec_prM pd
-                     , decprR  = dec_prR pd
+                     , decprL  = prL
+                     , decprM  = prM
+                     , decprR  = prR
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                      , decfpos = dec_fpos pd
                      , deciss  = True
@@ -611,9 +611,9 @@ pCtx2aCtx' _
     typeCheckRul :: 
                  String -- environment name (pattern / proc name)
               -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
-    typeCheckRul env P_Ru { rr_nm = nm
+    typeCheckRul env P_Ru { rr_fps = orig
+                          , rr_nm = nm
                           , rr_exp = expr
-                          , rr_fps = orig
                           , rr_mean = meanings
                           , rr_msg = msgs
                           , rr_viol = viols
@@ -698,10 +698,10 @@ pCtx2aCtx' _
         []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdtyp="", cdref="", cdfrom=n1} 
         (x:_) -> x
     allConceptDefs :: [ConceptDef]
-    allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
+    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
-                      (p_roleRules ++ concatMap pt_RRuls (p_patterns++p_processes))
+                      (p_roleRules ++ concatMap pt_RRuls p_patterns)
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
