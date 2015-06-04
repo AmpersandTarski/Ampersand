@@ -1,4 +1,4 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch', 'cgBusy']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -84,6 +84,15 @@ AmpersandApp.run(function(Restangular, $rootScope){
 	});
 	
 });
+
+AmpersandApp.value('cgBusyDefaults',{
+	  message:'Loading...',
+	  backdrop: true,
+	  //templateUrl: 'my_custom_template.html',
+	  delay: 500, // in ms
+	  minDuration: 1000, // in ms
+	  // wrapperClass: 'my-class my-class2'
+	});
 
 AmpersandApp.directive('myShowonhoverRow', function (){
 	return {
