@@ -171,7 +171,7 @@ models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
          , baseDir </> "Webshop/Webshop.adl"
          ]
   where
-    baseDir = "dontTouch" </> "ampersand-models"
+    baseDir = "ampersand-models"
 
 getTestScripts :: IO [FilePath]
 getTestScripts =
@@ -191,7 +191,7 @@ testAmpersandScripts
  = do 
     walk baseDir $$ myVisitor
  where
-    baseDir = "ampersand-models" 
+    baseDir = "ampersand-models" </> "Tests"
 
 -- Produces directory data
 walk :: FilePath -> Source IO DirData
