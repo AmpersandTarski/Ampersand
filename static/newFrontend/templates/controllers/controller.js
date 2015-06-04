@@ -14,6 +14,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.showSaveButton = {}; // initialize object for show/hide save button
   \$scope.showCancelButton = {}; // initialize object for show/hide cancel button
   \$scope.resourceStatus = {}; // initialize object for resource status colors
+  \$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
   
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
   
@@ -66,12 +67,16 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.deleteResource = function (resourceId){
     if(confirm('Are you sure?')){
       var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
-      \$scope.val['$interfaceName$'][resourceIndex]
+      
+      // myPromise is used for busy indicator
+  	  \$scope.myPromises[resourceId] = new Array();
+  	
+      \$scope.myPromises[resourceId].push(\$scope.val['$interfaceName$'][resourceIndex]
         .remove({ 'requestType' : 'promise'})
         .then(function(data){
           \$rootScope.updateNotifications(data.notifications);
           \$scope.val['$interfaceName$'].splice(resourceIndex, 1); // remove from array
-        });
+        }));
     }
   }
    
@@ -93,7 +98,11 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 	var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 	
 	requestType = requestType || 'feedback'; // set default requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
-    \$scope.val['$interfaceName$'][resourceIndex]
+	
+	// myPromise is used for busy indicator
+	\$scope.myPromises[resourceId] = new Array();
+	
+	\$scope.myPromises[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
       .put({'requestType' : requestType})
       .then(function(data) {
         \$rootScope.updateNotifications(data.notifications);
@@ -122,21 +131,25 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         	\$scope.showSaveButton[resourceId] = false;
         	\$scope.showCancelButton[resourceId] = true;
         }
-      });
+      }));
   }
 
   // Function to cancel edits and reset resource data
   \$scope.cancel = function(resourceId){
 	  
 	  var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
-	  \$scope.val['$interfaceName$'][resourceIndex]
+	  
+	  // myPromise is used for busy indicator
+	  \$scope.myPromises[resourceId] = new Array();
+	  
+	  \$scope.myPromises[resourceId].push(\$scope.val['$interfaceName$'][resourceIndex]
 	  	.get()
 	  	.then(function(data) {
 	  		\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.plain());
 	  		setResourceStatus(resourceId, 'default');
 	  		\$scope.showSaveButton[resourceId] = false;
 	  		\$scope.showCancelButton[resourceId] = false;
-	  	});
+	  	}));
   }
 
   // Function to patch only the changed attributes of a Resource

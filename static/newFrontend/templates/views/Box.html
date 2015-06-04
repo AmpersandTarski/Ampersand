@@ -8,7 +8,7 @@
     </div>
     <h4><a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a></h4>
   </div>
-  <div class="panel-body">
+  <div class="panel-body" cg-busy="myPromises[ResourceId]">
   $endif$
     $subObjects:{subObj|<!-- BOX<> CHILD: "$subObj.subObjLabel$" -->
     <div class="row">
