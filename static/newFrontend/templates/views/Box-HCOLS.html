@@ -9,7 +9,7 @@
     </tr>
   </thead>
   <tbody $if(isEditable)$ng-init="parent = val['$name$']"$endif$>
-    <tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = \$index"$endif$>
+    <tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>
       $if(isEditable)$<td>
         <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
       </td>$endif$
@@ -21,7 +21,9 @@ $subObj.subObjContents$
       $if(isRoot)$
       <td>
         <button type="button" class="btn btn-warning btn-xs" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
+        <button type="button" class="btn btn-danger btn-xs" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
         <a my-showonhover-box href="" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>
+        <div style="float:right;" cg-busy="{promise:myPromises[ResourceId],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
       </td>$endif$
     </tr>
   </tbody>

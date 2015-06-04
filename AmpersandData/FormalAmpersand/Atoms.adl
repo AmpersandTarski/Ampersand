@@ -68,6 +68,9 @@ ROLE ExecEngine MAINTAINS "source type", "target type"
 -- ROLE ExecEngine MAINTAINS garbage
 ENDPROCESS
 
+--! Onderstaande interfaces zijn een beetje aangepast om na te gaan of we toch niet al wat kunnen editen.
+--$ Merk op dat 'String' geen primitief type is, en TEXT wel. Daarom is String door TEXT vervangen.
+
 INTERFACE Overview : '_SESSION'
 TABS[ atoms : V[SESSION*Atom]
       COLS [ repr : repr
@@ -80,21 +83,23 @@ TABS[ atoms : V[SESSION*Atom]
            ]
     ]
 
-VIEW Atom : Atom(repr,TXT ":",pop)
-RELATION repr[Atom*String] [UNI,TOT,INJ]
+VIEW Atom : Atom(pop;name,TXT ":",repr)
+RELATION repr[Atom*TEXT] [UNI,TOT,INJ]
 MEANING "Every atom has a representation, which identifies that concept."
 
 INTERFACE Atom(repr,pop) : I[Atom]
-COLS [ repr : repr
+COLS [ ID : I
+     , repr : repr
      , pop  : pop
      ]
 
 VIEW Concept : Concept(name)
-RELATION name[Concept*String] [UNI,TOT,INJ]
+RELATION name[Concept*TEXT] [UNI,TOT,INJ]
 MEANING "Every concept has a name, which identifies that concept."
 
-INTERFACE newConcept(name[Concept*String]) : I[Concept]
-COLS [ name             : I
+INTERFACE newConcept(name[Concept*TEXT]) : I[Concept]
+COLS [ ID : I
+     , name             : name
      ]
 
 INTERFACE mkISA(sub) : I[Concept]
@@ -102,4 +107,31 @@ COLS [ name             : I
      , generalizations  : sub
      , specializations  : sub~
      ]
+
+POPULATION sub CONTAINS [ ( "Asub_", "Agen_") ]
+POPULATION sub CONTAINS [ ( "Bsub_", "Bgen_") ]
+
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
+
+POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
+POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
+POPULATION partOf CONTAINS [ ( "Bsub_", "Btypo_") ]
+POPULATION partOf CONTAINS [ ( "Bgen_", "Btypo_") ]
+
+POPULATION pop CONTAINS [ ( "A1_", "Agen_" ) ]
+POPULATION pop CONTAINS [ ( "B1_", "Bgen_" ) ]
+POPULATION pop CONTAINS [ ( "A1sub_", "Asub_" ) ]
+POPULATION pop CONTAINS [ ( "B1sub_", "Bsub_" ) ]
+POPULATION pop CONTAINS [ ( "A1sub_", "Agen_" ) ]
+POPULATION pop CONTAINS [ ( "B1sub_", "Bgen_" ) ]
+
+POPULATION repr CONTAINS [ ( "A1_", "A1" ) ]
+POPULATION repr CONTAINS [ ( "B1_", "B1" ) ]
+POPULATION repr CONTAINS [ ( "A1sub_", "A1sub" ) ]
+POPULATION repr CONTAINS [ ( "B1sub_", "B1sub" ) ]
+
+
 ENDCONTEXT

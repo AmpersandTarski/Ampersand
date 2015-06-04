@@ -91,14 +91,16 @@ class Api{
 
 	/**************************** OBJECTINTERFACES ****************************/
 	/**
-	 * @url GET interface/{interfaceId}
-	 * @url GET interface/{interfaceId}/{atomId}
+	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}
+	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
 	 */
-	public function getAtom($interfaceId, $sessionId = null, $atomId = null, $roleId = null){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -106,22 +108,22 @@ class Api{
 		
 			$result = array();
 			
-			if(is_null($atomId)) {
-				foreach(Concept::getAllAtomIds($session->interface->srcConcept) as $atomId){
-					$atom = new Atom($atomId, $session->interface->srcConcept);
-					$result = array_merge($result, (array)$atom->getContent($session->interface));
-				}
-				
-				if(empty($result)) Notifications::addInfo("No results found");
-			}else{
-		
-				$atom = new Atom($atomId, $session->interface->srcConcept);
-				if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
-				
-				$result = $atom->getContent($session->interface);
-			}			
+			if($session->interface->srcConcept != $concept) throw new Exception("Concept '$concept' cannot be used as source concept for interface '".$session->interface->label."'", 400);
+			
+			$atom = new Atom($srcAtomId, $concept);
+			if(!$atom->atomExists()) throw new Exception("Resource '$srcAtomId' not found", 404);
+			
+			$result = (array)$atom->getContent($session->interface, true, $tgtAtomId);
+			
+			if(empty($result)) Notifications::addInfo("No results found");			
 	
-			return array_values($result); // array_values transforms assoc array to non-assoc array
+			if(is_null($tgtAtomId)){
+				// return array of atoms (i.e. tgtAtoms of the interface given srcAtomId)
+				return array_values($result); // array_values transforms assoc array to non-assoc array
+			}else{
+				// return 1 atom (i.e. tgtAtomId)
+				return current($result);
+			}
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
@@ -129,22 +131,27 @@ class Api{
 	}
 	
 	/**
-	 * @url PATCH interface/{interfaceId}/{atomId}
+	 * @url PATCH resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
 	 * @param string $requestType
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
-				
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
+			
+			// TODO: insert check if Atom may be patched  with this interface
+			
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
+			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
 				
 			return $session->atom->patch($session->interface, $request_data, $requestType);
 	
@@ -154,30 +161,31 @@ class Api{
 	}
 	
 	/**
-	 * @url PUT interface/{interfaceId}/{atomId}
+	 * @url PUT resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($interfaceId, $sessionId, $atomId, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
-			
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 
 			// TODO: insert check if Atom may be updated with this interface
 			
-			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)){
+			if(!$session->database->atomExists($tgtAtomId, $session->interface->tgtConcept)){
 				// TODO: insert check if Atom may be created with this interface
-				$session->database->addAtomToConcept($atomId, $session->interface->tgtConcept);
+				$session->database->addAtomToConcept($tgtAtomId, $session->interface->tgtConcept);
 			}
 			
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
 			
 			return $session->atom->put($session->interface, $request_data, $requestType);
 		
@@ -187,13 +195,18 @@ class Api{
 	}
 	
 	/**
-	 * @url DELETE interface/{interfaceId}/{atomId}
+	 * @url DELETE resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
+	 * @param string $tgtAtomId
 	 * @param string $sessionId
-	 * @param string $atomId
 	 * @param int $roleId
+	 * @param string $requestType
+	 * 
+	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($interfaceId, $sessionId, $atomId, $roleId = null){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback'){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -201,11 +214,10 @@ class Api{
 		
 			// TODO: insert check if Atom may be deleted with this interface
 			
-			if(!$session->database->atomExists($atomId, $session->interface->tgtConcept)) throw new Exception("Resource '$atomId' not found", 404);
-			$session->atom = new Atom($atomId, $session->interface->tgtConcept);
-			$session->atom->delete();
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
+			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
 			
-			return array('notifications' => Notifications::getAll());
+			return $session->atom->delete($requestType);
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
@@ -213,47 +225,35 @@ class Api{
 	}
 	
 	/**
-	 * @url POST interface/{interfaceId}
+	 * @url POST resource/{concept}/{srcAtomId}/{interfaceId}
+	 * @param string $concept
+	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $sessionId
 	 * @param int $roleId
+	 * @param string $requestType
+	 * 
+	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($interfaceId, $sessionId, $roleId = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
 		try{
-			$session = Session::singleton($sessionId);
-			$db = Database::singleton();
-			
+			$session = Session::singleton($sessionId);			
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
 			// TODO: insert check if Atom may be created with this interface
 			
-			$concept = $session->interface->srcConcept;
-			$atomId = $db->addAtomToConcept(Concept::createNewAtom($concept), $concept);
-			$atom = new Atom($atomId, $concept);
-			if(!$atom->atomExists()) throw new Exception("Atom '$atomId' not created", 500);
+			$concept = $session->interface->tgtConcept;
+			$newAtomId = $session->database->addAtomToConcept(Concept::createNewAtom($concept), $concept);
+			$session->atom = new Atom($newAtomId, $concept);
 			
-			return array_values((array)$atom->getContent($session->interface)); // array_values transforms assoc array to non-assoc array
+			if(!$session->atom->atomExists()) throw new Exception("Resource not created", 500);
+			
+			return $session->atom->post($session->interface, $request_data, $requestType);
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
 		}
-	}
-	
-	/**************************** CONTEXT ****************************/
-	
-	/**
-	 * @url GET context/{interfaceId}
-	 */
-	public function getInterface($interfaceId){
-		throw new RestException(501);
-		try{			
-			$interface = new InterfaceObject($interfaceId);
-			
-			return $interface;
-		}catch(Exception $e){
-       		throw new RestException($e->getCode(), $e->getMessage());
-       	}
 	}
 	
 
@@ -398,7 +398,7 @@ class Api{
     
 	/**
      * @url GET interfaces
-	 * @url GET interfaces/{interfaceId}
+	 * @url GET interface/{interfaceId}
 	 * @param string $interfaceId
 	 * @param int $roleId
      */

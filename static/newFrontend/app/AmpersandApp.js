@@ -1,4 +1,4 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch', 'cgBusy']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -30,10 +30,6 @@ AmpersandApp.config(function($routeProvider) {
 AmpersandApp.config(function(RestangularProvider) {
 	
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
-    
-    RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
-        return data;
-    });
     
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     
@@ -67,7 +63,36 @@ AmpersandApp.run(function(Restangular, $rootScope){
     	return false; // error handled
     });
 	
+	// The responseInterceptor is called after we get each response from the server
+	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
+		var newResponse;
+		
+		// Extract the response for a POST call
+		if (operation === "post") {
+			// First the newResponse will be data.content, which contains the new Resource
+			newData = data.content;
+			
+			// Then we update the notifications
+			$rootScope.updateNotifications(data.notifications);
+
+		// Else, just return the "regular" response as there's no object wrapping it 
+		}else{
+			newData = data;
+		}
+		
+		return newData;
+	});
+	
 });
+
+AmpersandApp.value('cgBusyDefaults',{
+	  message:'Loading...',
+	  backdrop: true,
+	  //templateUrl: 'my_custom_template.html',
+	  //delay: 500, // in ms
+	  minDuration: 500, // in ms
+	  // wrapperClass: 'my-class my-class2'
+	});
 
 AmpersandApp.directive('myShowonhoverRow', function (){
 	return {

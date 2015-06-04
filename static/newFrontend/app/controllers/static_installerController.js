@@ -1,7 +1,7 @@
 AmpersandApp.controller('static_installerController', ['$scope', '$rootScope', '$routeParams', 'Restangular', function ($scope, $rootScope, $routeParams, Restangular) {
 	$scope.installing = false;
 	$scope.install = function(){
-		$scope.installing = !$scope.installing;
+		$scope.installing = true;
 		Restangular.one('installer').get().then(function(data) {
 			$rootScope.notifications = data;
 			
@@ -10,7 +10,10 @@ AmpersandApp.controller('static_installerController', ['$scope', '$rootScope', '
 			
 			// refresh interfaces list
 			$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
-		$scope.installing = !$scope.installing;
+			
+			$scope.installing = false;
+		}, function(){
+			$scope.installing = false;
 		});
 	}
 	

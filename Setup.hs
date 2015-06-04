@@ -23,7 +23,7 @@ main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
 -- Before each build, generate a BuildInfo_Generated module that exports the project version from cabal,
--- the current svn revision number and the build time.
+-- the current revision number and the build time.
 --
 -- Note that in order for this Setup.hs to be used by cabal, the build-type should be Custom.
 
@@ -144,8 +144,8 @@ getPreviousStaticFileModuleContents sfModulePath =
       --; putStrLn $ "Done"      
       ; return str
       }) `catch` \err ->  -- old generated module exists, but we can't read the file or read the contents
-   do { putStrLn $ "\n\n\nERROR: Cannot read previously generated " ++ sfModulePath ++ ":\n" ++
-                   show (err :: SomeException) ++ "\nTry to rebuild Ampersand, and if the error persist, please report this as a bug.\n"
+   do { putStrLn $ "\n\n\nWarning: Cannot read previously generated " ++ sfModulePath ++ ":\n" ++
+                   show (err :: SomeException) ++ "\nThis warning should disappear the next time you build Ampersand. If the error persists, please report this as a bug.\n"
       ; return []
       }
         
