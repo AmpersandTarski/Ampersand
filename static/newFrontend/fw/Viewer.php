@@ -44,13 +44,15 @@ class Viewer {
 		$this->addHtmlLine('<script src="app/lib/angular/angular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-resource.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-route.min.js"></script>');
-		$this->addHtmlLine('<script src="app/lib/angular/angular-filter.min.js"></script>');
 		// Third party directives for angular
-		$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');	
-		$this->addHtmlLine('<link href="app/lib/angular/angular-ui-switch/angular-ui-switch.css" rel="stylesheet" media="screen" type="text/css">');
-		$this->addHtmlLine('<script src="app/lib/angular/angular-busy/angular-busy.min.js"></script>');
-		$this->addHtmlLine('<link href="app/lib/angular/angular-busy/angular-busy.min.css" rel="stylesheet" media="screen" type="text/css">');
-		
+			// angular-ui-switch
+			$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');	
+			$this->addHtmlLine('<link href="app/lib/angular/angular-ui-switch/angular-ui-switch.css" rel="stylesheet" media="screen" type="text/css">');
+			
+			// angular-busy
+			$this->addHtmlLine('<script src="app/lib/angular/angular-busy/angular-busy.min.js"></script>');
+			$this->addHtmlLine('<link href="app/lib/angular/angular-busy/angular-busy.min.css" rel="stylesheet" media="screen" type="text/css">');
+			
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/restangular/lodash.min.js"></script>');
