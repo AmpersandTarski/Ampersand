@@ -237,7 +237,7 @@ class Database
 			
 			// If the modified column is unique, we do an update
 			// This is placed first, because of INJ constraints
-			if ($tableModifiedColumnInfo['unique']){
+			if ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
 			
 				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 			}
