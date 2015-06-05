@@ -739,7 +739,7 @@ pLabel = pADLid <* pColon
 --TODO! Try should not be necessary here, we must take the brackets out of the scope
 --- Content ::= '[' (RecordList | RecordObsList)? ']'
 pContent :: AmpParser Pairs
-pContent = pSpec '[' *> (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi) <* pSpec ']'
+pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi)
           --- RecordList ::= Record (',' Record)*
           --- Record ::= String '*' String
     where pRecord :: AmpParser Paire
@@ -747,7 +747,7 @@ pContent = pSpec '[' *> (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi) <
           --- RecordObsList ::= RecordObsList (';' RecordObsList)
           --- RecordObs ::= '(' String ',' String ')'
           pRecordObs :: AmpParser Paire
-          pRecordObs = mkPair <$ pSpec '(' <*> pString <* pComma <*> pString <* pSpec ')'
+          pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
 
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*

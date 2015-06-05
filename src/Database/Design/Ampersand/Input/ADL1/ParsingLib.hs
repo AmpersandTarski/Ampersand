@@ -12,7 +12,6 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pAtom, pConid, pString, pExpl, pVarid,
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
-    pSpec,
     -- Keywords
     pKey,
     -- Operators
