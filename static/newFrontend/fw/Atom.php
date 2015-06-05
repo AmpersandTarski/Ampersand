@@ -98,6 +98,7 @@ Class Atom {
 			}else{ // TgtConcept of interface is primitive datatype
 				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
 				if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
+				if($interface->label == "#") $tgtAtom->id = (int) $tgtAtom->id; // convert # value to int TODO: remove when Types are implemented
 				
 				$content = $tgtAtom->id;
 			}
