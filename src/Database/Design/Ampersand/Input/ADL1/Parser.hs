@@ -629,9 +629,8 @@ The functions pars and f have arguments 'combinator' and 'operator' only to avoi
 -}
 --- Term ::= Trm2 (('/\' Trm2)+ | ('\/' Trm2)+)?
 pTerm :: AmpParser (Term TermPrim)
-pTerm = rebuild <$> pTrm2 <*> optList (many1 (invert PIsc <$> currPos <* pOperator "/\\" <*> pTrm2) <|>
-                                       many1 (invert PUni <$> currPos <* pOperator "\\/" <*> pTrm2))
-    where rebuild = foldl (\a f -> f a)
+pTerm = reinvert <$> pTrm2 <*> optList (many1 (invert PIsc <$> currPos <* pOperator "/\\" <*> pTrm2) <|>
+                                        many1 (invert PUni <$> currPos <* pOperator "\\/" <*> pTrm2))
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
@@ -656,10 +655,9 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
-pTrm4 = rebuild <$> pTrm5 <*> optList (many1 (invert PCps <$> currPos <* pOperator ";" <*> pTrm5) <|>
-                                       many1 (invert PRad <$> currPos <* pOperator "!" <*> pTrm5) <|>
-                                       many1 (invert PPrd <$> currPos <* pOperator "#" <*> pTrm5))
-    where rebuild = foldl (\a f -> f a)
+pTrm4 = reinvert <$> pTrm5 <*> optList (many1 (invert PCps <$> currPos <* pOperator ";" <*> pTrm5) <|>
+                                        many1 (invert PRad <$> currPos <* pOperator "!" <*> pTrm5) <|>
+                                        many1 (invert PPrd <$> currPos <* pOperator "#" <*> pTrm5))
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
@@ -677,9 +675,13 @@ pTrm6 :: AmpParser (Term TermPrim)
 pTrm6 = Prim <$> pRelationRef  <|>
         PBrk <$> currPos <*> pParens pTerm
 
--- Help function for several expressions. The type 't' is each of the left and right terms, while t is the result type.
+-- Help function for several expressions. The type 't' is each of the left and right terms, while r is the result type.
 invert :: (Origin -> t -> t -> r) -> Origin -> t -> t -> r
 invert constructor position rightTerm leftTerm = constructor position leftTerm rightTerm
+
+reinvert :: Term TermPrim -> [Term TermPrim -> Term TermPrim] -> Term TermPrim
+reinvert x xs = foldr apply x (reverse xs)
+    where apply f t = f t
 
 --- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
@@ -734,10 +736,10 @@ optLabelProps = try pLabelProps `opt` ("",[])
 pLabel :: AmpParser String
 pLabel = pADLid <* pColon
 
+--TODO! Try should not be necessary here, we must take the brackets out of the scope
 --- Content ::= '[' (RecordList | RecordObsList)? ']'
 pContent :: AmpParser Pairs
-pContent = try (pBrackets (pRecord `sepBy` pComma))  <|>
-           try (pBrackets (pRecordObs `sepBy` pSemi))
+pContent = pSpec '[' *> (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi) <* pSpec ']'
           --- RecordList ::= Record (',' Record)*
           --- Record ::= String '*' String
     where pRecord :: AmpParser Paire
@@ -745,7 +747,7 @@ pContent = try (pBrackets (pRecord `sepBy` pComma))  <|>
           --- RecordObsList ::= RecordObsList (';' RecordObsList)
           --- RecordObs ::= '(' String ',' String ')'
           pRecordObs :: AmpParser Paire
-          pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
+          pRecordObs = mkPair <$ pSpec '(' <*> pString <* pComma <*> pString <* pSpec ')'
 
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
