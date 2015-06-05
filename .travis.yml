@@ -9,8 +9,8 @@ ghc: 7.8
 
 after_script:
   - echo "${pwd}"
-  - cd dist
-  - cd test
+  - cd dist/test
+  - ls -al
   - cat *.log
 
 
