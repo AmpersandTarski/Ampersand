@@ -8,10 +8,10 @@ before_install:
 ghc: 7.8
 
 after_script:
-  - echo "${pwd}"
   - cd dist/test
   - ls -al
-  - cat *.log
+  - cat ampersand-3.1.0.log
+  - cat ampersand-3.1.0-ampersand-test.log
 
 
 
