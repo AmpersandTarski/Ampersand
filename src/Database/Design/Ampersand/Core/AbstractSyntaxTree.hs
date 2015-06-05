@@ -37,7 +37,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..),showVal,GenericNumber(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
+ , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -60,8 +60,9 @@ import Data.List (intercalate,nub,delete)
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
-import Data.Char (toUpper)
-import Text.Read
+import Data.Char (toUpper,toLower)
+import Data.Maybe
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
 
@@ -506,40 +507,58 @@ data AAtomPair
           }deriving(Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
-string2AtomValue :: TType -> String -> Maybe AAtomValue
+string2AtomValue :: TType -> String -> Either String AAtomValue
 string2AtomValue dom str
   = case dom of 
-     Alphanumeric     -> Just (AAVString Alphanumeric str) 
-     BigAlphanumeric  -> Just (AAVString BigAlphanumeric str)
-     HugeAlphanumeric -> Just (AAVString HugeAlphanumeric str)
-     Password         -> Just (AAVString Password str)
-     Binary           -> Nothing
-     BigBinary        -> Nothing
-     HugeBinary       -> Nothing
-     Date             -> Nothing
-     DateTime         -> Nothing
-     Boolean 
-           | map toUpper str `elem` ["TRUE", "YES","WAAR", "JA", "WEL"]      -> Just (AAVBoolean Boolean True)
-           | map toUpper str `elem` ["FALSE", "NO", "ONWAAR", "NEE", "NIET"] -> Just (AAVBoolean Boolean False)
-           | otherwise -> Nothing
-     Numeric          -> case readEither str of 
-                           Right i -> Just (AAVNumeric Numeric (Integer i))
-                           Left _  -> case readEither str of
-                                       Right r -> Just (AAVNumeric Numeric (Rational r))
-                                       Left _  -> Nothing
-     AutoIncrement    -> Nothing
-     TypeOfOne        -> Nothing
+     Alphanumeric     -> Right (AAVString Alphanumeric str) 
+     BigAlphanumeric  -> Right (AAVString BigAlphanumeric str)
+     HugeAlphanumeric -> Right (AAVString HugeAlphanumeric str)
+     Password         -> Right (AAVString Password str)
+     Binary           -> Left "Binary cannot be populated in an ADL script"
+     BigBinary        -> Left "Binary cannot be populated in an ADL script"
+     HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+     Date             -> Left "Date cannot be populated (jet) in an ADL script"
+     DateTime         -> Left "DateTime cannot be populated (jet) in an ADL script"
+     Boolean          -> let table =
+                                [("TRUE", True), ("FALSE" , False)
+                                ,("YES" , True), ("NO"    , False)
+                                ,("WAAR", True), ("ONWAAR", False)
+                                ,("JA"  , True), ("NEE"   , False)
+                                ,("WEL" , True), ("NIET"  , False)
+                                ]
+                         in case lookup (map toUpper str) table of
+                            Just b -> Right (AAVBoolean Boolean b)
+                            Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
+                           where camelCase []     = []
+                                 camelCase (c:xs) = toUpper c: map toLower xs 
+                            
+     Integer          -> case maybeRead str  of
+                           Just i  -> Right (AAVInteger Integer i)
+                           Nothing -> Left $ "This is not of type "++show dom++": " ++str
+     Float         -> case maybeRead str of 
+                           Just r  -> Right (AAVFloat Float r)
+                           Nothing -> Left $ "This is not of type "++show dom++": " ++str
+     AutoIncrement    -> Left "AutoIncrement cannot be populated in an ADL script"
+     TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+     Object           -> Left "Object cannot be populated in an ADL script"
+     
+   where
+     maybeRead :: Read a => String -> Maybe a
+     maybeRead = fmap fst . listToMaybe . reads
 data AAtomValue
-  = AAVString  { aavdom :: TType
+  = AAVString  { aavtyp :: TType
                , aavstr :: String
                }
-  | AAVNumeric { aavdom :: TType
-               , aavnum :: GenericNumber
+  | AAVInteger { aavtyp :: TType
+               , aavint :: Integer
                }
-  | AAVBoolean { aavdom :: TType
+  | AAVFloat   { aavtyp :: TType
+               , aavflt :: Float
+               }
+  | AAVBoolean { aavtyp :: TType
                , aavbool :: Bool
                }
-  | AAVDate { aavdom :: TType
+  | AAVDate { aavtyp :: TType
             , aadateYear ::  Int
             , aadateMonth :: Int
             , aadateDay   :: Int
@@ -549,28 +568,16 @@ showVal :: AAtomValue -> String
 showVal val = 
   case val of
    AAVString{}  -> show (aavstr val)
-   AAVNumeric{} -> show (aavnum val)
+   AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showLen 4 (aadateYear val)++
                    showLen 2 (aadateMonth val)++
                    showLen 2 (aadateDay val)
+   AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
   where
    showLen i x =
     replicate (i-length (show x)) '0'++show x
-data GenericNumber =
-    Integer Integer
-  | Rational Rational
- {- | Double Double -} -- not yet implemented
-     deriving (Prelude.Ord)
-instance Show GenericNumber where
-  show (Integer i) = show i
-  show (Rational r) = show r
-instance Eq GenericNumber where  -- This might need rethinking! see https://wiki.haskell.org/Generic_number_type
- Integer a  == Integer b  = a            == b
- Integer a  == Rational b = toRational a == b
- Rational a == Rational b = a            == b
- Rational a == Integer b  = Integer b == Rational a -- the opposite condition
  
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration

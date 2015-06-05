@@ -384,10 +384,10 @@ showPAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 instance ShowADL AAtomValue where
  showADL at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
   where x = case at of
-              AAVString _ str -> str
-              AAVNumeric _ (Integer i) -> show i
-              AAVNumeric _ (Rational r) -> show r
-              AAVBoolean _ b -> show b
+              AAVString  _ str -> str
+              AAVInteger _ i   -> show i
+              AAVFloat   _ f   -> show f
+              AAVBoolean _ b   -> show b
               AAVDate{} -> fshow 4 (aadateYear at)++"-"++fshow 2 (aadateMonth at)++"-"++fshow 2 (aadateDay at)
               AtomValueOfONE -> "1"
         fshow len int = reverse . take len . reverse $ show int ++ repeat '0'

@@ -148,10 +148,10 @@ mkMultipleRepresentationsForConceptError cpt rs =
                   concatMap (("\n    "++ ) . show . origin ) rs
     _ -> fatal 142 "There are no multiple representations."
 
-mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> CtxError
-mkIncompatibleAtomValueError pav t cpt=
+mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
+mkIncompatibleAtomValueError pav t cpt msg=
   case pav of 
-    PAVString o str -> CTXE o $ show str++" isn't a valid "++show t++
+    PAVString o str -> CTXE o $ msg ++"\n  "++show str++" isn't a valid "++show t++
                                 ", which is the type of "++name cpt++"."
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError

@@ -96,6 +96,6 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
          EEps i _   -> fromList [(a,[a]) | a <- aVals i]
          EDcV sgn   -> fromList [(s, cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
          EMp1 a c   -> fromList [case string2AtomValue (representationOf ci c) a of
-                                   Just av -> (av,[av])
-                                   Nothing -> fatal 99 $ "This shouldn't happen here. "  -- TODO: This should be caught in a better way (not als fatal, but as a user error)
+                                   Right av -> (av,[av])
+                                   Left err -> fatal 99 $ "This shouldn't happen here. \n  "++err  -- TODO: This should be caught in a better way (not als fatal, but as a user error)
                                 | name c/="SESSION"] -- prevent populating SESSION

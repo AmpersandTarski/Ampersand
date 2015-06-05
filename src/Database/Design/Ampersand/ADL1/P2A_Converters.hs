@@ -362,8 +362,8 @@ pCtx2aCtx' _
     pAtomValue2aAtomValue ::A_Concept -> PAtomValue -> Guarded AAtomValue
     pAtomValue2aAtomValue cpt pav =
        case string2AtomValue typ (strOf pav) of
-         Just aav -> pure aav 
-         Nothing -> Errors [mkIncompatibleAtomValueError pav typ cpt]
+         Right aav -> pure aav 
+         Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
          where typ = representationOf contextInfo cpt
                strOf (PAVString _ str) = str
 

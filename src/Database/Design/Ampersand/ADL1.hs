@@ -58,7 +58,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          ,A_RoleRelation(..)
          ,Population(..)
          ,Purpose(..), ExplObj(..)
-         , AAtomPair(..), AAtomValue(..),GenericNumber(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
+         , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Database.Design.Ampersand.ADL1.Expression

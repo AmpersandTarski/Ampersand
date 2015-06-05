@@ -138,7 +138,8 @@ suitableAsKey st =
     Date             -> True
     DateTime         -> True
     Boolean          -> True
-    Numeric          -> True
+    Integer          -> True
+    Float            -> False
     AutoIncrement    -> True
     TypeOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
 -----------------------------------------
@@ -464,7 +465,8 @@ tType2SqlType dom
      Date             -> SQLDate
      DateTime         -> SQLDateTime
      Boolean          -> SQLBool
-     Numeric          -> SQLFloat
+     Integer          -> SQLBigInt
+     Float            -> SQLFloat
      AutoIncrement    -> SQLSerial
      TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
 

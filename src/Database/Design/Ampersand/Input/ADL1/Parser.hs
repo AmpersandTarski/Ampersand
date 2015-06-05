@@ -45,7 +45,7 @@ keywordstxt       = [ "INCLUDE"
                     -- Keywords for TType:
                     , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
                     , "BINARY", "BIGBINARY", "HUGEBINARY"
-                    , "DATE", "DATETIME", "BOOLEAN", "NUMERIC", "AUTOINCREMENT"
+                    , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
                     ]
 keywordsops :: [String]
 keywordsops       = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#", "::", ":", "\\/", "/\\", "\\", "/", "<>"
@@ -376,7 +376,8 @@ pAdlTType
       <|> k Date             "DATE"
       <|> k DateTime         "DATETIME"
       <|> k Boolean          "BOOLEAN"
-      <|> k Numeric          "NUMERIC"
+      <|> k Integer          "INTEGER"
+      <|> k Float            "FLOAT"
       <|> k AutoIncrement    "AUTOINCREMENT"
   where
    k tt str = f <$> pKey str where f _ = tt

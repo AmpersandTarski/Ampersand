@@ -39,8 +39,8 @@ class ConceptStructure a where
      where cpt (EMp1 _ c) = c
            cpt _          = fatal 31 "cpt error"
            atm (EMp1 a c) = case string2AtomValue (representationOf ci c) a of
-                             Just av -> av
-                             Nothing -> fatal 43 "Could not convert the string. That should have been checked earlier."
+                             Right av -> av
+                             Left err -> fatal 43 $ "Could not convert the string. That should have been checked earlier. \n  "++err
            atm _          = fatal 31 "atm error"
            
 prim2rel :: Expression -> Declaration

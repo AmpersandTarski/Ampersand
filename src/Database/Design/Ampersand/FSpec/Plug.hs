@@ -172,15 +172,16 @@ fldauto f = case fldtype f of
               _         -> False
               
 showSQL :: SqlTType -> String
-showSQL (SQLFloat   ) = "FLOAT"
+showSQL (SQLFloat    ) = "FLOAT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLText     ) = "TEXT"
-showSQL (SQLMediumText     ) = "MEDIUMTEXT"
+showSQL (SQLMediumText ) = "MEDIUMTEXT"
 showSQL (SQLBlob     ) = "BLOB"
-showSQL (SQLMediumBlob     ) = "MEDIUMBLOB"
-showSQL (SQLLongBlob     ) = "LONGBLOB"
+showSQL (SQLMediumBlob ) = "MEDIUMBLOB"
+showSQL (SQLLongBlob ) = "LONGBLOB"
 showSQL (SQLDate     ) = "DATE"
 showSQL (SQLDateTime ) = "DATETIME"
+showSQL (SQLBigInt   ) = "BIGINT"
 showSQL (SQLBool     ) = "BOOLEAN"
 showSQL (SQLSerial   ) = "SERIAL"
 

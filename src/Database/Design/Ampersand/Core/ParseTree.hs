@@ -16,7 +16,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..),GenericNumber(..), mkPair
+   , PAtomPair(..), PAtomValue(..), mkPair
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -170,7 +170,7 @@ data TType
   = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
   | Binary | BigBinary | HugeBinary 
   | Date | DateTime 
-  | Boolean | Numeric | AutoIncrement 
+  | Boolean | Integer | Float | Object | AutoIncrement 
   | TypeOfOne --special type for the special concept ONE.
      deriving (Show, Eq, Ord)
 
@@ -203,11 +203,10 @@ data PAtomPair
 data PAtomValue
   = PAVString Origin String
 -- TODO: Later add parsers for:
---  | PAVNumeric Origin GenericNumber
+--  | PAVInteger Origin Integer
+--  | PAVFloat Origin Float
 --  | PAVBoolean Origin Bool 
   deriving Show
-data GenericNumber
-  = Original String deriving Show
 mkPair :: Origin -> String -> String -> PAtomPair
 mkPair o l r 
    = PPair { pppos = o

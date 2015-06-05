@@ -331,6 +331,7 @@ data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-ty
              | SQLDate     -- MySQL retrieves and displays DATE values in 'YYYY-MM-DD' format
              | SQLDateTime -- MySQL retrieves and displays DATETIME values in 'YYYY-MM-DD HH:MM:SS' format
              | SQLBool
+             | SQLBigInt
              | SQLSerial   -- SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
              
 --HJO, 20150501: below are the types that used to be there. (may be removed in near future)
