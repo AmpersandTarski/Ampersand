@@ -141,7 +141,7 @@ pPatternDef = rebuild <$> currPos
              , pt_end = end
              }
 
---- ProcessDef ::= 'PROCESS' ConceptName ProcElem* 'ENDPROCESS'
+--- ProcessDef ::= 'PROCESS' ConceptName PatElem* 'ENDPROCESS'
 pProcessDef :: AmpParser P_Pattern
 pProcessDef = rebuild <$> currPos
                       <*  pKey "PROCESS"
@@ -230,7 +230,7 @@ pRuleDef =  P_Ru <$> currPos
                  pPairView :: AmpParser (PairView (Term TermPrim))
                  pPairView = PairView <$> pParens (pPairViewSegment `sepBy1` pComma)
 
-                 --- PairViewSegmentList  ::= PairViewSegment (',' PairViewSegment)*
+                 --- PairViewSegmentList ::= PairViewSegment (',' PairViewSegment)*
                  --- PairViewSegment ::= 'SRC' Term | 'TGT' Term | 'TXT' String
                  pPairViewSegment :: AmpParser (PairViewSegment (Term TermPrim))
                  pPairViewSegment = PairViewExp  <$> posOf (pKey "SRC") <*> return Src <*> pTerm
@@ -318,7 +318,7 @@ pGenDef = try (PGen <$> currPos <* key <*> pConceptRef <* pKey "ISA") <*> pConce
 -- The label 'onNameAddress' is used to refer to this identity.
 -- You may also use an expression on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
---- Index ::= 'IDENT' Label ConceptRefPos '(' IndSegmentList ')'
+--- Index ::= 'IDENT' Label ConceptRef '(' IndSegmentList ')'
 pIndex :: AmpParser P_IdentDef
 pIndex  = P_Id <$> currPos
                <*  pKey "IDENT"
@@ -342,7 +342,7 @@ pIndex  = P_Id <$> currPos
 pViewDef :: AmpParser P_ViewDef
 pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' Label ConceptOneRefPos 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' Label ConceptOneRef 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
 pFancyViewDef  = mkViewDef <$> currPos
                       <*  pKey "VIEW"
@@ -375,7 +375,7 @@ pFancyViewDef  = mkViewDef <$> currPos
           pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
 
---- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRefPos '(' ViewSegmentList ')'
+--- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
 pViewDefLegacy = P_Vd <$> currPos
                       <*  (pKey "VIEW" <|> pKey "KEY")
@@ -544,7 +544,7 @@ pMeaning = PMeaning <$> (
 pMessage :: AmpParser PMessage
 pMessage = PMessage <$ pKey "MESSAGE" <*> pMarkup
 
--- Markup ::= LanguageRef? TextMarkup? (String | Expl)
+--- Markup ::= LanguageRef? TextMarkup? (String | Expl)
 pMarkup :: AmpParser P_Markup
 pMarkup = P_Markup
            <$> pMaybe pLanguageRef
