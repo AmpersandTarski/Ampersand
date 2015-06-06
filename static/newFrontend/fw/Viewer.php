@@ -48,6 +48,8 @@ class Viewer {
 		// Third party directives for angular
 		$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');	
 		$this->addHtmlLine('<link href="app/lib/angular/angular-ui-switch/angular-ui-switch.css" rel="stylesheet" media="screen" type="text/css">');
+		$this->addHtmlLine('<script src="app/lib/angular/angular-busy/angular-busy.min.js"></script>');
+		$this->addHtmlLine('<link href="app/lib/angular/angular-busy/angular-busy.min.css" rel="stylesheet" media="screen" type="text/css">');
 		
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');
