@@ -42,7 +42,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
-            , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
+            , ctx_gs     = [g | CGen g<-ces] ++ [y | CCfy y<-ces] -- The gen definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = []  -- TODO: Allow MAINTAINS statements in the context
             , ctx_rrels  = []  -- TODO: Allow EDITS statements in the context
@@ -206,9 +206,14 @@ pClassify = try (P_Cy <$> currPos
                where
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
-                 pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
-                 pCterm1 = pure   <$> pConceptRef <|>
-                           id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
+                 pCterm  = f <$> pCterm1 `sepBy1` pOperator "/\\"
+                 -- pCterm1 = pure   <$> pConceptRef <|>
+                 --           id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
+                 pCterm1 = g <$> pConceptRef                        <|>
+                           h <$> pParens pCterm  -- brackets are allowed for educational reasons.
+                 f ccs = concat ccs
+                 g c = [c]
+                 h cs = cs
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
