@@ -629,8 +629,12 @@ The functions pars and f have arguments 'combinator' and 'operator' only to avoi
 -}
 --- Term ::= Trm2 (('/\' Trm2)+ | ('\/' Trm2)+)?
 pTerm :: AmpParser (Term TermPrim)
-pTerm = reinvert <$> pTrm2 <*> optList (many1 (invert PIsc <$> currPos <* pOperator "/\\" <*> pTrm2) <|>
-                                        many1 (invert PUni <$> currPos <* pOperator "\\/" <*> pTrm2))
+pTerm = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
+          where pars combinator operator
+                 = g <$> currPos <* pOperator operator <*> pTrm2 <*> pMaybe (pars combinator operator)
+                          where g orig y Nothing  = (orig, y)
+                                g orig y (Just (org,z)) = (orig, combinator org y z)
+                f combinator (orig, y) x = combinator orig x y
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
@@ -655,9 +659,12 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
-pTrm4 = reinvert <$> pTrm5 <*> optList (many1 (invert PCps <$> currPos <* pOperator ";" <*> pTrm5) <|>
-                                        many1 (invert PRad <$> currPos <* pOperator "!" <*> pTrm5) <|>
-                                        many1 (invert PPrd <$> currPos <* pOperator "#" <*> pTrm5))
+pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "#")
+          where pars combinator operator
+                 = g <$> currPos <* pOperator operator <*> pTrm5 <*> pMaybe (pars combinator operator)
+                          where g orig y Nothing  = (orig, y)
+                                g orig y (Just (org,z)) = (orig, combinator org y z)
+                f combinator (orig, y) x = combinator orig x y
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
