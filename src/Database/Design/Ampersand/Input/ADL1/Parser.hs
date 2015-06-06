@@ -167,7 +167,7 @@ pProcessDef = rebuild <$> currPos
              , pt_end = end
              }
 
---- PatElem used by PATTERN and PROCESS
+-- PatElem used by PATTERN and PROCESS
 --- PatElem ::= RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Purpose | Population
 pPatElem :: AmpParser PatElem
 pPatElem = Pr <$> pRuleDef          <|>
@@ -206,14 +206,9 @@ pClassify = try (P_Cy <$> currPos
                where
                  --- Cterm ::= Cterm1 ('/\' Cterm1)*
                  --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
-                 pCterm  = f <$> pCterm1 `sepBy1` pOperator "/\\"
-                 -- pCterm1 = pure   <$> pConceptRef <|>
-                 --           id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
-                 pCterm1 = g <$> pConceptRef                        <|>
-                           h <$> pParens pCterm  -- brackets are allowed for educational reasons.
-                 f ccs = concat ccs
-                 g c = [c]
-                 h cs = cs
+                 pCterm  = concat <$> pCterm1 `sepBy1` pOperator "/\\"
+                 pCterm1 = pure   <$> pConceptRef <|>
+                           id     <$> pParens pCterm  -- brackets are allowed for educational reasons.
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
@@ -331,20 +326,9 @@ pIndex  = P_Id <$> currPos
                <*> pConceptRef
                <*> pParens (pIndSegment `sepBy1` pComma)
     where
-          --- IndSegmentList ::= IndSegment (',' IndSegment)
-          --- IndSegment ::= IndAtt
+          --- IndSegmentList ::= Att (',' Att)*
           pIndSegment :: AmpParser P_IdentSegment
-          pIndSegment = P_IdentExp <$> pIndAtt
-
-          --- IndAtt ::= LabelProps? Term
-          pIndAtt :: AmpParser P_ObjectDef
-          -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
-          pIndAtt  = attL <$> currPos <*> optLabelProps <*> try pTerm
-              where mView = Nothing
-                    msub = Nothing
-                    --TODO: What does this origin mean? It's not used, can we remove it?
-                    attL p (nm, strs) ctx = let pos = if null nm then Origin "pIndAtt CC664" else p
-                                in P_Obj nm pos ctx mView msub strs
+          pIndSegment = P_IdentExp <$> pAtt
 
 -- | A view definition looks like:
 --      VIEW onSSN: Person("social security number":ssn)
@@ -407,17 +391,11 @@ pViewDefLegacy = P_Vd <$> currPos
                     | (i,viewSeg) <- zip [(1::Integer)..] xs]
                     -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
-          --- ViewSegment ::= ViewAtt | 'TXT' String | 'PRIMHTML' String
+          --- ViewSegment ::= Att | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
-          pViewSegment = P_ViewExp  <$> pViewAtt <|>
+          pViewSegment = P_ViewExp  <$> pAtt <|>
                          P_ViewText <$ pKey "TXT" <*> pString <|>
                          P_ViewHtml <$ pKey "PRIMHTML" <*> pString
-          --- ViewAtt ::= LabelProps? Term
-          pViewAtt :: AmpParser P_ObjectDef
-          pViewAtt = rebuild <$> currPos <*> optLabelProps <*> pTerm
-              where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mView msub strs
-                    mView = Nothing
-                    msub  = Nothing
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term SubInterface
 pInterface :: AmpParser P_Interface
@@ -471,14 +449,8 @@ pObjDef = obj <$> currPos
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj pos (nm, strs) term mView msub  =
-                 P_Obj { obj_nm   = nm
-                       , obj_pos  = pos
-                       , obj_ctx  = term
-                       , obj_mView = mView
-                       , obj_msub = msub
-                       , obj_strs = strs
-                       }
+         where obj pos (nm, strs) ctx mView msub =
+                 P_Obj nm pos ctx mView msub strs
 
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
@@ -706,6 +678,14 @@ pRelationRef      = PNamedR <$> pNamedRel                                       
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
+--- Att ::= LabelProps? Term
+pAtt :: AmpParser P_ObjectDef
+-- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
+pAtt = rebuild <$> currPos <*> try pLabelProps `opt` ("",[]) <*> try pTerm
+  where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mView msub strs
+        mView = Nothing
+        msub = Nothing
+
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Sign?
 pNamedRel :: AmpParser P_NamedRel
@@ -739,10 +719,6 @@ pLabelProps = (,) <$> pADLid
                   <*> optList pArgs
                   <*  posOf pColon
               where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
-
---TODO: move the try to where it's being used.
-optLabelProps :: AmpParser (String, [[String]])
-optLabelProps = try pLabelProps `opt` ("",[])
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
