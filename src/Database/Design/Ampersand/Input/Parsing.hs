@@ -64,15 +64,15 @@ parseErrors lang err = [PE (Message msg)]
                       showLang English = showErrorMessages "or" "unknown parse error"   "expecting" "unexpected" "end of input"
                       showLang Dutch   = showErrorMessages "of" "onbekende parsingfout" "verwacht"  "onverwacht" "einde van de invoer"
 
-parse :: AmpParser a -> [Token] -> Guarded a
-parse p ts =
+parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
+parse p fn ts =
       -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a 
     case runP p pos fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
         Right a -> Checked a
-    where pos = tokPos (head ts)
-          fn  = nm pos where nm (FilePos file _ _ ) = file
+    where pos | null ts   = initPos fn
+              | otherwise = tokPos (head ts)
 
 --TODO: Give the errors in a better way
 lexerErrors :: LexerError -> [CtxError]
@@ -86,7 +86,7 @@ runParser parser filename input =
   in case lexed of
     Left err -> Errors $ lexerErrors err
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
-    Right (tokens, _)  -> whenChecked (parse parser tokens) Checked
+    Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
 
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
