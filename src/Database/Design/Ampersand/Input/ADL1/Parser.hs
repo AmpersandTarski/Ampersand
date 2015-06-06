@@ -629,12 +629,8 @@ The functions pars and f have arguments 'combinator' and 'operator' only to avoi
 -}
 --- Term ::= Trm2 (('/\' Trm2)+ | ('\/' Trm2)+)?
 pTerm :: AmpParser (Term TermPrim)
-pTerm = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
-          where pars combinator operator
-                 = g <$> currPos <* pOperator operator <*> pTrm2 <*> pMaybe (pars combinator operator)
-                          where g orig y Nothing  = (orig, y)
-                                g orig y (Just (org,z)) = (orig, combinator org y z)
-                f combinator (orig, y) x = combinator orig x y
+pTerm = pTrm2 <??> (invertT PIsc <$> rightAssociate PIsc "/\\" pTrm2 <|>
+                    invertT PUni <$> rightAssociate PUni "\\/" pTrm2)
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
 --- Trm2 ::= Trm3 ('-' Trm3)?
@@ -659,12 +655,9 @@ pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
-pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "#")
-          where pars combinator operator
-                 = g <$> currPos <* pOperator operator <*> pTrm5 <*> pMaybe (pars combinator operator)
-                          where g orig y Nothing  = (orig, y)
-                                g orig y (Just (org,z)) = (orig, combinator org y z)
-                f combinator (orig, y) x = combinator orig x y
+pTrm4   = pTrm5 <??> (invertT PCps <$> rightAssociate PCps ";" pTrm5 <|>
+                      invertT PRad <$> rightAssociate PRad "!" pTrm5 <|>
+                      invertT PPrd <$> rightAssociate PPrd "#" pTrm5)
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
@@ -682,13 +675,20 @@ pTrm6 :: AmpParser (Term TermPrim)
 pTrm6 = Prim <$> pRelationRef  <|>
         PBrk <$> currPos <*> pParens pTerm
 
--- Help function for several expressions. The type 't' is each of the left and right terms, while r is the result type.
-invert :: (Origin -> t -> t -> r) -> Origin -> t -> t -> r
+-- Help function for several expressions. The type 't' is each of the terms.
+invert :: (Origin -> t -> t -> t) -> Origin -> t -> t -> t
 invert constructor position rightTerm leftTerm = constructor position leftTerm rightTerm
 
-reinvert :: Term TermPrim -> [Term TermPrim -> Term TermPrim] -> Term TermPrim
-reinvert x xs = foldr apply x (reverse xs)
-    where apply f t = f t
+-- Variant for the above function with a tuple, for usage with right association
+invertT :: (Origin -> t -> t -> t) -> (Origin, t) -> t -> t
+invertT constructor (position,rightTerm) leftTerm = constructor position leftTerm rightTerm
+
+-- Help function for pTerm and pTrm4, to allow right association
+rightAssociate :: (Origin -> t -> t -> t) -> String -> AmpParser t -> AmpParser (Origin, t)
+rightAssociate combinator operator term
+                 = g <$> currPos <* pOperator operator <*> term <*> pMaybe (rightAssociate combinator operator term)
+                          where g orig y Nothing  = (orig, y)
+                                g orig y (Just (org,z)) = (orig, combinator org y z)
 
 --- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
