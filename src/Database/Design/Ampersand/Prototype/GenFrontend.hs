@@ -5,7 +5,6 @@ import Prelude hiding (putStrLn,readFile)
 import Control.Monad
 import Data.Data
 import Data.List
-import Data.Maybe
 import System.Directory
 import System.FilePath
 import Text.StringTemplate
@@ -152,8 +151,8 @@ data FEObject = FEObject { objName :: String
                          , atomicOrBox :: FEAtomicOrBox } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
-                   | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
+data FEAtomicOrBox = FEAtomic { _objPrimTemplate :: (FilePath, [String]) }
+                   | FEBox    { _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
 
 data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [Role] } deriving Show
 
@@ -190,17 +189,15 @@ buildInterface fSpec allIfcs ifc =
                   ; let mView = case objmView object of
                                   Just nm -> Just $ lookupView fSpec nm
                                   Nothing -> getDefaultViewForConcept fSpec tgt
-                  ; mSpecificTemplatePath <-
+                  ; defaulttemplate <- selectDefaultTemplate fSpec tgt
+                  ; viewTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp Obj{objnm=viewAttr} <- viewSegs])
-                            _ -> -- no view, or no view with an html template, so we fall back to target-concept template
-                                 -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                             do { let templatePath = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
-                                ; hasSpecificTemplate <- doesTemplateExist fSpec $ templatePath
-                                ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
-                                }
-                  ; return (FEAtomic mSpecificTemplatePath, iExp, isEditable, src, tgt)
+                              -> return $ ("views" </> fName, [ viewAttr | ViewExp Obj{objnm=viewAttr} <- viewSegs])
+                            _ -> -- no view, or no view with an html template, so we fall back to default template
+                                 
+                                 return $ (defaulttemplate,[]) 
+                  ; return (FEAtomic viewTemplatePath, iExp, isEditable, src, tgt)
                   }
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -304,7 +301,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
             -- For now, we choose specific template based on target concept. This will probably be too weak. 
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
-            ; let (templateFilename, viewAttrs) = fromMaybe ("views/Atomic.html", []) mPrimTemplate -- Atomic is the default template
+            ; let (templateFilename, viewAttrs) = mPrimTemplate -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
@@ -358,9 +355,9 @@ genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editable
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten obj
           allEditableNonPrimTargets = nub [ escapeIdentifier $ name (objTarget o) 
-                                        | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
+                                        | o@FEObject { atomicOrBox = FEAtomic {} } <- allObjs
                                         , objIsEditable o
-                                        , not . isJust $ objMPrimTemplate a
+                                        , False -- TODO: Cleanup. This used to be: not . isJust $ objPrimTemplate a
                                         ]
           containsEditable          = any objIsEditable allObjs
           containsEditableNonPrim   = not $ null allEditableNonPrimTargets
@@ -392,13 +389,26 @@ genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editable
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
 
--- TODO: better abstraction for specific template and fallback to default
-doesTemplateExist :: FSpec -> String -> IO Bool
-doesTemplateExist fSpec templatePath =
- do { let absPath = getTemplateDir fSpec </> templatePath
-    ; doesFileExist absPath
-    }
- 
+selectDefaultTemplate :: FSpec -> A_Concept -> IO(FilePath)
+selectDefaultTemplate fSpec cpt 
+ = do conceptSpecificTemplateExists <- doesTemplateExist conceptBasedName
+      if conceptSpecificTemplateExists
+      then return conceptBasedName
+      else return typeBasedName
+    where
+      conceptBasedName = relPath (name cpt)
+      typeBasedName 
+        = relPath $ 
+           case lookup cpt (allTTypes fSpec) of
+              Just tt -> show tt
+              Nothing -> fatal 407 $ "all concepts should be typed! Concept `"++name cpt++"`doesn't seem to be."         
+      relPath str = "views" </> "Atomic-"++escapeIdentifier str++".html"
+      doesTemplateExist :: String -> IO Bool
+      doesTemplateExist templatePath =
+       do { let absPath = getTemplateDir fSpec </> templatePath
+          ; doesFileExist absPath
+          }
+
 readTemplate :: FSpec -> String -> IO Template
 readTemplate fSpec templatePath =
  do { let absPath = getTemplateDir fSpec </> templatePath
