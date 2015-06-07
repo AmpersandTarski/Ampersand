@@ -71,7 +71,8 @@ executable ampersand
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
-  build-depends:     HDBC == 2.4.*,
+  build-depends:     
+                     HDBC == 2.4.*,
                      HDBC-odbc == 2.3.*,
                      HStringTemplate == 0.7.*,
                      SpreadsheetML == 0.1.*,
@@ -83,21 +84,30 @@ executable ampersand
                      filepath == 1.3.*,
                      graphviz == 2999.17.*,
                      hashable == 1.2.*,
+                     MissingH == 1.3.*,
                      mtl == 2.1.*,
                      old-locale == 1.0.*,
                      old-time == 1.1.*,
                      pandoc == 1.13.*,
                      pandoc-types == 1.12.*,
+                     parsec == 3.1.*,
                      process == 1.2.*,
                      simple-sql-parser >=0.4.1 && <0.5,
                      split == 0.2.*,
                      text == 1.1.*,
                      time == 1.4.*,
                      utf8-string == 0.3.*,
-                     uulib == 0.9.*
+                     uulib == 0.9.*,
+                     wl-pprint == 1.1.*,
+                     wl-pprint,
+                     MissingH,
+                     containers >=0.5 && <0.6,
+                     text >=1.1 && <1.2,
+                     simple-sql-parser,
+                     pandoc-types,
+                     pandoc
         
-  other-modules:     
-                     Database.Design.Ampersand,
+  other-modules:     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
@@ -105,6 +115,7 @@ executable ampersand
                      Database.Design.Ampersand.ADL1.Lattices,
                      Database.Design.Ampersand.ADL1.P2A_Converters,
                      Database.Design.Ampersand.ADL1.Pair,
+                     Database.Design.Ampersand.ADL1.PrettyPrinters,
                      Database.Design.Ampersand.ADL1.Rule,
                      Database.Design.Ampersand.Basics,
                      Database.Design.Ampersand.Basics.Auxiliaries,
@@ -150,9 +161,14 @@ executable ampersand
                      Database.Design.Ampersand.Input,
                      Database.Design.Ampersand.Input.ADL1.CtxError,
                      Database.Design.Ampersand.Input.ADL1.FilePos,
+                     Database.Design.Ampersand.Input.ADL1.Lexer,
+                     Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees,
+                     Database.Design.Ampersand.Input.ADL1.LexerMessage,
+                     Database.Design.Ampersand.Input.ADL1.LexerMonad,
+                     Database.Design.Ampersand.Input.ADL1.LexerTexts,
+                     Database.Design.Ampersand.Input.ADL1.LexerToken,
                      Database.Design.Ampersand.Input.ADL1.Parser,
-                     Database.Design.Ampersand.Input.ADL1.UU_BinaryTrees,
-                     Database.Design.Ampersand.Input.ADL1.UU_Scanner,
+                     Database.Design.Ampersand.Input.ADL1.ParsingLib,
                      Database.Design.Ampersand.Input.Parsing,
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
@@ -192,3 +208,39 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand
+
+
+Test-Suite ampersand-test
+  type:              exitcode-stdio-1.0
+  main-is:           Test.hs
+  hs-source-dirs:    src
+  default-language:  Haskell2010
+  ghc-options:       -with-rtsopts=-M1536m -Wall
+  build-depends:     
+                     base,
+                     bytestring >=0.10 && <0.11,
+                     containers >=0.5 && <0.6,
+                     directory >=1.2 && <1.3,
+                     hashable >=1.2 && <1.3,
+                     filepath,
+                     MissingH,
+                     mtl >=2.1 && <2.2,
+                     pandoc,
+                     pandoc-types,
+                     parsec >=3.1 && <3.2,
+                     QuickCheck == 2.7.*,
+                     text >=1.1 && <1.2,
+                     time >=1.4 && <1.5,
+                     simple-sql-parser,
+                     utf8-string,
+                     wl-pprint,
+                     transformers >=0.3 && <0.4,
+                     conduit >=1.2 && <1.3
+  other-modules:     
+                     Database.Design.Ampersand.Misc.Options,
+                     Database.Design.Ampersand.Test.Parser.ArbitraryPandoc,
+                     Database.Design.Ampersand.Test.Parser.ArbitraryTree,
+                     Database.Design.Ampersand.Test.Parser.ParserTest,
+                     Database.Design.Ampersand.Test.Parser.QuickChecks,
+                     Database.Design.Ampersand.Test.RunAmpersand,
+                     Database.Design.Ampersand.Test.TestScripts

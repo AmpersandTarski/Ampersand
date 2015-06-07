@@ -1,4 +1,3 @@
-Automatic build status summary
 
 Branch | Status
 ---------|-----------

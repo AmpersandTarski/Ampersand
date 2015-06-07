@@ -11,7 +11,6 @@ import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceabi
 --import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
 import Database.Design.Ampersand.Classes
-import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner
 import Database.Design.Ampersand.Misc
 import Data.Hashable
 import Data.Ord
@@ -714,27 +713,28 @@ instance ShowHSName Prop where
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
  showHSName Aut = "Aut"
+ showHSName Prop = "Prop"
 
 instance ShowHS Prop where
  showHS _ _ = showHSName
 
 instance ShowHS FilePos where
- showHS _ _ (FilePos (fn,Database.Design.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
-   = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
+ showHS _ _ pos = show pos
 
 instance ShowHSName Origin where
  showHSName ori = "Orig"++show x++show (hash x)
-   where x = case ori of
-              FileLoc l -> "FileLoc (" ++ show l++")"
-              DBLoc l   -> "DBLoc " ++ show l
-              Origin s  -> "Origin " ++ show s
+   where x :: String
+         x = case ori of
+              FileLoc l sym -> "FileLoc (" ++ show l ++ " " ++ sym ++ ")"
+              DBLoc l       -> "DBLoc " ++ show l
+              Origin s      -> "Origin " ++ show s
               OriginUnknown -> "OriginUnknown"
 
 instance ShowHS Origin where
- showHS opts indent (FileLoc l) = "FileLoc (" ++ showHS opts indent l++")"
- showHS _     _      (DBLoc l)   = "DBLoc "  ++ show l
- showHS _     _      (Origin s)  = "Origin " ++ show s
- showHS _     _    OriginUnknown = "OriginUnknown"
+ showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
+ showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
+ showHS _     _      (Origin s)   = "Origin " ++ show s
+ showHS _     _    OriginUnknown  = "OriginUnknown"
 
 instance ShowHS Block where
  showHS _ _   = show
