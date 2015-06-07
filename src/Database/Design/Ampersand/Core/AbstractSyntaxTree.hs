@@ -540,7 +540,7 @@ string2AtomValue dom str
                            Nothing -> Left $ "This is not of type "++show dom++": " ++str
      AutoIncrement    -> Left "AutoIncrement cannot be populated in an ADL script"
      TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-     Object           -> Left "Object cannot be populated in an ADL script"
+     Object           -> Right (AAVString Object str) 
      
    where
      maybeRead :: Read a => String -> Maybe a
