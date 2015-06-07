@@ -9,13 +9,30 @@ In this pattern, we describe the behaviour of atoms in relation to their represe
 -}
 
 PURPOSE CONCEPT Atom
-{+To assert that a thing exists is a feature of any information system.
-Ampersand uses atoms for that purpose.
-Atoms are to information systems what numbers are for arithmetic: they can be represented in various ways, but they are the basic, unstructured thing around which everything else is built.
-For example, an atom with representation ``{\tt Amsterdam}'' can be used to assert that something exists that is called ``Amsterdam''.
-The word `atom' is used to indicate that atoms are indivisible and do not contain any structure (that is: not within the world of Ampersand).
+{+People who design information systems must discuss ``things''.
+The Oxford Dictionary uses the word 'entity' to refer to tangible things (e.g. a chair) and well as intangible things (e.g. an idea, or a number) that exist in the real world.
+However, the word ``entity'' is used by contemporary database engineers in a specific meaning.
+Ampersand uses the word ``atom'' to refer to things\footnote{%
+The word ``atom'' suggests indivisibility.
+Indeed, Ampersand does not impose any internal structure to atoms, but only uses equality on atoms.}.
+Atoms can refer to things that exist in the real world and have a representation in an information system.
+
+As an example, suppose we have an atom that has ``Peter'' as representation and we want that atom to represent an existing person called Peter.
+In an attempt to be precise in our language, we could consistently speak about atoms as: "the atom that represents Peter".
+Or you might speak about it as, the atom that has ``Peter'' as representation, knowing that it represents the person we know as Peter.
+Needless to say that this makes it quite verbose (and cumbersome) to discuss atoms in this way.
+Fortunately, natural language is full of shortcuts that allow us to talk normally about Peter, and still be precise about it.
+So we will use a shortcut in our language too: let us simply talk about the atom ``Peter''.
+In the back of our minds we know perfectly well that ``Peter'' is the representation of an atom rather than the atom itself.
+But in all cases where it does not do any harm, we will talk about the representation as if it were an atom.
+
+--SJ (meta): ik wil het filosofische verhaal niet op deze plek. 
+--In order for knowledge/reasoning/information systems (in Ampersand: Contexts) to reason about stuff in the real world, a perception ('mental image', idea) of that universe is needed. This (highly philosophical) idea is necessary to explain differences between how we reasoning about the real world and what actually happens in that real world: after all, the reasoning is done on the **perceived** entities rather than the entities that have an actual existence. Note that the perception of an entity is itself something that exists, and hence an entity as well.
+--Within a Context, we want to talk and reason about any perception (of an entity) that exists within that Context.
+--To do so, every perception must not only be referrable (named), but also distinguishable from all other such perceptions.
 -}
-CONCEPT Atom "An atom is an indivisible thing that exists in a context."
+CONCEPT Atom "An atom is a representation of some real-world thing that exists in a context."
+
 PURPOSE RELATION repr
 {+
 Every atom has a representation. In the current version of Ampersand, every atom is represented by a finite list of UTF-8 characters.
@@ -23,6 +40,21 @@ In future versions, other types of representation will become possible.
 Whatever the choice, Ampersand relies on the representation to identify the atom.
 For that reason, every atom has a representation (\id{TOT}) and the representation identifies that atom (\id{INJ}).
 -}
+CONCEPT Concept "A concept is a name to characterize a set of similar things."
+PURPOSE CONCEPT Concept
+{+Classification of things is a well known feature of natural language, since the days of Carl von Linn\'e (Carolus Linnaeus) in the eighteenth century.
+By saying: ``This thing is a tree'', or ``Peter is a person'', we are classifying concrete things (like ``this thing'' or ``Peter'').
+We will call ``tree'' and ``person'' in these examples a {\em concept}.
+In a world full of things, we use the word ``concept'' to name and characterize a set of things that are similar.
+We use the concept ``Table'' to denote the set of tables in a context.
+When asked: which tables are there, we can point at all available tables and conclude that each one is an instance of ``Table''.
+Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 101.
+Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things.
+(Ask: Which joys are there? Which peaces are there?).
+-}
+
+PURPOSE RELATION pop
+{+In order to talk about (perceptions of) real world entities that share (perceived) similar properties, or in order to specify rules, it must be possible to classify Atoms. We use the term 'Concept' to refer to a class of Atoms. We say that 'an Atom is in the population of some Concept' or alternatively 'an Atom is an element of some Concept' iff the Atom belongs to (or: is an instance of) that class.-}
 PURPOSE RELATION pop
 {+
 Concepts can be populated with atoms, which gives them meaning.
@@ -84,6 +116,15 @@ CONCEPT Pair "A pair is something that contains two atoms."
 PURPOSE RULE "source type"
 {+In order to know to which concept an atom belongs, we must look at the relation in which a concept resides.
 Note that atoms cannot exist outside a population, since pop is a total relation.
+-}
+
+PURPOSE CONCEPT Typology
+{+Merriam-Webster defines a typology as ``a system used for putting things into groups according to how they are similar''.
+-}
+CONCEPT Typology "a hierarchy of Concepts"
+
+PURPOSE RULE "Integrity of Atoms and populations"
+{+It must be ensured that the representations of ((different) perceptions of) (different) real world entities can be properly distinguished. Any pair of Atoms in the same Concept are distinct (per definition). Thus, we need a rule that expresses when two Atoms that are in different Concepts represent the same (perception of) a real world entity.
 -}
 
 ENDCONTEXT
