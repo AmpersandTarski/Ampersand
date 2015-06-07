@@ -823,7 +823,7 @@ representationOf ci cpt =
     ONE -> TypeOfOne
     PlainConcept{}
         ->  case eqCl reprdom . filter isAboutThisCpt . ctxiRepresents $ ci of
-              [] ->  Alphanumeric  --The default value, when no representation is specified
+              [] ->  Object  --The default value, when no representation is specified
               [rs] -> case rs of   
                          []  -> fatal 498 "This should be impossible with eqClass"
                          r: _ ->reprdom r
