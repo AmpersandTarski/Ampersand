@@ -1,4 +1,5 @@
 CONTEXT AST IN ENGLISH LATEX
+-- The commented version of Atoms can be found in Atoms.doc
 
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
@@ -70,7 +71,7 @@ TABS[ atoms : V[SESSION*Atom]
            , source  : source
            , target  : target
            ]
---    , garbage : V[SESSION*Atom];-(l~;in;source \/ r~;in;target)
+--    , garbage : V[SESSION*Atom];-((l~;in;source;pop~/\I) \/ (r~;in;target;pop~/\I))
 --      COLS [ repr : repr
 --           , pop  : pop
 --           ]
