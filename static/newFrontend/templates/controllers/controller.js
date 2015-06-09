@@ -176,13 +176,12 @@ $endif$
 $if(containsEditableNonPrim)$  // The interface contains at least 1 editable relation to a non-primitive concept
   // AddObject function to add a new item (val) to a certain property (property) of an object (obj)
   // Also needed by addModal function.
-  \$scope.addObject = function(obj, property, selected, resourceId){
-    if(selected.id === undefined || selected.id == ''){
+  \$scope.addObject = function(obj, property, item, resourceId){
+    if(item.id === undefined || item.id == ''){
       console.log('selected id is undefined');
     }else{
       if(obj[property] === null) obj[property] = new Array();
-      obj[property].push({'id': selected.id});
-      selected.id = ''; // reset input field
+      obj[property].push({'id': item.id});
       \$scope.put(resourceId);
     }
   }
@@ -195,6 +194,10 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   
   // Typeahead functionality
   \$scope.typeahead = {}; // an empty object for typeahead
+  
+  \$scope.typeaheadOnSelect = function (\$item, \$model, \$label, obj, property, resourceId){
+    \$scope.addObject(obj, property, \$item, resourceId);
+  };
 
 
   // A property for every (non-primitive) tgtConcept of the editable relations in this interface
