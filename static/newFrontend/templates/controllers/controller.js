@@ -16,22 +16,29 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.resourceStatus = {}; // initialize object for resource status colors
   \$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
   
+  if(typeof \$routeParams.resourceId != 'undefined'){
+	  srcAtomId = \$routeParams.resourceId;
+  }else{ 
+	  srcAtomId = \$rootScope.session.id;
+  }
+	  
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
+  srcAtom = Restangular.one('resource/$source$', srcAtomId);
+  \$scope.val['$interfaceName$'] = new Array();
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
-	\$scope.val['$interfaceName$'] = Restangular.one('resource/SESSION', \$rootScope.session.id).all('$interfaceName$'); // requestless URL build
-	\$scope.val['$interfaceName$'].post({}).then(function(newItem) { // POST
-		\$scope.val['$interfaceName$'].push(newItem); // Add to collection
+	\$scope.val['$interfaceName$'].post({}).then(function(data) { // POST
+		\$rootScope.updateNotifications(data.notifications);
+		\$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(srcAtom, data.content, '$interfaceName$')); // Add to collection
+		showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
 	});
     
-  // Elseif resourceId is provided
-  }else if(typeof \$routeParams.resourceId != 'undefined'){
-    \$scope.val['$interfaceName$'] = Restangular.one('resource/$source$', \$routeParams.resourceId).getList('$interfaceName$').\$object;
-  
-  // Else use session.id
+  // Else
   }else{
-	\$scope.val['$interfaceName$'] = Restangular.one('resource/$source$', \$rootScope.session.id).getList('$interfaceName$').\$object;
+    srcAtom.all('$interfaceName$').getList().then(function(data){
+	  \$scope.val['$interfaceName$'] = data;
+    });
   }
   
   \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
