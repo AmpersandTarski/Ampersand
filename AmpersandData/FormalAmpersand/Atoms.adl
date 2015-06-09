@@ -94,7 +94,7 @@ COLS [ name             : name
 
 VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
 
-INTERFACE Pair(l,r,in) : I[Pair]
+INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
 COLS [ pair           : I
      , l              : l
      , r              : r

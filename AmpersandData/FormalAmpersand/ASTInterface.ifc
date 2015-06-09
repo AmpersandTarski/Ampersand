@@ -15,9 +15,10 @@ TABS[ Context : V[SESSION*Context]
          , Specific : genspc
          ]
     , "Concepts" : V[SESSION*PlainConcept]
-    COLS [ Definition : cptdf
-         , Purpose : cptpurpose
-         , "Technical Type" : cpttp
+    COLS [ Id: I
+       --  , Definition : cptdf
+       --  , Purpose : cptpurpose
+       --  , "Technical Type" : cpttp
          ]
     , "Declarations" : V[SESSION*Declaration]
     COLS [ Name : name
@@ -56,7 +57,7 @@ TABS[ Atoms : V[SESSION*Atom]
          ]
     , Concepts : V[SESSION*Concept]
     COLS [ "Concept" : I
-         , name : name[PlainConcept*ConceptName]
+         , name : name -- [Concept*ConceptName]
          ]
     ]
     
@@ -66,7 +67,7 @@ INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name
     ]
 
-INTERFACE Concept FOR Ampersand : I[PlainConcept]
+INTERFACE Concept FOR Ampersand : I[Concept]
 BOX [ Concept : name
     ]
 

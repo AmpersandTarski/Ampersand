@@ -52,9 +52,11 @@ MEANING "The purposes of a pattern."
 ENDPATTERN
 
 PATTERN Specialization
-VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name , TXT " ISA " , gengen;name )
+VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name[Concept*TEXT] , TXT " ISA " , gengen;name[Concept*TEXT] )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
+
+CLASSIFY PlainConcept ISA Concept
 
 RELATION gengen[Gen*PlainConcept] [UNI,TOT]
 MEANING "A generalization rule refers to one more generic concept."
@@ -73,7 +75,7 @@ ENDPATTERN
 
 
 PATTERN Sign
-VIEW Sign: Sign( TXT "[" , src;name[PlainConcept*ConceptName] , TXT "*" , trg;name[PlainConcept*ConceptName] , TXT "]" )
+VIEW Sign: Sign( TXT "[" , src;name[Concept*TEXT] , TXT "*" , trg;name[Concept*TEXT] , TXT "]" )
 
 
 RELATION src[Sign*Concept] [UNI,TOT]
