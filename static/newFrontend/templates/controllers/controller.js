@@ -108,28 +108,14 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         \$rootScope.updateNotifications(data.notifications);
         \$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
         
-        // show/hide save button
-        if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
-        	\$scope.showSaveButton[resourceId] = true;
-        	\$scope.showCancelButton[resourceId] = true;
-        	setResourceStatus(resourceId, 'warning');
-        }else if(data.invariantRulesHold && data.requestType == 'promise'){
-			\$scope.showSaveButton[resourceId] = false;
-			\$scope.showCancelButton[resourceId] = false;
-			setResourceStatus(resourceId, 'success');
-			\$timeout(function() {
-				setResourceStatus(resourceId, 'default');
-		    }, 3000);
-			
-			// If this atom was updated with the 'new' interface, change url
+        showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
+        
+        if(data.invariantRulesHold && data.requestType == 'promise'){
+        	// If this atom was updated with the 'new' interface, change url
 			var location = \$location.search();
 			if(location['new']){
 				\$location.url('/$interfaceName$/' + data.content.id);
-			}
-		}else{
-			setResourceStatus(resourceId, 'danger');
-        	\$scope.showSaveButton[resourceId] = false;
-        	\$scope.showCancelButton[resourceId] = true;
+			}        	
         }
       }));
   }
@@ -214,6 +200,26 @@ $endif$
       return (item.id === itemId) && (index = idx)
     });
     return index;
+  }
+  
+  //show/hide save button
+  function showHideButtons(invariantRulesHold, requestType, resourceId){
+	if(invariantRulesHold && requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
+	  \$scope.showSaveButton[resourceId] = true;
+	  \$scope.showCancelButton[resourceId] = true;
+	  setResourceStatus(resourceId, 'warning');
+	}else if(invariantRulesHold && requestType == 'promise'){
+	  \$scope.showSaveButton[resourceId] = false;
+	  \$scope.showCancelButton[resourceId] = false;
+	  setResourceStatus(resourceId, 'success');
+	  \$timeout(function() {
+	    setResourceStatus(resourceId, 'default');
+	  }, 3000);
+	}else{
+	  setResourceStatus(resourceId, 'danger');
+	  \$scope.showSaveButton[resourceId] = false;
+	  \$scope.showCancelButton[resourceId] = true;
+	}
   }
   
   function setResourceStatus(resourceId, status){
