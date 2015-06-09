@@ -79,19 +79,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         }));
     }
   }
-   
-$if(containsDATE)$  // The interface contains an editable relation to the primitive concept DATE
-  // Function for Datepicker
-  \$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
-  \$scope.openDatepicker = function(\$event, datepicker) {
-    \$event.preventDefault();
-    \$event.stopPropagation();
-    
-    \$scope.datepicker[datepicker] = {'open' : true};
-  }
-$else$  // The interface does not contain editable relations to primitive concept DATE
-$endif$
-$if(containsEditable)$  // The interface contains at least 1 editable relation
+
   // Put function to update a Resource
   \$scope.put = function(resourceId, requestType){
 	
@@ -137,6 +125,8 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 	  		\$scope.showCancelButton[resourceId] = false;
 	  	}));
   }
+  
+$if(containsEditable)$  // The interface contains at least 1 editable relation
 
   // Function to patch only the changed attributes of a Resource
   \$scope.patch = function(resourceId){
@@ -145,6 +135,18 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 	  console.log('not yet implemented');
   }
   
+  $if(containsDATE)$  // The interface contains an editable relation to the primitive concept DATE
+  // Function for Datepicker
+  \$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
+  \$scope.openDatepicker = function(\$event, datepicker) {
+    \$event.preventDefault();
+    \$event.stopPropagation();
+  
+    \$scope.datepicker[datepicker] = {'open' : true};
+  }
+  $else$  // The interface does not contain editable relations to primitive concept DATE
+  $endif$
+
   // Function to add item to array of primitieve datatypes
   \$scope.addItem = function(obj, property, selected, resourceId){
     if(selected.value != ''){
