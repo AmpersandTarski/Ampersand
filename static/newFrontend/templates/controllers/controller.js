@@ -180,8 +180,8 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
     if(selected.id === undefined || selected.id == ''){
       console.log('selected id is undefined');
     }else{
-      if(obj[property] === null) obj[property] = {};
-      obj[property][selected.id] = {'id': selected.id};
+      if(obj[property] === null) obj[property] = new Array();
+      obj[property].push({'id': selected.id});
       selected.id = ''; // reset input field
       \$scope.put(resourceId);
     }

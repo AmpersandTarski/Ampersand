@@ -71,8 +71,10 @@ Class Atom {
 			$tgtAtoms[] = $tgtAtom;
 		}
 		
-		// define $arr as array if $interface is not univalent and its tgtDataType a primitive datatype (i.e. not concept) 
-		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array();
+		// defaults 
+		if(!$interface->univalent) $arr = array(); // define $arr as array if $interface is not univalent
+		elseif($interface->tgtDataType == "concept") $arr = array();
+		else $arr = null;
 		
 		foreach ($tgtAtoms as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
@@ -114,12 +116,12 @@ Class Atom {
 			// determine whether value of atom must be inserted as list or as single value
 			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
-			}elseif($interface->univalent AND !($interface->tgtDataType == "concept")){ // in cause of univalent (i.e. count of $tgtAtoms <= 1) and a datatype (i.e. not concept)
-				$arr = $content;
-			}elseif(!($interface->tgtDataType == "concept")){
+			}elseif(!$interface->univalent){ // in cause of univalent and a datatype (i.e. not concept)
+				$arr[] = $content;
+			}elseif($interface->tgtDataType == "concept"){
 				$arr[] = $content;
 			}else{
-				$arr[$tgtAtom->id] = $content;
+				$arr = $content;
 			}			
 				
 			unset($content);			
@@ -240,8 +242,8 @@ Class Atom {
 					break;
 				}
 				
-				// if tgtDataType is a concept (i.e. ! prim. datatype), use key of object in $patch['value']
-				if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
+				// if tgtDataType is a concept (i.e. ! prim. datatype), use id of object in $patch['value']
+				if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = current($patch['value'])['id'];
 				// elseif tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
 				elseif ($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
 				// else
@@ -301,8 +303,9 @@ Class Atom {
 				
 				}
 				
-				// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
+				// if tgtDataType is a primitieve datatype (i.e. !concept), use patch value
 				if (!($tgtInterface->tgtDataType == "concept")) $tgtAtom = $patch['value'];
+				else $tgtAtom = $patch['value']['id'];
 				
 				// perform editUpdate
 				if($tgtInterface->editable){
@@ -352,6 +355,7 @@ Class Atom {
 					// two situations: 1) expr is UNI -> path is '/<attr name>' or 2) expr is not UNI -> path is '/<attr name>/<key>', where key is entry in array of values.
 					try{
 						if(!($tgtInterface->tgtDataType == "concept")) $tgtAtom = JsonPatch::get($before, $patch['path']);
+						else $tgtAtom = JsonPatch::get($before, $patch['path'])['id'];
 					}catch(Exception $e){
 						Notifications::addError($e->getMessage());
 					}
