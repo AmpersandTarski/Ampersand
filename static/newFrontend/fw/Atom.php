@@ -72,8 +72,7 @@ Class Atom {
 		}
 		
 		// defaults 
-		if(!$interface->univalent) $arr = array(); // define $arr as array if $interface is not univalent
-		elseif($interface->tgtDataType == "concept") $arr = array();
+		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array(); // define $arr as array if $interface is not univalent and tgtDataType not an concept
 		else $arr = null;
 		
 		foreach ($tgtAtoms as $tgtAtomId){
@@ -116,12 +115,12 @@ Class Atom {
 			// determine whether value of atom must be inserted as list or as single value
 			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
-			}elseif(!$interface->univalent){ // in cause of univalent and a datatype (i.e. not concept)
-				$arr[] = $content;
 			}elseif($interface->tgtDataType == "concept"){
-				$arr[] = $content;
-			}else{
+				$arr[$content['id']] = $content;
+			}elseif($interface->univalent){
 				$arr = $content;
+			}else{
+				$arr[] = $content;
 			}			
 				
 			unset($content);			
@@ -242,8 +241,8 @@ Class Atom {
 					break;
 				}
 				
-				// if tgtDataType is a concept (i.e. ! prim. datatype), use id of object in $patch['value']
-				if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = current($patch['value'])['id'];
+				// if tgtDataType is a concept (i.e. ! prim. datatype), use key of object in $patch['value']
+				if (is_null($tgtAtom) AND $tgtInterface->tgtDataType == "concept") $tgtAtom = key($patch['value']);
 				// elseif tgtDataType is a primitieve datatype (i.e. !concept), use patch value instead of path index.
 				elseif ($tgtInterface->tgtDataType != "concept") $tgtAtom = $patch['value'];
 				// else
