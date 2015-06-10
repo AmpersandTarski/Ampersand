@@ -270,7 +270,7 @@ class JsonPatch
       return self::diff_assoc($path, $value, $other);
     }
     else if (is_array($value) && !self::is_associative($value)
-             && is_array($other) && !self::is_associative($value))
+             && is_array($other) && !self::is_associative($other))
     {
       return self::diff_array($path, $value, $other);
     }

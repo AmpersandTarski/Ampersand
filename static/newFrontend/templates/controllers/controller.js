@@ -16,22 +16,30 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.resourceStatus = {}; // initialize object for resource status colors
   \$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
   
+  if(typeof \$routeParams.resourceId != 'undefined'){
+	  srcAtomId = \$routeParams.resourceId;
+  }else{ 
+	  srcAtomId = \$rootScope.session.id;
+  }
+	  
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
+  srcAtom = Restangular.one('resource/$source$', srcAtomId);
+  \$scope.val['$interfaceName$'] = new Array();
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
-	\$scope.val['$interfaceName$'] = Restangular.one('resource/SESSION', \$rootScope.session.id).all('$interfaceName$'); // requestless URL build
-	\$scope.val['$interfaceName$'].post({}).then(function(newItem) { // POST
-		\$scope.val['$interfaceName$'].push(newItem); // Add to collection
+    srcAtom.all('$interfaceName$').post({})
+      .then(function(data) { // POST
+		\$rootScope.updateNotifications(data.notifications);
+		\$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(srcAtom, data.content, '$interfaceName$')); // Add to collection
+		showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
 	});
     
-  // Elseif resourceId is provided
-  }else if(typeof \$routeParams.resourceId != 'undefined'){
-    \$scope.val['$interfaceName$'] = Restangular.one('resource/$source$', \$routeParams.resourceId).getList('$interfaceName$').\$object;
-  
-  // Else use session.id
+  // Else
   }else{
-	\$scope.val['$interfaceName$'] = Restangular.one('resource/$source$', \$rootScope.session.id).getList('$interfaceName$').\$object;
+    srcAtom.all('$interfaceName$').getList().then(function(data){
+	  \$scope.val['$interfaceName$'] = data;
+    });
   }
   
   \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
@@ -79,19 +87,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         }));
     }
   }
-   
-$if(containsDATE)$  // The interface contains an editable relation to the primitive concept DATE
-  // Function for Datepicker
-  \$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
-  \$scope.openDatepicker = function(\$event, datepicker) {
-    \$event.preventDefault();
-    \$event.stopPropagation();
-    
-    \$scope.datepicker[datepicker] = {'open' : true};
-  }
-$else$  // The interface does not contain editable relations to primitive concept DATE
-$endif$
-$if(containsEditable)$  // The interface contains at least 1 editable relation
+
   // Put function to update a Resource
   \$scope.put = function(resourceId, requestType){
 	
@@ -108,28 +104,14 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
         \$rootScope.updateNotifications(data.notifications);
         \$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
         
-        // show/hide save button
-        if(data.invariantRulesHold && data.requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
-        	\$scope.showSaveButton[resourceId] = true;
-        	\$scope.showCancelButton[resourceId] = true;
-        	setResourceStatus(resourceId, 'warning');
-        }else if(data.invariantRulesHold && data.requestType == 'promise'){
-			\$scope.showSaveButton[resourceId] = false;
-			\$scope.showCancelButton[resourceId] = false;
-			setResourceStatus(resourceId, 'success');
-			\$timeout(function() {
-				setResourceStatus(resourceId, 'default');
-		    }, 3000);
-			
-			// If this atom was updated with the 'new' interface, change url
+        showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
+        
+        if(data.invariantRulesHold && data.requestType == 'promise'){
+        	// If this atom was updated with the 'new' interface, change url
 			var location = \$location.search();
 			if(location['new']){
 				\$location.url('/$interfaceName$/' + data.content.id);
-			}
-		}else{
-			setResourceStatus(resourceId, 'danger');
-        	\$scope.showSaveButton[resourceId] = false;
-        	\$scope.showCancelButton[resourceId] = true;
+			}        	
         }
       }));
   }
@@ -151,6 +133,8 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 	  		\$scope.showCancelButton[resourceId] = false;
 	  	}));
   }
+  
+$if(containsEditable)$  // The interface contains at least 1 editable relation
 
   // Function to patch only the changed attributes of a Resource
   \$scope.patch = function(resourceId){
@@ -159,6 +143,18 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 	  console.log('not yet implemented');
   }
   
+  $if(containsDATE)$  // The interface contains an editable relation to the primitive concept DATE
+  // Function for Datepicker
+  \$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
+  \$scope.openDatepicker = function(\$event, datepicker) {
+    \$event.preventDefault();
+    \$event.stopPropagation();
+  
+    \$scope.datepicker[datepicker] = {'open' : true};
+  }
+  $else$  // The interface does not contain editable relations to primitive concept DATE
+  $endif$
+
   // Function to add item to array of primitieve datatypes
   \$scope.addItem = function(obj, property, selected, resourceId){
     if(selected.value != ''){
@@ -181,13 +177,12 @@ $endif$
 $if(containsEditableNonPrim)$  // The interface contains at least 1 editable relation to a non-primitive concept
   // AddObject function to add a new item (val) to a certain property (property) of an object (obj)
   // Also needed by addModal function.
-  \$scope.addObject = function(obj, property, selected, resourceId){
-    if(selected.id === undefined || selected.id == ''){
+  \$scope.addObject = function(obj, property, item, resourceId){
+    if(item.id === undefined || item.id == ''){
       console.log('selected id is undefined');
     }else{
       if(obj[property] === null) obj[property] = {};
-      obj[property][selected.id] = {'id': selected.id};
-      selected.id = ''; // reset input field
+      obj[property][item.id] = {'id': item.id};
       \$scope.put(resourceId);
     }
   }
@@ -200,6 +195,10 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   
   // Typeahead functionality
   \$scope.typeahead = {}; // an empty object for typeahead
+  
+  \$scope.typeaheadOnSelect = function (\$item, \$model, \$label, obj, property, resourceId){
+    \$scope.addObject(obj, property, \$item, resourceId);
+  };
 
 
   // A property for every (non-primitive) tgtConcept of the editable relations in this interface
@@ -214,6 +213,26 @@ $endif$
       return (item.id === itemId) && (index = idx)
     });
     return index;
+  }
+  
+  //show/hide save button
+  function showHideButtons(invariantRulesHold, requestType, resourceId){
+	if(invariantRulesHold && requestType == 'feedback'){ // if invariant rules hold (promise is possible) and the previous request was not a request4feedback (i.e. not a request2promise itself)
+	  \$scope.showSaveButton[resourceId] = true;
+	  \$scope.showCancelButton[resourceId] = true;
+	  setResourceStatus(resourceId, 'warning');
+	}else if(invariantRulesHold && requestType == 'promise'){
+	  \$scope.showSaveButton[resourceId] = false;
+	  \$scope.showCancelButton[resourceId] = false;
+	  setResourceStatus(resourceId, 'success');
+	  \$timeout(function() {
+	    setResourceStatus(resourceId, 'default');
+	  }, 3000);
+	}else{
+	  setResourceStatus(resourceId, 'danger');
+	  \$scope.showSaveButton[resourceId] = false;
+	  \$scope.showCancelButton[resourceId] = true;
+	}
   }
   
   function setResourceStatus(resourceId, status){

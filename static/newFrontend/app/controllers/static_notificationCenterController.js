@@ -9,7 +9,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		
 		if($rootScope.switchAutoHideSuccesses){
 			$timeout(function() {
-		    	console.log('Hide success messages');
 		    	$rootScope.notifications.successes = [];
 		    }, 3000);
 		}
@@ -38,6 +37,8 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$rootScope.switchShowInfos = false;
 	$rootScope.switchShowSuccesses = true;
 	$rootScope.switchAutoHideSuccesses = true;
+	$rootScope.switchShowErrors = true;
+	$rootScope.switchShowInvariants = true;
 	
 	$rootScope.toggleShowViolations = function(){
 		$rootScope.switchShowViolations = !$rootScope.switchShowViolations;
@@ -53,6 +54,14 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$rootScope.toogleAutoHideSuccesses = function(){
 		$rootScope.switchAutoHideSuccesses = !$rootScope.switchAutoHideSuccesses;
+	}
+	
+	$rootScope.toogleShowErrors = function(){
+		$rootScope.switchShowErrors = !$rootScope.switchShowErrors;
+	}
+	
+	$rootScope.toogleShowInvariants = function(){
+		$rootScope.switchShowInvariants = !$rootScope.switchShowInvariants;
 	}
 	
 });

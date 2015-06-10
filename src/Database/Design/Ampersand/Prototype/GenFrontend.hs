@@ -146,10 +146,16 @@ data FEInterface = FEInterface { ifcName :: String
                                , _ifcRoles :: [Role], _ifcEditableRels :: [Declaration], _ifcObj :: FEObject }
 
 data FEObject = FEObject { objName :: String
-                         , objExp :: Expression, objSource :: A_Concept, objTarget :: A_Concept
-                         , objIsEditable :: Bool, _exprIsUni :: Bool, _exprIsTot :: Bool, _exprIsProp :: Bool
+                         , objExp :: Expression
+						 , objSource :: A_Concept
+						 , objTarget :: A_Concept
+                         , objIsEditable :: Bool
+						 , _exprIsUni :: Bool
+						 , _exprIsTot :: Bool
+						 , _exprIsProp :: Bool
                          , _objNavInterfaces :: [NavInterface]
-                         , atomicOrBox :: FEAtomicOrBox } deriving Show
+                         , atomicOrBox :: FEAtomicOrBox
+						 } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
@@ -278,8 +284,11 @@ genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels o
     }
 
 -- Helper data structure to pass attribute values to HStringTemplate
-data SubObjectAttr = SubObjAttr { subObjName :: String, subObjLabel :: String, isBLOB ::Bool
-                                , subObjContents :: String } deriving (Show, Data, Typeable)
+data SubObjectAttr = SubObjAttr { subObjName :: String
+								, subObjLabel :: String
+                                , subObjContents :: String 
+								, subObjExprIsUni :: Bool
+								} deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot exprIsProp navInterfaces _) =
@@ -338,8 +347,8 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
          do { lns <- genView_Object fSpec (depth + 1) subObj
             ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                                , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                               , isBLOB = name (target $ objExp subObj) == "BLOB"
                                , subObjContents = intercalate "\n" $ indent 8 lns
+							   , subObjExprIsUni = _exprIsUni subObj
                                -- Indentation is not context sensitive, so some templates will
                                -- be indented a bit too much (we take the maximum necessary value now)
                                } 
