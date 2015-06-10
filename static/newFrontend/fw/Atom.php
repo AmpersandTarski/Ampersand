@@ -453,10 +453,12 @@ Class Atom {
 		}else{
 			$viewStrs = array ();
 			
+			$i=0;
 			foreach ($view['segments'] as $viewSegment){
+				$i++;
 				
 				if ($viewSegment['segmentType'] == 'Text'){ 
-					$viewStrs[$viewSegment['label']] = htmlSpecialChars($viewSegment['Text']);
+					$viewStrs['txt_' . $i] = htmlSpecialChars($viewSegment['Text']);
 				
 				}elseif($viewSegment['segmentType'] == 'Html'){
 					$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
