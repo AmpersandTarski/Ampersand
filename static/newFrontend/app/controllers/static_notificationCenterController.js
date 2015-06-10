@@ -37,6 +37,8 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$rootScope.switchShowInfos = false;
 	$rootScope.switchShowSuccesses = true;
 	$rootScope.switchAutoHideSuccesses = true;
+	$rootScope.switchShowErrors = true;
+	$rootScope.switchShowInvariants = true;
 	
 	$rootScope.toggleShowViolations = function(){
 		$rootScope.switchShowViolations = !$rootScope.switchShowViolations;
@@ -52,6 +54,14 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$rootScope.toogleAutoHideSuccesses = function(){
 		$rootScope.switchAutoHideSuccesses = !$rootScope.switchAutoHideSuccesses;
+	}
+	
+	$rootScope.toogleShowErrors = function(){
+		$rootScope.switchShowErrors = !$rootScope.switchShowErrors;
+	}
+	
+	$rootScope.toogleShowInvariants = function(){
+		$rootScope.switchShowInvariants = !$rootScope.switchShowInvariants;
 	}
 	
 });

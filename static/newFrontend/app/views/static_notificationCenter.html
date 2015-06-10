@@ -14,14 +14,14 @@
 			</div>
 		</div>
 		
-		<div id="errors">
+		<div id="errors" ng-show="switchShowErrors">
 			<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
 				<strong>Error!</strong> {{error.message}}
 				<span class="badge pull-right">{{error.count}}</span>
 			</alert>
 		</div>
 		
-		<div id="invariants">
+		<div id="invariants" ng-show="switchShowInvariants">
 			<div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">
 					<div class="text-left">
