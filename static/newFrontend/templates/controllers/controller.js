@@ -28,7 +28,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
-	\$scope.val['$interfaceName$'].post({}).then(function(data) { // POST
+    srcAtom.all('$interfaceName$').post({})
+      .then(function(data) { // POST
 		\$rootScope.updateNotifications(data.notifications);
 		\$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(srcAtom, data.content, '$interfaceName$')); // Add to collection
 		showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
