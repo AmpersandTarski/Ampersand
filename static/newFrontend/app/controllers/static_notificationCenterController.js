@@ -9,7 +9,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		
 		if($rootScope.switchAutoHideSuccesses){
 			$timeout(function() {
-		    	console.log('Hide success messages');
 		    	$rootScope.notifications.successes = [];
 		    }, 3000);
 		}
