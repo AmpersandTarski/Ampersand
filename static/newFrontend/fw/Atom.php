@@ -94,6 +94,7 @@ Class Atom {
 				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
 														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept))
+														, '_sortValues_' => array()
 													 	, 'id' => $tgtAtom->id));
 				
 			}else{ // TgtConcept of interface is primitive datatype
@@ -109,6 +110,11 @@ Class Atom {
 			foreach($interface->subInterfaces as $subinterface){
 				$otherAtom = $tgtAtom->getContent($subinterface, false);
 				$content[$subinterface->id] = $otherAtom;
+				
+				// _sortValues_ (if subInterface is uni)
+				if($subinterface->univalent){
+					$content['_sortValues_'][$subinterface->id] = ($subinterface->tgtDataType == "concept") ? current($otherAtom)['@label'] : $otherAtom;
+				}
 				
 			}
 			
