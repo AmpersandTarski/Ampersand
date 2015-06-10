@@ -6,7 +6,7 @@
       <button type="button" class="btn btn-sm btn-danger" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
       <span class="glyphicon glyphicon-trash" ng-click="deleteResource(ResourceId)" style="vertical-align : middle;"></span>
     </div>
-    <h4><a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a></h4>
+    <h4><a ng-href="#/$name$/{{val.id}}">{{val['@label']}}</a>&nbsp;</h4>
   </div>
   <div class="panel-body" cg-busy="myPromises[ResourceId]">
   $endif$
