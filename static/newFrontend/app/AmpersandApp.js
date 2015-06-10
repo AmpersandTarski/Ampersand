@@ -115,6 +115,7 @@ AmpersandApp.directive('myShowonhoverRow', function (){
 	// used from: https://github.com/petebacondarwin/angular-toArrayFilter
 	return function (obj, addKey) {
 	    if (!obj) return obj;
+	    if ($.isArray(obj)) return obj; // obj is already an array
 	    if ( addKey === false ) {
 	      return Object.keys(obj).map(function(key) {
 	        return obj[key];
