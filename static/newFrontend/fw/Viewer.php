@@ -56,6 +56,9 @@ class Viewer {
 			// si-table
 			$this->addHtmlLine('<script src="app/lib/angular/si-table/si-table.js"></script>');
 			
+			// angular-highlightjs
+			// $this->addHtmlLine('<script src="app/lib/angular/angular-highlightjs/angular-highlightjs.js"></script>');
+			
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/restangular/lodash.min.js"></script>');
