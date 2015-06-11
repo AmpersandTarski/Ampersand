@@ -50,7 +50,7 @@ instance LanguageDependent Interface where
 instance LanguageDependent ObjectDef where
   mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
 instance LanguageDependent SubInterface where
-  mapexprs _ _ iref@(InterfaceRef _) = iref
+  mapexprs _ _ iref@(InterfaceRef _ _) = iref
   mapexprs f l (Box o cl objs) = Box o cl $ map (mapexprs f l) objs
 instance LanguageDependent Declaration where
   mapexprs _ _ = id
@@ -61,7 +61,7 @@ instance LanguageDependent Event where
 --------------------------------------------------------------
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ nm) = " INTERFACE "++showstr nm
+  showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
@@ -74,7 +74,7 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef nm)) = ind++" INTERFACE "++showstr nm
+        recur ind (Just (InterfaceRef isLink nm)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")

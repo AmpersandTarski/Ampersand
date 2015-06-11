@@ -388,7 +388,7 @@ objAts :: ObjectDef -> [ObjectDef]
 objAts obj
   = case objmsub obj of
      Nothing       -> []
-     Just (InterfaceRef _) -> []
+     Just (InterfaceRef _ _) -> []
      Just (Box _ _ objs)     -> objs
 
 class Object a where
@@ -413,7 +413,9 @@ instance Named ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 
-data SubInterface = Box A_Concept (Maybe String) [ObjectDef] | InterfaceRef String deriving (Eq, Show)
+data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
+                  | InterfaceRef Bool -- is LINKTO? 
+                                 String deriving (Eq, Show)
 
 data InsDel   = Ins | Del
                  deriving (Show,Eq)

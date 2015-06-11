@@ -590,18 +590,21 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
 generateMSubInterface :: FSpec -> [Declaration] -> Int -> Maybe SubInterface -> [String]
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
-    Nothing                -> [ "      // No subinterfaces" ]
-    Just (InterfaceRef nm) -> [ "      // InterfaceRef"
-                              , "      , 'refSubInterface' => " ++ showPhpStr nm
-                              , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end
-                              ]
-    Just (Box _ cl objects) -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
-                               , "      , 'boxSubInterfaces' =>"
-                               , "          array"
-                               ] ++
-                               indent 12
-                                 (blockParenthesize "(" ")" ","
-                                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
+    Nothing -> [ "      // No subinterfaces" ]
+    Just (InterfaceRef isLink nm)
+            -> [ "      // InterfaceRef"
+               , "      , 'refSubInterface' => " ++ showPhpStr nm
+               , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end
+               , "      , 'isLinkTo' => "++ show isLink
+               ]
+    Just (Box _ cl objects)
+            -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
+               , "      , 'boxSubInterfaces' =>"
+               , "          array"
+               ] ++
+               indent 12
+                 (blockParenthesize "(" ")" ","
+                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
 
 -- utils
 

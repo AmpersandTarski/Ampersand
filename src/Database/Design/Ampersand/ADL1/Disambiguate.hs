@@ -136,7 +136,7 @@ instance Disambiguatable P_ViewSegmt where
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,noConstraints)
+  disambInfo (P_InterfaceRef o a b) _      = (P_InterfaceRef o a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
   disambInfo (P_Box o cl (a:lst)) env1  = 
      (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf envA++sourceConstraintsOf envB) [])

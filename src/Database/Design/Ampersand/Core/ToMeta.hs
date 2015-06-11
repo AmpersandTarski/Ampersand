@@ -260,6 +260,7 @@ instance MakeMeta a => MakeMeta (P_SubIfc a) where
                                         , si_box   = makeMeta f (si_box sub)
                                         }
       P_InterfaceRef{} -> P_InterfaceRef{ si_ori   = makeMeta f (si_ori sub)
+                                        , si_isLink =            si_isLink sub
                                         , si_str   =            (si_str sub)
                                         }
 

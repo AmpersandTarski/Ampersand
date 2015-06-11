@@ -437,16 +437,17 @@ pInterface = lbl <$> currPos                                       <*>
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> pRole `sepBy1` pComma
 
---- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'INTERFACE' ADLid
+--- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
+--TODO Optionality of 'LINKTO' should be implemented some nicer way...
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
-            <|> P_InterfaceRef <$> currPos <*  pKey "INTERFACE" <*> pADLid
+            <|> interfRef <$> currPos <*> pMaybe (pKey "LINKTO") <*  pKey "INTERFACE" <*> pADLid
   where pBoxKey :: AmpParser (Maybe String)
         pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
               <|> Just <$> pKey "ROWS"
               <|> Just <$> pKey "COLS"
               <|> Just <$> pKey "TABS"
-
+        interfRef p mlt s = P_InterfaceRef p (isJust mlt) s
 --- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef

@@ -189,7 +189,7 @@ buildInterface fSpec allIfcs ifc =
     buildObject editableRels object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
               
-        ; (aOrB, iExp', isEditable, src, tgt) <-
+        ; (aOrB, iExp', isEditable, src, tgt, isLink) <-
             case objmsub object of
               Nothing                  ->
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -206,14 +206,14 @@ buildInterface fSpec allIfcs ifc =
                                 ; hasSpecificTemplate <- doesTemplateExist fSpec $ templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
-                  ; return (FEAtomic mSpecificTemplatePath, iExp, isEditable, src, tgt)
+                  ; return (FEAtomic mSpecificTemplatePath, iExp, isEditable, src, tgt, False)
                   }
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
                   ; subObjs <- mapM (buildObject editableRels) objects
-                  ; return (FEBox mCl subObjs, iExp, isEditable, src, tgt)
+                  ; return (FEBox mCl subObjs, iExp, isEditable, src, tgt, False)
                   }
-              Just (InterfaceRef nm)   -> 
+              Just (InterfaceRef isLink nm)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                   []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
@@ -222,7 +222,7 @@ buildInterface fSpec allIfcs ifc =
                                 ; let comp = ECps (iExp, objExp refObj) 
                                       -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                       (isEditable, src, tgt) = getIsEditableSrcTgt comp
-                                ; return (atomicOrBox refObj, comp, isEditable, src, tgt)
+                                ; return (atomicOrBox refObj, comp, isEditable, src, tgt, isLink)
                                 } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
         ; let navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 

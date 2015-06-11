@@ -31,8 +31,8 @@ perlinePrefix :: Pretty a => String -> [a] -> Doc
 perlinePrefix pref xs = vsep $ map addPrefix xs
            where addPrefix x = text pref <+> pretty x
 
-quoteWith :: String -> String -> String -> Doc
-quoteWith l r x = enclose (text l) (text r) (text x)
+--quoteWith :: String -> String -> String -> Doc
+--quoteWith l r x = enclose (text l) (text r) (text x)
 
 quote :: String -> Doc
 quote = dquotes.text.escapeAll
@@ -277,7 +277,7 @@ instance Pretty a => Pretty (P_ObjDef a) where
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
-                P_InterfaceRef _ str -> text "INTERFACE" <+> maybeQuote str
+                P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
             where box_type Nothing  = text "BOX"
                   box_type (Just x) = text x -- ROWS, COLS, TABS
 
@@ -306,10 +306,10 @@ instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp (P_Obj nm _ ctx _ _ _))
-                            = maybeQuote nm <+> text ":" <~> ctx
-    pretty (P_ViewText txt) = text "TXT" <+> quote txt
-    pretty (P_ViewHtml htm) = text "PRIMHTML" <+> quote htm
+    pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _))
+                              = maybeQuote nm <+> text ":" <~> ctx
+    pretty (P_ViewText _ txt) = text "TXT" <+> quote txt
+    pretty (P_ViewHtml _ htm) = text "PRIMHTML" <+> quote htm
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =

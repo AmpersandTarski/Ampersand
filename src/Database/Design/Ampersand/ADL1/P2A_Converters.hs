@@ -99,9 +99,9 @@ checkInterfaceCycles gCtx =
       where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
-                                   Nothing                -> []
-                                   Just (InterfaceRef nm) -> [nm]
-                                   Just (Box _ _ objs)    -> concatMap getDeepIfcRefs objs
+                                   Nothing                  -> []
+                                   Just (InterfaceRef _ nm) -> [nm]
+                                   Just (Box _ _ objs)      -> concatMap getDeepIfcRefs objs
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
@@ -407,7 +407,7 @@ pCtx2aCtx' _
       = case x of
          P_InterfaceRef{si_str = ifcId} 
            ->  unguard $
-             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
+             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef (si_isLink x) ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
              <$> case lookupDisambIfcObj ifcId of
                    Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                    Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
