@@ -329,16 +329,18 @@ pCtx2aCtx' _
        <$> traverse (typeCheckViewSegment o) pvs
 
     typeCheckViewSegment :: (P_ViewD a) -> (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
-    typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
-     = unguard $
-         (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
-                        [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                        r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                              else mustBeBound (origin obj) [(Tgt,objctx obj)])
-         <$> typecheckObjDef ojd
+    typeCheckViewSegment o vs
+     = case vs of 
+        P_ViewExp{} -> 
+          unguard $
+            (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
+                           [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
+                           r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
+                                 else mustBeBound (origin obj) [(Tgt,objctx obj)])
+         <$> typecheckObjDef (vs_obj vs)
+        P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
+        P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
      where c = name (vd_cpt o)
-    typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
-    typeCheckViewSegment _ P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
     
     isa :: String -> String -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here

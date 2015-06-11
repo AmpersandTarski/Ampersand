@@ -303,7 +303,15 @@ instance Named ViewDef where
 instance Traced ViewDef where
   origin = vdpos
 
-data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
+data ViewSegment = ViewExp { vsgmNr   :: Integer
+                           , vsgmObj  :: ObjectDef
+                           }
+                 | ViewText{ vsgmNr   :: Integer
+                           , vsgmTxt  :: String
+                           } 
+                 | ViewHtml{ vsgmNr   :: Integer
+                           , vsgmHtml :: String
+                           } deriving (Eq, Show)
 
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script

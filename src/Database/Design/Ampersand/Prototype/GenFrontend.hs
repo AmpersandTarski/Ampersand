@@ -147,15 +147,15 @@ data FEInterface = FEInterface { ifcName :: String
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression
-						 , objSource :: A_Concept
-						 , objTarget :: A_Concept
+                                                 , objSource :: A_Concept
+                                                 , objTarget :: A_Concept
                          , objIsEditable :: Bool
-						 , _exprIsUni :: Bool
-						 , _exprIsTot :: Bool
-						 , _exprIsProp :: Bool
+                                                 , _exprIsUni :: Bool
+                                                 , _exprIsTot :: Bool
+                                                 , _exprIsProp :: Bool
                          , _objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
-						 } deriving Show
+                                                 } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
@@ -199,7 +199,7 @@ buildInterface fSpec allIfcs ifc =
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp Obj{objnm=viewAttr} <- viewSegs])
+                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp _ Obj{objnm=viewAttr} <- viewSegs])
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                              do { let templatePath = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
@@ -285,10 +285,10 @@ genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels o
 
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr = SubObjAttr { subObjName :: String
-								, subObjLabel :: String
+                                                                , subObjLabel :: String
                                 , subObjContents :: String 
-								, subObjExprIsUni :: Bool
-								} deriving (Show, Data, Typeable)
+                                                                , subObjExprIsUni :: Bool
+                                                                } deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot exprIsProp navInterfaces _) =
@@ -348,7 +348,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
             ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                                , subObjLabel = objName subObj -- no escaping for labels in templates needed
                                , subObjContents = intercalate "\n" $ indent 8 lns
-							   , subObjExprIsUni = _exprIsUni subObj
+                                                           , subObjExprIsUni = _exprIsUni subObj
                                -- Indentation is not context sensitive, so some templates will
                                -- be indented a bit too much (we take the maximum necessary value now)
                                } 

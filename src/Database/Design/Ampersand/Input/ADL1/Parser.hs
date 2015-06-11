@@ -349,7 +349,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> pBraces ((P_ViewExp <$> pViewObj) `sepBy1` pComma)
+                      <*> pBraces ((P_ViewExp fatl <$> pViewObj) `sepBy1` pComma)
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos nm cpt isDef ats html =
@@ -358,9 +358,11 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_cpt = cpt
                  , vd_isDefault = isDef
                  , vd_html = html
-                 , vd_ats = ats
+                 , vd_ats = numbered ats
                  }
-
+          fatl = fatal 363 "Numbering of segment goes wrong."
+          numbered xs = map numbr (zip [1..] xs)
+              where numbr (i,x)= x{vs_nr=i}
           --- ViewObjList ::= ViewObj (',' ViewObj)*
           --- ViewObj ::= Label Term
           pViewObj :: AmpParser P_ObjectDef
@@ -386,16 +388,20 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
     --TODO: Numbering should not happen in the parser
     where ats xs = [ case viewSeg of
-                         P_ViewExp x  -> if null (obj_nm x) then P_ViewExp $ x{obj_nm="seg_"++show i} else viewSeg
-                         _            -> viewSeg
+                         P_ViewExp _ x  -> if null (obj_nm x) then P_ViewExp i $ x{obj_nm="seg_"++show i} 
+                                                              else P_ViewExp i x 
+                         P_ViewText _ x -> P_ViewText i x
+                         P_ViewHtml _ x -> P_ViewHtml i x
+                         
                     | (i,viewSeg) <- zip [(1::Integer)..] xs]
                     -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
           --- ViewSegment ::= Att | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
-          pViewSegment = P_ViewExp  <$> pAtt <|>
-                         P_ViewText <$ pKey "TXT" <*> pString <|>
-                         P_ViewHtml <$ pKey "PRIMHTML" <*> pString
+          pViewSegment = P_ViewExp  fat <$> pAtt <|>
+                         P_ViewText fat <$ pKey "TXT" <*> pString <|>
+                         P_ViewHtml fat <$ pKey "PRIMHTML" <*> pString
+               where fat = fatal 399 "numbering is done a little later."
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term SubInterface
 pInterface :: AmpParser P_Interface

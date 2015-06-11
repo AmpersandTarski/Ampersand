@@ -210,9 +210,9 @@ instance ShowADL ViewDef where
           ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
 
 instance ShowADL ViewSegment where
- showADL (ViewExp objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
- showADL (ViewText str) = "TXT " ++ show str
- showADL (ViewHtml str) = "PRIMHTML " ++ show str
+ showADL (ViewExp _ objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
+ showADL (ViewText _ str) = "TXT " ++ show str
+ showADL (ViewHtml _ str) = "PRIMHTML " ++ show str
 
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only

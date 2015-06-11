@@ -95,8 +95,8 @@ instance ConceptStructure IdentityDef where
   expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
-  concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp objDef <- vdats vd]
-  expressionsIn vd = expressionsIn        [objDef | ViewExp objDef <- vdats vd]
+  concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp _ objDef <- vdats vd]
+  expressionsIn vd = expressionsIn        [objDef | ViewExp _ objDef <- vdats vd]
 
 instance ConceptStructure Expression where
   concs (EDcI c    ) = [c]

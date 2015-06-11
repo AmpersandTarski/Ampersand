@@ -158,7 +158,8 @@ instance MakeMeta a => MakeMeta (P_ViewD a) where
 instance MakeMeta a => MakeMeta (P_ViewSegmt a) where
   makeMeta f vs
    = case vs of 
-      P_ViewExp{}  -> P_ViewExp { vs_obj = makeMeta f (vs_obj vs)
+      P_ViewExp{}  -> P_ViewExp { vs_nr  = vs_nr vs
+                                , vs_obj = makeMeta f (vs_obj vs)
                                 }
       P_ViewText{} -> vs
       P_ViewHtml{} -> vs
