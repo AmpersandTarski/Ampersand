@@ -61,7 +61,7 @@ AmpersandApp.run(function(Restangular, $rootScope){
     	
     	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
     	
-    	return false; // error handled
+    	return true; // proceed with success or error hooks of promise
     });
 	
 });
