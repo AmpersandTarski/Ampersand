@@ -1,19 +1,9 @@
 <!-- Atomic[] "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $if(isEditable)$
   <div ng-repeat="(key, row) in val['$name$'] track by row.id">
-  	<div style="position:relative;">  <!-- required for positioning of dropdown for multiple interface links -->
+  	<div style="position:relative;">
       <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
-      <!-- If multiple interfaces are available for navigation -->
-      <a ng-if="row['@interfaces'].length > 1" href="" class="dropdown-toggle" data-toggle="dropdown">{{row['@label']}}</a>
-      <ul ng-if="row['@interfaces'].length > 1" class="dropdown-menu" role="menu">
-        <li ng-repeat="interface in row['@interfaces']">
-          <a ng-href="#/{{interface}}/{{row['id']}}">{{interface}}</a>
-        </li>
-      </ul>
-      <!-- If only 1 interface is available for navigation -->
-      <a ng-if="row['@interfaces'].length == 1" ng-href="#/{{row['@interfaces'][0]}}/{{row['id']}}">{{row['@label']}}</a>
-      <!-- If no interfaces are available for navigation -->
-      <span ng-if="row['@interfaces'].length == 0">{{row['@label']}}</span>
+      <div my-nav-to-interfaces ng-attr-ifcs="row['@interfaces']" ng-attr-resource="row.id" label="row['@label']"/>
     </div>
   </div>
   <!-- Input to add new link to another resource -->
@@ -22,18 +12,6 @@ $if(isEditable)$
   </div>
 $else$
   <div ng-repeat="(key, row) in val['$name$'] track by row.id">
-    <div style="position:relative;"> <!-- required for positioning of dropdown for multiple interface links -->
-      <!-- If multiple interfaces are available for navigation -->
-      <a ng-if="row['@interfaces'].length > 1" href="" class="dropdown-toggle" data-toggle="dropdown">{{row['@label']}}</a>
-      <ul ng-if="row['@interfaces'].length > 1" class="dropdown-menu" role="menu">
-        <li ng-repeat="interface in row['@interfaces']">
-          <a ng-href="#/{{interface}}/{{row['id']}}">{{interface}}</a>
-        </li>
-      </ul>
-      <!-- If only 1 interface is available for navigation -->
-      <a ng-if="row['@interfaces'].length == 1" ng-href="#/{{row['@interfaces'][0]}}/{{row['id']}}">{{row['@label']}}</a>
-      <!-- If no interfaces are available for navigation -->
-      <span ng-if="row['@interfaces'].length == 0">{{row['@label']}}</span>
-    </div>
+    <div my-nav-to-interfaces ng-attr-ifcs="row['@interfaces']" ng-attr-resource="row.id" label="row['@label']"/>
   </div>
 $endif$

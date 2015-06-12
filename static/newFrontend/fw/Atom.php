@@ -89,11 +89,12 @@ Class Atom {
 				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
 				
 				// Add other elements
+				$atomInterfaces = $interface->isLinkTo ? array($interface->refInterfaceId) : array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept));
 				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
 														, '@label' => $tgtAtom->label
 				                    					, '@view' => $tgtAtom->view
 													 	, '@type' => $tgtAtom->jsonld_type
-														, '@interfaces' => array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept))
+														, '@interfaces' => $atomInterfaces
 														, '_sortValues_' => array()
 													 	, 'id' => $tgtAtom->id));
 				
