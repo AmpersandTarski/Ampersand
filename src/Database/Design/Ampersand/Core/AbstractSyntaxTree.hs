@@ -309,7 +309,15 @@ instance Named ViewDef where
 instance Traced ViewDef where
   origin = vdpos
 
-data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
+data ViewSegment = ViewExp { vsgmNr   :: Integer
+                           , vsgmObj  :: ObjectDef
+                           }
+                 | ViewText{ vsgmNr   :: Integer
+                           , vsgmTxt  :: String
+                           } 
+                 | ViewHtml{ vsgmNr   :: Integer
+                           , vsgmHtml :: String
+                           } deriving (Eq, Show)
 
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
@@ -386,7 +394,7 @@ objAts :: ObjectDef -> [ObjectDef]
 objAts obj
   = case objmsub obj of
      Nothing       -> []
-     Just (InterfaceRef _) -> []
+     Just (InterfaceRef _ _) -> []
      Just (Box _ _ objs)     -> objs
 
 class Object a where
@@ -411,7 +419,9 @@ instance Named ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 
-data SubInterface = Box A_Concept (Maybe String) [ObjectDef] | InterfaceRef String deriving (Eq, Show)
+data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
+                  | InterfaceRef Bool -- is LINKTO? 
+                                 String deriving (Eq, Show)
 
 data InsDel   = Ins | Del
                  deriving (Show,Eq)

@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH
+﻿CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "ASTdocumentation.adl"
 INCLUDE "ASTInterface.ifc"
@@ -52,9 +52,11 @@ MEANING "The purposes of a pattern."
 ENDPATTERN
 
 PATTERN Specialization
-VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name , TXT " ISA " , gengen;name )
+VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name[Concept*TEXT] , TXT " ISA " , gengen;name[Concept*TEXT] )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
+
+CLASSIFY PlainConcept ISA Concept
 
 RELATION gengen[Gen*PlainConcept] [UNI,TOT]
 MEANING "A generalization rule refers to one more generic concept."
@@ -71,47 +73,9 @@ MEANING "A generalization rule refers to one more specific concept."
 
 ENDPATTERN
 
-PATTERN Concept
-CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
-CONCEPT PlainConcept "A concept is a name for a category of similar objects."
-IDENT PlainConcept: PlainConcept(name)
-CLASSIFY PlainConcept ISA Concept
---CLASSIFY ConceptName ISA Conid
-
-
-RELATION name[PlainConcept*ConceptName] [UNI,TOT,INJ]
-MEANING "The name of a concept."
---RELATION cptos[Concept*AtomID] [SUR]  --HJO20150204: Deze relatie is vervangen door instanceOf~ . Dit heeft te maken met het feit dat één AtomID in meerdere concepten kan voorkomen. 
---MEANING "The population of a concept."
-RELATION cptdf[PlainConcept*ConceptDefinition]
-MEANING "The definitions of a concept."
-RELATION cptpurpose[PlainConcept*Purpose]
-MEANING "The purposes of a concept."
-RELATION cpttp[PlainConcept*TechnicalType] [UNI]
-MEANING "The (technical) type of a concept"
-
---CONCEPT Order "The order of the is-a-relation between concepts."
---IDENT Order: Order(ordername)
---
---RELATION ordername[Order*String] [UNI,TOT,INJ]
---MEANING "The name of a class of is-a-related concepts."
---RELATION order[Concept*Order] [UNI,TOT]
---MEANING "A concept belongs to a class of is-a-related concepts."
---RULE "order": order~;genspc~;gengen;order |- I
---MEANING "Is-a-related concepts belong to the same class of is-a-related concepts."
---RULE "different order": ???, a closure would be nice...
---MEANING "Concepts, that are not is-a-related, are in different orders of the is-a-relation."
-
---NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
---if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so->risk for awkward messages in new interface
---RULE "referential integrity": src~;sign~;decpopu;left \/ trg~;sign~;decpopu;right |- order;order~;cptos
---MEANING "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
---MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
---VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
-ENDPATTERN
 
 PATTERN Sign
-VIEW Sign: Sign( TXT "[" , src;name[PlainConcept*ConceptName] , TXT "*" , trg;name[PlainConcept*ConceptName] , TXT "]" )
+VIEW Sign: Sign( TXT "[" , src;name[Concept*TEXT] , TXT "*" , trg;name[Concept*TEXT] , TXT "]" )
 
 
 RELATION src[Sign*Concept] [UNI,TOT]

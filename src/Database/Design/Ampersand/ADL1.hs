@@ -10,7 +10,7 @@ import Database.Design.Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , Label(..)
-         , FilePos(..), Origin(..), Pos(..), Traced(..)
+         , FilePos(..), Origin(..), Traced(..)
          , Prop(..)
          , P_Concept(..)
          , P_Sign(..)

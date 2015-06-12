@@ -80,6 +80,7 @@ rulefromProp prp d@Sgn{} =
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
                      Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
+                     Prop -> fatal 78 "Prop should have been converted by the parser"
         explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                               case prop of
                                 Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
@@ -92,6 +93,7 @@ rulefromProp prp d@Sgn{} =
                                 Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
                                 Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
                                 Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
+                                Prop -> fatal 90 "Prop should have been converted by the parser"
                                 ))
                        ,   A_Markup Dutch ReST (string2Blocks ReST (
                               case prop of
@@ -105,6 +107,7 @@ rulefromProp prp d@Sgn{} =
                                 Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
                                 Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
                                 Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
+                                Prop -> fatal 103 "Prop should have been converted by pattern the parser"
                                 ))
                       ]
 

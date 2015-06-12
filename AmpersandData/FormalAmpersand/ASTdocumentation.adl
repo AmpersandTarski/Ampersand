@@ -134,7 +134,7 @@ in order to formalize concepts and determine their meaning.
 -}
 --HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders --CONCEPT A_Concept "A concept is a name for a category of similar objects."
 --HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders ----CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
-PURPOSE CONCEPT PlainConcept
+PURPOSE CONCEPT Concept
 {+
 In order to reason about meaning,
 Ampersand has borrowed the idea of a "concept" from the field of semantics
@@ -149,6 +149,7 @@ without referring to the actual instances of those concepts.
 The distinction between an object (Amsterdam) and the corresponding concept (City)
 has been studied for a long time [e.g.\ Frege, 1892] and is highly relevant for Ampersand.
 -}
+CONCEPT Concept "A set of things that we can talk about using the name of the concept."
 ENDPATTERN
 
 PATTERN Populations

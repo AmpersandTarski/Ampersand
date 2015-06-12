@@ -1,53 +1,33 @@
 CONTEXT AST IN ENGLISH LATEX
+-- The commented version of Atoms can be found in Atoms.doc
 
-PROCESS "Equality on Atoms"
-{-RJ: The modifications I have made this time attempt to simplify the model, where I have taken the various telco-discussions and comments into account. 
+PROCESS Atoms
+RELATION repr[Atom*TEXT] [UNI,TOT]
+MEANING "Every atom has a representation, which identifies that atom."
 
-In order to ensure that readers can distinguish between possibly different meanings of a term that is both defined in AST and in the dictionary, I use capitalized words to refer to Concepts that are, should be, or should have been defined in AST. 
--}
-
-PURPOSE CONCEPT Atom
-{+The Oxford Dictionary uses the term 'entity' to refer to tangible things (e.g. a chair) and well as intangible things (e.g. an idea, or a number) that exist in the real world. We interpret the term 'universe' to refer to the collection of all such entities. Note that these terms are highly philosophical.
-
-In order for knowledge/reasoning/information systems (in Ampersand: Contexts) to reason about stuff in the real world, a perception ('mental image', idea) of that universe is needed. This (highly philosophical) idea is necessary to explain differences between how we reasoning about the real world and what actually happens in that real world: after all, the reasoning is done on the **perceived** entities rather than the entities that have an actual existence. Note that the perception of an entity is itself something that exists, and hence an entity as well.
-
-Within a Context, we want to talk and reason about any perception (of an entity) that exists within that Context. To do so, every perception must not only be referrable (named), but also distinguishable from all other such perceptions.-}
-CONCEPT Atom "a representation, within a specific Context, of a real-world entity that within that Context is perceived to exist"
-
-PURPOSE RELATION pop
-{+In order to talk about (perceptions of) real world entities that share (perceived) similar properties, or in order to specify rules, it must be possible to classify Atoms. We use the term 'Concept' to refer to a class of Atoms. We say that 'an Atom is in the population of some Concept' or alternatively 'an Atom is an element of some Concept' iff the Atom belongs to (or: is an instance of) that class.-}
 RELATION pop[Atom*Concept] [TOT] 
 MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
+
+RELATION name[Concept*TEXT] [UNI]
+MEANING "Every concept has a name, which identifies that concept."
+
+RULE InjName : name;name~ |- I[Concept]
+MEANING "The name of a concept identifies that concept."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
+
+RULE InjRepr : repr;repr~ /\ pop;pop~ |- I[Atom]
+MEANING "Together, a concept and the representation identifies an atom uniquely."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
 RELATION sub[Concept*Concept]
 MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is an element of concept $g$ as well."
 
-CONCEPT Typology "a hierarchy of Concepts"
-RELATION partOf[Concept*Typology] [UNI,TOT]
-MEANING "Every concept is part of exactly one typology"
-
-RULE "typologies" : sub;partOf |- partOf
-MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
-
-PURPOSE RULE "Integrity of Atoms and populations"
-{+It must be ensured that the representations of ((different) perceptions of) (different) real world entities can be properly distinguished. Any pair of Atoms in the same Concept are distinct (per definition). Thus, we need a rule that expresses when two Atoms that are in different Concepts represent the same (perception of) a real world entity.
--}
-RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
-MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
-
--- RJ: Onderstaande relatie en regel kunenn weg, omdat we een (nieuwe) regel "Integrity of Atoms and populations" hebben.
---RELATION eq[Atom*Atom] [UNI,TOT,SUR,INJ,SYM,TRN,RFX]
---MEANING "Within one Context, two Atoms can be equivalent, i.e. refer to the same real world entity."
---RULE "equivalence of Atoms" : eq = Irepr;repr~;in;in~
--- @Stef: Dit is precies waar we naar op zoek zijn. De hond "Fikkie" is iets anders dan de kat "Fikkie",
--- totdat het concept hond en het concept kat onderdeel zijn van dezelfde typologie. Dan blijkt plotseling
--- dat we het over hetzelfde 'Dier' hebben...
-
 RULE "specialization" : pop;sub |- pop
-MEANING "An Atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
+MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS specialization
 
+RELATION name[Relation*TEXT] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
@@ -57,64 +37,86 @@ RELATION r[Pair*Atom] [UNI,TOT]
 
 RULE "source type" : l~;in;source |- pop
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
-VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 RULE "target type" : r~;in;target |- pop
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS "source type", "target type"
-
--- RULE "garbage" : pop |- l~;in;source \/ r~;in;target
--- VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
--- ROLE ExecEngine MAINTAINS garbage
 ENDPROCESS
 
---! Onderstaande interfaces zijn een beetje aangepast om na te gaan of we toch niet al wat kunnen editen.
---$ Merk op dat 'String' geen primitief type is, en TEXT wel. Daarom is String door TEXT vervangen.
+{-
+RELATION partOf[Concept*Typology] [UNI,TOT]
+MEANING "Every concept is part of exactly one typology"
 
-INTERFACE Overview : '_SESSION'
+RULE "typologies" : sub;partOf |- partOf
+MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
+
+RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
+MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
+-}
+INTERFACE Overview: '_SESSION'
 TABS[ atoms : V[SESSION*Atom]
       COLS [ repr : repr
            , pop  : pop
            ]
     , concepts :V[SESSION*Concept]
       COLS [ name             : I
-           , generalizations  : sub
            , specializations  : sub~
            ]
+    , pairs : V[SESSION*Pair]
+      COLS [ pair           : I
+           , "relation(s)"  : in
+           ]
+    , relations : V[SESSION*Relation]
+      COLS [ name    : name
+           , source  : source
+           , target  : target
+           ]
+--    , garbage : V[SESSION*Atom];-((l~;in;source;pop~/\I) \/ (r~;in;target;pop~/\I))
+--      COLS [ repr : repr
+--           , pop  : pop
+--           ]
     ]
 
-VIEW Atom : Atom(pop;name,TXT ":",repr)
-RELATION repr[Atom*TEXT] [UNI,TOT,INJ]
-MEANING "Every atom has a representation, which identifies that concept."
+VIEW Atom : Atom(repr,TXT ":",pop)
 
 INTERFACE Atom(repr,pop) : I[Atom]
-COLS [ ID : I
-     , repr : repr
+COLS [ repr : repr
      , pop  : pop
      ]
 
 VIEW Concept : Concept(name)
-RELATION name[Concept*TEXT] [UNI,TOT,INJ]
-MEANING "Every concept has a name, which identifies that concept."
 
-INTERFACE newConcept(name[Concept*TEXT]) : I[Concept]
-COLS [ ID : I
-     , name             : name
-     ]
-
-INTERFACE mkISA(sub) : I[Concept]
-COLS [ name             : I
+INTERFACE concept(name[Concept*TEXT],sub) : I[Concept]
+COLS [ name             : name
      , generalizations  : sub
      , specializations  : sub~
      ]
 
+VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+
+INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+COLS [ pair           : I
+     , l              : l
+     , r              : r
+     , "relation(s)"  : in
+     ]
+
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "]",target;name)
+
+INTERFACE Relation(name[Relation*TEXT],source,target) : I[Relation]
+COLS [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+{-
 POPULATION sub CONTAINS [ ( "Asub_", "Agen_") ]
 POPULATION sub CONTAINS [ ( "Bsub_", "Bgen_") ]
 
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
+POPULATION name CONTAINS [ ( "Asub_", "Asub") ]
+POPULATION name CONTAINS [ ( "Agen_", "Agen") ]
+POPULATION name CONTAINS [ ( "Bsub_", "Bsub") ]
+POPULATION name CONTAINS [ ( "Bgen_", "Bgen") ]
 
 POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
@@ -132,6 +134,6 @@ POPULATION repr CONTAINS [ ( "A1_", "A1" ) ]
 POPULATION repr CONTAINS [ ( "B1_", "B1" ) ]
 POPULATION repr CONTAINS [ ( "A1sub_", "A1sub" ) ]
 POPULATION repr CONTAINS [ ( "B1sub_", "B1sub" ) ]
-
+-}
 
 ENDCONTEXT

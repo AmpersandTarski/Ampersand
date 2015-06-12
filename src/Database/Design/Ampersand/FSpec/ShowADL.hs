@@ -50,7 +50,7 @@ instance LanguageDependent Interface where
 instance LanguageDependent ObjectDef where
   mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
 instance LanguageDependent SubInterface where
-  mapexprs _ _ iref@(InterfaceRef _) = iref
+  mapexprs _ _ iref@(InterfaceRef _ _) = iref
   mapexprs f l (Box o cl objs) = Box o cl $ map (mapexprs f l) objs
 instance LanguageDependent Declaration where
   mapexprs _ _ = id
@@ -61,7 +61,7 @@ instance LanguageDependent Event where
 --------------------------------------------------------------
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ nm) = " INTERFACE "++showstr nm
+  showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
@@ -74,7 +74,7 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef nm)) = ind++" INTERFACE "++showstr nm
+        recur ind (Just (InterfaceRef isLink nm)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
@@ -210,9 +210,9 @@ instance ShowADL ViewDef where
           ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
 
 instance ShowADL ViewSegment where
- showADL (ViewExp objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
- showADL (ViewText str) = "TXT " ++ show str
- showADL (ViewHtml str) = "PRIMHTML " ++ show str
+ showADL (ViewExp _ objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
+ showADL (ViewText _ str) = "TXT " ++ show str
+ showADL (ViewHtml _ str) = "PRIMHTML " ++ show str
 
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
@@ -301,6 +301,7 @@ instance ShowADL ConceptDef where
 instance ShowADL A_Context where
  showADL context
   = "CONTEXT " ++name context
+    ++ " " ++ (showADL (ctxlang context))
     ++ (if null (ctxmetas context) then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxmetas context))++ "\n")
     ++ (if null (ctxifcs context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxifcs context)) ++ "\n")
     ++ (if null (ctxpats context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxpats context)) ++ "\n")

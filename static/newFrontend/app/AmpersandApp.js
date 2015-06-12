@@ -1,4 +1,5 @@
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'angular.filter', 'uiSwitch', 'cgBusy']);
+// when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable']);//, 'hljs']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -60,28 +61,8 @@ AmpersandApp.run(function(Restangular, $rootScope){
     	
     	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
     	
-    	return false; // error handled
+    	return true; // proceed with success or error hooks of promise
     });
-	
-	// The responseInterceptor is called after we get each response from the server
-	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
-		var newResponse;
-		
-		// Extract the response for a POST call
-		if (operation === "post") {
-			// First the newResponse will be data.content, which contains the new Resource
-			newData = data.content;
-			
-			// Then we update the notifications
-			$rootScope.updateNotifications(data.notifications);
-
-		// Else, just return the "regular" response as there's no object wrapping it 
-		}else{
-			newData = data;
-		}
-		
-		return newData;
-	});
 	
 });
 
@@ -130,4 +111,19 @@ AmpersandApp.directive('myShowonhoverRow', function (){
             }
         });
     };
+}).filter('toArray', function() {
+	// used from: https://github.com/petebacondarwin/angular-toArrayFilter
+	return function (obj, addKey) {
+	    if (!obj) return obj;
+	    if ($.isArray(obj)) return obj; // obj is already an array
+	    if ( addKey === false ) {
+	      return Object.keys(obj).map(function(key) {
+	        return obj[key];
+	      });
+	    } else {
+	      return Object.keys(obj).map(function (key) {
+	        return Object.defineProperty(obj[key], '$key', { enumerable: false, value: key});
+	      });
+	    }
+	  };
 });

@@ -82,7 +82,7 @@ getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
  where getViewExps view = [ (objctx objDef, "view "++show (name view))
-                          | ViewExp objDef <- vdats view ]
+                          | ViewExp _ objDef <- vdats view ]
 
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we

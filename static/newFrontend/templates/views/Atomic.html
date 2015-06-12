@@ -1,8 +1,8 @@
 <!-- Atomic[] "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $if(isEditable)$
-  <div ng-repeat="row in val['$name$'] track by \$index">
+  <div ng-repeat="(key, row) in val['$name$'] track by row.id">
   	<div style="position:relative;">  <!-- required for positioning of dropdown for multiple interface links -->
-      <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row['id'], ResourceId)"></span>
+      <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
       <!-- If multiple interfaces are available for navigation -->
       <a ng-if="row['@interfaces'].length > 1" href="" class="dropdown-toggle" data-toggle="dropdown">{{row['@label']}}</a>
       <ul ng-if="row['@interfaces'].length > 1" class="dropdown-menu" role="menu">
@@ -18,10 +18,10 @@ $if(isEditable)$
   </div>
   <!-- Input to add new link to another resource -->
   <div $if(exprIsUni)$ng-if="!val['$name$']"$endif$ my-showonhover-box ng-controller="addObjectController">
-    <input ng-model="selected.id" type="text" class="input-sm" placeholder="Add new" typeahead="item['id'] as item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:8" typeahead-editable="false" ng-blur="addObject(val, '$name$', selected, ResourceId)">
+    <input ng-model="selected.label" type="text" class="input-sm" placeholder="Add new" typeahead="item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="false" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, val, '$name$', ResourceId); selected.label=''">
   </div>
 $else$
-  <div ng-repeat="row in val['$name$'] track by \$index">
+  <div ng-repeat="(key, row) in val['$name$'] track by row.id">
     <div style="position:relative;"> <!-- required for positioning of dropdown for multiple interface links -->
       <!-- If multiple interfaces are available for navigation -->
       <a ng-if="row['@interfaces'].length > 1" href="" class="dropdown-toggle" data-toggle="dropdown">{{row['@label']}}</a>

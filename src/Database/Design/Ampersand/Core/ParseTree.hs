@@ -34,9 +34,7 @@ module Database.Design.Ampersand.Core.ParseTree (
 
    , PandocFormat(..)
 
-   , Label(..)
-
-   , Prop(..), Props
+   , Prop(..), Props, normalizeProps
    -- Inherited stuff:
    , module Database.Design.Ampersand.Input.ADL1.FilePos
    , gen_concs
@@ -44,8 +42,9 @@ module Database.Design.Ampersand.Core.ParseTree (
 import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Basics
 import Data.Traversable
-import Data.Foldable (Foldable(foldMap))
-import Prelude hiding (foldr, sequence)
+import Data.Foldable hiding (concat)
+import Data.List (nub)
+import Prelude hiding (foldr, sequence, foldl, concatMap)
 import Control.Applicative
 import Data.Typeable
 import GHC.Generics (Generic)
@@ -61,8 +60,7 @@ data P_Context
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
-         , ctx_PPrcs ::  [P_Pattern]      -- ^ The processes as defined by the parser
-         , ctx_rs ::     [P_Rule TermPrim]         -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -95,9 +93,9 @@ data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for 
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
 data P_RoleRelation
-   = P_RR { rr_Roles :: [Role]      -- ^ list of roles
+   = P_RR { rr_Pos :: Origin      -- ^ position in the Ampersand script
+          , rr_Roles :: [Role]      -- ^ list of roles
           , rr_Rels :: [P_NamedRel] -- ^ list of named relations
-          , rr_Pos :: Origin      -- ^ position in the Ampersand script
           } deriving (Show)       -- deriving Show is just for debugging
 instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
 instance Traced P_RoleRelation where
@@ -106,10 +104,10 @@ instance Traced P_RoleRelation where
  -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
 data P_RoleRule
    = Maintain
-     { mRoles :: [Role]    -- ^ name of a role
-     , mRules :: [String]    -- ^ name of a Rule
-     , mPos :: Origin      -- ^ position in the Ampersand script
-     } deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
+     { mPos :: Origin      -- ^ position in the Ampersand script
+     , mRoles :: [Role]    -- ^ name of a role
+     , mRules :: [String]  -- ^ name of a Rule
+     } deriving (Eq, Show) -- deriving (Eq, Show) is just for debugging
 
 data Role = Role String deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
 instance Named Role where
@@ -120,9 +118,8 @@ instance Traced P_RoleRule where
  origin = mPos
 
 data P_Pattern
-   = P_Pat { pt_nm :: String            -- ^ Name of this pattern
-           , pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
-           , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
+   = P_Pat { pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
+           , pt_nm :: String            -- ^ Name of this pattern
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
            , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
@@ -134,6 +131,7 @@ data P_Pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
+           , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
            }   deriving (Show)       -- for debugging purposes
 
 instance Named P_Pattern where
@@ -178,9 +176,8 @@ data P_Declaration =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
             , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-            , dec_prL :: String    -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-            , dec_prM :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-            , dec_prR :: String
+            , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+                                      -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
             , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
@@ -268,29 +265,29 @@ instance Traversable Term where
  traverse f' x
   = case x of
     Prim a -> Prim <$> f' a
-    PEqu o a b -> PEqu o <$> (f a) <*> (f b)
-    PImp o a b -> PImp o <$> (f a) <*> (f b)
-    PIsc o a b -> PIsc o <$> (f a) <*> (f b)
-    PUni o a b -> PUni o <$> (f a) <*> (f b)
-    PDif o a b -> PDif o <$> (f a) <*> (f b)
-    PLrs o a b -> PLrs o <$> (f a) <*> (f b)
-    PRrs o a b -> PRrs o <$> (f a) <*> (f b)
-    PDia o a b -> PDia o <$> (f a) <*> (f b)
-    PCps o a b -> PCps o <$> (f a) <*> (f b)
-    PRad o a b -> PRad o <$> (f a) <*> (f b)
-    PPrd o a b -> PPrd o <$> (f a) <*> (f b)
-    PKl0 o a   -> PKl0 o <$> (f a)
-    PKl1 o a   -> PKl1 o <$> (f a)
-    PFlp o a   -> PFlp o <$> (f a)
-    PCpl o a   -> PCpl o <$> (f a)
-    PBrk o a   -> PBrk o <$> (f a)
+    PEqu o a b -> PEqu o <$> f a <*> f b
+    PImp o a b -> PImp o <$> f a <*> f b
+    PIsc o a b -> PIsc o <$> f a <*> f b
+    PUni o a b -> PUni o <$> f a <*> f b
+    PDif o a b -> PDif o <$> f a <*> f b
+    PLrs o a b -> PLrs o <$> f a <*> f b
+    PRrs o a b -> PRrs o <$> f a <*> f b
+    PDia o a b -> PDia o <$> f a <*> f b
+    PCps o a b -> PCps o <$> f a <*> f b
+    PRad o a b -> PRad o <$> f a <*> f b
+    PPrd o a b -> PPrd o <$> f a <*> f b
+    PKl0 o a   -> PKl0 o <$> f a
+    PKl1 o a   -> PKl1 o <$> f a
+    PFlp o a   -> PFlp o <$> f a
+    PCpl o a   -> PCpl o <$> f a
+    PBrk o a   -> PBrk o <$> f a
   where f = traverse f'
 
 instance Functor P_SubIfc where fmap = fmapDefault
 instance Foldable P_SubIfc where foldMap = foldMapDefault
 instance Traversable P_SubIfc where
-  traverse _ (P_InterfaceRef a b) = pure (P_InterfaceRef a b)
-  traverse f (P_Box o c lst) = P_Box o c <$> (traverse (traverse f) lst)
+  traverse _ (P_InterfaceRef o a b) = pure (P_InterfaceRef o a b)
+  traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
  origin = si_ori
@@ -398,9 +395,9 @@ instance Functor PairView where fmap = fmapDefault
 instance Foldable PairView where foldMap = foldMapDefault
 
 data P_Rule a  =
-   P_Ru { rr_nm ::   String            -- ^ Name of this rule
-        , rr_exp ::  (Term a)   -- ^ The rule expression
-        , rr_fps ::  Origin            -- ^ Position in the Ampersand file
+   P_Ru { rr_fps ::  Origin            -- ^ Position in the Ampersand file
+        , rr_nm ::   String            -- ^ Name of this rule
+        , rr_exp ::  Term a            -- ^ The rule expression
         , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
         , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rr_viol :: Maybe (PairView (Term a))  -- ^ Custom presentation for violations, currently only in a single language
@@ -411,8 +408,8 @@ instance Traced (P_Rule a) where
 instance Functor P_Rule where fmap = fmapDefault
 instance Foldable P_Rule where foldMap = foldMapDefault
 instance Traversable P_Rule where
- traverse f (P_Ru nm expr fps mean msg viol)
-  = (\e v -> P_Ru nm e fps mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
+ traverse f (P_Ru fps nm expr mean msg viol)
+  = (\e v -> P_Ru fps nm e mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
 instance Named (P_Rule a) where
  name = rr_nm
@@ -429,11 +426,12 @@ data P_Markup =
 
 data P_Population
   = P_RelPopu { p_nmdr :: P_NamedRel  -- the named relation
+
               , p_orig ::  Origin  -- the origin
               , p_popps :: [PAtomPair]   -- the contents
               }
-  | P_CptPopu { p_cnme ::  String  -- the name of a concept
-              , p_orig ::  Origin  -- the origin
+  | P_CptPopu { p_orig ::  Origin  -- the origin
+              , p_cnme ::  String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
     deriving Show
@@ -470,6 +468,7 @@ data P_SubIfc a
                                , si_class :: Maybe String
                                , si_box :: [P_ObjDef a] }
               | P_InterfaceRef { si_ori :: Origin
+                               , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
                                , si_str :: String }
                 deriving (Eq, Show)
 
@@ -533,9 +532,9 @@ instance Traversable P_ViewD where
  traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
 type P_ViewSegment = P_ViewSegmt TermPrim
-data P_ViewSegmt a  = P_ViewExp  { vs_obj :: P_ObjDef a }
-                    | P_ViewText { vs_txt :: String }
-                    | P_ViewHtml { vs_htm :: String }
+data P_ViewSegmt a  = P_ViewExp  { vs_nr ::Integer, vs_obj :: P_ObjDef a }
+                    | P_ViewText { vs_nr ::Integer, vs_txt :: String }
+                    | P_ViewHtml { vs_nr ::Integer, vs_htm :: String }
                       deriving (Eq, Show)
 
 data ViewHtmlTemplate = ViewHtmlTemplateFile String
@@ -551,9 +550,9 @@ data ViewText = ViewTextTemplateFile String
 instance Functor P_ViewSegmt where fmap = fmapDefault
 instance Foldable P_ViewSegmt where foldMap = foldMapDefault
 instance Traversable P_ViewSegmt where
- traverse f (P_ViewExp  a) = P_ViewExp <$> traverse f a
- traverse _ (P_ViewText a) = pure (P_ViewText a)
- traverse _ (P_ViewHtml a) = pure (P_ViewHtml a)
+ traverse f (P_ViewExp i a) = P_ViewExp i <$> traverse f a
+ traverse _ (P_ViewText i a) = pure (P_ViewText i a)
+ traverse _ (P_ViewHtml i a) = pure (P_ViewHtml i a)
 
 instance Traced (P_ViewD a) where
  origin = vd_pos
@@ -617,13 +616,13 @@ instance Show P_Sign where
   showsPrec _ sgn =
       showString (   "[" ++ show (pSrc sgn)++"*"++show (pTgt sgn) ++ "]" )
 
-data P_Gen =  P_Cy{ gen_spc :: P_Concept         -- ^ Left hand side concept expression
+data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand file
+                  , gen_spc :: P_Concept         -- ^ Left hand side concept expression
                   , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
-                  , gen_fp ::  Origin            -- ^ Position in the Ampersand file
                   }
-            | PGen{ gen_spc :: P_Concept      -- ^ specific concept
+            | PGen{ gen_fp  :: Origin         -- ^ the position of the GEN-rule
+                  , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  , gen_fp ::  Origin         -- ^ the position of the GEN-rule
                   }
 gen_concs :: P_Gen -> [P_Concept]
 gen_concs (P_Cy {gen_rhs=x}) = x
@@ -652,7 +651,8 @@ data Prop      = Uni          -- ^ univalent
                | Rfx          -- ^ reflexive
                | Irf          -- ^ irreflexive
                | Aut          -- ^ automatically computed (NOTE: this is a hacky way to denote these until we have appropriate syntax)
-                 deriving (Eq,Ord)
+               | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
+                 deriving (Eq, Ord, Enum, Bounded)
 instance Show Prop where
  showsPrec _ Uni = showString "UNI"
  showsPrec _ Inj = showString "INJ"
@@ -664,6 +664,7 @@ instance Show Prop where
  showsPrec _ Rfx = showString "RFX"
  showsPrec _ Irf = showString "IRF"
  showsPrec _ Aut = showString "AUT"
+ showsPrec _ Prop = showString "PROP"
 
 instance Flippable Prop where
  flp Uni = Inj
@@ -672,12 +673,14 @@ instance Flippable Prop where
  flp Inj = Uni
  flp x = x
 
-data Label = Lbl { lblnm :: String
-                 , lblpos :: Origin
-                 , lblstrs :: [[String]]
-                 } deriving Show
-instance Eq Label where
- l==l' = lblnm l==lblnm l'
+normalizeProps :: [Prop] -> [Prop]
+normalizeProps = nub.conv.rep
+    where -- replace PROP by SYM, ASY
+          rep (Prop:ps) = [Sym, Asy] ++ rep ps
+          rep (p:ps) = (p:rep ps)
+          rep [] = []
+          -- add Uni and Inj if ps has neither Sym nor Asy
+          conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
@@ -689,7 +692,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
       , ctx_thms   = concatMap ctx_thms contexts
       , ctx_pats   = concatMap ctx_pats contexts
-      , ctx_PPrcs  = concatMap ctx_PPrcs contexts
       , ctx_rs     = concatMap ctx_rs contexts
       , ctx_ds     = concatMap ctx_ds contexts
       , ctx_cs     = concatMap ctx_cs contexts

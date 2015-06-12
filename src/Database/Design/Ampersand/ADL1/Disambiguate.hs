@@ -99,11 +99,11 @@ instance Disambiguatable P_IdentSegmnt where
   disambInfo (P_IdentExp v) x = (P_IdentExp v', rt)
      where (v',rt) = disambInfo v x
 instance Disambiguatable P_Rule where
-  disambInfo (P_Ru nm expr fps mean msg Nothing) x
-   = (P_Ru nm exp' fps mean msg Nothing, rt)
+  disambInfo (P_Ru fps nm expr mean msg Nothing) x
+   = (P_Ru fps nm exp' mean msg Nothing, rt)
    where (exp',rt) = disambInfo expr x
-  disambInfo (P_Ru nm expr fps mean msg (Just viol)) x
-   = (P_Ru nm exp' fps mean msg (Just viol'), rt)
+  disambInfo (P_Ru fps nm expr mean msg (Just viol)) x
+   = (P_Ru fps nm exp' mean msg (Just viol'), rt)
    where (exp',rt) = disambInfo expr x
          (PairViewTerm viol',_) -- SJ 20131123: disambiguation does not depend on the contents of this pairview, but must come from outside...
           = (disambInfo (PairViewTerm viol) rt)
@@ -130,13 +130,13 @@ instance Disambiguatable P_ViewD where
    where constraints = Cnstr [MustBe (pCpt2aCpt c)] []
 
 instance Disambiguatable P_ViewSegmt where
-  disambInfo (P_ViewText a) _ = (P_ViewText a,noConstraints)
-  disambInfo (P_ViewHtml a) _ = (P_ViewHtml a,noConstraints)
-  disambInfo (P_ViewExp a) i = (P_ViewExp a',r)
+  disambInfo (P_ViewText nr a) _ = (P_ViewText nr a,noConstraints)
+  disambInfo (P_ViewHtml nr a) _ = (P_ViewHtml nr a,noConstraints)
+  disambInfo (P_ViewExp nr a) i = (P_ViewExp nr a',r)
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef a b) _      = (P_InterfaceRef a b,noConstraints)
+  disambInfo (P_InterfaceRef o a b) _      = (P_InterfaceRef o a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
   disambInfo (P_Box o cl (a:lst)) env1  = 
      (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf envA++sourceConstraintsOf envB) [])

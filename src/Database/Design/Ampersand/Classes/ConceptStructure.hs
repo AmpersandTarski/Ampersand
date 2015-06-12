@@ -97,8 +97,8 @@ instance ConceptStructure IdentityDef where
   expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
-  concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp objDef <- vdats vd]
-  expressionsIn vd = expressionsIn        [objDef | ViewExp objDef <- vdats vd]
+  concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp _ objDef <- vdats vd]
+  expressionsIn vd = expressionsIn        [objDef | ViewExp _ objDef <- vdats vd]
 
 instance ConceptStructure Expression where
   concs (EDcI c    ) = [c]
@@ -131,10 +131,10 @@ instance ConceptStructure ObjectDef where
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
-  concs (Box _ _ objs)           = concs objs
-  concs (InterfaceRef _)         = []
-  expressionsIn (Box _ _ objs)   = expressionsIn objs
-  expressionsIn (InterfaceRef _) = []
+  concs (Box _ _ objs)         = concs objs
+  concs InterfaceRef{}         = []
+  expressionsIn (Box _ _ objs) = expressionsIn objs
+  expressionsIn InterfaceRef{} = []
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []

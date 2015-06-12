@@ -206,7 +206,6 @@ makectx opts r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
                                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
                      |p<-r_ptnm]
-       , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
        , ctx_cs    = [{- TODO: Han, please fix this:
@@ -247,9 +246,8 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                              r_cptnm
                              r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose
                              r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
- = P_Pat { pt_nm  = pnm
-         , pt_pos = DBLoc "Atlas(Pattern)"
-         , pt_end = DBLoc "Atlas(Pattern)"
+ = P_Pat { pt_pos = DBLoc "Atlas(Pattern)"
+         , pt_nm  = pnm
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
                     | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
          , pt_gns = [PGen{ gen_fp = DBLoc "Atlas(Isa)"
@@ -277,13 +275,14 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     , (rid',rpurp)<-r_decpurpose, rid==rid', not(null rpurp)
                     , let rnm = geta r_decnm rid (error "while geta r_decnm for rpurp.")]
          , pt_pop = []
+         , pt_end = DBLoc "Atlas(Pattern)"
          }
 
 atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term TermPrim)] -> (P_Rule TermPrim)
 atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
- = P_Ru { rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
+ = P_Ru { rr_fps  = DBLoc "Atlas(Rule)"
+        , rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
         , rr_exp  = geta r_exprvalue eid (error "while geta r_exprvalue.")
-        , rr_fps  = DBLoc "Atlas(Rule)"
         , rr_mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_rrmean rid ""))]
         , rr_msg  = []
         , rr_viol = Nothing
@@ -339,9 +338,7 @@ atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredt
                         "ASY"->Asy
                         _ -> error "unknown prop in atlas"
                       | (rid',prp)<-r_decprps, rid'==rid]
-         , dec_prL = geta r_decprL rid ""
-         , dec_prM = geta r_decprM rid ""
-         , dec_prR = geta r_decprR rid ""
+         , dec_pragma = [geta r_decprL rid "", geta r_decprM rid "", geta r_decprR rid ""]
          , dec_Mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_decmean rid ""))]
          , dec_popu = []
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i

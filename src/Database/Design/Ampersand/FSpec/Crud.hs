@@ -97,7 +97,7 @@ getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
   where getExprs Obj{objctx=expr, objmsub=subObj} = 
           expr : case subObj of Nothing                -> []
-                                Just (InterfaceRef nm) ->
+                                Just (InterfaceRef _ nm) ->
                                   case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                                     []      -> fatal 65 $ "Referenced interface " ++ nm ++ " missing"
                                     (_:_:_) -> fatal 66 $ "Multiple declarations of referenced interface " ++ nm

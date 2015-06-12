@@ -100,9 +100,9 @@ checkInterfaceCycles gCtx =
       where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
-                                   Nothing                -> []
-                                   Just (InterfaceRef nm) -> [nm]
-                                   Just (Box _ _ objs)    -> concatMap getDeepIfcRefs objs
+                                   Nothing                  -> []
+                                   Just (InterfaceRef _ nm) -> [nm]
+                                   Just (Box _ _ objs)      -> concatMap getDeepIfcRefs objs
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
@@ -161,7 +161,6 @@ pCtx2aCtx' _
       , ctx_markup = pandocf
       , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
-      , ctx_PPrcs  = p_processes
       , ctx_rs     = p_rules    
       , ctx_ds     = p_declarations
       , ctx_cs     = p_conceptdefs
@@ -208,8 +207,8 @@ pCtx2aCtx' _
             , ctxphp = phpdefs
             , ctxmetas = p_metas
             }
-    ) <$> traverse pPat2aPat (p_patterns ++ p_processes)            --  The patterns defined in this context
-      <*> traverse (pRul2aRul n1) p_rules       --  All user defined rules in this context, but outside patterns and outside processes
+    ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
+      <*> traverse (pRul2aRul n1) p_rules       --  All user defined rules in this context, but outside patterns
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaceAndDisambObjs   --  TODO: explain   ... The interfaces defined in this context, outside the scope of patterns
@@ -217,7 +216,7 @@ pCtx2aCtx' _
       <*> traverse pPop2aPop p_pops                --  [Population]
       <*> traverse pObjDef2aObjDef p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
       <*> traverse pObjDef2aObjDef p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
-      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels (p_patterns ++ p_processes))
+      <*> traverse pRoleRelation2aRoleRelation (p_roleRelations ++ concatMap pt_RRels p_patterns)
       <*> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) p_declarations
       
   where
@@ -233,7 +232,7 @@ pCtx2aCtx' _
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
     genRules = [ ( Set.singleton (name (gen_spc x)), Set.fromList (map name (gen_concs x)))
-               | x <- p_gens ++ concatMap pt_gns (p_patterns ++ p_processes)
+               | x <- p_gens ++ concatMap pt_gns p_patterns
                ]
     genLattice :: Op1EqualitySystem String
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
@@ -255,7 +254,7 @@ pCtx2aCtx' _
              Errors err -> fatal 253 $ "there are errors."++show err
       where f = (\declsWithPops
                   -> map fst declsWithPops -- ++ concatMap ptdcs pats
-                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) (p_declarations  ++ concatMap pt_dcs (p_patterns ++ p_processes))
+                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) (p_declarations  ++ concatMap pt_dcs (p_patterns ++ p_processesTODO))
  
 
 --    dclPops= ctxDclPops++patDclPops
@@ -284,13 +283,14 @@ pCtx2aCtx' _
       -> PandocFormat   -- The default pandocFormat
       -> P_Declaration -> Guarded (Declaration,Population)
     pDecl2aDecl patNm defLanguage defFormat pd
-     = let dcl = Sgn { decnm   = dec_nm pd
+     = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
+           dcl = Sgn { decnm   = dec_nm pd
                      , decsgn  = pSign2aSign (dec_sign pd)
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                      , decprL  = dec_prL pd
-                     , decprM  = dec_prM pd
-                     , decprR  = dec_prR pd
+                     , decprL  = prL
+                     , decprM  = prM
+                     , decprR  = prR
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                      , decfpos = dec_fpos pd
                      , deciss  = True
@@ -397,16 +397,18 @@ pCtx2aCtx' _
        <$> traverse (typeCheckViewSegment o) pvs
 
     typeCheckViewSegment :: (P_ViewD a) -> (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
-    typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
-     = unguard $
-         (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
-                        [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                        r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                              else mustBeBound (origin obj) [(Tgt,objctx obj)])
-         <$> typecheckObjDef ojd
+    typeCheckViewSegment o vs
+     = case vs of 
+        P_ViewExp{} -> 
+          unguard $
+            (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
+                           [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
+                           r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
+                                 else mustBeBound (origin obj) [(Tgt,objctx obj)])
+         <$> typecheckObjDef (vs_obj vs)
+        P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
+        P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
      where c = name (vd_cpt o)
-    typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
-    typeCheckViewSegment _ P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
     
     isa :: String -> String -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
@@ -473,7 +475,7 @@ pCtx2aCtx' _
       = case x of
          P_InterfaceRef{si_str = ifcId} 
            ->  unguard $
-             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
+             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef (si_isLink x) ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
              <$> case lookupDisambIfcObj ifcId of
                    Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                    Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
@@ -679,9 +681,9 @@ pCtx2aCtx' _
     typeCheckRul :: 
                  String -- environment name (pattern / proc name)
               -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
-    typeCheckRul env P_Ru { rr_nm = nm
+    typeCheckRul env P_Ru { rr_fps = orig
+                          , rr_nm = nm
                           , rr_exp = expr
-                          , rr_fps = orig
                           , rr_mean = meanings
                           , rr_msg = msgs
                           , rr_viol = viols
@@ -766,10 +768,10 @@ pCtx2aCtx' _
         []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdref="", cdfrom=n1} 
         (x:_) -> x
     allConceptDefs :: [ConceptDef]
-    allConceptDefs = p_conceptdefs++concatMap pt_cds (p_patterns++p_processes)
+    allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
-                      (p_roleRules ++ concatMap pt_RRuls (p_patterns++p_processes))
+                      (p_roleRules ++ concatMap pt_RRuls p_patterns)
     allRepresentations :: [Representation]
     allRepresentations = p_representations++concatMap pt_Reprs (p_patterns++p_processes)
 

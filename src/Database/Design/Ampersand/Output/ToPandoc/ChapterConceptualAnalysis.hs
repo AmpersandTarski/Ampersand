@@ -132,7 +132,8 @@ chpConceptualAnalysis lev fSpec = (
     ukadj Trn = "transitive"
     ukadj Rfx = "reflexive"
     ukadj Irf = "irreflexive"
-    ukadj Aut = "automatically computed"    
+    ukadj Aut = "automatically computed"
+    ukadj Prop = "symmetric and antisymmetric"
   nladjs d = case [Uni,Tot]>-multiplicities d of
                [] -> commaNL "en" (map nladj (multiplicities d>-[Uni,Tot]))++" functie"
                _  -> commaNL "en" (map nladj (multiplicities d))++" relatie"
@@ -168,9 +169,9 @@ chpConceptualAnalysis lev fSpec = (
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
                     <>(mconcat (intersperse  (str ", ") 
-                          [   xRefTo (XRefConceptualAnalysisDeclaration d) 
-                           <> text (" ("++name d++")")
-                          | d@Sgn{}<-relsMentionedIn r]))  
+                                [   xRefTo (XRefConceptualAnalysisDeclaration d) 
+                                 <> text (" ("++name d++")")
+                                | d@Sgn{}<-relsMentionedIn r])) 
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))    
                    )

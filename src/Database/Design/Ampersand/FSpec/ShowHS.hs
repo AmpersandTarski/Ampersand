@@ -11,7 +11,6 @@ import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceabi
 --import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
 import Database.Design.Ampersand.Classes
-import qualified Database.Design.Ampersand.Input.ADL1.UU_Scanner
 import Database.Design.Ampersand.Misc
 import Data.Hashable
 import Data.Ord
@@ -561,9 +560,9 @@ instance ShowHS ViewDef where
 -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
 
 instance ShowHS ViewSegment where
- showHS _     _      (ViewText str)   = "ViewText "++show str
- showHS _     _      (ViewHtml str)   = "ViewHtml "++show str
- showHS opts indent (ViewExp objDef) = "ViewExp "++ showHS opts (indent++"            ") objDef
+ showHS _     _     (ViewText i str)    = "ViewText "++show i ++show str
+ showHS _     _     (ViewHtml i str)    = "ViewHtml "++show i ++show str
+ showHS opts indent (ViewExp  i objDef) = "ViewExp " ++show i ++showHS opts (indent++"            ") objDef
 
 instance ShowHS Population where
  showHS _ indent pop
@@ -612,7 +611,7 @@ instance ShowHS Interface where
         ]++indent++"    }"
 
 instance ShowHS SubInterface where
- showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n
+ showHS _     _      (InterfaceRef isLink n) = "InterfaceRef "++show isLink ++" "++show n
  showHS opts indent (Box x cl objs) = "Box ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"
 
 instance ShowHS Expression where
@@ -706,27 +705,28 @@ instance ShowHSName Prop where
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
  showHSName Aut = "Aut"
+ showHSName Prop = "Prop"
 
 instance ShowHS Prop where
  showHS _ _ = showHSName
 
 instance ShowHS FilePos where
- showHS _ _ (FilePos (fn,Database.Design.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
-   = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
+ showHS _ _ pos = show pos
 
 instance ShowHSName Origin where
  showHSName ori = "Orig"++show x++show (hash x)
-   where x = case ori of
-              FileLoc l -> "FileLoc (" ++ show l++")"
-              DBLoc l   -> "DBLoc " ++ show l
-              Origin s  -> "Origin " ++ show s
+   where x :: String
+         x = case ori of
+              FileLoc l sym -> "FileLoc (" ++ show l ++ " " ++ sym ++ ")"
+              DBLoc l       -> "DBLoc " ++ show l
+              Origin s      -> "Origin " ++ show s
               OriginUnknown -> "OriginUnknown"
 
 instance ShowHS Origin where
- showHS opts indent (FileLoc l) = "FileLoc (" ++ showHS opts indent l++")"
- showHS _     _      (DBLoc l)   = "DBLoc "  ++ show l
- showHS _     _      (Origin s)  = "Origin " ++ show s
- showHS _     _    OriginUnknown = "OriginUnknown"
+ showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
+ showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
+ showHS _     _      (Origin s)   = "Origin " ++ show s
+ showHS _     _    OriginUnknown  = "OriginUnknown"
 
 instance ShowHS Block where
  showHS _ _   = show

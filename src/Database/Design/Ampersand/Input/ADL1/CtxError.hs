@@ -1,7 +1,7 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
-  , showErr
+  , showErr, makeError, addError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
@@ -12,7 +12,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
   , mkUnmatchedAtomValue
   , Guarded(..)
-  , whenCheckedIO
+  , whenCheckedIO, whenChecked
   , unguard
   )
 -- SJC: I consider it ill practice to export CTXE
@@ -29,9 +29,9 @@ import Database.Design.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate,nub)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Input.ADL1.UU_Scanner (Token)
-import UU.Parsing (Message(..),Action(..))
 import Database.Design.Ampersand.Core.ParseTree
+import Text.Parsec.Error (Message(..), messageString)
+import Database.Design.Ampersand.Input.ADL1.FilePos()
 
 fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
@@ -45,12 +45,21 @@ unguard (Errors errs) = Errors errs
 unguard (Checked g)   = g  
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE (Message Token (Maybe Token))
-              deriving Show
+              | PE Message
+
+instance Show CtxError where
+    show (CTXE o s) = "CTXE " ++ show o ++ " " ++ show s
+    show (PE msg)   = "PE " ++ messageString msg
 
 errors :: Guarded t -> [CtxError]
 errors (Checked _) = []
 errors (Errors lst) = lst
+
+makeError :: String -> Guarded a
+makeError msg = Errors [PE (Message msg)]
+
+addError :: String -> Guarded a -> Guarded b
+addError msg guard = Errors (PE (Message msg):errors guard)
 
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
@@ -71,7 +80,7 @@ instance GetOneGuarded (SubInterface) where
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
-  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++(showFullOrig$origin l) | l<-lst]]
+  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++showFullOrig (origin l) | l<-lst]]
 
 cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
 cannotDisambRel o exprs
@@ -181,7 +190,7 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
   CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++showADL atomValue++"`."
-  
+    
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String
@@ -263,7 +272,7 @@ writeBind e
 data Guarded a = Errors [CtxError] | Checked a deriving Show
 
 instance Functor Guarded where
- fmap _ (Errors a) = (Errors a)
+ fmap _ (Errors a)  = Errors a
  fmap f (Checked a) = Checked (f a)
 
 instance Applicative Guarded where
@@ -279,34 +288,29 @@ instance Applicative Guarded where
 -- Shorthand for working with Guarded in IO
 whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
 whenCheckedIO ioGA fIOGB =
- do { gA <- ioGA 
-    ; case gA of
-         Errors errs -> return $ Errors errs
-         Checked a   ->
-          do { gB <- fIOGB a
-             ; return gB
-             }
-    }
+   do gA <- ioGA 
+      case gA of
+         Errors err -> return (Errors err)
+         Checked a  -> fIOGB a
+
+whenChecked :: Guarded a -> (a -> Guarded b) -> Guarded b
+whenChecked ga fgb =
+      case ga of
+         Checked a  -> fgb a
+         Errors err -> Errors err
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
-showErr (PE msg)   = showMessage msg
- where showMessage (Msg expecting token action) =  
-         let pos = case token of
-                     Nothing -> "at end of file"
-                     Just s  -> case action of 
-                                  Insert _ -> "before " ++ show s
-                                  Delete t -> "at " ++ show t  
-                                  Other str -> str -- Probably never used, UU.Parsing.parseIO ignores this case
-         in  "\nParse error " ++ pos ++
-             "\nExpecting " ++ show expecting ++
-             "\nTry " ++ show action ++ "\n"                
- 
+showErr (PE msg)   = messageString msg
 
 showFullOrig :: Origin -> String
-showFullOrig (FileLoc (FilePos (filename,Database.Design.Ampersand.ADL1.Pos l c,t)))
-              = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show l++" : "++show c
+showFullOrig (FileLoc (FilePos filename line column) t)
+              = "Error at symbol " ++ t ++
+                " in file " ++ filename ++
+                " at line " ++ show line ++
+                " : " ++ show column
+
 showFullOrig x = show x
 showMinorOrigin :: Origin -> String
-showMinorOrigin (FileLoc (FilePos (_,Database.Design.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++" : "++show c
+showMinorOrigin (FileLoc (FilePos _ line column) _) = "line " ++ show line ++" : "++show column
 showMinorOrigin v = show v
