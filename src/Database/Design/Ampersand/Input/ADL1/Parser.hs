@@ -17,11 +17,6 @@ import Control.Applicative(pure)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
 
-                    , "REPRESENT", "TYPE"
-                    -- Keywords for TType:
-                    , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
-                    , "BINARY", "BIGBINARY", "HUGEBINARY"
-                    , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
 --to parse files containing only populations
 --- Populations ::= Population+
 pPopulations :: AmpParser [P_Population]
@@ -142,6 +137,7 @@ pPatternDef = rebuild <$> currPos
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
              , pt_cds = [c nm | Pc c<-pes]
+             , pt_Reprs = [x | Prep x<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
@@ -188,7 +184,7 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
            Pg <$> pGenDef           <|>
-               Prep <$> pRepresentation <|>
+           Prep <$> pRepresentation <|>
            Pk <$> pIndex            <|>
            Pv <$> pViewDef          <|>
            Pe <$> pPurpose          <|>
@@ -208,9 +204,6 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pp P_Population
 
 --- Classify ::= 'CLASSIFY' ConceptRef 'IS' Cterm
-              , pt_Reprs = [r  | PrRep r<-pes]
-                PrRep <$> pRepresentation <|>
-              | PrRep Representation
 pClassify :: AmpParser P_Gen   -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify = try (P_Cy <$> currPos
                       <* pKey "CLASSIFY"
@@ -322,13 +315,15 @@ pConceptDef       = Cd <$> currPos
                   --     <*> optList (pKey "TYPE" *> pString)     -- the type of the concept.
                        <*> (pString `opt` "")     -- a reference to the source of this definition.
 
+--- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
 pRepresentation 
-  = Repr <$> pKey_pos "REPRESENT"
-         <*> pList1Sep (pSpec ',') pConceptName  -- the concept names
+  = Repr <$> currPos
+         <*  pKey "REPRESENT"
+         <*> pConceptName `sepBy1` pComma
          <*  pKey "TYPE"
          <*> pAdlTType
-
+--- AdlTType = ...<enumeration>
 pAdlTType :: AmpParser TType
 pAdlTType
         = k Alphanumeric     "ALPHANUMERIC"
@@ -544,13 +539,11 @@ pPurpose = rebuild <$> currPos
 --- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
 pPopulation :: AmpParser P_Population
 pPopulation = pKey "POPULATION" *> (
-                  prelpop   <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
-                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
-    where prelpop :: Origin -> P_NamedRel -> [PAtomPair] -> P_Population
-          prelpop orig (PNamedRel _ nm mSgn) = case mSgn of
-                               Nothing    -> P_RelPopu orig nm
-                               Just ptype -> P_TRelPop orig nm ptype
-
+                  P_RelPopu <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
+                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
+pAtomValue ::AmpParser PAtomValue
+pAtomValue = PAVString <$> currPos
+                       <*> pString
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation = try (P_RR <$> currPos
@@ -777,12 +770,18 @@ pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi)
           --- RecordList ::= Record (',' Record)*
           --- Record ::= String '*' String
     where pRecord :: AmpParser PAtomPair
-          pRecord = mkPair <$> pString <* pOperator "*" <*> pString
+          pRecord = PPair <$> currPos
+                          <*> pAtomValue 
+                          <* pOperator "*" 
+                          <*> pAtomValue
           --- RecordObsList ::= RecordObsList (';' RecordObsList)
           --- RecordObs ::= '(' String ',' String ')'
           pRecordObs :: AmpParser PAtomPair
-          pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
-    pRecordObs = build2 <$> pSpec_pos '(' <*> pString <* pComma   <*> pString <* pSpec ')' --obsolete
+          pRecordObs = pParens (PPair <$> currPos
+                                      <*> pAtomValue
+                                      <* pComma
+                                      <*> pAtomValue
+                               )
  
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*

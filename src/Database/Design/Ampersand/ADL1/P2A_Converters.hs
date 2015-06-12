@@ -254,14 +254,14 @@ pCtx2aCtx' _
              Errors err -> fatal 253 $ "there are errors."++show err
       where f = (\declsWithPops
                   -> map fst declsWithPops -- ++ concatMap ptdcs pats
-                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) (p_declarations  ++ concatMap pt_dcs (p_patterns ++ p_processesTODO))
+                ) <$> traverse (pDecl2aDecl n1 deflangCtxt deffrmtCtxt) (p_declarations  ++ concatMap pt_dcs p_patterns)
  
 
 --    dclPops= ctxDclPops++patDclPops
 --    (ctxDecls,_ ) =  ctxDecls'
 --    dps = ctxDecls'++patDecls
 --    (ctxDecls,ctxDclPops) = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
---    (patDecls,patDclPops) = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns ++p_processes , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
+--    (patDecls,patDclPops) = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
 
 -- In order to find declarations efficiently, a Map is constructed to search declarations by name.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
@@ -773,7 +773,7 @@ pCtx2aCtx' _
     allRoleRules = map pRoleRule2aRoleRule 
                       (p_roleRules ++ concatMap pt_RRuls p_patterns)
     allRepresentations :: [Representation]
-    allRepresentations = p_representations++concatMap pt_Reprs (p_patterns++p_processes)
+    allRepresentations = p_representations++concatMap pt_Reprs p_patterns
 
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x

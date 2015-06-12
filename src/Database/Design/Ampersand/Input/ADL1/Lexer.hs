@@ -46,7 +46,8 @@ keywords      = [ "INCLUDE"
                 , "META"
                 , "PATTERN", "ENDPATTERN"
                 , "PROCESS", "ENDPROCESS"
-                , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE", "LINKTO"
+                , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG"
+                , "REPRESENT", "TYPE", "LINKTO"
                 , "POPULATION", "CONTAINS"
                 , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                 , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
@@ -60,6 +61,10 @@ keywords      = [ "INCLUDE"
                 , "ONE"
                 , "BYPLUG"
                 , "ROLE", "EDITS", "MAINTAINS"
+                -- Keywords for TType:
+                , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
+                , "BINARY", "BIGBINARY", "HUGEBINARY"
+                , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
                 ]
 
 operators :: [String]

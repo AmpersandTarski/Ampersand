@@ -9,7 +9,6 @@ where
 import Database.Design.Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
-         , Label(..)
          , FilePos(..), Origin(..), Traced(..)
          , Prop(..)
          , P_Concept(..)

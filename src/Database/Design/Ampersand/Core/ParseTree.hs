@@ -204,11 +204,11 @@ data PAtomValue
 --  | PAVFloat Origin Float
 --  | PAVBoolean Origin Bool 
   deriving Show
-mkPair :: Origin -> String -> String -> PAtomPair
+mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r 
-   = PPair { pppos = o
-           , ppLeft  = PAVString o l
-           , ppRight = PAVString o r}
+   = PPair { pppos   = o
+           , ppLeft  = l
+           , ppRight = r}
 
 data TermPrim
    = PI Origin                              -- ^ identity element without a type
@@ -419,19 +419,18 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang ::   Maybe Lang
+    P_Markup  { mLang   ::   Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: String
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_nmdr :: P_NamedRel  -- the named relation
-
-              , p_orig ::  Origin  -- the origin
+  = P_RelPopu { p_orig  :: Origin  -- the origin
+              , p_nmdr  :: P_NamedRel  -- the named relation
               , p_popps :: [PAtomPair]   -- the contents
               }
-  | P_CptPopu { p_orig ::  Origin  -- the origin
-              , p_cnme ::  String  -- the name of a concept
+  | P_CptPopu { p_orig  :: Origin  -- the origin
+              , p_cnme  :: String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
     deriving Show
