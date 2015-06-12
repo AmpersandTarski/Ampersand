@@ -93,7 +93,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 	
-	requestType = requestType || 'feedback'; // set default requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
+	requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 	
 	// myPromise is used for busy indicator
 	\$scope.myPromises[resourceId] = new Array();
