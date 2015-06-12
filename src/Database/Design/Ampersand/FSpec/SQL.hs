@@ -48,8 +48,28 @@ selectExpr :: FSpec    -- current context
 -- That allows more efficient code while retaining correctness and completeness as much as possible.
 -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
-selectExpr fSpec expr
- = case expr of
+selectExpr fSpec expr 
+ = fromMaybe (nonSpecialSelectExpr fSpec expr) (maybeSpecialCase fSpec expr) --special cases for optimized results.
+
+-- Special cases for optimized SQL generation
+-- Sometimes it is possible to generate queries that perform better. If this is the case for some 
+-- expression, this function will return the optimized query. 
+maybeSpecialCase :: FSpec -> Expression -> Maybe BinQueryExpr
+maybeSpecialCase fSpec expr = 
+  case expr of 
+    EIsc (EDcI a , ECpl (ECps (EFlp (EDcD r),EDcD r') )) 
+      | r == r'   -> Just . BQEComment 
+                              [ BlockComment $ "TO-BE Optimized case for TOT"
+                              , BlockComment $ "   "++showADL expr++" ("++show (sign expr)++")"
+                              ] $ --TODO: Write optimized code for TOT case
+                                  nonSpecialSelectExpr fSpec expr 
+      | otherwise -> Nothing
+    _ -> Nothing 
+
+
+nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
+nonSpecialSelectExpr fSpec expr=
+    case expr of
     EIsc{} -> 
     {- The story on the case of EIsc:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
