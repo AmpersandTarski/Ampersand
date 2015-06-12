@@ -182,7 +182,7 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
       console.log('selected id is undefined');
     }else{
       if(obj[property] === null) obj[property] = {};
-      obj[property][item.id] = {'id': item.id};
+      obj[property][item.id] = item.plain(); // plain is Restangular function
       \$scope.put(resourceId);
     }
   }
