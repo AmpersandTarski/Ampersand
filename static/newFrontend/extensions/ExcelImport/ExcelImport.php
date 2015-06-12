@@ -139,7 +139,6 @@ class ImportExcel
 						$atom[$col] = $atom[0]; // '&' copies the atom-value; useful for property-relations.
 					}
 					
-					$this->addAtomToConcept($atom[$col], $concept[$col]); // Try if this fixes the bug....
 					$this->insertRel($relation[$col], $atom[0], $atom[$col], $concept[0], $concept[$col]);
 					
 				}
