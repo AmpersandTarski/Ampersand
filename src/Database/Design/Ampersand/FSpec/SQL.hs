@@ -61,18 +61,48 @@ maybeSpecialCase fSpec expr =
       | r == r'   -> Just . BQEComment 
                               [ BlockComment $ "Optimized case for: "++name r++showSign r++" [TOT]."
                               , BlockComment $ "   "++showADL expr++" ("++show (sign expr)++")"
-                              ] $ --TODO: Write optimized code for TOT case
+                              ] $ 
                                  let aAtt = Iden [sqlAttConcept fSpec a]
-                                     whereClasue = 
+                                     whereClause = 
                                        conjunctSQL [(notNull aAtt)
                                                    , aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r))]
                                  in    
                                    BSE { bseSrc = aAtt
                                        , bseTrg = aAtt
                                        , bseTbl = [sqlConceptTable fSpec a]
-                                       , bseWhr = Just whereClasue
+                                       , bseWhr = Just whereClause
                                        }
       | otherwise -> Nothing
+    EIsc (expr1 , ECpl expr2)
+                  -> Just . BQEComment
+                              [ BlockComment . unlines $
+                                   [ "Optimized case for: <expr1> intersect with the complement of <expr2>."
+                                   , "where "
+                                   , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
+                                   , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
+                                   , "   "++showADL expr++" ("++show (sign expr)++")"
+                                   ]
+                              ] $ let table1 = Name "expr1"
+                                      table2 = Name "expr2"
+                                      whereClause = Just . disjunctSQL $
+                                                      [ isNull (Iden[table2,sourceAlias])
+                                                      , isNull (Iden[table2,targetAlias])
+                                                      ]
+                                  in BSE { bseSrc = Iden [table1 ,sourceAlias]
+                                         , bseTrg = Iden [table1 ,targetAlias]
+                                         , bseTbl = [TRJoin 
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
+                                                       True -- TODO: Uitzoeken wat dit betekent
+                                                       JLeft
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr2)) `as` table2)
+                                                       (Just . JoinOn . conjunctSQL $
+                                                           [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
+                                                           , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
+                                                           ]
+                                                       ) 
+                                                    ]
+                                         , bseWhr = whereClause
+                                         }
     _ -> Nothing 
 
 
@@ -717,6 +747,11 @@ conjunctSQL [] = fatal 57 "nothing to `AND`."
 conjunctSQL [ve] = ve
 conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
 
+disjunctSQL :: [ValueExpr] -> ValueExpr
+disjunctSQL [] = fatal 57 "nothing to `OR`."
+disjunctSQL [ve] = ve
+disjunctSQL (ve:ves) = BinOp ve [Name "OR"] (conjunctSQL ves)
+
 as :: TableRef -> Name -> TableRef
 as ve a = -- TRAlias ve (Alias a Nothing)
   case ve of 
@@ -728,7 +763,8 @@ as ve a = -- TRAlias ve (Alias a Nothing)
     
 notNull :: ValueExpr -> ValueExpr
 notNull ve = PostfixOp [Name "IS NOT NULL"] ve                         
-
+isNull  :: ValueExpr -> ValueExpr
+isNull ve = PostfixOp [Name "IS NULL"] ve
 emptySet :: BinQueryExpr
 emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"] $
            BSE { 
