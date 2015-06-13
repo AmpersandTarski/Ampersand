@@ -69,7 +69,7 @@ maybeSpecialCase fSpec expr =
                                  in    
                                    BSE { bseSrc = aAtt
                                        , bseTrg = aAtt
-                                       , bseTbl = [sqlConceptTable fSpec a]
+                                       , bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"]
                                        , bseWhr = Just whereClause
                                        }
       | otherwise -> Nothing
@@ -144,7 +144,8 @@ nonSpecialSelectExpr fSpec expr=
                                                                 EIsc (a,b) -> 
                                                                    [show a
                                                                    ,show b
-                                                                   ] 
+                                                                   ]
+                                                                _ -> fatal 148 $ "Not expecting anything else here than EIsc!\n  " ++ show expr
                                                           )] $
                         case subTerms of
                           [] -> case specificValue of 
