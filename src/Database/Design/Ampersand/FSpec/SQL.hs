@@ -644,14 +644,14 @@ selectSorT :: Name -> BinQueryExpr -> QueryExpr
 selectSorT att binExp =
      Select { qeSetQuantifier = SQDefault
             , qeSelectList    = [(Iden [att],Nothing)]   
-            , qeFrom          = [TRQueryExpr (toSQL binExp)]
+            , qeFrom          = [TRQueryExpr (toSQL binExp) `as` att]
             , qeWhere         = Nothing
             , qeGroupBy       = []
             , qeHaving        = Nothing
             , qeOrderBy       = []
             , qeOffset        = Nothing
             , qeFetchFirst    = Nothing
-            }
+            } 
 
 selectExists, selectNotExists
      :: TableRef        -- ^ tables
