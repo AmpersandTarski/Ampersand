@@ -76,7 +76,7 @@ maybeSpecialCase fSpec expr =
     EIsc (expr1 , ECpl expr2)
                   -> Just . BQEComment
                               [ BlockComment . unlines $
-                                   [ "Optimized case for: 'expr1' intersect with the complement of 'expr2'."
+                                   [ "Optimized case for: <expr1> intersect with the complement of <expr2>."
                                    , "where "
                                    , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
                                    , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
@@ -95,6 +95,36 @@ maybeSpecialCase fSpec expr =
                                                        False -- Needs to be false in MySql
                                                        JLeft
                                                        (TRQueryExpr (toSQL (selectExpr fSpec expr2)) `as` table2)
+                                                       (Just . JoinOn . conjunctSQL $
+                                                           [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
+                                                           , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
+                                                           ]
+                                                       ) 
+                                                    ]
+                                         , bseWhr = whereClause
+                                         }
+    EIsc (expr1 , EFlp (ECpl expr2))
+                  -> Just . BQEComment
+                              [ BlockComment . unlines $
+                                   [ "Optimized case for: <expr1> intersect with the flipped complement of <expr2>."
+                                   , "where "
+                                   , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
+                                   , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
+                                   , "   "++showADL expr++" ("++show (sign expr)++")"
+                                   ]
+                              ] $ let table1 = Name "t1"
+                                      table2 = Name "t2"
+                                      whereClause = Just . disjunctSQL $
+                                                      [ isNull (Iden[table2,sourceAlias])
+                                                      , isNull (Iden[table2,targetAlias])
+                                                      ]
+                                  in BSE { bseSrc = Iden [table1 ,sourceAlias]
+                                         , bseTrg = Iden [table1 ,targetAlias]
+                                         , bseTbl = [TRJoin 
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
+                                                       False -- Needs to be false in MySql
+                                                       JLeft
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec (flp expr2))) `as` table2)
                                                        (Just . JoinOn . conjunctSQL $
                                                            [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
                                                            , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
