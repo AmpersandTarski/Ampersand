@@ -57,9 +57,9 @@ selectExpr fSpec expr
 maybeSpecialCase :: FSpec -> Expression -> Maybe BinQueryExpr
 maybeSpecialCase fSpec expr = 
   case expr of 
-    EIsc (EDcI a , ECpl (ECps (EFlp (EDcD r),EDcD r') )) 
+    EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) )) 
       | r == r'   -> Just . BQEComment 
-                              [ BlockComment $ "TO-BE Optimized case for: "++showSign r++" [TOT]."
+                              [ BlockComment $ "Optimized case for: "++name r++showSign r++" [TOT]."
                               , BlockComment $ "   "++showADL expr++" ("++show (sign expr)++")"
                               ] $ --TODO: Write optimized code for TOT case
                                  let aAtt = Iden [sqlAttConcept fSpec a]
@@ -109,7 +109,13 @@ nonSpecialSelectExpr fSpec expr=
                       -> [Expression] -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.  
                       -> BinQueryExpr
                   f specificValue subTerms 
-                     = BQEComment [BlockComment $ "case: (EIsc "++showADL expr++" ("++show (sign expr)++")"] $
+                     = BQEComment [BlockComment $ unlines (["case: (EIsc "++showADL expr++" ("++show (sign expr)++")"
+                                                           ]++case expr of 
+                                                                EIsc (a,b) -> 
+                                                                   [show a
+                                                                   ,show b
+                                                                   ] 
+                                                          )] $
                         case subTerms of
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
