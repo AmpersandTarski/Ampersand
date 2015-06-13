@@ -76,14 +76,14 @@ maybeSpecialCase fSpec expr =
     EIsc (expr1 , ECpl expr2)
                   -> Just . BQEComment
                               [ BlockComment . unlines $
-                                   [ "Optimized case for: <expr1> intersect with the complement of <expr2>."
+                                   [ "Optimized case for: 'expr1' intersect with the complement of 'expr2'."
                                    , "where "
                                    , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
                                    , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
                                    , "   "++showADL expr++" ("++show (sign expr)++")"
                                    ]
-                              ] $ let table1 = Name "expr1"
-                                      table2 = Name "expr2"
+                              ] $ let table1 = Name "t1"
+                                      table2 = Name "t2"
                                       whereClause = Just . disjunctSQL $
                                                       [ isNull (Iden[table2,sourceAlias])
                                                       , isNull (Iden[table2,targetAlias])
@@ -92,7 +92,7 @@ maybeSpecialCase fSpec expr =
                                          , bseTrg = Iden [table1 ,targetAlias]
                                          , bseTbl = [TRJoin 
                                                        (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
-                                                       True -- TODO: Uitzoeken wat dit betekent
+                                                       False -- Needs to be false in MySql
                                                        JLeft
                                                        (TRQueryExpr (toSQL (selectExpr fSpec expr2)) `as` table2)
                                                        (Just . JoinOn . conjunctSQL $
