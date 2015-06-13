@@ -59,10 +59,19 @@ maybeSpecialCase fSpec expr =
   case expr of 
     EIsc (EDcI a , ECpl (ECps (EFlp (EDcD r),EDcD r') )) 
       | r == r'   -> Just . BQEComment 
-                              [ BlockComment $ "TO-BE Optimized case for TOT"
+                              [ BlockComment $ "TO-BE Optimized case for: "++showSign r++" [TOT]."
                               , BlockComment $ "   "++showADL expr++" ("++show (sign expr)++")"
                               ] $ --TODO: Write optimized code for TOT case
-                                  nonSpecialSelectExpr fSpec expr 
+                                 let aAtt = Iden [sqlAttConcept fSpec a]
+                                     whereClasue = 
+                                       conjunctSQL [(notNull aAtt)
+                                                   , aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r))]
+                                 in    
+                                   BSE { bseSrc = aAtt
+                                       , bseTrg = aAtt
+                                       , bseTbl = [sqlConceptTable fSpec a]
+                                       , bseWhr = Just whereClasue
+                                       }
       | otherwise -> Nothing
     _ -> Nothing 
 
@@ -370,12 +379,12 @@ nonSpecialSelectExpr fSpec expr=
                                            , bseWhr = Nothing
                                            }
                               PlainConcept{} -> 
-                                 let cAtt = sqlAttConcept fSpec c
+                                 let cAtt = Iden [sqlAttConcept fSpec c]
                                  in    BQEComment [BlockComment $ "I["++name c++"]"] $
-                                       BSE { bseSrc = Iden [cAtt]
-                                           , bseTrg = Iden [cAtt]
+                                       BSE { bseSrc = cAtt
+                                           , bseTrg = cAtt
                                            , bseTbl = [sqlConceptTable fSpec c]
-                                           , bseWhr = Just (notNull (Iden [cAtt]))
+                                           , bseWhr = Just (notNull cAtt)
                                            }
 
 --        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
@@ -586,12 +595,26 @@ selectDeclaration fSpec dcl =
             mayContainNulls _        = False
 
 
+isNotIn, isIn :: ValueExpr -> QueryExpr -> ValueExpr
+isNotIn value = In False value . InQueryExpr 
+isIn    value = In True value . InQueryExpr
+-- | select only the source of a binary expression
+selectSource, selectTarget :: BinQueryExpr -> QueryExpr
+selectSource = selectSorT sourceAlias
+selectTarget = selectSorT targetAlias
 
-
-
-
-
-
+selectSorT :: Name -> BinQueryExpr -> QueryExpr
+selectSorT att binExp =
+     Select { qeSetQuantifier = SQDefault
+            , qeSelectList    = [(Iden [att],Nothing)]   
+            , qeFrom          = [TRQueryExpr (toSQL binExp)]
+            , qeWhere         = Nothing
+            , qeGroupBy       = []
+            , qeHaving        = Nothing
+            , qeOrderBy       = []
+            , qeOffset        = Nothing
+            , qeFetchFirst    = Nothing
+            }
 
 selectExists, selectNotExists
      :: TableRef        -- ^ tables
