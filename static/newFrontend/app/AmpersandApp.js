@@ -126,4 +126,32 @@ AmpersandApp.directive('myShowonhoverRow', function (){
 	      });
 	    }
 	  };
+}).directive('myNavToInterfaces', function(){
+	
+	return {
+		  restrict: 'AE'
+		, scope : {ifcs : "=", resource : "=", label : "="} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, replace: true
+		, transclude: true
+		, link: function(scope, element, attrs) {
+			if(scope.ifcs != null){
+				if(scope.ifcs.length > 1){
+					var html = '<div style="position:relative;">';
+					html += '<a class="dropdown-toggle" data-toggle="dropdown">' + scope.label + '</a>';
+					html += '<ul class="dropdown-menu" role="menu">';
+					for (ifc in scope.ifcs){
+						html += '<li><a href="#/' + scope.ifcs[ifc] + '/' + scope.resource + '">' + scope.ifcs[ifc] + '</a>';
+					}
+					html += '</div>';
+					element.html(html);
+				}else if(scope.ifcs.length == 1){
+					element.html('<a href="#/' + scope.ifcs[0] + '/' + scope.resource + '">' + scope.label + '</a>');
+				}else{
+					element.html('<span>' + scope.label + '</span>');
+				}
+			}else{
+				element.html('<span>' + scope.label + '</span>');
+			}
+		}
+	};
 });

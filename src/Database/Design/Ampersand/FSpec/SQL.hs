@@ -48,8 +48,97 @@ selectExpr :: FSpec    -- current context
 -- That allows more efficient code while retaining correctness and completeness as much as possible.
 -- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
 -- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
-selectExpr fSpec expr
- = case expr of
+selectExpr fSpec expr 
+ = fromMaybe (nonSpecialSelectExpr fSpec expr) (maybeSpecialCase fSpec expr) --special cases for optimized results.
+
+-- Special cases for optimized SQL generation
+-- Sometimes it is possible to generate queries that perform better. If this is the case for some 
+-- expression, this function will return the optimized query. 
+maybeSpecialCase :: FSpec -> Expression -> Maybe BinQueryExpr
+maybeSpecialCase fSpec expr = 
+  case expr of 
+    EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) )) 
+      | r == r'   -> Just . BQEComment 
+                              [ BlockComment $ "Optimized case for: "++name r++showSign r++" [TOT]."
+                              , BlockComment $ "   "++showADL expr++" ("++show (sign expr)++")"
+                              ] $ 
+                                 let aAtt = Iden [sqlAttConcept fSpec a]
+                                     whereClause = 
+                                       conjunctSQL [(notNull aAtt)
+                                                   , aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r))]
+                                 in    
+                                   BSE { bseSrc = aAtt
+                                       , bseTrg = aAtt
+                                       , bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"]
+                                       , bseWhr = Just whereClause
+                                       }
+      | otherwise -> Nothing
+    EIsc (expr1 , ECpl expr2)
+                  -> Just . BQEComment
+                              [ BlockComment . unlines $
+                                   [ "Optimized case for: <expr1> intersect with the complement of <expr2>."
+                                   , "where "
+                                   , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
+                                   , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
+                                   , "   "++showADL expr++" ("++show (sign expr)++")"
+                                   ]
+                              ] $ let table1 = Name "t1"
+                                      table2 = Name "t2"
+                                      whereClause = Just . disjunctSQL $
+                                                      [ isNull (Iden[table2,sourceAlias])
+                                                      , isNull (Iden[table2,targetAlias])
+                                                      ]
+                                  in BSE { bseSrc = Iden [table1 ,sourceAlias]
+                                         , bseTrg = Iden [table1 ,targetAlias]
+                                         , bseTbl = [TRJoin 
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
+                                                       False -- Needs to be false in MySql
+                                                       JLeft
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr2)) `as` table2)
+                                                       (Just . JoinOn . conjunctSQL $
+                                                           [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
+                                                           , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
+                                                           ]
+                                                       ) 
+                                                    ]
+                                         , bseWhr = whereClause
+                                         }
+    EIsc (expr1 , EFlp (ECpl expr2))
+                  -> Just . BQEComment
+                              [ BlockComment . unlines $
+                                   [ "Optimized case for: <expr1> intersect with the flipped complement of <expr2>."
+                                   , "where "
+                                   , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
+                                   , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
+                                   , "   "++showADL expr++" ("++show (sign expr)++")"
+                                   ]
+                              ] $ let table1 = Name "t1"
+                                      table2 = Name "t2"
+                                      whereClause = Just . disjunctSQL $
+                                                      [ isNull (Iden[table2,sourceAlias])
+                                                      , isNull (Iden[table2,targetAlias])
+                                                      ]
+                                  in BSE { bseSrc = Iden [table1 ,sourceAlias]
+                                         , bseTrg = Iden [table1 ,targetAlias]
+                                         , bseTbl = [TRJoin 
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
+                                                       False -- Needs to be false in MySql
+                                                       JLeft
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec (flp expr2))) `as` table2)
+                                                       (Just . JoinOn . conjunctSQL $
+                                                           [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
+                                                           , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
+                                                           ]
+                                                       ) 
+                                                    ]
+                                         , bseWhr = whereClause
+                                         }
+    _ -> Nothing 
+
+
+nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
+nonSpecialSelectExpr fSpec expr=
+    case expr of
     EIsc{} -> 
     {- The story on the case of EIsc:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
@@ -80,7 +169,14 @@ selectExpr fSpec expr
                       -> [Expression] -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.  
                       -> BinQueryExpr
                   f specificValue subTerms 
-                     = BQEComment [BlockComment $ "case: (EIsc "++showADL expr++" ("++show (sign expr)++")"] $
+                     = BQEComment [BlockComment $ unlines (["case: (EIsc "++showADL expr++" ("++show (sign expr)++")"
+                                                           ]++case expr of 
+                                                                EIsc (a,b) -> 
+                                                                   [show a
+                                                                   ,show b
+                                                                   ]
+                                                                _ -> fatal 148 $ "Not expecting anything else here than EIsc!\n  " ++ show expr
+                                                          )] $
                         case subTerms of
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
@@ -350,12 +446,12 @@ selectExpr fSpec expr
                                            , bseWhr = Nothing
                                            }
                               PlainConcept{} -> 
-                                 let cAtt = sqlAttConcept fSpec c
+                                 let cAtt = Iden [sqlAttConcept fSpec c]
                                  in    BQEComment [BlockComment $ "I["++name c++"]"] $
-                                       BSE { bseSrc = Iden [cAtt]
-                                           , bseTrg = Iden [cAtt]
+                                       BSE { bseSrc = cAtt
+                                           , bseTrg = cAtt
                                            , bseTbl = [sqlConceptTable fSpec c]
-                                           , bseWhr = Just (notNull (Iden [cAtt]))
+                                           , bseWhr = Just (notNull cAtt)
                                            }
 
 --        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
@@ -566,12 +662,26 @@ selectDeclaration fSpec dcl =
             mayContainNulls _        = False
 
 
+isNotIn, isIn :: ValueExpr -> QueryExpr -> ValueExpr
+isNotIn value = In False value . InQueryExpr 
+isIn    value = In True value . InQueryExpr
+-- | select only the source of a binary expression
+selectSource, selectTarget :: BinQueryExpr -> QueryExpr
+selectSource = selectSorT sourceAlias
+selectTarget = selectSorT targetAlias
 
-
-
-
-
-
+selectSorT :: Name -> BinQueryExpr -> QueryExpr
+selectSorT att binExp =
+     Select { qeSetQuantifier = SQDefault
+            , qeSelectList    = [(Iden [att],Nothing)]   
+            , qeFrom          = [TRQueryExpr (toSQL binExp) `as` att]
+            , qeWhere         = Nothing
+            , qeGroupBy       = []
+            , qeHaving        = Nothing
+            , qeOrderBy       = []
+            , qeOffset        = Nothing
+            , qeFetchFirst    = Nothing
+            } 
 
 selectExists, selectNotExists
      :: TableRef        -- ^ tables
@@ -668,6 +778,11 @@ conjunctSQL [] = fatal 57 "nothing to `AND`."
 conjunctSQL [ve] = ve
 conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
 
+disjunctSQL :: [ValueExpr] -> ValueExpr
+disjunctSQL [] = fatal 57 "nothing to `OR`."
+disjunctSQL [ve] = ve
+disjunctSQL (ve:ves) = BinOp ve [Name "OR"] (conjunctSQL ves)
+
 as :: TableRef -> Name -> TableRef
 as ve a = -- TRAlias ve (Alias a Nothing)
   case ve of 
@@ -679,7 +794,8 @@ as ve a = -- TRAlias ve (Alias a Nothing)
     
 notNull :: ValueExpr -> ValueExpr
 notNull ve = PostfixOp [Name "IS NOT NULL"] ve                         
-
+isNull  :: ValueExpr -> ValueExpr
+isNull ve = PostfixOp [Name "IS NULL"] ve
 emptySet :: BinQueryExpr
 emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"] $
            BSE { 

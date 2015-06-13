@@ -23,6 +23,7 @@ class InterfaceObject {
 	public $tgtDataType;
 	
 	public $refInterfaceId;
+	public $isLinkTo;
 	private $boxSubInterfaces;
 	public $subInterfaces = array();
 	
@@ -84,6 +85,7 @@ class InterfaceObject {
 	/* Information about subinterfaces */
 		// Set attributes
 		$this->refInterfaceId = $interface['refSubInterfaceId'];
+		$this->isLinkTo = $interface['isLinkTo'];
 		$this->boxSubInterfaces = $interface['boxSubInterfaces'];
 		$this->expressionSQL = $interface['expressionSQL'];
 		
@@ -92,7 +94,9 @@ class InterfaceObject {
 		if(in_array($this->refInterfaceId, $refInterfacesArr)) throw new Exception("Infinite loop in interface '$this->id' by referencing '$this->refInterfaceId'", 500);
 				
 		// Determine subInterfaces
-		if(!empty($this->refInterfaceId)){
+		if($this->isLinkTo){
+			// do nothing
+		}elseif(!empty($this->refInterfaceId)){
 					
 			$refInterface = new InterfaceObject($this->refInterfaceId, null, $refInterfacesArr);
 			foreach($refInterface->subInterfaces as $subInterface){

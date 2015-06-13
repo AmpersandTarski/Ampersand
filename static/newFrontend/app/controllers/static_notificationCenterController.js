@@ -40,6 +40,13 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$rootScope.switchShowErrors = true;
 	$rootScope.switchShowInvariants = true;
 	
+	$rootScope.switchAutoCommit = false;
+	$rootScope.defaultRequestType = $rootScope.switchAutoCommit ? 'promise' : 'feedback';
+	
+	$rootScope.$watch('switchAutoCommit', function() {
+		$rootScope.defaultRequestType = $rootScope.switchAutoCommit ? 'promise' : 'feedback';
+	});
+	
 	$rootScope.toggleShowViolations = function(){
 		$rootScope.switchShowViolations = !$rootScope.switchShowViolations;
 	}
@@ -52,16 +59,20 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		$rootScope.switchShowSuccesses = !$rootScope.switchShowSuccesses;
 	}
 	
-	$rootScope.toogleAutoHideSuccesses = function(){
+	$rootScope.toggleAutoHideSuccesses = function(){
 		$rootScope.switchAutoHideSuccesses = !$rootScope.switchAutoHideSuccesses;
 	}
 	
-	$rootScope.toogleShowErrors = function(){
+	$rootScope.toggleShowErrors = function(){
 		$rootScope.switchShowErrors = !$rootScope.switchShowErrors;
 	}
 	
-	$rootScope.toogleShowInvariants = function(){
+	$rootScope.toggleShowInvariants = function(){
 		$rootScope.switchShowInvariants = !$rootScope.switchShowInvariants;
+	}
+	
+	$rootScope.toggleAutoCommit = function(){
+		$rootScope.switchAutoCommit = !$rootScope.switchAutoCommit;
 	}
 	
 });
