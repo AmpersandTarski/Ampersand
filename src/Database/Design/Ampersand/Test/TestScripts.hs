@@ -35,8 +35,8 @@ getFiles ext dir =
                 do ms <- getFiles ext d
                    return $ ms ++ rs
 
-models :: [FilePath]
-models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
+models' :: [FilePath]
+models' = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
          , baseDir </> "Bugs/Current/Other/Bug335_Kl0Kl1.adl"
          , baseDir </> "Bugs/Current/SQL/ARM20-Test8.adl"
          , baseDir </> "Bugs/Current/SQLFail/Bug331_TotalInjective.adl"
@@ -177,9 +177,9 @@ models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
 getTestScripts :: IO [FilePath]
 getTestScripts =
      do fs <- getFiles ".adl" "ArchitectureAndDesign"
-        ss <- return[] -- getFiles ".adl" "ampersand-models/Tests/ShouldSucceed"
-        ds <- return[] -- getFiles ".adl" "AmpersandData/FormalAmpersand"
-        return $ fs ++ ss ++ ds ++ models
+        ss <- getFiles ".adl" "ampersand-models/Tests/ShouldSucceed"
+        ds <- getFiles ".adl" "AmpersandData/FormalAmpersand"
+        return $ fs ++ ss ++ ds -- ++ models
 
 
 
