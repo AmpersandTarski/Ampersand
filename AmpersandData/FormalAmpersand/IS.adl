@@ -1,5 +1,5 @@
 CONTEXT RAP IN ENGLISH LATEX
-INCLUDE "ISdocumentation.adl"
+INCLUDE "ISdocumentation.partialadl"
 INCLUDE "IS.ifc"
 INCLUDE "IS.pop"
 
