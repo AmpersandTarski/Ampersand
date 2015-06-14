@@ -55,7 +55,10 @@ This is considered editable iff the composition rel;relRef yields an editable de
 
 -}
 
-data Include = Include { _fileOrDir :: FileOrDir, includeSrc :: String, _includeTgt :: String } deriving Show
+data Include = Include { fileOrDir :: FileOrDir
+                       , includeSrc :: String
+                       , includeTgt :: String
+                       } deriving Show
 
 data FileOrDir = File | Dir deriving Show
 
@@ -111,19 +114,16 @@ copyIncludes fSpec =
        do { putStrLn $ "Copying user includes from " ++ includeDir 
           ; includeDirContents <- fmap (map (includeDir </>)) $ getProperDirectoryContents includeDir
           
-          ; let absIncludes = [ Include fOrD absSd (protoDir </> tgtPth)
-                              | Include fOrD srcPth tgtPth <- allowedIncludeSubDirs
-                              , let absSd = includeDir </> srcPth
+          ; let absIncludes = [ Include { fileOrDir = fileOrDir incl
+                                        , includeSrc = absSd
+                                        , includeTgt = protoDir </> includeTgt incl
+                                        }
+                              | incl <- allowedIncludeSubDirs
+                              , let absSd = includeDir </> includeSrc incl
                               , absSd `elem` includeDirContents
                               ]
                               
-          ; sequence_ [ do { putStrLn $ "  Copying " ++ toFOrDStr fOrD ++ " " ++ srcPth ++ "\n    -> " ++ tgtPth
-                           ; case fOrD of
-                               File -> copyDeepFile srcPth tgtPth
-                               Dir  -> copyDirRecursively srcPth tgtPth
-                           }
-                      | Include fOrD srcPth tgtPth <- absIncludes
-                      ]
+          ; sequence_ (fmap copyInclude absIncludes) -- recursively copy all includes
                       
           ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
           ; when (not $ null ignoredPaths) $
@@ -134,9 +134,16 @@ copyIncludes fSpec =
       else
         putStrLn $ "No user includes (there is no directory " ++ includeDir ++ ")"
     } 
-  where toFOrDStr File = "file"
-        toFOrDStr Dir  = "directory"
-        
+  where copyInclude :: Include -> IO()
+        copyInclude incl =
+          do { putStrLn $ "  Copying " ++ (case fileOrDir incl of 
+                                             File -> "file"
+                                             Dir  -> "directory"
+                                          )++ " " ++ includeSrc incl ++ "\n    -> " ++ includeTgt incl
+             ; case fileOrDir incl of
+                 File -> copyDeepFile (includeSrc incl) (includeTgt incl)
+                 Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl)
+             }
 ------ Build intermediate data structure
 
 -- NOTE: _ disables 'not used' warning for fields
