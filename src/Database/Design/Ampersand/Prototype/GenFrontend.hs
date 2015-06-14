@@ -166,9 +166,13 @@ data FEObject = FEObject { objName :: String
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
-                   | FEBox    {  _objMClass :: Maybe String, ifcSubObjs :: [FEObject] } deriving Show
+                   | FEBox    { objMClass :: Maybe String
+                              , ifcSubObjs :: [FEObject] 
+                              } deriving Show
 
-data NavInterface = NavInterface { _navIfcName :: String, _navIfcRoles :: [Role] } deriving Show
+data NavInterface = NavInterface { navIfcName :: String
+                                 , navIfcRoles :: [Role]
+                                 } deriving Show
 
 flatten :: FEObject -> [FEObject]
 flatten obj = obj : concatMap flatten subObjs
@@ -218,7 +222,10 @@ buildInterface fSpec allIfcs ifc =
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
                   ; subObjs <- mapM (buildObject editableRels) objects
-                  ; return (FEBox mCl subObjs, iExp, isEditable, src, tgt, False)
+                  ; return (FEBox { objMClass  = mCl
+                                  , ifcSubObjs = subObjs
+                                  }
+                           , iExp, isEditable, src, tgt, False)
                   }
               Just (InterfaceRef isLink nm)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
@@ -232,10 +239,11 @@ buildInterface fSpec allIfcs ifc =
                                 ; return (atomicOrBox refObj, comp, isEditable, src, tgt, isLink)
                                 } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
-        ; let navIfcs = [ NavInterface (name nIfc) nRoles -- only consider interfaces that share roles with the one we're building 
+        ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
+                                       , navIfcRoles = ifcRoles nIfc `intersect` ifcRoles ifc -- only consider interfaces that share roles with the one we're building
+                                       } 
                         | nIfc <- allIfcs
                         , (source . objctx . ifcObj $ nIfc) == tgt
-                        , let nRoles = ifcRoles nIfc `intersect` ifcRoles ifc
                         ]
 
         ; return $ FEObject (name object) iExp' src tgt isEditable (isUni iExp') (isTot iExp') (isProp iExp') navIfcs aOrB
@@ -325,16 +333,15 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
-            ; let mNavInterface = case navInterfaces of -- TODO: do something with roles here. For now, simply use the first interface, if any.
-                                    []                      -> Nothing
-                                    NavInterface iName _ :_ -> Just iName
+            ; let mNavInterface = listToMaybe navInterfaces -- TODO: do something with roles here. For now, simply use the first interface, if any.
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
                                . setManyAttrib [(viewAttr, "{{row['@view']['"++viewAttr++"']}}") | viewAttr <- viewAttrs ] -- TODO: escape/protect
-                               . setAttribute "navInterface" (fmap escapeIdentifier mNavInterface)
+                               . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface)
             }
-        FEBox mClass subObjs ->
+        FEBox { objMClass  = mClass
+              , ifcSubObjs = subObjs} ->
          do { {-
               verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
                                             " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
