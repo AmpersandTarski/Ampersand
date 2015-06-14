@@ -191,7 +191,15 @@ buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return $
-        FEInterface (name ifc) (ifcClass ifc) (objExp obj) (objSource obj) (objTarget obj) (ifcRoles ifc) editableRels obj
+        FEInterface { ifcName = name ifc
+                    , _ifcMClass = ifcClass ifc
+                    , _ifcExp = objExp obj
+                    , _ifcSource = objSource obj
+                    , _ifcTarget = objTarget obj
+                    , _ifcRoles = ifcRoles ifc
+                    , _ifcEditableRels = editableRels
+                    , _ifcObj = obj
+                    }
     -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
     --       (name comes from interface, but is equal to object name)
     } 
@@ -277,24 +285,23 @@ genView_Interfaces fSpec ifcs =
     }
 
 genView_Interface :: FSpec -> FEInterface -> IO ()
-genView_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels obj) =
- do { --verboseLn (getOpts fSpec) $ "\nTop-level interface: " ++ show iName ++ " [" ++ name iSrc ++ "*"++ name iTgt ++ "] "
-    ; lns <- genView_Object fSpec 0 obj
+genView_Interface fSpec interf =
+ do { lns <- genView_Object fSpec 0 (_ifcObj interf)
     ; template <- readTemplate fSpec "views/Interface.html"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (addSlashes $ fsName fSpec)
-                     . setAttribute "isTopLevel"          (name (source iExp) `elem` ["ONE", "SESSION"])
-                     . setAttribute "roles"               [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"   [ show $ escapeIdentifier (name r) | r <- editableRels ] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
+                     . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"   (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
-                     . setAttribute "interfaceName"       (escapeIdentifier iName)
-                     . setAttribute "interfaceLabel"      iName -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"              (showADL iExp)
-                     . setAttribute "source"              (escapeIdentifier $ name iSrc)
-                     . setAttribute "target"              (escapeIdentifier $ name iTgt)
+                     . setAttribute "interfaceName"       (escapeIdentifier . ifcName $ interf)
+                     . setAttribute "interfaceLabel"      (ifcName interf) -- no escaping for labels in templates needed
+                     . setAttribute "expAdl"              (showADL . _ifcExp $ interf)
+                     . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
+                     . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
 
-    ; let filename = escapeIdentifier iName ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
+    ; let filename = escapeIdentifier (ifcName interf) ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
     }
 
@@ -377,9 +384,9 @@ genController_Interfaces fSpec ifcs =
     }
 
 genController_Interface :: FSpec -> FEInterface -> IO ()
-genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editableRels obj) =
+genController_Interface fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
-    ; let allObjs = flatten obj
+    ; let allObjs = flatten (_ifcObj interf)
           allEditableNonPrimTargets = nub [ escapeIdentifier $ name (objTarget o) 
                                         | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
                                         , objIsEditable o
@@ -392,20 +399,20 @@ genController_Interface fSpec (FEInterface iName _ iExp iSrc iTgt roles editable
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
-                     . setAttribute "isRoot"                   (name (source iExp) `elem` ["ONE", "SESSION"])
-                     . setAttribute "roles"                    [ show r | r <- roles ] -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"        [ show $ escapeIdentifier (name r) | r <- editableRels ] -- show name, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
+                     . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
+                     . setAttribute "editableRelations"        (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableNonPrimTargets"   allEditableNonPrimTargets
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable
                      . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
-                     . setAttribute "interfaceName"            (escapeIdentifier iName)
-                     . setAttribute "expAdl"                   (showADL iExp)
-                     . setAttribute "source"                   (escapeIdentifier $ name iSrc)
-                     . setAttribute "target"                   (escapeIdentifier $ name iTgt)
+                     . setAttribute "interfaceName"            (escapeIdentifier . ifcName $ interf)
+                     . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
+                     . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
+                     . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
 
-    ; let filename = (escapeIdentifier iName) ++ ".js"
+    ; let filename = (escapeIdentifier . ifcName $ interf) ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
