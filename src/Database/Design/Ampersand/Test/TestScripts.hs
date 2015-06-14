@@ -177,7 +177,7 @@ models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
 getTestScripts :: IO [FilePath]
 getTestScripts =
      do fs <- getFiles ".adl" "ArchitectureAndDesign"
-        ss <- return[] -- getFiles ".adl" "dontTouch/ampersand-models/Tests/ShouldSucceed"
+        ss <- return[] -- getFiles ".adl" "ampersand-models/Tests/ShouldSucceed"
         ds <- return[] -- getFiles ".adl" "AmpersandData/FormalAmpersand"
         return $ fs ++ ss ++ ds ++ models
 
@@ -192,8 +192,7 @@ testAmpersandScripts
  = do 
     walk baseDir $$ myVisitor
  where
-    baseDir = -- ".." </> --Enable this line for local testing, Disable for testing at Travis-ci 
-       "ampersand-models"
+    baseDir = ".." </> "ampersand-models"
 
 -- Produces directory data
 walk :: FilePath -> Source IO DirData
