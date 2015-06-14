@@ -165,7 +165,9 @@ data FEObject = FEObject { objName :: String
                          } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
-data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
+data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
+                                                          , [String] -- the attributes of the template
+                                                          ) }
                    | FEBox    { objMClass :: Maybe String
                               , ifcSubObjs :: [FEObject] 
                               } deriving Show
@@ -225,7 +227,8 @@ buildInterface fSpec allIfcs ifc =
                                 ; hasSpecificTemplate <- doesTemplateExist fSpec $ templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
-                  ; return (FEAtomic mSpecificTemplatePath, iExp, isEditable, src, tgt, False)
+                  ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
+                           , iExp, isEditable, src, tgt, False)
                   }
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -346,7 +349,7 @@ genView_Object fSpec depth obj =
 --                           , atomicOrBox = aOrB
 --                           }                    
   in  case atomicOrBox obj of
-        FEAtomic mPrimTemplate ->
+        FEAtomic{} ->
          do { {-
               verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "ATOMIC "++show nm ++ 
                                             " [" ++ name src ++ "*"++ name tgt ++ "], " ++
@@ -355,7 +358,7 @@ genView_Object fSpec depth obj =
             -- For now, we choose specific template based on target concept. This will probably be too weak. 
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
-            ; let (templateFilename, viewAttrs) = fromMaybe ("views/Atomic.html", []) mPrimTemplate -- Atomic is the default template
+            ; let (templateFilename, viewAttrs) = fromMaybe ("views/Atomic.html", []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
@@ -407,14 +410,14 @@ genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten (_ifcObj interf)
-          allEditableNonPrimTargets = nub [ escapeIdentifier $ name (objTarget o) 
-                                        | o@FEObject { atomicOrBox = a@FEAtomic {} } <- allObjs
-                                        , objIsEditable o
-                                        , not . isJust $ objMPrimTemplate a
-                                        ]
-                                        
+          allEditableNonPrimTargets = nub . map objTarget $  
+                                         ( filter (not . isJust . objMPrimTemplate . atomicOrBox) 
+                                         . filter (isAtomic . atomicOrBox)
+                                         . filter objIsEditable $ allObjs)
+          isAtomic FEAtomic{} = True
+          isAtomic _ = False                              
           containsEditable          = any objIsEditable allObjs
-          containsEditableNonPrim   = not $ null allEditableNonPrimTargets
+          containsEditableNonPrim   = (not . null) allEditableNonPrimTargets
           containsDATE              = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
           
     ; template <- readTemplate fSpec "controllers/controller.js"
@@ -423,7 +426,7 @@ genController_Interface fSpec interf =
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"        (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableNonPrimTargets"   allEditableNonPrimTargets
+                     . setAttribute "editableNonPrimTargets"   (map (escapeIdentifier . name) allEditableNonPrimTargets)
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable
                      . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
