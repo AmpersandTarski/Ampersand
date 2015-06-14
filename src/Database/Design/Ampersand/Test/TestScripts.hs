@@ -172,7 +172,7 @@ models = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
          , baseDir </> "Webshop/Webshop.adl"
          ]
   where
-    baseDir = "ampersand-models"
+    baseDir = ".." </> "ampersand-models"
 
 getTestScripts :: IO [FilePath]
 getTestScripts =
