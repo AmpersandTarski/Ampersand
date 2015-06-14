@@ -64,8 +64,9 @@ maybeSpecialCase fSpec expr =
                               ] $ 
                                  let aAtt = Iden [sqlAttConcept fSpec a]
                                      whereClause = 
-                                       conjunctSQL [(notNull aAtt)
-                                                   , aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r))]
+                                       conjunctSQL [ aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r))
+                                                   , notNull aAtt
+                                                   ]
                                  in    
                                    BSE { bseSrc = aAtt
                                        , bseTrg = aAtt
