@@ -454,20 +454,6 @@ nonSpecialSelectExpr fSpec expr=
                                            , bseWhr = Just (notNull cAtt)
                                            }
 
---        EDcI ONE -> fatal 401 "ONE is unexpected at this place."
---        EDcI c -> if cpt === sqlAttConcept fSpec c
---                  then TRSimple [cpt]
---                  else sg
---                 where  
---                   sg = TRQueryExpr . toSQL $  BSE { bqeCmt = [" case: EDcI " ++ name c ++ " "]
---                                           , bseSrc = Iden [sqlAttConcept fSpec c]
---                                           , bseTrg = Iden [sqlConcept fSpec c]
---                                           , bseTbl = [sqlConceptTable fSpec c]
---                                           , bseWhr = Nothing
---                                           }
---                   cpt = sqlConcept fSpec c
-
-
 
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
     (EEps c sgn)     -> BQEComment [BlockComment $ "epsilon "++name c++" "++showSign sgn] $
@@ -625,8 +611,6 @@ Based on this derivation:
 toTableRef :: BinQueryExpr -> TableRef
 toTableRef = TRQueryExpr . toSQL
      
-(===) :: Name -> Name -> Bool
-n === n' = stringOfName n == stringOfName n'
 
 selectDeclaration :: FSpec -> Declaration -> BinQueryExpr
 selectDeclaration fSpec dcl =
@@ -662,13 +646,11 @@ selectDeclaration fSpec dcl =
             mayContainNulls _        = False
 
 
-isNotIn, isIn :: ValueExpr -> QueryExpr -> ValueExpr
+isNotIn :: ValueExpr -> QueryExpr -> ValueExpr
 isNotIn value = In False value . InQueryExpr 
-isIn    value = In True value . InQueryExpr
 -- | select only the source of a binary expression
-selectSource, selectTarget :: BinQueryExpr -> QueryExpr
+selectSource :: BinQueryExpr -> QueryExpr
 selectSource = selectSorT sourceAlias
-selectTarget = selectSorT targetAlias
 
 selectSorT :: Name -> BinQueryExpr -> QueryExpr
 selectSorT att binExp =
@@ -786,7 +768,7 @@ disjunctSQL (ve:ves) = BinOp ve [Name "OR"] (conjunctSQL ves)
 as :: TableRef -> Name -> TableRef
 as ve a = -- TRAlias ve (Alias a Nothing)
   case ve of 
-    TRSimple [n] -> if n === a then withoutAlias else withAlias
+    TRSimple [n] -> if stringOfName n == stringOfName a then withoutAlias else withAlias
     _            -> withAlias
  where
    withoutAlias = ve
