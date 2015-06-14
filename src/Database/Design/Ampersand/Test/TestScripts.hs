@@ -177,8 +177,8 @@ models' = [ baseDir </> "Atlasv2/RepoRap/Fspec.adl"
 getTestScripts :: IO [FilePath]
 getTestScripts =
      do fs <- getFiles ".adl" "ArchitectureAndDesign"
-        ss <- getFiles ".adl" "ampersand-models/Tests/ShouldSucceed"
-        ds <- getFiles ".adl" "AmpersandData/FormalAmpersand"
+        ss <- getFiles ".adl" $ ".." </> "ampersand-models" </> "Tests" </> "ShouldSucceed"
+        ds <- getFiles ".adl" $ "AmpersandData" </> "FormalAmpersand"
         return $ fs ++ ss ++ ds -- ++ models
 
 
