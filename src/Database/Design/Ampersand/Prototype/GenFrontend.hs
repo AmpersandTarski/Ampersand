@@ -154,15 +154,15 @@ data FEInterface = FEInterface { ifcName :: String
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression
-                                                 , objSource :: A_Concept
-                                                 , objTarget :: A_Concept
+                         , objSource :: A_Concept
+                         , objTarget :: A_Concept
                          , objIsEditable :: Bool
-                                                 , _exprIsUni :: Bool
-                                                 , _exprIsTot :: Bool
-                                                 , _exprIsProp :: Bool
+                         , _exprIsUni :: Bool
+                         , _exprIsTot :: Bool
+                         , _exprIsProp :: Bool
                          , _objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
-                                                 } deriving Show
+                         } deriving Show
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe (String, [String]) }
@@ -190,7 +190,7 @@ buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
-    ; return $
+    ; return 
         FEInterface { ifcName = name ifc
                     , _ifcMClass = ifcClass ifc
                     , _ifcExp = objExp obj
@@ -254,7 +254,17 @@ buildInterface fSpec allIfcs ifc =
                         , (source . objctx . ifcObj $ nIfc) == tgt
                         ]
 
-        ; return $ FEObject (name object) iExp' src tgt isEditable (isUni iExp') (isTot iExp') (isProp iExp') navIfcs aOrB
+        ; return $ FEObject{ objName = name object
+                           , objExp = iExp'
+                           , objSource = src
+                           , objTarget = tgt
+                           , objIsEditable = isEditable
+                           , _exprIsUni = isUni iExp'
+                           , _exprIsTot = isTot iExp'
+                           , _exprIsProp = isProp iExp'
+                           , _objNavInterfaces = navIfcs
+                           , atomicOrBox = aOrB
+                           }
         }
       where getIsEditableSrcTgt expr = 
               case getExpressionRelation expr of
@@ -313,18 +323,28 @@ data SubObjectAttr = SubObjAttr { subObjName :: String
                                                                 } deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
-genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni exprIsTot exprIsProp navInterfaces _) =
+genView_Object fSpec depth obj =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
-      atomicAndBoxAttrs = setAttribute "isEditable" isEditable
-                        . setAttribute "exprIsUni"  exprIsUni
-                        . setAttribute "exprIsTot"  exprIsTot
-                        . setAttribute "exprIsProp" exprIsProp
-                        . setAttribute "name"       (escapeIdentifier nm)
-                        . setAttribute "label"      nm -- no escaping for labels in templates needed
-                        . setAttribute "expAdl"     (showADL oExp) 
-                        . setAttribute "source"     (escapeIdentifier $ name src)
-                        . setAttribute "target"     (escapeIdentifier $ name tgt)
-                    
+      atomicAndBoxAttrs = setAttribute "isEditable" (objIsEditable obj)
+                        . setAttribute "exprIsUni"  (_exprIsUni obj)
+                        . setAttribute "exprIsTot"  (_exprIsTot obj)
+                        . setAttribute "exprIsProp" (_exprIsProp obj)
+                        . setAttribute "name"       (escapeIdentifier . objName $ obj)
+                        . setAttribute "label"      (objName $ obj) -- no escaping for labels in templates needed
+                        . setAttribute "expAdl"     (showADL . objExp $ obj) 
+                        . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
+                        . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
+--{ objName = name object
+--                           , objExp = iExp'
+--                           , objSource = src
+--                           , objTarget = tgt
+--                           , objIsEditable = isEditable
+--                           , _exprIsUni = isUni iExp'
+--                           , _exprIsTot = isTot iExp'
+--                           , _exprIsProp = isProp iExp'
+--                           , _objNavInterfaces = navIfcs
+--                           , atomicOrBox = aOrB
+--                           }                    
   in  case atomicOrBox obj of
         FEAtomic mPrimTemplate ->
          do { {-
@@ -340,7 +360,7 @@ genView_Object fSpec depth obj@(FEObject nm oExp src tgt isEditable exprIsUni ex
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
-            ; let mNavInterface = listToMaybe navInterfaces -- TODO: do something with roles here. For now, simply use the first interface, if any.
+            ; let mNavInterface = listToMaybe (_objNavInterfaces obj) -- TODO: do something with roles here. For now, simply use the first interface, if any.
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
@@ -392,6 +412,7 @@ genController_Interface fSpec interf =
                                         , objIsEditable o
                                         , not . isJust $ objMPrimTemplate a
                                         ]
+                                        
           containsEditable          = any objIsEditable allObjs
           containsEditableNonPrim   = not $ null allEditableNonPrimTargets
           containsDATE              = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
