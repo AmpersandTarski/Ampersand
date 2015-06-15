@@ -100,7 +100,8 @@ executable ampersand
                      text >=1.1 && <1.2,
                      xlsx
         
-  other-modules:     Database.Design.Ampersand,
+  other-modules:     
+                     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
@@ -200,7 +201,8 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand
+                     Paths_ampersand,
+                     Database.Design.Ampersand.Input.Xslx.XLSX
 
 
 Test-Suite ampersand-test
@@ -236,4 +238,5 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Test.Parser.ParserTest,
                      Database.Design.Ampersand.Test.Parser.QuickChecks,
                      Database.Design.Ampersand.Test.RunAmpersand,
-                     Database.Design.Ampersand.Test.TestScripts
+                     Database.Design.Ampersand.Test.TestScripts,
+                     Database.Design.Ampersand.Input.Xslx.XLSX
