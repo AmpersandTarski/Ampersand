@@ -4,7 +4,7 @@ author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
-homepage:       http://wiki.ampersand.nl
+homepage:       http://wiki.tarski.nl
 category:       Database Design
 stability:      alpha
 cabal-version:  >= 1.10
@@ -97,12 +97,8 @@ executable ampersand
                      uulib == 0.9.*,
                      wl-pprint == 1.1.*,
                      wl-pprint,
-                     MissingH,
-                     containers >=0.5 && <0.6,
                      text >=1.1 && <1.2,
-                     simple-sql-parser,
-                     pandoc-types,
-                     pandoc
+                     xlsx
         
   other-modules:     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
