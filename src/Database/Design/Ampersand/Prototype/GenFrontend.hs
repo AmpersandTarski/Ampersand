@@ -210,7 +210,7 @@ buildInterface fSpec allIfcs ifc =
     buildObject editableRels object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
               
-        ; (aOrB, iExp', isEditable, src, tgt, isLink) <-
+        ; (aOrB, iExp', isEditable, src, tgt) <-
             case objmsub object of
               Nothing                  ->
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -223,12 +223,12 @@ buildInterface fSpec allIfcs ifc =
                               -> return $ Just ("views" </> fName, [ viewAttr | ViewExp _ Obj{objnm=viewAttr} <- viewSegs])
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                             do { let templatePath = "views/Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
+                             do { let templatePath = "views" </> "Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
                                 ; hasSpecificTemplate <- doesTemplateExist fSpec $ templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                           , iExp, isEditable, src, tgt, False)
+                           , iExp, isEditable, src, tgt)
                   }
               Just (Box _ mCl objects) -> 
                do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
@@ -236,18 +236,25 @@ buildInterface fSpec allIfcs ifc =
                   ; return (FEBox { objMClass  = mCl
                                   , ifcSubObjs = subObjs
                                   }
-                           , iExp, isEditable, src, tgt, False)
+                           , iExp, isEditable, src, tgt)
                   }
               Just (InterfaceRef isLink nm)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                   []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-                  [i]     -> do { let editableRels' = editableRels `intersect` ifcParams i
+                  [i]     -> 
+                        if isLink
+                        then do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
+                                ; let templatePath = "views" </> "LINKTO.html"
+                                ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
+                                         , iExp, isEditable, src, tgt)
+                                }
+                        else do { let editableRels' = editableRels `intersect` ifcParams i
                                 ; refObj <- buildObject editableRels' (ifcObj i)
                                 ; let comp = ECps (iExp, objExp refObj) 
                                       -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                       (isEditable, src, tgt) = getIsEditableSrcTgt comp
-                                ; return (atomicOrBox refObj, comp, isEditable, src, tgt, isLink)
+                                ; return (atomicOrBox refObj, comp, isEditable, src, tgt)
                                 } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
         ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
