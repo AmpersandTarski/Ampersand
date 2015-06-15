@@ -7,8 +7,18 @@ import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1
 
+import Codec.Xlsx
+import qualified Data.ByteString.Lazy as L
+--import Control.Lens
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
 
 parseXlsxFile :: Options -> FilePath -> IO (Guarded P_Context)
-parseXlsxFile _ _ = fatal 14 "INCLUDE Excel files comming soon."
+parseXlsxFile _ filePath = 
+  do bytestr <- L.readFile filePath
+     return . xlsx2pContext . toXlsx $ bytestr
+
+xlsx2pContext :: Xlsx -> Guarded P_Context
+xlsx2pContext xlsx = fatal 14 "INCLUDE Excel files comming soon."
+
