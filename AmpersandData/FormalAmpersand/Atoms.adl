@@ -134,19 +134,20 @@ ROWS [ name    : name
      ]
 
 
-{-
 POPULATION sub CONTAINS [ ( "Asub_", "Agen_") ]
 POPULATION sub CONTAINS [ ( "Bsub_", "Bgen_") ]
 
-POPULATION name CONTAINS [ ( "Asub_", "Asub") ]
-POPULATION name CONTAINS [ ( "Agen_", "Agen") ]
-POPULATION name CONTAINS [ ( "Bsub_", "Bsub") ]
-POPULATION name CONTAINS [ ( "Bgen_", "Bgen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
 
+{-
 POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Bsub_", "Btypo_") ]
 POPULATION partOf CONTAINS [ ( "Bgen_", "Btypo_") ]
+-}
 
 POPULATION pop CONTAINS [ ( "A1_", "Agen_" ) ]
 POPULATION pop CONTAINS [ ( "B1_", "Bgen_" ) ]
@@ -159,6 +160,5 @@ POPULATION repr CONTAINS [ ( "A1_", "A1" ) ]
 POPULATION repr CONTAINS [ ( "B1_", "B1" ) ]
 POPULATION repr CONTAINS [ ( "A1sub_", "A1sub" ) ]
 POPULATION repr CONTAINS [ ( "B1sub_", "B1sub" ) ]
--}
 
 ENDCONTEXT
