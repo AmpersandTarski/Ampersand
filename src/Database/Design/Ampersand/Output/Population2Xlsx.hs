@@ -40,30 +40,26 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        matrix = 
          case plug of
            TblSQL{} -> Just $ headers ++ content  
-           BinSQL{} -> Nothing
+           BinSQL{} -> Just $ headers ++ content
            ScalarSQL{} -> Nothing
---       field2Row :: SqlField -> [Cell]
---       field2Row fld = headerRows ++ content
          where
            headers :: [[Cell]]
-           headers = transpose (Prelude.map f (fields plug)) 
-             where f :: SqlField -> [Cell]
-                   f fld = Prelude.map toCell 
-                             [ case flduse fld of -- In case of the main concept of the table, we put the fieldname inbetween brackets,
-                                                  -- to be able to find the population again by the reader of the .xlsx file
-                                 (TableKey True _) -> Just $ "["++name fld++"]" 
-                                 _ ->  Just $ name fld
-                             , Just $ name .target . fldexpr $ fld ]
-           content = Prelude.map record2Cells (tblcontents (vgens fSpec) (initialPops fSpec) plug)
-           record2Cells :: TblRecord -> [Cell]
+           headers = transpose (Prelude.map f (zip (True : repeat False) (plugFields plug))) 
+             where f :: (Bool,SqlField) -> [Cell]
+                   f (isFirstField,fld) = Prelude.map toCell 
+                         [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,
+                                            -- to be able to find the population again by the reader of the .xlsx file
+                           then Just $ "["++name fld++"]" 
+                           else Just $ name fld
+                         , Just $ name .target . fldexpr $ fld ]
+                              
+           content = fmap record2Cells (tblcontents (vgens fSpec) (initialPops fSpec) plug)
            record2Cells = fmap toCell
        toCell :: Maybe String -> Cell
        toCell mStr = Cell { _cellStyle = Nothing
                          , _cellValue = fmap (\x -> CellText . pack $ x) mStr
                          }
        
-       -- case tblcontents (vgens fSpec) (initialPops fSpec) plug of
-type TblRecord = [Maybe String]
 
   
             
