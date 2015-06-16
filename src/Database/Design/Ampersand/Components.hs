@@ -42,6 +42,7 @@ generateAmpersandOutput fSpec =
     ; when (export2adl (getOpts fSpec))  $ doGenADL      fSpec
     ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
     ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
+    ; when (genPOPExcel (getOpts fSpec)) $ doGenPopsXLSX fSpec
     ; when (proofs (getOpts fSpec))      $ doGenProofs   fSpec
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
@@ -129,14 +130,14 @@ doGenFPAExcel fSpec =
     }
    where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension ("FPA_"++baseName (getOpts fSpec)) ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
-doGenPopulationXLSX :: FSpec -> IO()
-doGenPopulationXLSX fSpec =
- do { verbose (getOpts fSpec) "Generating Excel file containing the population "
+doGenPopsXLSX :: FSpec -> IO()
+doGenPopsXLSX fSpec =
+ do { verboseLn (getOpts fSpec) "Generating .xlsx file containing the population "
     ; ct <- getClockTime
     ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
     ; Prelude.putStrLn $ "Generated file: " ++ outputFile
     }
-   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".generated.pop"
+   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)++ "_generated_pop") ".xlsx"
 
     
    
