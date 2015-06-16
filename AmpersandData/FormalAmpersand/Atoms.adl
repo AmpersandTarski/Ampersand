@@ -6,7 +6,7 @@ RELATION repr[Atom*TEXT] [UNI,TOT]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
 RELATION pop[Atom*Concept] [TOT] 
-MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
+MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
 RELATION name[Concept*TEXT] [UNI,TOT]
 MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
@@ -23,15 +23,16 @@ RELATION sub[Concept*Concept]
 MEANING "s sub g  means that each element of concept  s  is defined to be an element of concept  g  as well."
 RELATION subs[Concept*Concept]
 MEANING "s subs g  means that each element of concept  s  is defined or inferred to be an element of concept  g."
+ROLE ExecEngine MAINTAINS recurIns
 RULE recurIns : sub;subs\/subs;sub\/I |- subs
 VIOLATION (TXT "{EX} InsPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
+ROLE ExecEngine MAINTAINS recurDel
 RULE recurDel : subs |- sub;subs\/subs;sub\/I
 VIOLATION (TXT "{EX} DelPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS recurIns, recurDel
 
 ROLE ExecEngine MAINTAINS "Add atoms in generalization concepts"
 RULE "Add atoms in generalization concepts" : pop;subs |- pop
-MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
+MEANING "An atom that is an instance of a specialization of c is an instance of c as well."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
