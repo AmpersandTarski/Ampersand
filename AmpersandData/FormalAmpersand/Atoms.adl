@@ -44,12 +44,18 @@ RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
+ROLE ExecEngine MAINTAINS "source type"
 RULE "source type" : l~;in;source |- pop
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+
+ROLE ExecEngine MAINTAINS "target type"
 RULE "target type" : r~;in;target |- pop
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS "source type", "target type"
+
+-- Ik zou graag de PURPOSES van bovenstaande regels willen zien. Op basis daarvan zou het mogelijk moeten zijn om vast te stellen of deze regels invarianten moeten zijn, of door de ExecEngine moeten worden bijgehouden.
+
 ENDPROCESS
 
 {-
