@@ -8,7 +8,7 @@ MEANING "Every atom has a representation." -- Identifiability is not a property 
 RELATION pop[Atom*Concept] [TOT] 
 MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
 
-RELATION name[Concept*TEXT] [UNI]
+RELATION name[Concept*TEXT] [UNI,TOT]
 MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
 RULE "Identifiability of concepts": name;name~ |- I[Concept]
@@ -16,23 +16,21 @@ MEANING "The name of a concept identifies that concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
 RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
-MEANING "An Atom is identifiable by its representation nd its concept." -- Identifiability is 'unique' (per definition).
+MEANING "An Atom is identifiable by its representation and its concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
 RELATION sub[Concept*Concept]
-MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is defined to be an element of concept $g$ as well."
+MEANING "s sub g  means that each element of concept  s  is defined to be an element of concept  g  as well."
 RELATION subs[Concept*Concept]
-MEANING "$s\\ \\id{subs}\\ g$ means that each element of concept $s$ is defined or inferred to be an element of concept $g$."
-RULE recurR : subs;sub \/ I |- subs
-VIOLATION (TXT "{EX} InsPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
-RULE recurL : I \/ sub;subs |- subs
+MEANING "s subs g  means that each element of concept  s  is defined or inferred to be an element of concept  g."
+RULE recurIns : sub;subs\/subs;sub\/I |- subs
 VIOLATION (TXT "{EX} InsPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
 RULE recurDel : subs |- sub;subs\/subs;sub\/I
 VIOLATION (TXT "{EX} DelPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS recurL, recurR, recurDel
+ROLE ExecEngine MAINTAINS recurIns, recurDel
 
-ROLE ExecEngine MAINTAINS "Add atoms in specialization concepts"
-RULE "Add atoms in specialization concepts" : pop;subs |- pop
+ROLE ExecEngine MAINTAINS "Add atoms in generalization concepts"
+RULE "Add atoms in generalization concepts" : pop;subs |- pop
 MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
@@ -44,16 +42,13 @@ RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
---This rule is an invariant and should not be assigned to ROLE ExecEngine MAINTAINS "source type"
-RULE "source type" : l~;in;source |- pop
+RULE "source type" : in |- l;pop;source~
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
---VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "Atom ", SRC l;repr, TXT " has concept ", SRC (l;pop - in;source;subs);name, TXT ", which is not ", TGT source;name)
 
---This rule is an invariant and should not be assigned to ROLE ExecEngine MAINTAINS "target type"
-RULE "target type" : r~;in;target |- pop
+RULE "target type" : in |- r;pop;target~
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
---VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-
+VIOLATION (TXT "Atom ", SRC r;repr, TXT " has concept ", SRC (r;pop - in;target;subs);name, TXT ", which is not ", TGT target;name)
 ENDPROCESS
 
 {-
@@ -132,6 +127,7 @@ ROWS [ name    : name
      ]
 
 
+{-
 POPULATION sub CONTAINS [ ( "Asub_", "Agen_") ]
 POPULATION sub CONTAINS [ ( "Bsub_", "Bgen_") ]
 
@@ -140,12 +136,10 @@ POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
 POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
 POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
 
-{-
 POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Bsub_", "Btypo_") ]
 POPULATION partOf CONTAINS [ ( "Bgen_", "Btypo_") ]
--}
 
 POPULATION pop CONTAINS [ ( "A1_", "Agen_" ) ]
 POPULATION pop CONTAINS [ ( "B1_", "Bgen_" ) ]
@@ -158,5 +152,6 @@ POPULATION repr CONTAINS [ ( "A1_", "A1" ) ]
 POPULATION repr CONTAINS [ ( "B1_", "B1" ) ]
 POPULATION repr CONTAINS [ ( "A1sub_", "A1sub" ) ]
 POPULATION repr CONTAINS [ ( "B1sub_", "B1sub" ) ]
+-}
 
 ENDCONTEXT
