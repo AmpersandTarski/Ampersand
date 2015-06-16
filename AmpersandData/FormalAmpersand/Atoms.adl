@@ -3,37 +3,38 @@ CONTEXT AST IN ENGLISH LATEX
 
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
-MEANING "Every atom has a representation, which identifies that atom."
+MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
 RELATION pop[Atom*Concept] [TOT] 
 MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
 
 RELATION name[Concept*TEXT] [UNI]
-MEANING "Every concept has a name, which identifies that concept."
+MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
-RULE InjName : name;name~ |- I[Concept]
+RULE "Identifiability of concepts": name;name~ |- I[Concept]
 MEANING "The name of a concept identifies that concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-RULE InjRepr : repr;repr~ /\ pop;pop~ |- I[Atom]
-MEANING "Together, a concept and the representation identifies an atom uniquely."
+RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
+MEANING "An Atom is identifiable by its representation nd its concept." -- Identifiability is 'unique' (per definition).
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
 RELATION sub[Concept*Concept]
-MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is an element of concept $g$ as well."
+MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is defined to be an element of concept $g$ as well."
+RELATION subs[Concept*Concept]
+MEANING "$s\\ \\id{subs}\\ g$ means that each element of concept $s$ is defined or inferred to be an element of concept $g$."
 RULE recurR : subs;sub \/ I |- subs
 VIOLATION (TXT "{EX} InsPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
-RELATION subs[Concept*Concept]
 RULE recurL : I \/ sub;subs |- subs
 VIOLATION (TXT "{EX} InsPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
 RULE recurDel : subs |- sub;subs\/subs;sub\/I
 VIOLATION (TXT "{EX} DelPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS recurL, recurR, recurDel
 
-RULE "specialization" : pop;subs |- pop
+ROLE ExecEngine MAINTAINS "Add atoms in specialization concepts"
+RULE "Add atoms in specialization concepts" : pop;subs |- pop
 MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS specialization
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
