@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy as L
 --import Control.Lens
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Parsing"
+fatal = fatalMsg "XLSX"
 
 parseXlsxFile :: Options -> FilePath -> IO (Guarded P_Context)
 parseXlsxFile _ filePath = 

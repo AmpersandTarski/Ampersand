@@ -26,6 +26,8 @@ import Database.Design.Ampersand.FSpec.ShowXMLtiny (showXML)
 import Database.Design.Ampersand.Output
 import Control.Monad
 import System.FilePath
+import System.Time
+import qualified Data.ByteString.Lazy as L
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Components"
@@ -122,7 +124,20 @@ doGenDocument fSpec =
 -- | This function will generate an Excel workbook file, containing an extract from the FSpec
 doGenFPAExcel :: FSpec -> IO()
 doGenFPAExcel fSpec =
- do { verboseLn (getOpts fSpec) "Generating Excel..."
-    ; writeFile outputFile (showSpreadsheet (fspec2Workbook fSpec))
+ do { verboseLn (getOpts fSpec) "Generating Excel containing FPA..."
+    ; writeFile outputFile $ fspec2FPA_Excel fSpec
     }
    where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension ("FPA_"++baseName (getOpts fSpec)) ".xml"  -- Do not use .xls here, because that generated document contains xml.
+
+doGenPopulationXLSX :: FSpec -> IO()
+doGenPopulationXLSX fSpec =
+ do { verbose (getOpts fSpec) "Generating Excel file containing the population "
+    ; ct <- getClockTime
+    ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
+    ; Prelude.putStrLn $ "Generated file: " ++ outputFile
+    }
+   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".generated.pop"
+
+    
+   
+   
