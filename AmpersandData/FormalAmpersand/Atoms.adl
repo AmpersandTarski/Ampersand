@@ -1,31 +1,39 @@
 CONTEXT AST IN ENGLISH LATEX
--- The commented version of Atoms can be found in Atoms.doc
+-- The comments for this script can be found in Atoms.doc
 
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
-MEANING "Every atom has a representation, which identifies that atom."
+MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
 RELATION pop[Atom*Concept] [TOT] 
-MEANING "If $a\\ \\id{pop}\\ c$, we say that atom $a$ is in the population of concept $c$."
+MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
-RELATION name[Concept*TEXT] [UNI]
-MEANING "Every concept has a name, which identifies that concept."
+RELATION name[Concept*TEXT] [UNI,TOT]
+MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
-RULE InjName : name;name~ |- I[Concept]
+RULE "Identifiability of concepts": name;name~ |- I[Concept]
 MEANING "The name of a concept identifies that concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-RULE InjRepr : repr;repr~ /\ pop;pop~ |- I[Atom]
-MEANING "Together, a concept and the representation identifies an atom uniquely."
+RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
+MEANING "An Atom is identifiable by its representation and its concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
 RELATION sub[Concept*Concept]
-MEANING "$s\\ \\id{sub}\\ g$ means that each element of concept $s$ is an element of concept $g$ as well."
+MEANING "s sub g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+RELATION subs[Concept*Concept]
+MEANING "s subs g  means that each element of concept  s  is defined or inferred to be an element of concept  g."
+ROLE ExecEngine MAINTAINS recurIns
+RULE recurIns : sub;subs\/subs;sub\/I |- subs
+VIOLATION (TXT "{EX} InsPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
+ROLE ExecEngine MAINTAINS recurDel
+RULE recurDel : subs |- sub;subs\/subs;sub\/I
+VIOLATION (TXT "{EX} DelPair;subs;Concept;", SRC I, TXT ";Concept;", TGT I)
 
-RULE "specialization" : pop;sub |- pop
-MEANING "An atom that is an instance of a specialization of $c$ is an instance of $c$ as well."
+ROLE ExecEngine MAINTAINS "Add atoms in generalization concepts"
+RULE "Add atoms in generalization concepts" : pop;subs |- pop
+MEANING "An atom that is an instance of a specialization of c is an instance of c as well."
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS specialization
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
@@ -35,12 +43,13 @@ RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
-RULE "source type" : l~;in;source |- pop
+RULE "source type" : in |- l;pop;source~
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
-RULE "target type" : r~;in;target |- pop
+VIOLATION (TXT "Atom ", SRC l;repr, TXT " has concept ", SRC (l;pop - in;source;subs);name, TXT ", which is not ", TGT source;name)
+
+RULE "target type" : in |- r;pop;target~
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
-VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS "source type", "target type"
+VIOLATION (TXT "Atom ", SRC r;repr, TXT " has concept ", SRC (r;pop - in;target;subs);name, TXT ", which is not ", TGT target;name)
 ENDPROCESS
 
 {-
@@ -53,70 +62,80 @@ MEANING "A specialisation of a concept and the concept itself are both part of t
 RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
 MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
 -}
+
 INTERFACE Overview: '_SESSION'
 TABS[ atoms : V[SESSION*Atom]
-      COLS [ repr : repr
+      BOX<SCOLS>
+           [ repr : I
            , pop  : pop
            ]
     , concepts :V[SESSION*Concept]
-      COLS [ name             : I
-           , specializations  : sub~
+      BOX<SCOLS>
+           [ name             : I
+           , spec             : sub~
+           , specializations  : subs~
+           , gener            : sub
+           , generalizations  : subs
+           , atoms            : pop~
            ]
     , pairs : V[SESSION*Pair]
-      COLS [ pair           : I
+      BOX<SCOLS>
+           [ pair           : I
            , "relation(s)"  : in
            ]
     , relations : V[SESSION*Relation]
-      COLS [ name    : name
+      BOX<SCOLS>
+           [ name    : name
            , source  : source
            , target  : target
            ]
---    , garbage : V[SESSION*Atom];-((l~;in;source;pop~/\I) \/ (r~;in;target;pop~/\I))
---      COLS [ repr : repr
---           , pop  : pop
---           ]
+    , garbage : V[SESSION*Atom];((I - l~;in;source;pop~) - r~;in;target;pop~)
+      COLS [ repr : repr
+           , pop  : pop
+           ]
     ]
 
-VIEW Atom : Atom(repr,TXT ":",pop)
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
 INTERFACE Atom(repr,pop) : I[Atom]
-COLS [ repr : repr
+ROWS [ repr : repr
      , pop  : pop
      ]
 
 VIEW Concept : Concept(name)
 
-INTERFACE concept(name[Concept*TEXT],sub) : I[Concept]
-COLS [ name             : name
+INTERFACE Concept(name[Concept*TEXT],sub) : I[Concept]
+ROWS [ name             : name
      , generalizations  : sub
      , specializations  : sub~
      ]
 
 VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
-COLS [ pair           : I
+INTERFACE Pair(l,r,in) : I[Pair]
+ROWS [ pair           : I
      , l              : l
      , r              : r
      , "relation(s)"  : in
      ]
 
-VIEW Relation : Relation(name,TXT "[",source;name,TXT "]",target;name)
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Relation(name[Relation*TEXT],source,target) : I[Relation]
-COLS [ name    : name
+ROWS [ name    : name
      , source  : source
      , target  : target
      ]
+
 
 {-
 POPULATION sub CONTAINS [ ( "Asub_", "Agen_") ]
 POPULATION sub CONTAINS [ ( "Bsub_", "Bgen_") ]
 
-POPULATION name CONTAINS [ ( "Asub_", "Asub") ]
-POPULATION name CONTAINS [ ( "Agen_", "Agen") ]
-POPULATION name CONTAINS [ ( "Bsub_", "Bsub") ]
-POPULATION name CONTAINS [ ( "Bgen_", "Bgen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
+POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
 
 POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
 POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]

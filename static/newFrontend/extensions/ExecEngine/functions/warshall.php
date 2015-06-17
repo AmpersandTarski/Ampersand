@@ -1,13 +1,13 @@
 <?php 
-/* This file defines the function 'TransitiveClosure', that computes the transitive closure of a relation using Washall's algorithm.
-   There are no guarantees with respect to its 100% functioning. Have fun...
+/* This file defines the (php) function 'TransitiveClosure', that computes the transitive closure of a relation.
 
-   Suppose you need the transitive closure r* of a relation r :: C * C
-   This pattern tells you how to define a relation rStar that contains the same population as r*
-   (which you need, but isn't provided in the prototype generator, so this is the workaround).
+   Suppose you have a relation r :: C * C, and that you need the transitive closure r* of that relation.
+   Since r* is not supported in the prototype generator as is, we need a way to instruct the ExecEngine
+   to populate a relation rStar :: C * C that contains the same population as r*
    Maintaining the population of rStar correctly is not trivial, particularly when r is depopulated.
-   The easiest way around this is to compute rStar from scratch.
+   The easiest way around this is to compute rStar from scratch (using Warshall's algorithm).
    However, you then need to know that r is being (de)populated, so we need a copy of r.
+
    This leads to the following pattern:
    
    relation :: Concept*Concept
@@ -22,8 +22,6 @@
    1) The above example is made for ease of use. This is what you need to do:
       a) copy and paste the above example into your own ADL script;
       b) replace the names of 'relation' and 'Concept' (cases sensitive, also as part of a word) with what you need
-      c) make sure you define an INTERFACE that contains both 'relationCopy' and 'relationStar'
-         (this is necessary for interfacing with such relations using PHP).
    2) Of course, there are all sorts of alternative ways in which 'TransitiveClosure' can be used.
    3) There are ways to optimize the below code, e.g. by splitting the function into an 'InsTransitiveClosure'
       and a 'DelTransitiveClosure'
@@ -77,12 +75,12 @@ function RetrievePopulation($relationName, $concept){
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
 		
-		$query = "SELECT * FROM $table";
+		$query = "SELECT * FROM `$table`";
 		$result = $database->Exe($query);
 		
 		// initialization of 2-dimensional array
 		foreach($result as $row){
-			$array[$row['src']][$row['tgt']] = true;
+			$array[$row[$srcCol]][$row[$tgtCol]] = !is_null($row[$tgtCol]);
 		}
 		
 		return (array)$array;
@@ -92,7 +90,7 @@ function RetrievePopulation($relationName, $concept){
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-function OverwritePopulation($rArray, $relation, $concept){
+function OverwritePopulation($rArray, $relationName, $concept){
 	try{
 		$database = Database::singleton();
 		

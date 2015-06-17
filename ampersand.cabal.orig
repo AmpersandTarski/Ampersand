@@ -95,11 +95,19 @@ executable ampersand
                      time == 1.4.*,
                      utf8-string == 0.3.*,
                      uulib == 0.9.*,
+<<<<<<< HEAD
+                     wl-pprint == 1.1.*
+  other-modules:     Database.Design.Ampersand,
+=======
                      wl-pprint == 1.1.*,
+                     wl-pprint,
+                     text >=1.1 && <1.2,
                      xlsx == 0.1.*,
                      lens
+        
   other-modules:     
                      Database.Design.Ampersand,
+>>>>>>> master
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,

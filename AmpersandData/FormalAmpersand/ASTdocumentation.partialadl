@@ -34,6 +34,33 @@ For this reason, a context defines a language by means of concepts and relations
 We say that these utterances {\emph make sense} in that context.
 -}
 
+PURPOSE PATTERN Rules
+{+The rules that govern rules are brought together in one pattern,
+in order to formalize rules and determine their meaning.
+-}
+CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
+PURPOSE CONCEPT Rule
+{+
+Rules are used as a concrete reason for people to act, feel or believe.
+In philosophy, this is called a 'norm'.
+\subsubsection*{Explanation}
+A rule differs from a statement in that it must always be true.
+Example:
+\begin{itemize}
+\item   The statement "St. Paul street is a one way street." might be either true or false.
+        We just have to check the road signs on St. Paul street to know.
+        If, however, the city council decides that St. Paul street is a one way street, we have a rule.
+        It is a rule because St. Paul street must be a one way street.
+        As long as the appropriate road signs are absent, the situation on the street contradicts the decision of the city council.
+\end{itemize}
+The word 'must' implies that there is someone who says so.
+In this example, the city council, by the authority invested upon it by the law, says that St. Paul street must be a one way street.
+The people who are affected by this are called stakeholders.
+All contexts in which this rule is valid are called the scope of this rule.
+Outside its scope, a rule has no meaning.
+For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
+-}
+
 PURPOSE PATTERN Patterns
 {+The rules that govern patterns are brought together in one pattern,
 in order to formalize patterns and determine their meaning.
@@ -63,10 +90,8 @@ PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
 -}
-CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation." 
-REPRESENT ExpressionID TYPE BigAlphanumeric
-CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"  
-REPRESENT Expression TYPE BigAlphanumeric
+CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation." TYPE "Text"
+CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"  TYPE "Text"
 PURPOSE CONCEPT Expression
 {+
 Ampersand uses relation algebra to formalize phrases.
@@ -156,6 +181,7 @@ It refers the the total of all populations in relations and concepts inside that
 CONCEPT RelPopu "The content of a relation"
 CONCEPT CptPopu "The content of a concept"
 CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
+CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
 CONCEPT String "A string is a pString expected to be less than 256 characters."
 --HJO20150420: Uitgezet: CONCEPT Conid "A conid is an identifier starting with an uppercase"
 --HJO20150420: Uitgezet: CONCEPT Varid "A varid is an identifier starting with a lowercase"

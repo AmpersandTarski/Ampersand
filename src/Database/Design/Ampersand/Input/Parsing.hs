@@ -8,18 +8,21 @@ module Database.Design.Ampersand.Input.Parsing (
 
 import Control.Applicative
 import Data.List
+import Data.Char(toLower)
 import Data.Traversable (sequenceA)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.Input.ADL1.Lexer
 import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.Core.ParseTree (mkContextOfPopsOnly)
 import Database.Design.Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import System.Directory
 import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
+import Database.Design.Ampersand.Input.Xslx.XLSX
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
@@ -44,17 +47,24 @@ parseADLs opts parsedFilePaths filePaths =
 
 -- Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
-parseSingleADL opts filePath =
- do { verboseLn opts $ "Reading file " ++ filePath
-    ; mFileContents <- readUTF8File filePath
-    ; case mFileContents of
-        Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
-        Right fileContents ->
-             whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
-                   do filePaths <- mapM normalizePath relativePaths
-                      return (Checked (ctxts, filePaths))
+parseSingleADL opts filePath
+ | extension == ".xlsx" = 
+     do { verboseLn opts $ "Reading Excel populations from " ++ filePath
+        ; popFromExcel <- parseXlsxFile opts filePath
+        ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+        }
+ | otherwise =   
+     do { verboseLn opts $ "Reading file " ++ filePath
+        ; mFileContents <- readUTF8File filePath
+        ; case mFileContents of
+            Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
+            Right fileContents ->
+                 whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
+                       do filePaths <- mapM normalizePath relativePaths
+                          return (Checked (ctxts, filePaths))
     }
  where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
+       extension = map toLower $ takeExtension filePath
 
 parseErrors :: Lang -> ParseError -> [CtxError]
 parseErrors lang err = [PE (Message msg)]

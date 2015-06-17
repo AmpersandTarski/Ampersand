@@ -65,6 +65,7 @@ data Options = Options { showVersion :: Bool
                        , genUML :: Bool   -- Generate a UML 2.0 data model
                        , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
+                       , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
                        , genStaticFiles :: Bool-- Generate the static files into the prototype
                        , genBericht :: Bool
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
@@ -167,6 +168,7 @@ getOptions =
                       , genFPAChap    = False
                       , genFPAExcel   = False
                       , genStaticFiles= True
+                      , genPOPExcel   = False
                       , genBericht    = False
                       , language      = Nothing
                       , progrName     = progName
@@ -410,10 +412,14 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{genFPAChap = True}))
                "Generate Function Point Analysis chapter."
             , Hidden)
-          , (Option []        ["excel"]
+          , (Option []        ["fpa-excel"]
                (NoArg (\opts -> return opts{genFPAExcel = True}))
                "Generate an Excel workbook (FPA_<filename>.xml)."
             , Hidden)
+          , (Option []        ["pop-xlsx"]
+               (NoArg (\opts -> return opts{genPOPExcel = True}))
+               "Generate an .xmlx file containing the populations of your script."
+            , Public) 
           , (Option []        ["bericht"]
                (NoArg (\opts -> return opts{genBericht = True}))
                "Generate definitions for 'berichten' (specific to INDOORS project)."

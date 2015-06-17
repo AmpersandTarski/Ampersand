@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.ParseTree (
-     P_Context(..), mergeContexts
+     P_Context(..), mergeContexts, mkContextOfPopsOnly
    , Meta(..)
    , MetaObj(..)
    , P_RoleRelation(..)
@@ -709,6 +709,30 @@ mergeContexts ctx1 ctx2 =
       }
     where contexts = [ctx1,ctx2]
 
+mkContextOfPopsOnly :: [P_Population] -> P_Context
+mkContextOfPopsOnly pops = 
+  PCtx{ ctx_nm     = ""
+      , ctx_pos    = []
+      , ctx_lang   = fatal 686 "No language because of excel import hack. Please report this as a bug"
+      , ctx_markup = Nothing
+      , ctx_thms   = []
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = []
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_rrels  = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = []
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = pops
+      , ctx_sql    = []
+      , ctx_php    = []
+      , ctx_metas  = []
+      }
 -- | Left-biased choice on maybes
 orElse :: Maybe a -> Maybe a -> Maybe a
 x `orElse` y = case x of

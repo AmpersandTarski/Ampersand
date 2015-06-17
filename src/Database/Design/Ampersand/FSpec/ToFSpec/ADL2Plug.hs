@@ -205,7 +205,7 @@ rel2fld ci
        
        mkColumnName expr = mkColumnName' False expr
          where  mkColumnName' isFlipped (EFlp x) = mkColumnName' (not isFlipped) x
-                mkColumnName' isFlipped (EDcD d) = (if isFlipped then "src" else "tgt")++"_"++(unquote . name) d
+                mkColumnName' isFlipped (EDcD d) = (if isFlipped then "src" else "tgt")++"_"++(unquote . name) d  --TODO: This has to be made more generic, to enable writing of populations from tables. (Excell spreadsheets)
                 mkColumnName' _         (EDcI c) = (unquote . name) c
                 mkColumnName' _ rel = fatal 162 ( "Unexpected relation found:\n"++
                                                   intercalate "\n  "

@@ -114,7 +114,7 @@ Class Atom {
 				
 				// _sortValues_ (if subInterface is uni)
 				if($subinterface->univalent){
-					$content['_sortValues_'][$subinterface->id] = ($subinterface->tgtDataType == "concept") ? current($otherAtom)['@label'] : $otherAtom;
+					$content['_sortValues_'][$subinterface->id] = ($subinterface->tgtDataType == "concept") ? current((array)$otherAtom)['@label'] : $otherAtom;
 				}
 				
 			}
