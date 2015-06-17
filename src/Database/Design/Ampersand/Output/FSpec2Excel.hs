@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Output.FSpec2Excel (fspec2Workbook,showSpreadsheet)
+module Database.Design.Ampersand.Output.FSpec2Excel (fspec2FPA_Excel)
 where
 import Text.XML.SpreadsheetML.Builder
 import Text.XML.SpreadsheetML.Types
@@ -10,7 +10,12 @@ import Database.Design.Ampersand.FSpec.FPA
 import Database.Design.Ampersand.Basics
 import Data.Maybe
 
+-- TODO: Get rid of package SpreadsheetML. Use http://hackage.haskell.org/package/xlsx (Reason: SpreadsheetML doesn.t have a writer. xlsx package does.
+
 -- NOTE: this code was refactored to support the new FPA module, but has not been tested yet.
+
+fspec2FPA_Excel :: FSpec -> String
+fspec2FPA_Excel = showSpreadsheet . fspec2Workbook
 
 fspec2Workbook :: FSpec -> Workbook
 fspec2Workbook fSpec =
