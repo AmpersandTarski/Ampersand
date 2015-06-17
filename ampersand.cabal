@@ -98,7 +98,8 @@ executable ampersand
                      wl-pprint == 1.1.*,
                      wl-pprint,
                      text >=1.1 && <1.2,
-                     xlsx == 0.1.*
+                     xlsx == 0.1.*,
+                     lens
         
   other-modules:     
                      Database.Design.Ampersand,
@@ -232,7 +233,8 @@ Test-Suite ampersand-test
                      wl-pprint,
                      transformers >=0.3 && <0.4,
                      conduit >=1.2 && <1.3,
-                     xlsx == 0.1.*
+                     xlsx == 0.1.*,
+                     lens
   other-modules:     
                      Database.Design.Ampersand.Misc.Options,
                      Database.Design.Ampersand.Test.Parser.ArbitraryPandoc,

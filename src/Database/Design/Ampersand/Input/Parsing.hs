@@ -15,6 +15,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.Input.ADL1.Lexer
 import Database.Design.Ampersand.Input.ADL1.Parser
+import Database.Design.Ampersand.Core.ParseTree (mkContextOfPopsOnly)
 import Database.Design.Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import System.Directory
@@ -50,7 +51,7 @@ parseSingleADL opts filePath
  | extension == ".xlsx" = 
      do { verboseLn opts $ "Reading Excel populations from " ++ filePath
         ; popFromExcel <- parseXlsxFile opts filePath
-        ; return ((\ctx -> (ctx,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+        ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
         }
  | otherwise =   
      do { verboseLn opts $ "Reading file " ++ filePath
