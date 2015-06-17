@@ -75,12 +75,12 @@ function RetrievePopulation($relationName, $concept){
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
 		
-		$query = "SELECT * FROM $table";
+		$query = "SELECT * FROM `$table`";
 		$result = $database->Exe($query);
 		
 		// initialization of 2-dimensional array
 		foreach($result as $row){
-			$array[$row['src']][$row['tgt']] = true;
+			$array[$row[$srcCol]][$row[$tgtCol]] = !is_null($row[$tgtCol]);
 		}
 		
 		return (array)$array;
@@ -90,7 +90,7 @@ function RetrievePopulation($relationName, $concept){
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-function OverwritePopulation($rArray, $relation, $concept){
+function OverwritePopulation($rArray, $relationName, $concept){
 	try{
 		$database = Database::singleton();
 		
