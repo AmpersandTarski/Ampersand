@@ -104,7 +104,7 @@ ROWS [ repr : repr
 
 VIEW Concept : Concept(name)
 
-INTERFACE concept(name[Concept*TEXT],sub) : I[Concept]
+INTERFACE Concept(name[Concept*TEXT],sub) : I[Concept]
 ROWS [ name             : name
      , generalizations  : sub
      , specializations  : sub~

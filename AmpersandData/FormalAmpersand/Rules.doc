@@ -1,0 +1,31 @@
+CONTEXT AST IN ENGLISH LATEX
+INCLUDE "Rules.adl"
+
+PURPOSE PATTERN Rules
+{+The rules that govern rules are brought together in one pattern,
+in order to formalize rules and determine their meaning.
+-}
+CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
+PURPOSE CONCEPT Rule
+{+
+Rules are used as a concrete reason for people to act, feel or believe.
+In philosophy, this is called a 'norm'.
+\subsubsection*{Explanation}
+A rule differs from a statement in that it must always be true.
+Example:
+\begin{itemize}
+\item   The statement "St. Paul street is a one way street." might be either true or false.
+        We just have to check the road signs on St. Paul street to know.
+        If, however, the city council decides that St. Paul street is a one way street, we have a rule.
+        It is a rule because St. Paul street must be a one way street.
+        As long as the appropriate road signs are absent, the situation on the street contradicts the decision of the city council.
+\end{itemize}
+The word 'must' implies that there is someone who says so.
+In this example, the city council, by the authority invested upon it by the law, says that St. Paul street must be a one way street.
+The people who are affected by this are called stakeholders.
+All contexts in which this rule is valid are called the scope of this rule.
+Outside its scope, a rule has no meaning.
+For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
+-}
+
+ENDCONTEXT
