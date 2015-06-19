@@ -12,6 +12,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		// refresh interfaces list + notifications
 		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 		$rootScope.notifications = Restangular.one('notifications/all').get().$object;
+		$route.reload();
 	};
 	
 	$scope.destroySession = function(){
