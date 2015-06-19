@@ -39,150 +39,175 @@ select languageRef table =
     in fromMaybe (error "Texts.select: unknown language")
         (lookup lang (map convert table))
 
+-- | Translates warning into the chosen language
 warning :: String
 warning = select language
     [ English :-> "Warning"
     , Dutch   :-> "Waarschuwing"
     ]
 
+-- | Translates hint into the chosen language
 hint :: String
 hint = select language
     [ English :-> "Hint"
     , Dutch   :-> "Hint"
     ]
 
+-- | Translates syntax error into the chosen language
 parserSyntaxError :: String
 parserSyntaxError = select language
     [ English :-> "Syntax error"
     , Dutch   :-> "Syntax fout"
     ]
 
+-- | Translates 'or' into the chosen language
 parserOr :: String
 parserOr = select language
     [ English :-> "or"
     , Dutch   :-> "of"
     ]
 
+-- | Translates 'unknown error' into the chosen language
 parserUnknown :: String
 parserUnknown = select language
     [ English :-> "unknown parse error"
     , Dutch   :-> "onbekende syntax fout"
     ]
 
+-- | Translates 'expecting' into the chosen language
 parserExpecting :: String
 parserExpecting = select language
     [ English :-> "expecting"
     , Dutch   :-> "verwacht: "
     ]
 
+-- | Translates 'unexpected' into the chosen language
 parserUnexpected :: String
 parserUnexpected = select language
     [ English :-> "unexpected"
     , Dutch   :-> "onverwacht: "
     ]
 
+-- | Translates 'end of input' into the chosen language
 parserEndOfInput :: String
 parserEndOfInput = select language
     [ English :-> "end of input"
     , Dutch   :-> "einde van de tekst"
     ]
 
+-- | Translates 'priority must be a single digit' into the chosen language
 parserSingleDigitPriority :: String
 parserSingleDigitPriority = select language
     [ English :-> "priority must be a single digit"
     , Dutch   :-> "de prioriteit mag maar uit 1 cijfer bestaan"
     ]
 
+-- | Translates 'type class' into the chosen language
 parserTypeClass :: String
 parserTypeClass = select language
     [ English :-> "type class"
     , Dutch   :-> "type klasse"
     ]
 
+-- | Translates 'type constructor' into the chosen language
 parserTypeConstructor :: String
 parserTypeConstructor = select language
     [ English :-> "type constructor"
     , Dutch   :-> "type constructor"
     ]
 
+-- | Translates 'type variable' into the chosen language
 parserTypeVariable :: String
 parserTypeVariable = select language
     [ English :-> "type variable"
     , Dutch   :-> "type variabele"
     ]
 
+-- | Translates 'module name' into the chosen language
 parserModuleName :: String
 parserModuleName = select language
     [ English :-> "module name"
     , Dutch   :-> "module naam"
     ]
 
+-- | Translates 'variable' into the chosen language
 parserVariable :: String
 parserVariable = select language
     [ English :-> "variable"
     , Dutch   :-> "variabele"
     ]
 
+-- | Translates 'constructor' into the chosen language
 parserConstructor :: String
 parserConstructor = select language
     [ English :-> "constructor"
     , Dutch   :-> "constructor"
     ]
 
+-- | Translates 'constructor operator' into the chosen language
 parserConstructorOperator :: String
 parserConstructorOperator = select language
     [ English :-> "constructor operator"
     , Dutch   :-> "constructor operator"
     ]
 
+-- | Translates 'parser operator' into the chosen language
 parserOperator :: String
 parserOperator = select language
     [ English :-> "operator"
     , Dutch   :-> "operator"
     ]
 
+-- | Translates 'character literal' into the chosen language
 parserCharacterLiteral :: String
 parserCharacterLiteral = select language
     [ English :-> "character literal"
     , Dutch   :-> "letter constante"
     ]
 
+-- | Translates 'string literal' into the chosen language
 parserStringLiteral :: String
 parserStringLiteral = select language
     [ English :-> "string literal"
     , Dutch   :-> "string constante"
     ]
 
+-- | Translates 'integer literal' into the chosen language
 parserIntegerLiteral :: String
 parserIntegerLiteral = select language
     [ English :-> "integer literal"
     , Dutch   :-> "geheel getal"
     ]
 
+-- | Translates 'float literal' into the chosen language
 parserFloatLiteral :: String
 parserFloatLiteral = select language
     [ English :-> "floating-point literal"
     , Dutch   :-> "reeel getal"
     ]
 
+-- | Translates 'keyword' into the chosen language
 parserKeyword :: String
 parserKeyword = select language
     [ English :-> "keyword"
     , Dutch   :-> "gereserveerd woord"
     ]
 
+-- | Translates 'inserted left brace' into the chosen language
 parserInsertedLBrace :: String
 parserInsertedLBrace = select language
     [ English :-> "inserted '{'"
     , Dutch   :-> "ingevoegde '{'"
     ]
 
+-- | Translates 'end of file' into the chosen language
 parserEndOfFile :: String
 parserEndOfFile = select language
     [ English :-> "end of file"
     , Dutch   :-> "einde van het bestand"
     ]
 
+-- | Translates 'next in block' into the chosen language
 parserNextInBlock :: String
 parserNextInBlock = select language
     [ English :-> "next in block (based on layout)"
@@ -423,7 +448,7 @@ lexerUtfChar = select language
 
 lexerNestedComment :: [String]
 lexerNestedComment = select language
-    [ English :-> [ "Syntax colouring usually can not handle nested comments"
+    [ English :-> [ "Syntax coloring usually can not handle nested comments"
                   , "Some of your code may be in comments but not visibly so"
                   ]
     , Dutch   :-> [ "Syntax kleuring van editor kan meestal niet overweg met genest commentaar"
@@ -433,7 +458,7 @@ lexerNestedComment = select language
 
 lexerCommentOperator :: [String]
 lexerCommentOperator = select language
-    [ English :-> [ "Syntax colouring usually can not handle names containing --"
+    [ English :-> [ "Syntax coloring usually cannot handle names containing --"
                   , "If you wanted to start a comment, write spaces around --"
                   ]
     , Dutch   :-> [ "Syntax kleuring van editor kan meestal niet overweg met namen die -- bevatten"
@@ -441,14 +466,16 @@ lexerCommentOperator = select language
                   ]
     ]
 
+-- | Adds commas and 'and' in between each element of the list
+commasAndLang :: String   -- ^ The word to use for 'and'
+              -> [String] -- ^ The list of items to show
+              -> String   -- ^ The result
+commasAndLang _ [] = []
+commasAndLang _ [x] = x
+commasAndLang a (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " " ++ a ++ " " ++ last xs
 
 commasAnd :: [String] -> String
-commasAnd [] = []
-commasAnd [x] = x
-commasAnd (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " and " ++ last xs
+commasAnd = commasAndLang "and"
 
 kommasEn :: [String] -> String
-kommasEn [] = []
-kommasEn [x] = x
-kommasEn (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " en " ++ last xs
-
+kommasEn = commasAndLang "en"

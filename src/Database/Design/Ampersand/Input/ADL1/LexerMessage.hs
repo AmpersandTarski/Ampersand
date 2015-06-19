@@ -44,24 +44,35 @@ sourcePosToRange pos =
     in Range_Range position position
  -}
 
-data LexerError = LexerError FilePos LexerErrorInfo
+-- | Defines a lexer error
+data LexerError = LexerError FilePos LexerErrorInfo -- ^ The lexer file position and error information
     deriving(Show)
 
+-- | Defines the different lexer error types
 data LexerErrorInfo
+    -- | The comment was not terminated
     = UnterminatedComment
-	| UnterminatedPurpose
+	-- | The purpose statement was not terminated
+    | UnterminatedPurpose
+    -- | The atom was not terminated
     | UnterminatedAtom
+    -- | The character was unexpected
     | UnexpectedChar Char
+    -- | The string was not terminated
     | NonTerminatedString String
+    -- | In UnexpectedClose, first char is the closing bracket we see, 
+    --   second char is the closing bracket we would like to see first
+    --   e.g. [(1,3]  =>  UnexpectedClose ']' ... ')'
     | TooManyClose Char
-        -- In UnexpectedClose, first char is the closing bracket we see, 
-        -- second char is the closing bracket we would like to see first
-        -- e.g. [(1,3]  =>  UnexpectedClose ']' ... ')'
+    -- | An unexpected closing bracket was found
     | UnexpectedClose Char FilePos Char
+    -- | Brackets were not closed at the end of the file
     | StillOpenAtEOF [(FilePos, Char)]
     deriving(Show)
 
-showLexerErrorInfo :: LexerErrorInfo -> [String]
+-- | Converts the error information into a list of error messages
+showLexerErrorInfo :: LexerErrorInfo -- ^ The error information
+                   -> [String] -- ^ The error messages
 showLexerErrorInfo info =
     case info of
         UnterminatedComment          -> [ Texts.lexerUnterminatedComment               ]
@@ -91,23 +102,29 @@ instance HasMessage LexerWarning where
             [ MessageHints Texts.hint [ MessageString s | s <- rest ] ]
 -}
 
+-- | Defines a lexer warning
 data LexerWarning =
-    LexerWarning FilePos LexerWarningInfo
+    LexerWarning FilePos LexerWarningInfo -- ^ The lexer file position and warning information
 
-data LexerWarningInfo 
-    = TabCharacter
-    | LooksLikeFloatNoFraction String
-    | LooksLikeFloatNoDigits String
-    | NestedComment FilePos
-    | UtfChar
-    | CommentOperator
+-- | Defines the different lexer warning types
+data LexerWarningInfo
+    = TabCharacter -- ^ Tab character was encountered
+    | LooksLikeFloatNoFraction String -- ^ The number looks like a float, but doesn't have fraction
+    | LooksLikeFloatNoDigits String   -- ^ The number looks like a float, but doesn't have digits
+    | NestedComment FilePos  -- ^ Nested comment was encountered
+    | UtfChar -- ^ The UTF BOM character was found
+    | CommentOperator -- ^ Syntax coloring cannot handle names containing --
 
-showLexerWarnings :: [LexerWarning] -> String
+-- | Converts a list of warnings to a single string
+showLexerWarnings :: [LexerWarning] -- ^ The warnings
+                  -> String         -- ^ The string for the user
 showLexerWarnings ws = intercalate "\n-----------\n" $ map showWarning ws
             where showWarning (LexerWarning pos info) = "Warning: " ++
                     intercalate "\n" (showLexerWarningInfo info) ++ " " ++ show pos
 
-showLexerWarningInfo :: LexerWarningInfo -> [String]
+-- | Converts the warning information into a list of warning messages
+showLexerWarningInfo :: LexerWarningInfo  -- ^ The warning information
+                     -> [String] -- ^ The warning messages
 showLexerWarningInfo info = 
     case info of
         TabCharacter                    -> Texts.lexerTabCharacter
@@ -118,7 +135,9 @@ showLexerWarningInfo info =
         CommentOperator                 -> Texts.lexerCommentOperator
 
 -- TODO: This is only valid for haskell.. Probably more of the warnings too!
-keepOneTabWarning :: [LexerWarning] -> [LexerWarning]
+-- | Generates a TabCharacter warning
+keepOneTabWarning :: [LexerWarning] -- ^ The old warnings
+                  -> [LexerWarning] -- ^ The new warnings
 keepOneTabWarning = keepOneTab True
   where
     keepOneTab isFirst (warning@(LexerWarning _ TabCharacter):rest)
@@ -128,7 +147,9 @@ keepOneTabWarning = keepOneTab True
         warning : keepOneTab isFirst rest
     keepOneTab _ [] = []
 
-isLooksLikeFloatWarningInfo :: LexerWarningInfo -> Bool
+-- | Checks whether the given warning is a LooksLikeFloatNoFraction or LooksLikeFloatNoDigits
+isLooksLikeFloatWarningInfo :: LexerWarningInfo -- ^ The warning
+                            -> Bool             -- ^ The result
 isLooksLikeFloatWarningInfo warningInfo =
    case warningInfo of
       LooksLikeFloatNoFraction _ -> True

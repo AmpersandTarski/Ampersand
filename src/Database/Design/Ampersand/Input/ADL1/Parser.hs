@@ -17,13 +17,14 @@ import Control.Applicative(pure)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
 
---to parse files containing only populations
 --- Populations ::= Population+
-pPopulations :: AmpParser [P_Population]
+-- | Parses a list of populations
+pPopulations :: AmpParser [P_Population] -- ^ The population list parser
 pPopulations = many1 pPopulation
 
 --- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
-pContext :: AmpParser (P_Context, [String]) -- the result is the parsed context and a list of include filenames
+-- | Parses a context
+pContext :: AmpParser (P_Context, [String]) -- ^ The result is the parsed context and a list of include filenames
 pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> pConceptName
                     <*> pLanguageRef
@@ -496,7 +497,8 @@ pPurpose = rebuild <$> currPos
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 --- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
-pPopulation :: AmpParser P_Population
+-- | Parses a population
+pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   prelpop   <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
                   P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
@@ -590,7 +592,8 @@ pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
 -- However elegant, this solution needs to be left-factored in order to get a performant parser.
 -}
 --- Rule ::= Term ('=' Term | '|-' Term)?
-pRule :: AmpParser (Term TermPrim)
+-- | Parses a rule
+pRule :: AmpParser (Term TermPrim) -- ^ The rule parser
 pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
                       invert PImp  <$> currPos <* pOperator "|-" <*> pTerm)
 
@@ -605,7 +608,8 @@ In order to maintain performance standards, the parser is left factored.
 The functions pars and f have arguments 'combinator' and 'operator' only to avoid writing the same code twice.
 -}
 --- Term ::= Trm2 (('/\' Trm2)+ | ('\/' Trm2)+)?
-pTerm :: AmpParser (Term TermPrim)
+-- | Parses a term
+pTerm :: AmpParser (Term TermPrim) -- ^ The term parser
 pTerm = pTrm2 <??> (invertT PIsc <$> rightAssociate PIsc "/\\" pTrm2 <|>
                     invertT PUni <$> rightAssociate PUni "\\/" pTrm2)
 

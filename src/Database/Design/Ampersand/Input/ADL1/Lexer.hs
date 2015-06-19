@@ -19,7 +19,6 @@ module Database.Design.Ampersand.Input.ADL1.Lexer
     , Lexeme(..)
     , lexemeText
     , initPos
-    , Filename
     , FilePos(..)
 ) where
 
@@ -40,7 +39,8 @@ import Database.Design.Ampersand.Misc
 fatal :: Int -> String -> a
 fatal = fatalMsg "Lexer"
 
-keywords :: [String]
+-- | Retrieves a list of keywords accepted by the ampersand language
+keywords :: [String] -- ^ The keywords
 keywords      = [ "INCLUDE"
                 , "CONTEXT", "ENDCONTEXT", "EXTENDS", "THEMES"
                 , "META"
@@ -62,15 +62,22 @@ keywords      = [ "INCLUDE"
                 , "ROLE", "EDITS", "MAINTAINS"
                 ]
 
-operators :: [String]
+-- | Retrieves a list of operators accepted by the ampersand language
+operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
-symbols :: String -- [Char]
+-- | Retrieves the list of symbols accepted by the ampersand language
+symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
 --TODO: The init pos gets calculated here and again in the runLexerMonad method
-lexer :: [Options] -> Filename -> String -> Either LexerError ([Token], [LexerWarning])
+--TODO: Options should be one item, not a list
+-- | Runs the lexer
+lexer :: [Options]  -- ^ The command line options
+      -> FilePath   -- ^ The file name, used for error messages
+      -> String     -- ^ The content of the file
+      -> Either LexerError ([Token], [LexerWarning]) -- ^ Either an error or a list of tokens and warnings
 lexer opt file input = case runLexerMonad opt file (mainLexer (initPos file) input) of
                                Left err -> Left err
                                Right (ts, ws) -> Right (ts, ws)
@@ -212,7 +219,6 @@ scanAtom ('"':xs)        = let (str,w,r) = scanAtom xs
                            in ('"': str,w+1,r)
 scanAtom xs   = let (ch,cw,cr) = getchar xs
                     (str,w,r)  = scanAtom cr
---                    str' = maybe "" (:str) ch
                 in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
 -----------------------------------------------------------
