@@ -148,7 +148,7 @@ theSheetCellsForTable (sheetName,ws)
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
      | otherwise
-     =  Just . (\x->trace (show x) x) $
+     =  Just -- . (\x->trace (show x) x) $
              Mapping { theSheetName = T.unpack sheetName
                      , theCellMap   = ws  ^. wsCells
                      , headerRowNrs = okHeaderRows

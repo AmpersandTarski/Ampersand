@@ -39,7 +39,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        matrix = 
          case plug of
            TblSQL{} -> Just $ headers ++ content  
-           BinSQL{} -> trace ("### Warning BinSQL is still buggy. This impacts `"++name plug++"`.") $
+           BinSQL{} -> trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
                        Just $ headers ++ content
            ScalarSQL{} -> Nothing
          where
