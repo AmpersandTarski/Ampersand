@@ -202,28 +202,28 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellText t) -> (not . T.null) t && isLower(T.head t)
             _ -> False
                
---conceptNameAndDelimiter :: T.Text -> Maybe (String,Char) --(Conceptname, Delimiter)
---conceptNameAndDelimiter t =
---  case T.uncons t of
---    Nothing         -> Nothing  --t is empty
---    Just (h,tl) 
---         | h /= '[' -> Nothing -- first character is not '['
---         | otherwise -> case T.uncons . T.reverse $ tl of
---                         Nothing -> Nothing -- only one character in t
---                         Just (l,revRest)
---                           | l /= ']' -> Nothing  -- last character is not ']'
---                           | otherwise -> case T.uncons revRest of
---                                            Nothing -> Nothing -- t == "[]"
---                                            Just (c,revName) -> if isDelimiter c
---                                                                then  case T.unpack . T.reverse $ revName of
---                                                                        [] -> Nothing
---                                                                        nm@(h':_) -> if isUpper h' 
---                                                                                     then Just (nm,c)
---                                                                                     else Nothing
---                                                                else Nothing
---               
+conceptNameAndDelimiter :: T.Text -> Maybe (String,Maybe Char) --(Conceptname, Delimiter)
+-- Cases:  1) "[" ++ Conceptname ++ delimiter ++ "]"
+--         2) Conceptname
+--         3) none of above
+--  Where Conceptname is any string starting with an uppercase character
+conceptNameAndDelimiter t
+  | T.null t = Nothing
+  | T.head t == '[' && T.last t == ']'
+             = let mid = (T.reverse . T.tail . T.reverse . T.tail) t
+                   (nm,d) = (T.init mid, T.last mid)
+               in if isDelimiter d && isConceptName nm
+                  then Just (T.unpack nm , Just d)
+                  else Nothing
+  | otherwise = if isConceptName t
+                then Just (T.unpack t, Nothing)
+                else Nothing
            
                
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
-         
+isConceptName :: T.Text -> Bool
+isConceptName t = case T.uncons t of
+                    Nothing  -> False
+                    (Just (h,_)) -> isUpper h
+ 
