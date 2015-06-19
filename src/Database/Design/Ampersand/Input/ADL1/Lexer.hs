@@ -10,10 +10,8 @@ module Database.Design.Ampersand.Input.ADL1.Lexer
     , LexerWarning(..)
     , LexerWarningInfo(..)
     , keepOneTabWarning
-    , isLooksLikeFloatWarningInfo
     , showLexerErrorInfo
     , showLexerWarningInfo
-    , showLexerWarnings
     -- LexerToken
     , Token(..)
     , Lexeme(..)
