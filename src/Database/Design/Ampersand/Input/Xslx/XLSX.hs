@@ -58,7 +58,7 @@ toPops file x = map popForColumn' (colNrs x)
                                                 "this value should be present. (sheet,row,col) = "++show (theSheetName x,row,i)
                                             )
                                             (case value(row,i) of
-                                               Just (CellText t)   -> Just (show t)
+                                               Just (CellText t)   -> Just (T.unpack t) -- don't use show, for you get quotes!
                                                Just (CellDouble d) -> Just (show d)
                                                Just (CellBool b)   -> Just (show b)
                                                Nothing -> Nothing)
@@ -136,14 +136,19 @@ theSheetCellsForTable (sheetName,ws)
     tableStarters :: [(Int,Int)]
     tableStarters = Prelude.filter isStartOfTable $ M.keys (ws  ^. wsCells)  
       where isStartOfTable :: (Int,Int) -> Bool
-            isStartOfTable k 
-              = (snd k) == 1 && case  value k of
-                             Just (CellText t) -> (not . T.null ) t && T.head t == '[' && T.last t == ']' 
-                                          --      &&   let t' = T.init t in
-                                          --           (not . T.null) t' && isDelimiter (T.last t')
-                             _  -> False
+            isStartOfTable (rowNr,colNr)
+              | colNr /= 1 = False
+              | rowNr == 1 = isBracketed (rowNr,colNr) 
+              | otherwise  =           isBracketed (rowNr     ,colNr)  
+                             && (not $ isBracketed (rowNr - 1, colNr))             
+              
     value :: (Int,Int) -> Maybe CellValue
     value k = (ws  ^. wsCells) ^? ix k . cellValue . _Just
+    isBracketed :: (Int,Int) -> Bool
+    isBracketed k = 
+       case value k of
+         Just (CellText t) -> (not . T.null ) t && T.head t == '[' && T.last t == ']'
+         _                 -> False      
     theMapping :: Int -> Maybe SheetCellsForTable
     theMapping indexInTableStarters 
      | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
@@ -194,20 +199,21 @@ theSheetCellsForTable (sheetName,ws)
           | otherwise  = isProperConceptName (conceptNameRowNr,colNr) && isProperRelName(relationNameRowNr,colNr)
        isProperConceptName k 
          = case value k of
-            Just (CellText t) -> ((not . T.null) t && isUpper(T.head t)) 
---                               || isJust (conceptNameAndDelimiter t)
+            Just (CellText t) -> isJust (conceptNameWithOptionalDelimiter t)
             _ -> False
        isProperRelName k 
          = case value k of
             Just (CellText t) -> (not . T.null) t && isLower(T.head t)
             _ -> False
                
-conceptNameAndDelimiter :: T.Text -> Maybe (String,Maybe Char) --(Conceptname, Delimiter)
+conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname -} 
+                                                    , Maybe Char {- Delimiter   -}
+                                             )
 -- Cases:  1) "[" ++ Conceptname ++ delimiter ++ "]"
 --         2) Conceptname
 --         3) none of above
 --  Where Conceptname is any string starting with an uppercase character
-conceptNameAndDelimiter t
+conceptNameWithOptionalDelimiter t
   | T.null t = Nothing
   | T.head t == '[' && T.last t == ']'
              = let mid = (T.reverse . T.tail . T.reverse . T.tail) t
@@ -219,7 +225,6 @@ conceptNameAndDelimiter t
                 then Just (T.unpack t, Nothing)
                 else Nothing
            
-               
 isDelimiter :: Char -> Bool
 isDelimiter = isPunctuation
 isConceptName :: T.Text -> Bool
