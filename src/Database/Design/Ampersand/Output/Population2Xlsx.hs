@@ -39,7 +39,8 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        matrix = 
          case plug of
            TblSQL{} -> Just $ headers ++ content  
-           BinSQL{} -> Just $ headers ++ content
+           BinSQL{} -> trace ("### Warning BinSQL is still buggy. This impacts `"++name plug++"`.") $
+                       Just $ headers ++ content
            ScalarSQL{} -> Nothing
          where
            headers :: [[Cell]]
@@ -55,8 +56,9 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                    --TODO: This is a not-so-nice way to get the relationname from the fieldname.
                    cleanUpRelName orig
                      | isPrefixOf "tgt_" orig = drop 4 orig
-                     | isPrefixOf "src_" orig = drop 4 orig
+                     | isPrefixOf "src_" orig = drop 4 orig ++"~" --TODO: Make in less hacky! (See also the way the fieldname is constructed.
                      | otherwise         = orig
+           content :: [[Cell]]
            content = fmap record2Cells (tblcontents (vgens fSpec) (initialPops fSpec) plug)
            record2Cells = fmap toCell
        toCell :: Maybe String -> Cell

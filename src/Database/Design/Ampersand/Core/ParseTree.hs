@@ -586,6 +586,10 @@ data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
 instance Show P_Sign where
   showsPrec _ sgn =
       showString (   "[" ++ show (pSrc sgn)++"*"++show (pTgt sgn) ++ "]" )
+instance Flippable P_Sign where
+  flp sgn = P_Sign { pSrc = pTgt sgn
+                   , pTgt = pSrc sgn
+                   }
 
 data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand file
                   , gen_spc :: P_Concept         -- ^ Left hand side concept expression

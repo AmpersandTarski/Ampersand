@@ -34,6 +34,7 @@ data SheetCellsForTable
                 , headerRowNrs :: [Int]
                 , popRowNrs    :: [Int]
                 , colNrs       :: [Int]
+                , debugInfo :: [String]
                 }
 instance Show SheetCellsForTable where  --for debugging only
   show x 
@@ -42,27 +43,34 @@ instance Show SheetCellsForTable where  --for debugging only
       , "headerRowNrs: "++show (headerRowNrs x)
       , "popRowNrs   : "++show (popRowNrs x)
       , "colNrs      : "++show (colNrs x)
-      ]  
+      ] ++ debugInfo x 
 toPops :: FilePath -> SheetCellsForTable -> [P_Population]
-toPops file x = map popForColumn (colNrs x)
+toPops file x = map popForColumn' (colNrs x)
   where
+    popForColumn' i = -- trace (show x ++"(Now column: "++show i++")") $
+                    popForColumn i
     popForColumn :: Int -> P_Population
     popForColumn i 
-      | i  == 1  
+      | i  == sourceCol  
         =  P_CptPopu { p_orig = popOrigin
                      , p_cnme = sourceConceptName 
-                     , p_popas = map T.unpack [fromMaybe (fatal 49 "this value should be present")
-                                                         (case value(row,i) of
-                                                           Just (CellText t) -> Just t
-                                                           _ -> Nothing)
-                                              | row <- popRowNrs x] 
+                     , p_popas = [fromMaybe (fatal 49 $ 
+                                                "this value should be present. (sheet,row,col) = "++show (theSheetName x,row,i)
+                                            )
+                                            (case value(row,i) of
+                                               Just (CellText t)   -> Just (show t)
+                                               Just (CellDouble d) -> Just (show d)
+                                               Just (CellBool b)   -> Just (show b)
+                                               Nothing -> Nothing)
+                                 | row <- popRowNrs x] 
                      }
       | otherwise
         =  (case mTargetConceptName of
              Just tCptName 
                 -> P_TRelPop { p_orig = popOrigin
                              , p_rnme = relName
-                             , p_type = P_Sign {pSrc = PCpt sourceConceptName
+                             , p_type = (if isFlipped then flp else id)
+                                        P_Sign {pSrc = PCpt sourceConceptName
                                                ,pTgt = PCpt tCptName
                                                }
                              , p_popps = thePairs}
@@ -89,16 +97,23 @@ toPops file x = map popForColumn (colNrs x)
                 Just (CellText t) -> Just (T.unpack t)
                 _ -> Nothing
        relName :: String
-       relName 
+       isFlipped :: Bool
+       (relName,isFlipped) 
           = case value (relNamesRow,targetCol) of
-                Just (CellText t) -> T.unpack t
+                Just (CellText t) -> 
+                    let str = T.unpack t
+                    in if last str == '~'
+                       then (init str, True )
+                       else (     str, False)
                 _ -> fatal 87 $ "No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol)
        thePairs = catMaybes (map pairAtRow (popRowNrs x))
        pairAtRow :: Int -> Maybe Paire
        pairAtRow r = case (value (r,sourceCol)
                           ,value (r,targetCol)
                           ) of
-                       (Just s,Just t) -> Just $ mkPair (cellToString s) (cellToString t)
+                       (Just s,Just t) -> Just $ 
+                                            (if isFlipped then flp else id) $
+                                                mkPair (cellToString s) (cellToString t)
                        _ -> Nothing
        cellToString :: CellValue -> String
        cellToString cv = case cv of
@@ -123,50 +138,92 @@ theSheetCellsForTable (sheetName,ws)
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable k 
               = (snd k) == 1 && case  value k of
-                             Just (CellText t) -> (not . T.null ) t && T.head t == '[' && T.last t == ']'
+                             Just (CellText t) -> (not . T.null ) t && T.head t == '[' && T.last t == ']' 
+                                          --      &&   let t' = T.init t in
+                                          --           (not . T.null) t' && isDelimiter (T.last t')
                              _  -> False
     value :: (Int,Int) -> Maybe CellValue
     value k = (ws  ^. wsCells) ^? ix k . cellValue . _Just
     theMapping :: Int -> Maybe SheetCellsForTable
     theMapping indexInTableStarters 
-     | length headerRows /= 2 = Nothing  -- Because there are not enough header rows
+     | length okHeaderRows /= nrOfHeaderRows = Nothing  -- Because there are not enough header rows
      | otherwise
-     =  Just Mapping { theSheetName = T.unpack sheetName
+     =  Just . (\x->trace (show x) x) $
+             Mapping { theSheetName = T.unpack sheetName
                      , theCellMap   = ws  ^. wsCells
-                     , headerRowNrs = headerRows
+                     , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows
                      , colNrs       = theCols
+                     , debugInfo = [ "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
+                                   , "maxColOfWorksheet"++": "++show maxColOfWorksheet
+                                   , "startOfTable     "++": "++show startOfTable
+                                   , "firstPopRowNr    "++": "++show firstPopRowNr
+                                   , "lastPopRowNr     "++": "++show lastPopRowNr
+                                   , "[(row,isProperRow)] "++": "++concatMap show [(r,isProperRow r) | r<- [firstPopRowNr..lastPopRowNr]]
+                                   , "theCols          "++": "++show theCols
+                                   ] 
                      }
      where
-       (r1,_{-c1-}) = tableStarters !! indexInTableStarters 
+       startOfTable = tableStarters !! indexInTableStarters 
+       firstHeaderRowNr = fst startOfTable
+       firstColumNr = snd startOfTable
+       relationNameRowNr = firstHeaderRowNr
+       conceptNameRowNr  = firstHeaderRowNr+1
+       nrOfHeaderRows = 2
        maxRowOfWorksheet = Prelude.maximum (Prelude.map fst (M.keys (ws  ^. wsCells)))
        maxColOfWorksheet = Prelude.maximum (Prelude.map snd (M.keys (ws  ^. wsCells)))
-       maxRows = ((map fst tableStarters++[maxRowOfWorksheet])!!(indexInTableStarters+1))-r1+1
-       headerRows = map (+ (r1-1)) $ filter isProperRow [1,2]
-       populationRows = filter isProperRow [length headerRows+1..maxRows]
+       firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
+       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet])!!(indexInTableStarters+1))-1
+       okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
+       populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool
-       isProperRow i
-          | i == 1 = True -- The first row was recognized as tableStarter
-          | i == 2 = isProperConceptName(r1-1+i,1)
-          | otherwise = notEmpty (r1-1+i,1)
+       isProperRow rowNr
+          | rowNr == relationNameRowNr = True -- The first row was recognized as tableStarter
+          | rowNr == conceptNameRowNr  = isProperConceptName(rowNr,firstColumNr)
+          | otherwise                  = notEmpty (rowNr,firstColumNr)
        notEmpty k
           = case value k of
-            Just (CellText t) -> (not . T.null) t
-            _ -> False
+            Just (CellText t)   -> (not . T.null) t
+            Just (CellDouble _) -> True
+            Just (CellBool _)   -> True
+            Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool
-       isProperCol i
-          | i == 1    = isProperConceptName (r1+1,i)
-          | otherwise = isProperConceptName (r1+1,i) && isProperRelName(r1,i)
+       isProperCol colNr
+          | colNr == 1 = isProperConceptName (conceptNameRowNr,colNr)
+          | otherwise  = isProperConceptName (conceptNameRowNr,colNr) && isProperRelName(relationNameRowNr,colNr)
        isProperConceptName k 
          = case value k of
-            Just (CellText t) -> (not . T.null) t && isUpper(T.head t)
+            Just (CellText t) -> ((not . T.null) t && isUpper(T.head t)) 
+--                               || isJust (conceptNameAndDelimiter t)
             _ -> False
        isProperRelName k 
          = case value k of
             Just (CellText t) -> (not . T.null) t && isLower(T.head t)
             _ -> False
                
-   
-
+--conceptNameAndDelimiter :: T.Text -> Maybe (String,Char) --(Conceptname, Delimiter)
+--conceptNameAndDelimiter t =
+--  case T.uncons t of
+--    Nothing         -> Nothing  --t is empty
+--    Just (h,tl) 
+--         | h /= '[' -> Nothing -- first character is not '['
+--         | otherwise -> case T.uncons . T.reverse $ tl of
+--                         Nothing -> Nothing -- only one character in t
+--                         Just (l,revRest)
+--                           | l /= ']' -> Nothing  -- last character is not ']'
+--                           | otherwise -> case T.uncons revRest of
+--                                            Nothing -> Nothing -- t == "[]"
+--                                            Just (c,revName) -> if isDelimiter c
+--                                                                then  case T.unpack . T.reverse $ revName of
+--                                                                        [] -> Nothing
+--                                                                        nm@(h':_) -> if isUpper h' 
+--                                                                                     then Just (nm,c)
+--                                                                                     else Nothing
+--                                                                else Nothing
+--               
+           
+               
+isDelimiter :: Char -> Bool
+isDelimiter = isPunctuation
          
