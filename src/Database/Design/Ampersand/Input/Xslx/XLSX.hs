@@ -87,15 +87,22 @@ toPops file x = map popForColumn' (colNrs x)
        sourceCol       = colNrs x !! 0
        targetCol       = i 
        sourceConceptName :: String
-       sourceConceptName 
+       mSourceConceptDelimiter :: Maybe Char
+       (sourceConceptName, mSourceConceptDelimiter)
           = case value (conceptNamesRow,sourceCol) of
-                Just (CellText t) -> T.unpack t
-                _ -> fatal 66 "No valid source conceptname found. This should have been checked before"
+                Just (CellText t) -> case conceptNameWithOptionalDelimiter t of
+                                       Nothing -> fatal 94 "No valid source conceptname found. This should have been checked before"
+                                       Just res -> res
+                _ -> fatal 96 "No valid source conceptname found. This should have been checked before"
        mTargetConceptName :: Maybe String
-       mTargetConceptName 
+       mTargetConceptDelimiter :: Maybe Char
+       (mTargetConceptName, mTargetConceptDelimiter)
           = case value (conceptNamesRow,targetCol) of
-                Just (CellText t) -> Just (T.unpack t)
-                _ -> Nothing
+                Just (CellText t) -> let (nm,mDel) = case conceptNameWithOptionalDelimiter t of
+                                                      Nothing -> fatal 94 "No valid source conceptname found. This should have been checked before"
+                                                      Just res -> res
+                                     in (Just nm, mDel)
+                _ -> (Nothing, Nothing)
        relName :: String
        isFlipped :: Bool
        (relName,isFlipped) 
@@ -106,20 +113,35 @@ toPops file x = map popForColumn' (colNrs x)
                        then (init str, True )
                        else (     str, False)
                 _ -> fatal 87 $ "No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol)
-       thePairs = catMaybes (map pairAtRow (popRowNrs x))
-       pairAtRow :: Int -> Maybe Paire
-       pairAtRow r = case (value (r,sourceCol)
+       thePairs :: [Paire]
+       thePairs =  concat . catMaybes . map pairsAtRow . popRowNrs $ x
+       pairsAtRow :: Int -> Maybe [Paire]
+       pairsAtRow r = case (value (r,sourceCol)
                           ,value (r,targetCol)
                           ) of
                        (Just s,Just t) -> Just $ 
-                                            (if isFlipped then flp else id) $
-                                                mkPair (cellToString s) (cellToString t)
+                                            (if isFlipped then map flp else id) $
+                                                [mkPair a b
+                                                | a <- cellToStrings mSourceConceptDelimiter s
+                                                , b <- cellToStrings mTargetConceptDelimiter t
+                                                ]
                        _ -> Nothing
-       cellToString :: CellValue -> String
-       cellToString cv = case cv of
-                          CellText t -> T.unpack t
-                          CellDouble d -> show d
-                          CellBool b -> show b 
+       cellToStrings :: Maybe Char -> CellValue -> [String]  -- The value in a cell can contain the delimeter of the row
+       cellToStrings mDelimiter cv 
+         = case cv of
+             CellText t -> unDelimit mDelimiter (T.unpack t)
+             CellDouble d -> [show d]
+             CellBool b -> [show b] 
+       unDelimit :: Eq a => Maybe a -> [a] -> [[a]]
+       unDelimit mDelimiter xs =
+         case mDelimiter of
+           Nothing -> [xs]
+           (Just delimiter)
+                  -> if fs == [] 
+                     then [xs]
+                     else  fs : unDelimit mDelimiter (tail gs)
+               where (fs,gs) = span (== delimiter) xs
+            
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
