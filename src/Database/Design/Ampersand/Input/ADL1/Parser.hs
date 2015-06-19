@@ -439,16 +439,15 @@ pInterface = lbl <$> currPos                                       <*>
           pRoles  = pKey "FOR" *> pRole `sepBy1` pComma
 
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
---TODO Optionality of 'LINKTO' should be implemented some nicer way...
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
-            <|> interfRef <$> currPos <*> pMaybe (pKey "LINKTO") <*  pKey "INTERFACE" <*> pADLid
+            <|> P_InterfaceRef <$> currPos <*> pIsThere (pKey "LINKTO") <*  pKey "INTERFACE" <*> pADLid
   where pBoxKey :: AmpParser (Maybe String)
         pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
               <|> Just <$> pKey "ROWS"
               <|> Just <$> pKey "COLS"
               <|> Just <$> pKey "TABS"
-        interfRef p mlt s = P_InterfaceRef p (isJust mlt) s
+
 --- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
@@ -560,44 +559,6 @@ pMarkup = P_Markup
            <*> pMaybe pTextMarkup
            <*> (pString <|> pExpl)
 
-{-  Basically we would have the following expression syntax:
-pRule ::= pTrm1   "="    pTerm                           |  -- equivalence
-       pTrm1   "|-"   pTerm                           |  -- implication or subset
-       pTrm1 .
-pTerm ::= pList1Sep "/\\" pTrm2                          |  -- intersection
-       pList1Sep "\\/" pTrm2                          |  -- union
-       pTrm2 .
-pTrm2 ::= pTrm3    "-"    pTrm3                          |  -- set difference
-       pTrm3 .
-pTrm3 ::= pTrm4   "\\"   pTrm4                           |  -- right residual
-       pTrm4   "/"    pTrm4                           |  -- left residual
-       pTrm4 .
-pTrm4 ::= pList1Sep ";" pTrm5                            |  -- composition       (semicolon)
-       pList1Sep "!" pTrm5                            |  -- relative addition (dagger)
-       pList1Sep "#" pTrm5                            |  -- cartesian product (asterisk)
-       pTrm5 .
-pTrm5 ::= "-"     pTrm6                                  |  -- unary complement
-       pTrm6   pSign                                  |  -- unary type cast
-       pTrm6   "~"                                    |  -- unary flip
-       pTrm6   "*"                                    |  -- unary Kleene star
-       pTrm6   "+"                                    |  -- unary Kleene plus
-       pTrm6 .
-pTrm6 ::= pRelation                                      |
-       "("   pTerm   ")" .
-In practice, we have it a little different.
- - In order to avoid "associative" brackets, we parse the associative operators "\/", "/\", ";", and "!" with pList1Sep. That works.
- - We would like the user to disambiguate between "=" and "|-" by using brackets.
--}
-
-{- In theory, the expression is parsed by:
-pRule :: AmpParser (Term TermPrim)
-pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
-          fEimp <$> pTrm1  <*>  posOf (pOperator "|-") <*>  pTerm   <|>
-          pTrm1
-          where fequ  lExp orig rExp = PEqu orig lExp rExp
-                fEimp lExp orig rExp = PImp orig lExp rExp
--- However elegant, this solution needs to be left-factored in order to get a performant parser.
--}
 --- Rule ::= Term ('=' Term | '|-' Term)?
 -- | Parses a rule
 pRule :: AmpParser (Term TermPrim) -- ^ The rule parser
@@ -606,7 +567,7 @@ pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
 
 
 {-
-pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
+pTerm is slightly more complicated, for the purpose of avoiding "associative" brackets.
 The idea is that each operator ("/\\" or "\\/") can be parsed as a sequence without brackets.
 However, as soon as they are combined, brackets are needed to disambiguate the combination.
 There is no natural precedence of one operator over the other.
@@ -631,14 +592,6 @@ pTrm3 :: AmpParser (Term TermPrim)
 pTrm3  =  pTrm4 <??> (invert PLrs <$> currPos <* pOperator "/"  <*> pTrm4 <|>
                       invert PRrs <$> currPos <* pOperator "\\" <*> pTrm4 <|>
                       invert PDia <$> currPos <* pOperator "<>" <*> pTrm4 )
-
-{- by the way, a slightly different way of getting exactly the same result is:
-pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "\\") <|> valPosOf (pOperator "<>")) <*> pTrm4 )
-          where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
-                f ("/" , orig) rExp lExp = PLrs orig lExp rExp
-                f (_   , orig) rExp lExp = PDia orig lExp rExp
--}
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
@@ -735,7 +688,6 @@ pLabelProps = (,) <$> pADLid
 pLabel :: AmpParser String
 pLabel = pADLid <* pColon
 
---TODO! Try should not be necessary here, we must take the brackets out of the scope
 --- Content ::= '[' (RecordList | RecordObsList)? ']'
 pContent :: AmpParser Pairs
 pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi)
