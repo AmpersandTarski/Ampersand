@@ -1,22 +1,18 @@
-module Database.Design.Ampersand.Input.ADL1.LexerTexts(
-    warning, hint,
-    parserSyntaxError, parserOr, parserUnknown, parserExpecting, parserUnexpected,
-    parserEndOfInput, parserSingleDigitPriority, parserTypeClass, parserTypeConstructor,
-    parserTypeVariable, parserModuleName, parserVariable,
-    parserConstructor, parserConstructorOperator, parserOperator,
-    parserCharacterLiteral, parserStringLiteral, parserIntegerLiteral, parserFloatLiteral,
-    parserKeyword, parserInsertedLBrace, parserEndOfFile, parserNextInBlock, parserEndOfBlock,
-    parserExpression, parserPattern, parserType, parserLiteral, parserNumericLiteral, 
-    parserImportDeclaration, parserDeclaration,
-    lexerUnterminatedComment, lexerUnterminatedPurpose, lexerUnterminatedAtom, lexerUnterminatedInfix,
-    lexerMissingExponentDigits, lexerUnexpectedInfixKeyword, lexerUnexpectedInfixChar, lexerUnexpectedChar,
-    lexerIllegalEscapeInChar, lexerEmptyChar, lexerIllegalCharInChar, lexerNonTerminatedString,
-    lexerInfixHint, lexerEOFInChar, lexerEOFInString,
-    lexerIllegalEscapeInString, lexerNewLineInString, lexerIllegalCharInString,
-    lexerTooManyClose, lexerUnexpectedClose, lexerStillOpenAtEOF, lexerCorrectStrings,
-    lexerTabCharacter, lexerLooksLikeFloatNoFraction, lexerLooksLikeFloatNoDigits,
-    lexerUtfChar, lexerNestedComment, lexerCommentOperator
-) where
+module Database.Design.Ampersand.Input.ADL1.LexerTexts
+    ( lexerCommentOperator
+    , lexerCorrectStrings
+    , lexerNestedComment
+    , lexerNonTerminatedString
+    , lexerStillOpenAtEOF
+    , lexerTabCharacter
+    , lexerTooManyClose
+    , lexerUnexpectedChar
+    , lexerUnexpectedClose
+    , lexerUnterminatedAtom
+    , lexerUnterminatedComment
+    , lexerUnterminatedPurpose
+    , lexerUtfChar
+    ) where
 
 import Data.IORef
 import System.IO.Unsafe
@@ -39,318 +35,49 @@ select languageRef table =
     in fromMaybe (error "Texts.select: unknown language")
         (lookup lang (map convert table))
 
-warning :: String
-warning = select language
-    [ English :-> "Warning"
-    , Dutch   :-> "Waarschuwing"
-    ]
-
-hint :: String
-hint = select language
-    [ English :-> "Hint"
-    , Dutch   :-> "Hint"
-    ]
-
-parserSyntaxError :: String
-parserSyntaxError = select language
-    [ English :-> "Syntax error"
-    , Dutch   :-> "Syntax fout"
-    ]
-
-parserOr :: String
-parserOr = select language
-    [ English :-> "or"
-    , Dutch   :-> "of"
-    ]
-
-parserUnknown :: String
-parserUnknown = select language
-    [ English :-> "unknown parse error"
-    , Dutch   :-> "onbekende syntax fout"
-    ]
-
-parserExpecting :: String
-parserExpecting = select language
-    [ English :-> "expecting"
-    , Dutch   :-> "verwacht: "
-    ]
-
-parserUnexpected :: String
-parserUnexpected = select language
-    [ English :-> "unexpected"
-    , Dutch   :-> "onverwacht: "
-    ]
-
-parserEndOfInput :: String
-parserEndOfInput = select language
-    [ English :-> "end of input"
-    , Dutch   :-> "einde van de tekst"
-    ]
-
-parserSingleDigitPriority :: String
-parserSingleDigitPriority = select language
-    [ English :-> "priority must be a single digit"
-    , Dutch   :-> "de prioriteit mag maar uit 1 cijfer bestaan"
-    ]
-
-parserTypeClass :: String
-parserTypeClass = select language
-    [ English :-> "type class"
-    , Dutch   :-> "type klasse"
-    ]
-
-parserTypeConstructor :: String
-parserTypeConstructor = select language
-    [ English :-> "type constructor"
-    , Dutch   :-> "type constructor"
-    ]
-
-parserTypeVariable :: String
-parserTypeVariable = select language
-    [ English :-> "type variable"
-    , Dutch   :-> "type variabele"
-    ]
-
-parserModuleName :: String
-parserModuleName = select language
-    [ English :-> "module name"
-    , Dutch   :-> "module naam"
-    ]
-
-parserVariable :: String
-parserVariable = select language
-    [ English :-> "variable"
-    , Dutch   :-> "variabele"
-    ]
-
-parserConstructor :: String
-parserConstructor = select language
-    [ English :-> "constructor"
-    , Dutch   :-> "constructor"
-    ]
-
-parserConstructorOperator :: String
-parserConstructorOperator = select language
-    [ English :-> "constructor operator"
-    , Dutch   :-> "constructor operator"
-    ]
-
-parserOperator :: String
-parserOperator = select language
-    [ English :-> "operator"
-    , Dutch   :-> "operator"
-    ]
-
-parserCharacterLiteral :: String
-parserCharacterLiteral = select language
-    [ English :-> "character literal"
-    , Dutch   :-> "letter constante"
-    ]
-
-parserStringLiteral :: String
-parserStringLiteral = select language
-    [ English :-> "string literal"
-    , Dutch   :-> "string constante"
-    ]
-
-parserIntegerLiteral :: String
-parserIntegerLiteral = select language
-    [ English :-> "integer literal"
-    , Dutch   :-> "geheel getal"
-    ]
-
-parserFloatLiteral :: String
-parserFloatLiteral = select language
-    [ English :-> "floating-point literal"
-    , Dutch   :-> "reeel getal"
-    ]
-
-parserKeyword :: String
-parserKeyword = select language
-    [ English :-> "keyword"
-    , Dutch   :-> "gereserveerd woord"
-    ]
-
-parserInsertedLBrace :: String
-parserInsertedLBrace = select language
-    [ English :-> "inserted '{'"
-    , Dutch   :-> "ingevoegde '{'"
-    ]
-
-parserEndOfFile :: String
-parserEndOfFile = select language
-    [ English :-> "end of file"
-    , Dutch   :-> "einde van het bestand"
-    ]
-
-parserNextInBlock :: String
-parserNextInBlock = select language
-    [ English :-> "next in block (based on layout)"
-    , Dutch   :-> "volgende in blok (d.m.v. inspringing)"
-    ]
-
-parserEndOfBlock :: String
-parserEndOfBlock = select language
-    [ English :-> "end of block (based on layout)"
-    , Dutch   :-> "einde van het blok (d.m.v. inspringing)"
-    ]
-
-parserExpression :: String
-parserExpression = select language
-    [ English :-> "expression"
-    , Dutch   :-> "expressie"
-    ]
-
-parserPattern :: String
-parserPattern = select language
-    [ English :-> "pattern"
-    , Dutch   :-> "patroon"
-    ]
-
-parserType :: String
-parserType = select language
-    [ English :-> "type"
-    , Dutch   :-> "type"
-    ]
-
-parserLiteral :: String
-parserLiteral = select language
-    [ English :-> "literal"
-    , Dutch   :-> "constante"
-    ]
-
-parserNumericLiteral :: String
-parserNumericLiteral = select language
-    [ English :-> "numeric literal"
-    , Dutch   :-> "getal"
-    ]
-
-parserImportDeclaration :: String
-parserImportDeclaration = select language
-    [ English :-> "import declaration"
-    , Dutch   :-> "import declaratie"
-    ]
-
-parserDeclaration :: String
-parserDeclaration = select language
-    [ English :-> "declaration"
-    , Dutch   :-> "declaratie"
-    ]
-
-lexerUnterminatedComment :: String
+-- | Translates 'Unterminated comment' into the chosen language
+lexerUnterminatedComment :: String -- ^ The translated string
 lexerUnterminatedComment = select language
     [ English :-> "Unterminated comment"
     , Dutch   :-> "Commentaar niet afgesloten"
     ]
 	
-lexerUnterminatedPurpose:: String
+-- | Translates 'Unterminated purpose' into the chosen language
+lexerUnterminatedPurpose:: String -- ^ The translated string
 lexerUnterminatedPurpose= select language
     [ English :-> "Unterminated PURPOSE section"
     , Dutch   :-> "PURPOSE sectie niet afgesloten"
     ]
-	
-lexerUnterminatedAtom :: String
+
+-- | Translates 'Unterminated atom' into the chosen language
+lexerUnterminatedAtom :: String -- ^ The translated string
 lexerUnterminatedAtom = select language
     [ English :-> "Unterminated Atom literal"
     , Dutch   :-> "Atom literal niet afgesloten"
     ]
 
-lexerUnterminatedInfix :: String
-lexerUnterminatedInfix = select language
-    [ English :-> "Unterminated infix identifier"
-    , Dutch   :-> "Infix identifier niet afgesloten"
-    ]
-
-lexerMissingExponentDigits :: String
-lexerMissingExponentDigits = select language
-    [ English :-> "Missing digits in exponent in floating-point literal"
-    , Dutch   :-> "Geen cijfers in de exponent van een reeel getal"
-    ]
-
-lexerUnexpectedInfixKeyword :: String -> String
-lexerUnexpectedInfixKeyword s = select language
-    [ English :-> "Keyword used as infix identifier:  '"           ++ s ++ "'"
-    , Dutch   :-> "Een Keyword is gebruikt als infix operator '"   ++ s ++ "'"
-    ]
-
-lexerUnexpectedInfixChar :: Char -> String
-lexerUnexpectedInfixChar c = select language
-    [ English :-> "Unexpected character in infix identifier: "           ++ [c] ++ "'"
-    , Dutch   :-> "Ongekend karakter gebruikt in infix operator '"       ++ [c] ++ "'"
-    ]
-	
-lexerUnexpectedChar :: Char -> String
+-- | Translates 'Unexpected character' into the chosen language
+lexerUnexpectedChar :: Char -> String -- ^ The translated string
 lexerUnexpectedChar c = select language
     [ English :-> "Unexpected character '" ++ [c] ++ "'"
     , Dutch   :-> "Onverwachte letter '" ++ [c] ++ "'"
     ]
 
-lexerIllegalEscapeInChar :: String
-lexerIllegalEscapeInChar = select language
-    [ English :-> "Illegal escape sequence in character literal"
-    , Dutch   :-> "Illegaal escape karakter in letter constante"
-    ]
-
-lexerEmptyChar :: String
-lexerEmptyChar = select language
-    [ English :-> "Empty character literal"
-    , Dutch   :-> "Lege letter constante"
-    ]
-
-lexerIllegalCharInChar :: String
-lexerIllegalCharInChar = select language
-    [ English :-> "Illegal character in character literal"
-    , Dutch   :-> "Niet toegestaan teken in letter constante"
-    ]
-
-lexerNonTerminatedString :: String
+-- | Translates 'Unterminated string' into the chosen language
+lexerNonTerminatedString :: String -- ^ The translated string
 lexerNonTerminatedString = select language
     [ English :-> "Unterminated string literal"
     , Dutch   :-> "String niet afgesloten"
     ]
 
-lexerInfixHint :: String -> String
-lexerInfixHint name = select language
-    [ English :-> "To write a function in infix notation, use backquotes: `" ++ name ++ "`"
-    , Dutch   :-> "Om een functie infix te schrijven gebruik je backquotes: `" ++ name ++ "`"
-    ]
-
-lexerEOFInChar :: String
-lexerEOFInChar = select language
-    [ English :-> "End of file in character literal"
-    , Dutch   :-> "Einde van bestand in letter constante"
-    ]
-
-lexerEOFInString :: String
-lexerEOFInString = select language
-    [ English :-> "End of file in string literal"
-    , Dutch   :-> "Einde van bestand in tekst constante"
-    ]
-
-lexerIllegalEscapeInString :: String
-lexerIllegalEscapeInString = select language
-    [ English :-> "Illegal escape sequence in string literal"
-    , Dutch   :-> "Illegaal escape karakter in tekst constante"
-    ]
-
-lexerNewLineInString :: String
-lexerNewLineInString = select language
-    [ English :-> "Newline in string literal (expecting \")"
-    , Dutch   :-> "Einde van regel in een tekst (gebruik \" om de tekst te sluiten)"
-    ]
-
-lexerIllegalCharInString :: String
-lexerIllegalCharInString = select language
-    [ English :-> "Illegal character in string literal"
-    , Dutch   :-> "Niet toegestaan teken in tekst constante"
-    ]
-
-lexerTooManyClose :: Show a => a -> String
+-- | Translates 'Close bracket but no open bracket' into the chosen language
+lexerTooManyClose :: Show a => a -> String -- ^ The translated string
 lexerTooManyClose c = select language
     [ English :-> "Close bracket " ++ show c ++ " but no open bracket"
     , Dutch   :-> "Haakje " ++ show c ++ " wordt gesloten maar nergens geopend"
     ]
 
+-- | Translates 'Unexpected close bracket' into the chosen language
 lexerUnexpectedClose :: Char -> Char -> [String]
 lexerUnexpectedClose c1 c2 = select language
     [ English :-> [ "Unexpected close bracket " ++ show c1
@@ -361,23 +88,29 @@ lexerUnexpectedClose c1 c2 = select language
                   ]
     ]
 
-lexerStillOpenAtEOF :: [String] -> String
+-- | Translates 'Bracket is never closed' into the chosen language
+lexerStillOpenAtEOF :: [String] -- ^ The brackets
+                    -> String -- ^ The translated string
 lexerStillOpenAtEOF [s] = select language
     [ English :-> "Bracket " ++ s ++ " is never closed"
     , Dutch   :-> "Sluithaakje voor " ++ s ++ " wordt nog verwacht"
     ]
+
+-- | Translates 'Brackets are never closed' into the chosen language
 lexerStillOpenAtEOF xs = select language
     [ English :-> "The following brackets are never closed: " ++ commasAnd xs
     , Dutch   :-> "De volgende haakjes worden nergens gesloten: " ++ kommasEn xs
     ]
 
-lexerCorrectStrings :: String
+-- | Gives string examples in the chosen language
+lexerCorrectStrings :: String -- ^ The translated string
 lexerCorrectStrings = select language
     [ English :-> "Correct examples of Strings: \"Helium is cool\" \"abc\\ndef\" \"\""
     , Dutch   :-> "Correcte voorbeelden van teksten: \"Helium is geweldig\" \"abc\\ndef\" \"\""
     ]
 
-lexerTabCharacter :: [String]
+-- | Translates 'Tab character encountered' into the chosen language
+lexerTabCharacter :: [String] -- ^ The translated strings
 lexerTabCharacter = select language
     [ English :-> [ "Tab character encountered; may cause problems with the layout rule"
                   , "Configure your editor to replace tabs by spaces"
@@ -387,31 +120,8 @@ lexerTabCharacter = select language
                   ]
     ]
 
-lexerLooksLikeFloatNoFraction :: String -> [String]
-lexerLooksLikeFloatNoFraction digits = select language
-    [ English :-> [ "Integer immediately followed by function composition (.)"
-                  , "If a Float was meant, write \"" ++ digits ++ ".0\""
-                  , "Otherwise, insert a space for readability"
-                  ]
-    , Dutch   :-> [ "Geheel getal direct gevolgd door functie compositie (.)"
-                  , "Als je een reeel getal bedoelde, schrijf dan \"" ++ digits ++ ".0\""
-                  , "Voeg anders een spatie in voor leesbaarheid"
-                  ]
-    ]
-
-lexerLooksLikeFloatNoDigits :: String -> [String]
-lexerLooksLikeFloatNoDigits fraction = select language
-    [ English :-> [ "Function composition (.) immediately followed by number"
-                  , "If a Float was meant, write \"0." ++ fraction ++ "\""
-                  , "Otherwise, insert a space for readability"
-                  ]
-    , Dutch   :-> [ "Functie compositie (.) direct gevolgd door een getal"
-                  , "Als je een reeel getal bedoelde, schrijf dan \"0." ++ fraction ++ "\""
-                  , "Voeg anders een spatie in voor leesbaarheid"
-                  ]
-    ]
-
-lexerUtfChar :: [String]
+-- | Translates 'Unrecognized character' into the chosen language
+lexerUtfChar :: [String] -- ^ The translated strings
 lexerUtfChar = select language
     [ English :-> [ "Unrecognized character in the beginning of the file."
                   , "Is it saved with encoding UTF-8 without BOM?"
@@ -421,9 +131,10 @@ lexerUtfChar = select language
                   ]
     ]
 
-lexerNestedComment :: [String]
+-- | Translates 'Nested comment' into the chosen language
+lexerNestedComment :: [String] -- ^ The translated strings
 lexerNestedComment = select language
-    [ English :-> [ "Syntax colouring usually can not handle nested comments"
+    [ English :-> [ "Syntax coloring usually can not handle nested comments"
                   , "Some of your code may be in comments but not visibly so"
                   ]
     , Dutch   :-> [ "Syntax kleuring van editor kan meestal niet overweg met genest commentaar"
@@ -431,9 +142,10 @@ lexerNestedComment = select language
                   ]
     ]
 
-lexerCommentOperator :: [String]
+-- | Translates 'Comment operator' into the chosen language
+lexerCommentOperator :: [String] -- ^ The translated strings
 lexerCommentOperator = select language
-    [ English :-> [ "Syntax colouring usually can not handle names containing --"
+    [ English :-> [ "Syntax coloring usually cannot handle names containing --"
                   , "If you wanted to start a comment, write spaces around --"
                   ]
     , Dutch   :-> [ "Syntax kleuring van editor kan meestal niet overweg met namen die -- bevatten"
@@ -441,14 +153,16 @@ lexerCommentOperator = select language
                   ]
     ]
 
+-- | Adds commas and 'and' in between each element of the list
+commasAndLang :: String   -- ^ The word to use for 'and'
+              -> [String] -- ^ The list of items to show
+              -> String   -- ^ The result
+commasAndLang _ [] = []
+commasAndLang _ [x] = x
+commasAndLang a (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " " ++ a ++ " " ++ last xs
 
 commasAnd :: [String] -> String
-commasAnd [] = []
-commasAnd [x] = x
-commasAnd (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " and " ++ last xs
+commasAnd = commasAndLang "and"
 
 kommasEn :: [String] -> String
-kommasEn [] = []
-kommasEn [x] = x
-kommasEn (x:xs) = x ++ concatMap (", " ++) (init xs) ++ " en " ++ last xs
-
+kommasEn = commasAndLang "en"
