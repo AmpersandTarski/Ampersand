@@ -41,7 +41,9 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        matrix :: Maybe  [[Cell]]
        matrix = 
          case plug of
-           TblSQL{} -> Just $ headers ++ content  
+           TblSQL{} -> if length (fields plug) > 1
+                       then Just $ headers ++ content
+                       else Nothing
            BinSQL{} -> -- trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
                        Just $ headers ++ content
            ScalarSQL{} -> Nothing
