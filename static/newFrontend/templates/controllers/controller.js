@@ -127,7 +127,9 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	  \$scope.myPromises[resourceId].push(\$scope.val['$interfaceName$'][resourceIndex]
 	  	.get()
 	  	.then(function(data) {
+	  		\$rootScope.updateNotifications(data.notifications);
 	  		\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.plain());
+	  		
 	  		setResourceStatus(resourceId, 'default');
 	  		\$scope.showSaveButton[resourceId] = false;
 	  		\$scope.showCancelButton[resourceId] = false;
