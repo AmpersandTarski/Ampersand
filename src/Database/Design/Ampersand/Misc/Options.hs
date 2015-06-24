@@ -25,6 +25,7 @@ fatal = fatalMsg "Misc.Options"
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
 data Options = Options { showVersion :: Bool
+                       , typeGraphs :: Bool   -- draw a diagram of the type analysis, for educational or debugging purposes.
                        , preVersion :: String
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
@@ -135,6 +136,7 @@ getOptions =
                       , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
                       , theme         = DefaultTheme
                       , showVersion   = False
+                      , typeGraphs    = False
                       , showHelp      = False
                       , verboseP      = False
                       , development   = False
@@ -228,6 +230,10 @@ options :: [(OptionDef, DisplayMode) ]
 options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{showVersion = True}))
                "show version and exit."
+            , Public)
+          , (Option [] ["typeGraphs"]
+               (NoArg (\opts -> return opts{typeGraphs = True}))
+               "show the type analysis in graphical (.png) form."
             , Public)
           , (Option ['h','?'] ["help"]
                (NoArg (\opts -> return opts{showHelp = True}))
