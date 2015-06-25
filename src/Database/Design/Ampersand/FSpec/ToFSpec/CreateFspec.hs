@@ -28,8 +28,9 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (Left (fileName opts)) -- the P_Context of the user's sourceFile
+     genFiles userP_Ctx
      genTypeGraphs userP_Ctx   -- Type graphs must be generated from the P-Structure, in order to visualize type errors.
-     genFiles userP_Ctx >> genTables userP_Ctx
+     genTables userP_Ctx
    where
 -- For educational purposes, the switch "--typeGraphs" can be used. It executes genTypeGraphs (below), which prints two graphs.
 -- For an explanation of those graphs, consult the corresponding paper (Joosten&Joosten, Ramics 2015).
@@ -37,17 +38,19 @@ createFSpec opts =
 -- For the large scripts that are used in projects, the program may abort due to insufficient resources.
     genTypeGraphs :: Guarded P_Context -> IO(Guarded ())
     genTypeGraphs userP_Ctx
-      = case typeGraphs opts of
-          True -> do { let (stTypeGraph, condensedGraph) = computeTypeGraphs userP_Ctx
+      = case (typeGraphs opts, userP_Ctx) of
+         (_, Errors es) -> return(Errors es)
+         (False, _)     -> return (Checked ())
+         (_, Checked userCtx)
+               -> do { let (stTypeGraph, condensedGraph) = computeTypeGraphs userCtx
                      ; condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
                      ; verboseLn opts (condensedGraphPath++" written.")
                      ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
                      ; verboseLn opts (stDotGraphPath++" written.")
                      ; return (Checked ())
                      }
-          _    -> return (Checked ())
 
-    computeTypeGraphs :: Guarded P_Context -> (DotGraph String, DotGraph String)
+    computeTypeGraphs :: P_Context -> (DotGraph String, DotGraph String)
     computeTypeGraphs _ = fatal 41 "TODO typeGraphs"
 
     genFiles :: Guarded P_Context -> IO(Guarded ())
