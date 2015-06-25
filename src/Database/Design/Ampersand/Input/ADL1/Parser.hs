@@ -1,14 +1,15 @@
 {-# OPTIONS_GHC -fno-enable-rewrite-rules #-} -- Disable rewrite rules to drastically improve compilation speed
 {-# LANGUAGE FlexibleContexts #-}
-module Database.Design.Ampersand.Input.ADL1.Parser(
-    AmpParser, pContext, pPopulations, pTerm, pRule
-) where
-
---TODO! Haddock comments to the parser
+module Database.Design.Ampersand.Input.ADL1.Parser
+    ( AmpParser
+    , pContext
+    , pPopulations
+    , pTerm
+    , pRule
+    ) where
 
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
---TODO! Remove or at least simplify the parsing lib
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
@@ -484,7 +485,7 @@ pPurpose = rebuild <$> currPos
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
            = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
-              -- TODO! This separation should not happen in the parser
+              -- TODO: This separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
@@ -522,7 +523,7 @@ pRoleRelation = try (P_RR <$> currPos
                     <*> pNamedRel `sepBy1` pComma
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
---TODO! Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
+--TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
 pRoleRule :: AmpParser P_RoleRule
 pRoleRule = try (Maintain <$> currPos
                           <*  pKey "ROLE"
@@ -602,7 +603,7 @@ pTrm4   = pTrm5 <??> (invertT PCps <$> rightAssociate PCps ";" pTrm5 <|>
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
---TODO! Separate into prefix and postfix top-level functions
+--TODO: Separate into prefix and postfix top-level functions
 pTrm5  =  f <$> many (valPosOf pDash) <*> pTrm6  <*> many (valPosOf (pOperator "~" <|> pOperator "*" <|> pOperator "+" ))
           where f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
                 f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)

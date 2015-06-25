@@ -80,7 +80,6 @@ showLexerWarningInfo info =
         UtfChar                         -> Texts.lexerUtfChar
         CommentOperator                 -> Texts.lexerCommentOperator
 
--- TODO: This is only valid for Haskell.. Probably more of the warnings too!
 -- | Generates a TabCharacter warning
 keepOneTabWarning :: [LexerWarning] -- ^ The old warnings
                   -> [LexerWarning] -- ^ The new warnings

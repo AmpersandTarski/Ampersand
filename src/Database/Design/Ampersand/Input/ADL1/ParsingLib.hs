@@ -20,8 +20,6 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne, pInteger
 ) where
 
---TODO! Haddock comments to the parsing lib
-
 import Control.Monad.Identity (Identity)
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
@@ -38,7 +36,6 @@ type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser f
 -- Useful functions
 -----------------------------------------------------------
 
--- TODO! Use Parsec operators
 infixl 4 <$
 
 -- | Applies the given parser and returns the given constructor
@@ -65,10 +62,10 @@ pMaybe :: AmpParser a           -- ^ The parser to apply
        -> AmpParser (Maybe a)   -- ^ The result
 pMaybe p = Just CA.<$> p <|> P.parserReturn Nothing
 
---TODO! Remove `opt` and use Parsec's option instead.
-opt ::  AmpParser a
-    -> a
-    -> AmpParser a
+-- | Tries to apply the given parser and returns the second argument if it doesn't succeed
+opt ::  AmpParser a  -- ^ The parser to try
+    -> a             -- ^ The item to return if the parser doesn't succeed
+    -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
 -----------------------------------------------------------

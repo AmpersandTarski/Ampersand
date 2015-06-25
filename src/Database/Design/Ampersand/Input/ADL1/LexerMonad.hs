@@ -74,7 +74,6 @@ runLexerMonad opts file (LM f) =
         Left err -> Left err
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
--- TODO: These methods are not being used anywhere
 -- | Retrieves the command line options
 getOpts :: LexerMonad [Options] -- ^ The lexer monad with the options
 getOpts = LM (\opts pos brackets -> Right (opts, [], pos, brackets))

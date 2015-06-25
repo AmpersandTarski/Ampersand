@@ -20,11 +20,8 @@ module Database.Design.Ampersand.Input.ADL1.Lexer
     , FilePos(..)
 ) where
 
---TODO! Haddock comments to the lexer
-
 import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
---TODO! I don't think that LexerMonad is being used! Also LexerMessage is maybe not being used.
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
@@ -69,7 +66,6 @@ operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
---TODO: The init pos gets calculated here and again in the runLexerMonad method
 --TODO: Options should be one item, not a list
 -- | Runs the lexer
 lexer :: [Options]  -- ^ The command line options
