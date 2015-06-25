@@ -28,8 +28,19 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+     genTypeGraphs userP_Ctx   -- Type graphs must be generated from the P-Structure, in order to visualize type errors.
      genFiles userP_Ctx >> genTables userP_Ctx
    where
+    genTypeGraphs :: Guarded P_Context -> IO(Guarded ())
+    genTypeGraphs userP_Ctx
+      = case typeGraphs opts of
+          True -> do { --  showGraphs stTypeGraph condensedGraph
+   --                ; let outputFile = combine (dirOutput opts) (outputfile opts)
+                     ; verboseLn opts $ ".png-files with type graphs will be written in a version yet to come."
+                     ; return (Checked ())
+                     }
+          _    -> return (Checked ())
+
     genFiles :: Guarded P_Context -> IO(Guarded ())
     genFiles uCtx 
       = case pCtx2Fspec uCtx of
