@@ -133,9 +133,9 @@ instance MetaPopulations A_Gen where
  metaPops fSpec gen =
   [ Pop "gens" "Context" "Gen"
           [(uri fSpec,uri gen)]
-  , Pop "genspc"  "Gen" "PlainConcept"
+  , Pop "genspc"  "Gen" "Concept"
           [(uri gen,uri(genspc gen))]
-  , Pop "gengen"  "Gen" "PlainConcept"
+  , Pop "gengen"  "Gen" "Concept"
           [(uri gen,uri c) | c<- case gen of
                                    Isa{} -> [gengen gen]
                                    IsE{} -> genrhs gen
@@ -150,7 +150,7 @@ instance GenericPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "allConcepts" "Context" "Concept"
              [(uri fSpec,uri cpt)]
-      , Pop "name" "Concept" "ConceptName"
+      , Pop "name" "Concept" "TEXT"
              [(uri cpt, name cpt)]
       , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
              [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
@@ -159,8 +159,16 @@ instance GenericPopulations A_Concept where
       , Pop "conceptTableFields" "Concept" "TableColumn"
              [(uri cpt, uri fld) | fld <- tablesAndFields]
       ]
-     ONE -> [
-            ]
+     ONE -> 
+      [ Comment " "
+      , Comment $ " Concept ONE "
+      , Pop "allConcepts" "Context" "Concept"
+             [(uri fSpec,uri cpt)]
+      , Pop "name" "Concept" "TEXT"
+             [(uri cpt, name cpt)]
+      , Pop "conceptTableFields" "Concept" "TableColumn"
+             [(uri cpt, uri fld) | fld <- tablesAndFields]
+      ]
   where
    affConjs = fromMaybe [] (lookup cpt $ allConjsPerConcept fSpec)
    tablesAndFields = nub . concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
@@ -170,14 +178,14 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Comment " "
       , Comment $ " Concept `"++name cpt++"` "
-      , Pop "concs" "Context" "PlainConcept"
+      , Pop "concs" "Context" "Concept"
            [(uri fSpec,uri cpt)]
-      , Pop "name" "PlainConcept" "ConceptName"
+      , Pop "name" "Concept" "TEXT"
              [(uri cpt, name cpt)]
-      , Pop "cptdf" "PlainConcept" "ConceptDefinition"
-             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
-      , Pop "cptpurpose" "PlainConcept" "Purpose"
-             [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+--      , Pop "cptdf" "Concept" "ConceptDefinition"
+--             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
+--      , Pop "cptpurpose" "Concept" "Purpose"
+--             [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
      ONE -> [
             ]
@@ -214,9 +222,10 @@ instance GenericPopulations Role where
 
 instance MetaPopulations Atom where
  metaPops _ atm =
-   [ Pop "key" "Atom" "AtomID" 
-          [(uri atm, uri atm)]
-   , Pop "atomvalue"  "Atom" "AtomValue"
+   [ Pop "pop" "Atom" "Concept" 
+          [(uri atm, uri cpt)
+          |cpt <- atmRoots atm]
+   , Pop "repr"  "Atom" "TEXT"
           [(uri atm,(show.atmVal) atm)]
    ]
 --instance MetaPopulations Sign where
@@ -265,7 +274,7 @@ instance MetaPopulations Declaration where
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "allDeclarations" "Context" "Declaration"
              [(uri fSpec,uri dcl)] 
-      , Pop "name" "Declaration" "DeclarationName"
+      , Pop "name" "Relation" "TEXT"
              [(uri dcl, name dcl)]
 --      , Pop "sign" "Declaration" "Sign"
 --             [(uri dcl,uri (sign dcl))]
@@ -404,7 +413,7 @@ instance MetaPopulations PlugInfo where
  metaPops _ plug = 
       [ Comment $ " Plug `"++name plug++"` "
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
-      , Pop "in" "PlainConcept" "Plug"                 
+      , Pop "in" "Concept" "Plug"                 
              [(uri cpt,uri plug)| cpt <- concs plug]  
       , Pop "in" "Declaration" "Plug"
              [(uri dcl,uri plug)| dcl <- relsMentionedIn plug]

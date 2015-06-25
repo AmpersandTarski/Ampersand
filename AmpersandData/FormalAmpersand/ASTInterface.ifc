@@ -1,6 +1,6 @@
 CONTEXT "AST Interface" IN ENGLISH
 
-INTERFACE Ampersand FOR Ampersand, Stef : I[SESSION];'_SESSION'
+INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Context : V[SESSION*Context]
     COLS ["Name" : name
          ]
@@ -40,7 +40,7 @@ TABS[ Context : V[SESSION*Context]
          ]
 --    , "All plugs" : V[ONE*Context];
     ]
-INTERFACE Atoms FOR Stef : I[SESSION];'_SESSION'
+INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
          ]
@@ -61,15 +61,12 @@ TABS[ Atoms : V[SESSION*Atom]
          ]
     ]
     
-          
+       
           
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name
     ]
 
-INTERFACE Concept FOR Ampersand : I[Concept]
-BOX [ Concept : name
-    ]
 
 INTERFACE Gen FOR Ampersand : I[Gen]
 BOX [ gengen : gengen

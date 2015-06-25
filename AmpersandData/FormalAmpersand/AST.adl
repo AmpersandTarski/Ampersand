@@ -25,7 +25,7 @@ RELATION name[Context*ContextName] [UNI,TOT,INJ]
 MEANING "The name of a context."
 RELATION patterns[Context*Pattern]
 MEANING "The patterns in a context."
-RELATION concs[Context*PlainConcept]
+RELATION concs[Context*Concept]
 MEANING "A concept, mentioned anywhere in a context."
 RELATION allDeclarations[Context*Declaration]
 MEANING "A relation declared in a context"
@@ -56,11 +56,9 @@ VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name[Concept*TEXT] , TXT " ISA " , gengen
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
-CLASSIFY PlainConcept ISA Concept
-
-RELATION gengen[Gen*PlainConcept] [UNI,TOT]
+RELATION gengen[Gen*Concept] [UNI,TOT]
 MEANING "A generalization rule refers to one more generic concept."
-RELATION genspc[Gen*PlainConcept] [UNI,TOT]
+RELATION genspc[Gen*Concept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
 
 --PURPOSE RULE specialization
@@ -80,6 +78,7 @@ VIEW Sign: Sign( TXT "[" , src;name[Concept*TEXT] , TXT "*" , trg;name[Concept*T
 
 RELATION src[Sign*Concept] [UNI,TOT]
 MEANING "The source of a sign."
+ROLE Ampersand MAINTAINS "TOT src::Sign*Concept", "TOT trg::Sign*Concept"
 RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
@@ -108,7 +107,7 @@ As a consequence, the type of an expression can be computed based on the types o
 ENDPATTERN
 
 PATTERN Declaration
---VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
+--VIEW Declaration: Declaration( name , TXT "::", sign;src;name[Concept*ConceptName] ,TXT " * ", sign;trg;name[Concept*ConceptName] )
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
 CLASSIFY Declaration ISA Relation
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
@@ -167,7 +166,7 @@ MEANING "The user-declared relations in an expression."
 {-CLASSIFY RelationRef ISA Expression
 
 CONCEPT RelationRef "A relation reference (aka relation token) is an expression that refers to a user-declared relation"  
-VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[PlainConcept*ConceptName] , TXT "*" , relsgn;trg;name[PlainConcept*ConceptName] , TXT "]")
+VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[Concept*ConceptName] , TXT "*" , relsgn;trg;name[Concept*ConceptName] , TXT "]")
 
 RELATION name[RelationRef*DeclarationName] [UNI,TOT]
 MEANING "A relation reference has the name of the relation that is being referred to."
@@ -200,7 +199,7 @@ ENDPATTERN
 
 PROCESS Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION maintains[Plug*Rule]
-RELATION in[PlainConcept*Plug] [TOT]
+RELATION in[Concept*Plug] --TODO: 'Nearly TOT: All concepts are in a plug, except ONE".
 RELATION in[Declaration*Plug] [TOT]
 
 -- Rules
@@ -208,7 +207,7 @@ RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
 MEANING "A plug, which maintains a rule, must contain every relation that is mentioned explicitly in that rule."
 
 ROLE Ampersand MAINTAINS "All isas in one plug"
-RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;in) \/ in)
+RULE "All isas in one plug" : (-(genspc~;gengen;in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen~;genspc;in[Concept*Plug]) \/ in[Concept*Plug])
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPROCESS
 

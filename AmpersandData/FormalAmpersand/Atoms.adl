@@ -36,6 +36,7 @@ MEANING "An atom that is an instance of a specialization of c is an instance of 
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
+ROLE Ampersand MAINTAINS "TOT name::Relation*TEXT", "TOT source::Relation*Concept", "TOT target::Relation*Concept" --Uitzoeken: Is I<Concept>  een Relation of een Expressie?? Dit heeft consequenties!
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
@@ -112,7 +113,7 @@ ROWS [ name             : name
 
 VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
 
-INTERFACE Pair(l,r,in) : I[Pair]
+INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
 ROWS [ pair           : I
      , l              : l
      , r              : r
