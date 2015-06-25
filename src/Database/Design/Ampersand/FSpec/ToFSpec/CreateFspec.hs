@@ -17,6 +17,7 @@ import Data.Traversable (sequenceA)
 import Control.Applicative
 import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
+import Data.GraphViz
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "CreateFspec"
@@ -31,15 +32,24 @@ createFSpec opts =
      genTypeGraphs userP_Ctx   -- Type graphs must be generated from the P-Structure, in order to visualize type errors.
      genFiles userP_Ctx >> genTables userP_Ctx
    where
+-- For educational purposes, the switch "--typeGraphs" can be used. It executes genTypeGraphs (below), which prints two graphs.
+-- For an explanation of those graphs, consult the corresponding paper (Joosten&Joosten, Ramics 2015).
+-- Use only for very small scripts to obtain informative results.
+-- For the large scripts that are used in projects, the program may abort due to insufficient resources.
     genTypeGraphs :: Guarded P_Context -> IO(Guarded ())
     genTypeGraphs userP_Ctx
       = case typeGraphs opts of
-          True -> do { --  showGraphs stTypeGraph condensedGraph
-   --                ; let outputFile = combine (dirOutput opts) (outputfile opts)
-                     ; verboseLn opts $ ".png-files with type graphs will be written in a version yet to come."
+          True -> do { let (stTypeGraph, condensedGraph) = computeTypeGraphs userP_Ctx
+                     ; condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
+                     ; verboseLn opts (condensedGraphPath++" written.")
+                     ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
+                     ; verboseLn opts (stDotGraphPath++" written.")
                      ; return (Checked ())
                      }
           _    -> return (Checked ())
+
+    computeTypeGraphs :: Guarded P_Context -> (DotGraph String, DotGraph String)
+    computeTypeGraphs _ = fatal 41 "TODO typeGraphs"
 
     genFiles :: Guarded P_Context -> IO(Guarded ())
     genFiles uCtx 
