@@ -89,7 +89,7 @@ instance MetaPopulations FSpec where
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
-  ++[ Pop "name"   "Context" "ContextName"
+  ++[ Pop "name"   "Context" "TEXT"
            [(uri fSpec,name fSpec)]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
@@ -120,7 +120,7 @@ instance MetaPopulations Pattern where
    , Comment $ " Pattern `"++name pat++"` "
    , Pop "patterns" "Context" "Pattern"
           [(uri fSpec,uri pat)]
-   , Pop "name"    "Pattern" "PatternName"
+   , Pop "name"    "Pattern" "TEXT"
           [(uri pat, name pat)]
    , Pop "rules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
@@ -214,7 +214,7 @@ instance GenericPopulations Role where
       [ Comment $ "Role: '"++name rol++"'"
       , Pop "allRoles" "Context" "Role"
                  [(uri fSpec, uri rol) ]
-      , Pop "name" "Role" "RoleName"
+      , Pop "name" "Role" "TEXT"
                  [(uri rol, name rol) ]
       , Pop "maintains" "Role" "Rule"
                  [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
@@ -226,7 +226,7 @@ instance MetaPopulations Atom where
           [(uri atm, uri cpt)
           |cpt <- atmRoots atm]
    , Pop "repr"  "Atom" "TEXT"
-          [(uri atm,(show.atmVal) atm)]
+          [(uri atm, atmVal atm)]
    ]
 --instance MetaPopulations Sign where
 -- metaPops _ sgn =
@@ -272,7 +272,7 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
-      , Pop "allDeclarations" "Context" "Declaration"
+      , Pop "allDeclarations" "Context" "Relation"
              [(uri fSpec,uri dcl)] 
       , Pop "name" "Relation" "TEXT"
              [(uri dcl, name dcl)]
@@ -282,16 +282,16 @@ instance MetaPopulations Declaration where
              [(uri dcl,uri (source dcl))]
       , Pop "target" "Relation" "Concept"
              [(uri dcl,uri (target dcl))]
-      , Pop "decprL" "Declaration" "String"
-             [(uri dcl,decprL dcl)]
-      , Pop "decprM" "Declaration" "String"
-             [(uri dcl,decprM dcl)]
-      , Pop "decprR" "Declaration" "String"
-             [(uri dcl,decprR dcl)]
-      , Pop "decmean" "Declaration" "Meaning"
-             [(uri dcl, show(decMean dcl))]
-      , Pop "decpurpose" "Declaration" "Purpose"
-             [(uri dcl, showADL x) | x <- explanations dcl]
+--      , Pop "decprL" "Declaration" "String"
+--             [(uri dcl,decprL dcl)]
+--      , Pop "decprM" "Declaration" "String"
+--             [(uri dcl,decprM dcl)]
+--      , Pop "decprR" "Declaration" "String"
+--             [(uri dcl,decprR dcl)]
+--      , Pop "decmean" "Declaration" "Meaning"
+--             [(uri dcl, show(decMean dcl))]
+--      , Pop "decpurpose" "Declaration" "Purpose"
+--             [(uri dcl, showADL x) | x <- explanations dcl]
       ]
      Isn{} -> 
       [ Comment " "
@@ -390,7 +390,7 @@ instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "RuleName"
+      , Pop "name"  "Rule" "TEXT"
              [(uri rul,name rul)]
       , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]

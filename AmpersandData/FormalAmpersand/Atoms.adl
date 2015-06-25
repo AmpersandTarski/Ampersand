@@ -36,7 +36,6 @@ MEANING "An atom that is an instance of a specialization of c is an instance of 
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
-ROLE Ampersand MAINTAINS "TOT name::Relation*TEXT", "TOT source::Relation*Concept", "TOT target::Relation*Concept" --Uitzoeken: Is I<Concept>  een Relation of een Expressie?? Dit heeft consequenties!
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
@@ -64,7 +63,7 @@ RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
 MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
 -}
 
-INTERFACE Overview: '_SESSION'
+INTERFACE Overview FOR Ampersand : '_SESSION'
 TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
@@ -98,14 +97,14 @@ TABS[ atoms : V[SESSION*Atom]
 
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
-INTERFACE Atom(repr,pop) : I[Atom]
+INTERFACE Atom(repr,pop) FOR Ampersand : I[Atom]
 ROWS [ repr : repr
      , pop  : pop
      ]
 
 VIEW Concept : Concept(name)
 
-INTERFACE Concept(name[Concept*TEXT],isa) : I[Concept]
+INTERFACE Concept(name[Concept*TEXT],isa) FOR Ampersand : I[Concept]
 ROWS [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -113,7 +112,7 @@ ROWS [ name             : name
 
 VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair(l,r,in[Pair*Relation]) FOR Ampersand: I[Pair]
 ROWS [ pair           : I
      , l              : l
      , r              : r
@@ -122,7 +121,7 @@ ROWS [ pair           : I
 
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Relation(name[Relation*TEXT],source,target) : I[Relation]
+INTERFACE Relation(name[Relation*TEXT],source,target) FOR Ampersand: I[Relation]
 ROWS [ name    : name
      , source  : source
      , target  : target

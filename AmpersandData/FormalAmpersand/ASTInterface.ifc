@@ -51,17 +51,17 @@ TABS[ Atoms : V[SESSION*Atom]
          , in : in
          ]
     , Relations : V[SESSION*Relation]
-    COLS [ "Relation" : I
+    COLS [ "Relation" : I 
          , source : source
          , target : target
          ]
     , Concepts : V[SESSION*Concept]
-    COLS [ "Concept" : I
+    COLS [ "Concept" : I 
          , name : name -- [Concept*ConceptName]
          ]
     ]
     
-       
+
           
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name
