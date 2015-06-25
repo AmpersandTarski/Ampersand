@@ -30,7 +30,6 @@ generateAmpersandOutput :: FSpec -> IO ()
 generateAmpersandOutput fSpec =
  do { when (genUML (getOpts fSpec))      $ doGenUML      fSpec
     ; when (haskell (getOpts fSpec))     $ doGenHaskell  fSpec
-    ; when (typeGraphs (getOpts fSpec))  $ doGenTypeGphs fSpec
     ; when (export2adl (getOpts fSpec))  $ doGenADL      fSpec
     ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
     ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
@@ -47,14 +46,6 @@ generateAmpersandOutput fSpec =
 --    Or do we assume a correct implementation with unambiguous expressions only?
 -- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
 --    So the answer is: we assume a correct implementation with unambiguous expressions only.
-doGenTypeGphs :: FSpec -> IO()
-doGenTypeGphs fSpec =
- do { fatal 61 "TODO: write doGenTypeGphs"
---  ; showGraphs stTypeGraph condensedGraph
-    ; verboseLn (getOpts fSpec) $ ".png-files with type graphs will be written in a version yet to come " ++ outputFile ++ "."
-    }
- where outputFile = combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))
-
 doGenADL :: FSpec -> IO()
 doGenADL fSpec =
  do { writeFile outputFile . showADL . originalContext $ fSpec
