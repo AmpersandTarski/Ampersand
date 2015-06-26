@@ -33,17 +33,17 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
 
 instance Show Lexeme where
     show x = case x of
-         LexSymbol   val -> "Symbol "                ++ "'"  ++     [val] ++ "'"
-         LexOperator val -> "Operator "              ++ "'"  ++      val  ++ "'"
-         LexKeyword  val -> "Keyword "               ++         show val
-         LexString   val -> "String "                ++ "\"" ++      val  ++ "\""
-         LexExpl     val -> "Explanation "           ++ "{+" ++      val  ++ "+}"
-         LexAtom     val -> "Atom "                  ++ "'"  ++      val  ++ "'"
-         LexDecimal   _  -> "Integer "               ++   lexemeText  x
-         LexOctal     _  -> "Octal "                 ++   lexemeText  x
-         LexHex       _  -> "Hexadecimal "           ++   lexemeText  x
-         LexVarId    val -> "Lower case identifier " ++              val
-         LexConId    val -> "Upper case identifier " ++              val
+         LexSymbol   val -> "symbol "                ++ "'"  ++     [val] ++ "'"
+         LexOperator val -> "operator "              ++ "'"  ++      val  ++ "'"
+         LexKeyword  val -> "keyword "               ++         show val
+         LexString   val -> "string "                ++ "\"" ++      val  ++ "\""
+         LexExpl     val -> "explanation "           ++ "{+" ++      val  ++ "+}"
+         LexAtom     val -> "atom "                  ++ "'"  ++      val  ++ "'"
+         LexDecimal   _  -> "integer "               ++   lexemeText  x
+         LexOctal     _  -> "octal "                 ++   lexemeText  x
+         LexHex       _  -> "hexadecimal "           ++   lexemeText  x
+         LexVarId    val -> "lower case identifier " ++              val
+         LexConId    val -> "upper case identifier " ++              val
 
 -- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
 -- This is trivial unless you are using the monad in a non-trivial way.
