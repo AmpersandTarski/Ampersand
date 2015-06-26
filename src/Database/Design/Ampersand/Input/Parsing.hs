@@ -75,9 +75,9 @@ parseSingleADL opts filePath
 parseErrors :: Lang -> ParseError -> [CtxError]
 parseErrors lang err = [PE (Message msg)]
                 where msg :: String
-                      msg = show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
+                      msg = "In file " ++ show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
                       showLang :: Lang -> [Message] -> String
-                      showLang English = showErrorMessages "or" "unknown parse error"   "expecting" "unexpected" "end of input"
+                      showLang English = showErrorMessages "or" "unknown parse error"   "at that point expecting" "Parsing stumbled upon" "end of input"
                       showLang Dutch   = showErrorMessages "of" "onbekende parsingfout" "verwacht"  "onverwacht" "einde van de invoer"
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
