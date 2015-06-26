@@ -1,6 +1,8 @@
 CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
-
+INCLUDE "Atoms.ifc"
+--INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
+ 
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
@@ -62,70 +64,6 @@ MEANING "A specialisation of a concept and the concept itself are both part of t
 RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
 MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
 -}
-
-INTERFACE Overview FOR Ampersand : '_SESSION'
-TABS[ atoms : V[SESSION*Atom]
-      BOX<SCOLS>
-           [ repr : I
-           , pop  : pop
-           ]
-    , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
-           [ name             : I
-           , spec             : isa~
-           , specializations  : isas~
-           , gener            : isa
-           , generalizations  : isas
-           , atoms            : pop~
-           ]
-    , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
-           [ pair           : I
-           , "relation(s)"  : in
-           ]
-    , relations : V[SESSION*Relation]
-      BOX<SCOLS>
-           [ name    : name
-           , source  : source
-           , target  : target
-           ]
-    , garbage : V[SESSION*Atom];((I - l~;in;source;pop~) - r~;in;target;pop~)
-      COLS [ repr : repr
-           , pop  : pop
-           ]
-    ]
-
-VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
-
-INTERFACE Atom(repr,pop) FOR Ampersand : I[Atom]
-ROWS [ repr : repr
-     , pop  : pop
-     ]
-
-VIEW Concept : Concept(name)
-
-INTERFACE Concept(name[Concept*TEXT],isa) FOR Ampersand : I[Concept]
-ROWS [ name             : name
-     , generalizations  : isa
-     , specializations  : isa~
-     ]
-
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
-
-INTERFACE Pair(l,r,in[Pair*Relation]) FOR Ampersand: I[Pair]
-ROWS [ pair           : I
-     , l              : l
-     , r              : r
-     , "relation(s)"  : in
-     ]
-
-VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
-
-INTERFACE Relation(name[Relation*TEXT],source,target) FOR Ampersand: I[Relation]
-ROWS [ name    : name
-     , source  : source
-     , target  : target
-     ]
 
 
 {-
