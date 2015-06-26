@@ -3,7 +3,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     AmpParser, pIsThere, optList,
     -- Operators
     --TODO: Maybe we shouldn't export these here, but import in the parser directly
-    (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
+    (DF.<$>), (P.<|>), (P.<?>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
     -- Positions
@@ -107,24 +107,24 @@ match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
-pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing })
+pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing }) <?> "upper case identifier"
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
 pString :: AmpParser String
-pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing })
+pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing }) <?> "string"
 
 --- Expl ::= '{+' Any* '-}'
 pExpl :: AmpParser String
-pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing })
+pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing }) <?> "explanation"
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
-pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing })
+pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
 
 --- Atom ::= "'" Any* "'"
 pAtom :: AmpParser String
-pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
+pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing }) <?> "atom"
 
 -----------------------------------------------------------
 -- Integers

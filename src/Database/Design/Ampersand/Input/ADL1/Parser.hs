@@ -304,11 +304,11 @@ pFun  = []        <$ pOperator "*"  <|>
 pConceptDef :: AmpParser (String->ConceptDef)
 pConceptDef       = Cd <$> currPos
                        <*  pKey "CONCEPT"
-                       <*> pConceptName           -- the concept name
+                       <*> pConceptName
                        <*> pIsThere (pKey "BYPLUG")
-                       <*> pString                -- the definition text
-                       <*> optList (pKey "TYPE" *> pString)     -- the type of the concept.
-                       <*> (pString `opt` "")     -- a reference to the source of this definition.
+                       <*> (pString <?> "concept definition (string)")
+                       <*> optList (pKey "TYPE" *> pString)     -- concept type
+                       <*> (pString `opt` "") -- a reference to the source of this definition.
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen
