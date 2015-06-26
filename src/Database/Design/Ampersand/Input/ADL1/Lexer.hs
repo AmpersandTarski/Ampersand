@@ -24,10 +24,8 @@ import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
-import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 import Data.Char hiding(isSymbol)
-import Data.Maybe
-import Data.List (sort)
+import Data.Set (member, fromList)
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Misc
 
@@ -168,7 +166,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es = isJust . btLocateIn compare (tab2tree (sort es))
+locatein es e = member e (fromList es)
 
 iskw :: String -> Bool
 iskw = locatein keywords

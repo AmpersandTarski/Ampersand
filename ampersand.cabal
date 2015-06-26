@@ -157,7 +157,6 @@ executable ampersand
                      Database.Design.Ampersand.Input.ADL1.CtxError,
                      Database.Design.Ampersand.Input.ADL1.FilePos,
                      Database.Design.Ampersand.Input.ADL1.Lexer,
-                     Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees,
                      Database.Design.Ampersand.Input.ADL1.LexerMessage,
                      Database.Design.Ampersand.Input.ADL1.LexerMonad,
                      Database.Design.Ampersand.Input.ADL1.LexerTexts,
@@ -212,7 +211,7 @@ Test-Suite ampersand-test
   main-is:           Test.hs
   hs-source-dirs:    src
   default-language:  Haskell2010
-  ghc-options:       -with-rtsopts=-M1536m -Wall
+  ghc-options:       -fhpc -with-rtsopts=-M1536m -Wall
   build-depends:     
                      base,
                      bytestring >=0.10 && <0.11,
