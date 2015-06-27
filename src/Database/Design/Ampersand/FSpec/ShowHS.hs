@@ -10,7 +10,6 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
 --import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Misc
 import Data.Hashable
 import Data.Ord

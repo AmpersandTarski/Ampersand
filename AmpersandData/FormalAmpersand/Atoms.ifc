@@ -1,0 +1,67 @@
+﻿CONTEXT AST IN ENGLISH 
+
+INTERFACE Overview FOR Ampersand : '_SESSION'
+TABS[ atoms : V[SESSION*Atom]
+      BOX<SCOLS>
+           [ repr : I
+           , pop  : pop
+           ]
+    , concepts :V[SESSION*Concept]
+      BOX<SCOLS>
+           [ name             : I
+           , spec             : isa~
+           , specializations  : isas~
+           , gener            : isa
+           , generalizations  : isas
+           , atoms            : pop~
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<SCOLS>
+           [ pair           : I
+           , "relation(s)"  : in
+           ]
+    , relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ name    : name
+           , source  : source
+           , target  : target
+           ]
+    , garbage : V[SESSION*Atom];((I - l~;in;source;pop~) - r~;in;target;pop~)
+      COLS [ repr : repr
+           , pop  : pop
+           ]
+    ]
+
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+
+INTERFACE Atom(repr,pop) FOR Ampersand : I[Atom]
+ROWS [ repr : repr
+     , pop  : pop
+     ]
+
+VIEW Concept : Concept(name)
+
+INTERFACE Concept(name[Concept*TEXT],isa) FOR Ampersand : I[Concept]
+ROWS [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+
+INTERFACE Pair(l,r,in[Pair*Relation]) FOR Ampersand: I[Pair]
+ROWS [ pair           : I
+     , l              : l
+     , r              : r
+     , "relation(s)"  : in
+     ]
+
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+
+INTERFACE Relation(name[Relation*TEXT],source,target) FOR Ampersand: I[Relation]
+ROWS [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+ENDCONTEXT

@@ -39,7 +39,6 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
- , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics
  , showSign
  , aMarkup2String
  , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
@@ -334,30 +333,6 @@ instance Show A_Gen where
     case g of
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
-
-genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]
-genericAndSpecifics gen = 
-    case gen of
-      Isa{} -> [(genspc gen, gengen gen)]
-      IsE{} -> [(genspc gen, g ) | g<-genrhs gen]
-
--- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
---   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
-smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
-smallerConcepts gens cpt
-  = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller
-  where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gens, gengen g==cpt ]++[ genspc g | g@IsE{}<-gens, cpt `elem` genrhs g ]
--- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
-largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
-largerConcepts gens cpt
- = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
-  where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gens, genspc g==cpt ]++[ c | g@IsE{}<-gens, genspc g==cpt, c<-genrhs g ]
-
--- | this function returns the most generic concepts in the class of a given concept
-rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
-rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gens cpt ] `uni` cpts
-                                , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
-                                ]
 
 data Interface = Ifc { ifcParams ::   [Declaration] -- all relations that can be edited in this interface
                      , ifcClass ::    Maybe String

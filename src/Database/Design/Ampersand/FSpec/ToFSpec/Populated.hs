@@ -1,4 +1,8 @@
-module Database.Design.Ampersand.Classes.Populated (fullContents,atomsOf) where
+module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
+    (fullContents,atomsOf
+    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics
+    ) 
+where
 {- This file contains all functions to compute populations.
    The implementation is done through Haskell's Map mechanism, as defined in Data.Map, for reasons of efficiency.
 -}
@@ -8,12 +12,40 @@ import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (empty)
-import Data.Map hiding (null, unions)
+import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
-import Data.List (nub)
+import Data.List (nub,delete)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.Populated"
+
+      
+       
+       
+genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]
+genericAndSpecifics gen = 
+    case gen of
+      Isa{} -> [(genspc gen, gengen gen)]
+      IsE{} -> [(genspc gen, g ) | g<-genrhs gen]
+
+-- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
+--   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
+smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
+smallerConcepts gens cpt
+  = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller
+  where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gens, gengen g==cpt ]++[ genspc g | g@IsE{}<-gens, cpt `elem` genrhs g ]
+-- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
+largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
+largerConcepts gens cpt
+ = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
+  where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gens, genspc g==cpt ]++[ c | g@IsE{}<-gens, genspc g==cpt, c<-genrhs g ]
+
+-- | this function returns the most generic concepts in the class of a given concept
+rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
+rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gens cpt ] `uni` cpts
+                                , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
+                                ]
+
 
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
 atomsOf :: [A_Gen]      -- the generalisation relations from the context

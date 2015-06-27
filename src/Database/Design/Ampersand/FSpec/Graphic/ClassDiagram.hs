@@ -11,7 +11,6 @@ import Data.List
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1  hiding (Association,Box)
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Association)
 import Database.Design.Ampersand.FSpec.Plug
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.FSpec

@@ -1,7 +1,7 @@
 ﻿CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-INCLUDE "ASTdocumentation.partialadl"
-INCLUDE "ASTInterface.ifc"
+INCLUDE "AST.docadl"
+INCLUDE "AST.ifc"
 INCLUDE "Atoms.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
