@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Classes.Populated 
+module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomsOf
     , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics
     ) 

@@ -29,7 +29,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
-          , module Database.Design.Ampersand.Classes.Populated 
+          , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
           
 import Data.List
@@ -42,7 +42,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
-import Database.Design.Ampersand.Classes.Populated
+import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"

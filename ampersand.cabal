@@ -127,7 +127,6 @@ executable ampersand
                      Database.Design.Ampersand.Basics.Version,
                      Database.Design.Ampersand.Classes,
                      Database.Design.Ampersand.Classes.ConceptStructure,
-                     Database.Design.Ampersand.Classes.Populated,
                      Database.Design.Ampersand.Classes.Relational,
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Components,
@@ -208,7 +207,8 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
-                     Database.Design.Ampersand.Output.Population2Xlsx
+                     Database.Design.Ampersand.Output.Population2Xlsx,
+                     Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
 
 Test-Suite ampersand-test
