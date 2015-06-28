@@ -116,12 +116,12 @@ generateDBstructQueries fSpec =
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
-        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
         ]
       , [ "CREATE TABLE "++ show "__History__"
         , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
         , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
-        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
         ]
       , [ "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
         , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
@@ -130,7 +130,7 @@ generateDBstructQueries fSpec =
         , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
         , "   , "++show "src"++" VARCHAR(255) NOT NULL"
         , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
-        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
         ]
       ] ++ 
       ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])
@@ -149,7 +149,7 @@ generateDBstructQueries fSpec =
                                  )
                             )
                         )
-                     ++ [" )"]
+                     ++ [" ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"]
                    )
           ]
         fld2sql :: SqlField -> String
@@ -194,7 +194,7 @@ plug2TableSpec plug
                                         ]
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
-     , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8"
+     , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
      }
 
 commentBlockSQL :: [String] -> [String]

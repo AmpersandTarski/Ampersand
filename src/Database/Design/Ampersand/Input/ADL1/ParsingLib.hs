@@ -20,8 +20,6 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne, pInteger
 ) where
 
---TODO! Haddock comments to the parsing lib
-
 import Control.Monad.Identity (Identity)
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
@@ -31,31 +29,43 @@ import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
 
-type AmpParser a = P.ParsecT [Token] FilePos Identity a
+-- | The Ampersand parser type
+type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
 
 -----------------------------------------------------------
 -- Useful functions
 -----------------------------------------------------------
 
--- TODO! Use Parsec operators
 infixl 4 <$
-(<$) :: a -> AmpParser b -> AmpParser a
+
+-- | Applies the given parser and returns the given constructor
+(<$) :: a           -- ^ The value to return
+     -> AmpParser b -- ^ The parser to apply
+     -> AmpParser a -- ^ The result
 a <$ p = do { _ <- p; return a }
 
 (<??>) :: AmpParser a -> AmpParser (a -> a) -> AmpParser a
 p <??> q = (\x f -> f x) CA.<$> p CA.<*> (q `opt` id)
 
-pIsThere :: AmpParser a -> AmpParser Bool
+-- | Tries to apply the given parser and returns a parser with a boolean indicating whether it succeeded
+pIsThere :: AmpParser a     -- ^ The parser to run
+         -> AmpParser Bool  -- ^ The parser with the result
 pIsThere p = (True <$ p) `opt` False
 
-optList :: AmpParser [a] -> AmpParser [a]
+-- | Optionally applies a list parser, returning an empty list if it doesn't succeed
+optList :: AmpParser [a]
+        -> AmpParser [a]
 optList p = p `opt` []
 
-pMaybe :: AmpParser a -> AmpParser (Maybe a)
+-- | Tries to apply the given parser and encapsulates the result in Maybe
+pMaybe :: AmpParser a           -- ^ The parser to apply
+       -> AmpParser (Maybe a)   -- ^ The result
 pMaybe p = Just CA.<$> p <|> P.parserReturn Nothing
 
---TODO! Remove `opt` and use Parsec's option instead.
-opt ::  AmpParser a -> a -> AmpParser a
+-- | Tries to apply the given parser and returns the second argument if it doesn't succeed
+opt ::  AmpParser a  -- ^ The parser to try
+    -> a             -- ^ The item to return if the parser doesn't succeed
+    -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
 -----------------------------------------------------------

@@ -24,3 +24,6 @@ mkPair :: String -> String -> Paire
 mkPair = Paire
 instance Unique Paire where
   showUnique p = "("++srcPaire p++","++trgPaire p++")"
+
+instance Flippable Paire where
+  flp (Paire a b) = (Paire b a)

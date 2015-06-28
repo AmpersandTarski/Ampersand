@@ -27,14 +27,20 @@ import Database.Design.Ampersand.Input.Xslx.XLSX
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
 
--- Parse an Ampersand file and all transitive includes
-parseADL ::  Options -> FilePath -> IO (Guarded P_Context)
+-- | Parse an Ampersand file and all transitive includes
+parseADL ::  Options                -- ^ The options given through the command line
+         -> FilePath                -- ^ The path of the file to be parsed
+         -> IO (Guarded P_Context)  -- ^ The resulting context
 parseADL opts filePath =
   whenCheckedIO (parseSingleADL opts filePath) $ \(ctxt, filePaths) ->
     whenCheckedIO (parseADLs opts [filePath] filePaths) $ \ctxts ->
       return $ Checked $ foldl mergeContexts ctxt ctxts
 
-parseADLs :: Options -> [FilePath] -> [FilePath] -> IO (Guarded [P_Context])
+-- | Parses several ADL files
+parseADLs :: Options                    -- ^ The options given through the command line
+          -> [FilePath]                 -- ^ The list of files that have already been parsed
+          -> [FilePath]                 -- ^ The list of files to parse
+          -> IO (Guarded [P_Context])   -- ^ The resulting contexts
 parseADLs _    _               []        = return $ Checked []
 parseADLs opts parsedFilePaths filePaths =
  do { let filePathsToParse = nub filePaths \\ parsedFilePaths
@@ -45,7 +51,7 @@ parseADLs opts parsedFilePaths filePaths =
           }
     }
 
--- Parse an Ampersand file, but not its includes (which are simply returned as a list)
+-- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts filePath
  | extension == ".xlsx" = 
@@ -88,7 +94,11 @@ parse p fn ts =
 lexerErrors :: LexerError -> [CtxError]
 lexerErrors err = [PE (Message ("Lexer error "++show err))]
 
-runParser :: AmpParser a -> Filename -> String -> Guarded a
+-- | Runs the given parser
+runParser :: AmpParser a -- ^ The parser to run
+          -> FilePath    -- ^ Name of the file (for error messages)
+          -> String      -- ^ String to parse
+          -> Guarded a   -- ^ The result
 runParser parser filename input =
   -- lexer :: [Options] -> String -> [Char] -> Either LexerError ([Token], [LexerWarning])
   --TODO: Give options to the lexer
@@ -98,22 +108,27 @@ runParser parser filename input =
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
     Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
 
+-- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
 -- Since it is applied on static code only, error messagea may be produced as fatals.
-parseRule :: String -> Term TermPrim
+parseRule :: String         -- ^ The string to be parsed
+          -> Term TermPrim  -- ^ The resulting rule
 parseRule str
    = case  runParser pRule "inside Haskell code" str of
        Checked result -> result
        Errors  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
 
--- | Parse isolated ADL1 expression strings
+-- | Parses an isolated ADL1 expression string
 parseADL1pExpr :: String            -- ^ The string to be parsed
                -> FilePath          -- ^ The name of the file (used for error messages)
-               -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result
+               -> Either String (Term TermPrim)  -- ^ The result: Either an error message, or a good result
 parseADL1pExpr str fn =
   case runParser pTerm fn str of
       Checked result -> Right result
       Errors  msg    -> Left $ "Parse errors:\n"++show msg
 
-parseCtx :: FilePath -> String -> Guarded (P_Context, [String])
+-- | Parses an Ampersand context
+parseCtx :: FilePath -- ^ The file name (used for error messages)
+         -> String   -- ^ The string to be parsed
+         -> Guarded (P_Context, [String]) -- ^ The context and a list of included files
 parseCtx = runParser pContext

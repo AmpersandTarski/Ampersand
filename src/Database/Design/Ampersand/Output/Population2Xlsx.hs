@@ -13,6 +13,9 @@ import qualified Data.Text as T
 import Data.Maybe
 import Data.List
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Population2Xlsx"
+
 fSpec2PopulationXlsx :: ClockTime -> FSpec -> L.ByteString 
 fSpec2PopulationXlsx ct fSpec = 
   fromXlsx ct xlsx
@@ -38,8 +41,11 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        matrix :: Maybe  [[Cell]]
        matrix = 
          case plug of
-           TblSQL{} -> Just $ headers ++ content  
-           BinSQL{} -> Just $ headers ++ content
+           TblSQL{} -> if length (fields plug) > 1
+                       then Just $ headers ++ content
+                       else Nothing
+           BinSQL{} -> -- trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
+                       Just $ headers ++ content
            ScalarSQL{} -> Nothing
          where
            headers :: [[Cell]]
@@ -49,13 +55,17 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                          [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,
                                             -- to be able to find the population again by the reader of the .xlsx file
                            then Just $ "["++name fld++"]" 
-                           else Just . cleanUpRelName $ name fld
+                           else Just . cleanUpRelName $
+                                          case plug of
+                                            TblSQL{}    -> name fld
+                                            BinSQL{}    -> name plug
+                                            ScalarSQL{} -> fatal 57 "ScalarSQL not expected here"
                          , Just $ name .target . fldexpr $ fld ]
                    cleanUpRelName :: String -> String
                    --TODO: This is a not-so-nice way to get the relationname from the fieldname.
                    cleanUpRelName orig
                      | isPrefixOf "tgt_" orig = drop 4 orig
-                     | isPrefixOf "src_" orig = drop 4 orig
+                     | isPrefixOf "src_" orig = drop 4 orig ++"~" --TODO: Make in less hacky! (See also the way the fieldname is constructed.
                      | otherwise         = orig
            content = fmap record2Cells (tblcontents (contextInfo fSpec) (initialPops fSpec) plug)
            record2Cells :: [Maybe AAtomValue] -> [Cell]

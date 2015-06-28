@@ -3,7 +3,7 @@ module Database.Design.Ampersand.ADL1.Rule
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes.Populated ( fullContents)
+import Database.Design.Ampersand.FSpec.ToFSpec.Populated ( fullContents)
 import Database.Design.Ampersand.Misc
 import qualified Data.Set as Set
 

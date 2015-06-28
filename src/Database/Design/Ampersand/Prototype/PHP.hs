@@ -83,7 +83,7 @@ plug2TableSpec plug
                                         ]
                    ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                    PlainAttr     -> []
-   , "InnoDB DEFAULT CHARACTER SET UTF8")
+   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN")
 
 signalTableSpec :: TableSpec
 signalTableSpec =
@@ -92,7 +92,7 @@ signalTableSpec =
   , [ "`conjId` VARCHAR(255) NOT NULL"
     , "`src` VARCHAR(255) NOT NULL"
     , "`tgt` VARCHAR(255) NOT NULL" ]
-  , "InnoDB DEFAULT CHARACTER SET UTF8"
+  , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN"
   )
 
 sessionTableSpec :: TableSpec
@@ -101,7 +101,7 @@ sessionTableSpec
    , "__SessionTimeout__"
    , [ "`SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , "`lastAccess` BIGINT NOT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8" )
+   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
 historyTableSpec :: TableSpec
 historyTableSpec
@@ -109,7 +109,7 @@ historyTableSpec
    , "__History__"
    , [ "`Seconds` VARCHAR(255) DEFAULT NULL"
      , "`Date` VARCHAR(255) DEFAULT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8" )
+   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
@@ -177,7 +177,7 @@ createTempDbPHP dbNm =
       , "// Don't bother about the error if the database didn't exist..."
       , ""
       , "// Create the database"
-      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8\";"
+      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin\";"
       , "if (!mysqli_query($DB_link,$sql)) {"
       , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
       , "  }"

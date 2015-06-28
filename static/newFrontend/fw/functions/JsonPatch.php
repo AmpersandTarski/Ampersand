@@ -299,7 +299,7 @@ class JsonPatch
       foreach (array_keys($src) as $key)
       {
         $ekey = self::escape_pointer_part($key);
-        if (!array_key_exists($key, $dst))
+        if (!array_key_exists($key, (array)$dst))
         {
           $result[] = array("op" => "remove", "path" => "$path/$ekey");
         }
@@ -310,7 +310,7 @@ class JsonPatch
                                                   $src[$key], $dst[$key]));
         }
       }
-      foreach (array_keys($dst) as $key)
+      foreach (array_keys((array)$dst) as $key)
       {
         if (!array_key_exists($key, $src))
         {

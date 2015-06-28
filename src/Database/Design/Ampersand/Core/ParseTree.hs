@@ -197,6 +197,12 @@ data PAtomPair
           , ppLeft  :: PAtomValue
           , ppRight :: PAtomValue
           } deriving Show
+instance Traced PAtomPair where
+  origin = pppos
+instance Flippable PAtomPair where
+  flp pr = pr{ppLeft = ppRight pr
+             ,ppRight = ppLeft pr}
+
 data PAtomValue
   = PAVString Origin String
 -- TODO: Later add parsers for:
@@ -614,6 +620,10 @@ data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
 instance Show P_Sign where
   showsPrec _ sgn =
       showString (   "[" ++ show (pSrc sgn)++"*"++show (pTgt sgn) ++ "]" )
+instance Flippable P_Sign where
+  flp sgn = P_Sign { pSrc = pTgt sgn
+                   , pTgt = pSrc sgn
+                   }
 
 data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand file
                   , gen_spc :: P_Concept         -- ^ Left hand side concept expression

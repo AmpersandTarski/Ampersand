@@ -1,7 +1,7 @@
 ﻿CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-INCLUDE "ASTdocumentation.partialadl"
-INCLUDE "ASTInterface.ifc"
+INCLUDE "AST.docadl"
+INCLUDE "AST.ifc"
 INCLUDE "Atoms.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
@@ -21,13 +21,13 @@ PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
 IDENT Context: Context(name)  
 --CLASSIFY ContextName ISA Conid
-RELATION name[Context*ContextName] [UNI,TOT,INJ]
+RELATION name[Context*TEXT] [UNI,TOT,INJ]
 MEANING "The name of a context."
 RELATION patterns[Context*Pattern]
 MEANING "The patterns in a context."
-RELATION concs[Context*PlainConcept]
+RELATION concs[Context*Concept]
 MEANING "A concept, mentioned anywhere in a context."
-RELATION allDeclarations[Context*Declaration]
+RELATION allDeclarations[Context*Relation]
 MEANING "A relation declared in a context"
 RELATION gens[Context*Gen]
 MEANING "The user-defined generalization rules in a context."
@@ -39,7 +39,7 @@ IDENT Pattern: Pattern(name)
 
 --CLASSIFY PatternName ISA Conid
 
-RELATION name[Pattern*PatternName] [UNI,TOT,INJ]
+RELATION name[Pattern*TEXT] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
 RELATION rules[Pattern*Rule]
 MEANING "The user-defined rules in a pattern."
@@ -56,11 +56,9 @@ VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name[Concept*TEXT] , TXT " ISA " , gengen
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
-CLASSIFY PlainConcept ISA Concept
-
-RELATION gengen[Gen*PlainConcept] [UNI,TOT]
+RELATION gengen[Gen*Concept] [UNI,TOT]
 MEANING "A generalization rule refers to one more generic concept."
-RELATION genspc[Gen*PlainConcept] [UNI,TOT]
+RELATION genspc[Gen*Concept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
 
 --PURPOSE RULE specialization
@@ -80,6 +78,7 @@ VIEW Sign: Sign( TXT "[" , src;name[Concept*TEXT] , TXT "*" , trg;name[Concept*T
 
 RELATION src[Sign*Concept] [UNI,TOT]
 MEANING "The source of a sign."
+ROLE Ampersand MAINTAINS "TOT src::Sign*Concept", "TOT trg::Sign*Concept"
 RELATION trg[Sign*Concept] [UNI,TOT]
 MEANING "The target of a sign."
 
@@ -108,13 +107,13 @@ As a consequence, the type of an expression can be computed based on the types o
 ENDPATTERN
 
 PATTERN Declaration
---VIEW Declaration: Declaration( name , TXT "::", sign;src;name[PlainConcept*ConceptName] ,TXT " * ", sign;trg;name[PlainConcept*ConceptName] )
+--VIEW Declaration: Declaration( name , TXT "::", sign;src;name[Concept*TEXT] ,TXT " * ", sign;trg;name[Concept*TEXT] )
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
-CLASSIFY Declaration ISA Relation
+--CLASSIFY Declaration ISA Relation
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
---CLASSIFY DeclarationName ISA Varid
-RELATION name[Declaration*DeclarationName] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
+
+RELATION name[Declaration*TEXT] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The name of a relation."
 RELATION sign[Declaration*Sign] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The sign of a declaration."
@@ -167,24 +166,24 @@ MEANING "The user-declared relations in an expression."
 {-CLASSIFY RelationRef ISA Expression
 
 CONCEPT RelationRef "A relation reference (aka relation token) is an expression that refers to a user-declared relation"  
-VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[PlainConcept*ConceptName] , TXT "*" , relsgn;trg;name[PlainConcept*ConceptName] , TXT "]")
+VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[Concept*TEXT] , TXT "*" , relsgn;trg;name[Concept*TEXT] , TXT "]")
 
-RELATION name[RelationRef*DeclarationName] [UNI,TOT]
+RELATION name[RelationRef*TEXT] [UNI,TOT]
 MEANING "A relation reference has the name of the relation that is being referred to."
 RELATION relsgn[RelationRef*Sign] [UNI,TOT]
 MEANING "A relation reference has the sign of the relation that is being referred to."
 RELATION reldcl[RelationRef*Declaration] [UNI,TOT]
 MEANING "A relation reference has the relation that is being referred to."
-RULE "rel name is decl name": name = reldcl;name[Declaration*DeclarationName]
+RULE "rel name is decl name": name = reldcl;name[Declaration*TEXT]
 MEANING "A relation reference has the same name as the relation to which it refers."
-RULE "rel sign sub of decl sign": reldcl = name;name[Declaration*DeclarationName]~ /\ relsgn;subsgn;sign~
+RULE "rel sign sub of decl sign": reldcl = name;name[Declaration*TEXT]~ /\ relsgn;subsgn;sign~
 MEANING "A relation reference refers to the relation with the same name, the signature of which is larger or equal to the signature of the relation reference."
 -}ENDPATTERN
 
 PATTERN Rules
 IDENT Rule: Rule(name)
---CLASSIFY RuleName ISA ADLid
-RELATION name[Rule*RuleName] [UNI,TOT,INJ]
+
+RELATION name[Rule*TEXT] [UNI,TOT,INJ]
 MEANING "The name of a rule."
 RELATION sign[Rule*Sign] [UNI,TOT]
 RELATION rrexp[Rule*ExpressionID] [UNI,TOT]
@@ -200,7 +199,7 @@ ENDPATTERN
 
 PROCESS Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION maintains[Plug*Rule]
-RELATION in[PlainConcept*Plug] [TOT]
+RELATION in[Concept*Plug] --TODO: 'Nearly TOT: All concepts are in a plug, except ONE".
 RELATION in[Declaration*Plug] [TOT]
 
 -- Rules
@@ -208,7 +207,7 @@ RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
 MEANING "A plug, which maintains a rule, must contain every relation that is mentioned explicitly in that rule."
 
 ROLE Ampersand MAINTAINS "All isas in one plug"
-RULE "All isas in one plug" : (-(genspc~;gengen;in) \/ in) /\ (-(gengen~;genspc;in) \/ in)
+RULE "All isas in one plug" : (-(genspc~;gengen;in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen~;genspc;in[Concept*Plug]) \/ in[Concept*Plug])
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPROCESS
 

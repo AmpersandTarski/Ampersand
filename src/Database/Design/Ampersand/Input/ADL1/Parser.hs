@@ -1,14 +1,15 @@
 {-# OPTIONS_GHC -fno-enable-rewrite-rules #-} -- Disable rewrite rules to drastically improve compilation speed
 {-# LANGUAGE FlexibleContexts #-}
-module Database.Design.Ampersand.Input.ADL1.Parser(
-    AmpParser, pContext, pPopulations, pTerm, pRule
-) where
-
---TODO! Haddock comments to the parser
+module Database.Design.Ampersand.Input.ADL1.Parser
+    ( AmpParser
+    , pContext
+    , pPopulations
+    , pTerm
+    , pRule
+    ) where
 
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
---TODO! Remove or at least simplify the parsing lib
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
@@ -17,13 +18,14 @@ import Control.Applicative(pure)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.Parser"
 
---to parse files containing only populations
 --- Populations ::= Population+
-pPopulations :: AmpParser [P_Population]
+-- | Parses a list of populations
+pPopulations :: AmpParser [P_Population] -- ^ The population list parser
 pPopulations = many1 pPopulation
 
 --- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
-pContext :: AmpParser (P_Context, [String]) -- the result is the parsed context and a list of include filenames
+-- | Parses a context
+pContext :: AmpParser (P_Context, [String]) -- ^ The result is the parsed context and a list of include filenames
 pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> pConceptName
                     <*> pLanguageRef
@@ -472,16 +474,15 @@ pInterface = lbl <$> currPos                                       <*>
           pRoles  = pKey "FOR" *> pRole `sepBy1` pComma
 
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
---TODO Optionality of 'LINKTO' should be implemented some nicer way...
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
-            <|> interfRef <$> currPos <*> pMaybe (pKey "LINKTO") <*  pKey "INTERFACE" <*> pADLid
+            <|> P_InterfaceRef <$> currPos <*> pIsThere (pKey "LINKTO") <*  pKey "INTERFACE" <*> pADLid
   where pBoxKey :: AmpParser (Maybe String)
         pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
               <|> Just <$> pKey "ROWS"
               <|> Just <$> pKey "COLS"
               <|> Just <$> pKey "TABS"
-        interfRef p mlt s = P_InterfaceRef p (isJust mlt) s
+
 --- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
@@ -518,7 +519,7 @@ pPurpose = rebuild <$> currPos
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
            = PRef2 orig obj (P_Markup lang fmt str) (concatMap (splitOn ";") refs)
-              -- TODO! This separation should not happen in the parser
+              -- TODO: This separation should not happen in the parser
               where splitOn :: Eq a => [a] -> [a] -> [[a]]
                     splitOn [] s = [s]
                     splitOn s t  = case findIndex (isPrefixOf s) (tails t) of
@@ -537,7 +538,8 @@ pPurpose = rebuild <$> currPos
                   PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
 --- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
-pPopulation :: AmpParser P_Population
+-- | Parses a population
+pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   P_RelPopu <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
                   P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
@@ -553,7 +555,7 @@ pRoleRelation = try (P_RR <$> currPos
                     <*> pNamedRel `sepBy1` pComma
 
 --- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
---TODO! Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
+--TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
 pRoleRule :: AmpParser P_RoleRule
 pRoleRule = try (Maintain <$> currPos
                           <*  pKey "ROLE"
@@ -590,52 +592,15 @@ pMarkup = P_Markup
            <*> pMaybe pTextMarkup
            <*> (pString <|> pExpl)
 
-{-  Basically we would have the following expression syntax:
-pRule ::= pTrm1   "="    pTerm                           |  -- equivalence
-       pTrm1   "|-"   pTerm                           |  -- implication or subset
-       pTrm1 .
-pTerm ::= pList1Sep "/\\" pTrm2                          |  -- intersection
-       pList1Sep "\\/" pTrm2                          |  -- union
-       pTrm2 .
-pTrm2 ::= pTrm3    "-"    pTrm3                          |  -- set difference
-       pTrm3 .
-pTrm3 ::= pTrm4   "\\"   pTrm4                           |  -- right residual
-       pTrm4   "/"    pTrm4                           |  -- left residual
-       pTrm4 .
-pTrm4 ::= pList1Sep ";" pTrm5                            |  -- composition       (semicolon)
-       pList1Sep "!" pTrm5                            |  -- relative addition (dagger)
-       pList1Sep "#" pTrm5                            |  -- cartesian product (asterisk)
-       pTrm5 .
-pTrm5 ::= "-"     pTrm6                                  |  -- unary complement
-       pTrm6   pSign                                  |  -- unary type cast
-       pTrm6   "~"                                    |  -- unary flip
-       pTrm6   "*"                                    |  -- unary Kleene star
-       pTrm6   "+"                                    |  -- unary Kleene plus
-       pTrm6 .
-pTrm6 ::= pRelation                                      |
-       "("   pTerm   ")" .
-In practice, we have it a little different.
- - In order to avoid "associative" brackets, we parse the associative operators "\/", "/\", ";", and "!" with pList1Sep. That works.
- - We would like the user to disambiguate between "=" and "|-" by using brackets.
--}
-
-{- In theory, the expression is parsed by:
-pRule :: AmpParser (Term TermPrim)
-pRule  =  fEequ <$> pTrm1  <*>  posOf (pOperator "=")  <*>  pTerm   <|>
-          fEimp <$> pTrm1  <*>  posOf (pOperator "|-") <*>  pTerm   <|>
-          pTrm1
-          where fequ  lExp orig rExp = PEqu orig lExp rExp
-                fEimp lExp orig rExp = PImp orig lExp rExp
--- However elegant, this solution needs to be left-factored in order to get a performant parser.
--}
 --- Rule ::= Term ('=' Term | '|-' Term)?
-pRule :: AmpParser (Term TermPrim)
+-- | Parses a rule
+pRule :: AmpParser (Term TermPrim) -- ^ The rule parser
 pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
                       invert PImp  <$> currPos <* pOperator "|-" <*> pTerm)
 
 
 {-
-pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
+pTerm is slightly more complicated, for the purpose of avoiding "associative" brackets.
 The idea is that each operator ("/\\" or "\\/") can be parsed as a sequence without brackets.
 However, as soon as they are combined, brackets are needed to disambiguate the combination.
 There is no natural precedence of one operator over the other.
@@ -644,7 +609,8 @@ In order to maintain performance standards, the parser is left factored.
 The functions pars and f have arguments 'combinator' and 'operator' only to avoid writing the same code twice.
 -}
 --- Term ::= Trm2 (('/\' Trm2)+ | ('\/' Trm2)+)?
-pTerm :: AmpParser (Term TermPrim)
+-- | Parses a term
+pTerm :: AmpParser (Term TermPrim) -- ^ The term parser
 pTerm = pTrm2 <??> (invertT PIsc <$> rightAssociate PIsc "/\\" pTrm2 <|>
                     invertT PUni <$> rightAssociate PUni "\\/" pTrm2)
 
@@ -660,14 +626,6 @@ pTrm3  =  pTrm4 <??> (invert PLrs <$> currPos <* pOperator "/"  <*> pTrm4 <|>
                       invert PRrs <$> currPos <* pOperator "\\" <*> pTrm4 <|>
                       invert PDia <$> currPos <* pOperator "<>" <*> pTrm4 )
 
-{- by the way, a slightly different way of getting exactly the same result is:
-pTrm3 :: AmpParser (Term TermPrim)
-pTrm3  =  pTrm4 <??> (f <$>  (valPosOf (pOperator "/") <|> valPosOf (pOperator "\\") <|> valPosOf (pOperator "<>")) <*> pTrm4 )
-          where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
-                f ("/" , orig) rExp lExp = PLrs orig lExp rExp
-                f (_   , orig) rExp lExp = PDia orig lExp rExp
--}
-
 -- composition and relational addition are associative, and parsed similar to union and intersect...
 --- Trm4 ::= Trm5 ((';' Trm5)+ | ('!' Trm5)+ | ('#' Trm5)+)?
 pTrm4 :: AmpParser (Term TermPrim)
@@ -677,7 +635,7 @@ pTrm4   = pTrm5 <??> (invertT PCps <$> rightAssociate PCps ";" pTrm5 <|>
 
 --- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
 pTrm5 :: AmpParser (Term TermPrim)
---TODO! Separate into prefix and postfix top-level functions
+--TODO: Separate into prefix and postfix top-level functions
 pTrm5  =  f <$> many (valPosOf pDash) <*> pTrm6  <*> many (valPosOf (pOperator "~" <|> pOperator "*" <|> pOperator "+" ))
           where f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
                 f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)
@@ -763,7 +721,6 @@ pLabelProps = (,) <$> pADLid
 pLabel :: AmpParser String
 pLabel = pADLid <* pColon
 
---TODO! Try should not be necessary here, we must take the brackets out of the scope
 --- Content ::= '[' (RecordList | RecordObsList)? ']'
 pContent :: AmpParser [PAtomPair]
 pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi)

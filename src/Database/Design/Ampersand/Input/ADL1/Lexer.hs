@@ -10,37 +10,30 @@ module Database.Design.Ampersand.Input.ADL1.Lexer
     , LexerWarning(..)
     , LexerWarningInfo(..)
     , keepOneTabWarning
-    , isLooksLikeFloatWarningInfo
     , showLexerErrorInfo
     , showLexerWarningInfo
-    , showLexerWarnings
     -- LexerToken
     , Token(..)
     , Lexeme(..)
     , lexemeText
     , initPos
-    , Filename
     , FilePos(..)
 ) where
 
---TODO! Haddock comments to the lexer
-
 import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
---TODO! I don't think that LexerMonad is being used! Also LexerMessage is maybe not being used.
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
-import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 import Data.Char hiding(isSymbol)
-import Data.Maybe
-import Data.List (sort)
+import Data.Set (member, fromList)
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Misc
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Lexer"
 
-keywords :: [String]
+-- | Retrieves a list of keywords accepted by the ampersand language
+keywords :: [String] -- ^ The keywords
 keywords      = [ "INCLUDE"
                 , "CONTEXT", "ENDCONTEXT", "EXTENDS", "THEMES"
                 , "META"
@@ -67,15 +60,21 @@ keywords      = [ "INCLUDE"
                 , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
                 ]
 
-operators :: [String]
+-- | Retrieves a list of operators accepted by the ampersand language
+operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
-symbols :: String -- [Char]
+-- | Retrieves the list of symbols accepted by the ampersand language
+symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
---TODO: The init pos gets calculated here and again in the runLexerMonad method
-lexer :: [Options] -> Filename -> String -> Either LexerError ([Token], [LexerWarning])
+--TODO: Options should be one item, not a list
+-- | Runs the lexer
+lexer :: [Options]  -- ^ The command line options
+      -> FilePath   -- ^ The file name, used for error messages
+      -> String     -- ^ The content of the file
+      -> Either LexerError ([Token], [LexerWarning]) -- ^ Either an error or a list of tokens and warnings
 lexer opt file input = case runLexerMonad opt file (mainLexer (initPos file) input) of
                                Left err -> Left err
                                Right (ts, ws) -> Right (ts, ws)
@@ -172,7 +171,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es = isJust . btLocateIn compare (tab2tree (sort es))
+locatein es e = member e (fromList es)
 
 iskw :: String -> Bool
 iskw = locatein keywords
@@ -217,7 +216,6 @@ scanAtom ('"':xs)        = let (str,w,r) = scanAtom xs
                            in ('"': str,w+1,r)
 scanAtom xs   = let (ch,cw,cr) = getchar xs
                     (str,w,r)  = scanAtom cr
---                    str' = maybe "" (:str) ch
                 in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
 -----------------------------------------------------------

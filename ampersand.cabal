@@ -19,12 +19,17 @@ bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 data-files:     
                 AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/FormalAmpersand/AST.adl, 
-                AmpersandData/FormalAmpersand/ASTdocumentation.partialadl, 
-                AmpersandData/FormalAmpersand/ASTInterface.ifc, 
+                AmpersandData/FormalAmpersand/AST.docadl, 
+                AmpersandData/FormalAmpersand/AST.ifc, 
                 AmpersandData/FormalAmpersand/Atoms.adl, 
+                AmpersandData/FormalAmpersand/Atoms.docadl, 
+                AmpersandData/FormalAmpersand/Atoms.ifc,
                 AmpersandData/FormalAmpersand/FormalAmpersand.adl, 
                 AmpersandData/FormalAmpersand/Generics.adl, 
-                AmpersandData/FormalAmpersand/IS.adl, 
+                AmpersandData/FormalAmpersand/Interfaces.adl,
+                AmpersandData/FormalAmpersand/Interfaces.docadl,
+                AmpersandData/FormalAmpersand/IS.adl,
+                AmpersandData/FormalAmpersand/IS.docadl,
                 AmpersandData/FormalAmpersand/IS.ifc, 
                 AmpersandData/FormalAmpersand/IS.pop, 
                 AmpersandData/FormalAmpersand/README.txt, 
@@ -118,7 +123,6 @@ executable ampersand
                      Database.Design.Ampersand.Basics.Version,
                      Database.Design.Ampersand.Classes,
                      Database.Design.Ampersand.Classes.ConceptStructure,
-                     Database.Design.Ampersand.Classes.Populated,
                      Database.Design.Ampersand.Classes.Relational,
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Components,
@@ -153,7 +157,6 @@ executable ampersand
                      Database.Design.Ampersand.Input.ADL1.CtxError,
                      Database.Design.Ampersand.Input.ADL1.FilePos,
                      Database.Design.Ampersand.Input.ADL1.Lexer,
-                     Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees,
                      Database.Design.Ampersand.Input.ADL1.LexerMessage,
                      Database.Design.Ampersand.Input.ADL1.LexerMonad,
                      Database.Design.Ampersand.Input.ADL1.LexerTexts,
@@ -200,7 +203,8 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
-                     Database.Design.Ampersand.Output.Population2Xlsx
+                     Database.Design.Ampersand.Output.Population2Xlsx,
+                     Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
 
 Test-Suite ampersand-test
@@ -208,7 +212,7 @@ Test-Suite ampersand-test
   main-is:           Test.hs
   hs-source-dirs:    src
   default-language:  Haskell2010
-  ghc-options:       -with-rtsopts=-M1536m -Wall
+  ghc-options:       -fhpc -with-rtsopts=-M1536m -Wall
   build-depends:     
                      base,
                      bytestring >=0.10 && <0.11,

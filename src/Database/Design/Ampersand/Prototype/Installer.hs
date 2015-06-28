@@ -30,7 +30,7 @@ installerDBstruct fSpec = unlines $
       , "// Don't bother about the error if the database didn't exist..."
       , ""
       , "// Create the database"
-      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8\";"
+      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN\";"
       , "if (!mysqli_query($DB_link,$sql)) {"
       , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
       , "  }"

@@ -3,32 +3,32 @@ module Database.Design.Ampersand.Input.ADL1.LexerToken
     , Lexeme(..)
     , lexemeText
     , initPos
-    , Filename
     , FilePos(..)
     ) where
 
 import Database.Design.Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
 import Text.Parsec()
 
-type Filename   = String
-
-data Token = Tok { tokLex :: Lexeme
-                 , tokPos :: FilePos }
+-- | The Ampersand token
+data Token = Tok { tokLex :: Lexeme  -- ^ The lexeme
+                 , tokPos :: FilePos -- ^ The position where the lexeme was found
+                 }
 
 instance Show Token where
   show (Tok lx p) = show lx ++ " " ++ show p
 
-data Lexeme  = LexSymbol      Char
-             | LexOperator    String
-             | LexKeyword     String
-             | LexString      String
-             | LexExpl        String
-             | LexAtom        String
-             | LexDecimal     Int
-             | LexOctal       Int
-             | LexHex         Int
-             | LexConId       String
-             | LexVarId       String
+-- | The Ampersand Lexemes
+data Lexeme  = LexSymbol      Char    -- ^ A symbol
+             | LexOperator    String  -- ^ An operator
+             | LexKeyword     String  -- ^ A keyword
+             | LexString      String  -- ^ A quoted string
+             | LexExpl        String  -- ^ An explanation
+             | LexAtom        String  -- ^ An atom
+             | LexDecimal     Int     -- ^ A decimal number
+             | LexOctal       Int     -- ^ An octal number
+             | LexHex         Int     -- ^ A hexadecimal number
+             | LexConId       String  -- ^ An upper case identifier
+             | LexVarId       String  -- ^ A lower case identifier
   deriving (Eq, Ord)
 
 instance Show Lexeme where
@@ -52,7 +52,9 @@ instance Show Lexeme where
 --    uncons []     = return $ Nothing
 --    uncons (t:ts) = return $ Just (t,ts)
 
-lexemeText :: Lexeme -> String
+-- | Retrieves the text from a lexeme
+lexemeText :: Lexeme -- ^ The lexeme
+           -> String -- ^ The text contained in the lexeme
 lexemeText l = case l of
          LexSymbol   val -> [val]
          LexOperator val -> val
