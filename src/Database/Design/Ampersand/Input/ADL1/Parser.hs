@@ -311,11 +311,10 @@ pFun  = []        <$ pOperator "*"  <|>
 pConceptDef :: AmpParser (String->ConceptDef)
 pConceptDef       = Cd <$> currPos
                        <*  pKey "CONCEPT"
-                       <*> pConceptName           -- the concept name
+                       <*> pConceptName
                        <*> pIsThere (pKey "BYPLUG")
-                       <*> pString                -- the definition text
-                  --     <*> optList (pKey "TYPE" *> pString)     -- the type of the concept.
-                       <*> (pString `opt` "")     -- a reference to the source of this definition.
+                       <*> (pString <?> "concept definition (string)")
+                       <*> (pString `opt` "") -- a reference to the source of this definition.
 
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
