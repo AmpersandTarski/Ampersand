@@ -23,6 +23,7 @@ import Data.List(nub)
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
 
+-- SignOrd is used for finding declarations efficiently. From SJ to @SJC: I would expect compare (name a,name c) (name b,name d). WHY is compare being used as it is?
 newtype SignOrd = SignOrd Sign
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
@@ -223,7 +224,7 @@ pCtx2aCtx' _
     ctxDecls' = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The relations declared in this context, outside the scope of patterns
     patDecls  = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns , pDecl<-pt_dcs pat ] --  The relations declared in all patterns within this context.
 
--- In order to find declarations efficiently, a Map is constructed to search declarations by name.
+    -- In order to find declarations efficiently, a Map is constructed to search declarations by name.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap  -- get all declarations with the same name as x

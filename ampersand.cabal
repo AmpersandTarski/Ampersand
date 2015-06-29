@@ -112,13 +112,14 @@ executable ampersand
                      Database.Design.Ampersand.ADL1.Pair,
                      Database.Design.Ampersand.ADL1.PrettyPrinters,
                      Database.Design.Ampersand.ADL1.Rule,
+                     Database.Design.Ampersand.ADL1.TypeGraphs,
                      Database.Design.Ampersand.Basics,
                      Database.Design.Ampersand.Basics.Auxiliaries,
                      Database.Design.Ampersand.Basics.BuildInfo_Generated,
                      Database.Design.Ampersand.Basics.Collection,
                      Database.Design.Ampersand.Basics.String,
-                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.UTF8,
+                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.Version,
                      Database.Design.Ampersand.Classes,
                      Database.Design.Ampersand.Classes.ConceptStructure,
@@ -165,6 +166,7 @@ executable ampersand
                      Database.Design.Ampersand.Input.ADL1.Parser,
                      Database.Design.Ampersand.Input.ADL1.ParsingLib,
                      Database.Design.Ampersand.Input.Parsing,
+                     Database.Design.Ampersand.Input.Xslx.XLSX,
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
@@ -174,6 +176,7 @@ executable ampersand
                      Database.Design.Ampersand.Output.FSpec2Excel,
                      Database.Design.Ampersand.Output.FSpec2Pandoc,
                      Database.Design.Ampersand.Output.PandocAux,
+                     Database.Design.Ampersand.Output.Population2Xlsx,
                      Database.Design.Ampersand.Output.PredLogic,
                      Database.Design.Ampersand.Output.Statistics,
                      Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
@@ -193,8 +196,8 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.AutoInstaller,
                      Database.Design.Ampersand.Prototype.CoreImporter,
                      Database.Design.Ampersand.Prototype.GenBericht,
-                     Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.GenFrontend,
+                     Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
@@ -203,8 +206,7 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
-                     Database.Design.Ampersand.Input.Xslx.XLSX,
-                     Database.Design.Ampersand.Output.Population2Xlsx
+                     Database.Design.Ampersand.ADL1.TypePropagation
 
 
 Test-Suite ampersand-test
@@ -244,4 +246,5 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Test.RunAmpersand,
                      Database.Design.Ampersand.Test.TestScripts,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
-                     Database.Design.Ampersand.Output.Population2Xlsx
+                     Database.Design.Ampersand.Output.Population2Xlsx,
+                     Database.Design.Ampersand.ADL1.TypePropagation

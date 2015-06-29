@@ -7,6 +7,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.P2A_Converters
+import Database.Design.Ampersand.ADL1.TypeGraphs
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
@@ -50,9 +51,6 @@ createFSpec opts =
                      ; verboseLn opts (stDotGraphPath++" written.")
                      ; return (Checked ())
                      }
-
-    computeTypeGraphs :: P_Context -> (DotGraph String, DotGraph String)
-    computeTypeGraphs _ = fatal 41 "TODO typeGraphs"
 
     genFiles :: Guarded P_Context -> IO(Guarded ())
     genFiles uCtx 
