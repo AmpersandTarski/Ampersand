@@ -67,13 +67,14 @@ executable ampersand
                      Database.Design.Ampersand.ADL1.P2A_Converters,
                      Database.Design.Ampersand.ADL1.PrettyPrinters,
                      Database.Design.Ampersand.ADL1.Rule,
+                     Database.Design.Ampersand.ADL1.TypeGraphs,
                      Database.Design.Ampersand.Basics,
                      Database.Design.Ampersand.Basics.Auxiliaries,
                      Database.Design.Ampersand.Basics.BuildInfo_Generated,
                      Database.Design.Ampersand.Basics.Collection,
                      Database.Design.Ampersand.Basics.String,
-                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.UTF8,
+                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.Version,
                      Database.Design.Ampersand.Classes,
                      Database.Design.Ampersand.Classes.ConceptStructure,
@@ -146,8 +147,8 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
                      Database.Design.Ampersand.Prototype.CoreImporter,
                      Database.Design.Ampersand.Prototype.GenBericht,
-                     Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.GenFrontend,
+                     Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
@@ -155,7 +156,7 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
-                     Database.Design.Ampersand.Core.A2P_Converters
+                     Database.Design.Ampersand.ADL1.TypePropagation
 
 
 Test-Suite ampersand-test
@@ -198,6 +199,6 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Test.TestScripts,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
                      Database.Design.Ampersand.Output.Population2Xlsx,
-                     Database.Design.Ampersand.Graphic.ClassDiag2Dot,
+                     Database.Design.Ampersand.ADL1.TypePropagation
                      Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams,
                      Database.Design.Ampersand.Core.A2P_Converters

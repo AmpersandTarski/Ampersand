@@ -352,10 +352,10 @@ data TermPrim
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
    | PNamedR P_NamedRel
-   deriving (Show) --For QuickCheck error messages only!
+   deriving (Show, Eq, Ord) -- Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
 
 data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
-   deriving Show
+   deriving (Show, Eq, Ord) -- Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where
@@ -388,7 +388,8 @@ data Term a
    | PFlp Origin (Term a)           -- ^ conversion (flip, wok)  ~
    | PCpl Origin (Term a)           -- ^ Complement
    | PBrk Origin (Term a)           -- ^ bracketed expression ( ... )
-   deriving (Show) -- deriving Show for debugging purposes
+   deriving (Show, Eq, Ord) -- deriving Show for debugging purposes
+    -- deriving Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
 instance Functor Term where fmap = fmapDefault
 instance Foldable Term where foldMap = foldMapDefault
 instance Traversable Term where
@@ -729,9 +730,10 @@ instance Traced PPurpose where
 data P_Concept
    = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
    | P_Singleton
---      deriving (Eq, Ord)
+      deriving (Eq, Ord)
 -- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 -- (Sebastiaan 11 okt 2013) Removed this again, I thought it would be more clean to use newtype for this instead
+-- (Stef June 27th, 2015) Reinstate this solely for the purpose of generating type graphs
 
 instance Named P_Concept where
  name (PCpt {p_cptnm = nm}) = nm
@@ -741,6 +743,7 @@ instance Show P_Concept where
  showsPrec _ c = showString (name c)
 
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
+              deriving (Eq, Ord) -- Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
 
 instance Show P_Sign where
   showsPrec _ sgn =
