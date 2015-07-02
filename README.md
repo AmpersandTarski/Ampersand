@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/AmpersandTarski/ampersand.png?label=ready&title=Ready)](https://waffle.io/AmpersandTarski/ampersand)
 
 Branch | Status
 ---------|-----------
