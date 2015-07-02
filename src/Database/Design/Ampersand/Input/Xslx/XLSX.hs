@@ -191,7 +191,8 @@ theSheetCellsForTable (sheetName,ws)
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows
                      , colNrs       = theCols
-                     , debugInfo = [ "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
+                     , debugInfo = [ "indexInTableStarters"++": "++show indexInTableStarters
+                                   , "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
                                    , "maxColOfWorksheet"++": "++show maxColOfWorksheet
                                    , "startOfTable     "++": "++show startOfTable
                                    , "firstPopRowNr    "++": "++show firstPopRowNr
@@ -210,7 +211,7 @@ theSheetCellsForTable (sheetName,ws)
        maxRowOfWorksheet = Prelude.maximum (Prelude.map fst (M.keys (ws  ^. wsCells)))
        maxColOfWorksheet = Prelude.maximum (Prelude.map snd (M.keys (ws  ^. wsCells)))
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet])!!(indexInTableStarters+1))-1
+       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1])!!(indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
        populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool
