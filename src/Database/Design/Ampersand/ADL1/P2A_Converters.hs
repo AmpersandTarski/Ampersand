@@ -80,7 +80,7 @@ checkPurposes gCtx =
 isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
-    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (ctxcds ctx )
+    ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (concs ctx )
     ExplDeclaration decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
