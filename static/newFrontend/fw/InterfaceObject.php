@@ -115,16 +115,6 @@ class InterfaceObject {
 				
 	}
 	
-	
-	public static function isInterfaceForRole($roleName, $interfaceId = null){
-		if(isset($interfaceId)){
-			$interface = new InterfaceObject($interfaceId);
-			return (in_array($roleName, $interface->interfaceRoles) or empty($interface->interfaceRoles));
-		}		
-		
-		return (in_array($roleName, $this->interfaceRoles) or empty($this->interfaceRoles));
-	}
-	
 	public static function getSubinterface($interface, $subinterfaceId){
 		
 		foreach((array)$interface->subInterfaces as $subinterface){

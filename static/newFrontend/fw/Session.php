@@ -69,19 +69,22 @@ class Session {
 	}
 	
 	public function setRole($roleId = null){
-		try{
-			if(isset($roleId)){
-				$this->role = new Role($roleId);	
-			}else{
-				$this->role = new Role();
+		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles(session_id()) : Role::getAllRoles();
+		if(empty($roles) || $roleId == 0) $this->role = new Role(0); // select role 0, no role
+		elseif(is_null($roleId)) $this->role = current($roles); // select first of $roles
+		elseif(isset($roleId)){
+			if(!is_int($roleId)) throw new Exception ("roleId must be an integer", 400);
+			foreach($roles as $role){
+				if($role->id == $roleId) $this->role = $role;
 			}
-			
-			Notifications::addLog("Role " . $this->role->name . " selected");
-
-			return $this->role->id;
-		}catch(Exception $e){
-			throw $e;
+			if(!isset($this->role)) throw new Exception("You do not have access to the selected role", 401);
+		}else{
+			throw new Exception("No role could be selected", 500);
 		}
+		
+		Notifications::addLog("Role " . $this->role->name . " selected");
+
+		return $this->role->id;
 	}
 	
 	public function setInterface($interfaceId){
