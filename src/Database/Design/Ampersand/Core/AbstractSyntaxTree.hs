@@ -52,7 +52,7 @@ import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,le
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
-import Data.List (intercalate,nub,delete)
+import Data.List (intercalate)
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
