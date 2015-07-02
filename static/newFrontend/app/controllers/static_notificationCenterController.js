@@ -40,7 +40,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$rootScope.switchShowErrors = true;
 	$rootScope.switchShowInvariants = true;
 	
-	$rootScope.switchAutoCommit = false;
+	$rootScope.switchAutoCommit = true;
 	$rootScope.defaultRequestType = $rootScope.switchAutoCommit ? 'promise' : 'feedback';
 	
 	$rootScope.$watch('switchAutoCommit', function() {
