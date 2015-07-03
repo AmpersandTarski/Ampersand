@@ -461,10 +461,11 @@ generateRoles fSpec =
   addToLastLine ";"
     (indent 4
       (blockParenthesize  "(" ")" ","
-         [ [ "array ( 'name' => "++showPhpStr (name role)
+         [ [ "array ( 'id' => "++show i 
+           , "'name' => "++showPhpStr (name role)
            , "      , 'ruleNames' => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
            , "      )" ]
-         | role <- fRoles fSpec ]
+         | (i,role) <- zip [1::Int ..] (fRoles fSpec) ]
     ) )
   where maintainedByRole role (role',_) = role == role'
 
