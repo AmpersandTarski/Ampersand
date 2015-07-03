@@ -461,12 +461,17 @@ generateRoles fSpec =
   addToLastLine ";"
     (indent 4
       (blockParenthesize  "(" ")" ","
-         [ [ "array ( 'name' => "++showPhpStr (name role)
-           , "      , 'ruleNames' => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
+         [ [ "array ( 'id' => "++show i 
+           , "      , 'name' => "++showPhpStr (name role)
+           , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
+           , "      , 'interfaces' => array ("++ intercalate ", " ((map (showPhpStr . name) . filter (forThisRole role) . interfaceS) fSpec) ++")"
            , "      )" ]
-         | role <- fRoles fSpec ]
+         | (i,role) <- zip [1::Int ..] (fRoles fSpec) ]
     ) )
   where maintainedByRole role (role',_) = role == role'
+        forThisRole role interf = case ifcRoles interf of
+                                     []   -> True -- interface is for all roles
+                                     rs  -> role `elem` rs
 
 generateViews :: FSpec -> [String]
 generateViews fSpec =

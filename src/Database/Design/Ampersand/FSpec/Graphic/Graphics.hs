@@ -357,7 +357,7 @@ constrNode :: a -> PictureObject -> Options -> DotNode a
 constrNode nodeId pObj opts
   = DotNode { nodeID = nodeId
             , nodeAttributes = [ FontSize 10
-                               , FontName (fromString(pangoFont opts))
+                               , FontName (fromString "sans")
                            --    , Width 0.1
                            --    , Height  0.1
                                ]++handleFlags pObj opts
@@ -368,7 +368,7 @@ constrEdge nodeFrom nodeTo pObj opts
   = DotEdge { fromNode = nodeFrom
             , toNode   = nodeTo
             , edgeAttributes = [ FontSize 12
-                               , FontName (fromString(pangoFont opts))
+                               , FontName (fromString "sans")
                                , Dir Forward
                             --   , LabelAngle (-25.0)
                                , Color [WC(X11Color Gray35)Nothing]
