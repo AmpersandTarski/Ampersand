@@ -35,7 +35,7 @@ class Api{
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function installer($sessionId, $roleId = null){
+	public function installer($sessionId, $roleId = 0){
 		try{			
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -85,7 +85,7 @@ class Api{
 	 * @url GET notifications/all
 	 * @param int $roleId
 	 */
-	public function getAllNotifications($roleId = null){
+	public function getAllNotifications($roleId = 0){
 		try{
 			$session = Session::singleton();
 			$session->setRole($roleId);
@@ -125,7 +125,7 @@ class Api{
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = null){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = 0){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -167,7 +167,7 @@ class Api{
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -197,7 +197,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -231,7 +231,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback'){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -260,7 +260,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);			
 			$session->setRole($roleId);
@@ -382,8 +382,9 @@ class Api{
     /**
      * @url GET role
      * @url GET role/{roleId}
+     * @param int $roleId
      */
-    public function getRole($roleId = null){
+    public function getRole($roleId = 0){
     	try{
     		if(!is_null($roleId)){	// do not use isset(), because roleNr can be 0.
     			return new Role($roleId); // Return role with properties as defined in class Role
@@ -403,7 +404,7 @@ class Api{
      * @param string $sessionId
      * @param int $roleId
      */
-    public function getAllInterfaces($sessionId = null, $roleId = null){
+    public function getAllInterfaces($sessionId = null, $roleId = 0){
     	try{
     		$session = Session::singleton($sessionId);
     		$session->setRole($roleId);
