@@ -4,11 +4,9 @@ import Control.Monad
 import Control.Applicative
 import Data.List
 import Data.Function (on)
-import System.FilePath        (combine)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
-import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, doGenAtlas, writeStaticFiles)
-import Database.Design.Ampersand.Prototype.Apps.RAP    (atlas2context, atlas2populations)
+import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, writeStaticFiles)
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
 import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
@@ -49,18 +47,6 @@ generateProtoStuff fSpec
          ; isValid <- validateRulesSQL fSpec
          ; unless isValid (exitWith (ExitFailure 30))
          }
---  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1Format =
---      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .adl-file..."
---         ; cx<-atlas2context (getOpts fSpec) fSpec
---         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) (showADL cx)
---         ; verboseLn (getOpts fSpec) $ "Context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
---         }
---  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1PopFormat =
---      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .pop-file..."
---         ; cxstr<-atlas2populations fSpec
---         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) cxstr
---         ; verboseLn (getOpts fSpec) $ "Population of context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
---         }
   | otherwise =
       do { when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
@@ -95,7 +81,6 @@ doGenProto fSpec =
                 else
                   generateCustomCss fSpec
               
-              ; when (genAtlas (getOpts fSpec)) $ doGenAtlas fSpec
               ; verboseLn (getOpts fSpec) "\n"
               
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)

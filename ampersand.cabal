@@ -190,8 +190,6 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                      Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                      Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                     Database.Design.Ampersand.Prototype.Apps,
-                     Database.Design.Ampersand.Prototype.Apps.RAP,
                      Database.Design.Ampersand.Prototype.AutoInstaller,
                      Database.Design.Ampersand.Prototype.CoreImporter,
                      Database.Design.Ampersand.Prototype.GenBericht,
