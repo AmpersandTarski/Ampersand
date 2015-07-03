@@ -14,6 +14,7 @@ import qualified Data.Text as T
 import qualified Data.Map as M 
 import Data.Maybe
 import Data.Char
+import Text.Printf
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "XLSX"
@@ -130,8 +131,17 @@ toPops file x = map popForColumn' (colNrs x)
        cellToStrings mDelimiter cv 
          = case cv of
              CellText t -> unDelimit mDelimiter (T.unpack t)
-             CellDouble d -> [show d]
+             CellDouble d -> [myShow d]
              CellBool b -> [show b] 
+          where myShow :: Double -> String
+                myShow = reverse . cleanTrailingZeroes . reverse . printf "%f"
+                cleanTrailingZeroes s 
+                 = case s of
+                   [] -> []
+                   (c:cs) 
+                     | c == '0'  -> cleanTrailingZeroes cs
+                     | c == '.'  -> cs
+                     | otherwise -> s  
        unDelimit :: Eq a => Maybe a -> [a] -> [[a]]
        unDelimit mDelimiter xs =
          case mDelimiter of
@@ -181,7 +191,8 @@ theSheetCellsForTable (sheetName,ws)
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows
                      , colNrs       = theCols
-                     , debugInfo = [ "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
+                     , debugInfo = [ "indexInTableStarters"++": "++show indexInTableStarters
+                                   , "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
                                    , "maxColOfWorksheet"++": "++show maxColOfWorksheet
                                    , "startOfTable     "++": "++show startOfTable
                                    , "firstPopRowNr    "++": "++show firstPopRowNr
@@ -200,7 +211,7 @@ theSheetCellsForTable (sheetName,ws)
        maxRowOfWorksheet = Prelude.maximum (Prelude.map fst (M.keys (ws  ^. wsCells)))
        maxColOfWorksheet = Prelude.maximum (Prelude.map snd (M.keys (ws  ^. wsCells)))
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet])!!(indexInTableStarters+1))-1
+       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1])!!(indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
        populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool

@@ -29,6 +29,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..)
+          , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
           
 import Data.List
@@ -41,6 +42,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
+import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
@@ -192,6 +194,11 @@ instance Named Activity where
 instance ConceptStructure Activity where
  concs         act = concs (actRule act) `uni` concs (actAffect act)
  expressionsIn act = expressionsIn (actRule act)
+
+data Typology = Typology {tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty)
+                         }
+                         
+
 
 data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
