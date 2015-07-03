@@ -257,11 +257,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
-      [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) | genAtlas opts ]++
-      [writeDot Canon  | {- genFSpec opts || -} genAtlas opts ]++
---      [writeDot XDot   | genFSpec opts || genAtlas opts ]++
-      [writeDot Png    | genFSpec opts || genAtlas opts ]++
-      [writeDot Cmapx  |                   genAtlas opts ]
+      [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
+      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
+      [writeDot Png    | genFSpec opts ]
           )
    where
      writeDot :: GraphvizOutput
@@ -277,7 +276,7 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     (if genAtlas opts then dirPrototype opts </> "images" else dirOutput opts)
+     ( dirOutput opts)
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
 
 class Named a => Navigatable a where
@@ -357,7 +356,7 @@ constrNode :: a -> PictureObject -> Options -> DotNode a
 constrNode nodeId pObj opts
   = DotNode { nodeID = nodeId
             , nodeAttributes = [ FontSize 10
-                               , FontName (fromString(pangoFont opts))
+                               , FontName (fromString "sans")
                            --    , Width 0.1
                            --    , Height  0.1
                                ]++handleFlags pObj opts
@@ -368,7 +367,7 @@ constrEdge nodeFrom nodeTo pObj opts
   = DotEdge { fromNode = nodeFrom
             , toNode   = nodeTo
             , edgeAttributes = [ FontSize 12
-                               , FontName (fromString(pangoFont opts))
+                               , FontName (fromString "sans")
                                , Dir Forward
                             --   , LabelAngle (-25.0)
                                , Color [WC(X11Color Gray35)Nothing]

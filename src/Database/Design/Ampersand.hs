@@ -75,7 +75,7 @@ module Database.Design.Ampersand
    -- * Functions with Options
    , getOptions
    , verboseLn, verbose
-   , FileFormat(..),helpNVersionTexts
+   ,helpNVersionTexts
    -- * Other functions
    , eqCl, showErr, unCap,upCap,escapeNonAlphaNum, fatalMsg
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr

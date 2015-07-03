@@ -4,13 +4,38 @@ use Luracast\Restler\Data\Object;
 use Luracast\Restler\RestException;
 class Api{
 	
+	
+	/*
+	 * @url GET login
+	 * @param string @sessionId
+	 * @param string @accessToken
+	 */
+	public function login($sessionId, $accessToken){
+		
+		// Stap 4 & 5, get validated email from Oauth provider
+		
+		// If response valid,
+		// Autenticate user and create session user relation in db (stap 6)
+		try{
+			$session = Session::singleton($sessionId);
+			
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
+		// Return true (stap 7)
+		
+		// If response false,
+		// Return error (stap 8)
+	}
+	
+	
 	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
 	 * @url GET installer
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function installer($sessionId, $roleId = null){
+	public function installer($sessionId, $roleId = 0){
 		try{			
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -60,7 +85,7 @@ class Api{
 	 * @url GET notifications/all
 	 * @param int $roleId
 	 */
-	public function getAllNotifications($roleId = null){
+	public function getAllNotifications($roleId = 0){
 		try{
 			$session = Session::singleton();
 			$session->setRole($roleId);
@@ -100,7 +125,7 @@ class Api{
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = null){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = 0){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -142,7 +167,7 @@ class Api{
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -172,7 +197,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -206,7 +231,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback'){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -235,7 +260,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);			
 			$session->setRole($roleId);
@@ -338,10 +363,16 @@ class Api{
 	/**************************** ROLES ****************************/
 	/**
      * @url GET roles
+     * @param string $sessionId
      */
-    public function getAllRoles(){
+    public function getAllRoles($sessionId){
     	try{
-			return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
+    		$roles = array();
+    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoles();
+			foreach((array)$allRoles as $role){
+				$roles[] = array('id' => $role->id, 'label' => $role->label);
+			}
+			return $roles;
 		
     	}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
@@ -351,10 +382,11 @@ class Api{
     /**
      * @url GET role
      * @url GET role/{roleId}
+     * @param int $roleId
      */
-    public function getRole($roleId = NULL){
+    public function getRole($roleId = 0){
     	try{
-    		if($roleId !== NULL){	// do not use isset(), because roleNr can be 0.
+    		if(!is_null($roleId)){	// do not use isset(), because roleNr can be 0.
     			return new Role($roleId); // Return role with properties as defined in class Role
     		}else{
     			return new Role(); // Return default role	
@@ -365,61 +397,35 @@ class Api{
    		}
     }
     
-    /**
-     * @url GET role/name/{roleName}
-     */
-    public function getRoleByName($roleName){
-    	try{
-    		return Role::getRole($roleName);
-    		
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-   		}
-    }
-    
     
 	/**************************** INTERFACES ****************************/
     /**
      * @url GET interfaces/all
+     * @param string $sessionId
      * @param int $roleId
      */
-    public function getAllInterfaces($roleId = null){
+    public function getAllInterfaces($sessionId = null, $roleId = 0){
     	try{
-    		$session = Session::singleton();
+    		$session = Session::singleton($sessionId);
     		$session->setRole($roleId);
     		
-    		return array ('top' => $session->role->getInterfacesForNavBar()
-    					 ,'new' => $session->role->getInterfacesToCreateAtom());
+    		// top level interfaces
+    		$top = array();
+    		foreach ($session->role->getInterfacesForNavBar() as $ifc){
+    			$top[] = array('id' => $ifc->id, 'label' => $ifc->label);
+    		}
+    		
+    		// new interfaces
+    		$new = array();
+    		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
+    			$new[] = array('id' => $ifc->id, 'label' => $ifc->label);
+    		}
+    		return array ('top' => $top
+    					 ,'new' => $new);
     		
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());
     	}
-    }
-    
-	/**
-     * @url GET interfaces
-	 * @url GET interface/{interfaceId}
-	 * @param string $interfaceId
-	 * @param int $roleId
-     */
-    public function getInterfaces($interfaceId = null, $roleId = null){
-    	try{
-    		$session = Session::singleton();
-    		$session->setRole($roleId);
-    	
-	    	if(!is_null($interfaceId)){
-		    	$session->setInterface($interfaceId);
-	    		
-		    	return $session->interface->getInterface(); // Return specific interface
-	    		
-	        }else{
-	        	
-	        	return $session->role->getInterfaces();  // Return list of all interfaces for the given/default role
-			}
-		
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
     }
 }
 ?>

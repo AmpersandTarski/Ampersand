@@ -26,7 +26,7 @@ class ExecEngine {
 			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file);
 		}
 		
-		$role = Role::getRole(self::$roleName);
+		$role = Role::getRoleByName(self::$roleName);
 		if($role){
 			// Get all rules that are maintained by the ExecEngine
 			foreach ($role->maintains as $ruleName){

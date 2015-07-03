@@ -114,15 +114,16 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                 0 -> text "Er zijn geen gegevensverzamelingen."
                                 1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
                                 _ -> text ("Er zijn "++count Dutch nrOfClasses "gegevensverzameling"++". ")
-                                  <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
+                                  <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de twee nu volgende tabellen beschreven:"
                              )
              English -> para (case nrOfClasses of
                                 0 -> text "There are no entity types."
                                 1 -> text "There is only one entity type:"
                                 _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
-                                  <> text "The details of each entity type are described (in alphabetical order) in the following paragraphs:"
+                                  <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                              )
-     <> conceptTable
+     <> conceptTable True
+     <> conceptTable False
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
 
 
@@ -136,20 +137,39 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec
 
-  conceptTable :: Blocks
-  conceptTable = table mempty
-                 [(AlignLeft,1/6),(AlignCenter,4/6),(AlignLeft,1/6)]
-                 [ (plain.text.l) (NL "Type"          , EN "Type")
-                 , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-                 , (plain.text.l) (NL "Technisch type", EN "Technical type") 
-                 ] 
-                 [ [ (plain.text.name) c
-                   , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
-                   , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
-                   ]
-                 | c <- allConcepts fSpec
-                 ]
-
+  conceptTable :: Bool    -- this bool is introduced to split the table into two separate tables. The first table contains
+                          -- the concepts that have their own table in the logical data model. The second table contains
+                          -- all other concepts.  
+               -> Blocks
+  conceptTable keys = 
+    table (if keys
+           then text.l $ (NL "Logische gegevensverzamelingen"
+                         ,EN "Logical entity types")
+           else text.l $ (NL "Overige attributen"
+                         ,EN "Other attributes"
+                         )
+          )
+         [(AlignLeft,1/6),(AlignLeft,4/6),(AlignLeft,1/6)]
+         [ (plain.text.l) (NL "Concept"       , EN "Concept")
+         , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
+         , (plain.text.l) (NL "Type"          , EN "Type") 
+         ] 
+         [ [ (plain.text.name) c
+           ,   meaningOf c
+            <> fromList (maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c)
+           , mempty
+           ]
+         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE $ allConcepts fSpec
+         ]
+     where
+       keyFilter :: A_Concept -> Bool
+       keyFilter cpt = (    keys &&      isKey  cpt)
+                     ||(not keys && (not.isKey) cpt)
+       isKey :: A_Concept -> Bool
+       isKey cpt = cpt `elem` ooCpts oocd
+       meaningOf :: A_Concept -> Blocks
+       meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
+       
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
        (   header (lev+1) 

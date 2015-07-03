@@ -3,13 +3,13 @@ error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", false);
 
 /************ CONFIG ********************/
-define ('DEFAULT_ROLEID', '0');
-
 define ('API_PATH', 'http://localhost/' . $contextName . '/api/v1/'); // $contextName is defeind in the (generated!) file __DIR__ . '/generics/Generics.php'
 
 define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
 define ('JSONLD_ID_PATH', API_PATH . 'resource/');
 define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
+
+define ('LOG_ENABLED', true);
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
@@ -23,6 +23,16 @@ $DB_name = $dbName; // from Generics.php
  *	$GLOBALS['ext']['<extension name']...
  *
  */
+
+/************ LOGIN FUNCTIONALITY ***************
+ * Enable/disable built-in login functionality
+ * 
+ * Requires &-INTERFACE defintion:
+ * INTERFACE "SessionRoles" : sessionUser;userRole
+    	BOX [ "roleName"    : I]  
+ * 
+ */
+define ('LOGIN_ENABLED', false);
 
 // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
