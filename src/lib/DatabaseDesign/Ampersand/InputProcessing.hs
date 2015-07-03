@@ -59,9 +59,9 @@ createFspec flags =
 -- Use only for very small scripts, or else the results will not be very informative.
 -- For the large scripts that are used in projects, the program may abort due to insufficient resources.
     showGraphs stTypeGraph condensedGraph
-      = do condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".png")
+      = do condensedGraphPath<-runGraphvizCommand Dot condensedGraph Canon (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".dot")
            verboseLn flags (condensedGraphPath++" written.")
-           stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName flags) ".png")
+           stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Canon (replaceExtension ("stGraph_of_"++baseName flags) ".dot")
            verboseLn flags (stDotGraphPath++" written.")
     popsCtxOf :: Guarded P_Context ->IO(Guarded P_Context)
     popsCtxOf gp =

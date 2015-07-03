@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand
    , Prop(..)
    , Lang(..)
    , Options(..), DocTheme(..)
-   , Picture(..), writePicture, DrawingType(..)
+   , Picture(..), writePicture
    , Origin(..)
    , FPA(..), FPcompl(..)
    , mkPair
@@ -39,7 +39,6 @@ module DatabaseDesign.Ampersand
    , Motivated(..)
    , Traced(..)
    , Language(..)
-   , Dotable(..)
    , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
@@ -82,7 +81,7 @@ module DatabaseDesign.Ampersand
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
-   , Populated(..), Paire, Purpose(..), ExplObj(..), PictType(..)
+   , Populated(..), Paire, Purpose(..), ExplObj(..)
    )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
