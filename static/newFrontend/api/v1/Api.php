@@ -408,8 +408,19 @@ class Api{
     		$session = Session::singleton($sessionId);
     		$session->setRole($roleId);
     		
-    		return array ('top' => $session->role->getInterfacesForNavBar()
-    					 ,'new' => $session->role->getInterfacesToCreateAtom());
+    		// top level interfaces
+    		$top = array();
+    		foreach ($session->role->getInterfacesForNavBar() as $ifc){
+    			$top[] = array('id' => $ifc->id, 'label' => $ifc->label);
+    		}
+    		
+    		// new interfaces
+    		$new = array();
+    		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
+    			$new[] = array('id' => $ifc->id, 'label' => $ifc->label);
+    		}
+    		return array ('top' => $top
+    					 ,'new' => $new);
     		
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());

@@ -130,7 +130,7 @@ class Notifications {
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
-		$all['logs'] = self::getLogs();
+		$all['logs'] = LOG_ENABLED ? self::getLogs() : array(array('type' => 'LOG', 'message' => 'Logging is disabled'));
 		
 		return $all;
 	}

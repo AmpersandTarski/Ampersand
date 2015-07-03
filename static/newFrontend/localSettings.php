@@ -9,6 +9,8 @@ define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
 define ('JSONLD_ID_PATH', API_PATH . 'resource/');
 define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
 
+define ('LOG_ENABLED', true);
+
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
 $DB_user = 'ampersand';
