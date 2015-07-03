@@ -36,7 +36,6 @@ data Options = Options { showVersion :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
                        , allInterfaces :: Bool
                        , dbName :: String
-                       , genAtlas :: Bool
                        , namespace :: String
                        , autoRefresh :: Maybe Int
                        , testRule :: Maybe String
@@ -135,7 +134,6 @@ getOptions =
                       , validateEdit  = Nothing
                       , genPrototype  = False
                       , allInterfaces = False
-                      , genAtlas      = False
                       , namespace     = ""
                       , autoRefresh   = Nothing
                       , testRule      = Nothing

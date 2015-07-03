@@ -257,11 +257,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
-      [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) | genAtlas opts ]++
-      [writeDot Canon  | {- genFSpec opts || -} genAtlas opts ]++
---      [writeDot XDot   | genFSpec opts || genAtlas opts ]++
-      [writeDot Png    | genFSpec opts || genAtlas opts ]++
-      [writeDot Cmapx  |                   genAtlas opts ]
+      [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
+      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
+      [writeDot Png    | genFSpec opts ]
           )
    where
      writeDot :: GraphvizOutput
@@ -277,7 +276,7 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     (if genAtlas opts then dirPrototype opts </> "images" else dirOutput opts)
+     ( dirOutput opts)
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
 
 class Named a => Navigatable a where
