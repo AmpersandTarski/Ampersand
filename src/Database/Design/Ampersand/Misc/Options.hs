@@ -43,7 +43,6 @@ data Options = Options { showVersion :: Bool
                        , customCssFile :: Maybe FilePath
                                                    --class Populated a where populate::a->b->a
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
-                       , genXML :: Bool
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
@@ -71,7 +70,6 @@ data Options = Options { showVersion :: Bool
                        , progrName :: String --The name of the adl executable
                        , fileName :: FilePath --the file with the Ampersand context
                        , baseName :: String
-                       , logName :: FilePath
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , test :: Bool
@@ -124,7 +122,6 @@ getOptions =
                       , dirPrototype  = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
                                                   (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
                       , dbName        = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
-                      , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
                       , dirExec       = takeDirectory exePath
                       , ampersandDataDir = dataDir
                       , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
@@ -139,11 +136,10 @@ getOptions =
                       , genPrototype  = False
                       , allInterfaces = False
                       , genAtlas      = False
-                      , namespace     = []
+                      , namespace     = ""
                       , autoRefresh   = Nothing
                       , testRule      = Nothing
                       , customCssFile = Nothing
-                      , genXML        = False
                       , genFSpec      = False
                       , diag          = False
                       , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
@@ -187,7 +183,6 @@ getOptions =
       -- Now we do some checks on the options:
       when (development opts && validateSQL opts)
            (error "--dev and --validate must not be used at the same time.") --(Reason: see ticket #378))
-      createDirectoryIfMissing True (takeDirectory (logName opts))
       createDirectoryIfMissing True (dirOutput opts)
       when (genPrototype opts)
            (createDirectoryIfMissing True (dirPrototype opts))
@@ -278,11 +273,6 @@ options = [ (Option ['v']   ["version"]
                        ) "DIR")
                ("output directory (dir overrules environment variable "++ envdirOutput ++ ").")
             , Public)
-          , (Option []      ["log"]
-               (ReqArg (\nm opts -> return opts{logName = nm}
-                       ) "NAME")
-               ("log file name (name overrules environment variable "++ envlogName  ++ ").")
-            , Hidden)
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> return opts{namespace = nm}
                        ) "NAMESPACE")
@@ -502,8 +492,6 @@ envdirOutput :: String
 envdirOutput="CCdirOutput"
 envdbName :: String
 envdbName="CCdbName"
-envlogName :: String
-envlogName="CClogName"
 
 verbose :: Options -> String -> IO ()
 verbose opts x

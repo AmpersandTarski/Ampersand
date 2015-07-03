@@ -171,7 +171,6 @@ executable ampersand
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
                      Database.Design.Ampersand.Misc.Options,
-                     Database.Design.Ampersand.Misc.TinyXML,
                      Database.Design.Ampersand.Output,
                      Database.Design.Ampersand.Output.FSpec2Excel,
                      Database.Design.Ampersand.Output.FSpec2Pandoc,
