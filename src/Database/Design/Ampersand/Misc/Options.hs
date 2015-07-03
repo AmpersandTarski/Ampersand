@@ -1,7 +1,7 @@
 {-# LANGUAGE PatternGuards #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
-        ,verboseLn,verbose,FSpecFormat(..),FileFormat(..)
+        ,verboseLn,verbose,FSpecFormat(..)
         ,DocTheme(..),helpNVersionTexts)
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
@@ -41,7 +41,6 @@ data Options = Options { showVersion :: Bool
                        , autoRefresh :: Maybe Int
                        , testRule :: Maybe String
                        , customCssFile :: Maybe FilePath
-                       , importfile :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML :: Bool
@@ -144,7 +143,6 @@ getOptions =
                       , autoRefresh   = Nothing
                       , testRule      = Nothing
                       , customCssFile = Nothing
-                      , importfile    = []
                       , genXML        = False
                       , genFSpec      = False
                       , diag          = False
@@ -208,7 +206,6 @@ allFSpecFormats = "["++intercalate ", "
                     _:h:t -> toUpper h : map toLower t
                     x     -> x 
 
-data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
               | StudentTheme   -- Output for normal students of the business rules course
@@ -286,11 +283,6 @@ options = [ (Option ['v']   ["version"]
                        ) "NAME")
                ("log file name (name overrules environment variable "++ envlogName  ++ ").")
             , Hidden)
-          , (Option []      ["import"]
-               (ReqArg (\nm opts -> return opts{importfile = nm}
-                       ) "FILE")
-               "import this file as the population of the context."
-            , Public)
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> return opts{namespace = nm}
                        ) "NAMESPACE")

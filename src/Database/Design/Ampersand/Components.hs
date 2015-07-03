@@ -5,14 +5,6 @@ module Database.Design.Ampersand.Components
      makeFSpec
     -- * Generators of output
    , generateAmpersandOutput
---   , doGenADL
---   , doGenProofs
---   , doGenHaskell
---   , doGenXML
---   , doGenUML
---   , doGenDocument
---   , doGenFPAExcel
-    -- * etc...
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
