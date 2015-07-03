@@ -49,18 +49,18 @@ generateProtoStuff fSpec
          ; isValid <- validateRulesSQL fSpec
          ; unless isValid (exitWith (ExitFailure 30))
          }
-  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1Format =
-      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .adl-file..."
-         ; cx<-atlas2context (getOpts fSpec) fSpec
-         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) (showADL cx)
-         ; verboseLn (getOpts fSpec) $ "Context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
-         }
-  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1PopFormat =
-      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .pop-file..."
-         ; cxstr<-atlas2populations fSpec
-         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) cxstr
-         ; verboseLn (getOpts fSpec) $ "Population of context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
-         }
+--  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1Format =
+--      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .adl-file..."
+--         ; cx<-atlas2context (getOpts fSpec) fSpec
+--         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) (showADL cx)
+--         ; verboseLn (getOpts fSpec) $ "Context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
+--         }
+--  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1PopFormat =
+--      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .pop-file..."
+--         ; cxstr<-atlas2populations fSpec
+--         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) cxstr
+--         ; verboseLn (getOpts fSpec) $ "Population of context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
+--         }
   | otherwise =
       do { when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec

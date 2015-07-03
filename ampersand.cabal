@@ -150,7 +150,6 @@ executable ampersand
                      Database.Design.Ampersand.FSpec.ShowECA,
                      Database.Design.Ampersand.FSpec.ShowHS,
                      Database.Design.Ampersand.FSpec.ShowMeatGrinder,
-                     Database.Design.Ampersand.FSpec.ShowXMLtiny,
                      Database.Design.Ampersand.FSpec.Switchboard,
                      Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec,
                      Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug,

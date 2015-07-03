@@ -43,13 +43,11 @@ data Options = Options { showVersion :: Bool
                        , customCssFile :: Maybe FilePath
                        , importfile :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
-                       , fileformat :: Maybe FileFormat --file format e.g. of importfile or export2adl
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML :: Bool
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
-                       , genGraphics :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
@@ -83,7 +81,6 @@ data Options = Options { showVersion :: Bool
                        , genGenericsFile :: Bool  -- Generate the meta-population in generics format and output it to an .adl file
                        , genGenericTables :: Bool -- When set, generate the meta-tables of generics into the prototype
                        , metaTablesHaveUnderscore :: Bool -- Separate the extra tables used with ASTTables or GenericTables by letting them have underscores
-                       , pangoFont :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
@@ -148,18 +145,16 @@ getOptions =
                       , testRule      = Nothing
                       , customCssFile = Nothing
                       , importfile    = []
-                      , fileformat    = Nothing
                       , genXML        = False
                       , genFSpec      = False
                       , diag          = False
                       , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
-                      , genGraphics   = True
                       , genEcaDoc     = False
                       , proofs        = False
                       , haskell       = False
                       , crowfoot      = False
                       , blackWhite    = False
-                      , doubleEdges   = False
+                      , doubleEdges   = True
                       , showPredExpr  = False
                       , noDiagnosis   = False
                       , diagnosisOnly = False
@@ -183,7 +178,6 @@ getOptions =
                       , genASTTables     = False
                       , genASTFile    = False
                       , metaTablesHaveUnderscore = False
-                      , pangoFont     = "Sans"
                       , sqlHost       = "localhost"
                       , sqlLogin      = "ampersand"
                       , sqlPwd        = "ampersand"
@@ -239,7 +233,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []      ["dev"]
                (NoArg (\opts -> return opts{development = True}))
-               "Report and generate extra development information"
+               "Report and generate extra development information (for Martijn)"
             , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> return opts{validateSQL = True}))
@@ -254,14 +248,14 @@ options = [ (Option ['v']   ["version"]
                (OptArg (\nm opts -> return opts {dirPrototype = fromMaybe (dirPrototype opts) nm
                                                   ,genPrototype = True}
                        ) "DIRECTORY")
-               ("generate a functional prototype (overwrites environment variable "++ envdirPrototype ++ ").")
+               ("generate a functional prototype (overrules environment variable "++ envdirPrototype ++ ").")
             , Public)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> return opts{dbName = if nm == ""
                                                          then dbName opts
                                                          else map toLower nm}
                        ) "NAME")
-               ("database name (overwrites environment variable "++ envdbName ++ ", defaults to filename)")
+               ("database name (overrules environment variable "++ envdbName ++ ", defaults to filename)")
             , Public)
           , (Option []      ["theme"]
                (ReqArg (\t opts -> return opts{theme = case map toUpper t of
@@ -285,34 +279,22 @@ options = [ (Option ['v']   ["version"]
           , (Option ['o']     ["outputDir"]
                (ReqArg (\nm opts -> return opts{dirOutput = nm}
                        ) "DIR")
-               ("output directory (dir overwrites environment variable "++ envdirOutput ++ ").")
+               ("output directory (dir overrules environment variable "++ envdirOutput ++ ").")
             , Public)
           , (Option []      ["log"]
                (ReqArg (\nm opts -> return opts{logName = nm}
                        ) "NAME")
-               ("log file name (name overwrites environment variable "++ envlogName  ++ ").")
+               ("log file name (name overrules environment variable "++ envlogName  ++ ").")
             , Hidden)
           , (Option []      ["import"]
                (ReqArg (\nm opts -> return opts{importfile = nm}
                        ) "FILE")
                "import this file as the population of the context."
             , Public)
-          , (Option []      ["fileformat"]
-               (ReqArg (\f opts -> return
-                             opts{fileformat = case map toUpper f of
-                                                 "ADL" -> Just Adl1Format
-                                                 "ADL1"-> Just Adl1Format
-                                                 "POP" -> Just Adl1PopFormat
-                                                 "POP1"-> Just Adl1PopFormat
-                                                 _     -> fileformat opts
-                                  }
-                       ) "FORMAT")
-               ("format of import file (FORMAT=ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)).")
-            , Public)
           , (Option []      ["namespace"]
                (ReqArg (\nm opts -> return opts{namespace = nm}
                        ) "NAMESPACE")
-               "places the population in this namespace within the context."
+               "prefix database identifiers with this namespace, in order to isolate namspaces."
             , Public)
           , (Option ['f']   ["fspec"]
                (ReqArg (\w opts -> return opts
@@ -356,26 +338,18 @@ options = [ (Option ['v']   ["version"]
                (ReqArg (\pth opts -> return opts{ customCssFile = Just pth }) "file")
                "Custom.css file to customize the style of the prototype."
             , Public)
-          , (Option []        ["noGraphics"]
-               (NoArg (\opts -> return opts{genGraphics = False}))
-               "save compilation time by not generating any graphics."
-            , Public)
           , (Option []        ["ECA"]
                (NoArg (\opts -> return opts{genEcaDoc = True}))
                "generate documentation with ECA rules."
-            , Public)
+            , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> return opts{proofs = True}))
                "generate derivations."
-            , Public)
-          , (Option []        ["XML"]
-               (NoArg (\opts -> return opts{genXML = True}))
-               "generate internal data structure, written in XML (for debugging)."
-            , Public)
+            , Hidden)
           , (Option []        ["haskell"]
                (NoArg (\opts -> return opts{haskell = True}))
                "generate internal data structure, written in Haskell (for debugging)."
-            , Public)
+            , Hidden)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> return opts{crowfoot = True}))
                "generate crowfoot notation in graphics."
@@ -384,14 +358,14 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{blackWhite = True}))
                "do not use colours in generated graphics"
             , Public)
-          , (Option []        ["doubleEdges"]
+          , (Option []        ["altGraphics"]
                (NoArg (\opts -> return opts{doubleEdges = not (doubleEdges opts)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Public)
           , (Option []        ["predLogic"]
                (NoArg (\opts -> return opts{showPredExpr = True}))
                "show logical expressions in the form of predicate logic."
-            , Public)
+            , Hidden)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> return opts{noDiagnosis = True}))
                "omit the diagnosis chapter from the functional specification document."
@@ -400,9 +374,9 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{diagnosisOnly = True}))
                "diagnose your Ampersand script (generates a .pdf file)."
             , Public)
-          , (Option []        ["legalrefs"]
+          , (Option []        ["reference-table"]
                (NoArg (\opts -> return opts{genLegalRefs = True}))
-               "generate a table of legal references in Natural Language chapter."
+               "generate a table of references in the Natural Language chapter, for instance for legal traceability."
             , Public)
           , (Option []        ["uml"]
                (NoArg (\opts -> return opts{genUML = True}))
@@ -420,9 +394,9 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{genPOPExcel = True}))
                "Generate an .xmlx file containing the populations of your script."
             , Public) 
-          , (Option []        ["bericht"]
+          , (Option []        ["ebc"]
                (NoArg (\opts -> return opts{genBericht = True}))
-               "Generate definitions for 'berichten' (specific to INDOORS project)."
+               "Generate specifications of interfaces in EBV-format (http://www.justid.nl/ebv/)."
             , Hidden)
           , (Option []        ["language"]
                (ReqArg (\l opts-> return opts{language = case map toUpper l of
@@ -457,11 +431,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["meta-tables-have-underscore"]
                (NoArg (\opts -> return opts{metaTablesHaveUnderscore = True}))
                "Separate the extra tables used with ast-tables or generic-tables by letting them have underscores"
-            , Hidden)
-          , (Option []        ["pango"]
-               (ReqArg (\nm opts -> return opts{pangoFont = nm}
-                       ) "FONTNAME")
-               "specify font name for Pango in graphics."
             , Hidden)
           , (Option []   ["no-static-files"]
                (NoArg  (\opts -> return opts{genStaticFiles = False}))
