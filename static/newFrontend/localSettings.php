@@ -27,7 +27,9 @@ $DB_name = $dbName; // from Generics.php
 /************ LOGIN FUNCTIONALITY ***************
  * Enable/disable built-in login functionality
  * 
- * Requires an &-INTERFACE defintion "SessionRoles" with expr.signature [SESSION*Role]
+ * Requires &-INTERFACE defintion:
+ * INTERFACE "SessionRoles" : sessionUser;userRole
+    	BOX [ "roleName"    : I]  
  * 
  */
 define ('LOGIN_ENABLED', false);
