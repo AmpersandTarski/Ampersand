@@ -399,7 +399,7 @@ genView_Object fSpec depth obj =
                                        verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
                                        return $ if exists
                                                 then cptfn
-                                                else "views" </> "Concept-"++show ttp++".html" 
+                                                else "views" </> "Atomic-"++show ttp++".html" 
            where ttp = case lookup cpt (allTTypes fSpec) of
                          Nothing -> fatal 400 $ "Concept `"++"` has no representation!"
                          Just x  -> x
