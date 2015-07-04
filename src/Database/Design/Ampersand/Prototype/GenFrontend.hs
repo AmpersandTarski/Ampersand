@@ -354,7 +354,8 @@ genView_Object fSpec depth obj =
             -- For now, we choose specific template based on target concept. This will probably be too weak. 
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
-            ; let (templateFilename, viewAttrs) = fromMaybe ("views/Atomic.html", []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
+            ; conceptTemplate <- getTemplateForConcept (objTarget obj)
+            ; let (templateFilename, viewAttrs) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
@@ -393,7 +394,16 @@ genView_Object fSpec depth obj =
                                -- be indented a bit too much (we take the maximum necessary value now)
                                } 
             }
-
+        getTemplateForConcept :: A_Concept -> IO(FilePath)
+        getTemplateForConcept cpt = do exists <- doesFileExist cptfn
+                                       verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
+                                       return $ if exists
+                                                then cptfn
+                                                else "views" </> "Concept-"++show ttp++".html" 
+           where ttp = case lookup cpt (allTTypes fSpec) of
+                         Nothing -> fatal 400 $ "Concept `"++"` has no representation!"
+                         Just x  -> x
+                 cptfn = "Concept-"++name cpt++".html" 
             
 ------ Generate controller JavaScript code
 
