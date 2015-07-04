@@ -395,7 +395,7 @@ genView_Object fSpec depth obj =
                                } 
             }
         getTemplateForConcept :: A_Concept -> IO(FilePath)
-        getTemplateForConcept cpt = do exists <- doesTemplateExist cptfn
+        getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
                                        verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
                                        return $ if exists
                                                 then cptfn
@@ -416,15 +416,16 @@ genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
     ; let allObjs = flatten (_ifcObj interf)
-          allEditableNonPrimTargets = nub . map objTarget $  
-                                         ( filter (not . isJust . objMPrimTemplate . atomicOrBox) 
+          allEditableObjects = nub . map objTarget $  
+                                         ( filter (targetIsObject ) 
                                          . filter (isAtomic . atomicOrBox)
                                          . filter objIsEditable $ allObjs)
+          targetIsObject o = (ttp . objTarget) o == Object
           isAtomic FEAtomic{} = True
           isAtomic _ = False                              
           containsEditable          = any objIsEditable allObjs
-          containsEditableNonPrim   = (not . null) allEditableNonPrimTargets
-          containsDATE              = any (\o -> name (objTarget o) == "DATE" && objIsEditable o) allObjs
+          containsEditableOjects    = (not . null) allEditableObjects
+          containsDATE              = any (\o -> ttp (objTarget o) == Date && objIsEditable o) allObjs
           
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
@@ -432,10 +433,10 @@ genController_Interface fSpec interf =
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"        (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableNonPrimTargets"   (map (escapeIdentifier . name) allEditableNonPrimTargets)
+                     . setAttribute "editableObjects"          (map (escapeIdentifier . name) allEditableObjects)
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable
-                     . setAttribute "containsEditableNonPrim"  containsEditableNonPrim
+                     . setAttribute "containsEditableOjects"   containsEditableOjects
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (escapeIdentifier . ifcName $ interf)
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
@@ -446,9 +447,12 @@ genController_Interface fSpec interf =
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
-    
+  where
+          ttp cpt = case lookup cpt (allTTypes fSpec) of
+            Nothing -> fatal 400 $ "Concept `"++"` has no representation!"
+            Just x  -> x
+      
 ------ Utility functions
-
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
 
