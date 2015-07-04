@@ -31,6 +31,7 @@ class Role {
 	
 	public static function getRoleInfo($roleId){
 		global $allRoles;
+		$allRoles[] = Role::getRoleZero();
 		
 		foreach($allRoles as $arr){
 			if($arr['id'] == $roleId) return $arr;
@@ -40,6 +41,7 @@ class Role {
 		
 	public static function getAllRoles(){
 		global $allRoles; // from Generics.php
+		$allRoles[] = Role::getRoleZero();
 		
 		$roles = array();
 		foreach((array)$allRoles as $arr){
@@ -47,6 +49,13 @@ class Role {
 		}
 		
 		return $roles;
+	}
+	
+	public static function getRoleZero(){
+		return array( 'id' => 0
+            		, 'name' => 'No role'
+            		, 'ruleNames'  => array ()
+            		, 'interfaces' => array ());
 	}
 	
 	public static function getAllSessionRoles($sessionId){
@@ -68,6 +77,7 @@ class Role {
 	
 	public static function getRoleByName($roleName){
 		global $allRoles; // from Generics.php
+		$allRoles[] = Role::getRoleZero();
 		
 		foreach((array)$allRoles as $arr){
 			if($arr['name'] == $roleName) return new Role($arr['id']);
