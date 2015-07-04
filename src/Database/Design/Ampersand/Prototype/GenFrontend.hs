@@ -424,7 +424,7 @@ genController_Interface fSpec interf =
           isAtomic FEAtomic{} = True
           isAtomic _ = False                              
           containsEditable          = any objIsEditable allObjs
-          containsEditableOjects    = (not . null) allEditableObjects
+          containsEditableObjects    = (not . null) allEditableObjects
           containsDATE              = any (\o -> ttp (objTarget o) == Date && objIsEditable o) allObjs
           
     ; template <- readTemplate fSpec "controllers/controller.js"
@@ -436,7 +436,7 @@ genController_Interface fSpec interf =
                      . setAttribute "editableObjects"          (map (escapeIdentifier . name) allEditableObjects)
                      . setAttribute "containsDATE"             containsDATE
                      . setAttribute "containsEditable"         containsEditable
-                     . setAttribute "containsEditableOjects"   containsEditableOjects
+                     . setAttribute "containsEditableObjects"  containsEditableObjects
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (escapeIdentifier . ifcName $ interf)
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
