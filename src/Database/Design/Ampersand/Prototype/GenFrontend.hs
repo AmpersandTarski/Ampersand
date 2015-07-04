@@ -395,7 +395,7 @@ genView_Object fSpec depth obj =
                                } 
             }
         getTemplateForConcept :: A_Concept -> IO(FilePath)
-        getTemplateForConcept cpt = do exists <- doesFileExist cptfn
+        getTemplateForConcept cpt = do exists <- doesTemplateExist cptfn
                                        verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
                                        return $ if exists
                                                 then cptfn
@@ -403,7 +403,7 @@ genView_Object fSpec depth obj =
            where ttp = case lookup cpt (allTTypes fSpec) of
                          Nothing -> fatal 400 $ "Concept `"++"` has no representation!"
                          Just x  -> x
-                 cptfn = "Concept-"++name cpt++".html" 
+                 cptfn = "views" </> "Concept-"++name cpt++".html" 
             
 ------ Generate controller JavaScript code
 
