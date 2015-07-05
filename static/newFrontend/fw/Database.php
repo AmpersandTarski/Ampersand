@@ -146,6 +146,8 @@ class Database
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 
+			if(Concept::getTypeRepresentation($concept) == "Date") $newAtom = $this->dateConversion($newAtom);
+			
 			// If $newAtom is not in $concept
 			if(!$this->atomExists($newAtom, $concept)){
 				// Get table properties
@@ -186,6 +188,8 @@ class Database
 		$table = $tableInfo['table'];
 		$conceptCol = $tableInfo['cols'][0];
 		
+		if(Concept::getTypeRepresentation($concept) == "Date") $newAtom = $this->dateConversion($atomId);
+		
 		$atomIdEsc = $this->escape($atomId);
 		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomIdEsc'";
 		$result = $this->Exe($query);
@@ -208,6 +212,9 @@ class Database
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
+			
+			if(Concept::getTypeRepresentation($stableConcept) == "Date") $stableAtom = $this->dateConversion($stableAtom);
+			if(Concept::getTypeRepresentation($modifiedConcept) == "Date") $modifiedAtom = $this->dateConversion($modifiedAtom);
 			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
 			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
@@ -272,6 +279,9 @@ class Database
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
+			if(Concept::getTypeRepresentation($stableConcept) == "Date") $stableAtom = $this->dateConversion($stableAtom);
+			if(Concept::getTypeRepresentation($modifiedConcept) == "Date") $modifiedAtom = $this->dateConversion($modifiedAtom);
+			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
 			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
 			$tgtConcept = $isFlipped ? $stableConcept : $modifiedConcept;
@@ -326,6 +336,8 @@ class Database
 		try{
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
+			
+			if(Concept::getTypeRepresentation($concept) == "Date") $atom = $this->dateConversion($atom);
 			
 			global $tableColumnInfo;
 			
@@ -440,6 +452,11 @@ class Database
 		$date = date("j-M-Y, H:i:s.").$microseconds;
 		$this->Exe("INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
 	
+	}
+	
+	private function dateConversion($value){
+		$date = new DateTime($value);
+		return $date->format('Y-m-d');	
 	}
 }
 

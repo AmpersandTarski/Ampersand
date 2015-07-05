@@ -104,7 +104,7 @@ Class Atom {
 				
 			}elseif($interface->tgtDataType == "Date"){
 				$date = new DateTime($tgtAtom->id);
-				$content = $date->format('yyyy-mm-dd');
+				$content = $date->format('Y-m-d');
 			
 			}else{ // Representation of tgtconcept of interface is scalar (i.e. not object)
 				// if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
