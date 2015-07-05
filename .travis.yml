@@ -14,5 +14,13 @@ ghc: 7.8
 after_script:
   - cat dist/test/*.log
 
-
+notifications:
+  email:
+    recipients:
+      - sjcjoosten@gmail.com
+      - stef.joosten@tarski.nl
+      - michiel.stornebrink@tno.nl
+      - han.joosten.han@gmail.com
+    on_success: [always|never|change] # default: change
+    on_failure: [always|never|change] # default: always
 
