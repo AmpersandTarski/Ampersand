@@ -122,7 +122,7 @@ populateTablesPHP fSpec =
                                                                     ++" (`conjId`, `src`, `tgt`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlConjId++", "++sqlAtomQuote (srcPaire p)++", "++sqlAtomQuote (trgPaire p)++")" 
+                                                [ "(" ++sqlConjId++", "++sqlAtomQuote (apLeft p)++", "++sqlAtomQuote (apRight p)++")" 
                                                 | (conj, viols) <- conjSignals
                                                 , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
                                                 , p <- viols
@@ -136,7 +136,7 @@ populateTablesWithPopsPHP fSpec pops =
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
-         = case tblcontents (vgens fSpec) pops plug of
+         = case tblcontents (contextInfo fSpec) pops plug of
                [] -> []
                tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
@@ -146,7 +146,7 @@ populateTablesWithPopsPHP fSpec pops =
                              ):
                              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
      where
-        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
+        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> sqlAtomQuote val | fld<-record]
 
 
 dropplug :: PlugSQL -> String

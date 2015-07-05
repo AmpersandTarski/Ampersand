@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
-    (fullContents,atomsOf
+    (fullContents,atomValuesOf
     , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics
     ) 
 where
@@ -8,7 +8,6 @@ where
 -}
 
 import Prelude hiding (lookup)
-import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (empty)
@@ -48,42 +47,42 @@ rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts
 
 
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
-atomsOf :: [A_Gen]      -- the generalisation relations from the context
-        -> [Population] -- the user defined populations in the context
+atomValuesOf :: ContextInfo -- the relevant info of the context
+        -> [Population] 
         -> A_Concept    -- the concept from which the population is requested
-        -> [String]     -- the elements in the concept's set of atoms
-atomsOf gens pt c
+        -> [AAtomValue]     -- the elements in the concept's set of atoms
+atomValuesOf ci pt c
  = case c of
-     ONE -> ["1"] -- fatal 22 "Asking for the value of the universal singleton"
+     ONE -> [AtomValueOfONE]
      PlainConcept{}
-         -> let smallerconcs = c:smallerConcepts gens c in
-            nub$ [srcPaire p | pop@PRelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
-               ++[trgPaire p | pop@PRelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
-               ++[a          | pop@PCptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
-
-pairsOf :: [A_Gen] -> [Population] -> Declaration -> Map String [String]
-pairsOf gens pt dcl
+         -> let smallerconcs = c:smallerConcepts (ctxiGens ci) c in
+            nub$ [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
+               ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
+               ++[a         | pop@ACptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
+pairsOf :: ContextInfo -> [Population] -> Declaration -> Map AAtomValue [AAtomValue]
+pairsOf ci ps dcl
  = case dcl of
-     Isn c  -> fromList [ (a,[a])   | a  <-atomsOf gens pt c]
-     Vs sgn -> fromList [ (sa, atomsOf gens pt (target sgn)) | sa <-atomsOf gens pt (source sgn)]
+     Isn c  -> fromList [ (a,[a] )   | a  <-atomValuesOf ci ps c]
+     Vs sgn -> fromList [ (sa, atomValuesOf ci ps (target sgn)) | sa <-atomValuesOf ci ps (source sgn)]
      Sgn{}  -> unionsWith uni
-                      [ fromListWith uni [ (srcPaire p,[trgPaire p]) | p<-popps pop]
-                      | pop@PRelPopu{} <- pt
+                      [ fromListWith uni [ (apLeft p,[apRight p]) | p<-popps pop]
+                      | pop@ARelPopu{} <- ps
                       , name dcl==name (popdcl pop)
-                      , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts gens (source dcl)
-                      , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts gens (target dcl)
+                      , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
+                      , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts (ctxiGens ci) (target dcl)
                       ]
 
-fullContents :: [A_Gen] -> [Population] -> Expression -> Pairs
-fullContents gens pt e = [ mkPair a b | let pairMap=contents e, a<-keys pairMap, b<-pairMap ! a ]
+fullContents :: ContextInfo -> [Population] -> Expression -> [AAtomPair]
+fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMap, b<-pairMap ! a ]
   where
    unions t1 t2 = unionWith uni t1 t2
    inters t1 t2 = mergeWithKey (\_ l r ->case l `isc` r of [] -> Nothing; atoms -> Just atoms) c c t1 t2
                   where c=const empty
    differ t1 t2 = differenceWith (\l r->case l >- r of [] -> Nothing; atoms -> Just atoms) t1 t2
-   contents :: Expression -> Map String [String]
+   contents :: Expression -> Map AAtomValue [AAtomValue]
    contents expr
-    = let lkp x contMap = (concat.maybeToList.lookup x) contMap in  -- (!) may not be used, because we don't know whether x `elem` keys fmap
+    = let aVals = atomValuesOf ci ps 
+          lkp x contMap = (concat.maybeToList.lookup x) contMap in  -- (!) may not be used, because we don't know whether x `elem` keys fmap
       case expr of
          EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))
          EImp (l,r) -> contents (notCpl l .\/. r)
@@ -92,25 +91,25 @@ fullContents gens pt e = [ mkPair a b | let pairMap=contents e, a<-keys pairMap,
          EDif (l,r) -> differ (contents l) (contents r)
          -- The left residual l/r is defined by: for all x,y:  x(l/r)y  <=>  for all z in X, y r z implies x l z.
          ELrs (l,r) -> fromListWith (++)
-                       [(x,[y]) | x<-atomsOf gens pt (source l), y<-atomsOf gens pt (source r)
+                       [(x,[y]) | x<-aVals (source l), y<-aVals (source r)
                                 , null (lkp y (contents r) >- lkp x (contents l))
                                 ]
          -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
          ERrs (l,r) -> fromListWith uni
-                       [(x,[y]) | x<-atomsOf gens pt (target l), y<-atomsOf gens pt (target r)
+                       [(x,[y]) | x<-aVals (target l), y<-aVals (target r)
                                 , null (lkp x (contents (EFlp l)) >- lkp y (contents (EFlp r)))
                                 ]
          EDia (l,r) -> fromListWith (++)
-                       [(x,[y]) | x<-atomsOf gens pt (source l), y<-atomsOf gens pt (source r)
+                       [(x,[y]) | x<-aVals (source l), y<-aVals (source r)
                                 , null (lkp y (contents r) >- lkp x (contents l))
                                 , null (lkp y (contents l) >- lkp x (contents r))
                                 ]
          ERad (l,r) -> fromListWith uni
-                       [(x,[y]) | x<-atomsOf gens pt (source l), y<-atomsOf gens pt (target r)
-                                , null (atomsOf gens pt (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
+                       [(x,[y]) | x<-aVals (source l), y<-aVals (target r)
+                                , null (aVals (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
                                 ]
          EPrd (l,r) -> fromList $
-                       [ (a,cod) | a <- atomsOf gens pt (source l), let cod=atomsOf gens pt (target r), not (null cod) ]
+                       [ (a,cod) | a <- aVals (source l), let cod=aVals (target r), not (null cod) ]
          ECps (l,r) -> fromListWith uni
                        [(x,[y]) | x<-keys (contents l), y<-keys flipr
                                 , (not.null) ((contents l ! x ) `isc` (flipr ! y))
@@ -124,8 +123,11 @@ fullContents gens pt e = [ mkPair a b | let pairMap=contents e, a<-keys pairMap,
          EFlp x     -> fromListWith uni [(b,[a]) | (a,bs)<-assocs (contents x), b<-bs]
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x
-         EDcD dcl   -> pairsOf gens pt dcl
-         EDcI c     -> fromList [(a,[a]) | a <- atomsOf gens pt c]
-         EEps i _   -> fromList [(a,[a]) | a <- atomsOf gens pt i]
-         EDcV sgn   -> fromList [(s, cod) | s <- atomsOf gens pt (source sgn), let cod=atomsOf gens pt (target sgn), not (null cod) ]
-         EMp1 a c   -> fromList [(a,[a]) | name c/="SESSION"] -- prevent populating SESSION
+         EDcD dcl   -> pairsOf ci ps dcl
+         EDcI c     -> fromList [(a,[a]) | a <- aVals c]
+         EEps i _   -> fromList [(a,[a]) | a <- aVals i]
+         EDcV sgn   -> fromList [(s, cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
+         EMp1 a c   -> fromList [case string2AtomValue (representationOf ci c) a of
+                                   Right av -> (av,[av])
+                                   Left err -> fatal 99 $ "This shouldn't happen here. \n  "++err  -- TODO: This should be caught in a better way (not als fatal, but as a user error)
+                                | name c/="SESSION"] -- prevent populating SESSION

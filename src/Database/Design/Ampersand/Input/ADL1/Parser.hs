@@ -48,6 +48,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = []  -- TODO: Allow MAINTAINS statements in the context
             , ctx_rrels  = []  -- TODO: Allow EDITS statements in the context
+            , ctx_reprs  = [r | CRep r<-ces] 
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
@@ -67,6 +68,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CCfy     <$> pClassify     <|>
                       CRel     <$> pRelationDef  <|>
                       CCon     <$> pConceptDef   <|>
+                      CRep     <$> pRepresentation <|>
                       CGen     <$> pGenDef       <|>
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
@@ -84,6 +86,7 @@ data ContextElement = CMeta Meta
                     | CCfy P_Gen
                     | CRel P_Declaration
                     | CCon (String -> ConceptDef)
+                    | CRep Representation
                     | CGen P_Gen
                     | CIndx P_IdentDef
                     | CView P_ViewDef
@@ -136,6 +139,7 @@ pPatternDef = rebuild <$> currPos
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
              , pt_cds = [c nm | Pc c<-pes]
+             , pt_Reprs = [x | Prep x<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
              , pt_xps = [e | Pe e<-pes]
@@ -161,6 +165,7 @@ pProcessDef = rebuild <$> currPos
              , pt_dcs = [d | Pd d<-pes]
              , pt_RRuls = [rr | Pm rr<-pes]
              , pt_RRels = [rr | Pl rr<-pes]
+             , pt_Reprs = [r | Prep r<-pes]
              , pt_cds = [c nm | Pc c<-pes]
              , pt_ids = [k | Pk k<-pes]
              , pt_vds = [v | Pv v<-pes]
@@ -181,6 +186,7 @@ pPatElem = Pr <$> pRuleDef          <|>
            Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
            Pg <$> pGenDef           <|>
+           Prep <$> pRepresentation <|>
            Pk <$> pIndex            <|>
            Pv <$> pViewDef          <|>
            Pe <$> pPurpose          <|>
@@ -193,6 +199,7 @@ data PatElem = Pr (P_Rule TermPrim)
              | Pl P_RoleRelation
              | Pc (String -> ConceptDef)
              | Pg P_Gen
+             | Prep Representation
              | Pk P_IdentDef
              | Pv P_ViewDef
              | Pe PPurpose
@@ -307,8 +314,34 @@ pConceptDef       = Cd <$> currPos
                        <*> pConceptName
                        <*> pIsThere (pKey "BYPLUG")
                        <*> (pString <?> "concept definition (string)")
-                       <*> optList (pKey "TYPE" *> pString)     -- concept type
                        <*> (pString `opt` "") -- a reference to the source of this definition.
+
+--- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
+pRepresentation :: AmpParser Representation
+pRepresentation 
+  = Repr <$> currPos
+         <*  pKey "REPRESENT"
+         <*> pConceptName `sepBy1` pComma
+         <*  pKey "TYPE"
+         <*> pAdlTType
+--- AdlTType = ...<enumeration>
+pAdlTType :: AmpParser TType
+pAdlTType
+        = k Alphanumeric     "ALPHANUMERIC"
+      <|> k BigAlphanumeric  "BIGALPHANUMERIC"
+      <|> k HugeAlphanumeric "HUGEALPHANUMERIC"
+      <|> k Password         "PASSWORD"
+      <|> k Binary           "BINARY"
+      <|> k BigBinary        "BIGBINARY"
+      <|> k HugeBinary       "HUGEBINARY"
+      <|> k Date             "DATE"
+      <|> k DateTime         "DATETIME"
+      <|> k Boolean          "BOOLEAN"
+      <|> k Integer          "INTEGER"
+      <|> k Float            "FLOAT"
+      <|> k AutoIncrement    "AUTOINCREMENT"
+  where
+   k tt str = f <$> pKey str where f _ = tt
 
 --- GenDef ::= ('CLASSIFY' | 'SPEC') ConceptRef 'ISA' ConceptRef
 pGenDef :: AmpParser P_Gen
@@ -379,10 +412,10 @@ pFancyViewDef  = mkViewDef <$> currPos
           pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
 
---- ViewDefLegacy ::= ('VIEW' | 'KEY') LabelProps ConceptOneRef '(' ViewSegmentList ')'
+--- ViewDefLegacy ::= 'VIEW' LabelProps ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
 pViewDefLegacy = P_Vd <$> currPos
-                      <*  (pKey "VIEW" <|> pKey "KEY")
+                      <*  pKey "VIEW"
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> return True
@@ -507,13 +540,11 @@ pPurpose = rebuild <$> currPos
 -- | Parses a population
 pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
-                  prelpop   <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
-                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pString `sepBy` pComma))
-    where prelpop :: Origin -> P_NamedRel -> Pairs -> P_Population
-          prelpop orig (PNamedRel _ nm mSgn) = case mSgn of
-                               Nothing    -> P_RelPopu orig nm
-                               Just ptype -> P_TRelPop orig nm ptype
-
+                  P_RelPopu <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
+                  P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
+pAtomValue ::AmpParser PAtomValue
+pAtomValue = PAVString <$> currPos
+                       <*> pString
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation = try (P_RR <$> currPos
@@ -690,17 +721,24 @@ pLabel :: AmpParser String
 pLabel = pADLid <* pColon
 
 --- Content ::= '[' (RecordList | RecordObsList)? ']'
-pContent :: AmpParser Pairs
+pContent :: AmpParser [PAtomPair]
 pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi)
           --- RecordList ::= Record (',' Record)*
           --- Record ::= String '*' String
-    where pRecord :: AmpParser Paire
-          pRecord = mkPair <$> pString <* pOperator "*" <*> pString
+    where pRecord :: AmpParser PAtomPair
+          pRecord = PPair <$> currPos
+                          <*> pAtomValue 
+                          <* pOperator "*" 
+                          <*> pAtomValue
           --- RecordObsList ::= RecordObsList (';' RecordObsList)
           --- RecordObs ::= '(' String ',' String ')'
-          pRecordObs :: AmpParser Paire
-          pRecordObs = pParens (mkPair <$> pString <* pComma <*> pString)
-
+          pRecordObs :: AmpParser PAtomPair
+          pRecordObs = pParens (PPair <$> currPos
+                                      <*> pAtomValue
+                                      <* pComma
+                                      <*> pAtomValue
+                               )
+ 
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*

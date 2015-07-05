@@ -186,7 +186,7 @@ data RuleCont = CRul { cRul ::  Rule
 data DeclCont = CDcl { cDcl ::  Declaration
                      , cDclPurps :: [Purpose] 
                      , cDclMeaning :: Maybe A_Markup
-                     , cDclPairs :: [Paire]
+                     , cDclPairs :: [AAtomPair]
                      } 
 data CptCont  = CCpt { cCpt ::  A_Concept
                      , cCptDefs :: [ConceptDef]
@@ -269,8 +269,8 @@ orderingByTheme fSpec
    where
      theDecl :: Population -> Bool
      theDecl p = case p of
-                   PRelPopu{} -> popdcl p == dcl
-                   PCptPopu{} -> False
+                   ARelPopu{} -> popdcl p == dcl
+                   ACptPopu{} -> False
 
   cpt2cptCont :: A_Concept -> CptCont
   cpt2cptCont cpt 

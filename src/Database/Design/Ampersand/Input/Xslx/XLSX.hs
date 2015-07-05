@@ -7,6 +7,7 @@ import Database.Design.Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Core.ParseTree
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
 import Control.Lens
@@ -51,35 +52,29 @@ toPops file x = map popForColumn' (colNrs x)
     popForColumn' i = -- trace (show x ++"(Now column: "++show i++")") $
                     popForColumn i
     popForColumn :: Int -> P_Population
-    popForColumn i 
-      | i  == sourceCol  
-        =  P_CptPopu { p_orig = popOrigin
-                     , p_cnme = sourceConceptName 
-                     , p_popas = [fromMaybe (fatal 49 $ 
-                                                "this value should be present. (sheet,row,col) = "++show (theSheetName x,row,i)
-                                            )
-                                            (case value(row,i) of
-                                               Just (CellText t)   -> Just (T.unpack t) -- don't use show, for you get quotes!
-                                               Just (CellDouble d) -> Just (show d)
-                                               Just (CellBool b)   -> Just (show b)
-                                               Nothing -> Nothing)
-                                 | row <- popRowNrs x] 
-                     }
-      | otherwise
-        =  (case mTargetConceptName of
-             Just tCptName 
-                -> P_TRelPop { p_orig = popOrigin
-                             , p_rnme = relName
-                             , p_type = (if isFlipped then flp else id)
-                                        P_Sign {pSrc = PCpt sourceConceptName
-                                               ,pTgt = PCpt tCptName
-                                               }
-                             , p_popps = thePairs}
-             Nothing
-                -> P_RelPopu { p_orig = popOrigin
-                             , p_rnme = relName
-                             , p_popps = thePairs}
-           )
+    popForColumn i =
+      if i  == sourceCol  
+      then  P_CptPopu { p_orig = popOrigin
+                      , p_cnme = sourceConceptName 
+                      , p_popas = concat [ case value(row,i) of
+                                             Nothing -> []
+                                             Just cv -> cellToAtomValue mSourceConceptDelimiter cv popOrigin
+                                         | row <- popRowNrs x
+                                         ] 
+                      }
+      else  P_RelPopu { p_orig = popOrigin
+                      , p_nmdr 
+                         = PNamedRel popOrigin relName
+                               (case mTargetConceptName of
+                                       Just tCptName
+                                          -> Just . (if isFlipped then flp else id) $ 
+                                               P_Sign {pSrc = PCpt sourceConceptName
+                                                      ,pTgt = PCpt tCptName
+                                                      }
+                                       Nothing -> Nothing
+                               )
+                      , p_popps = thePairs
+                      }
      where                             
        popOrigin :: Origin
        popOrigin = originOfCell (relNamesRow, targetCol)
@@ -114,25 +109,27 @@ toPops file x = map popForColumn' (colNrs x)
                        then (init str, True )
                        else (     str, False)
                 _ -> fatal 87 $ "No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol)
-       thePairs :: [Paire]
+       thePairs :: [PAtomPair]
        thePairs =  concat . catMaybes . map pairsAtRow . popRowNrs $ x
-       pairsAtRow :: Int -> Maybe [Paire]
+       pairsAtRow :: Int -> Maybe [PAtomPair]
        pairsAtRow r = case (value (r,sourceCol)
                           ,value (r,targetCol)
                           ) of
                        (Just s,Just t) -> Just $ 
                                             (if isFlipped then map flp else id) $
-                                                [mkPair a b
-                                                | a <- cellToStrings mSourceConceptDelimiter s
-                                                , b <- cellToStrings mTargetConceptDelimiter t
+                                                [mkPair origTrg a b
+                                                | a <- cellToAtomValue mSourceConceptDelimiter s origSrc
+                                                , b <- cellToAtomValue mTargetConceptDelimiter t origTrg
                                                 ]
-                       _ -> Nothing
-       cellToStrings :: Maybe Char -> CellValue -> [String]  -- The value in a cell can contain the delimeter of the row
-       cellToStrings mDelimiter cv 
+                       _               -> Nothing
+            where origSrc = XLSXLoc file (theSheetName x) (r,sourceCol)
+                  origTrg = XLSXLoc file (theSheetName x) (r,targetCol)
+       cellToAtomValue :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
+       cellToAtomValue mDelimiter cv orig
          = case cv of
-             CellText t -> unDelimit mDelimiter (T.unpack t)
-             CellDouble d -> [myShow d]
-             CellBool b -> [show b] 
+             CellText t   -> map (PAVString orig) (unDelimit mDelimiter (T.unpack t))
+             CellDouble d -> [PAVString orig (myShow d)]
+             CellBool b -> [PAVString orig (show b)] 
           where myShow :: Double -> String
                 myShow = reverse . cleanTrailingZeroes . reverse . printf "%f"
                 cleanTrailingZeroes s 
@@ -155,7 +152,7 @@ toPops file x = map popForColumn' (colNrs x)
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
-      = Origin $ file ++",\n  Sheet: "++theSheetName x++", Cell ("++show r++","++show c++")" --TODO: Make separate Origin constructor for this 
+      = XLSXLoc file (theSheetName x) (r,c) 
 
     value :: (Int,Int) -> Maybe CellValue
     value k = (theCellMap x) ^? ix k . cellValue . _Just

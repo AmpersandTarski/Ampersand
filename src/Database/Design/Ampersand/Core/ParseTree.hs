@@ -14,8 +14,9 @@ module Database.Design.Ampersand.Core.ParseTree (
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
+   , Representation(..), TType(..)
    , P_Population(..)
-
+   , PAtomPair(..), PAtomValue(..), mkPair
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -36,12 +37,10 @@ module Database.Design.Ampersand.Core.ParseTree (
    , Prop(..), Props, normalizeProps
    -- Inherited stuff:
    , module Database.Design.Ampersand.Input.ADL1.FilePos
-   , module Database.Design.Ampersand.ADL1.Pair
    , gen_concs
   ) where
 import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
 import Data.Traversable
 import Data.Foldable hiding (concat)
 import Data.List (nub)
@@ -67,6 +66,7 @@ data P_Context
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
          , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
+         , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
@@ -126,6 +126,7 @@ data P_Pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: [Representation] -- ^ The type into which concepts is represented
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
@@ -144,7 +145,6 @@ data ConceptDef
          , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
          , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
          , cddef :: String   -- ^ The textual definition of this concept.
-         , cdtyp :: String   -- ^ The (SQL) type of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
          }   deriving (Show,Eq,Typeable)
@@ -156,6 +156,22 @@ instance Traced ConceptDef where
 instance Named ConceptDef where
  name = cdcpt
 
+data Representation
+  = Repr { reprpos  :: Origin
+         , reprcpts  :: [String]  -- ^ the concepts 
+         , reprdom :: TType     -- the type of the concept the atom is in
+         } deriving (Show)
+instance Traced Representation where
+ origin = reprpos
+         
+data TType 
+  = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
+  | Binary | BigBinary | HugeBinary 
+  | Date | DateTime 
+  | Boolean | Integer | Float | Object | AutoIncrement 
+  | TypeOfOne --special type for the special concept ONE.
+     deriving (Show, Eq, Ord)
+
 data P_Declaration =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
@@ -163,7 +179,7 @@ data P_Declaration =
             , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
-            , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
+            , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving Show -- for debugging and testing only
@@ -175,6 +191,30 @@ instance Named P_Declaration where
  name = dec_nm
 instance Traced P_Declaration where
  origin = dec_fpos
+
+data PAtomPair 
+  = PPair { pppos :: Origin
+          , ppLeft  :: PAtomValue
+          , ppRight :: PAtomValue
+          } deriving Show
+instance Traced PAtomPair where
+  origin = pppos
+instance Flippable PAtomPair where
+  flp pr = pr{ppLeft = ppRight pr
+             ,ppRight = ppLeft pr}
+
+data PAtomValue
+  = PAVString Origin String
+-- TODO: Later add parsers for:
+--  | PAVInteger Origin Integer
+--  | PAVFloat Origin Float
+--  | PAVBoolean Origin Bool 
+  deriving Show
+mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
+mkPair o l r 
+   = PPair { pppos   = o
+           , ppLeft  = l
+           , ppRight = r}
 
 data TermPrim
    = PI Origin                              -- ^ identity element without a type
@@ -274,15 +314,15 @@ instance Traced TermPrim where
    Pfull orig _ _ -> orig
    PNamedR r      -> origin r
    
-instance Named TermPrim where
- name e = case e of
-   PI _        -> "I"
-   Pid _ _     -> "I"
-   Patm _ s _  -> s
-   PVee _      -> "V"
-   Pfull _ _ _ -> "V"
-   PNamedR r   -> name r
-   
+--instance Named TermPrim where
+-- name e = case e of
+--   PI _        -> "I"
+--   Pid _ _     -> "I"
+--   Patm _ s _  -> s
+--   PVee _      -> "V"
+--   Pfull _ _ _ -> "V"
+--   PNamedR r   -> name r
+--   
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
 
@@ -385,30 +425,24 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang ::   Maybe Lang
+    P_Markup  { mLang   ::   Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: String
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_orig ::  Origin  -- the origin
-              , p_rnme ::  String  -- the name of a relation
-              , p_popps :: Pairs   -- the contents
+  = P_RelPopu { p_orig  :: Origin  -- the origin
+              , p_nmdr  :: P_NamedRel  -- the named relation
+              , p_popps :: [PAtomPair]   -- the contents
               }
-  | P_TRelPop { p_orig ::  Origin  -- the origin
-              , p_rnme ::  String  -- the name of a relation
-              , p_type ::  P_Sign  -- the signature of the relation
-              , p_popps :: Pairs   -- the contents
-              }
-  | P_CptPopu { p_orig ::  Origin  -- the origin
-              , p_cnme ::  String  -- the name of a concept
-              , p_popas :: [String]   -- atoms in the initial population of that concept
+  | P_CptPopu { p_orig  :: Origin  -- the origin
+              , p_cnme  :: String  -- the name of a concept
+              , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
     deriving Show
 
 instance Named P_Population where
- name P_RelPopu{p_rnme = nm} = nm
- name P_TRelPop{p_rnme = nm} = nm
+ name P_RelPopu{p_nmdr = nr} = name nr
  name P_CptPopu{p_cnme = nm} = nm
 
 instance Traced P_Population where
@@ -673,6 +707,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_ks     = concatMap ctx_ks contexts
       , ctx_rrules = concatMap ctx_rrules contexts
       , ctx_rrels  = concatMap ctx_rrels contexts
+      , ctx_reprs  = concatMap ctx_reprs contexts
       , ctx_vs     = concatMap ctx_vs contexts
       , ctx_gs     = concatMap ctx_gs contexts
       , ctx_ifcs   = concatMap ctx_ifcs contexts
@@ -698,6 +733,7 @@ mkContextOfPopsOnly pops =
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_rrels  = []
+      , ctx_reprs  = []
       , ctx_vs     = []
       , ctx_gs     = []
       , ctx_ifcs   = []

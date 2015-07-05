@@ -215,7 +215,7 @@ generateAllDefPopQueries fSpec =
         populateTablesWithPops
         
 
-    fillSignalTable :: [(Conjunct, [Paire])] -> [String]
+    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
      = [intercalate "\n           " $ 
@@ -223,7 +223,7 @@ generateAllDefPopQueries fSpec =
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate "\n     , " 
-                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
+                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, showVal (apLeft p), showVal (apRight p)])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
@@ -235,7 +235,7 @@ generateAllDefPopQueries fSpec =
       where
         populatePlug :: PlugSQL -> [String]
         populatePlug plug 
-          = case tblcontents (vgens fSpec) (initialPops fSpec) plug of
+          = case tblcontents (contextInfo fSpec) (initialPops fSpec) plug of
              []  -> []
              tblRecords 
                  -> [intercalate "\n           " $ 
@@ -251,7 +251,7 @@ generateAllDefPopQueries fSpec =
              = intercalate ", " 
                  [case fld of 
                     Nothing -> "NULL"
-                    Just str -> showAsValue str
+                    Just val -> showAsValue (showVal val)
                  | fld <- record ]
 
 
@@ -308,6 +308,9 @@ generateTableInfos fSpec =
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
                   | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
+              [ ", 'type' => '"++(maybe (fatal 311 ("Unknown TType for concept "++show (name c)))
+                                        show . lookup c . allTTypes) fSpec++"'" ]++
+              [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
               [ ")" ]
            )
          | c <- concs fSpec
@@ -315,7 +318,7 @@ generateTableInfos fSpec =
                  Nothing    -> []
                  Just conjs -> conjs
                affInvConjs = filterFrontEndInvConjuncts affConjs
-               affSigConjs = filterFrontEndSigConjuncts affConjs 
+               affSigConjs = filterFrontEndSigConjuncts affConjs
 
          ]
     ) ++

@@ -9,6 +9,8 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
+  , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
+  , mkUnmatchedAtomValue
   , Guarded(..)
   , whenCheckedIO, whenChecked
   , unguard
@@ -25,7 +27,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
-import Data.List  (intercalate)
+import Data.List  (intercalate,nub)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
@@ -129,6 +131,11 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> String -- the reference itself. eg. "Rule 42"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
+mkUnmatchedAtomValue :: TType  -> PAtomValue -> CtxError
+mkUnmatchedAtomValue ct val = 
+ case val of 
+  (PAVString orig str) ->
+      CTXE orig $ "Unmatched value: `"++str++"` does not match "++show ct++"."
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
@@ -139,6 +146,22 @@ mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs = 
   CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++ 
                       concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)       
+
+mkMultipleRepresentationsForConceptError :: String -> [Representation] -> CtxError
+mkMultipleRepresentationsForConceptError cpt rs =
+  case rs of 
+    _:r:_  
+      -> CTXE (origin r)
+          $ "Multiple representations for concept "++show cpt++". ("
+               ++(intercalate ", " . map show . nub . map reprdom) rs ++
+                  concatMap (("\n    "++ ) . show . origin ) rs
+    _ -> fatal 142 "There are no multiple representations."
+
+mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
+mkIncompatibleAtomValueError pav t cpt msg=
+  case pav of 
+    PAVString o str -> CTXE o $ msg ++"\n  "++show str++" isn't a valid "++show t++
+                                ", which is the type of "++name cpt++"."
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
@@ -164,9 +187,9 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
                          ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
 
-mkOtherAtomInSessionError :: String -> CtxError
+mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
-  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++atomValue++"`."
+  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++showADL atomValue++"`."
     
 class ErrorConcept a where
   showEC :: a -> String

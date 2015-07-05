@@ -171,18 +171,8 @@ instance ShowHS SqlFieldUsage where
  showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
  showHS _ _ PlainAttr                 = "PlainAttr "
 
-instance ShowHS SqlType where
- showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i
- showHS _ indent SQLBlob        = indent++"SQLBlob   "
- showHS _ indent SQLPass        = indent++"SQLPass   "
- showHS _ indent SQLSingle      = indent++"SQLSingle "
- showHS _ indent SQLDouble      = indent++"SQLDouble "
- showHS _ indent SQLText        = indent++"SQLText   "
- showHS _ indent (SQLuInt i)    = indent++"SQLuInt   "++show i
- showHS _ indent (SQLsInt i)    = indent++"SQLsInt   "++show i
- showHS _ indent SQLId          = indent++"SQLId     "
- showHS _ indent (SQLVarchar i) = indent++"SQLVarchar "++show i
- showHS _ indent SQLBool        = indent++"SQLBool   "
+instance ShowHS SqlTType where
+ showHS _ indent sqltype = indent ++ show sqltype
 
 instance ShowHSName Quad where
  showHSName q
@@ -373,15 +363,15 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomsOf (vgens fSpec)(initialPops fSpec) c))
+                    strs = map showVal (sort (atomValuesOf (contextInfo fSpec) (initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
-              showViolatedRule :: String -> (Rule,Pairs) -> String
+              showViolatedRule :: String -> (Rule,[AAtomPair]) -> String
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
-                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
+                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showVal.apLeft) p++", "++(show.showVal.apRight) p++")"
                                                                    in showPair) ps++
                       indent'++" )"
                      ]
@@ -576,14 +566,16 @@ instance ShowHS ViewSegment where
 instance ShowHS Population where
  showHS _ indent pop
   = case pop of
-      PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
-          ++indent++"         , popps  = [ "++intercalate
-           (indent++"                    , ") (map show (popps pop))
+      ARelPopu{} -> "ARelPopu { popdcl = "++showHSName (popdcl pop)
+--TODOFIX
+--          ++indent++"         , popps  = [ "++intercalate
+--           (indent++"                    , ") (map show (popps pop))
           ++indent++"                    ]"
           ++indent++"         }"
-      PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
-          ++indent++"         , popas  = [ "++intercalate
-           (indent++"                    , ") (map show (popas pop))
+      ACptPopu{} -> "ACptPopu { popcpt = "++showHSName (popcpt pop)
+--TODOFIX
+--          ++indent++"         , popas  = [ "++intercalate
+--           (indent++"                    , ") (map show (popas pop))
           ++indent++"                    ]"
           ++indent++"         }"
 
@@ -688,7 +680,7 @@ instance ShowHS Declaration where
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName c = show c
 instance ShowHS Char where

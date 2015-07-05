@@ -251,7 +251,7 @@ chpNatLangReqs lev fSpec =
                ]
       
 
-  mkPhrase :: Declaration -> Paire -> Inlines
+  mkPhrase :: Declaration -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
    = case decl of
        Sgn{} | null (prL++prM++prR)
@@ -278,8 +278,8 @@ chpNatLangReqs lev fSpec =
 
        Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
        Vs{}      -> fatal 300 "Vs  is not supposed to be here expected here."
-   where srcAtom = srcPaire pair
-         tgtAtom = trgPaire pair
+   where srcAtom = showVal (apLeft pair)
+         tgtAtom = showVal (apRight pair)
          prL = decprL decl
          prM = decprM decl
          prR = decprR decl

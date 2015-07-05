@@ -6,7 +6,7 @@ module Database.Design.Ampersand.FSpec.Plug
      (Plugable(..), PlugInfo(..)
      ,SqlField(..)
      ,SqlFieldUsage(..)
-     ,SqlType(..)
+     ,SqlTType(..)
      ,showSQL
      ,plugpath
 
@@ -165,20 +165,25 @@ instance Object PlugSQL where
  contextOf p = EDcI (concept p)
 
 fldauto::SqlField->Bool -- is the field auto increment?
-fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f -- && isIdent (fldexpr f)
-
-showSQL :: SqlType -> String
-showSQL (SQLChar    n) = "CHAR("++show n++")"
-showSQL (SQLBlob     ) = "BLOB"
-showSQL (SQLPass     ) = "VARCHAR(255)"
-showSQL (SQLSingle   ) = "FLOAT" -- todo
-showSQL (SQLDouble   ) = "FLOAT"
-showSQL (SQLText     ) = "TEXT"
-showSQL (SQLuInt    n) = "INT("++show n++") UNSIGNED"
-showSQL (SQLsInt    n) = "INT("++show n++")"
-showSQL (SQLId       ) = "INT"
+fldauto f = case fldtype f of
+              SQLSerial -> if not (fldnull f) && flduniq f
+                           then True
+                           else fatal 171 "AutoIncrement is not allowed at this place." --TODO: build check in P2Aconverters
+              _         -> False
+              
+showSQL :: SqlTType -> String
+showSQL (SQLFloat    ) = "FLOAT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
+showSQL (SQLText     ) = "TEXT"
+showSQL (SQLMediumText ) = "MEDIUMTEXT"
+showSQL (SQLBlob     ) = "BLOB"
+showSQL (SQLMediumBlob ) = "MEDIUMBLOB"
+showSQL (SQLLongBlob ) = "LONGBLOB"
+showSQL (SQLDate     ) = "DATE"
+showSQL (SQLDateTime ) = "DATETIME"
+showSQL (SQLBigInt   ) = "BIGINT"
 showSQL (SQLBool     ) = "BOOLEAN"
+showSQL (SQLSerial   ) = "SERIAL"
 
 -- Every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL (which has one column only)
 -- isPlugIndex refers to UNIQUE key -- TODO: this is wrong
@@ -260,13 +265,13 @@ eLkpTbl p = clos1 [([r],s,t)|(r,s,t)<-mLkpTbl p]
 
 
 -- | tblcontents is meant to compute the contents of an entity table.
---   It yields a list of records. Values in the records may be absent, which is why Maybe String is used rather than String.
-type TblRecord = [Maybe String]
-tblcontents :: [A_Gen] -> [Population] -> PlugSQL -> [TblRecord]
-tblcontents gs udp plug
+--   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
+type TblRecord = [Maybe AAtomValue]
+tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [TblRecord]
+tblcontents ci ps plug
    = case plug of
-     ScalarSQL{} -> [[Just x] | x<-atomsOf gs udp (cLkp plug)]
-     BinSQL{}    -> [[(Just . srcPaire) p,(Just . trgPaire) p] |p<-fullContents gs udp (mLkp plug)]
+     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
+     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other,
@@ -278,19 +283,19 @@ tblcontents gs udp plug
          f:fs -> transpose
                  ( map Just cAtoms
                  : [case fExp of
-                       EDcI c -> [ if a `elem` atomsOf gs udp c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents gs udp) fExp | a<-cAtoms ]
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
                    | fld<-fs, let fExp=fldexpr fld
                    ]
                  )
                  where
-                   cAtoms = (atomsOf gs udp . source . fldexpr) f
+                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
                    lkp a pairs
-                    = case [ p | p<-pairs, a==srcPaire p ] of
+                    = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
-                       [p] -> Just (trgPaire p)
-                       ps -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
-                               "Looking for: '"++a++"'.\n"++
-                               "Multiple values in one field: \n"++
-                               "  [ "++intercalate "\n  , " (map show ps)++"\n  ]")
+                       [p] -> Just (apRight p)
+                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++showVal a++"'.\n"++
+                               "Multiple values in one field. \n"
+                               )
                        

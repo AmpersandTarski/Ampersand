@@ -5,7 +5,6 @@ where
 import Text.PrettyPrint.Leijen
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
-import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 
@@ -77,9 +76,6 @@ commas = encloseSep empty empty comma
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
 
-prettyPair :: Paire -> Doc
-prettyPair (Paire src trg) = quote src <+> text "*" <+> quote trg
-
 listOfLists :: [[String]] -> Doc
 listOfLists xs = commas $ map (hsep.quoteAll) xs
 
@@ -100,7 +96,7 @@ prettyLabel :: String -> [[String]] -> Doc
 prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels vs gs ifcs ps pops sql php metas) =
+    pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
@@ -115,6 +111,7 @@ instance Pretty P_Context where
                <+\> perline ks
                <+\> perline rrules
                <+\> perline rrels
+               <+\> perline reprs
                <+\> perline vs
                <+\> perline gs
                <+\> perline ifcs
@@ -144,7 +141,7 @@ instance Pretty Role where
     pretty (Role name) = maybeQuote name
 
 instance Pretty P_Pattern where
-    pretty (P_Pat _ nm rls gns dcs rruls rrels cds ids vds xps pop _) =
+    pretty (P_Pat _ nm rls gns dcs rruls rrels reprs cds ids vds xps pop _) =
           text keyword
           <+>  quoteConcept nm
           <+\> perline rls
@@ -152,6 +149,7 @@ instance Pretty P_Pattern where
           <+\> perline dcs
           <+\> perline rruls
           <+\> perline rrels
+          <+\> perline reprs
           <+\> perline cds
           <+\> perline ids
           <+\> perline vds
@@ -170,7 +168,7 @@ instance Pretty P_Declaration where
               pragmas | null pragma = empty
                       | otherwise   = text "PRAGMA" <+> hsep (map quote pragma)
               content | null popu   = empty
-                      | otherwise   = text "=\n[" <+> commas (map prettyPair popu) <+> text "]"
+                      | otherwise   = text "=\n[" <+> commas (map pretty popu) <+> text "]"
 
 instance Pretty a => Pretty (Term a) where
    pretty p = case p of
@@ -239,21 +237,24 @@ instance Pretty a => Pretty (P_Rule a) where
                          else maybeQuote nm <> text ":"
 
 instance Pretty ConceptDef where
-    pretty (Cd _ cpt plug def typ ref _) -- from, the last argument, is not used in the parser
+    pretty (Cd _ cpt plug def ref _) -- from, the last argument, is not used in the parser
         = text "CONCEPT" <+> quoteConcept cpt <+> (if plug then text "BYPLUG" else empty)
-               <+> quote def <+> type_ <+> maybeText ref
-        where type_ = if null typ then empty
-                      else text "TYPE" <+> quote typ
-              maybeText txt = if null txt then empty
+               <+> quote def <+> maybeText ref
+        where maybeText txt = if null txt then empty
                               else quote txt
 
 instance Pretty P_Population where
     pretty p = case p of
-                P_RelPopu _ nm    cs -> text "POPULATION" <+> maybeQuote (takeQuote nm)        <+> text "CONTAINS" <+> contents cs
-                P_TRelPop _ nm tp cs -> text "POPULATION" <+> maybeQuote (takeQuote nm) <~> tp <+> text "CONTAINS" <+> contents cs
-                P_CptPopu _ nm    ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> list (quoteAll ps)
-               where contents = list . map prettyPair
+                P_RelPopu _ nrel  cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
+                P_CptPopu _ nm    ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
+               where contents = list . map pretty
 
+instance Pretty Representation where
+    pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf cs <~> text "TYPE" <+> pretty tt
+
+instance Pretty TType where
+    pretty = text . show
+      
 instance Pretty P_Interface where
     pretty (P_Ifc name klass prms args roles obj _ _) =
         text "INTERFACE" <+> maybeQuote name <+> class_
@@ -382,3 +383,12 @@ instance Pretty Prop where
                 Irf -> "IRF"
                 Aut -> "AUT"
                 Prop -> "PROP"
+
+instance Pretty PAtomPair where
+    pretty (PPair _ l r) = text "(" <+> pretty l 
+                       <~> text "*" <+> pretty r 
+                       <~> text ")"
+
+instance Pretty PAtomValue where
+    pretty (PAVString _ str) = quote str
+

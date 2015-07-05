@@ -8,7 +8,6 @@ import Control.Applicative
 
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer (keywords)
-import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
 -- Useful functions to build on the quick check functions
 
@@ -76,11 +75,6 @@ subIfc objGen n =
     else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
     where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 
-genPairs :: Gen Pairs
-genPairs = listOf genPaire
-
-genPaire :: Gen Paire
-genPaire = Paire <$> safeStr <*> safeStr
 
 --- Now the arbitrary instances
 instance Arbitrary Origin where
@@ -98,8 +92,9 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- relations
        <*> listOf arbitrary -- concepts
        <*> listOf arbitrary -- identities
-       <*> return []        -- role rules
-       <*> return []        -- role relations
+       <*> listOf arbitrary -- role rules
+       <*> listOf arbitrary -- role relations
+       <*> listOf arbitrary -- representation
        <*> listOf arbitrary -- views
        <*> listOf arbitrary -- gen definitions
        <*> listOf arbitrary -- interfaces
@@ -121,21 +116,32 @@ instance Arbitrary P_RoleRelation where
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> listOf1 arbitrary <*> listOf1 safeStr
 
+instance Arbitrary Representation where
+    arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
+
+instance Arbitrary TType where
+    arbitrary = elements [Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
+                         , Binary, BigBinary, HugeBinary 
+                         , Date, DateTime 
+                         , Boolean, Integer, Float, Object, AutoIncrement 
+                         , TypeOfOne
+                         ]
+
 instance Arbitrary Role where
     arbitrary = Role <$> safeStr
 
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Declaration where
     arbitrary = P_Sgn <$> lowerId         -- name
                       <*> arbitrary       -- sign
                       <*> arbitrary       -- props
-                      <*> listOf safeStr1 -- pragma. Should be tree, but the grammar allows more.
+                      <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
                       <*> arbitrary       -- meaning
-                      <*> genPairs        -- pairs
+                      <*> arbitrary        -- pairs
                       <*> arbitrary       -- origin
                       <*> arbitrary       -- plug
 
@@ -219,19 +225,24 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr <*> safeStr
+    arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr
                    <*>  safeStr  <*> safeStr
 
-instance Arbitrary Paire where
-    arbitrary = Paire <$> arbitrary <*> arbitrary
+instance Arbitrary PAtomPair where
+    arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          P_RelPopu <$> arbitrary <*> lowerId <*> genPairs,
-          P_TRelPop <$> arbitrary <*> lowerId <*> arbitrary <*> genPairs,
-          P_CptPopu <$> arbitrary <*> lowerId <*> listOf safeStr
+          P_RelPopu <$> arbitrary <*> arbitrary <*> arbitrary,
+          P_CptPopu <$> arbitrary <*> lowerId <*> arbitrary
         ]
+
+instance Arbitrary P_NamedRel where
+    arbitrary = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
+
+instance Arbitrary PAtomValue where
+    arbitrary = PAVString <$> arbitrary <*> safeStr
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr

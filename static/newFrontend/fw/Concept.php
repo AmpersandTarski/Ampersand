@@ -2,6 +2,12 @@
 
 class Concept {
 
+	public static function getTypeRepresentation($concept){
+		global $allConcepts;
+
+		return $allConcepts[$concept]['type'];
+	}
+	
 	public static function getAllConcepts(){
 		global $allConcepts; // from Generics.php
 		

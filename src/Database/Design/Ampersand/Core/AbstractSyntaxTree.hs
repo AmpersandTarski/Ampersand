@@ -32,10 +32,12 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
+ , Representation(..), TType(..), contextInfoOf
  , Sign(..)
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
+ , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -46,8 +48,9 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 )where
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
-                                                , PairView(..),PairViewSegment(..),Prop(..),Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc)
+                                                , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
+                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..)
+                                                )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
@@ -56,6 +59,8 @@ import Data.List (intercalate)
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
+import Data.Char (toUpper,toLower)
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -74,6 +79,7 @@ data A_Context
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
          , ctxRRels :: [A_RoleRelation] -- ^ The assignment of roles to Relations (which role mayEdit what relations)
+         , ctxreprs :: [Representation]
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
@@ -111,7 +117,7 @@ data Pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
-           }   deriving (Typeable, Show)    -- Show for debugging purposes
+           }   deriving (Typeable)    -- Show for debugging purposes
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
@@ -473,13 +479,91 @@ instance Traced Purpose where
   origin = explPos
 
 data Population -- The user defined populations
-  = PRelPopu { popdcl :: Declaration
-             , popps ::  Pairs     -- The user-defined pairs that populate the relation
+  = ARelPopu { popdcl :: Declaration
+             , popps ::  [AAtomPair]     -- The user-defined pairs that populate the relation
              }
-  | PCptPopu { popcpt :: A_Concept
-             , popas ::  [String]  -- The user-defined atoms that populate the concept
-             } deriving (Show, Eq)
+  | ACptPopu { popcpt :: A_Concept
+             , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
+             } deriving (Eq)
 
+data AAtomPair 
+  = APair { apLeft  :: AAtomValue
+          , apRight :: AAtomValue
+          }deriving(Eq,Prelude.Ord)
+mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
+mkAtomPair = APair
+string2AtomValue :: TType -> String -> Either String AAtomValue
+string2AtomValue dom str
+  = case dom of 
+     Alphanumeric     -> Right (AAVString Alphanumeric str) 
+     BigAlphanumeric  -> Right (AAVString BigAlphanumeric str)
+     HugeAlphanumeric -> Right (AAVString HugeAlphanumeric str)
+     Password         -> Right (AAVString Password str)
+     Binary           -> Left "Binary cannot be populated in an ADL script"
+     BigBinary        -> Left "Binary cannot be populated in an ADL script"
+     HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+     Date             -> Left "Date cannot be populated (jet) in an ADL script"
+     DateTime         -> Left "DateTime cannot be populated (jet) in an ADL script"
+     Boolean          -> let table =
+                                [("TRUE", True), ("FALSE" , False)
+                                ,("YES" , True), ("NO"    , False)
+                                ,("WAAR", True), ("ONWAAR", False)
+                                ,("JA"  , True), ("NEE"   , False)
+                                ,("WEL" , True), ("NIET"  , False)
+                                ]
+                         in case lookup (map toUpper str) table of
+                            Just b -> Right (AAVBoolean Boolean b)
+                            Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
+                           where camelCase []     = []
+                                 camelCase (c:xs) = toUpper c: map toLower xs 
+                            
+     Integer          -> case maybeRead str  of
+                           Just i  -> Right (AAVInteger Integer i)
+                           Nothing -> Left $ "This is not of type "++show dom++": " ++str
+     Float         -> case maybeRead str of 
+                           Just r  -> Right (AAVFloat Float r)
+                           Nothing -> Left $ "This is not of type "++show dom++": " ++str
+     AutoIncrement    -> Left "AutoIncrement cannot be populated in an ADL script"
+     TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+     Object           -> Right (AAVString Object str) 
+     
+   where
+     maybeRead :: Read a => String -> Maybe a
+     maybeRead = fmap fst . listToMaybe . reads
+data AAtomValue
+  = AAVString  { aavtyp :: TType
+               , aavstr :: String
+               }
+  | AAVInteger { aavtyp :: TType
+               , aavint :: Integer
+               }
+  | AAVFloat   { aavtyp :: TType
+               , aavflt :: Float
+               }
+  | AAVBoolean { aavtyp :: TType
+               , aavbool :: Bool
+               }
+  | AAVDate { aavtyp :: TType
+            , aadateYear ::  Int
+            , aadateMonth :: Int
+            , aadateDay   :: Int
+            }
+  | AtomValueOfONE deriving (Eq,Prelude.Ord)
+showVal :: AAtomValue -> String
+showVal val = 
+  case val of
+   AAVString{}  -> show (aavstr val)
+   AAVInteger{} -> show (aavint val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> showLen 4 (aadateYear val)++
+                   showLen 2 (aadateMonth val)++
+                   showLen 2 (aadateDay val)
+   AAVFloat{}   -> show (aavflt val)
+   AtomValueOfONE{} -> "1"
+  where
+   showLen i x =
+    replicate (i-length (show x)) '0'++show x
+ 
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
              | ExplRule String
@@ -711,4 +795,29 @@ class Association rel where
   isEndo s        = source s == target s
 
 
-  
+-- Convenient data structure to hold information about concepts and their populations
+--  in a context. 
+data ContextInfo =
+  CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
+     , ctxiRepresents :: [Representation] -- a list containing all user defined Representations in the context
+     }
+representationOf :: ContextInfo -> A_Concept -> TType
+representationOf ci cpt = 
+-- TODO: Fix this function, to take care of classifications
+  case cpt of 
+    ONE -> TypeOfOne
+    PlainConcept{}
+        ->  case eqCl reprdom . filter isAboutThisCpt . ctxiRepresents $ ci of
+              [] ->  Object  --The default value, when no representation is specified
+              [rs] -> case rs of   
+                         []  -> fatal 498 "This should be impossible with eqClass"
+                         r: _ ->reprdom r
+              _ -> fatal 500 $ "There are multiple Types for "++show cpt++". That should have been checked earlier!"
+  where
+    isAboutThisCpt :: Representation -> Bool 
+    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
+contextInfoOf :: A_Context -> ContextInfo
+contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
+                       , ctxiRepresents = ctxreprs ctx
+                       }
+

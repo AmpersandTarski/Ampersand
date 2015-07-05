@@ -61,25 +61,48 @@ class InterfaceObject {
 		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
 		
 		// Set datatype of tgtConcept
-		switch(strtolower($this->tgtConcept)){ // matching case-insensitive, because template filenames in windows are case-insensitive
-			// <input> types
-			case "text":
-				$this->tgtDataType = "text";		// relation to TEXT, Text, TExt, etc concept
+		switch(Concept::getTypeRepresentation($this->tgtConcept)){
+			case "Alphanumeric":
+				$this->tgtDataType = "String";
 				break;
-			case "date":
-				$this->tgtDataType = "date";		// relation to DATE, Date, DAte, etc concept
+			case "BigAlphanumeric":
+				$this->tgtDataType = "String";
 				break;
-			case "bool":
-				$this->tgtDataType = "checkbox";	// relation to BOOL, etc concept
+			case "HugeAlphanumeric":
+				$this->tgtDataType = "String";
 				break;
-			case "password":
-				$this->tgtDataType = "password"; 	// relation to PASSWORD, etc concept
+			case "Binary":
+				$this->tgtDataType = "File";
 				break;
-			case "blob":
-				$this->tgtDataType = "textarea"; 	// relation to BLOB, etc concept
+			case "BigBinary":
+				$this->tgtDataType = "File";
+				break;
+			case "HugeBinary":
+				$this->tgtDataType = "File";
+				break;
+			case "Date":
+				$this->tgtDataType = "Date";
+				break;
+			case "DateTime":
+				$this->tgtDataType = "DateTime";
+				break;
+			case "Boolean":
+				$this->tgtDataType = "Boolean";
+				break;
+			case "Password":
+				$this->tgtDataType = "String";
+				break;
+			case "Decimal":
+				$this->tgtDataType = "Float";
+				break;
+			case "Integer":
+				$this->tgtDataType = "Integer";
+				break;
+			case "Object":
+				$this->tgtDataType = "Object";
 				break;
 			default:
-				$this->tgtDataType = "concept"; 	// relation to other concept
+				$this->tgtDataType = "Object";
 		}
 		
 	/* Information about subinterfaces */

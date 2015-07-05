@@ -145,7 +145,7 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
 	  console.log('not yet implemented');
   }
   
-  $if(containsDATE)$  // The interface contains an editable relation to the primitive concept DATE
+  $if(containsDATE)$  // The interface contains an editable relation to a concept with representation DATE
   // Function for Datepicker
   \$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
   \$scope.openDatepicker = function(\$event, datepicker) {
@@ -154,10 +154,10 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
   
     \$scope.datepicker[datepicker] = {'open' : true};
   }
-  $else$  // The interface does not contain editable relations to primitive concept DATE
+  $else$  // The interface does not contain editable relations to a concept with representation DATE
   $endif$
 
-  // Function to add item to array of primitieve datatypes
+  // Function to add item to array of scalar
   \$scope.addItem = function(obj, property, selected, resourceId){
     if(selected.value != ''){
       if(obj[property] === null) obj[property] = [];
@@ -169,14 +169,14 @@ $if(containsEditable)$  // The interface contains at least 1 editable relation
     }
   }
   
-  //Function to remove item from array of primitieve datatypes
+  //Function to remove item from array of scalar
   \$scope.removeItem = function(obj, key, resourceId){
     obj.splice(key, 1);
     \$scope.put(resourceId);
   }
 $else$  // The interface does not contain any editable relations
 $endif$
-$if(containsEditableNonPrim)$  // The interface contains at least 1 editable relation to a non-primitive concept
+$if(containsEditableObjects)$  // The interface contains at least 1 editable relation to a concept with representation OBJECT
   // AddObject function to add a new item (val) to a certain property (property) of an object (obj)
   // Also needed by addModal function.
   \$scope.addObject = function(obj, property, item, resourceId){
@@ -203,10 +203,10 @@ $if(containsEditableNonPrim)$  // The interface contains at least 1 editable rel
   };
 
 
-  // A property for every (non-primitive) tgtConcept of the editable relations in this interface
-  $editableNonPrimTargets:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
+  // A property for every concept with representation OBJECT of the editable relations in this interface
+  $editableObjects:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
   }$
-$else$  // The interface does not contain editable relations to non-primitive concepts
+$else$  // The interface does not contain editable relations to a concept with representation OBJECT
 $endif$
 
   function _getResourceIndex(itemId, items){
