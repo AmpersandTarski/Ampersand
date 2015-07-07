@@ -552,7 +552,7 @@ data AAtomValue
 showVal :: AAtomValue -> String
 showVal val = 
   case val of
-   AAVString{}  -> show (aavstr val)
+   AAVString{}  ->      (aavstr val)
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showLen 4 (aadateYear val)++
