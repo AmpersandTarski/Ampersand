@@ -146,7 +146,7 @@ class Database
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 
-			if(Concept::getTypeRepresentation($concept) == "Date") $newAtom = $this->dateConversion($newAtom);
+			$newAtom = $this->typeConversion($newAtom, $concept);
 			
 			// If $newAtom is not in $concept
 			if(!$this->atomExists($newAtom, $concept)){
@@ -188,7 +188,7 @@ class Database
 		$table = $tableInfo['table'];
 		$conceptCol = $tableInfo['cols'][0];
 		
-		if(Concept::getTypeRepresentation($concept) == "Date") $newAtom = $this->dateConversion($atomId);
+		$newAtom = $this->typeConversion($atomId, $concept);
 		
 		$atomIdEsc = $this->escape($atomId);
 		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomIdEsc'";
@@ -213,8 +213,8 @@ class Database
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
-			if(Concept::getTypeRepresentation($stableConcept) == "Date") $stableAtom = $this->dateConversion($stableAtom);
-			if(Concept::getTypeRepresentation($modifiedConcept) == "Date") $modifiedAtom = $this->dateConversion($modifiedAtom);
+			$stableAtom = $this->typeConversion($stableAtom, $stableConcept);
+			$modifiedAtom = $this->typeConversion($modifiedAtom, $modifiedConcept);
 			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
 			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
@@ -279,8 +279,8 @@ class Database
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
-			if(Concept::getTypeRepresentation($stableConcept) == "Date") $stableAtom = $this->dateConversion($stableAtom);
-			if(Concept::getTypeRepresentation($modifiedConcept) == "Date") $modifiedAtom = $this->dateConversion($modifiedAtom);
+			$stableAtom = $this->typeConversion($stableAtom, $stableConcept);
+			$modifiedAtom = $this->typeConversion($modifiedAtom, $modifiedConcept);
 			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
 			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
@@ -337,7 +337,7 @@ class Database
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
-			if(Concept::getTypeRepresentation($concept) == "Date") $atom = $this->dateConversion($atom);
+			$atom = $this->typeConversion($atom, $concept);
 			
 			global $tableColumnInfo;
 			
@@ -454,9 +454,22 @@ class Database
 	
 	}
 	
-	private function dateConversion($value){
-		$date = new DateTime($value);
-		return $date->format('Y-m-d');	
+	/*
+	 * Conversion to MYSQL types
+	 */
+	public function typeConversion($value, $concept){
+		switch(Concept::getTypeRepresentation($concept)){
+			case "Date" :
+				$date = new DateTime($value);
+				return $date->format('Y-m-d');
+			case "Integer" :
+				return (int) $value;
+			case "Boolean" :
+				return (bool) $value;
+			default : 
+				return $value;
+		}
+		
 	}
 }
 

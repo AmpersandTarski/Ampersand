@@ -72,7 +72,7 @@ Class Atom {
 		}
 		
 		// defaults 
-		if(!$interface->univalent && !($interface->tgtDataType == "Object")) $arr = array(); // define $arr as array if $interface is not univalent and representation of tgtconcept not an object
+		if(!$interface->univalent && !$interface->tgtConceptIsObject) $arr = array(); // define $arr as array if $interface is not univalent and representation of tgtconcept not an object
 		else $arr = null;
 		
 		foreach ($tgtAtoms as $tgtAtomId){
@@ -82,7 +82,7 @@ Class Atom {
 			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$content = !is_null($tgtAtom->id);
 				
-			}elseif($interface->tgtDataType == "Object"){
+			}elseif($interface->tgtConceptIsObject){
 				$content = array();
 				
 				// Add @context for JSON-LD to rootElement
@@ -102,26 +102,20 @@ Class Atom {
 														, '_sortValues_' => array()
 													 	, 'id' => $tgtAtom->id));
 				
-			}elseif($interface->tgtDataType == "Date"){
-				$date = new DateTime($tgtAtom->id);
-				$content = $date->format('Y-m-d');
-			
 			}else{ // Representation of tgtconcept of interface is scalar (i.e. not object)
-				// if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
-				// if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
 				
-				$content = $tgtAtom->id;
+				$content = $this->database->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
 			}
 			
 			// subinterfaces
-			if(!empty($interface->subInterfaces) && $interface->tgtDataType != "Object") throw new Exception("TgtConcept of interface: '" . $interface->label . "' is primitive datatype and can not have subinterfaces", 501);
+			if(!empty($interface->subInterfaces) && !$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is primitive datatype and can not have subinterfaces", 501);
 			foreach($interface->subInterfaces as $subinterface){
 				$otherAtom = $tgtAtom->getContent($subinterface, false);
 				$content[$subinterface->id] = $otherAtom;
 				
 				// _sortValues_ (if subInterface is uni)
 				if($subinterface->univalent){
-					$content['_sortValues_'][$subinterface->id] = ($subinterface->tgtDataType == "Object") ? current((array)$otherAtom)['@label'] : $otherAtom;
+					$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
 				}
 				
 			}
@@ -129,7 +123,7 @@ Class Atom {
 			// determine whether value of atom must be inserted as list or as single value
 			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
-			}elseif($interface->tgtDataType == "Object"){
+			}elseif($interface->tgtConceptIsObject){
 				$arr[$content['id']] = $content;
 			}elseif($interface->univalent){
 				$arr = $content;
@@ -286,7 +280,7 @@ Class Atom {
 			}
 			
 		// Interface is a relation to an object
-		}elseif($tgtInterface->tgtDataType == "Object"){
+		}elseif($tgtInterface->tgtConceptIsObject){
 			// Replace by nothing => editDelete
 			if(empty($patch['value'])){
 				// The $tgtAtom(s) is/are not provided, so we have to get this value to perform the editDelete function
@@ -307,7 +301,7 @@ Class Atom {
 			}
 		
 		// Interface is a relation to a scalar (i.e. not an object)
-		}elseif($tgtInterface->tgtDataType != "Object"){
+		}elseif(!$tgtInterface->tgtConceptIsObject){
 			if(is_bool($patch['value'])) $patch['value'] = var_export($patch['value'], true);
 			
 			// Replace by nothing => editDelete
@@ -373,7 +367,7 @@ Class Atom {
 		
 		/* Interface is a relation to an object
 		 */
-		if($tgtInterface->tgtDataType == "Object"){
+		if($tgtInterface->tgtConceptIsObject){
 			$tgtAtom = $patch['value']['id'];
 			
 			// In case $tgtAtom is null provide error.
@@ -382,7 +376,7 @@ Class Atom {
 			$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
-		}elseif($tgtInterface->tgtDataType != "Object"){
+		}elseif(!$tgtInterface->tgtConceptIsObject){
 			$tgtAtom = $patch['value'];
 			
 			// In case $tgtAtom is null provide error.
@@ -429,7 +423,7 @@ Class Atom {
 		
 		/* Interface is a relation to an object
 		 */
-		if($tgtInterface->tgtDataType == "Object"){
+		if($tgtInterface->tgtConceptIsObject){
 		
 			$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 		
@@ -438,7 +432,7 @@ Class Atom {
 		 * 1) Interface is UNI -> not handled here, this is detected as a replace to ''
 		 * 2) Interface is not UNI -> $tgtAtom is index of array, so we have to get the corresponding value
 		 */
-		}elseif($tgtInterface->tgtDataType != "Object"){
+		}elseif(!$tgtInterface->tgtConceptIsObject){
 			try{
 				$tgtAtom = JsonPatch::get($before, $patch['path']);
 			}catch(Exception $e){

@@ -20,7 +20,7 @@ class InterfaceObject {
 	public $srcConcept;
 	public $tgtConcept;
 	public $viewId;
-	public $tgtDataType;
+	public $tgtConceptIsObject;
 	
 	public $refInterfaceId;
 	public $isLinkTo;
@@ -60,50 +60,8 @@ class InterfaceObject {
 		$this->tgtConcept = $interface['tgtConcept'];
 		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
 		
-		// Set datatype of tgtConcept
-		switch(Concept::getTypeRepresentation($this->tgtConcept)){
-			case "Alphanumeric":
-				$this->tgtDataType = "String";
-				break;
-			case "BigAlphanumeric":
-				$this->tgtDataType = "String";
-				break;
-			case "HugeAlphanumeric":
-				$this->tgtDataType = "String";
-				break;
-			case "Binary":
-				$this->tgtDataType = "File";
-				break;
-			case "BigBinary":
-				$this->tgtDataType = "File";
-				break;
-			case "HugeBinary":
-				$this->tgtDataType = "File";
-				break;
-			case "Date":
-				$this->tgtDataType = "Date";
-				break;
-			case "DateTime":
-				$this->tgtDataType = "DateTime";
-				break;
-			case "Boolean":
-				$this->tgtDataType = "Boolean";
-				break;
-			case "Password":
-				$this->tgtDataType = "String";
-				break;
-			case "Decimal":
-				$this->tgtDataType = "Float";
-				break;
-			case "Integer":
-				$this->tgtDataType = "Integer";
-				break;
-			case "Object":
-				$this->tgtDataType = "Object";
-				break;
-			default:
-				$this->tgtDataType = "Object";
-		}
+		// Determine if tgtConcept is Object (true) or Scalar (false)
+		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "Object") ? true : false;
 		
 	/* Information about subinterfaces */
 		// Set attributes
