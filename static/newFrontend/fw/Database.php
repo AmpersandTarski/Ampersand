@@ -462,10 +462,15 @@ class Database
 			case "Date" :
 				$date = new DateTime($value);
 				return $date->format('Y-m-d');
+			case "DateTime" :
+				$datetime = new DateTime($value);
+				return $data->format('Y-m-d H:i:s');
 			case "Integer" :
 				return (int) $value;
 			case "Boolean" :
 				return (bool) $value;
+			case "Decimal" :
+				return (float) $value;
 			default : 
 				return $value;
 		}
