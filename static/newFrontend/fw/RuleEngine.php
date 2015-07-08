@@ -55,7 +55,7 @@ class RuleEngine {
 		
 		// If $allInvariantConjuctsIds is provided (i.e. not null, which is something different than an empty array), check only those invariant conjuncts
 		if(!is_null($invariantConjuctsIds)) {
-			Notifications::addLog("Checking provided conjuncts");
+			Notifications::addLog("Checking provided conjuncts: " . implode(', ', $invariantConjuctsIds));
 			foreach ((array)$invariantConjuctsIds as $conjunctId){
 				$violations = RuleEngine::checkConjunct($conjunctId, $cacheConjuncts);
 				
