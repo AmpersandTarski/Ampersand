@@ -22,7 +22,7 @@ AmpersandApp.controller('ExcelImportController', function ($scope, $rootScope, F
 	}
 	
 	$rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
-		$rootScope.notifications = response.notifications;
+		$rootScope.updateNotifications(response.notifications);
         console.info('onSuccessItem', fileItem, response, status, headers);
     };
     
