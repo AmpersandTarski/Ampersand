@@ -17,22 +17,24 @@ $DB_user = 'ampersand';
 $DB_pass = 'ampersand';
 $DB_name = $dbName; // from Generics.php
 
+
+/************ LOGIN FUNCTIONALITY ***************
+ * Enable/disable built-in login functionality
+ *
+ * Requires &-INTERFACE defintion:
+ * INTERFACE "SessionRoles" : sessionUser;userRole
+ BOX [ "roleName"    : I]
+ *
+ */
+define ('LOGIN_ENABLED', false);
+
+
 /************ EXTENSIONS ***************
  *
  *	Define global variables, settings, etc using:
  *	$GLOBALS['ext']['<extension name']...
  *
  */
-
-/************ LOGIN FUNCTIONALITY ***************
- * Enable/disable built-in login functionality
- * 
- * Requires &-INTERFACE defintion:
- * INTERFACE "SessionRoles" : sessionUser;userRole
-    	BOX [ "roleName"    : I]  
- * 
- */
-define ('LOGIN_ENABLED', false);
 
 // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
