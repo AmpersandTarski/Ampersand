@@ -214,8 +214,14 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
         
      assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
-        (para.text.assrhr) assoc <>
-        purposeAndMeaningOfAssoc assoc
+         plain (  (text.assrhr) assoc
+                <>(text.l) (NL " (vanaf ",EN " (from ")
+                <>(text.assSrc) assoc
+                <>(text.l) (NL " naar ", EN " to ")
+                <>(text.assTgt) assoc
+                <>text ")."
+               ) 
+      <> purposeAndMeaningOfAssoc assoc
      {- <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
