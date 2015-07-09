@@ -221,13 +221,30 @@ data Declaration =
       } |
   Vs
       { decsgn :: Sign
-      } deriving (Prelude.Ord, Typeable)
+      } deriving (Typeable)
 
 instance Eq Declaration where
   d@Sgn{}     == d'@Sgn{}     = decnm d==decnm d' && decsgn d==decsgn d'
   d@Isn{}     == d'@Isn{}     = detyp d==detyp d'
   d@Vs{}      == d'@Vs{}      = decsgn d==decsgn d'
   _           == _            = False
+instance Ord Declaration where
+  compare a b =
+    case a of
+      Sgn{} -> case b of
+                Sgn{} -> if name a == name b 
+                         then Prelude.compare (sign a) (sign b)
+                         else Prelude.compare (name a) (name b)
+                Isn{} -> GT
+                Vs{}  -> GT
+      Isn{} -> case b of
+                Sgn{} -> LT
+                Isn{} -> Prelude.compare (sign a) (sign b)
+                Vs{}  -> GT
+      Vs{}  -> case b of 
+                Sgn{} -> LT
+                Isn{} -> LT
+                Vs{}  -> Prelude.compare (sign a) (sign b)
 instance Unique Declaration where
   showUnique d = 
     case d of
