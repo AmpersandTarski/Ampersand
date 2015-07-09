@@ -1,15 +1,22 @@
-AmpersandApp.config(function($routeProvider) {
-	$routeProvider
-		// default start page
-		.when('/ext/ExecEngine',
-			{
-				controller: 'ExecEngineController',
-				templateUrl: 'extensions/ExecEngine/ui/views/ExecEngine.html'
-			});
+// Controller for extension app in navigation bar
+AmpersandApp.controller('ExecEngineController', function ($scope, $rootScope, $route, ExecEngineRestangular) {	
+	
+	$scope.run = function (){	
+		ExecEngineRestangular.one('run').get()
+		.then(
+			function(data){ // success
+				$rootScope.updateNotifications(data.notifications);
+				
+			}, function(){ // error
+			
+			}
+		);
+	}
 });
 
-AmpersandApp.controller('ExecEngineController', function ($scope, $rootScope, Restangular) {
-	
-	$scope.role = Restangular.one('role/name/ExecEngine').get().$object;
-    
+// Restangular service for the ExecEngine
+AmpersandApp.factory('ExecEngineRestangular', function(Restangular) {
+  return Restangular.withConfig(function(RestangularConfigurer) {
+    RestangularConfigurer.setBaseUrl('extensions/ExecEngine/api');
+  });
 });
