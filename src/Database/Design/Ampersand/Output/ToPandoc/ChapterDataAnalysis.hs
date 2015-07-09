@@ -196,9 +196,8 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                             else (NL "Verplicht", EN "Mandatory")
                                            )] | attr <- clAtts cl]
                        )
-        <> let attrNames = map name (clAtts cl)
-               asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
-                       , not $ assrhr assoc `elem` attrNames ] 
+        <> let asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
+                       ] 
            in  case asscs of
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  [assoc] -> purposeAndMeaningOfAssoc assoc
