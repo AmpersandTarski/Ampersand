@@ -65,7 +65,7 @@ converse aBss = case groupWith fst [(b,[a])| (a,bs) <- aBss, b <- bs ] of
                   [] -> []
                   as -> map f as
       where f :: [(b, [a])] -> (b, [a])
-            f bas = (fst.head $ bas,concat (map snd bas))
+            f bas = (fst.head $ bas,(nub.concat.map snd) bas)
 
 commaEng :: String -> [String] -> String
 commaEng str [a,b,c] = a++", "++b++", "++str++" "++c
