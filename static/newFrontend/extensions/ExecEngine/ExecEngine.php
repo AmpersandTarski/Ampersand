@@ -1,11 +1,12 @@
 <?php
 
 // Define hooks
-$hooks['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
-$hooks['before_API_getAllNotifications_getViolations'][] = 'ExecEngine::run';
-$apps[] = array('name' => 'Execution engine', 'link' => '#/ext/ExecEngine/', 'icon' => 'glyphicon glyphicon-flash'); // activeer app extension in framework
-$apps[] = array('name' => 'Cycle ExecEngine', 'link' => '', 'ng-click' => 'getNotifications()', 'icon' => 'glyphicon glyphicon-cog'); // activeer app extension in framework
+$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
+$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngine::run';
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
+
+// Zet extension in applications menu
+$apps[] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
 
 class ExecEngine {
 	
