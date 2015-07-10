@@ -69,6 +69,8 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CRel     <$> pRelationDef  <|>
                       CCon     <$> pConceptDef   <|>
                       CRep     <$> pRepresentation <|>
+                      Cm       <$> pRoleRule     <|>
+                      Cl       <$> pRoleRelation <|>
                       CGen     <$> pGenDef       <|>
                       CIndx    <$> pIndex        <|>
                       CView    <$> pViewDef      <|>
