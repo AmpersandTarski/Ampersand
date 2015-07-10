@@ -1,5 +1,7 @@
 language: haskell
 
+sudo: false  # This is required to make use of container based infrastructure
+
 env:
   - GHCVER=7.8.3
   - GHCVER=7.10.1
