@@ -18,7 +18,7 @@ class ExecEngineApi{
 			
 			ExecEngine::run();
 			
-			$db->closeTransaction('Run completed',true,true,false);
+			$db->closeTransaction('Run completed',false,true,false);
 			
 			$result = array('notifications' => Notifications::getAll());
 			return $result;
