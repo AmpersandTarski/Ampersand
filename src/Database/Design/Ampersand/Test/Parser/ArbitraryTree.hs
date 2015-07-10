@@ -123,7 +123,7 @@ instance Arbitrary TType where
     arbitrary = elements [Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
                          , Binary, BigBinary, HugeBinary 
                          , Date, DateTime 
-                         , Boolean, Integer, Float, Object, AutoIncrement 
+                         , Boolean, Integer, Float, Object
                          , TypeOfOne
                          ]
 
@@ -141,7 +141,7 @@ instance Arbitrary P_Declaration where
                       <*> arbitrary       -- props
                       <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
                       <*> arbitrary       -- meaning
-                      <*> arbitrary        -- pairs
+                      <*> arbitrary       -- pairs
                       <*> arbitrary       -- origin
                       <*> arbitrary       -- plug
 

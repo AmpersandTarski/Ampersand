@@ -140,7 +140,6 @@ suitableAsKey st =
     Boolean          -> True
     Integer          -> True
     Float            -> False
-    AutoIncrement    -> True
     Object           -> True
     TypeOfOne      -> fatal 143 $ "ONE has no key at all. does it?"
 -----------------------------------------
@@ -468,7 +467,6 @@ tType2SqlType dom
      Boolean          -> SQLBool
      Integer          -> SQLBigInt
      Float            -> SQLFloat
-     AutoIncrement    -> SQLSerial
      Object           -> SQLVarchar 255
      TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
 

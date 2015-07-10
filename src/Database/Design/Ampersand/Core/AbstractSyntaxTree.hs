@@ -540,7 +540,6 @@ string2AtomValue dom str
      Float         -> case maybeRead str of 
                            Just r  -> Right (AAVFloat Float r)
                            Nothing -> Left $ "This is not of type "++show dom++": " ++str
-     AutoIncrement    -> Left "AutoIncrement cannot be populated in an ADL script"
      TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
      Object           -> Right (AAVString Object str) 
      

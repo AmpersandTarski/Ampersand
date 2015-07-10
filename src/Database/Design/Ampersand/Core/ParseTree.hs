@@ -75,7 +75,7 @@ data P_Context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         } deriving Show
+         } 
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
@@ -132,7 +132,7 @@ data P_Pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           }   deriving (Show)       -- for debugging purposes
+           }  
 
 instance Named P_Pattern where
  name = pt_nm
@@ -160,7 +160,7 @@ data Representation
   = Repr { reprpos  :: Origin
          , reprcpts  :: [String]  -- ^ the concepts 
          , reprdom :: TType     -- the type of the concept the atom is in
-         } deriving (Show)
+         } 
 instance Traced Representation where
  origin = reprpos
          
@@ -168,10 +168,25 @@ data TType
   = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
   | Binary | BigBinary | HugeBinary 
   | Date | DateTime 
-  | Boolean | Integer | Float | Object | AutoIncrement 
+  | Boolean | Integer | Float | Object  
   | TypeOfOne --special type for the special concept ONE.
-     deriving (Show, Eq, Ord)
-
+     deriving (Eq, Ord)
+instance Show TType where
+  show tt = case tt of
+    Alphanumeric      ->   "ALPHANUMERIC"
+    BigAlphanumeric   ->   "BIGALPHANUMERIC"
+    HugeAlphanumeric  ->   "HUGEALPHANUMERIC"   
+    Password          ->   "PASSWORD"           
+    Binary            ->   "BINARY"             
+    BigBinary         ->   "BIGBINARY"          
+    HugeBinary        ->   "HUGEBINARY"         
+    Date              ->   "DATE"               
+    DateTime          ->   "DATETIME"           
+    Boolean           ->   "BOOLEAN"            
+    Integer           ->   "INTEGER"            
+    Float             ->   "FLOAT"              
+    Object            ->   "OBJECT"             
+    TypeOfOne         ->   "TYPEOFONE"   
 data P_Declaration =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
