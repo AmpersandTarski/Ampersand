@@ -35,7 +35,7 @@ checkArgs = Args
 -- TODO: Improve the messages given here, remove all trace's
 test :: Testable prop => prop -> IO Bool
 test p = do res <- quickCheckWithResult checkArgs p
-            case trace (show res) res of
+            case res of
                 Success {} -> return True
                 _          -> return False
 
