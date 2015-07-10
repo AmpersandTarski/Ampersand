@@ -46,8 +46,8 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
             , ctx_gs     = [g | CGen g<-ces] ++ [y | CCfy y<-ces] -- The gen definitions defined in this context, outside the scope of patterns
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
-            , ctx_rrules = []  -- TODO: Allow MAINTAINS statements in the context
-            , ctx_rrels  = []  -- TODO: Allow EDITS statements in the context
+            , ctx_rrules = [x | Cm x <-ces]        -- The MAINTAINS statements in the context
+            , ctx_rrels  = [x | Cl x <-ces]        -- The EDITS statements in the context
             , ctx_reprs  = [r | CRep r<-ces] 
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
@@ -87,6 +87,8 @@ data ContextElement = CMeta Meta
                     | CRel P_Declaration
                     | CCon (String -> ConceptDef)
                     | CRep Representation
+                    | Cm P_RoleRule
+                    | Cl P_RoleRelation
                     | CGen P_Gen
                     | CIndx P_IdentDef
                     | CView P_ViewDef
