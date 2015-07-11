@@ -50,9 +50,10 @@ script:
 
 # Check that the resulting source distribution can be built & installed.
 # If there are no other `.tar.gz` files in `dist`, this can be even simpler:
-# `cabal install --force-reinstalls dist/*-*.tar.gz`
-## - SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz &&
-##   (cd dist && cabal sandbox init --sandbox=../.cabal-sandbox && cabal install -j2 --force-reinstalls "$SRC_TGZ")
+ - cabal install --force-reinstalls dist/*-*.tar.gz
+# When there are multiple .tar.gz files, it has to be done somthing like this:
+# - SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz &&
+#   (cd dist && cabal sandbox init --sandbox=../.cabal-sandbox && cabal install -j2 --force-reinstalls "$SRC_TGZ")
 
 after_script:
   - cat dist/test/*.log
