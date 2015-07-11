@@ -146,7 +146,8 @@ chpConceptualAnalysis lev fSpec = (
     nladj Trn = "transitieve"
     nladj Rfx = "reflexieve"
     nladj Irf = "irreflexieve"
-    nladj Aut = "automatisch berekende"  
+    nladj Aut = "automatisch berekende"
+    nladj Prop  = "symmetrische en antisymmetrische" 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
         = let purp = (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))

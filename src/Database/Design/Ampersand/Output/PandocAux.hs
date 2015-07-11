@@ -479,11 +479,12 @@ instance ShowMath Expression where
           showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
           showExpr (ECpl e)     = "\\cmpl{"++showExpr e++"}"
           showExpr (EBrk e)     = "("++showExpr e++")"
-          showExpr (EDcD d)     = "\\id{"++name d++"}"
-          showExpr (EDcI c)     = "I_{\\id{"++name c++"}}"
+          showExpr (EDcD d)     = "\\text{"++latexEscShw (name d)++"}"
+          showExpr (EDcI c)     = "I_{[\\text{"++latexEscShw (name c)++"}]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{\\id{"++show (source sgn)++"}\\times\\id{"++show (target sgn)++"}}"
-          showExpr (EMp1 a _)   = "'{\\tt "++a++"}'"
+          showExpr (EDcV sgn)   = "V_{[\\text{"++latexEscShw (name (source sgn))++"}"++"*"
+                                   ++"\\text{"++latexEscShw (name (target sgn))++"}]}"
+          showExpr (EMp1 a _)   = "`\\text{"++latexEscShw a++"}`"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -648,6 +649,9 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 ---------------------------
 --- LaTeX related stuff ---
 ---------------------------
+-- safe function to have plain text in a piece of Math  
+mathText :: String -> String
+mathText s = "\\text{"++latexEscShw s++"} "
 
 texOnly_Id :: String -> String
 texOnly_Id s = "\\id{"++latexEscShw s++"} "

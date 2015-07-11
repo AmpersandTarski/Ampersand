@@ -327,7 +327,7 @@ dpRule' fSpec = dpR
    l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
-     = ( ( str (name r)
+     = ( ( l (NL "Regel: ",EN "Rule: ") <> (text.latexEscShw.name) r
          , [theBlocks]
           ): dpNext
        , n'
