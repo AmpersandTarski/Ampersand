@@ -61,7 +61,7 @@ class InterfaceObject {
 		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
 		
 		// Determine if tgtConcept is Object (true) or Scalar (false)
-		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "Object") ? true : false;
+		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "OBJECT") ? true : false;
 		
 	/* Information about subinterfaces */
 		// Set attributes
