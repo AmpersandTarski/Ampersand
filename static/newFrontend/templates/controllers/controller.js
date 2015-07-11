@@ -9,6 +9,10 @@ Editable relations: [$editableRelations;separator=", "$]
 
 AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout) {
   
+  \$scope.interfaceName = "$interfaceName$";
+  \$scope.interfaceLabel = "$interfaceLabel$";
+  \$scope.resourceLabel = ''; // label of requested interface source resource
+  
   \$scope.val = {};
   \$scope.initialVal = {};
   \$scope.showSaveButton = {}; // initialize object for show/hide save button
@@ -39,6 +43,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   }else{
     srcAtom.all('$interfaceName$').getList().then(function(data){
 	  \$scope.val['$interfaceName$'] = data;
+	  \$scope.resourceLabel = \$scope.val['$interfaceName$'][0]['@label'];
     });
   }
   

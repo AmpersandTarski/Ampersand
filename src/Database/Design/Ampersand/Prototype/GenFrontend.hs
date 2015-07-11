@@ -439,6 +439,7 @@ genController_Interface fSpec interf =
                      . setAttribute "containsEditableObjects"  containsEditableObjects
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (escapeIdentifier . ifcName $ interf)
+					 . setAttribute "interfaceLabel"           (ifcName interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)

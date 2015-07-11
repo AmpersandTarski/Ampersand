@@ -5,26 +5,20 @@ AmpersandApp.config(function($routeProvider) {
 	$routeProvider
 		// default start page
 		.when('/',
-			{
-				controller: '',
-				templateUrl: 'app/views/static_home.html'
+			{	controller: ''
+			,	templateUrl: 'app/views/static_home.html'
+			,	interfaceLabel: 'Home'
 			})
 		// installer page
 		.when('/installer',
-			{
-				controller: 'static_installerController',
-				templateUrl: 'app/views/static_installer.html'
+			{	controller: 'static_installerController'
+			,	templateUrl: 'app/views/static_installer.html'
+			,	interfaceLabel: 'Installer'
 			})
 		.when('/404',
-			{
-				templateUrl: 'app/views/static_404.html'
+			{	templateUrl: 'app/views/static_404.html'
+			,	interfaceLabel: '404'
 			})
-		// here, you can add other stuff (e.g. DndTree)
-		//.when('/<interfaceId>/:resourceId?',
- 		//	{
-		//		controller: 'DndTreeController',
-		//		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
-		//	})
 		.otherwise({redirectTo: '/404'});
 });
 

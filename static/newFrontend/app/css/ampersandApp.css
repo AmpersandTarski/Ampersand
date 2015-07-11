@@ -113,7 +113,6 @@ input .ng-invalid .ng-dirty {
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
 	position			: relative; // fixed;
-	margin-bottom		: 15px;
 	// right			: 0px;
 	// z-index			: 999;
 }
@@ -142,4 +141,9 @@ input .ng-invalid .ng-dirty {
 #notificationCenter .panel .list-group-item {
 	padding-top			: 5px;
 	padding-bottom		: 5px;
+}
+
+/*********** BREADCRUMB ****************/
+#breadcrumb ol {
+	margin-bottom		: 10px;
 }
