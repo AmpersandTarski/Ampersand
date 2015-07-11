@@ -724,25 +724,19 @@ pLabelProps = (,) <$> pADLid
 pLabel :: AmpParser String
 pLabel = pADLid <* pColon
 
---- Content ::= '[' (RecordList | RecordObsList)? ']'
+--- Content ::= '[' RecordList? ']'
 pContent :: AmpParser [PAtomPair]
-pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecordObs `sepBy` pSemi)
-          --- RecordList ::= Record (',' Record)*
+pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecord `sepBy` pSemi)
+          --- RecordList ::= Record ((','|';') Record)*
           --- Record ::= String '*' String
     where pRecord :: AmpParser PAtomPair
-          pRecord = PPair <$> currPos
-                          <*> pAtomValue 
-                          <* pOperator "*" 
-                          <*> pAtomValue
-          --- RecordObsList ::= RecordObsList (';' RecordObsList)
-          --- RecordObs ::= '(' String ',' String ')'
-          pRecordObs :: AmpParser PAtomPair
-          pRecordObs = pParens (PPair <$> currPos
-                                      <*> pAtomValue
-                                      <* pComma
-                                      <*> pAtomValue
-                               )
- 
+          pRecord = 
+             pParens (PPair <$> currPos
+                            <*> pAtomValue 
+                            <* (pOperator ";" <|>  pComma)
+                            <*> pAtomValue
+                     )
+                     
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
