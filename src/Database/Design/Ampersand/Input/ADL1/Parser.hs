@@ -726,14 +726,14 @@ pLabel = pADLid <* pColon
 
 --- Content ::= '[' RecordList? ']'
 pContent :: AmpParser [PAtomPair]
-pContent = pBrackets (pRecord `sepBy1` pComma <|> pRecord `sepBy` pSemi)
+pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
           --- RecordList ::= Record ((','|';') Record)*
-          --- Record ::= String '*' String
+          --- Record ::= String ',' String
     where pRecord :: AmpParser PAtomPair
           pRecord = 
              pParens (PPair <$> currPos
                             <*> pAtomValue 
-                            <* (pOperator ";" <|>  pComma)
+                            <*  pComma
                             <*> pAtomValue
                      )
                      
