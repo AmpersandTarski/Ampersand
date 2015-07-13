@@ -1,45 +1,6 @@
 CONTEXT AST IN ENGLISH LATEX
--- The comments for this script can be found in Atoms.doc
-INCLUDE "Atoms.ifc"
 --INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
  
-PROCESS Types
-RELATION pretype[TypeTerm*Concept]
-RELATION sub[TypeTerm*TypeTerm]
-RELATION typehalf[Term*Type]
-RELATION dom[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
-ROLE ExecEngine MAINTAINS "dom is total"
-RULE "dom is total" : I |- dom;dom~
-VIOLATION (TXT "{EX} InsPair;dom;Term;", SRC I, TXT ";TypeTerm;dom(", SRC I, TXT ")")
-RELATION cod[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
-ROLE ExecEngine MAINTAINS "cod is total"
-RULE "cod is total" : I |- cod;cod~
-VIOLATION (TXT "{EX} InsPair;cod;Term;", SRC I, TXT ";TypeTerm;cod(", SRC I, TXT ")")
-RELATION popset[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
-RULE "popset is total" : I |- popset;popset~
-VIOLATION (TXT "{EX} InsPair;popset;Concept;", SRC I, TXT ";TypeTerm;popset(", SRC I, TXT ")")
-RELATION cod[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
-
-ROLE ExecEngine MAINTAINS "Delete from pretype"
-RULE "Delete from pretype" : pretype |- subs;popset~
-VIOLATION (TXT "{EX} DelPair;pretype;TypeTerm;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS "Insert into pretype"
-RULE "Insert into pretype" : subs;popset~ |- pretype
-VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", SRC I, TXT ";Concept;", TGT I)
-
-RELATION sub[TypeTerm*TypeTerm]
-MEANING "s sub g  means that each element of type-term  s  is defined to be an element of type-term  g  as well."
-RELATION subs[TypeTerm*TypeTerm]
-MEANING "s subs g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
-ROLE ExecEngine MAINTAINS subsIns
-RULE subsIns : sub;subs\/subs;sub\/I |- subs
-VIOLATION (TXT "{EX} InsPair;subs;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
-ROLE ExecEngine MAINTAINS subsDel
-RULE subsDel : subs |- sub;subs\/subs;sub\/I
-VIOLATION (TXT "{EX} DelPair;subs;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
-
-ENDPROCESS
-
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
@@ -90,18 +51,6 @@ RULE "target type" : in |- r;pop;target~
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
 VIOLATION (TXT "Atom ", SRC r;repr, TXT " has concept ", SRC (r;pop - in;target;isas);name, TXT ", which is not ", TGT target;name)
 ENDPROCESS
-
-{-
-RELATION partOf[Concept*Typology] [UNI,TOT]
-MEANING "Every concept is part of exactly one typology"
-
-RULE "typologies" : isa;partOf |- partOf
-MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
-
-RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
-MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
--}
-
 
 {-
 POPULATION isa CONTAINS [ ( "Asub_", "Agen_") ]
