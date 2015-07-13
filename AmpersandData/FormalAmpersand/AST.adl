@@ -13,9 +13,9 @@ INCLUDE "Atoms.adl"
       Reactie HJO/20150207: Dat denk ik ook. Leuk is, dat dit geen invloed heeft op de meatgrinder. Immers, die zorgt alleen maar voor de juiste populatie van Declarations. Als blijkt dat we dan overtredingen krijgen, dan gaan we dat meemaken...
 -}
 
-REPRESENT Purpose TYPE BigAlphanumeric
-REPRESENT Meaning TYPE BigAlphanumeric
-REPRESENT ConceptDefinition TYPE BigAlphanumeric
+REPRESENT Purpose TYPE BIGALPHANUMERIC
+REPRESENT Meaning TYPE BIGALPHANUMERIC
+REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 

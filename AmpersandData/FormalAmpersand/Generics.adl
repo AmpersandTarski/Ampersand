@@ -2,7 +2,7 @@ CONTEXT Generics IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
 {+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP-}
 
-REPRESENT MySQLQuery TYPE BigAlphanumeric
+REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 
 
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'

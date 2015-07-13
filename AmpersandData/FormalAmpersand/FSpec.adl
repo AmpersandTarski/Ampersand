@@ -24,7 +24,7 @@ ENDPATTERN
 
 PATTERN Misc
 CONCEPT PragmaSentence "An example sentence using the pragma of a relation declaration." 
-REPRESENT PragmaSentence TYPE BigAlphanumeric
+REPRESENT PragmaSentence TYPE BIGALPHANUMERIC
 decexample :: Declaration * PragmaSentence
 MEANING IN ENGLISH "An example sentence using the pragma of a relation."
 ENDPATTERN
