@@ -433,7 +433,15 @@ daRulesSection lev fSpec = theBlocks
             else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
                  (plain . code $ showADL (rrexp rule))
      , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
-     ]
+     , if isSignal rule
+       then mempty
+       else (para.text.l)
+              (NL $ "Overtredingen van deze regel leiden tot een foutmelding aan de gebruiker: "
+                        ++"\"TODO\"."
+              ,EN $ "Violations of this rule will result in an error message for the user: "
+                        ++"\"TODO\"."
+              )   
+     ]   
     where format = fspecFormat (getOpts fSpec) -- todo: bit hacky to use the output format here, but otherwise we need a major refactoring
   
   -- shorthand for easy localizing    
