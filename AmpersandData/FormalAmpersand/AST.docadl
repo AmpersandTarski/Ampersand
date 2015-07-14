@@ -90,8 +90,10 @@ PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
 -}
-CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation." TYPE "Text"
-CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"  TYPE "Text"
+CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
+REPRESENT ExpressionID TYPE ALPHANUMERIC
+CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
+REPRESENT Expression TYPE ALPHANUMERIC
 PURPOSE CONCEPT Expression
 {+
 Ampersand uses relation algebra to formalize phrases.
@@ -181,7 +183,8 @@ It refers the the total of all populations in relations and concepts inside that
 CONCEPT RelPopu "The content of a relation"
 CONCEPT CptPopu "The content of a concept"
 CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
-CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space." TYPE "Blob"
+CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space."
+REPRESENT Blob TYPE BIGBINARY
 CONCEPT String "A string is a pString expected to be less than 256 characters."
 --HJO20150420: Uitgezet: CONCEPT Conid "A conid is an identifier starting with an uppercase"
 --HJO20150420: Uitgezet: CONCEPT Varid "A varid is an identifier starting with a lowercase"
