@@ -3,6 +3,22 @@ CONTEXT AST IN ENGLISH LATEX
 INCLUDE "Atoms.adl"
  
 PROCESS Terms
+RELATION src[Type*Concept]
+RELATION tgt[Type*Concept]
+RELATION type[Relation*Type]
+
+ROLE ExecEngine MAINTAINS totType
+RULE totType : I[Relation] |- type;type~
+VIOLATION (TXT "{EX} NewStruct;Type" -- maak een nieuw atoom in concept Optelling
+                ,TXT ";type;Relation;", SRC I, TXT ";Type;NULL"
+          )
+ROLE ExecEngine MAINTAINS typeTgt
+RULE typeTgt : type~;target |- tgt
+VIOLATION (TXT "{EX} InsPair;tgt;Type;", SRC I, TXT ";Concept;", TGT I)
+ROLE ExecEngine MAINTAINS typeSrc
+RULE typeSrc : type~;source |- src
+VIOLATION (TXT "{EX} InsPair;src;Type;", SRC I, TXT ";Concept;", TGT I)
+
 RELATION pretype[TypeTerm*Concept]
 RELATION sub[TypeTerm*TypeTerm]
 RELATION typehalf[Term*Type]

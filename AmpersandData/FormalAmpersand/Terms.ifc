@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
 
-INTERFACE Overview (in) FOR Ampersand : '_SESSION'
+INTERFACE Overview : '_SESSION'
 TABS[ concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ name         : I[Concept]
