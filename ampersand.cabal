@@ -240,5 +240,5 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Test.TestScripts,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
                      Database.Design.Ampersand.Output.Population2Xlsx,
-                     Database.Design.Ampersand.FSpec.Graphic.ClassDiag2Dot,
-                     Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams
+                     Database.Design.Ampersand.Graphic.ClassDiag2Dot,
+                     Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
