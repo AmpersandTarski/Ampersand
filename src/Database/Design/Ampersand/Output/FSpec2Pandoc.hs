@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks, chpInterfacesPics)
+import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)
 import Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
 import Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
 import Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
@@ -100,7 +100,7 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
     fspec2Blocks DataAnalysis          = chpDataAnalysis            fSpec
     fspec2Blocks SoftwareMetrics       = (fpAnalysis                fSpec, [])
     fspec2Blocks EcaRules              = (chpECArules               fSpec, [])
-    fspec2Blocks Interfaces            = (chpInterfacesBlocks     0 fSpec, chpInterfacesPics fSpec)
+    fspec2Blocks Interfaces            = (chpInterfacesBlocks     0 fSpec, [])
     fspec2Blocks FunctionPointAnalysis = chpFunctionPointAnalysis   fSpec
     fspec2Blocks Glossary              = (chpGlossary             0 fSpec, [])
 

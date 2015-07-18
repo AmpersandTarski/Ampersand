@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces
-  ( chpInterfacesPics
-  , chpInterfacesBlocks
+  ( 
+   chpInterfacesBlocks
   )
 where
 import Data.List
@@ -13,9 +13,6 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterInterfaces"
-
-chpInterfacesPics :: FSpec -> [Picture]
-chpInterfacesPics _ = []
 
 chpInterfacesBlocks :: Int -> FSpec -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)

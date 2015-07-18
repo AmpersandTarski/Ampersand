@@ -106,6 +106,8 @@ makeFSpec opts context
                                          , not $ null viols
                                          ]
               , contextInfo = contextinfo
+              , specializationsOf = smallerConcepts (gens context)
+              , generalizationsOf = largerConcepts  (gens context)
               }
    where           
      contextinfo = contextInfoOf context

@@ -11,6 +11,7 @@ are merely different ways to show FSpec.
 module Database.Design.Ampersand.FSpec.FSpec
           ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
+          , A_Concept, Declaration, A_Gen
           , FSid(..)
 --        , InsDel(..)
           , ECArule(..)
@@ -102,7 +103,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
                    , allSigns ::     [Sign]                   -- ^ All Signs in the fSpec
-                   , contextInfo   :: ContextInfo     
+                   , contextInfo   :: ContextInfo 
+                   , specializationsOf :: A_Concept -> [A_Concept]    
+                   , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'

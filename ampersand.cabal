@@ -197,7 +197,9 @@ executable ampersand
                      Paths_ampersand,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
                      Database.Design.Ampersand.Output.Population2Xlsx,
-                     Database.Design.Ampersand.FSpec.ToFSpec.Populated
+                     Database.Design.Ampersand.FSpec.ToFSpec.Populated,
+                     Database.Design.Ampersand.FSpec.Graphic.ClassDiag2Dot,
+                     Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams
 
 
 Test-Suite ampersand-test
@@ -237,4 +239,6 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Test.RunAmpersand,
                      Database.Design.Ampersand.Test.TestScripts,
                      Database.Design.Ampersand.Input.Xslx.XLSX,
-                     Database.Design.Ampersand.Output.Population2Xlsx
+                     Database.Design.Ampersand.Output.Population2Xlsx,
+                     Database.Design.Ampersand.FSpec.Graphic.ClassDiag2Dot,
+                     Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams

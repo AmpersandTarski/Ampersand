@@ -26,7 +26,6 @@ module Database.Design.Ampersand
    , SqlFieldUsage(..)
    , DnfClause(..)
    , Options(..), DocTheme(..)
-   , Picture(..), writePicture , PictureReq(..), makePicture
    , FilePos(..), Origin(..)
    , mkPair
    -- * Classes:

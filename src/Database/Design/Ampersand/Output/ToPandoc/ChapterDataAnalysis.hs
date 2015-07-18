@@ -5,6 +5,7 @@ import Database.Design.Ampersand.ADL1 hiding (Association)
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams
 import Database.Design.Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
@@ -176,7 +177,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                   (((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl))
         <> case clcpt cl of
              Nothing -> mempty
-             Just (_, purposes)  -> purposes2Blocks (getOpts fSpec) purposes
+             Just cpt -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) cpt)
         <> (para . text . l) ( NL "Deze gegevensverzameling bevat de volgende attributen: "
                              , EN "This entity type has the following attributes: "
                              )
@@ -200,16 +201,10 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                        ] 
            in  case asscs of
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
-                 [assoc] -> purposeAndMeaningOfAssoc assoc
-                 _       ->
-                   para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
-                   <> orderedList (map assocToRow asscs) 
+                 _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
+                         <> orderedList (map assocToRow asscs) 
        )
     where
-     purposeAndMeaningOfAssoc :: Association -> Blocks
-     purposeAndMeaningOfAssoc assoc =
-        purposes2Blocks (getOpts fSpec) (asspurp assoc) <>
-        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty )
         
      assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
@@ -220,7 +215,6 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                 <>(text.assTgt) assoc
                 <>text ")."
                ) 
-      <> purposeAndMeaningOfAssoc assoc
      {- <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"

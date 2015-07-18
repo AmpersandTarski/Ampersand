@@ -3,8 +3,8 @@ module Database.Design.Ampersand.FSpec.GenerateUML (generateUML) where
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
 import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
+import Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams 
 import Database.Design.Ampersand.FSpec
-import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map
 import Control.Monad.State.Lazy  (State, gets, evalState, modify)
@@ -228,7 +228,7 @@ requirements fSpec
 -- State and Monad
 
 data UMLState = UMLState { idCounter :: Int
-                         , labelIdMap :: Map String String
+                         , labelIdMap :: Map.Map String String
                          , diagramEltIds :: [String]
                          , reqValues :: [ReqValue2]
                          }

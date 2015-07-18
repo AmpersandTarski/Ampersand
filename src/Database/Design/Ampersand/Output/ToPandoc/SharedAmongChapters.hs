@@ -12,6 +12,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Database.Design.Ampersand.Core.AbstractSyntaxTree
     , module Database.Design.Ampersand.ADL1
     , module Database.Design.Ampersand.Output.PandocAux
+    , module Database.Design.Ampersand.FSpec.Graphic.Graphics
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -54,7 +55,7 @@ import Data.Ord
 import System.Locale
 import System.FilePath
 import GHC.Exts(sortWith)
-
+import Database.Design.Ampersand.FSpec.Graphic.Graphics
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
 

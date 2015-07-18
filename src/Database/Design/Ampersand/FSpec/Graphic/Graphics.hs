@@ -9,7 +9,8 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram -- (ClassDiag,classdiagram2dot)
+import Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams
+import Database.Design.Ampersand.FSpec.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String
