@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.FSpec.Graphic.Graphics (makePicture, Picture)
+import Database.Design.Ampersand.Graphic.Graphics (makePicture, Picture)
 import Data.List
 import System.FilePath
 import Data.Maybe

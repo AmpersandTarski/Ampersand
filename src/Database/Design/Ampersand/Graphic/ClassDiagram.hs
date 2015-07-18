@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
+module Database.Design.Ampersand.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..),
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..) , MinValue(..), MaxValue(..)

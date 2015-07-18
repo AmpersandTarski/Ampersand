@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.Graphic.ClassDiag2Dot ( 
+module Database.Design.Ampersand.Graphic.ClassDiag2Dot ( 
   classdiagram2dot
 
 ) 
@@ -13,7 +13,7 @@ import Data.GraphViz.Types.Canonical hiding (attrs)
 import Data.GraphViz.Attributes.Complete as GVcomp
 import Data.GraphViz.Attributes as GVatt
 import Data.GraphViz.Attributes.HTML as Html
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
+import Database.Design.Ampersand.Graphic.ClassDiagram
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
 classdiagram2dot :: Options -> ClassDiag -> DotGraph String

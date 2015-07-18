@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams (
+module Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
 where
@@ -10,7 +10,7 @@ import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor)
 import Data.Maybe
 import Data.Either
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
+import Database.Design.Ampersand.Graphic.ClassDiagram
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec2ClassDiagrams"
@@ -197,7 +197,7 @@ tdAnalysis fSpec =
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal 200 ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlField) -> Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association
+       mkRel :: PlugSQL -> (Expression,SqlField) -> Database.Design.Ampersand.Graphic.ClassDiagram.Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
                     , assSrcPort = fldname f

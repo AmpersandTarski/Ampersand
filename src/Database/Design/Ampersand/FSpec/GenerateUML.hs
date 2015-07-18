@@ -2,8 +2,8 @@ module Database.Design.Ampersand.FSpec.GenerateUML (generateUML) where
 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram
-import Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams 
+import Database.Design.Ampersand.Graphic.ClassDiagram
+import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams 
 import Database.Design.Ampersand.FSpec
 import Data.List
 import qualified Data.Map as Map

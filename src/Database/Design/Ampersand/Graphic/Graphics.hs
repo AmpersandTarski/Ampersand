@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.Graphic.Graphics
+module Database.Design.Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
@@ -9,8 +9,8 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiag2Dot
+import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
+import Database.Design.Ampersand.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String

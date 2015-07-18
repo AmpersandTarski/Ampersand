@@ -4,8 +4,8 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAna
 import Database.Design.Ampersand.ADL1 hiding (Association)
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Database.Design.Ampersand.FSpec.Crud
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
-import Database.Design.Ampersand.FSpec.Graphic.Fspec2ClassDiagrams
+import Database.Design.Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
 import Database.Design.Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
@@ -206,7 +206,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
        )
     where
         
-     assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow :: Database.Design.Ampersand.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
          plain (  (text.assrhr) assoc
                 <>(text.l) (NL " (vanaf ",EN " (from ")

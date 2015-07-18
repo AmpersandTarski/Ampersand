@@ -14,7 +14,7 @@ import Text.Pandoc.Builder
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.FSpec.GenerateUML
-import Database.Design.Ampersand.FSpec.Graphic.Graphics (writePicture)
+import Database.Design.Ampersand.Graphic.Graphics (writePicture)
 import Database.Design.Ampersand.Output
 import Control.Monad
 import System.FilePath
