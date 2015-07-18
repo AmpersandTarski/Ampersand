@@ -26,7 +26,6 @@ module Database.Design.Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlTType(..)
           , SqlFieldUsage(..)
-          , getGeneralizations, getSpecializations
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue,showVal
@@ -344,24 +343,8 @@ data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-ty
              | SQLBigInt
              | SQLSerial   -- SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
              
---HJO, 20150501: below are the types that used to be there. (may be removed in near future)
---             SQLBlob              -- cannot compare, but can show (as a file)
---             | SQLPass              -- password, encrypted: cannot show, but can compare
---             | SQLSingle
---             | SQLDouble
---             | SQLText              -- cannot compare, but can show (as a text)
---             | SQLuInt    Int
---             | SQLsInt    Int
---             | SQLId                -- autoincrement integer
---             | SQLVarchar Int
---             | SQLBool              -- exists y/n
              deriving (Eq,Show)
 
-getGeneralizations :: FSpec -> A_Concept -> [A_Concept]
-getGeneralizations fSpec = largerConcepts (vgens fSpec)
-
-getSpecializations :: FSpec -> A_Concept -> [A_Concept]
-getSpecializations fSpec = smallerConcepts (vgens fSpec)
 
 -- Lookup view by id in fSpec.
 lookupView :: FSpec -> String -> ViewDef
