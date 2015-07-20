@@ -11,7 +11,7 @@ html {
 #main {
 	display				: block;
 	margin				: 0 auto 60px; /* Margin bottom by footer height */
-  	padding				: 100px 15px 0px 15px;
+  	padding				: 95px 15px 0px 15px;
 	min-height			: 100%;
 }
 
@@ -113,6 +113,7 @@ input .ng-invalid .ng-dirty {
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
 	position			: relative; // fixed;
+	margin-bottom		: 10px;
 	// right			: 0px;
 	// z-index			: 999;
 }
