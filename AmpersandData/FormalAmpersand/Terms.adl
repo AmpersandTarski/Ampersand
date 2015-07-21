@@ -1,18 +1,6 @@
-CONTEXT AST IN ENGLISH LATEX
+﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Atoms.adl"
-
-INTERFACE Overview : '_SESSION';V[SESSION*Concept]
-      BOX<SCOLS>
-           [ name         : I[Concept]
-           , atoms        : pop~
-           , "isa"        : isa
-           , "isa*"       : isas
-           , "isa~"       : isa~
-           , "isa*~"      : isas~
-           , "type-term"  : popset
-           , term         : id;repr
-           ]
 
 PROCESS Terms
 RELATION src[Type*Concept]

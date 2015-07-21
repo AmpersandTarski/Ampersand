@@ -5,21 +5,22 @@ INTERFACE Overview FOR Ampersand : '_SESSION'
 TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
+           , type : pop - pop;(isas-I)
            , pop  : pop
            ]
     , concepts :V[SESSION*Concept]
       BOX<SCOLS>
-           [ name             : I
-           , spec             : isa~
-           , specializations  : isas~
-           , gener            : isa
-           , generalizations  : isas
-           , atoms            : pop~
+           [ name    : I
+           , "isa"   : isa
+           , "isa+"  : isas
+           , "isa~"  : isa~
+           , "isa+~" : isas~
+           , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
       BOX<SCOLS>
-           [ pair           : I
-           , "relation(s)"  : in
+           [ pair          : I
+           , "relation(s)" : in
            ]
     , relations : V[SESSION*Relation]
       BOX<SCOLS>
@@ -27,15 +28,14 @@ TABS[ atoms : V[SESSION*Atom]
            , source  : source
            , target  : target
            ]
-    , garbage : V[SESSION*Atom];((I - l~;in;source;pop~) - r~;in;target;pop~)
+    , garbage : V[SESSION*Atom];(I - pop;pop~)
       COLS [ repr : repr
-           , pop  : pop
            ]
     ]
 
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
-INTERFACE Atom(repr,pop) FOR Ampersand : I[Atom]
+INTERFACE Atom(repr) FOR Ampersand : I[Atom]
 ROWS [ repr : repr
      , pop  : pop
      ]

@@ -1,11 +1,12 @@
-CONTEXT AST IN ENGLISH LATEX
+﻿CONTEXT AST IN ENGLISH LATEX
 --INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
- 
+--INCLUDE "Atoms.xlsx"
+
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 
-RELATION pop[Atom*Concept] [TOT] 
+RELATION pop[Atom*Concept]
 MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
 RELATION name[Concept*TEXT] [UNI,TOT]
@@ -30,10 +31,24 @@ ROLE ExecEngine MAINTAINS isasDel
 RULE isasDel : isas |- isa;isas\/isas;isa\/I
 VIOLATION (TXT "{EX} DelPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
 
-ROLE ExecEngine MAINTAINS "Add atoms in generalization concepts"
-RULE "Add atoms in generalization concepts" : pop;isas |- pop
-MEANING "An atom that is an instance of a specialization of c is an instance of c as well."
-VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+{-
+RELATION isa[Concept*Concept] [IRF,ASY]
+MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+RELATION isas[Concept*Concept]
+MEANING "the transitive closure isa+ ."
+RELATION isasCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+RULE "Compute transitive closure of isa" : isas = isasCopy
+VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isasCopy;isas")
+
+boxIPO :: Box * Box [UNI,IRF,ASY]
+MEANING "A Box can be a part of (max 1) other Box"
+boxIPOStar :: Box*Box -- transitive closure of boxIPO
+boxIPOCopy :: Box*Box -- copied value of 'boxIPO' allows for detecting modifcation events
+ROLE ExecEngine MAINTAINS "Compute transitive closure of boxIPO"
+RULE "Compute transitive closure of boxIPO": boxIPO = boxIPOCopy
+VIOLATION (TXT "{EX} TransitiveClosure;boxIPO;Box;boxIPOCopy;boxIPOStar")
+-}
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
@@ -43,6 +58,17 @@ RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
+ROLE ExecEngine MAINTAINS insPop, delPop
+RULE insPop : l~;in;source;isas \/ r~;in;target;isas |- pop
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RULE delPop : pop |- l~;in;source;isas \/ r~;in;target;isas
+VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+
+{- Are the following rules derivable?
+RULE "Add atoms in generalization concepts" : pop;isas |- pop
+MEANING "An atom that is an instance of a specialization of c is an instance of c as well."
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+
 RULE "source type" : in |- l;pop;source~
 MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
 VIOLATION (TXT "Atom ", SRC l;repr, TXT " has concept ", SRC (l;pop - in;source;isas);name, TXT ", which is not ", TGT source;name)
@@ -50,6 +76,7 @@ VIOLATION (TXT "Atom ", SRC l;repr, TXT " has concept ", SRC (l;pop - in;source;
 RULE "target type" : in |- r;pop;target~
 MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
 VIOLATION (TXT "Atom ", SRC r;repr, TXT " has concept ", SRC (r;pop - in;target;isas);name, TXT ", which is not ", TGT target;name)
+-}
 ENDPROCESS
 
 {-

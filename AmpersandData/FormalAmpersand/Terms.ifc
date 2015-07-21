@@ -7,9 +7,9 @@ TABS[ concepts :V[SESSION*Concept]
            [ name         : I[Concept]
            , atoms        : pop~
            , "isa"        : isa
-           , "isa*"       : isas
+           , "isa+"       : isas
            , "isa~"       : isa~
-           , "isa*~"      : isas~
+           , "isa+~"      : isas~
            , "type-term"  : popset
            , term         : id;repr
            ]
@@ -48,17 +48,15 @@ TABS[ concepts :V[SESSION*Concept]
            [ relation   : I[Relation]
            , "pair(s)"  : in~
            ]
-    , garbage : V[SESSION*Atom];((I - l~;in;source;pop~) - r~;in;target;pop~)
+    , garbage : V[SESSION*Atom];(I - pop;pop~)
       COLS [ repr : repr
-           , pop  : pop
            ]
     ]
 
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
-INTERFACE Atom(repr[Atom*TEXT],pop) FOR Ampersand : I[Atom]
+INTERFACE Atom(repr[Atom*TEXT]) FOR Ampersand : I[Atom]
 ROWS [ repr : repr
-     , pop  : pop
      ]
 
 VIEW Concept : Concept(name)
