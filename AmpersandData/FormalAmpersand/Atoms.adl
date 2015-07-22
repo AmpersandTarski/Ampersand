@@ -20,19 +20,6 @@ RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
 MEANING "An Atom is identifiable by its representation and its concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-{-
-RELATION isa[Concept*Concept]
-MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
-RELATION isas[Concept*Concept]
-MEANING "s isas g  means that each element of concept  s  is defined or inferred to be an element of concept  g."
-ROLE ExecEngine MAINTAINS isasIns
-RULE isasIns : isa;isas\/isas;isa\/I |- isas
-VIOLATION (TXT "{EX} InsPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS isasDel
-RULE isasDel : isas |- isa;isas\/isas;isa\/I
-VIOLATION (TXT "{EX} DelPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
--}
-
 RELATION isa[Concept*Concept] [IRF,ASY]
 MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
 RELATION isas[Concept*Concept]
@@ -51,51 +38,10 @@ RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
 ROLE ExecEngine MAINTAINS insPop, delPop
-RULE insPop : l~;in;source;isas \/ r~;in;target;isas |- pop
+RULE insPop : l~;in;source;(isas\/I) \/ r~;in;target;(isas\/I) |- pop
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-RULE delPop : pop |- l~;in;source;isas \/ r~;in;target;isas
+RULE delPop : pop |- l~;in;source;(isas\/I) \/ r~;in;target;(isas\/I)
 VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
-{- Are the following rules derivable?
-RULE "Add atoms in generalization concepts" : pop;isas |- pop
-MEANING "An atom that is an instance of a specialization of c is an instance of c as well."
-VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-
-RULE "source type" : in |- l;pop;source~
-MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
-VIOLATION (TXT "Atom ", SRC l;repr, TXT " has concept ", SRC (l;pop - in;source;isas);name, TXT ", which is not ", TGT source;name)
-
-RULE "target type" : in |- r;pop;target~
-MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
-VIOLATION (TXT "Atom ", SRC r;repr, TXT " has concept ", SRC (r;pop - in;target;isas);name, TXT ", which is not ", TGT target;name)
--}
 ENDPROCESS
-
-{-
-POPULATION isa CONTAINS [ ( "Asub_", "Agen_") ]
-POPULATION isa CONTAINS [ ( "Bsub_", "Bgen_") ]
-
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
-
-POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
-POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
-POPULATION partOf CONTAINS [ ( "Bsub_", "Btypo_") ]
-POPULATION partOf CONTAINS [ ( "Bgen_", "Btypo_") ]
-
-POPULATION pop CONTAINS [ ( "A1_", "Agen_" ) ]
-POPULATION pop CONTAINS [ ( "B1_", "Bgen_" ) ]
-POPULATION pop CONTAINS [ ( "A1sub_", "Asub_" ) ]
-POPULATION pop CONTAINS [ ( "B1sub_", "Bsub_" ) ]
-POPULATION pop CONTAINS [ ( "A1sub_", "Agen_" ) ]
-POPULATION pop CONTAINS [ ( "B1sub_", "Bgen_" ) ]
-
-POPULATION repr CONTAINS [ ( "A1_", "A1" ) ]
-POPULATION repr CONTAINS [ ( "B1_", "B1" ) ]
-POPULATION repr CONTAINS [ ( "A1sub_", "A1sub" ) ]
-POPULATION repr CONTAINS [ ( "B1sub_", "B1sub" ) ]
--}
-
 ENDCONTEXT
