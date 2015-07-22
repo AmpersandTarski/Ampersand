@@ -1,5 +1,6 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Atoms.adl"
+INCLUDE "Atoms.xslx"
 
 INTERFACE Overview FOR Ampersand : '_SESSION'
 TABS[ atoms : V[SESSION*Atom]

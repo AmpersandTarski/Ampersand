@@ -20,6 +20,7 @@ RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
 MEANING "An Atom is identifiable by its representation and its concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
+{-
 RELATION isa[Concept*Concept]
 MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
 RELATION isas[Concept*Concept]
@@ -30,25 +31,16 @@ VIOLATION (TXT "{EX} InsPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS isasDel
 RULE isasDel : isas |- isa;isas\/isas;isa\/I
 VIOLATION (TXT "{EX} DelPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
+-}
 
-{-
 RELATION isa[Concept*Concept] [IRF,ASY]
 MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
 RELATION isas[Concept*Concept]
 MEANING "the transitive closure isa+ ."
-RELATION isasCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
 ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
-RULE "Compute transitive closure of isa" : isas = isasCopy
-VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isasCopy;isas")
-
-boxIPO :: Box * Box [UNI,IRF,ASY]
-MEANING "A Box can be a part of (max 1) other Box"
-boxIPOStar :: Box*Box -- transitive closure of boxIPO
-boxIPOCopy :: Box*Box -- copied value of 'boxIPO' allows for detecting modifcation events
-ROLE ExecEngine MAINTAINS "Compute transitive closure of boxIPO"
-RULE "Compute transitive closure of boxIPO": boxIPO = boxIPOCopy
-VIOLATION (TXT "{EX} TransitiveClosure;boxIPO;Box;boxIPOCopy;boxIPOStar")
--}
+RULE "Compute transitive closure of isa" : isa = isaCopy
+VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isas")
 
 RELATION name[Relation*TEXT] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
