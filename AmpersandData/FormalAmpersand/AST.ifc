@@ -2,10 +2,10 @@ CONTEXT "AST Interface" IN ENGLISH
 
 INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Context : V[SESSION*Context]
-    COLS ["Name" : name
+    COLS ["Name" : name[Context*TEXT]
          ]
     , "Patterns" : V[SESSION*Pattern]
-    COLS [ Pattern : name
+    COLS [ Pattern : name[Pattern*TEXT]
          , Purpose : purpose
          , Rules : rules
          , Declarations : declarations
@@ -64,7 +64,7 @@ TABS[ Atoms : V[SESSION*Atom]
 
           
 INTERFACE Pattern FOR Ampersand : I[Pattern]
-BOX [ Pattern : name
+BOX [ Pattern : name[Pattern*TEXT]
     ]
 
 

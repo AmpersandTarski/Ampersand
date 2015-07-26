@@ -19,7 +19,7 @@ REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-IDENT Context: Context(name)  
+IDENT Context: Context(name[Context*TEXT])  
 --CLASSIFY ContextName ISA Conid
 RELATION name[Context*TEXT] [UNI,TOT,INJ]
 MEANING "The name of a context."
@@ -35,7 +35,7 @@ ENDPATTERN
 
 PATTERN Patterns
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-IDENT Pattern: Pattern(name)
+IDENT Pattern: Pattern(name[Pattern*TEXT])
 
 --CLASSIFY PatternName ISA Conid
 
