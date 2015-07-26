@@ -14,10 +14,42 @@ Ampersand uses the word ``atom''\footnote{%
 The word ``atom'' suggests indivisibility.
 Indeed, Ampersand does not impose any internal structure to atoms, but only uses equality on atoms.} to refer to things\footnote{%
 The Oxford Dictionary uses the word 'entity' to refer to tangible things (e.g. a chair) and well as intangible things (e.g. an idea, or a number) that exist in the real world.
-However, the word ``entity'' is used by contemporary database engineers in a specific meaning.}.
+However, the word ``entity'' is used by contemporary database engineers in a specific meaning.
+For this reason, Ampersand does not use the word ``entity''.}.
 Atoms can refer to things that exist in the real world and have a representation in an information system.
 -}
 CONCEPT Atom "An atom is a representation of some real-world thing that exists in a context."
+
+PURPOSE CONCEPT Concept
+{+Classification of things is a well known feature of natural language, since the days of Carl von Linn\'e (Carolus Linnaeus) in the eighteenth century.
+By saying: ``This thing is a tree'', or ``Peter is a person'', we are classifying concrete things (like ``this thing'' or ``Peter'').
+We will call ``tree'' and ``person'' in these examples a {\em concept}.
+In a world full of things, we use the word ``concept'' to name and characterize a set of things that are similar.
+By convention, we will write concepts starting with a capital letter, to distinguish concepts from relations visually.
+For example, we can use the concept ``Table'' to denote the set of tables in a context.
+When asked: which tables are there, we can point at all available tables and conclude that each one is an instance of ``Table''.
+Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 101.
+Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things.
+(Ask yourself ``Which joys are there?'' or ``Which peaces are there?'' when you doubt whether joy and peace are things to collect in a set.)
+-}
+CONCEPT Concept "A concept is a name to characterize a set of similar things."
+
+PURPOSE CONCEPT Relation
+{+
+In order to define a domain language, which business stakeholders can agree on, Ampersand uses relations as the basic building block of that language.
+Relations are equally useful as the basic element of a formal language, which computers can understand.
+For now, relations can be treated as a set of pairs.
+-}
+CONCEPT Relation "A relation is a set of pairs."
+
+PURPOSE CONCEPT Pair
+{+
+In order to populate relations, atoms are assembled in pairs.
+In fact, a relation may be regarded as a set of pairs of atoms.
+In an information system, the population of relations can change because of edit actions by users in user interfaces.
+This means that pairs are inserted into and deleted from relations as time goes by.
+-}
+CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."
 
 PURPOSE RELATION repr
 {+
@@ -43,23 +75,46 @@ In the current version of Ampersand, every atom is represented by a finite list 
 In future versions, other types of representation will become possible.
 -}
 
-CONCEPT Concept "A concept is a name to characterize a set of similar things."
-PURPOSE CONCEPT Concept
-{+Classification of things is a well known feature of natural language, since the days of Carl von Linn\'e (Carolus Linnaeus) in the eighteenth century.
-By saying: ``This thing is a tree'', or ``Peter is a person'', we are classifying concrete things (like ``this thing'' or ``Peter'').
-We will call ``tree'' and ``person'' in these examples a {\em concept}.
-In a world full of things, we use the word ``concept'' to name and characterize a set of things that are similar.
-We use the concept ``Table'' to denote the set of tables in a context.
-When asked: which tables are there, we can point at all available tables and conclude that each one is an instance of ``Table''.
-Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 101.
-Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things.
-(Ask: Which joys are there? Which peaces are there?).
+PURPOSE RELATION name[Relation*TEXT]
+{+Each relation has a name, provided by the Ampersand-programmer.
+This name has no meaning in the language.
+Therefore, the Ampersand-programmer can invent a name that can serve as a reminder of the meaning or purpose of that relation.
+For example, a relation that links a bank's customers to account numbers might be called ``customerAccount'' for this very reason.
+Ampersand has the convention that relation names start with a lowercase letter.
+-}
+PURPOSE RELATION source[Relation*Concept]
+{+Every relation has a source concept. Let us call it $A$.
+Each atom in the left hand side of a pair in that relation, is said to be of type $A$.
+-}
+PURPOSE RELATION target[Relation*Concept]
+{+Every relation has a target concept. Let us call it $A$.
+Each atom in the right hand side of a pair in that relation, is said to be of type $A$.
+-}
+
+PURPOSE RELATION in[Pair*Relation]
+{+The pair that is stored in a relation, is linked to it by means of in.
+-}
+PURPOSE RELATION l[Pair*Atom]
+{+The atom on the left hand side of a pair is linked to that pair via the relation l.
+-}
+PURPOSE RELATION r[Pair*Atom]
+{+The atom on the right hand side of a pair is linked to that pair via the relation r.
 -}
 
 PURPOSE RELATION pop
 {+In order to talk about (perceptions of) real world entities that share (perceived) similar properties, or in order to specify rules, it must be possible to classify Atoms.
 We use the term 'Concept' to refer to a class of Atoms.
 We say that 'an Atom is in the population of some Concept' or alternatively 'an Atom is an element of some Concept' iff the Atom belongs to (or: is an instance of) that class.
+-}
+
+PURPOSE RULE "Identifiability of concepts"
+{+In order to identify and distinguish concepts, they have a name.
+Throughout the context, this name refers to that particular concept, so there cannot be two distinct concepts with the same name within a context.
+-}
+PURPOSE RULE "Identifiability of atoms"
+{+In order to identify and distinguish atoms, each one has its own representation.
+Within the same typology, it refers to that particular atom.
+There cannot be two distinct atoms with the same representation within one typology.
 -}
 
 PURPOSE RULE "equality on Atoms"
@@ -72,41 +127,17 @@ Under that condition, equality on atoms may be implemented on runtime by compari
 Needless to say that this property must be proven in Ampersand's type system.
 -}
 PURPOSE RELATION isa[Concept*Concept]
-{+Specialization is required to facilitate Ampersand-programmers in re-using code.
-Ampersand defines specialization to allow for static type checking.
-This has an odd consequence.
-Suppose we have
-
-\begin{verbatim}
-CLASSIFY Lemon ISA Citrus
-CLASSIFY Orange ISA Citrus
-\end{verbatim}
-
-Suppose we have an interface with two editable fields: one expecting a Lemon and the other expecting an Orange.
-Now let's do the following exercise: fill in \verb#l1# in the field that expects a lemon and fill in the same atom in the field that expects an orange.
-The definition of equality now says that the Orange \verb#l1# and the Lemon \verb#l1# are the same atom.
-Adding the following rule to the Ampersand script will prevent that:
-
-\begin{verbatim}
-RULE -(I[Orange] /\ I[Lemon]) 
-\end{verbatim}
-
-The behaviour of specialization is characterized by a rule that says that something specific (e.g. a person) has all the properties of the generic thing from which it is a specialization (e.g. a mammal).
-The natural language logic, that states that every person is a mammal is thus reflected in Ampersand.
+{+Specialization is required for the purpose of code re-use.
+Ampersand defines specialization so that type checking can be performed statically.
+-}
+PURPOSE RELATION isas[Concept*Concept]
+{+The relation $\id{isas}$ is defined as the transitive closure of $\id{isa}$.
 -}
 
 RELATION eq[Atom*Atom]
 RULE "equality on Atoms" : eq = repr;repr~ /\ pop;(isa\/isa~)*;pop~
 MEANING "Two atoms are equal if their representations are equal and they share the same concept."
 
-PURPOSE CONCEPT Pair
-{+
-In order to populate relations, atoms are assembled in pairs.
-In fact, a relation may be regarded as a set of pairs of atoms.
-In an information system, the population of relations can change because of edit actions by users in user interfaces.
-This means that pairs are inserted into and deleted from relations as time goes by.
--}
-CONCEPT Pair "A pair is something that contains two atoms."
 -- The following are derivable relations
 
 PURPOSE CONCEPT Typology
