@@ -1,11 +1,17 @@
 CONTEXT AST IN ENGLISH LATEX
 INCLUDE "Atoms.adl"
 
+-- RJ: Ik maak duidelijk onderscheid tussen een 'representation' (bijv. een foto van een tomaat) 
+--     en een 'reference' (een verwijzing naar de tomaat). Een representation is wel een 
+--     reference, maar omgekeerd geldt dat niet. Ik heb een 2c-bijdrage gedaan in twee van de 
+--     hiernavolgnede beschrijvingen.
+
 PURPOSE PROCESS "Atoms"
 {+Here is a problem: Since an information system cannot store tomatoes, it must work with representations of tomatoes.
 In fact, representations are the only things an information system can work with.
-In order to unleash the available logical power of relational algebra to its maximum, Ampersand is restricted to {\em representable} relation algebras.
-In this section, we describe the behaviour of atoms in relation to their representation,
+In order to unleash the available logical power of relational algebra to its maximum, 
+Ampersand is restricted to {\em representable} relation algebras.
+In this section, we describe such representations in terms of references to things that exist (atoms) and relations between such references.
 -}
 
 PURPOSE CONCEPT Atom
@@ -13,12 +19,16 @@ PURPOSE CONCEPT Atom
 Ampersand uses the word ``atom''\footnote{%
 The word ``atom'' suggests indivisibility.
 Indeed, Ampersand does not impose any internal structure to atoms, but only uses equality on atoms.} to refer to things\footnote{%
-The Oxford Dictionary uses the word 'entity' to refer to tangible things (e.g. a chair) and well as intangible things (e.g. an idea, or a number) that exist in the real world.
+The Oxford English Dictionary allows the word 'entity' to refer to tangible things (e.g. a chair) and well as intangible things (e.g. an idea, or a number) that exist in the real world.
 However, the word ``entity'' is used by contemporary database engineers in a specific meaning.
 For this reason, Ampersand does not use the word ``entity''.}.
-Atoms can refer to things that exist in the real world and have a representation in an information system.
+An atom is a reference to
+\start{enumrate}
+\item some thing that (the information system 'knows' to) exist in the real world and 
+\item a representation (perception) of that thing in the information system that the atom belongs to.
+\end{enumrate}
 -}
-CONCEPT Atom "An atom is a representation of some real-world thing that exists in a context."
+CONCEPT Atom "An atom represents a real-world thing in an information system context."
 
 PURPOSE CONCEPT Concept
 {+Classification of things is a well known feature of natural language, since the days of Carl von Linn\'e (Carolus Linnaeus) in the eighteenth century.
