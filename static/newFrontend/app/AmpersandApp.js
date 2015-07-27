@@ -51,6 +51,13 @@ AmpersandApp.run(function(Restangular, $rootScope){
 		return params;
 	});
 	
+	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
+		if ($.isEmptyObject(data)){
+			$rootScope.notifications.errors.push( {'message' : 'Nothing here...'} );
+		}
+		return data;
+	});
+	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	
     	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
