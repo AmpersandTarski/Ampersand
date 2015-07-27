@@ -121,7 +121,7 @@ Class Atom {
 			}
 			
 			// determine whether value of atom must be inserted as list or as single value
-			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
 			}elseif($interface->tgtConceptIsObject){
 				$arr[$content['id']] = $content;
