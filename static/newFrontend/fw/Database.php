@@ -459,17 +459,17 @@ class Database
 	 */
 	public function typeConversion($value, $concept){
 		switch(Concept::getTypeRepresentation($concept)){
-			case "Date" :
+			case "DATE" :
 				$date = new DateTime($value);
 				return $date->format('Y-m-d');
-			case "DateTime" :
+			case "DATETIME" :
 				$datetime = new DateTime($value);
 				return $data->format('Y-m-d H:i:s');
-			case "Integer" :
+			case "INTEGER" :
 				return (int) $value;
-			case "Boolean" :
+			case "BOOLEAN" :
 				return (bool) $value;
-			case "Decimal" :
+			case "DECIMAL" :
 				return (float) $value;
 			default : 
 				return $value;

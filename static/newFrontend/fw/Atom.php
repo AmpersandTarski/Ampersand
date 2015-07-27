@@ -104,7 +104,7 @@ Class Atom {
 				
 			}else{ // Representation of tgtconcept of interface is scalar (i.e. not object)
 				
-				$content = $this->database->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
+				$content = $this->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
 			}
 			
 			// subinterfaces
@@ -552,6 +552,29 @@ Class Atom {
 			}
 			return $viewStrs;
 		}
+	}
+	
+	/*
+	 * Conversion to PHP/JSON types
+	 */
+	public function typeConversion($value, $concept){
+		switch(Concept::getTypeRepresentation($concept)){
+			case "DATE" :
+				$date = new DateTime($value);
+				return $date->format('Y-m-d');
+			case "DATETIME" :
+				$datetime = new DateTime($value);
+				return $data->format('Y-m-d H:i:s');
+			case "INTEGER" :
+				return (int) $value;
+			case "BOOLEAN" :
+				return (bool) $value;
+			case "DECIMAL" :
+				return (float) $value;
+			default :
+				return $value;
+		}
+	
 	}
 }
 
