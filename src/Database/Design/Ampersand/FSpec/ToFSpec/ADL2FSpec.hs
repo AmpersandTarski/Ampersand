@@ -445,7 +445,6 @@ makeFSpec opts context
                       , actPurp   = [Expl { explPos = OriginUnknown
                                           , explObj = ExplRule (name rul)
                                           , explMarkup = A_Markup { amLang   = Dutch
-                                                                  , amFormat = ReST
                                                                   , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
                                                                   }
                                           , explUserdefd = False
@@ -454,7 +453,6 @@ makeFSpec opts context
                                     ,Expl { explPos = OriginUnknown
                                           , explObj = ExplRule (name rul)
                                           , explMarkup = A_Markup { amLang   = English
-                                                                  , amFormat = ReST
                                                                   , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
                                                                   }
                                           , explUserdefd = False

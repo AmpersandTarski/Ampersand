@@ -135,7 +135,6 @@ data A_RoleRule = A_RoleRule { arRoles :: [Role]
                              } deriving (Show)
 data A_Markup =
     A_Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
-             , amFormat :: PandocFormat -- Idem: no Maybe in the A-structure.
              , amPandoc :: [Block]
              } deriving (Show, Eq, Prelude.Ord)
 
@@ -266,23 +265,12 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
                   Sgn{} -> name decl++showSign (sign decl)
                   Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
                   Vs{}  -> "V"++show (decsgn decl) )
--- was:
---  = showString (unwords (["RELATION",decnm decl,show (decsgn decl),show (decprps_calc decl)
---                         ,"PRAGMA",show (decprL decl),show (decprM decl),show (decprR decl)]
---                          ++concatMap showMeaning (ameaMrk (decMean decl))
---               )        )
---         where
---            showMeaning m = "MEANING"
---                           : ["IN", show (amLang m)]
---                          ++ [show (amFormat m)]
---                          ++ ["{+",aMarkup2String m,"-}"]
---                          -- then [] else ["MEANING",show (decMean decl)] ))
 
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
 
-aMarkup2String :: A_Markup -> String
-aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
+aMarkup2String :: PandocFormat -> A_Markup -> String
+aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
 
 data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord)
 

@@ -494,7 +494,6 @@ instance ShowHS A_Markup where
  showHS _ indent m
    = intercalate indent
      ["A_Markup{ amLang   = "++ show (amLang m)
-     ,"        , amFormat = "++ show (amFormat m)
      ,"        , amPandoc = "++ show (amPandoc m)
      ,"        }"
      ]

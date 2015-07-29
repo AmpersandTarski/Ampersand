@@ -386,10 +386,10 @@ generateRules fSpec =
          , let rExpr=rrexp rule
          ]
     ) )
- where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
+ where showMeaning rule = maybe "" (aMarkup2String ReST) (meaning (fsLang fSpec) rule)
        showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                             []    -> ""
-                            markup:_ -> aMarkup2String markup
+                            markup:_ -> aMarkup2String ReST markup
 
        genMPairView Nothing                  = []
        genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs

@@ -334,9 +334,9 @@ instance GenericPopulations Rule where
       , Pop "origin"  "Rule" "Origin"
              [(uri rul,(show.origin) rul)]
       , Pop "meaning"  "Rule" "Meaning"
-             [(uri rul,aMarkup2String m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+             [(uri rul,aMarkup2String ReST m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "message"  "Rule" "Message"
-             [(uri rul,aMarkup2String m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+             [(uri rul,aMarkup2String ReST m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
       , Pop "srcConcept"  "Rule" "Concept"
              [(uri rul,(uri.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"

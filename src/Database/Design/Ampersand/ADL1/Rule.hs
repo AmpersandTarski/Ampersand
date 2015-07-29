@@ -81,7 +81,7 @@ rulefromProp prp d@Sgn{} =
                      Irf-> r .|-. ECpl (EDcI (source r))
                      Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                      Prop -> fatal 78 "Prop should have been converted by the parser"
-        explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
+        explain isPositive prop = [ A_Markup English (string2Blocks ReST (
                               case prop of
                                 Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
                                 Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
@@ -95,7 +95,7 @@ rulefromProp prp d@Sgn{} =
                                 Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                                 Prop -> fatal 90 "Prop should have been converted by the parser"
                                 ))
-                       ,   A_Markup Dutch ReST (string2Blocks ReST (
+                       ,   A_Markup Dutch (string2Blocks ReST (
                               case prop of
                                 Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."
                                 Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."

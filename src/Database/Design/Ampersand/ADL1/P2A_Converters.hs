@@ -799,7 +799,6 @@ pMarkup2aMarkup defLanguage defFormat
              , mString = str
              }
  = A_Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
-            , amFormat = fmt
             , amPandoc = string2Blocks fmt str
             }
      where

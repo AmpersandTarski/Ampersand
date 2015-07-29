@@ -439,15 +439,13 @@ purposes2Blocks opts ps
                     _                                  -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
- = case eqCl f es of
+ = case eqCl amLang es of
     []   -> Nothing
     [cl] -> Just A_Markup { amLang   = amLang (head cl)
-                          , amFormat = amFormat (head cl)
                           , amPandoc = concatMap amPandoc es
                           }
     cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
-                      intercalate "\n   " [(show.f.head) cl | cl<-cls])
-   where f e = (amLang e, amFormat e)
+                      intercalate "\n   " [(show.amLang.head) cl | cl<-cls])
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]

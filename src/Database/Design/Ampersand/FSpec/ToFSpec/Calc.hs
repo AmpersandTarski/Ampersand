@@ -312,8 +312,8 @@ derivMono expr -- preconditie van actie a
                                     , rrfps = Origin "rule generated for isTrue neg' by Calc"
                                     , rrexp = pos'
                                     , rrmean = AMeaning
-                                               [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 402)")
-                                               ,A_Markup English ReST (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 403)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
+                                               [A_Markup Dutch   (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 402)")
+                                               ,A_Markup English (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 403)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                     , rrmsg = []
                                     , rrviol = Nothing
                                     , rrtyp = sign neg' {- (neg `meet` pos) -}
@@ -326,8 +326,8 @@ derivMono expr -- preconditie van actie a
                                     , rrfps = Origin "rule generated for not(isTrue neg') by Calc"
                                     , rrexp = neg' .|-. pos'
                                     , rrmean = AMeaning
-                                               [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
-                                               ,A_Markup English ReST (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 333)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
+                                               [A_Markup Dutch   (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
+                                               ,A_Markup English (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 333)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                     , rrmsg = []
                                     , rrviol = Nothing
                                     , rrtyp = sign neg' {- (neg `meet` pos) -}
