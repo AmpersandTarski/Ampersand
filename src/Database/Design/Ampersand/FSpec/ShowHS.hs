@@ -719,12 +719,13 @@ instance ShowHSName Origin where
               DBLoc l       -> "DBLoc " ++ show l
               Origin s      -> "Origin " ++ show s
               OriginUnknown -> "OriginUnknown"
-
+              XLSXLoc fPath sheet (a,b) -> "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)
 instance ShowHS Origin where
  showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
  showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
  showHS _     _      (Origin s)   = "Origin " ++ show s
  showHS _     _    OriginUnknown  = "OriginUnknown"
+ showHS _     _    (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
 
 instance ShowHS Block where
  showHS _ _   = show
