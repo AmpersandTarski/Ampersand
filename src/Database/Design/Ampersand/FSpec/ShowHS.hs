@@ -648,7 +648,6 @@ instance ShowHSName Declaration where
  showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
  showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- full relation
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations
-              | deciss d  = haskellIdentifier ("sgn_"++name d++"_"++name (source d)++"_"++name (target d)) -- relations generated for signalling
               | otherwise = haskellIdentifier ("vio_"++name d++"_"++name (source d)++"_"++name (target d)) -- relations generated per rule
 
 instance ShowHS Declaration where
@@ -666,7 +665,6 @@ instance ShowHS Declaration where
                      ,"   , decprR  = " ++ show (decprR d)
                      ,"   , decMean = " ++ show (decMean d)
                      ,"   , decfpos = " ++ showHS opts "" (decfpos d)
-                     ,"   , deciss  = " ++ show (deciss d)
                      ,"   , decusr  = " ++ show (decusr d)
                      ,"   , decpat  = " ++ show (decpat d)
                      ,"   , decplug = " ++ show (decplug d)

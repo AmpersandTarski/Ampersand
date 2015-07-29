@@ -595,7 +595,6 @@ rTerm2expr term
             , decprR  = fatal 484 "Illegal RTerm in rTerm2expr"
             , decMean = fatal 485 "Illegal RTerm in rTerm2expr"
             , decfpos = fatal 486 "Illegal RTerm in rTerm2expr"
-            , deciss  = fatal 487 "Illegal RTerm in rTerm2expr"
             , decusr  = fatal 488 "Illegal RTerm in rTerm2expr"
             , decpat  = fatal 489 "Illegal RTerm in rTerm2expr"
             , decplug = fatal 490 "Illegal RTerm in rTerm2expr"
@@ -1063,11 +1062,10 @@ delta sgn
               , decprL  = ""
               , decprM  = ""
               , decprR  = ""
-              , decMean = AMeaning [ --   A_Markup Dutch   ReST (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
-                                     -- , A_Markup English ReST (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
+              , decMean = AMeaning [ --   A_Markup Dutch   (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
+                                     -- , A_Markup English (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
                                    ]
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
-              , deciss  = True
               , decusr  = False
               , decpat  = ""
               , decplug = True

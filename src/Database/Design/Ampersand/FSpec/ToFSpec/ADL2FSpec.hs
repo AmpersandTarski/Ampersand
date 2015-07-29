@@ -290,12 +290,12 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-     cRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, not(deciss d), isTot d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+     cRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isTot d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-     dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, not(deciss d), isInj d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+     dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = clos1 cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
      maxInjPaths = clos1 dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels

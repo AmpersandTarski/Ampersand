@@ -293,7 +293,6 @@ pCtx2aCtx' _
                      , decprR  = prR
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
                      , decfpos = dec_fpos pd
-                     , deciss  = True
                      , decusr  = True
                      , decpat  = patNm
                      , decplug = dec_plug pd

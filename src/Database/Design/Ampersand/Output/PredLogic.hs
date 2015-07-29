@@ -269,7 +269,6 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                    , decprR  = ""
                    , decMean = fatal 223 "Do not refer to decMean of this dummy relation"
                    , decfpos = OriginUnknown
-                   , deciss  = fatal 226 "Do not refer to deciss of this dummy relation"
                    , decusr  = False
                    , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
                    , decplug = fatal 229 "Do not refer to decplug of this dummy relation"

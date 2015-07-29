@@ -1,7 +1,6 @@
 module Main (main) where
 
 import Database.Design.Ampersand.Misc.Options(getOptions,Options)
-import Database.Design.Ampersand.Test.RunAmpersand (ampersand)
 import Database.Design.Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
 import Database.Design.Ampersand.Test.Parser.ParserTest (parseScripts)
 import Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks)

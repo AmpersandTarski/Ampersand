@@ -209,14 +209,11 @@ instance XML Sign where
 instance XML Declaration where
   mkTag d = Tag "Association" ([nameToAttr d]
                              ++[ mkAttr "type" t]
-                             ++ extraAtts )
+                              )
          where t = case d of
                      Sgn{} -> "Sgn"
                      Isn{} -> "Isn"
                      Vs{} -> "Vs"
-               extraAtts = case d of
-                             Sgn{} -> [mkAttr "IsSignal" (show (deciss d))]
-                             _     -> []
 
   mkXmlTree d = Elem (mkTag d)
      (case d of
