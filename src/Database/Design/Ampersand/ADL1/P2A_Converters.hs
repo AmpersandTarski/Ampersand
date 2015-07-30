@@ -760,7 +760,6 @@ pCtx2aCtx' _
     pRefObj2aRefObj (PRef2Pattern     s ) = pure$ ExplPattern s
     pRefObj2aRefObj (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
-    pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
      = case filter (\cd -> name cd == s) allConceptDefs of

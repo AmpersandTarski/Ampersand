@@ -460,7 +460,6 @@ instance ShowHS PRef2Obj where
          PRef2Pattern str                       -> "PRef2Pattern "    ++show str
          PRef2Interface str                     -> "PRef2Interface "  ++show str
          PRef2Context str                       -> "PRef2Context "    ++show str
-         PRef2Fspc str                          -> "PRef2Fspc "       ++show str
 
 instance ShowHS Purpose where
  showHS opts _ expla =

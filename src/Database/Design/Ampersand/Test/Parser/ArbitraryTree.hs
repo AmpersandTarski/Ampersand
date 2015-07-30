@@ -294,8 +294,6 @@ instance Arbitrary PRef2Obj where
             PRef2Pattern <$> upperId,
             PRef2Interface <$> upperId,
             PRef2Context <$> upperId
-            -- The PRef2Fspc is not used in the parser.
-            -- PRef2Fspc <$> upperId
         ]
 
 instance Arbitrary PMeaning where

@@ -219,7 +219,6 @@ instance MakeMeta PRef2Obj where
       PRef2Pattern _     -> ref 
       PRef2Interface _   -> ref 
       PRef2Context _     -> ref 
-      PRef2Fspc _        -> ref
 
 instance MakeMeta PMeaning where
   makeMeta f (PMeaning m) = PMeaning (makeMeta f m)

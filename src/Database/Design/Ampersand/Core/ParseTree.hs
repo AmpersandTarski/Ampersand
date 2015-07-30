@@ -220,7 +220,7 @@ instance Flippable PAtomPair where
 
 data PAtomValue
   = PAVString Origin String
--- TODO: Later add parsers for:
+-- TODO: Later add parsers for:  --Beware to update aAtomValue2pAtomValue as well!
 --  | PAVInteger Origin Integer
 --  | PAVFloat Origin Float
 --  | PAVBoolean Origin Bool 
@@ -589,7 +589,6 @@ data PRef2Obj = PRef2ConceptDef String
               | PRef2Pattern String
               | PRef2Interface String
               | PRef2Context String
-              | PRef2Fspc String
               deriving Show -- only for fatal error messages
 
 instance Named PRef2Obj where
@@ -602,7 +601,6 @@ instance Named PRef2Obj where
      PRef2Pattern str -> str
      PRef2Interface str -> str
      PRef2Context str -> str
-     PRef2Fspc str -> str
 
 data PPurpose = PRef2 { pexPos :: Origin      -- the position in the Ampersand script of this purpose definition
                       , pexObj :: PRef2Obj    -- the reference to the object whose purpose is explained

@@ -330,7 +330,6 @@ instance Pretty PRef2Obj where
         PRef2Pattern str          -> text "PATTERN"   <+> maybeQuote str
         PRef2Interface str        -> text "INTERFACE" <+> maybeQuote str
         PRef2Context str          -> text "CONTEXT"   <+> maybeQuote str
-        PRef2Fspc str             -> text "PRef2Fspc" <+> maybeQuote str
 
 instance Pretty PMeaning where
     pretty (PMeaning markup) = text "MEANING" <~> markup
