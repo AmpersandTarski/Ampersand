@@ -200,7 +200,8 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand
+                     Paths_ampersand,
+                     Database.Design.Ampersand.Core.A2P_Converters
 
 
 Test-Suite ampersand-test
@@ -242,4 +243,5 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Input.Xslx.XLSX,
                      Database.Design.Ampersand.Output.Population2Xlsx,
                      Database.Design.Ampersand.Graphic.ClassDiag2Dot,
-                     Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
+                     Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams,
+                     Database.Design.Ampersand.Core.A2P_Converters
