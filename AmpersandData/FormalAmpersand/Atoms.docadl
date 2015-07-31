@@ -23,10 +23,10 @@ The Oxford English Dictionary allows the word 'entity' to refer to tangible thin
 However, the word ``entity'' is used by contemporary database engineers in a specific meaning.
 For this reason, Ampersand does not use the word ``entity''.}.
 An atom is a reference to
-\start{enumrate}
+\begin{enumerate}
 \item some thing that (the information system 'knows' to) exist in the real world and 
 \item a representation (perception) of that thing in the information system that the atom belongs to.
-\end{enumrate}
+\end{enumerate}
 -}
 CONCEPT Atom "An atom represents a real-world thing in an information system context."
 
