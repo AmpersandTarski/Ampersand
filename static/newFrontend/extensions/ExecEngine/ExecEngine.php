@@ -112,7 +112,7 @@ class ExecEngine {
 				
 				// returning the result
 				if(count($rows) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
-				elseif(count($rows) == 0) $pairStrs[] = '&EMPTY&';
+				elseif(count($rows) == 0) $pairStrs[] = '_NULL';
 				else $pairStrs[] = $rows[0]['tgt'];
 
 			// unknown segment

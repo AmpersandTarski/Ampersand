@@ -31,16 +31,18 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	
 	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
 	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
-		
-	// if srcAtom is specified as NULL, a new atom of srcConcept is created
-    if($srcAtom == "NULL"){
+	
+	if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+	
+	// if srcAtom is specified as _NEW, a new atom of srcConcept is created
+    if($srcAtom == "_NEW"){
 		$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
 	}elseif(!$database->atomExists($srcAtom, $srcConcept)){
 		$database->addAtomToConcept($srcAtom, $srcConcept);
 	}
 	
-	// if tgtAtom is specified as NULL, a new atom of tgtConcept is created
-	if($tgtAtom == "NULL"){
+	// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
+	if($tgtAtom == "_NEW"){
 		$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
 	}elseif(!$database->atomExists($tgtAtom, $tgtConcept)){
 		$database->addAtomToConcept($tgtAtom, $tgtConcept);
@@ -84,8 +86,8 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
    ROLE ExecEngine MAINTAINS "insEquivalence" -- Creation of the atom
    RULE "insEquivalence": r |- r1;r2
    VIOLATION (TXT "NewStruct;ConceptC[;AtomC]" -- AtomC is optional. If not provided then create new, else used specified Atom
-             ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"  -- Always use NULL as ConceptC atom
-             ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I   -- Always use NULL as ConceptC atom
+             ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;_NEW"  -- Always use _NEW as ConceptC atom
+             ,TXT ";r2;ConceptC;_NEW;ConceptB;atomB;", TGT I   -- Always use _NEW as ConceptC atom
               )
 
 */
@@ -114,37 +116,39 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		$tgtConcept = func_get_arg($i+3);
 		$tgtAtom    = func_get_arg($i+4);
 		
-		// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '&EMPTY&'): skip the insPair
-		if(($srcAtom == '&EMPTY&' or $tgtAtom == '&EMPTY&')) continue; 
+		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+		
+		// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') continue; 
 		
 		// populate relation r1, first checking for allowed syntax:		
-		if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')){ // Note: when populating a [PROP] relation, both atoms can be NULL
-			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL
-			throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL", 500);
+		if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')){ // Note: when populating a [PROP] relation, both atoms can be new
+			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW
+			throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW", 500);
 		}
 	
-		if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){ // Note: when populating a [PROP] relation, both atoms can be NULL
+		if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){
 			// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
 			throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC", 500);
 		}
 	
 		if ($srcConcept == $ConceptC){
-			if ($srcAtom == 'NULL'){
+			if ($srcAtom == '_NEW'){
 				$srcAtom = $AtomC;
 /* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-				// NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500); */
+				// NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)
+				throw new Exception("NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
 			}
 		}
 	
 		if ($tgtConcept == $ConceptC){  
-			if ($tgtAtom == 'NULL'){  
+			if ($tgtAtom == '_NEW'){  
 				$tgtAtom = $AtomC;
 /* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
 			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-				// NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)", 500); */
+				// NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)
+				throw new Exception("NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
 			}
 		}
 		
