@@ -114,6 +114,10 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		$tgtConcept = func_get_arg($i+3);
 		$tgtAtom    = func_get_arg($i+4);
 		
+		// if either srcAtom or tgtAtom is not provided by the pairview function, skip the insPair
+		// note! the pairview function sets the srcAtom or tgtAtom param to null, this is something different than the 'NULL' text which is used to indicate the newly created atom
+		if(is_null($srcAtom) or is_null($tgtAtom)) break; 
+		
 		// populate relation r1, first checking for allowed syntax:		
 		if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')){ // Note: when populating a [PROP] relation, both atoms can be NULL
 			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL
