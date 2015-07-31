@@ -12,10 +12,11 @@ class ExecEngine {
 	
 	private static $defaultRoleName = 'ExecEngine'; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']
 	private static $roleName;
-	private static $role;
 	public static $doRun = true;
 	
-	public static function init(){
+	public static function run(){
+		
+		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
 		
 		// Load the execEngine functions (security hazard :P)
 		$files = getDirectoryList(__DIR__ . '/functions');
@@ -26,21 +27,16 @@ class ExecEngine {
 		}
 		
 		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
-		self::$role = Role::getRoleByName(self::$roleName);
-	}
-	
-	public static function run(){
+		$role = Role::getRoleByName(self::$roleName);
 		
-		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
-		
-		if(self::$role){
-			Notifications::addLog("For role '" . self::$roleName . "'");
+		if($role){
+			Notifications::addLog("For role '" . $role . "'");
 			// Get all rules that are maintained by the ExecEngine
 			while(self::$doRun){
 				self::$doRun = false;
 				
 				Notifications::addLog("ExecEngine run");
-				foreach (self::$role->maintains as $ruleName){
+				foreach ($role->maintains as $ruleName){
 					$rule = RuleEngine::getRule($ruleName);
 						
 					// Fix violations for every rule
@@ -128,7 +124,4 @@ class ExecEngine {
 	}
 
 }
-
-ExecEngine::init();
-
 ?>
