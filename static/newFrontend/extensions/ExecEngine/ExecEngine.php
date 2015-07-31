@@ -12,12 +12,10 @@ class ExecEngine {
 	
 	private static $defaultRoleName = 'ExecEngine'; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']
 	private static $roleName;
+	private static $role;
+	public static $doRun = true;
 	
-	public static function run(){
-		
-		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
-		
-		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
+	public static function init(){
 		
 		// Load the execEngine functions (security hazard :P)
 		$files = getDirectoryList(__DIR__ . '/functions');
@@ -27,15 +25,29 @@ class ExecEngine {
 			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file);
 		}
 		
-		$role = Role::getRoleByName(self::$roleName);
-		if($role){
+		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
+		self::$role = Role::getRoleByName(self::$roleName);
+	}
+	
+	public static function run(){
+		
+		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
+		
+		if(self::$role){
+			Notifications::addLog("For role '" . self::$roleName . "'");
 			// Get all rules that are maintained by the ExecEngine
-			foreach ($role->maintains as $ruleName){
-				$rule = RuleEngine::getRule($ruleName);
-					
-				// Fix violations for every rule
-				ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
+			while(self::$doRun){
+				self::$doRun = false;
+				
+				Notifications::addLog("ExecEngine run");
+				foreach (self::$role->maintains as $ruleName){
+					$rule = RuleEngine::getRule($ruleName);
+						
+					// Fix violations for every rule
+					ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
+				}
 			}
+			
 		}else{
 			Notifications::addInfo("ExecEngine role '" . self::$roleName . "' not found.");
 		}
@@ -114,6 +126,9 @@ class ExecEngine {
 		}
 		return implode($pairStrs);
 	}
+
 }
+
+ExecEngine::init();
 
 ?>
