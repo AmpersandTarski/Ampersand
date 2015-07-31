@@ -30,7 +30,7 @@ class ExecEngine {
 		$role = Role::getRoleByName(self::$roleName);
 		
 		if($role){
-			Notifications::addLog("For role '" . $role . "'");
+			Notifications::addLog("For role '" . $role->label . "'");
 			// Get all rules that are maintained by the ExecEngine
 			while(self::$doRun){
 				self::$doRun = false;
