@@ -102,7 +102,7 @@ class Notifications {
 	}
 	
 	public static function addLog($message, $type = 'LOG'){
-		self::$logs[] = array('type' => $type, 'message' => $message);
+		self::$logs[] = array('timestamp' => microtime(true), 'type' => $type, 'message' => $message);
 	}
 	
 	public static function getErrors(){
