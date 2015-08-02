@@ -3,7 +3,7 @@ $if(isEditable)$
   <div ng-repeat="(key, row) in val['$name$'] track by row.id">
   	<div style="position:relative;">
       <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
-      <div style="display:inline-block" my-nav-to-interfaces ng-attr-ifcs="row['@interfaces']" ng-attr-resource="row.id" label="row['@label']"/>
+      <my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"/>
     </div>
   </div>
   <!-- Input to add new link to another resource -->
@@ -12,6 +12,6 @@ $if(isEditable)$
   </div>
 $else$
   <div ng-repeat="(key, row) in val['$name$'] track by row.id">
-    <div style="display:inline-block" my-nav-to-interfaces ng-attr-ifcs="row['@interfaces']" ng-attr-resource="row.id" label="row['@label']"/>
+    <my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"/>
   </div>
 $endif$

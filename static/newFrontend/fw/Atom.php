@@ -89,9 +89,9 @@ Class Atom {
 				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
 				
 				// Define interface(s) to navigate to for this tgtAtom
-				if($interface->isLinkTo) $atomInterfaces = array($interface->refInterfaceId);
-				elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return $o->id; }, $session->role->getInterfacesForConcept($interface->tgtConcept));
-				else $atomInterfaces = array(); // TODO: add interfaces not connected to a specific role
+				$atomInterfaces = array();
+				if($interface->isLinkTo) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+				elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
 				
 				// Add other elements
 				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id

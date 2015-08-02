@@ -6,7 +6,7 @@
       <button type="button" class="btn btn-sm btn-danger" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
       <span class="glyphicon glyphicon-trash" ng-click="deleteResource(ResourceId)" style="vertical-align : middle;"></span>
     </div>
-    <h4><div style="display:inline-block" my-nav-to-interfaces ng-attr-ifcs="val['@interfaces']" ng-attr-resource="val.id" label="val['@label']"/>&nbsp;</h4>
+    <h4><my-nav-to-interfaces ifcs="val['@interfaces']" resource="val.id" label="val['@label']"/>&nbsp;</h4>
   </div>
   <div class="panel-body" cg-busy="myPromises[ResourceId]">
   $endif$
