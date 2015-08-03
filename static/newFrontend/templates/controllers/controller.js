@@ -132,7 +132,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	  \$scope.myPromises[resourceId].push(\$scope.val['$interfaceName$'][resourceIndex]
 	  	.get()
 	  	.then(function(data) {
-	  		\$rootScope.updateNotifications(data.notifications);
+	  		\$rootScope.getNotifications();
 	  		\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.plain());
 	  		
 	  		setResourceStatus(resourceId, 'default');
