@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular) {
+AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage) {
 		
 	$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 		
@@ -6,14 +6,30 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.extensions = Restangular.all('extensions/all').getList().$object;
 	
+	$scope.$storage = $localStorage;
+	
 	$scope.selectRole = function(roleId){
-		$rootScope.roleId = roleId;
+		$localStorage.roleId = roleId;
 		
 		// refresh interfaces list + notifications
 		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
 		$rootScope.notifications = Restangular.one('notifications/all').get().$object;
 		$route.reload();
 	};
+	
+	$scope.selectRoleByLabel = function (roleLabel){
+		
+		angular.forEach($scope.roles, function(role) {
+			if(role.label == roleLabel){
+				$scope.selectRole(role.id);
+				return;
+			}
+			
+			console.log('Unknown role: ' + roleLabel);
+			return;
+		});
+		
+	}
 	
 	$scope.destroySession = function(){
 		$rootScope.session.remove().then(function(data){

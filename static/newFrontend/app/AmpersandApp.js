@@ -30,7 +30,7 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	
 	// Declare $rootScope objects
 	$rootScope.session = {};
@@ -41,12 +41,14 @@ AmpersandApp.run(function(Restangular, $rootScope){
 	
 	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
-	Restangular.one('role').get().then(function(data) {
-		$rootScope.roleId = data.id; // TODO: do all initiation in one call (i.e. role, navigationbar, etc)
-	});
+	if($localStorage.roleId === undefined){
+		Restangular.one('role').get().then(function(data) {
+			$localStorage.roleId = data.id;
+		});
+	}
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
-		params['roleId'] = $rootScope.roleId;
+		params['roleId'] = $localStorage.roleId;
 		params['sessionId'] = $rootScope.session.id;
 		return params;
 	});
