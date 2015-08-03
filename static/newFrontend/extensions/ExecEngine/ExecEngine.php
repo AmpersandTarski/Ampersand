@@ -11,6 +11,7 @@ $apps[] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
 class ExecEngine {
 	
 	private static $defaultRoleName = 'ExecEngine'; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']
+	private static $defaultMaxRunCount = 10; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['MaxRunCount']
 	private static $roleName;
 	public static $doRun = true;
 	
@@ -29,13 +30,18 @@ class ExecEngine {
 		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
 		$role = Role::getRoleByName(self::$roleName);
 		
+		$maxRunCount = isset($GLOBALS['ext']['ExecEngine']['MaxRunCount']) ? $GLOBALS['ext']['ExecEngine']['MaxRunCount'] : self::$defaultMaxRunCount;
+		$runCount = 0;
+		
 		if($role){
 			Notifications::addLog("For role '" . $role->label . "'");
 			// Get all rules that are maintained by the ExecEngine
 			while(self::$doRun){
 				self::$doRun = false;
+				$runCount++;
+				if($runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine', 500);
 				
-				Notifications::addLog("ExecEngine run");
+				Notifications::addLog("ExecEngine run ($runCount)");
 				foreach ($role->maintains as $ruleName){
 					$rule = RuleEngine::getRule($ruleName);
 						
