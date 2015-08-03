@@ -360,12 +360,12 @@ genView_Object fSpec depth obj =
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
-            ; let mNavInterface = listToMaybe (_objNavInterfaces obj) -- TODO: do something with roles here. For now, simply use the first interface, if any.
+            ; let mNavInterface = listToMaybe (_objNavInterfaces obj) -- TODO: can also be deleted, not used anymore?
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
-                               . setManyAttrib [(viewAttr, "{{row['@view']['"++viewAttr++"']}}") | viewAttr <- viewAttrs ] -- TODO: escape/protect
-                               . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface)
+                               -- . setManyAttrib [(viewAttr, "{{row['@view']['"++viewAttr++"']}}") | viewAttr <- viewAttrs ] -- TODO: delete this, not used anymore
+                               . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface) -- TODO: can also be deleted, not used anymore?
             }
         FEBox { objMClass  = mClass
               , ifcSubObjs = subObjs} ->
