@@ -39,15 +39,20 @@ class ExecEngine {
 			while(self::$doRun){
 				self::$doRun = false;
 				$runCount++;
-				if($runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine', 500);
+				if($runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
 				
 				Notifications::addLog("ExecEngine run ($runCount)");
+				$rulesThatHaveViolations = array();
 				foreach ($role->maintains as $ruleName){
 					$rule = RuleEngine::getRule($ruleName);
-						
+					$violations = RuleEngine::checkRule($rule, false);
+					
+					if(count($violations)) $rulesThatHaveViolations[] = $rule['name'];
 					// Fix violations for every rule
-					ExecEngine::fixViolations($rule, RuleEngine::checkRule($rule, false)); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
+					ExecEngine::fixViolations($rule, $violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
 				}
+				
+				
 			}
 			
 		}else{
