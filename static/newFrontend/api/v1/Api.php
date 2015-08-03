@@ -386,12 +386,7 @@ class Api{
      */
     public function getRole($roleId = 0){
     	try{
-    		if(!is_null($roleId)){	// do not use isset(), because roleNr can be 0.
-    			return new Role($roleId); // Return role with properties as defined in class Role
-    		}else{
-    			return new Role(); // Return default role	
-    		}
-    		
+    		return new Role($roleId); // Return role with properties as defined in class Role
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
    		}
