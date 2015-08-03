@@ -1,7 +1,9 @@
 <div class="row" ng-controller="static_logWindowController">
 	<div class="col-md-12" ng-if="switchShowLogWindow">
 		<h4>Log</h4>
-		<input ng-model="showLogTypes.query" type="checkbox"> QUERY
+		<div ng-repeat="(logType,value) in showLogTypes" style="display:inline-block;margin-right:10px;">
+			<input ng-model="showLogTypes[logType]" type="checkbox"> {{logType}}
+		</div>
 		<div id="logWindow">
 			<table style="font-size : 10px;" class="table table-striped table-hover table-condensed">
 				<thead>

@@ -1,7 +1,7 @@
 AmpersandApp.controller('static_notificationCenterController', function ($scope, $rootScope, $route, $routeParams, $timeout, Restangular) {
 		
 	Restangular.one('notifications/all').get().then(function(data){
-		$rootScope.notifications = data;
+		$rootScope.updateNotifications(data);
 	});
 	
 	$rootScope.updateNotifications = function(notifications){
@@ -12,6 +12,10 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		    	$rootScope.notifications.successes = [];
 		    }, 3000);
 		}
+		
+		angular.forEach(notifications.logs, function(log) {
+			if($rootScope.showLogTypes[log.type] == undefined) $rootScope.showLogTypes[log.type] = true;
+		});
 	}
 	
 	$rootScope.getNotifications = function(){

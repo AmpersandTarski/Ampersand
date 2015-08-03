@@ -6,10 +6,11 @@ AmpersandApp.controller('static_logWindowController', function ($scope, $rootSco
 		$rootScope.switchShowLogWindow = !$rootScope.switchShowLogWindow;
 	}
 	
-	$scope.showLogTypes = { 'query' : false };
-	
+	// Default for showing log types
+	$rootScope.showLogTypes = { 'QUERY' : false};
+
 	$scope.showLogEntry = function(log){
-		if(log.type != 'QUERY' || $scope.showLogTypes.query == true) return true;
+		if($rootScope.showLogTypes[log.type] || $rootScope.showLogTypes[log.type] == undefined) return true;
 		else return false;
 	}
 
