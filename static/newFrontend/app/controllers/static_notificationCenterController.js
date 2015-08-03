@@ -29,7 +29,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$rootScope.updateNotifications = function(notifications){
 		$rootScope.notifications = notifications;
 		
-		if($scope.$storage.switchAutoHideSuccesses){
+		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses){
 			$timeout(function() {
 		    	$rootScope.notifications.successes = [];
 		    }, 3000);
