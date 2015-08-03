@@ -27,12 +27,17 @@
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+	Notifications::addLog("InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
+	
 	$database = Database::singleton();
 	
 	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
 	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
 	
 	if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+	
+	// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+	if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
 	
 	// if srcAtom is specified as _NEW, a new atom of srcConcept is created
     if($srcAtom == "_NEW"){
@@ -62,6 +67,8 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+	Notifications::addLog("DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
+	
 	$database = Database::singleton();
 	
 	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
@@ -92,6 +99,8 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 
 */
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
+	Notifications::addLog("Newstruct", 'ExecEngine');
+	
 	$database = Database::singleton();
 	
 	// We start with parsing the first one or two arguments
@@ -159,7 +168,9 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-function InsAtom($concept){ 
+function InsAtom($concept){
+	Notifications::addLog("InsAtom($concept)", 'ExecEngine');
+	
 	$database = Database::singleton();
 	
 	$atom = Concept::createNewAtom($concept);
@@ -175,7 +186,9 @@ function InsAtom($concept){
 	VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
 */
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
-function DelAtom($concept, $atom){ 
+function DelAtom($concept, $atom){
+	Notifications::addLog("DelAtom($concept, $atom)", 'ExecEngine');
+	
 	$database = Database::singleton();
 	
 	$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
