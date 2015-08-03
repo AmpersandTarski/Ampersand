@@ -22,11 +22,11 @@ class ImportExcel
 
 	public function ParseFile(){
 		
-		Notifications::addLog('------------------------- EXCEL IMPORT STARTED -------------------------');
+		Notifications::addLog('------------------------- EXCEL IMPORT STARTED -------------------------', 'ExcelImport');
 				
 		$this->ProcessFileContent();
 		
-		Notifications::addLog('------------------------- END OF EXCEL IMPORT -------------------------');
+		Notifications::addLog('------------------------- END OF EXCEL IMPORT -------------------------', 'ExcelImport');
 		
 		// Close transaction => ROLLBACK or COMMIT.
 		$this->db->closeTransaction('File uploaded', false, true, false);

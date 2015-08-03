@@ -82,7 +82,7 @@ class Session {
 			throw new Exception("No role could be selected", 500);
 		}
 		
-		Notifications::addLog("Role " . $this->role->name . " selected");
+		Notifications::addLog("Role " . $this->role->name . " selected", 'SESSION');
 
 		return $this->role->id;
 	}
@@ -93,7 +93,7 @@ class Session {
 			if(!$this->role->isInterfaceForRole($interfaceId)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
 			
 			$this->interface = new InterfaceObject($interfaceId);
-			Notifications::addLog("Interface '". $this->interface->label . "' selected");
+			Notifications::addLog("Interface '". $this->interface->label . "' selected", 'SESSION');
 				
 		}else{
 			throw new Exception('No interface specified', 404);

@@ -80,19 +80,19 @@ class Database
 		global $allDBstructQueries; // from Generics.php
 		global $allDefPopQueries; // from Generics.php
 		
-		Notifications::addLog('========= INSTALLER ==========');
+		Notifications::addLog('========= INSTALLER ==========', 'INSTALLER');
 		
 		$this->startTransaction();
-		Notifications::addLog('---------- DB structure queries ------------');
+		Notifications::addLog('---------- DB structure queries ------------', 'INSTALLER');
 		foreach($allDBstructQueries as $query){
 			$this->Exe($query);
 			
 		}
-		Notifications::addLog('---------- DB population queries -----------');
+		Notifications::addLog('---------- DB population queries -----------', 'INSTALLER');
 		foreach($allDefPopQueries as $query){
 			$this->Exe($query);
 		}
-		Notifications::addLog('========= END OF INSTALLER ==========');
+		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
 		$this->closeTransaction('Database reset to initial state', true, true, false);
 	}
@@ -141,7 +141,7 @@ class Database
 	 */
 	// TODO: make private function
 	public function addAtomToConcept($newAtom, $concept){
-		Notifications::addLog("addAtomToConcept($newAtom, $concept)");
+		Notifications::addLog("addAtomToConcept($newAtom, $concept)", 'DATABASE');
 		try{
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -167,9 +167,9 @@ class Database
 				
 				if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
 				
-				Notifications::addLog("Atom $newAtom added into concept $concept");
+				Notifications::addLog("Atom $newAtom added into concept $concept", 'DATABASE');
 			}else{
-				Notifications::addLog("Atom $newAtom already in concept $concept");
+				Notifications::addLog("Atom $newAtom already in concept $concept", 'DATABASE');
 			}
 			
 			return $newAtom;
@@ -208,7 +208,7 @@ class Database
 	 * NOTE: if $originalAtom is provided, this means that tuple rel(stableAtom, originalAtom) is replaced by rel(stableAtom, modifiedAtom).
 	 */
 	public function editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom = null){
-		Notifications::addLog("editUpdate($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)");
+		Notifications::addLog("editUpdate($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)", 'DATABASE');
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -274,7 +274,7 @@ class Database
 	 * editDelete(r, true, b1, B, a1, A);
 	 */
 	public function editDelete($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept){
-		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept)");
+		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept)", 'DATABASE');
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -332,7 +332,7 @@ class Database
 	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 	 */    
 	function deleteAtom($atom, $concept){
-		Notifications::addLog("deleteAtom($atom, $concept)");
+		Notifications::addLog("deleteAtom($atom, $concept)", 'DATABASE');
 		try{
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -359,7 +359,7 @@ class Database
 			
 			if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom $atom (and all related links) deleted in database");
+			Notifications::addLog("Atom $atom (and all related links) deleted in database", 'DATABASE');
 		}catch(Exception $e){
 			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
@@ -369,7 +369,7 @@ class Database
 // =============================== TRANSACTIONS ===========================================================
 	
 	private function startTransaction(){
-		Notifications::addLog('========================= STARTING TRANSACTION =========================');
+		Notifications::addLog('========================= STARTING TRANSACTION =========================', 'DATABASE');
 		$this->Exe("START TRANSACTION"); // start database transaction
 		$this->transaction = rand();
 		
@@ -377,14 +377,14 @@ class Database
 	
 	// TODO: make private function, now also used by in Session class for session atom initiation
 	public function commitTransaction(){
-		Notifications::addLog('------------------------- COMMIT -------------------------');
+		Notifications::addLog('------------------------- COMMIT -------------------------', 'DATABASE');
 		$this->setLatestUpdateTime();
 		$this->Exe("COMMIT"); // commit database transaction
 		unset($this->transaction);
 	}
 	
 	private function rollbackTransaction(){
-		Notifications::addLog('------------------------- ROLLBACK -------------------------');
+		Notifications::addLog('------------------------- ROLLBACK -------------------------', 'DATABASE');
 		$this->Exe("ROLLBACK"); // rollback database transaction
 		unset($this->transaction);
 	}
@@ -398,12 +398,12 @@ class Database
 	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = false, $setNewContent = true){
 		$session = Session::singleton();
 		
-		Notifications::addLog('========================= CLOSING TRANSACTION =========================');
+		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
 		
 		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
 		
 		if($checkAllConjucts){
-			Notifications::addLog("Check all conjuncts");
+			Notifications::addLog("Check all conjuncts", 'DATABASE');
 			
 			// Evaluate all invariant conjuncts. Conjuncts are cached.
 			$invariantRulesHold = RuleEngine::checkInvariantRules();
@@ -412,7 +412,7 @@ class Database
 			RuleEngine::checkProcessRules();
 			
 		}else{
-			Notifications::addLog("Check all affected conjuncts");
+			Notifications::addLog("Check all affected conjuncts", 'DATABASE');
 			
 			// Evaluate all affected invariant conjuncts. Conjuncts are cached.
 			$invariantRulesHold = RuleEngine::checkInvariantRules(RuleEngine::getAffectedInvConjuncts($this->affectedConcepts, $this->affectedRelations), true);

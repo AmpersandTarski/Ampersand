@@ -17,14 +17,14 @@ class ExecEngine {
 	
 	public static function run(){
 		
-		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------');
+		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------', 'ExecEngine');
 		
 		// Load the execEngine functions (security hazard :P)
 		$files = getDirectoryList(__DIR__ . '/functions');
 		foreach ($files as $file){
 			if (substr($file,-3) !== 'php') continue;
 			require_once __DIR__.'/functions/'.$file;
-			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file);
+			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file, 'ExecEngine');
 		}
 		
 		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
@@ -34,14 +34,13 @@ class ExecEngine {
 		$runCount = 0;
 		
 		if($role){
-			Notifications::addLog("For role '" . $role->label . "'");
 			// Get all rules that are maintained by the ExecEngine
 			while(self::$doRun){
 				self::$doRun = false;
 				$runCount++;
 				if($runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
 				
-				Notifications::addLog("ExecEngine run ($runCount)");
+				Notifications::addLog("ExecEngine run ($runCount) for role '" . $role->label . "'", 'ExecEngine');
 				$rulesThatHaveViolations = array();
 				foreach ($role->maintains as $ruleName){
 					$rule = RuleEngine::getRule($ruleName);
@@ -59,13 +58,13 @@ class ExecEngine {
 			Notifications::addInfo("ExecEngine role '" . self::$roleName . "' not found.");
 		}
 		
-		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------');
+		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------', 'ExecEngine');
 				
 	}
 	
 	public static function fixViolations($rule, $violations){
 		if(count($violations)){
-			Notifications::addLog('ExecEngine fixing violations for rule: ' . $rule['name']);
+			Notifications::addLog('ExecEngine fixing violations for rule: ' . $rule['name'], 'ExecEngine');
 			
 			foreach ($violations as $violation){
 				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
@@ -89,7 +88,7 @@ class ExecEngine {
 					
 					if (function_exists($function)){
 						$successMessage = call_user_func_array($function,$params);
-						Notifications::addLog($successMessage);
+						Notifications::addLog($successMessage, 'ExecEngine');
 						
 					}else{
 						$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";

@@ -14,18 +14,18 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    Default is 'd-m-Y' -> e.g: "01-01-2015", other examples include time, like 'd-m-Y G:i:s' -> e.g.: "01-01-2015 1:00:00"
 */
 function SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
-	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
+	Notifications::addLog("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)", 'ExecEngine');
 	$curdate = date($formatSpec);
 	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
 	
-	Notifications::addLog("Today's date set to $curdate");
+	Notifications::addLog("Today's date set to $curdate", 'ExecEngine');
 	return "Today's date set to $curdate";
 }
 
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
 function datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec){
-	Notifications::addLog("datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec)");
+	Notifications::addLog("datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec)", 'ExecEngine');
 	$date = new DateTime($srcAtom);
 	InsPair($relation,$DateConcept,$srcAtom,$StdFormatConcept,$date->format($formatSpec));
 	
@@ -41,7 +41,7 @@ VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (RentalEndDat
           )
 */
 function DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate){
-	Notifications::addLog("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)");
+	Notifications::addLog("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)", 'ExecEngine');
 	$datediff = strtotime($latestDate) - strtotime($earliestDate);
 	if ($datediff < 0) Notifications::addError("DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
 	
@@ -60,7 +60,7 @@ VIOLATION (TXT "{EX} DateDifference"
           )
 */
 function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate){
-	Notifications::addLog("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)");
+	Notifications::addLog("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)", 'ExecEngine');
 	$datediff = strtotime($lastDate) - strtotime($firstDate);
 	if ($datediff < 0) Notifications::addError("DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
 	
@@ -101,7 +101,7 @@ function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDat
 */
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
 function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
-	Notifications::addLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	Notifications::addLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
 	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
 	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	
@@ -119,7 +119,7 @@ function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
 
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
 function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom){ 	
-	Notifications::addLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	Notifications::addLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
 	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
 	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	
@@ -134,7 +134,7 @@ function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom){
 
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
-	Notifications::addLog("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	Notifications::addLog("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
 	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
 	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	if ($dt1 == $dt2) return;
@@ -151,7 +151,7 @@ function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
 
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom){
-	Notifications::addLog("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	Notifications::addLog("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
 	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
 	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	if ($dt1 == $dt2) return;

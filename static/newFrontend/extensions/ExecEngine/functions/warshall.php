@@ -28,10 +28,10 @@
 */
 
 function TransitiveClosure($r,$C,$rCopy,$rStar){
-	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)");
+	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
 
 	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
-		Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)");
+		Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
 		return;  // this is the case if we have executed this function already in this transaction		
 	}else{
 		
