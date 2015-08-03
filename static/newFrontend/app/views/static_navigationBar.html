@@ -59,18 +59,18 @@
 			<li class="dropdown pull-right" tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="top">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
 				<ul class="dropdown-menu" role="menu">
-					<li><switch ng-model="$root.switchShowViolations"> Show violation messages</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowViolations"> Show violation messages</switch></li>
 					<li class="divider" role="presentation"></li>
-					<li><switch ng-model="$root.switchShowSuccesses"> Show success messages</switch></li>
-					<li><switch ng-model="$root.switchAutoHideSuccesses"> Auto hide success messages</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowSuccesses"> Show success messages</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchAutoHideSuccesses"> Auto hide success messages</switch></li>
 					<li class="divider" role="presentation"></li>
-					<li><switch ng-model="$root.switchShowErrors"> Show error messages</switch></li>
-					<li><switch ng-model="$root.switchShowInvariants"> Show invariant violations</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowErrors"> Show error messages</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowInvariants"> Show invariant violations</switch></li>
 					<li class="divider" role="presentation"></li>
-					<li><switch ng-model="$root.switchShowInfos"> Show info messages</switch></li>
-					<li><switch ng-model="$root.switchShowLogWindow"> Show log window</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowInfos"> Show info messages</switch></li>
+					<li><switch ng-model="$storage.logWindowPrefs.switchShowLogWindow"> Show log window</switch></li>
 					<li class="divider" role="presentation"></li>
-					<li><switch ng-model="$root.switchAutoCommit"> Auto commit changes</switch></li>
+					<li><switch ng-model="$storage.switchAutoCommit"> Auto commit changes</switch></li>
 				</ul>
 			</li>
 	 

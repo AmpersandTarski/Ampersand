@@ -1,8 +1,8 @@
 <div class="row" ng-controller="static_logWindowController">
-	<div class="col-md-12" ng-if="switchShowLogWindow">
+	<div class="col-md-12" ng-if="$storage.logWindowPrefs.switchShowLogWindow">
 		<h4>Log</h4>
-		<div ng-repeat="(logType,value) in showLogTypes" style="display:inline-block;margin-right:10px;">
-			<input ng-model="showLogTypes[logType]" type="checkbox"> {{logType}}
+		<div ng-repeat="(logType,value) in $storage.logWindowPrefs.showLogTypes" style="display:inline-block;margin-right:10px;">
+			<input ng-model="$storage.logWindowPrefs.showLogTypes[logType]" type="checkbox"> {{logType}}
 		</div>
 		<div id="logWindow">
 			<table style="font-size : 10px;" class="table table-striped table-hover table-condensed">
