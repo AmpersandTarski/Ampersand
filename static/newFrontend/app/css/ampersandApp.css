@@ -1,13 +1,40 @@
-/********* WRAPPERS **************/
 html {
 	position			: relative;
 	min-height			: 100%;
 }
 
-#wrapper {
-	
+/********* HEADER *****************/
+
+#header {
+	position			: fixed;
+	left				: 0;
+	right				: 0;
+	z-index				: 1030;
+	height				: 45px;
+	background-color	: white;
 }
 
+#header .glyphicon {
+	color				: #428bca;
+}
+
+/********* NAVBAR *****************/
+
+#navbar {
+	position			: fixed;
+	top					: 45px;
+	left				: 0;
+	right				: 0;
+	z-index				: 1030;
+	background-color	: white;
+}
+
+.navbar {
+	min-height			: initial;
+	margin-bottom		: 0px;
+}
+
+/********* MAIN *****************/
 #main {
 	display				: block;
 	margin				: 0 auto 60px; /* Margin bottom by footer height */
@@ -15,13 +42,7 @@ html {
 	min-height			: 100%;
 }
 
-#header {
-	
-}
-
-#header .glyphicon {
-	color				: #428bca;
-}
+/********* FOOTER *****************/
 
 #footer {
 	position			: absolute;
@@ -30,13 +51,6 @@ html {
 	height				: 60px;	/* Set the fixed height of the footer here */
 	padding				: 20px 0;
 	background-color	: #f8f8f8;
-}
-
-/********* LOG WINDOW *****************/
-#logWindow {
-	height				: 400px;
-	width				: 100%;
-	overflow-y			: scroll;
 }
 
 
@@ -110,6 +124,11 @@ input .ng-invalid .ng-dirty {
 	color				: #428bca;
 }
 
+/*********** BREADCRUMB ****************/
+#breadcrumb ol {
+	margin-bottom		: 10px;
+}
+
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
 	position			: relative; // fixed;
@@ -144,7 +163,9 @@ input .ng-invalid .ng-dirty {
 	padding-bottom		: 5px;
 }
 
-/*********** BREADCRUMB ****************/
-#breadcrumb ol {
-	margin-bottom		: 10px;
+/********* LOG WINDOW *****************/
+#logWindow {
+	height				: 400px;
+	width				: 100%;
+	overflow-y			: scroll;
 }

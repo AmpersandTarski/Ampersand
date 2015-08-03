@@ -1,22 +1,22 @@
-<!-- WRAPPER -->
-<div id="wrapper">
-	<!-- HEADER -->
-	<div id="header" ng-include="'app/views/static_navigationBar.html'"></div>
+<!-- HEADER -->
+<div id="header" ng-include="'app/views/static_header.html'"></div>
+
+<!-- NAVIGATION BAR -->
+<div id="navbar" ng-include="'app/views/static_navigationBar.html'"></div>
+
+<!-- MAIN -->
+<div id="main" class="container">
+	<!-- Breadcrumb -->
+	<div ng-include="'app/views/static_breadcrumb.html'"></div>
 	
-	<!-- PAGE CONTENT -->
-	<div id="main" class="container">
-		<!-- Breadcrumb -->
-		<div ng-include="'app/views/static_breadcrumb.html'"></div>
-		
-		<!--  Notification center -->
-		<div ng-include="'app/views/static_notificationCenter.html'"></div>
-		
-		<!-- Placeholder for views -->
-		<div ng-view></div>
-		
-		<!-- Log -->
-		<div ng-include="'app/views/static_logWindow.html'"></div>
-	</div>
+	<!--  Notification center -->
+	<div ng-include="'app/views/static_notificationCenter.html'"></div>
+	
+	<!-- Placeholder for views (user interfaces) -->
+	<div ng-view></div>
+	
+	<!-- Log window -->
+	<div ng-include="'app/views/static_logWindow.html'"></div>
 </div>
 
 <!-- FOOTER -->
