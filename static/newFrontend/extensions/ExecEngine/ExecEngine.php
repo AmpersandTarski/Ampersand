@@ -70,10 +70,10 @@ class ExecEngine {
 				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
 				
 				// This function tries to return a string with all NULL bytes, HTML and PHP tags stripped from a given str. Strip_tags() is binary safe.
-				$theCleanMessage = strip_tags($theMessage);
+				// $theCleanMessage = strip_tags($theMessage);
 				
 				// Determine actions/functions to be taken
-				$functionsToBeCalled = explode('{EX}', $theCleanMessage);
+				$functionsToBeCalled = explode('{EX}', $theMessage);
 				
 				// Execute actions/functions
 				foreach ($functionsToBeCalled as $functionToBeCalled) { 
