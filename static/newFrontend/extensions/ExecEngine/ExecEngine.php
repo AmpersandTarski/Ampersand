@@ -76,11 +76,13 @@ class ExecEngine {
 				$functionsToBeCalled = explode('{EX}', $theMessage);
 				
 				// Execute actions/functions
-				foreach ($functionsToBeCalled as $functionToBeCalled) { 
-					
+				foreach ($functionsToBeCalled as $functionToBeCalled) {
 					if(empty($functionToBeCalled)) continue; // skips to the next iteration if $functionToBeCalled is empty. This is the case when violation text starts with delimiter {EX}
 					
-					$params = explode(';', $functionToBeCalled); // Split off variables
+					// Determine delimiter
+					$delimiter = (strpos($functionToBeCalled, '_;') === false) ? ';' : '_;';
+					
+					$params = explode($delimiter, $functionToBeCalled); // Split off variables
 					$params = array_map('trim', $params); // Trim all params
 					$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
 					
@@ -123,7 +125,7 @@ class ExecEngine {
 				// returning the result
 				if(count($rows) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
 				elseif(count($rows) == 0) $pairStrs[] = '_NULL';
-				else $pairStrs[] = $rows[0]['tgt'];
+				else $pairStrs[] = str_replace(array('{EX}','{php}'), '', $rows[0]['tgt']); // prevent php interpreter by user input
 
 			// unknown segment
 			}else{
