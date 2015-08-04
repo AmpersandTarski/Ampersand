@@ -14,11 +14,9 @@ $if(isEditable)$
   $endif$
 $else$
   $if(exprIsUni)$
-  <div>{{val['$name$']}}</div>
+  <div class="wordwrap">{{val['$name$']}}</div>
   $else$
-  <div ng-repeat="row in val['$name$'] track by \$index">
-    {{row}}
-  </div>
+  <div ng-repeat="row in val['$name$'] track by \$index" class="wordwrap">{{row}}</div>
   $endif$
 $endif$
 </div>
