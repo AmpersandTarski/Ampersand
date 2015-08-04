@@ -90,6 +90,10 @@ class InterfaceObject {
 		}
 	}
 	
+	public function __toString() {
+		return $this->id;
+	}
+	
 	public function getInterface(){
 		
 		return $this;

@@ -5,7 +5,7 @@ class Role {
 	public $id;
 	public $label;
 	public $maintains = array();
-	private $interfaces = array();
+	public $interfaces = array();
 	
 	/*
 	 * param int $id
@@ -87,7 +87,8 @@ class Role {
 	
 	public function getInterfacesForConcept($concept){
 		$interfaces = array();
-		foreach($this->interfaces as $interface){
+		
+		foreach($this->getSessionInterfaces() as $interface){
 			if($interface->srcConcept == $concept || 
 					in_array($concept, Concept::getSpecializations($interface->srcConcept)) 
 				) $interfaces[] = $interface;
@@ -111,8 +112,8 @@ class Role {
 		return $interfaces;
 	}
 	
-	public function isInterfaceForRole($interfaceId){
-		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->interfaces));
+	public function isInterfaceForRole($interfaceId){		
+		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->getSessionInterfaces()));
 	}
 	
 	public function getViolations(){
@@ -136,6 +137,14 @@ class Role {
 		}
 		
 	}
-
+	
+	private function getSessionInterfaces(){
+		if(LOGIN_ENABLED){
+			$session = Session::singleton();
+			return (array)$session->accessibleInterfaces;
+		}else{
+			return (array)$this->interfaces;
+		}
+	}
 }
 ?>

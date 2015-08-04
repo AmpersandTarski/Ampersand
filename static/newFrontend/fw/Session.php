@@ -9,6 +9,7 @@ class Session {
 	public $interface;
 	public $viewer;
 	public $atom;
+	public $accessibleInterfaces = array();
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -80,6 +81,15 @@ class Session {
 			if(!isset($this->role)) throw new Exception("You do not have access to the selected role", 401);
 		}else{
 			throw new Exception("No role could be selected", 500);
+		}
+		
+		if(LOGIN_ENABLED){
+			$arr = array();
+			foreach($roles as $role){
+				$arr = array_merge($arr, $role->interfaces);
+			}
+			$this->accessibleInterfaces = array_unique($arr);
+			
 		}
 		
 		Notifications::addLog("Role " . $this->role->name . " selected", 'SESSION');

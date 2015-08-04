@@ -22,8 +22,12 @@ $DB_name = $dbName; // from Generics.php
  * Enable/disable built-in login functionality
  *
  * Requires &-INTERFACE defintion:
- * INTERFACE "SessionRoles" : sessionUser;userRole
- BOX [ "roleName"    : I]
+ * INTERFACE "SessionRoles" FOR <some unused Role> : <expression>[SESSION*TGTconcpet] BOX [ "garbage" : I]
+ * Notes: 
+ * 1) The name of the interface MUST be 'SessionRoles'
+ * 2) The SRC concept of <expression> MUST be SESSION
+ * 3) The population of the TGTconcept of <expression> must contain roles that are used in the &-script for MAINTAINing rules or INTERFACEs
+ * 4) The text 'BOX [ "garbage" : I ]' is not used, so it can be replaced with anything that the parser accepts.  
  *
  */
 define ('LOGIN_ENABLED', false);
