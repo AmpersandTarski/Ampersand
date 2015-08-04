@@ -1,7 +1,7 @@
 <?php
-function RerunExecEngine(){	
+function RerunExecEngine($logText = 'run ExecEngine again after completion'){	
 		
-	Notifications::addLog("Request ExecEngine to run again after completion", 'ExecEngine');
+	Notifications::addLog('Rerun: ' . $logText, 'ExecEngine');
 	ExecEngine::$doRun = true;
 	
 	return true;
