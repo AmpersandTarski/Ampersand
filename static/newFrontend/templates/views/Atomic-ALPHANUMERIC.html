@@ -6,15 +6,15 @@ $if(isEditable)$
   $else$
   <div ng-repeat="row in val['$name$'] track by \$index">
     <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
-    <span>{{row}}</span>
+    <span css="wordwrap">{{row}}</span>
   </div>
   <div my-showonhover-box ng-controller="addItemController">
     <input ng-model="selected.value" my-bluronenter type="text" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(val, '$name$', selected, ResourceId)">
   </div>
   $endif$$else$$if(exprIsUni)$
-  <div>{{val['$name$']}}</div>
+  <div css="wordwrap">{{val['$name$']}}</div>
   $else$
-  <div ng-repeat="row in val['$name$'] track by \$index">
+  <div ng-repeat="row in val['$name$'] track by \$index" css="wordwrap">
     {{row}}
   </div>$endif$$endif$
 </div>
