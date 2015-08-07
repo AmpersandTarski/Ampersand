@@ -314,12 +314,17 @@ generateTableInfos fSpec =
               [ ")" ]
            )
          | c <- concs fSpec
-         , let affConjs = case lookup c $ allConjsPerConcept fSpec of
-                 Nothing    -> []
-                 Just conjs -> conjs
+         , let -- the following is wrong, because generalizations of c should be taken into account as well.
+               -- affConjs = case lookup c $ allConjsPerConcept fSpec of
+               --   Nothing    -> []
+               --   Just conjs -> conjs
+               affConjs = nub [ conj  
+                              | c'<-largerConcepts (vgens fSpec) c++[c]
+                              , Just conjs<-[lookup c' (allConjsPerConcept fSpec)]
+                              , conj<-conjs
+                              ]
                affInvConjs = filterFrontEndInvConjuncts affConjs
                affSigConjs = filterFrontEndSigConjuncts affConjs
-
          ]
     ) ++
   [ ""
