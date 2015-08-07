@@ -314,10 +314,8 @@ generateTableInfos fSpec =
               [ ")" ]
            )
          | c <- concs fSpec
-         , let -- the following is wrong, because generalizations of c should be taken into account as well.
-               -- affConjs = case lookup c $ allConjsPerConcept fSpec of
-               --   Nothing    -> []
-               --   Just conjs -> conjs
+         , let 
+   -- TODO: The following code is a replica of affConjs in ShowMeatGrinder.hs, which poses a maintenance risk.
                affConjs = nub [ conj  
                               | c'<-largerConcepts (vgens fSpec) c++[c]
                               , Just conjs<-[lookup c' (allConjsPerConcept fSpec)]
