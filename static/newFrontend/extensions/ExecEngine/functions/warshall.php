@@ -27,43 +27,49 @@
       and a 'DelTransitiveClosure'
 */
 
+
 function TransitiveClosure($r,$C,$rCopy,$rStar){
 	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
+	
+	$warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
+	$execEngineRunCount = ExecEngine::$runCount;
 
 	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
-		Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
-		return;  // this is the case if we have executed this function already in this transaction		
-	}else{
+		if($warshallRunCount == $execEngineRunCount){
+			Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
+			return;  // this is the case if we have executed this function already in this transaction
+		}		
+	}
 		
-		$GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
-		
-		// Compute transitive closure following Warshall's algorithm
-		$closure = RetrievePopulation($r, $C); // get adjacency matrix
-		
-		OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
-		
-		// Get all unique atoms from this population
-		$atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
-		
-		foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
-			$tgtAtoms = array_keys($tgtAtomsList);
-			foreach ($tgtAtoms as $tgtAtom){
-				if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
-			}
+	$GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
+	$GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'] = ExecEngine::$runCount;
+	
+	// Compute transitive closure following Warshall's algorithm
+	$closure = RetrievePopulation($r, $C); // get adjacency matrix
+	
+	OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
+	
+	// Get all unique atoms from this population
+	$atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
+	
+	foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
+		$tgtAtoms = array_keys($tgtAtomsList);
+		foreach ($tgtAtoms as $tgtAtom){
+			if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
 		}
-		
-		foreach ($atoms as $k){
-			foreach ($atoms as $i){
-				if ($closure[$i][$k]){
-					foreach ($atoms as $j){
-						$closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
-					}
+	}
+	
+	foreach ($atoms as $k){
+		foreach ($atoms as $i){
+			if ($closure[$i][$k]){
+				foreach ($atoms as $j){
+					$closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
 				}
 			}
 		}
-		
-		OverwritePopulation($closure, $rStar, $C);
 	}
+	
+	OverwritePopulation($closure, $rStar, $C);
 }
 
 function RetrievePopulation($relationName, $concept){

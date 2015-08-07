@@ -14,6 +14,7 @@ class ExecEngine {
 	private static $defaultMaxRunCount = 10; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['MaxRunCount']
 	private static $roleName;
 	public static $doRun = true;
+	public static $runCount;
 	
 	public static function run(){
 		
@@ -31,16 +32,16 @@ class ExecEngine {
 		$role = Role::getRoleByName(self::$roleName);
 		
 		$maxRunCount = isset($GLOBALS['ext']['ExecEngine']['MaxRunCount']) ? $GLOBALS['ext']['ExecEngine']['MaxRunCount'] : self::$defaultMaxRunCount;
-		$runCount = 0;
+		self::$runCount = 0;
 		
 		if($role){
 			// Get all rules that are maintained by the ExecEngine
 			while(self::$doRun){
 				self::$doRun = false;
-				$runCount++;
-				if($runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
+				self::$runCount++;
+				if(self::$runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
 				
-				Notifications::addLog("ExecEngine run ($runCount) for role '" . $role->label . "'", 'ExecEngine');
+				Notifications::addLog("ExecEngine run (" . self::$runCount . ") for role '" . $role->label . "'", 'ExecEngine');
 				$rulesThatHaveViolations = array();
 				foreach ($role->maintains as $ruleName){
 					$rule = RuleEngine::getRule($ruleName);
