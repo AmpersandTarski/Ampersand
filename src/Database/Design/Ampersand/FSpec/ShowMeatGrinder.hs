@@ -170,13 +170,11 @@ instance GenericPopulations A_Concept where
              [(uri cpt, uri fld) | fld <- tablesAndFields]
       ]
   where
-  -- TODO: This code is a replica of affConjs in Generate.hs, which poses a maintenance risk.
-    largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
     affConjs = nub [ conj  
-                   | c'<-largerConcs
-                   , Just conjs<-[lookup c' (allConjsPerConcept fSpec)]
+                   | Just conjs<-[lookup cpt (allConjsPerConcept fSpec)]
                    , conj<-conjs
                    ]
+    largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
     tablesAndFields = nub . concatMap (lookupCpt fSpec) $ largerConcs
 
 instance MetaPopulations A_Concept where

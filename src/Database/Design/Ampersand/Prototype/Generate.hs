@@ -315,10 +315,8 @@ generateTableInfos fSpec =
            )
          | c <- concs fSpec
          , let 
-   -- TODO: The following code is a replica of affConjs in ShowMeatGrinder.hs, which poses a maintenance risk.
                affConjs = nub [ conj  
-                              | c'<-largerConcepts (vgens fSpec) c++[c]
-                              , Just conjs<-[lookup c' (allConjsPerConcept fSpec)]
+                              | Just conjs<-[lookup c (allConjsPerConcept fSpec)]
                               , conj<-conjs
                               ]
                affInvConjs = filterFrontEndInvConjuncts affConjs
