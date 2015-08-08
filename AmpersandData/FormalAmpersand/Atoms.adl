@@ -1,16 +1,17 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
 --INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
---INCLUDE "Atoms.xlsx"
 
 PROCESS Atoms
 RELATION repr[Atom*TEXT] [UNI,TOT]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT TEXT TYPE ALPHANUMERIC
 
 RELATION pop[Atom*Concept]
 MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
-RELATION name[Concept*TEXT] [UNI,TOT]
+RELATION name[Concept*Name] [UNI,TOT]
 MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Name TYPE ALPHANUMERIC
 
 RULE "Identifiability of concepts": name;name~ |- I[Concept]
 MEANING "The name of a concept identifies that concept."
@@ -29,7 +30,7 @@ ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
 RULE "Compute transitive closure of isa" : isa = isaCopy
 VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isas")
 
-RELATION name[Relation*TEXT] [UNI,TOT] 
+RELATION name[Relation*Name] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
