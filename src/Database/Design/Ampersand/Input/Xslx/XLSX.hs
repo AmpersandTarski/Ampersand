@@ -128,17 +128,8 @@ toPops file x = map popForColumn' (colNrs x)
        cellToAtomValue mDelimiter cv orig
          = case cv of
              CellText t   -> map (PAVString orig) (unDelimit mDelimiter (T.unpack t))
-             CellDouble d -> [PAVString orig (myShow d)]
-             CellBool b -> [PAVString orig (show b)] 
-          where myShow :: Double -> String
-                myShow = reverse . cleanTrailingZeroes . reverse . printf "%f"
-                cleanTrailingZeroes s 
-                 = case s of
-                   [] -> []
-                   (c:cs) 
-                     | c == '0'  -> cleanTrailingZeroes cs
-                     | c == '.'  -> cs
-                     | otherwise -> s  
+             CellDouble d -> [XlsxDouble orig d]
+             CellBool b -> [XlsxBool orig b] 
        unDelimit :: Eq a => Maybe a -> [a] -> [[a]]
        unDelimit mDelimiter xs =
          case mDelimiter of

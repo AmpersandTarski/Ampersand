@@ -10,7 +10,6 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
-  , mkUnmatchedAtomValue
   , Guarded(..)
   , whenCheckedIO, whenChecked
   , unguard
@@ -131,11 +130,6 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> String -- the reference itself. eg. "Rule 42"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
-mkUnmatchedAtomValue :: TType  -> PAtomValue -> CtxError
-mkUnmatchedAtomValue ct val = 
- case val of 
-  (PAVString orig str) ->
-      CTXE orig $ "Unmatched value: `"++str++"` does not match "++show ct++"."
 mkDanglingRefError entity ref orig =
   CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
@@ -160,9 +154,13 @@ mkMultipleRepresentationsForConceptError cpt rs =
 mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
 mkIncompatibleAtomValueError pav t cpt msg=
   case pav of 
-    PAVString o str -> CTXE o $ msg ++"\n  "++show str++" isn't a valid "++show t++
+    PAVString o str -> mkErr o str
+    XlsxDouble o d  -> mkErr o d
+    XlsxBool o b    -> mkErr o b
+ where
+   mkErr :: Show a => Origin -> a -> CtxError
+   mkErr o x = CTXE o $ msg ++"\n  "++show x++" isn't a valid "++show t++
                                 ", which is the type of "++name cpt++"."
-
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
 mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error

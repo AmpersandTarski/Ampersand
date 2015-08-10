@@ -360,11 +360,22 @@ pCtx2aCtx' _
 
     pAtomValue2aAtomValue ::A_Concept -> PAtomValue -> Guarded AAtomValue
     pAtomValue2aAtomValue cpt pav =
-       case string2AtomValue typ (strOf pav) of
-         Right aav -> pure aav 
-         Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
-         where typ = representationOf contextInfo cpt
-               strOf (PAVString _ str) = str
+       case pav of
+         PAVString _ str 
+            -> case string2AtomValue typ str of
+                 Right aav -> pure aav 
+                 Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
+         XlsxDouble _ d
+            -> case double2AtomValue typ d of
+                 Right aav -> pure aav 
+                 Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
+         XlsxBool _ b
+            -> if typ == Boolean 
+               then pure (AAVBoolean typ b)
+               else Errors [mkIncompatibleAtomValueError pav typ cpt msg] 
+                where msg = "Boolean value found where "++show typ++" is expected."
+      where typ = representationOf contextInfo cpt
+               
 
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = pObjDefDisamb2aObjDef $ disambiguate termPrimDisAmb x
@@ -851,4 +862,5 @@ instance Functor TT where
 getConcept :: SrcOrTgt -> Expression -> String
 getConcept Src = name . source
 getConcept Tgt = name . target
+
 

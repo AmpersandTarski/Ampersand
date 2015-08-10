@@ -1,5 +1,6 @@
 module Database.Design.Ampersand.Core.A2P_Converters (
   aCtx2pCtx
+  , aAtomValue2pAtomValue
 ) 
 where
 import Database.Design.Ampersand.ADL1.Expression
@@ -283,8 +284,45 @@ aAtomPair2pAtomPair pr =
        }
 
 aAtomValue2pAtomValue :: AAtomValue -> PAtomValue
+aAtomValue2pAtomValue AtomValueOfONE = fatal 286 "Unexpected AtomValueOfONE in convertion to P-structure"
 aAtomValue2pAtomValue val =
-  PAVString o (showVal val)
+  case aavtyp val of
+    Alphanumeric     -> case val of 
+                          AAVString{} -> PAVString o (aavstr val)
+                          _         -> fatal 291 "Unexpected combination of value types"
+    BigAlphanumeric  -> case val of 
+                          AAVString{} -> PAVString o (aavstr val)
+                          _         -> fatal 294 "Unexpected combination of value types"
+    HugeAlphanumeric -> case val of 
+                          AAVString{} -> PAVString o (aavstr val)
+                          _         -> fatal 297 "Unexpected combination of value types"
+    Password         -> case val of 
+                          AAVString{} -> PAVString o (aavstr val)
+                          _         -> fatal 300 "Unexpected combination of value types"
+    Binary           -> fatal 293 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    BigBinary        -> fatal 294 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    HugeBinary       -> fatal 295 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    Date             -> case val of
+                          AAVDate{} -> --TODO: Needs rethinking. A string or a double?
+                                       PAVString o (showVal val)
+                          _         -> fatal 307 "Unexpected combination of value types"
+    DateTime         -> case val of
+                          AAVDateTime{} -> --TODO: Needs rethinking. A string or a double?
+                                       PAVString o (showVal val)
+                          _         -> fatal 311 "Unexpected combination of value types"
+    Integer          -> case val of
+                          AAVInteger{} -> XlsxDouble o (fromInteger (aavint val))
+                          _            -> fatal 314 "Unexpected combination of value types"
+    Float            -> case val of
+                          AAVFloat{}   -> XlsxDouble o (aavflt val)
+                          _            -> fatal 317 "Unexpected combination of value types"
+    Boolean          -> case val of 
+                          AAVBoolean{} -> XlsxBool o (aavbool val)
+                          _            -> fatal 320 "Unexpected combination of value types"
+    Object           -> case val of 
+                          AAVString{} -> PAVString o (aavstr val)
+                          _         -> fatal 323 "Unexpected combination of value types"
+    TypeOfOne        -> fatal 324 "Unexpected combination of value types"
   where
    o = fatal 289 "Origin is not present in AAtomValue"
 

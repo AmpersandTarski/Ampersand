@@ -220,6 +220,8 @@ instance Flippable PAtomPair where
 
 data PAtomValue
   = PAVString Origin String
+  | XlsxDouble Origin Double
+  | XlsxBool Origin Bool
 -- TODO: Later add parsers for:  --Beware to update aAtomValue2pAtomValue as well!
 --  | PAVInteger Origin Integer
 --  | PAVFloat Origin Float

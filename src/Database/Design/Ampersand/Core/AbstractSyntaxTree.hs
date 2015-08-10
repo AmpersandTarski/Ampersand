@@ -37,7 +37,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, representationOf
+ , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, double2AtomValue, representationOf
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -61,6 +61,10 @@ import GHC.Generics (Generic)
 import Data.Hashable
 import Data.Char (toUpper,toLower)
 import Data.Maybe
+import Data.Time.Calendar
+import Data.Time.Clock
+import System.Locale (defaultTimeLocale)
+import Data.Time.Format (formatTime)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -499,15 +503,15 @@ mkAtomPair = APair
 string2AtomValue :: TType -> String -> Either String AAtomValue
 string2AtomValue dom str
   = case dom of 
-     Alphanumeric     -> Right (AAVString Alphanumeric str) 
-     BigAlphanumeric  -> Right (AAVString BigAlphanumeric str)
-     HugeAlphanumeric -> Right (AAVString HugeAlphanumeric str)
-     Password         -> Right (AAVString Password str)
+     Alphanumeric     -> Right (AAVString dom str) 
+     BigAlphanumeric  -> Right (AAVString dom str)
+     HugeAlphanumeric -> Right (AAVString dom str)
+     Password         -> Right (AAVString dom str)
      Binary           -> Left "Binary cannot be populated in an ADL script"
      BigBinary        -> Left "Binary cannot be populated in an ADL script"
      HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-     Date             -> Left "Date cannot be populated (jet) in an ADL script"
-     DateTime         -> Left "DateTime cannot be populated (jet) in an ADL script"
+     Date             -> Left $ "String cannot be converted to a "++show dom++".\n   String: "++show str
+     DateTime         -> Left $ "String cannot be converted to a "++show dom++".\n   String: "++show str
      Boolean          -> let table =
                                 [("TRUE", True), ("FALSE" , False)
                                 ,("YES" , True), ("NO"    , False)
@@ -516,23 +520,55 @@ string2AtomValue dom str
                                 ,("WEL" , True), ("NIET"  , False)
                                 ]
                          in case lookup (map toUpper str) table of
-                            Just b -> Right (AAVBoolean Boolean b)
+                            Just b -> Right (AAVBoolean dom b)
                             Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
                            where camelCase []     = []
                                  camelCase (c:xs) = toUpper c: map toLower xs 
                             
      Integer          -> case maybeRead str  of
-                           Just i  -> Right (AAVInteger Integer i)
+                           Just i  -> Right (AAVInteger dom i)
                            Nothing -> Left $ "This is not of type "++show dom++": " ++str
      Float         -> case maybeRead str of 
-                           Just r  -> Right (AAVFloat Float r)
+                           Just r  -> Right (AAVFloat dom r)
                            Nothing -> Left $ "This is not of type "++show dom++": " ++str
      TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-     Object           -> Right (AAVString Object str) 
+     Object           -> Right (AAVString dom str) 
      
    where
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads
+double2AtomValue :: TType -> Double -> Either String AAtomValue
+double2AtomValue dom d
+  = case dom of 
+     Alphanumeric     -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
+     BigAlphanumeric  -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
+     HugeAlphanumeric -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
+     Password         -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
+     Binary           -> Left "Binary cannot be populated in an ADL script"
+     BigBinary        -> Left "Binary cannot be populated in an ADL script"
+     HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+     Date             -> Right (AAVDate {aavtyp = dom
+                                        ,aadateDay = -- In Excel, the double contains the days since jan 1st, 1900
+                                            addDays (floor d) (fromGregorian 1900 1 1)
+                                        })
+     DateTime         -> Right (AAVDateTime {aavtyp = dom
+                                            ,aadatetime = -- In Excel, the double contains the days since jan 1st, 1900
+                                              UTCTime (addDays daysSinceZero (fromGregorian 1900 1 1))
+                                                      (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+                                                      
+                                        })
+                             where picosecondsPerDay = 24*60*60*1000000000000
+                                   (daysSinceZero, fractionOfDay) = properFraction d 
+     Boolean          -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
+     Integer          -> if frac == 0
+                         then Right (AAVInteger dom int)
+                         else Left $ "Numerical value found that is not an "++show dom++": " ++show d
+                          where
+                            (int,frac) = properFraction d
+     Float            -> Right (AAVFloat dom d)
+     TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+     Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show d 
+
 data AAtomValue
   = AAVString  { aavtyp :: TType
                , aavstr :: String
@@ -541,16 +577,17 @@ data AAtomValue
                , aavint :: Integer
                }
   | AAVFloat   { aavtyp :: TType
-               , aavflt :: Float
+               , aavflt :: Double
                }
   | AAVBoolean { aavtyp :: TType
                , aavbool :: Bool
                }
   | AAVDate { aavtyp :: TType
-            , aadateYear ::  Int
-            , aadateMonth :: Int
-            , aadateDay   :: Int
+            , aadateDay ::  Day
             }
+  | AAVDateTime { aavtyp :: TType
+                , aadatetime ::  UTCTime
+                }
   | AtomValueOfONE deriving (Eq,Prelude.Ord)
 showVal :: AAtomValue -> String
 showVal val = 
@@ -558,14 +595,10 @@ showVal val =
    AAVString{}  ->      (aavstr val)
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> showLen 4 (aadateYear val)++
-                   showLen 2 (aadateMonth val)++
-                   showLen 2 (aadateDay val)
+   AAVDate{}    -> showGregorian (aadateDay val)
+   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
-  where
-   showLen i x =
-    replicate (i-length (show x)) '0'++show x
  
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration

@@ -18,7 +18,8 @@ import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
---import Debug.Trace
+import Data.Time.Calendar
+
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ShowADL"
@@ -377,9 +378,9 @@ instance ShowADL Population where
 showPAtom :: PAtomValue -> String
 showPAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
   where x = case at of
-              PAVString _ str -> str
---              PAVNumeric (Original str) -> str
---              PAVBoolean b -> show b
+              PAVString  _ str -> str
+              XlsxDouble _ d -> show d
+              XlsxBool   _ b -> show b
 instance ShowADL AAtomValue where
  showADL at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
   where x = case at of
@@ -387,9 +388,10 @@ instance ShowADL AAtomValue where
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b
-              AAVDate{} -> fshow 4 (aadateYear at)++"-"++fshow 2 (aadateMonth at)++"-"++fshow 2 (aadateDay at)
+              AAVDate _ day    -> showGregorian day
+              AAVDateTime _ dt -> show dt
               AtomValueOfONE -> "1"
-        fshow len int = reverse . take len . reverse $ show int ++ repeat '0'
+
 instance ShowADL TermPrim where
  showADL (PI _)                                   = "I"
  showADL (Pid _ c)                                = "I["++showADL c++"]"

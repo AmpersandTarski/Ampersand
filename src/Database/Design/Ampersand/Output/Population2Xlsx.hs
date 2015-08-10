@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Output.Population2Xlsx
 where
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import System.Time
 import qualified Data.Map as M
@@ -12,6 +13,7 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.Text as T
 import Data.Maybe
 import Data.List
+import Database.Design.Ampersand.Core.A2P_Converters
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Population2Xlsx"
@@ -73,7 +75,11 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
            record2Cell :: Maybe AAtomValue -> Cell
            record2Cell mVal = Cell Nothing (case mVal of
                                              Nothing -> Nothing
-                                             Just aVal -> Just . CellText $ T.pack (showVal aVal)
+                                             Just aVal -> Just $
+                                                case aAtomValue2pAtomValue aVal of
+                                                  PAVString _ str -> CellText $ T.pack str
+                                                  XlsxDouble _ d  -> CellDouble d
+                                                  XlsxBool _ b    -> CellBool b
                                            )  
        toCell :: Maybe String -> Cell
        toCell mVal 
