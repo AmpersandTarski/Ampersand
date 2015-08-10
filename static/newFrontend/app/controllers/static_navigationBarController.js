@@ -35,6 +35,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		$rootScope.session.remove().then(function(data){
 			$rootScope.updateNotifications(data.notifications);
 			$rootScope.session = '';
+			
+			// set roleId back to 0
+			$scope.selectRole(0);
+			
 			$rootScope.session = Restangular.one('session').get().$object;
 		});
 	}

@@ -1,9 +1,12 @@
-AmpersandApp.controller('static_installerController', ['$scope', '$rootScope', '$routeParams', 'Restangular', function ($scope, $rootScope, $routeParams, Restangular) {
+AmpersandApp.controller('static_installerController', function ($scope, $rootScope, $routeParams, Restangular, $localStorage) {
 	$scope.installing = false;
 	$scope.install = function(){
 		$scope.installing = true;
 		Restangular.one('installer').get().then(function(data) {
 			$rootScope.updateNotifications(data);
+			
+			// set roleId back to 0
+			$localStorage.roleId = 0;
 			
 			// refresh session
 			$rootScope.session = Restangular.one('session').get().$object;
@@ -17,4 +20,4 @@ AmpersandApp.controller('static_installerController', ['$scope', '$rootScope', '
 		});
 	}
 	
-}]);
+});
