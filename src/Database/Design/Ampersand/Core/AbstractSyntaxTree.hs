@@ -548,13 +548,11 @@ double2AtomValue dom d
      BigBinary        -> Left "Binary cannot be populated in an ADL script"
      HugeBinary       -> Left "Binary cannot be populated in an ADL script"
      Date             -> Right (AAVDate {aavtyp = dom
-                                        ,aadateDay = -- In Excel, the double contains the days since jan 1st, 1900
-                                            addDays (floor d) (fromGregorian 1900 1 1)
+                                        ,aadateDay = addDays (floor d) dayZeroExcel
                                         })
      DateTime         -> Right (AAVDateTime {aavtyp = dom
-                                            ,aadatetime = -- In Excel, the double contains the days since jan 1st, 1900
-                                              UTCTime (addDays daysSinceZero (fromGregorian 1900 1 1))
-                                                      (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+                                            ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
+                                                                  (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
                                                       
                                         })
                              where picosecondsPerDay = 24*60*60*1000000000000
@@ -568,7 +566,8 @@ double2AtomValue dom d
      Float            -> Right (AAVFloat dom d)
      TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
      Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show d 
-
+ where
+   dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
 data AAtomValue
   = AAVString  { aavtyp :: TType
                , aavstr :: String
