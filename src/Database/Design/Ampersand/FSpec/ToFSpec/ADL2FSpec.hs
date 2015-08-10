@@ -299,8 +299,8 @@ makeFSpec opts context
      dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isInj d, not$decplug d]++
              [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
-     maxTotPaths = clos1 cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
-     maxInjPaths = clos1 dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
+     maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
+     maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      --    Warshall's transitive closure algorithm, adapted for this purpose:
      clos1 :: [Expression] -> [[Expression]]
      clos1 xs
