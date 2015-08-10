@@ -53,7 +53,7 @@ keywords      = [ "INCLUDE"
                 , "REST", "HTML", "LATEX", "MARKDOWN"
                 , "ONE"
                 , "BYPLUG"
-                , "ROLE", "EDITS", "MAINTAINS"
+                , "ROLE", "SERVICE", "EDITS", "MAINTAINS"
                 -- Keywords for TType:
                 , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
                 , "BINARY", "BIGBINARY", "HUGEBINARY"

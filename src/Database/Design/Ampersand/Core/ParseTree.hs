@@ -109,9 +109,12 @@ data P_RoleRule
      , mRules :: [String]  -- ^ name of a Rule
      } deriving (Eq, Show) -- deriving (Eq, Show) is just for debugging
 
-data Role = Role String deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
+data Role = Role String 
+          | Service String
+           deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
 instance Named Role where
  name (Role nm) = nm
+ name (Service nm) = nm
 instance Unique Role where
  showUnique = name
 instance Traced P_RoleRule where

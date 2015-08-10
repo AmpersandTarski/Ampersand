@@ -139,6 +139,7 @@ instance Pretty P_RoleRule where
 
 instance Pretty Role where
     pretty (Role name) = maybeQuote name
+    pretty (Service name) = maybeQuote name
 
 instance Pretty P_Pattern where
     pretty (P_Pat _ nm rls gns dcs rruls rrels reprs cds ids vds xps pop _) =
