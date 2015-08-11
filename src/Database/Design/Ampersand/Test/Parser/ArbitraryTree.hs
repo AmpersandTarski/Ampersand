@@ -127,7 +127,10 @@ instance Arbitrary TType where -- Not allowed are:  [ Object , TypeOfOne]
                          ]
 
 instance Arbitrary Role where
-    arbitrary = Role <$> safeStr
+    arbitrary = 
+      oneof [ Role    <$> safeStr
+            , Service <$> safeStr
+            ]
 
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
