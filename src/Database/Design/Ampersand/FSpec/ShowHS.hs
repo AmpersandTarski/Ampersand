@@ -639,7 +639,7 @@ instance ShowHS Expression where
  showHS opts _      (EDcV sgn  ) = "EDcV ("++showHS opts "" sgn++")"
  showHS _    _      (EMp1 a c  ) = "EMp1 " ++show a++" "++showHSName c
 
-instance ShowHS Sign where
+instance ShowHS Signature where
  showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
 
 instance ShowHS A_Gen where

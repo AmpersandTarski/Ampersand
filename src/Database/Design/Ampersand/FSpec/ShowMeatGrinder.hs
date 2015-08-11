@@ -99,7 +99,7 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
   ++   concatMap (metaPops fSpec) (allAtoms fSpec)
---  ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length.allSigns) fSpec++")"]
+--  ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
 --  ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
@@ -233,11 +233,11 @@ instance MetaPopulations Atom where
    , Pop "repr"  "Atom" "TEXT"
           [(uri atm, (showVal.atmVal) atm)]
    ]
---instance MetaPopulations Sign where
+--instance MetaPopulations Signature where
 -- metaPops _ sgn =
---      [ Pop "src" "Sign" "Concept"
+--      [ Pop "src" "Signature" "Concept"
 --             [(uri sgn, uri (source sgn))]
---      , Pop "trg" "Sign" "Concept"
+--      , Pop "trg" "Signature" "Concept"
 --             [(uri sgn, uri (target sgn))]
 --      ]
 
@@ -281,7 +281,7 @@ instance MetaPopulations Declaration where
              [(uri fSpec,uri dcl)] 
       , Pop "name" "Relation" "TEXT"
              [(uri dcl, name dcl)]
---      , Pop "sign" "Declaration" "Sign"
+--      , Pop "sign" "Declaration" "Signature"
 --             [(uri dcl,uri (sign dcl))]
       , Pop "source" "Relation" "Concept"
              [(uri dcl,uri (source dcl))]
@@ -301,7 +301,7 @@ instance MetaPopulations Declaration where
      Isn{} -> 
       [ Comment " "
       , Comment $ " Declaration `I["++name (source dcl)++"]`"
---      , Pop "sign" "Declaration" "Sign"
+--      , Pop "sign" "Declaration" "Signature"
 --             [(uri dcl,uri (sign dcl))]
       , Pop "source" "Relation" "Concept"
              [(uri dcl,uri (source dcl))]
@@ -404,7 +404,7 @@ instance MetaPopulations Rule where
       , Pop "rrpurpose"  "Rule" "Purpose"
              [(uri rul,showADL x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
-        Pop "sign" "Rule" "Sign"
+        Pop "sign" "Rule" "Signature"
              [(uri rul,uri (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property"
              [(uri rul,show prp) | Just(prp,_) <- [rrdcl rul]]
@@ -485,7 +485,7 @@ instance AdlId (PlugSQL,SqlField)
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
-instance AdlId Sign
+instance AdlId Signature
 instance AdlId Conjunct
 instance AdlId (PairView Expression)
   where uri x = show (typeOf x)++show (hash x)
