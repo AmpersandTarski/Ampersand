@@ -111,7 +111,9 @@ data P_RoleRule
 
 data Role = Role String 
           | Service String
-           deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
+           deriving (Show, Typeable )   -- deriving (Eq, Show) is just for debugging
+instance Eq Role where
+ r == r' = name r == name r' 
 instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
