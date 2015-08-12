@@ -355,7 +355,7 @@ genView_Object fSpec depth obj =
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
             ; conceptTemplate <- getTemplateForConcept (objTarget obj)
-            ; let (templateFilename, viewAttrs) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
+            ; let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
