@@ -140,7 +140,7 @@ aInterface2pInterface ifc =
        }
 
 
-aSign2pSign :: Sign -> P_Sign
+aSign2pSign :: Signature -> P_Sign
 aSign2pSign sgn =
  P_Sign { pSrc = aConcept2pConcept (source sgn)
         , pTgt = aConcept2pConcept (target sgn)

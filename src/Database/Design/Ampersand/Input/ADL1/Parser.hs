@@ -268,7 +268,7 @@ pRelationDef = reorder <$> currPos
                         props = prop ++ fun
                     in P_Sgn nm sign props pragma meanings popu pos plug
 
---- RelationNew ::= 'RELATION' Varid Sign
+--- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)
 pRelationNew = (,,) <$  pKey "RELATION"
                     <*> pVarid
@@ -677,7 +677,7 @@ rightAssociate combinator operator term
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
 
---- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
+--- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
@@ -697,11 +697,11 @@ pAtt = rebuild <$> currPos <*> try pLabelProps `opt` ("",[]) <*> try pTerm
         msub = Nothing
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
---- NamedRel ::= Varid Sign?
+--- NamedRel ::= Varid Signature?
 pNamedRel :: AmpParser P_NamedRel
 pNamedRel = PNamedRel  <$> currPos <*> pVarid <*> pMaybe pSign
 
---- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
+--- Signature ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser P_Sign
 pSign = pBrackets sign
    where sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)

@@ -454,7 +454,7 @@ instance ShowMath A_Gen where
 instance ShowMath Rule where
  showMath r = showMath (rrexp r)
 
-instance ShowMath Sign where
+instance ShowMath Signature where
  showMath (Sign s t) = showMath s++"\\rel"++showMath t
 
 instance ShowMath Expression where

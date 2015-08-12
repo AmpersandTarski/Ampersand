@@ -23,7 +23,7 @@ import Data.List(nub)
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
 
-newtype SignOrd = SignOrd Sign
+newtype SignOrd = SignOrd Signature
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
 instance Eq SignOrd where
@@ -302,7 +302,7 @@ pCtx2aCtx' _
                                  })
           ) <$> traverse (pAtomPair2aAtomPair dcl) (dec_popu pd)
 
-    pSign2aSign :: P_Sign -> Sign
+    pSign2aSign :: P_Sign -> Signature
     pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
     pGen2aGen :: P_Gen -> A_Gen
@@ -315,7 +315,7 @@ pCtx2aCtx' _
              , genspc = pCpt2aCpt (gen_spc pg)
              }
 
-    castSign :: String -> String -> Sign
+    castSign :: String -> String -> Signature
     castSign a b = Sign (castConcept a) (castConcept b)
 
     leastConcept :: A_Concept -> String -> A_Concept
