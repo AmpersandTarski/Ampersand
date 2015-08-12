@@ -190,9 +190,10 @@ makeFSpec opts context
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = [role 
-         | role <- concatMap arRoles . filter (\x -> name r `elem` arRules x) . ctxrrules $ context
-         ]
+       = concatMap arRoles . filter forThisRule . ctxrrules $ context
+         where
+          forThisRule :: A_RoleRule -> Bool
+          forThisRule x = name r `elem` arRules x
      isUserDefined rul =
        case r_usr rul of
          UserDefined  -> True
