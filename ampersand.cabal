@@ -151,7 +151,7 @@ executable ampersand
                      Database.Design.Ampersand.FSpec.ToFSpec.Populated,
                      Database.Design.Ampersand.Graphic.ClassDiag2Dot,
                      Database.Design.Ampersand.Graphic.ClassDiagram,
-                     Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
+                     Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams,
                      Database.Design.Ampersand.Graphic.Graphics,
                      Database.Design.Ampersand.Input,
                      Database.Design.Ampersand.Input.ADL1.CtxError,
@@ -197,7 +197,6 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
