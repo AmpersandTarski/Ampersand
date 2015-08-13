@@ -1,6 +1,7 @@
 CONTEXT RAP IN ENGLISH LATEX
 {- This file contains the documentation of RAP in LaTeX format.
    Each concept of the RAP metamodel has its own section, where sections are separated by comments -}
+INCLUDE "AST.adl"
 INCLUDE "Atoms.docadl"
 --INCLUDE "Terms.docadl"
 INCLUDE "Rules.docadl"

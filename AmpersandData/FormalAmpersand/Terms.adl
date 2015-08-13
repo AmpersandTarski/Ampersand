@@ -90,14 +90,14 @@ ROLE User MAINTAINS "Complete pretype"
 RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~
 MEANING "Every type-term must have a concept as its pretype."
 
-RELATION repr[Term*TEXT] [UNI]
+RELATION repr[Term*Representation] [UNI]
 ROLE ExecEngine MAINTAINS "Every I-term has a representation"
 RULE "Every I-term has a representation" : id |- id;repr;repr~
-VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC id, TXT ";TEXT;I[", SRC name, TXT "]")
+VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC id, TXT ";Representation;I[", SRC name, TXT "]")
 
 ROLE ExecEngine MAINTAINS "Every V-term has a representation"
 RULE "Every V-term has a representation" : vee |- vee;repr;repr~
-VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC vee, TXT ";TEXT;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
+VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC vee, TXT ";Representation;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
 ENDPROCESS
 
 {-

@@ -57,13 +57,13 @@ TABS[concepts :V[SESSION*Concept]
 
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
-INTERFACE Atom(repr[Atom*TEXT]) FOR Ampersand : I[Atom]
+INTERFACE Atom(repr[Atom*Representation]) FOR Ampersand : I[Atom]
 ROWS [ repr : repr
      ]
 
 VIEW Concept : Concept(name)
 
-INTERFACE Concept(name[Concept*Name],isa) FOR Ampersand : I[Concept]
+INTERFACE Concept(name[Concept*Identifier],isa) FOR Ampersand : I[Concept]
 ROWS [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -88,7 +88,7 @@ ROWS [ type : I
 
 VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
 
-INTERFACE Relation(name[Relation*Name], source, target) FOR Ampersand: I[Relation]
+INTERFACE Relation(name[Relation*Identifier], source, target) FOR Ampersand: I[Relation]
 ROWS [ name    : name
      , source  : source
      , target  : target
