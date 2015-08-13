@@ -58,8 +58,8 @@ processModel acts
                              GCH{} -> concat [ evs p | (_,_,p)<-paGCls clause]
                              ALL{} -> (concat.map evs) (paCls clause)
                              Do{}  -> [(paSrt clause, paTo clause)]
-                             New{} -> evs (paCl clause "")
-                             Rmv{} -> evs (paCl clause "")
+                             New{} -> evs (paCl clause [PAVString (Origin "New in `processModel`.") ""])
+                             Rmv{} -> evs (paCl clause [PAVString (Origin "Rmv in `processModel`.") ""])
                              Nop{} -> []
                              Blk{} -> []
                              Let{} -> fatal 305 "events for let undetermined"

@@ -466,10 +466,10 @@ showPAclause indent pa@Do{}
          showADL (paDelta pa)++
          indent++motivate indent "TO MAINTAIN " (paMotiv pa)
 showPAclause indent (New c clause cj_ruls)
-       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause [PAVString (Origin "New in `showPAclause`.") "x"])++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (Rmv c clause cj_ruls)
-       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause [PAVString (Origin "REMOVE in `showPAclause`.") "x"])++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (CHC ds cj_ruls)
        = "ONE OF "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls

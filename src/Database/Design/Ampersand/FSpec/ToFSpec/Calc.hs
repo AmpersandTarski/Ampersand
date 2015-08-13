@@ -679,25 +679,25 @@ genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
                                 , ALL [ genPAcl (testPA 992 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Del l
                                       , genPAcl (testPA 993 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Del r] motive
                                 ] motive
-       (Del, EDia (l,r)) -> GCH [ (Del, (testPA 995 (deltaX) (flp r)          l $ deltaX.:.flp r),          genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
-                                , (Ins, (testPA 996 (deltaX) (flp (notCpl r)) l $ deltaX.:.flp (notCpl r)), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
-                                , (Del, (testPA 997 (flp l) (deltaX)          r $ flp l.:.deltaX),          genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
-                                , (Ins, (testPA 998 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+       (Del, EDia (l,r)) -> GCH [ (Del, (testPA 995 (deltaX) (flp r)          l $ deltaX.:.flp r),          genPAcl (EMp1 a (source l).*.EMp1 b (target l)) tOp l)
+                                , (Ins, (testPA 996 (deltaX) (flp (notCpl r)) l $ deltaX.:.flp (notCpl r)), genPAcl (EMp1 a (source l).*.EMp1 b (target l)) tOp l)
+                                , (Del, (testPA 997 (flp l) (deltaX)          r $ flp l.:.deltaX),          genPAcl (EMp1 a (source r).*.EMp1 b (target r)) tOp r)
+                                , (Ins, (testPA 998 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX), genPAcl (EMp1 a (source r).*.EMp1 b (target r)) tOp r)
                                 ] motive
        (Ins, ERrs (l,r)) -> CHC [ genPAcl (testPA 1000 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX) Del l
                                 , genPAcl (testPA 1001 (l) (deltaX)            r $ l.:.deltaX)            Ins r
                                 ] motive
-       (Del, ERrs (l,r)) -> GCH [ (Ins, (testPA 1003 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
-                                , (Del, (testPA 1004 (l) (deltaX)            r $ l.:.deltaX),            genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+       (Del, ERrs (l,r)) -> GCH [ (Ins, (testPA 1003 (notCpl r) (flp deltaX) l $ notCpl r.:.flp deltaX), genPAcl (EMp1 a (source l).*.EMp1 b (target l)) tOp l)
+                                , (Del, (testPA 1004 (l) (deltaX)            r $ l.:.deltaX),            genPAcl (EMp1 a (source r).*.EMp1 b (target r)) tOp r)
                                 ] motive
        (Ins, ELrs (l,r)) -> CHC [ genPAcl (testPA 1006 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l) Del r
                                 , genPAcl (testPA 1007 (deltaX) (r)            l $ deltaX.:.r           ) Ins l
                                 ] motive
-       (Del, ELrs (l,r)) -> GCH [ (Ins, (testPA 1009 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
-                                , (Del, (testPA 1010 (deltaX) (r)            l $ deltaX.:.r),            genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
+       (Del, ELrs (l,r)) -> GCH [ (Ins, (testPA 1009 (flp deltaX) (notCpl l) r $ flp deltaX.:.notCpl l), genPAcl (EMp1 a (source r).*.EMp1 b (target r)) tOp r)
+                                , (Del, (testPA 1010 (deltaX) (r)            l $ deltaX.:.r),            genPAcl (EMp1 a (source l).*.EMp1 b (target l)) tOp l)
                                 ] motive
-       (Ins, ECps (l,r)) -> CHC [ GCH [ (Ins, (testPA 1012 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
-                                      , (Ins, (testPA 1013 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+       (Ins, ECps (l,r)) -> CHC [ GCH [ (Ins, (testPA 1012 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 a (source l).*.EMp1 b (target l)) tOp l)
+                                      , (Ins, (testPA 1013 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 a (source r).*.EMp1 b (target r)) tOp r)
                                       ] motive
                                 , New (source r) (\x->ALL [ genPAcl (deltaX.*.EMp1 x (target l)) Ins l
                                                           , genPAcl (EMp1 x (source r).*.deltaX) Ins r] motive) motive
@@ -708,8 +708,8 @@ genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
        (Ins, ERad (l,r)) -> CHC [ genPAcl (testPA 1021 (deltaX) (notCpl (flp r)) l $ deltaX.:.notCpl (flp r)) Ins l
                                 , genPAcl (testPA 1022 (notCpl (flp l)) (deltaX) r $ notCpl (flp l).:.deltaX) Ins r
                                 ] motive
-       (Del, ERad (l,r)) -> CHC [ GCH [ (Del, (testPA 1024 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 "a" (source l).*.EMp1 "b" (target l)) tOp l)
-                                      , (Del, (testPA 1025 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 "a" (source r).*.EMp1 "b" (target r)) tOp r)
+       (Del, ERad (l,r)) -> CHC [ GCH [ (Del, (testPA 1024 (deltaX) (flp r) l $ deltaX.:.flp r), genPAcl (EMp1 a (source l).*.EMp1 b (target l)) tOp l)
+                                      , (Del, (testPA 1025 (flp l) (deltaX) r $ flp l.:.deltaX), genPAcl (EMp1 a (source r).*.EMp1 b (target r)) tOp r)
                                       ] motive
                                 , New (source r) (\_->Nop motive) motive
                                 ] motive
@@ -737,6 +737,10 @@ genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
                                       if null motive then "null motive" else ""
                                       )
 -}
+      where
+       a,b :: [PAtomValue]
+       (a,b) = (f "a", f "b")
+         where f s = [PAVString (Origin "`genPAcl` in Calc.hs.") s]
 
    deltaK0 :: t -> InsDel -> t1 -> t
    deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)

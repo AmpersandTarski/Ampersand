@@ -1154,12 +1154,12 @@ normstepPA opts pac = (res,ss,"<=>")
                                 Blk{} -> p'{paMotiv = ms}
                                 _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
                              , msgs)
-                             where (p', msgs) = norm (p "x")
+                             where (p', msgs) = norm (p [PAVString (Origin "New in `norm`.") "x"])
   norm (Rmv c p ms)        = ( case p' of
                                 Blk{} -> p'{paMotiv = ms}
                                 _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms
                              , msgs)
-                             where (p', msgs) = norm (p "x")
+                             where (p', msgs) = norm (p [PAVString (Origin "Rmv in `norm`.") "x"])
   norm p                   = (p, [])
 
 {- Normalization of expressions -}

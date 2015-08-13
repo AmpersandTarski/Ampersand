@@ -37,7 +37,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, double2AtomValue, representationOf
+ , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, double2AtomValue, representationOf, PAtomValue(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -49,7 +49,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue
+                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..)
                                                 )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
@@ -440,11 +440,11 @@ data PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | New { paCpt :: A_Concept                  -- make a new instance of type c
-                    , paCl :: String->PAclause            -- to be done after creating the concept
+                    , paCl :: [PAtomValue] ->PAclause            -- to be done after creating the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
-                    , paCl :: String->PAclause            -- to be done afteremoving the concept
+                    , paCl :: [PAtomValue]->PAclause            -- to be done afteremoving the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
