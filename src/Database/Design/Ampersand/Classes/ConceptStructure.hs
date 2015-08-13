@@ -36,12 +36,10 @@ class ConceptStructure a where
    = [ ACptPopu{ popcpt = cpt (head cl)
                , popas = map atm cl } 
      | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
-     where cpt (EMp1 _ c) = c
-           cpt _          = fatal 31 "cpt error"
-           atm (EMp1 a c) = case string2AtomValue (representationOf ci c) a of
-                             Right av -> av
-                             Left err -> fatal 43 $ "Could not convert the string. That should have been checked earlier. \n  "++err
-           atm _          = fatal 31 "atm error"
+     where cpt (EMp1 _ c)   = c
+           cpt _            = fatal 31 "cpt error"
+           atm (EMp1 val c) = safePAtomVal2AAtomVal ci c val
+           atm _            = fatal 31 "atm error"
            
 prim2rel :: Expression -> Declaration
 prim2rel e

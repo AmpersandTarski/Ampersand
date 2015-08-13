@@ -16,7 +16,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..), mkPair
+   , PAtomPair(..), PAtomValue(..), mkPair, singletonValueAsString
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -232,6 +232,21 @@ data PAtomValue
 --  | PAVFloat Origin Float
 --  | PAVBoolean Origin Bool 
   deriving Show
+instance Eq PAtomValue where
+  PAVString  _ s == PAVString  _ s' = s == s'
+  XlsxDouble _ d == XlsxDouble _ d' = d == d'
+  XlsxBool   _ b == XlsxBool   _ b' = b == b'
+  _              == _               = False
+instance Ord PAtomValue where
+  compare a b = 
+   case (a,b) of
+    (PAVString  _ x, PAVString  _ x') -> compare x x'
+    (PAVString  _ _, _              ) -> GT
+    (XlsxDouble _ x, XlsxDouble _ x') -> compare x x'
+    (XlsxDouble _ _, _              ) -> GT
+    (XlsxBool   _ x, XlsxBool   _ x') -> compare x x'
+    (XlsxBool   _ _, _              ) -> GT
+ 
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r 
    = PPair { pppos   = o
@@ -245,13 +260,24 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin String (Maybe P_Concept)   -- ^ an atom, possibly with a type
+   | Patm Origin [PAtomValue] (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
+                                                  --   eg, when `123` is found by the parser, the list will contain both interpretations as 
+                                                  --   the String "123" or as Integer 123.  
+                                                  --   Since everything between the single quotes can allways be interpretated as a String, 
+                                                  --   it is quaranteed that the list contains the interpretation as String, and thus cannot
+                                                  --   be empty.    
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
    | PNamedR P_NamedRel
    deriving Show
-
+-- | function to be used in combination with the Patm constructor, 
+--   to retreave the allwasy present string interpretation
+singletonValueAsString :: [PAtomValue] -> PAtomValue
+singletonValueAsString ps =
+  case [p | p@PAVString{} <- ps] of
+    []  -> fatal 277 "Invalid call to this function!"
+    p:_ -> p
 data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
    deriving Show
 

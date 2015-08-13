@@ -677,17 +677,24 @@ rightAssociate combinator operator term
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
 
---- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Atom ('[' ConceptOneRef ']')?
+--- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Singleton ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
-                    pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
-                    pfull <$> currPos <* pKey "V" <*> pMaybe pSign                       <|>
-                    Patm  <$> currPos <*> pAtom   <*> pMaybe (pBrackets pConceptOneRef)
+pRelationRef      = PNamedR <$> pNamedRel                                                
+                <|> pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)
+                <|> pfull <$> currPos <* pKey "V" <*> pMaybe pSign
+                <|> Patm  <$> currPos <*> pSingleton <*> pMaybe (pBrackets pConceptOneRef)
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
+-- | returns a non-empty list
+pSingleton :: AmpParser [PAtomValue]
+pSingleton = reparse <$> currPos <*> pAtom
+  where -- | will return all possible parses of the given string. Since the string
+        --  PAVString{} will allways be an element in the list, which guarantees that the list is non-empty 
+        reparse :: Origin -> String -> [PAtomValue]
+        reparse o str = [PAVString o str]
 --- Att ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.

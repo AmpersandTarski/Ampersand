@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
-    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics
+    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePAtomVal2AAtomVal
     ) 
 where
 {- This file contains all functions to compute populations.
@@ -127,7 +127,10 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
          EDcI c     -> fromList [(a,[a]) | a <- aVals c]
          EEps i _   -> fromList [(a,[a]) | a <- aVals i]
          EDcV sgn   -> fromList [(s, cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
-         EMp1 a c   -> fromList [case string2AtomValue (representationOf ci c) a of
-                                   Right av -> (av,[av])
-                                   Left err -> fatal 99 $ "This shouldn't happen here. \n  "++err  -- TODO: This should be caught in a better way (not als fatal, but as a user error)
-                                | name c/="SESSION"] -- prevent populating SESSION
+         EMp1 val c -> fromList $ if name c == "SESSION" -- prevent populating SESSION
+                                  then []
+                                  else [(av,[av])]
+                         where 
+                           av = safePAtomVal2AAtomVal ci c val
+
+

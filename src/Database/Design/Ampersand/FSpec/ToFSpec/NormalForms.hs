@@ -78,7 +78,7 @@ data RTerm = RIsc {rTermSet :: Set RTerm}  -- intersection is associative and co
            | RFlp {rTermUny :: RTerm}
            | RId  A_Concept
            | RVee A_Concept A_Concept
-           | RAtm String A_Concept
+           | RAtm [PAtomValue] A_Concept
            | RVar String String String  -- relation name, source name, target name.
            | RConst Expression
            deriving (Eq,Ord,Show)
@@ -629,7 +629,7 @@ instance ShowADL RTerm where
           RConst e   -> wrap i i (showADL e)
           RId c      -> "I"++lbr++name c++rbr
           RVee s t   -> "V"++lbr++name s++star++name t++rbr
-          RAtm a c   -> "'"++a++"'"++lbr++name c++rbr
+          RAtm val c -> showADL (singletonValueAsString val)++lbr++name c++rbr
      wrap :: Int -> Int -> String -> String
      wrap i j e' = if i<=j then e' else lpar++e'++rpar
 

@@ -32,7 +32,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
- , Representation(..), TType(..), contextInfoOf
+ , Representation(..), TType(..), contextInfoOf, safePAtomVal2AAtomVal
  , Signature(..)
  , Population(..)
  , Association(..)
@@ -49,7 +49,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..)
+                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue
                                                 )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
@@ -641,12 +641,37 @@ data Expression
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
-      | EMp1 String A_Concept          -- ^ constant (string between single quotes)
+      | EMp1 [PAtomValue] A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet. 
       deriving (Eq, Prelude.Ord, Show, Typeable, Generic)
 instance Unique Expression where
   showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
-instance Hashable Expression
+instance Hashable Expression where
+   hashWithSalt s expr = 
+     s `hashWithSalt` 
+       case expr of
+        EEqu (a,b) -> ( 0::Int) `hashWithSalt` a `hashWithSalt` b
+        EImp (a,b) -> ( 1::Int) `hashWithSalt` a `hashWithSalt` b
+        EIsc (a,b) -> ( 2::Int) `hashWithSalt` a `hashWithSalt` b
+        EUni (a,b) -> ( 3::Int) `hashWithSalt` a `hashWithSalt` b
+        EDif (a,b) -> ( 4::Int) `hashWithSalt` a `hashWithSalt` b
+        ELrs (a,b) -> ( 5::Int) `hashWithSalt` a `hashWithSalt` b
+        ERrs (a,b) -> ( 6::Int) `hashWithSalt` a `hashWithSalt` b
+        EDia (a,b) -> ( 7::Int) `hashWithSalt` a `hashWithSalt` b
+        ECps (a,b) -> ( 8::Int) `hashWithSalt` a `hashWithSalt` b
+        ERad (a,b) -> ( 9::Int) `hashWithSalt` a `hashWithSalt` b
+        EPrd (a,b) -> (10::Int) `hashWithSalt` a `hashWithSalt` b
+        EKl0 e     -> (11::Int) `hashWithSalt` e
+        EKl1 e     -> (12::Int) `hashWithSalt` e
+        EFlp e     -> (13::Int) `hashWithSalt` e
+        ECpl e     -> (14::Int) `hashWithSalt` e
+        EBrk e     -> (15::Int) `hashWithSalt` e
+        EDcD d     -> (16::Int) `hashWithSalt` d
+        EDcI c     -> (17::Int) `hashWithSalt` c
+        EEps c sgn -> (18::Int) `hashWithSalt` c `hashWithSalt` sgn
+        EDcV sgn   -> (19::Int) `hashWithSalt` sgn
+        EMp1 val c -> (21::Int) `hashWithSalt` show val `hashWithSalt` c        
+
 instance Unique (PairView Expression) where
   showUnique = show
 instance Unique (PairViewSegment Expression) where
@@ -830,7 +855,7 @@ class Association rel where
   isEndo s        = source s == target s
 
 
--- Convenient data structure to hold information about concepts and their populations
+-- Convenient data structure to hold information about concepts and their representations
 --  in a context. 
 data ContextInfo =
   CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
@@ -855,4 +880,13 @@ contextInfoOf :: A_Context -> ContextInfo
 contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
                        , ctxiRepresents = ctxreprs ctx
                        }
-
+-- | This function is meant to convert the [PAtomValue] inside EMp1 to an AAtomValue,
+--   after the expression has been built inside an A_Context. Only at that time
+--   the TType is known, enabling the correct transformation. 
+--   To ensure that this function is not used too early, ContextInfo is required, 
+--   which only exsists after disambiguation.
+safePAtomVal2AAtomVal :: ContextInfo -> A_Concept -> [PAtomValue] -> AAtomValue
+safePAtomVal2AAtomVal todo cpt val = fatal 141 "TODO"
+-- case string2AtomValue (representationOf ci c) a of
+--                             Right av -> av
+--                             Left err -> fatal 43 $ "Could not convert the string. That should have been checked earlier. \n  "++err

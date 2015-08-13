@@ -245,9 +245,9 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr --HJO, 20140622: Modified this, because the output must comply to Ampersand syntax.
+          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
-          showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
+          showchar (EMp1 val c) = showADL (singletonValueAsString val)++lbr++name c++rbr
 
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
@@ -340,16 +340,12 @@ instance ShowADL P_Population where
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          P_RelPopu{} -> map showPPaire (p_popps pop)
-                          P_CptPopu{} -> map showPAtom  (p_popas pop)
-showPPaire :: PAtomPair -> String
-showPPaire p = showPAtom (ppLeft p)++", "++ showPAtom (ppRight p)
-showAPaire :: AAtomPair -> String
-showAPaire p = showADL (apLeft p)++", "++ showADL (apRight p)
+                          P_RelPopu{} -> map showADL (p_popps pop)
+                          P_CptPopu{} -> map showADL  (p_popas pop)
 instance ShowADL PAtomPair where
- showADL p = "("++showPAtom (ppLeft p)++","++ showPAtom (ppRight p)++")"
-instance ShowADL [PAtomPair] where
- showADL ps = "["++intercalate ", " (map showADL ps)++"]"
+ showADL p = "("++showADL (ppLeft p)++","++ showADL (ppRight p)++")"
+instance ShowADL AAtomPair where
+ showADL p = "("++showADL (apLeft p)++","++ showADL (apRight p)++")"
   
 instance ShowADL Population where
  showADL pop
@@ -366,7 +362,7 @@ instance ShowADL Population where
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          ARelPopu{} -> map showAPaire (popps pop)
+                          ARelPopu{} -> map showADL (popps pop)
                           ACptPopu{} -> map showADL (popas pop)
 
 -- showADL (ARelPopu r pairs)
@@ -375,10 +371,9 @@ instance ShowADL Population where
 --    where indent = "   "
 
 
-showPAtom :: PAtomValue -> String
-showPAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
-  where x = case at of
-              PAVString  _ str -> str
+instance ShowADL PAtomValue where
+ showADL at = case at of
+              PAVString  _ str -> "'"++[if c=='\'' then '`' else c|c<-str]++"'"
               XlsxDouble _ d -> show d
               XlsxBool   _ b -> show b
 instance ShowADL AAtomValue where
@@ -393,13 +388,13 @@ instance ShowADL AAtomValue where
               AtomValueOfONE -> "1"
 
 instance ShowADL TermPrim where
- showADL (PI _)                                   = "I"
- showADL (Pid _ c)                                = "I["++showADL c++"]"
- showADL (Patm _ a Nothing)                       = "'"++a++"'"
- showADL (Patm _ a (Just c))                      = "'"++a++"'["++show c++"]"
- showADL (PVee _)                                 = "V"
- showADL (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
- showADL (PNamedR rel)                            = showADL rel
+ showADL (PI _)                   = "I"
+ showADL (Pid _ c)                = "I["++showADL c++"]"
+ showADL (Patm _ val Nothing)     = showADL (singletonValueAsString val)
+ showADL (Patm _ val (Just c))    = showADL (singletonValueAsString val)++"["++show c++"]"
+ showADL (PVee _)                 = "V"
+ showADL (Pfull _ s t)            = "V["++show s++"*"++show t++"]"
+ showADL (PNamedR rel)            = showADL rel
  
 instance ShowADL P_NamedRel where
  showADL (PNamedRel _ rel mSgn)                    = rel++maybe "" showsign mSgn
