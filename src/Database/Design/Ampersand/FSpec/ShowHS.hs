@@ -136,10 +136,10 @@ instance ShowHS PAclause where
                          indent++"       ("++showHS opts (indent++"        ") (paDelta p)++indent++"       )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         New{} -> "New ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p [PAVString (Origin "New in `showHS`.") "x"])++indent++"    )"++
+                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         Rmv{} -> "Rmv ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p [PAVString (Origin "Rmv in `showHS`.") "x"])++indent++"    )"++
+                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
         Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms

@@ -738,9 +738,8 @@ genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
                                       )
 -}
       where
-       a,b :: [PAtomValue]
-       (a,b) = (f "a", f "b")
-         where f s = [PAVString (Origin "`genPAcl` in Calc.hs.") s]
+       (a,b) = (makePSingleton "a", makePSingleton "b")
+         
 
    deltaK0 :: t -> InsDel -> t1 -> t
    deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)

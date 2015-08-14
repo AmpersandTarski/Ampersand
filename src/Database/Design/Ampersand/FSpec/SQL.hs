@@ -156,9 +156,9 @@ nonSpecialSelectExpr fSpec expr=
                    else f (Just val) nonMp1Terms
             []  -> f Nothing nonMp1Terms
            where 
-                  posVals :: [[PAtomValue]]
+                  posVals :: [PSingleton]
                   posVals = nub (map atmValue posMp1Terms)
-                  negVals :: [[PAtomValue]]
+                  negVals :: [PSingleton]
                   negVals = nub (map (atmValue . notCpl) negMp1Terms)
                   atmValue (EMp1 a _) = a
                   atmValue _          = fatal 31 "atm error"
@@ -166,7 +166,7 @@ nonSpecialSelectExpr fSpec expr=
                   (mp1Terms,nonMp1Terms) = partition isMp1 (exprIsc2list expr)
                   posMp1Terms, negMp1Terms :: [Expression]
                   (posMp1Terms,negMp1Terms) = partition isPos mp1Terms
-                  f :: Maybe [PAtomValue]   -- Optional the singleton value that might be found as the only possible value 
+                  f :: Maybe PSingleton   -- Optional the singleton value that might be found as the only possible value 
                       -> [Expression] -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.  
                       -> BinQueryExpr
                   f specificValue subTerms 
@@ -201,7 +201,7 @@ nonSpecialSelectExpr fSpec expr=
                                             Nothing  -> Nothing
                                             Just val -> Just $ equalToValueClause val
                                           where
-                                            equalToValueClause :: [PAtomValue] -> ValueExpr
+                                            equalToValueClause :: PSingleton -> ValueExpr
                                             equalToValueClause singleton = conjunctSQL 
                                                                [ BinOp theSrc [Name "="] (representInSQL (source expr) singleton)
                                                                , BinOp theTrg [Name "="] (representInSQL (source expr) singleton)
@@ -214,7 +214,7 @@ nonSpecialSelectExpr fSpec expr=
                                             _   -> Just . conjunctSQL $
                                                      map notEqualToValueClause negVals
                                           where
-                                            notEqualToValueClause :: [PAtomValue] -> ValueExpr
+                                            notEqualToValueClause :: PSingleton -> ValueExpr
                                             notEqualToValueClause singleton = conjunctSQL 
                                                                [ BinOp theSrc [Name "<>"] (representInSQL (source expr) singleton)
                                                                , BinOp theTrg [Name "<>"] (representInSQL (source expr) singleton)
@@ -607,10 +607,10 @@ Based on this derivation:
            selectExpr fSpec (foldr1 (.:.) [l,v,r])
 
   where
-   representInSQL :: A_Concept -> [PAtomValue] -> ValueExpr
+   representInSQL :: A_Concept -> PSingleton -> ValueExpr
    representInSQL cpt = representInSQLwithTTyp ((cptTType fSpec) cpt)
 
-representInSQLwithTTyp :: TType -> [PAtomValue] -> ValueExpr
+representInSQLwithTTyp :: TType -> PSingleton -> ValueExpr
 representInSQLwithTTyp typ interpretations = fatal 826 "TODO"
 
 toTableRef :: BinQueryExpr -> TableRef

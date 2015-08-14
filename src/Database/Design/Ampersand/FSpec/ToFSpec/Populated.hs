@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
-    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePAtomVal2AAtomVal
+    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePSingleton2AAtomVal
     ) 
 where
 {- This file contains all functions to compute populations.
@@ -131,6 +131,6 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
                                   then []
                                   else [(av,[av])]
                          where 
-                           av = safePAtomVal2AAtomVal ci c val
+                           av = safePSingleton2AAtomVal ci c val
 
 

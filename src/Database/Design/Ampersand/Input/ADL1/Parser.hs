@@ -689,12 +689,18 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
 -- | returns a non-empty list
-pSingleton :: AmpParser [PAtomValue]
+pSingleton :: AmpParser PSingleton
 pSingleton = reparse <$> currPos <*> pAtom
   where -- | will return all possible parses of the given string. Since the string
         --  PAVString{} will allways be an element in the list, which guarantees that the list is non-empty 
-        reparse :: Origin -> String -> [PAtomValue]
-        reparse o str = [PAVString o str]
+        reparse :: Origin -> String -> PSingleton
+        reparse o str =
+            PSingleton { psOrig = o
+                       , psRaw  = str
+                       , psInterprets = [PAVString o str]
+                                     ++ [] --TODO: Also parse dates, numbers, video's whatever
+                       }
+
 --- Att ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.

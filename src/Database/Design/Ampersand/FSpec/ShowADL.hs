@@ -247,7 +247,7 @@ instance ShowADL Expression where
           showchar (EDcI c)     = "I"++lbr++name c++rbr
           showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
-          showchar (EMp1 val c) = showADL (singletonValueAsString val)++lbr++name c++rbr
+          showchar (EMp1 val c) = showADL val++lbr++name c++rbr
 
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
@@ -370,7 +370,8 @@ instance ShowADL Population where
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
-
+instance ShowADL PSingleton where  
+ showADL s = "'"++[if c=='\'' then '`' else c|c<-psRaw s]++"'"
 instance ShowADL PAtomValue where
  showADL at = case at of
               PAVString  _ str -> "'"++[if c=='\'' then '`' else c|c<-str]++"'"
@@ -390,8 +391,8 @@ instance ShowADL AAtomValue where
 instance ShowADL TermPrim where
  showADL (PI _)                   = "I"
  showADL (Pid _ c)                = "I["++showADL c++"]"
- showADL (Patm _ val Nothing)     = showADL (singletonValueAsString val)
- showADL (Patm _ val (Just c))    = showADL (singletonValueAsString val)++"["++show c++"]"
+ showADL (Patm _ val Nothing)     = showADL val
+ showADL (Patm _ val (Just c))    = showADL val++"["++show c++"]"
  showADL (PVee _)                 = "V"
  showADL (Pfull _ s t)            = "V["++show s++"*"++show t++"]"
  showADL (PNamedR rel)            = showADL rel
@@ -466,10 +467,10 @@ showPAclause indent pa@Do{}
          showADL (paDelta pa)++
          indent++motivate indent "TO MAINTAIN " (paMotiv pa)
 showPAclause indent (New c clause cj_ruls)
-       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause [PAVString (Origin "New in `showPAclause`.") "x"])++motivate indent "MAINTAINING" cj_ruls
+       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause (makePSingleton "x"))++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (Rmv c clause cj_ruls)
-       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause [PAVString (Origin "REMOVE in `showPAclause`.") "x"])++motivate indent "MAINTAINING" cj_ruls
+       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause (makePSingleton "x"))++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (CHC ds cj_ruls)
        = "ONE OF "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls

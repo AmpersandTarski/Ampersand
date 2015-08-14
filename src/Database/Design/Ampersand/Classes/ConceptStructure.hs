@@ -38,7 +38,7 @@ class ConceptStructure a where
      | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
      where cpt (EMp1 _ c)   = c
            cpt _            = fatal 31 "cpt error"
-           atm (EMp1 val c) = safePAtomVal2AAtomVal ci c val
+           atm (EMp1 val c) = safePSingleton2AAtomVal ci c val
            atm _            = fatal 31 "atm error"
            
 prim2rel :: Expression -> Declaration

@@ -16,7 +16,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..), mkPair, singletonValueAsString
+   , PAtomPair(..), PAtomValue(..), mkPair, PSingleton(..), makePSingleton
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -222,6 +222,25 @@ instance Traced PAtomPair where
 instance Flippable PAtomPair where
   flp pr = pr{ppLeft = ppRight pr
              ,ppRight = ppLeft pr}
+data PSingleton
+  = PSingleton { psOrig :: Origin
+               , psRaw  :: String 
+               , psInterprets :: [PAtomValue]
+               }
+instance Show PSingleton where
+ show = psRaw
+instance Eq PSingleton where
+ a == b = psRaw a == psRaw b 
+instance Ord PSingleton where
+ compare a b = compare (psRaw a) (psRaw b)
+instance Traced PSingleton where
+ origin = psOrig
+makePSingleton :: String -> PSingleton
+makePSingleton s = 
+   PSingleton { psOrig =Origin "ParseTree.hs"
+              , psRaw = s
+              , psInterprets = fatal 241 "Probably no need to make something up..." 
+              }
 
 data PAtomValue
   = PAVString Origin String
@@ -260,7 +279,7 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin [PAtomValue] (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
+   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
                                                   --   eg, when `123` is found by the parser, the list will contain both interpretations as 
                                                   --   the String "123" or as Integer 123.  
                                                   --   Since everything between the single quotes can allways be interpretated as a String, 
@@ -271,13 +290,7 @@ data TermPrim
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
    | PNamedR P_NamedRel
    deriving Show
--- | function to be used in combination with the Patm constructor, 
---   to retreave the allwasy present string interpretation
-singletonValueAsString :: [PAtomValue] -> PAtomValue
-singletonValueAsString ps =
-  case [p | p@PAVString{} <- ps] of
-    []  -> fatal 277 "Invalid call to this function!"
-    p:_ -> p
+
 data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
    deriving Show
 
