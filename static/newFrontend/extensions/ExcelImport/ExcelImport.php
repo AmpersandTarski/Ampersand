@@ -48,50 +48,52 @@ class ImportExcel
 		// Output is function call: 
 		// InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 
-		// Loop through all rows
-		$worksheet = $objPHPExcel->getActiveSheet();
-		$highestrow = $worksheet->getHighestRow();
-		$highestcolumn = $worksheet->getHighestColumn();
-		$highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
-
-		$row = 1; // Go to the first row where a table starts. 
-		for ($i = $row; $i <= $highestrow; $i++){
-			$row = $i;
-			if (substr($objPHPExcel->getActiveSheet()->getCell('A' . $row)->getValue(), 0, 1) === '[') break;
-		} // We are now at the beginning of a table or at the end of the file.
-
-		$line = array(); // Line is a buffer of one or more related (subsequent) excel rows
-
-		while ($row <= $highestrow){
-			// Read this line as an array of values
-			$values = array(); // values is a buffer containing the cells in a single excel row 
-			for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){ 
-				$columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-				$values[] = (string)$objPHPExcel->getActiveSheet()->getCell($columnletter . $row)->getCalculatedValue();
+		// Loop over all worksheets
+		foreach($objPHPExcel->getWorksheetIterator() as $worksheet){
+			// Loop through all rows
+			$highestrow = $worksheet->getHighestRow();
+			$highestcolumn = $worksheet->getHighestColumn();
+			$highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
+	
+			$row = 1; // Go to the first row where a table starts. 
+			for ($i = $row; $i <= $highestrow; $i++){
+				$row = $i;
+				if (substr($worksheet->getCell('A' . $row)->getValue(), 0, 1) === '[') break;
+			} // We are now at the beginning of a table or at the end of the file.
+	
+			$line = array(); // Line is a buffer of one or more related (subsequent) excel rows
+	
+			while ($row <= $highestrow){
+				// Read this line as an array of values
+				$values = array(); // values is a buffer containing the cells in a single excel row 
+				for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){ 
+					$columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
+					$values[] = (string)$worksheet->getCell($columnletter . $row)->getCalculatedValue();
+				}
+				// var_dump($values);
+				$line[] = $values; // add line (array of values) to the line buffer
+	
+				$row++;
+				// Is this relation table done? Then we parse the current values into function calls and reset it
+				$firstCellInRow = (string)$worksheet->getCell('A' . $row)->getCalculatedValue();
+				// emitLog("First cell in row $row is: $firstCellInRow");
+				if (substr($firstCellInRow, 0, 1) === '['){ 
+					// Relation table is complete, so it can be processed.
+					// emitLog( "<<< BLOK\n");
+					// print_r($line);
+					// emitLog( "\n/BLOK >>>\n\n");
+					$this->ParseLines($line);
+					$line = array();
+				}
 			}
-			// var_dump($values);
-			$line[] = $values; // add line (array of values) to the line buffer
-
-			$row++;
-			// Is this relation table done? Then we parse the current values into function calls and reset it
-			$firstCellInRow = (string)$objPHPExcel->getActiveSheet()->getCell('A' . $row)->getCalculatedValue();
-			// emitLog("First cell in row $row is: $firstCellInRow");
-			if (substr($firstCellInRow, 0, 1) === '['){ 
-				// Relation table is complete, so it can be processed.
-				// emitLog( "<<< BLOK\n");
-				// print_r($line);
-				// emitLog( "\n/BLOK >>>\n\n");
-				$this->ParseLines($line);
-				$line = array();
-			}
+			
+			// Last relation table remains to be processed.
+			// emitLog( "<<< BLOK\n");
+			// print_r($line);
+			// emitLog( "\n/BLOK >>>\n\n");
+			$this->ParseLines($line);
+			$line = array();
 		}
-		
-		// Last relation table remains to be processed.
-		// emitLog( "<<< BLOK\n");
-		// print_r($line);
-		// emitLog( "\n/BLOK >>>\n\n");
-		$this->ParseLines($line);
-		$line = array();
 	}
 
 	// Format is as follows:

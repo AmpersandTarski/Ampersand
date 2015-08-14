@@ -82,12 +82,14 @@ class Database
 		
 		Notifications::addLog('========= INSTALLER ==========', 'INSTALLER');
 		
-		$this->startTransaction();
 		Notifications::addLog('---------- DB structure queries ------------', 'INSTALLER');
 		foreach($allDBstructQueries as $query){
 			$this->Exe($query);
 			
 		}
+		
+		if(CHECK_DEF_POP) $this->startTransaction(); // default must be true: when CHECK_DEF_POP is undefined, this is true
+		
 		Notifications::addLog('---------- DB population queries -----------', 'INSTALLER');
 		foreach($allDefPopQueries as $query){
 			$this->Exe($query);
@@ -432,6 +434,9 @@ class Database
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
+		}elseif(defined(COMMIT_INV_VIOLATIONS) && COMMIT_INV_VIOLATIONS){
+			$this->commitTransaction();
+			Notifications::addError("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){
 			$this->rollbackTransaction(); // rollback database transaction
 			Notifications::addInfo($succesMessage);
