@@ -6,6 +6,7 @@ import Control.Monad
 import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
 import Database.Design.Ampersand hiding (putStr, origin)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Prototype.Installer
 import Database.Design.Ampersand.Prototype.PHP
 
@@ -99,7 +100,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
 validateExp fSpec vExp@(exp, origin) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec tempDbName $ exp
-    ; let violationsAmp = sort [(showVal (apLeft p), showVal (apRight p)) | p <- fullContents (contextInfo fSpec) (initialPops fSpec) exp]
+    ; let violationsAmp = sort [(showValPHP (apLeft p), showValPHP (apRight p)) | p <- fullContents (contextInfo fSpec) (initialPops fSpec) exp]
 
     ; if violationsSQL == violationsAmp
       then

@@ -7,6 +7,7 @@ import Data.Function (on)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
 import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, writeStaticFiles)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
 import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
@@ -96,9 +97,9 @@ doGenProto fSpec =
                           ]
                           
        showprs :: [AAtomPair] -> String
-       showprs aprs = "["++intercalate ", " (map showpr aprs)++"]"
-       showpr :: AAtomPair -> String
-       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )" 
+       showprs aprs = "["++intercalate ", " (map showADL aprs)++"]"
+--       showpr :: AAtomPair -> String
+--       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )" 
        reportSignals []        = verboseLn (getOpts fSpec) "No signals for the initial population."
        reportSignals conjViols = verboseLn (getOpts fSpec) $ "Signals for initial population:\n" ++ intercalate "\n"
          [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
@@ -116,6 +117,6 @@ ruleTest fSpec ruleName =
                   ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
                   ; putStrLn $ showContents ruleComplement
                   }
- where showContents rule = let pairs = [ "("++(show.showVal.apLeft) v++"," ++(show.showVal.apRight) v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
+ where showContents rule = let pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
                            in  "[" ++ intercalate ", " pairs ++ "]"
               

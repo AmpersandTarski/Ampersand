@@ -28,10 +28,13 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlFieldUsage(..)
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..),AAtomValue,showVal
+          , Language(..),AAtomValue
+          , showValADL,showValPHP,showValXLSX
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
-          
+-- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
+--       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
+--       hyrarchie to reflect the Architecture. 
 import Data.List
 import Data.Typeable
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
@@ -118,7 +121,7 @@ data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmVal   :: AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where
-  showUnique a = showVal (atmVal a)++" in "
+  showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x

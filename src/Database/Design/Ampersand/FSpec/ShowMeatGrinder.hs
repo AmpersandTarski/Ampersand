@@ -231,7 +231,7 @@ instance MetaPopulations Atom where
           [(uri atm, uri cpt)
           |cpt <- atmRoots atm]
    , Pop "repr"  "Atom" "TEXT"
-          [(uri atm, (showVal.atmVal) atm)]
+          [(uri atm, (showValADL.atmVal) atm)]
    ]
 --instance MetaPopulations Signature where
 -- metaPops _ sgn =

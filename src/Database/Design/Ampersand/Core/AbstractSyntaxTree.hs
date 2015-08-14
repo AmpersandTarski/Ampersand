@@ -38,7 +38,8 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), representationOf, PAtomValue(..)
+ , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf, PAtomValue(..)
+ , showValADL,showValPHP,showValXLSX
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -522,8 +523,27 @@ data AAtomValue
                 , aadatetime ::  UTCTime
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord)
-showVal :: AAtomValue -> String
-showVal val = 
+showValPHP :: AAtomValue -> String
+showValPHP val =
+  case val of
+   AAVString{}  -> "'"++f (aavstr val)++"'"
+     where 
+        f str'= 
+          case str' of
+            []        -> []
+            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
+            ('\\':s') -> "\\\\" ++ f s'
+            (c:cs)    -> c : f cs
+   AAVInteger{} -> show (aavint val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> showGregorian (aadateDay val)
+   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVFloat{}   -> show (aavflt val)
+   AtomValueOfONE{} -> "1"
+showValXLSX :: AAtomValue -> String
+showValXLSX = showValADL  -- Todo: Eigen maken
+showValADL :: AAtomValue -> String
+showValADL val = 
   case val of
    AAVString{}  ->      (aavstr val)
    AAVInteger{} -> show (aavint val)

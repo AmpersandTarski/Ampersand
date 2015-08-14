@@ -91,7 +91,7 @@ module Database.Design.Ampersand
    , rulefromProp
    , fullContents, AAtomPair, apLeft,apRight
    , Purpose(..), ExplObj(..)
-   , showVal,ContextInfo,AAtomValue
+   , ContextInfo,AAtomValue
    )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree

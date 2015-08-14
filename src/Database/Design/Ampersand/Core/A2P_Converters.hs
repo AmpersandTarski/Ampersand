@@ -304,11 +304,11 @@ aAtomValue2pAtomValue val =
     HugeBinary       -> fatal 295 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
     Date             -> case val of
                           AAVDate{} -> --TODO: Needs rethinking. A string or a double?
-                                       PAVString o (showVal val)
+                                       PAVString o (showValADL val)
                           _         -> fatal 307 "Unexpected combination of value types"
     DateTime         -> case val of
                           AAVDateTime{} -> --TODO: Needs rethinking. A string or a double?
-                                       PAVString o (showVal val)
+                                       PAVString o (showValADL val)
                           _         -> fatal 311 "Unexpected combination of value types"
     Integer          -> case val of
                           AAVInteger{} -> XlsxDouble o (fromInteger (aavint val))
