@@ -193,7 +193,7 @@ instance Arbitrary TermPrim where
         oneof [
            PI <$> arbitrary,
            Pid <$> arbitrary <*> genConceptOne,
-           Patm <$> arbitrary <*> identifier <*> maybeConceptOne,
+           Patm <$> arbitrary <*> arbitrary <*> maybeConceptOne,
            PVee <$> arbitrary,
            Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
            PNamedR <$> relationRef
@@ -245,6 +245,9 @@ instance Arbitrary P_NamedRel where
 
 instance Arbitrary PAtomValue where
     arbitrary = PAVString <$> arbitrary <*> safeStr
+
+instance Arbitrary PSingleton where
+    arbitrary = PSingleton <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
