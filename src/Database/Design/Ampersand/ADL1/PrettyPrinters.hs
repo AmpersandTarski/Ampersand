@@ -3,10 +3,14 @@ module Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
+import Database.Design.Ampersand.Basics        (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "PrettyPrinters"
 
 prettyPrint :: Pretty a => a -> String
 prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
@@ -394,6 +398,6 @@ instance Pretty PAtomValue where
     pretty val = 
       case val of
        PAVString  _ s -> quote s
-       XlsxDouble _ d -> (text . show) d
-       XlsxBool   _ b -> (text . show) b
+       XlsxDouble _ _ -> fatal 397 "XlsxDouble cannot be represented in an Ampersand script" -- it could be a date or a numeric thing. Who knows?
+       XlsxBool   _ b -> text $ if b then "TRUE" else "FALSE"
 

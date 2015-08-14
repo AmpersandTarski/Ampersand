@@ -182,8 +182,8 @@ nonSpecialSelectExpr fSpec expr=
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
                                  Just singleton ->
-                                    BSE { bseSrc = representInSQL (source expr) singleton
-                                        , bseTrg = representInSQL (source expr) singleton
+                                    BSE { bseSrc = singleton2SQL (source expr) singleton
+                                        , bseTrg = singleton2SQL (source expr) singleton
                                         , bseTbl = []
                                         , bseWhr = Nothing
                                         }
@@ -203,8 +203,8 @@ nonSpecialSelectExpr fSpec expr=
                                           where
                                             equalToValueClause :: PSingleton -> ValueExpr
                                             equalToValueClause singleton = conjunctSQL 
-                                                               [ BinOp theSrc [Name "="] (representInSQL (source expr) singleton)
-                                                               , BinOp theTrg [Name "="] (representInSQL (source expr) singleton)
+                                                               [ BinOp theSrc [Name "="] (singleton2SQL (source expr) singleton)
+                                                               , BinOp theTrg [Name "="] (singleton2SQL (source expr) singleton)
                                                                ]
 
                                        forbiddenTuples :: Maybe ValueExpr
@@ -216,8 +216,8 @@ nonSpecialSelectExpr fSpec expr=
                                           where
                                             notEqualToValueClause :: PSingleton -> ValueExpr
                                             notEqualToValueClause singleton = conjunctSQL 
-                                                               [ BinOp theSrc [Name "<>"] (representInSQL (source expr) singleton)
-                                                               , BinOp theTrg [Name "<>"] (representInSQL (source expr) singleton)
+                                                               [ BinOp theSrc [Name "<>"] (singleton2SQL (source expr) singleton)
+                                                               , BinOp theTrg [Name "<>"] (singleton2SQL (source expr) singleton)
                                                                ]
 
                                        theSrc = bseSrc (makeSelectable sResult)
@@ -342,20 +342,20 @@ nonSpecialSelectExpr fSpec expr=
                                     EDcV _    -> noConstraint  "..;EDcV"
                                     EMp1 a c  -> Just (BinOp (Iden [fenceName i,targetAlias])
                                                              [Name "="]
-                                                             (representInSQL c a))
+                                                             (singleton2SQL c a))
                                     (ECpl (EMp1 a c)) 
                                               -> Just (BinOp (Iden [fenceName i,targetAlias])
                                                              [Name "<>"]
-                                                             (representInSQL c a))
+                                                             (singleton2SQL c a))
                                     _         -> fatal 251 "there is no reason for having no fenceTable!"
                              (Nothing, Just _ ) ->
                                   case fenceExpr i of 
                                     EDcV _    -> noConstraint  "EDcV;.."
-                                    EMp1 a c  -> Just (BinOp (representInSQL c a)
+                                    EMp1 a c  -> Just (BinOp (singleton2SQL c a)
                                                              [Name "="]
                                                              (Iden [fenceName (i+1) ,sourceAlias]))
                                     (ECpl (EMp1 a c)) 
-                                              -> Just (BinOp (representInSQL c a)
+                                              -> Just (BinOp (singleton2SQL c a)
                                                              [Name "<>"]
                                                              (Iden [fenceName (i+1) ,sourceAlias]))
                                     _         -> fatal 258 "there is no reason for having no fenceTable!"
@@ -404,8 +404,8 @@ nonSpecialSelectExpr fSpec expr=
                                     BQEComment (_:c') fe -> BQEComment (c++c') fe
                                     _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
     (EMp1 val c) -> BQEComment [BlockComment "case: EMp1 val c"] $
-                     BSE { bseSrc = representInSQL c val
-                         , bseTrg = representInSQL c val
+                     BSE { bseSrc = singleton2SQL c val
+                         , bseTrg = singleton2SQL c val
                          , bseTbl = []
                          , bseWhr = Nothing
                          }
@@ -607,12 +607,19 @@ Based on this derivation:
            selectExpr fSpec (foldr1 (.:.) [l,v,r])
 
   where
-   representInSQL :: A_Concept -> PSingleton -> ValueExpr
-   representInSQL cpt = representInSQLwithTTyp ((cptTType fSpec) cpt)
+   singleton2SQL :: A_Concept -> PSingleton -> ValueExpr
+   singleton2SQL cpt singleton = 
+     atomVal2InSQL (safePSingleton2AAtomVal (contextInfo fSpec) cpt singleton)
 
-representInSQLwithTTyp :: TType -> PSingleton -> ValueExpr
-representInSQLwithTTyp typ interpretations = fatal 826 "TODO"
-
+atomVal2InSQL :: AAtomValue -> ValueExpr
+atomVal2InSQL val =
+ case val of 
+   AAVString _ str     -> StringLit str
+   AAVInteger _ int    -> NumLit (show int)
+   AAVFloat _ d        -> NumLit (show d)
+   AAVBoolean _ b      -> NumLit $ if b then "1" else "0"
+   _                   -> fatal 621 $ "Building a query with a literal `"
+                                    ++show (aavtyp val)++"` is not implemented (jet?)."
 toTableRef :: BinQueryExpr -> TableRef
 toTableRef = TRQueryExpr . toSQL
      
@@ -756,9 +763,6 @@ stringOfName (Name s)   =  s
 stringOfName (QName s)  =  s
 stringOfName (UQName s) =  s
 stringOfName _          = fatal 659 "This kind of a Name wasn't used before in Ampersand. "
-
-sqlAtomQuote :: String -> ValueExpr
-sqlAtomQuote s = StringLit s
 
 conjunctSQL :: [ValueExpr] -> ValueExpr
 conjunctSQL [] = fatal 57 "nothing to `AND`."

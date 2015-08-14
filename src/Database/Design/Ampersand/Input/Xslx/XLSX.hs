@@ -15,7 +15,6 @@ import qualified Data.Text as T
 import qualified Data.Map as M 
 import Data.Maybe
 import Data.Char
-import Text.Printf
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "XLSX"
