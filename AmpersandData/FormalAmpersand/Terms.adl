@@ -3,25 +3,25 @@
 INCLUDE "Atoms.adl"
 
 PROCESS Terms
-RELATION src[Type*Concept]
-RELATION tgt[Type*Concept]
-RELATION type[Relation*Type]
+RELATION src[Signature*Concept]
+RELATION tgt[Signature*Concept]
+RELATION type[Relation*Signature]
 
-ROLE ExecEngine MAINTAINS totType
-RULE totType : I[Relation] |- type;type~
-VIOLATION (TXT "{EX} NewStruct;Type" -- maak een nieuw atoom in concept Optelling
-                ,TXT ";type;Relation;", SRC I, TXT ";Type;NULL"
+ROLE ExecEngine MAINTAINS totSign
+RULE totSign : I[Relation] |- type;type~
+VIOLATION (TXT "{EX} NewStruct;Signature" -- maak een nieuw atoom in concept Optelling
+                ,TXT ";type;Relation;", SRC I, TXT ";Signature;_NEW"
           )
 ROLE ExecEngine MAINTAINS typeTgt
 RULE typeTgt : type~;target |- tgt
-VIOLATION (TXT "{EX} InsPair;tgt;Type;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair;tgt;Signature;", SRC I, TXT ";Concept;", TGT I)
 ROLE ExecEngine MAINTAINS typeSrc
 RULE typeSrc : type~;source |- src
-VIOLATION (TXT "{EX} InsPair;src;Type;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair;src;Signature;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION pretype[TypeTerm*Concept]
 RELATION sub[TypeTerm*TypeTerm]
-RELATION typehalf[Term*Type]
+RELATION typehalf[Term*Signature]
 
 RELATION dom[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "dom is total"
@@ -51,10 +51,10 @@ ROLE ExecEngine MAINTAINS "id is total"
 RULE "id is total" : I[Concept] |- id;id~
 VIOLATION (TXT "{EX} InsPair;id;Concept;", SRC I, TXT ";Term;id(", SRC I, TXT ")")
 
-RELATION vee[Type*Term] [UNI] -- TOT is computed by the exec-engine
+RELATION vee[Signature*Term] [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "vee is total"
-RULE "vee is total" : I[Type] |- vee;vee~
-VIOLATION (TXT "{EX} InsPair;vee;Type;", SRC I, TXT ";Term;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
+RULE "vee is total" : I[Signature] |- vee;vee~
+VIOLATION (TXT "{EX} InsPair;vee;Signature;", SRC I, TXT ";Term;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
 RULE "Insert into pretype" : subs;popset~ |- pretype

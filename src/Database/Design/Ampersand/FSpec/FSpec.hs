@@ -101,7 +101,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
-                   , allSigns ::     [Sign]                   -- ^ All Signs in the fSpec
+                   , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
                    , contextInfo   :: ContextInfo 
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]

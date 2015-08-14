@@ -459,20 +459,25 @@ filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRu
   
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
-  [ "$allRoles ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-    (indent 4
-      (blockParenthesize  "(" ")" ","
-         [ [ "array ( 'id' => "++show i 
-           , "      , 'name' => "++showPhpStr (name role)
-           , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
-           , "      , 'interfaces' => array ("++ intercalate ", " ((map (showPhpStr . name) . filter (forThisRole role) . interfaceS) fSpec) ++")"
-           , "      )" ]
-         | (i,role) <- zip [1::Int ..] (fRoles fSpec) ]
-    ) )
-  where maintainedByRole role (role',_) = role == role'
+  concatMap showRoles [False,True]
+  where showRoles isService =
+          [ if isService then "$allServices =" else "$allRoles ="
+          , "  array"
+          ] ++
+          addToLastLine ";"
+            (indent 4
+              (blockParenthesize  "(" ")" ","
+                 [ [ "array ( 'id' => "++show i 
+                   , "      , 'name' => "++showPhpStr (name role)
+                   , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
+                   , "      , 'interfaces' => array ("++ intercalate ", " ((map (showPhpStr . name) . filter (forThisRole role) . interfaceS) fSpec) ++")"
+                   , "      )" ]
+                 | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
+            ) )
+            where
+             serviceOrRole Role{} = not isService
+             serviceOrRole Service{} = isService 
+        maintainedByRole role (role',_) = role == role'
         forThisRole role interf = case ifcRoles interf of
                                      []   -> True -- interface is for all roles
                                      rs  -> role `elem` rs

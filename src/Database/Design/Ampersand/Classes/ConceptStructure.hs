@@ -118,7 +118,7 @@ instance ConceptStructure ConceptDef where
                     ]
   expressionsIn _ = []
 
-instance ConceptStructure Sign where
+instance ConceptStructure Signature where
   concs (Sign s t) = nub [s,t]
   expressionsIn _  = []
 

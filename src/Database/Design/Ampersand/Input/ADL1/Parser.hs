@@ -70,6 +70,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CCon     <$> pConceptDef   <|>
                       CRep     <$> pRepresentation <|>
                       Cm       <$> pRoleRule     <|>
+                      Cm       <$> pServiceRule  <|>
                       Cl       <$> pRoleRelation <|>
                       CGen     <$> pGenDef       <|>
                       CIndx    <$> pIndex        <|>
@@ -187,6 +188,7 @@ pPatElem = Pr <$> pRuleDef          <|>
                    -- the syntax of pRoleRule and pRoleRelation shows an ambiguity
                    -- Syntax review can be considered
            Pm <$> pRoleRule         <|>
+           Pm <$> pServiceRule      <|>
            Pl <$> pRoleRelation     <|>
            Pc <$> pConceptDef       <|>
            Pg <$> pGenDef           <|>
@@ -266,7 +268,7 @@ pRelationDef = reorder <$> currPos
                         props = prop ++ fun
                     in P_Sgn nm sign props pragma meanings popu pos plug
 
---- RelationNew ::= 'RELATION' Varid Sign
+--- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)
 pRelationNew = (,,) <$  pKey "RELATION"
                     <*> pVarid
@@ -474,7 +476,7 @@ pInterface = lbl <$> currPos                                       <*>
           --- InterfaceArgs ::= '{' ADLidListList '}'
           pArgs   = pBraces(many1 pADLid `sepBy1` pComma)
           --- Roles ::= 'FOR' RoleList
-          pRoles  = pKey "FOR" *> pRole `sepBy1` pComma
+          pRoles  = pKey "FOR" *> (pRole False) `sepBy1` pComma
 
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
@@ -553,7 +555,7 @@ pAtomValue = PAVString <$> currPos
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation = try (P_RR <$> currPos
                           <*  pKey "ROLE"
-                          <*> pRole `sepBy1` pComma
+                          <*> (pRole False) `sepBy1` pComma
                           <*  pKey "EDITS")
                     <*> pNamedRel `sepBy1` pComma
 
@@ -562,14 +564,22 @@ pRoleRelation = try (P_RR <$> currPos
 pRoleRule :: AmpParser P_RoleRule
 pRoleRule = try (Maintain <$> currPos
                           <*  pKey "ROLE"
-                          <*> pRole `sepBy1` pComma
+                          <*> (pRole False) `sepBy1` pComma
+                          <*  pKey "MAINTAINS")
+                <*> pADLid `sepBy1` pComma
+--- ServiceRule ::= 'SERVICE' RoleList 'MAINTAINS' ADLidList
+--TODO: Rename the RoleRule to RoleMantains and RoleRelation to RoleEdits.
+pServiceRule :: AmpParser P_RoleRule
+pServiceRule = try (Maintain <$> currPos
+                          <*  pKey "SERVICE"
+                          <*> (pRole True) `sepBy1` pComma
                           <*  pKey "MAINTAINS")
                 <*> pADLid `sepBy1` pComma
 
 --- Role ::= ADLid
 --- RoleList ::= Role (',' Role)*
-pRole :: AmpParser Role
-pRole =  Role <$> pADLid
+pRole :: Bool -> AmpParser Role
+pRole isService =  (if isService then Service else Role) <$> pADLid
 
 --- PrintThemes ::= 'THEMES' ConceptNameList
 pPrintThemes :: AmpParser [String]
@@ -667,7 +677,7 @@ rightAssociate combinator operator term
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
 
---- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Sign? | Atom ('[' ConceptOneRef ']')?
+--- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Atom ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
 pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
                     pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
@@ -687,11 +697,11 @@ pAtt = rebuild <$> currPos <*> try pLabelProps `opt` ("",[]) <*> try pTerm
         msub = Nothing
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
---- NamedRel ::= Varid Sign?
+--- NamedRel ::= Varid Signature?
 pNamedRel :: AmpParser P_NamedRel
 pNamedRel = PNamedRel  <$> currPos <*> pVarid <*> pMaybe pSign
 
---- Sign ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
+--- Signature ::= '[' ConceptOneRef ('*' ConceptOneRef)? ']'
 pSign :: AmpParser P_Sign
 pSign = pBrackets sign
    where sign = mkSign <$> pConceptOneRef <*> pMaybe (pOperator "*" *> pConceptOneRef)
