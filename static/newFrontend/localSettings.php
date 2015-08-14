@@ -16,8 +16,8 @@ $DB_host = 'localhost';
 $DB_user = 'ampersand';
 $DB_pass = 'ampersand';
 $DB_name = $dbName; // from Generics.php
-define ('COMMIT_INV_VIOLATIONS', false); // For debugging: set tot 'true' if you want to always commit, even when there are violations.
-define ('CHECK_DEF_POP', false); // For debugging: commit the initial population, regardless if it has violations.
+define ('CHECK_DEF_POP', true); // For debugging: FALSE: commit the initial population, regardless if it has invariant violations.
+define ('COMMIT_INV_VIOLATIONS', false); // For debugging: TRUE: always commit changes, even when there are invariant violations.
 
 /* For your convenience, the lines below can be copied straight into your source file (but outside a PATTERN or PROCESS).
 {- ----------- LOGIN FUNCTIONALITY -------------
