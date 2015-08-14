@@ -434,6 +434,9 @@ class Database
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
+		}elseif(defined(COMMIT_INV_VIOLATIONS) && COMMIT_INV_VIOLATIONS){
+			$this->commitTransaction();
+			Notifications::addError("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){
 			$this->rollbackTransaction(); // rollback database transaction
 			Notifications::addInfo($succesMessage);
