@@ -23,6 +23,8 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexKeyword     String  -- ^ A keyword
              | LexString      String  -- ^ A quoted string
              | LexExpl        String  -- ^ An explanation
+             | LexNonStringVal Char String -- ^ For purpose of atomvalues like number, date etc.
+                                           --   the Char is the character that ends the string.
              | LexAtom        String  -- ^ An atom
              | LexDecimal     Int     -- ^ A decimal number
              | LexOctal       Int     -- ^ An octal number

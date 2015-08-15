@@ -46,7 +46,6 @@ keywords      = [ "INCLUDE"
                 , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                 , "RELATION", "MEANING", "CONCEPT", "IDENT"
                 , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
-                , "KEY" -- HJO, 20130605: Obsolete. Only useful as long as the old prototype generator is still in use.
                 , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                 , "CLASSIFY"
                 , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
@@ -123,7 +122,7 @@ mainLexer p ('"':ss) =
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
 mainLexer p ('\'':ss)
-     = let (s,swidth,rest) = scanAtom ss
+     = let (s,swidth,rest) = scanAtomVal ss
        in if null rest || head rest /= '\''
              then lexerError UnterminatedAtom p
              else returnToken (LexAtom s) p mainLexer (addPos (swidth+2) p) (tail rest)
@@ -208,16 +207,6 @@ scanIdent p s = let (name,rest) = span isIdChar s
                 in (name,addPos (length name) p,rest)
 
 
-scanAtom :: String -> (String,Int,String)
-scanAtom []              = ("",0,[])
-scanAtom ('\\':'&':xs)   = let (str,w,r) = scanAtom xs
-                           in (str,w+2,r)
-scanAtom ('"':xs)        = let (str,w,r) = scanAtom xs
-                           in ('"': str,w+1,r)
-scanAtom xs   = let (ch,cw,cr) = getchar xs
-                    (str,w,r)  = scanAtom cr
-                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
-
 -----------------------------------------------------------
 -- String clean-up functions / comments
 -----------------------------------------------------------
@@ -277,28 +266,35 @@ value c | isDigit c = ord c - ord '0'
 -----------------------------------------------------------
 -- characters / strings
 -----------------------------------------------------------
-
 scanString :: String -> (String, Int, String)
-scanString []            = ("",0,[])
-scanString ('\\':'&':xs) = let (str,w,r) = scanString xs  -- TODO: why do we ignore \& ?
-                           in (str,w+2,r)
-scanString ('\\':'\'':xs) = let (str,w,r) = scanString xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)
-                           in ('\'': str,w+2,r)
-scanString ('\'':xs)     = let (str,w,r) = scanString xs  -- single quote: '
-                           in ('\'': str,w+1,r)
-scanString xs = let (ch,cw,cr) = getchar xs
-                    (str,w,r)  = scanString cr
-                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
+scanString = scanUpto '"'
 
-getchar :: String -> (Maybe Char, Int, String)
-getchar []          = (Nothing,0,[])
-getchar s@('\n':_ ) = (Nothing,0,s)
-getchar s@('\t':_ ) = (Nothing,0,s)
-getchar s@('\'':_ ) = (Nothing,0,s)
-getchar s@('"' :_ ) = (Nothing,0,s)
-getchar   ('\\':xs) = let (c,l,r) = getEscChar xs
-                      in (c,l+1,r)
-getchar (x:xs)      = (Just x,1,xs)
+scanAtomVal :: String -> (String, Int, String)
+scanAtomVal = scanUpto '\''
+-- | scan to some given character. The end char is scanned away too
+scanUpto :: Char -> String -> (String, Int, String)
+scanUpto ec s =
+ case s of
+   ('\\':'&':xs)   -> let (str,w,r) = scanUpto ec xs  -- TODO: why do we ignore \& ?
+                      in (str,w+2,r)
+   ('\\':'\'':xs)  -> let (str,w,r) = scanUpto ec xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)
+                      in ('\'': str,w+2,r)
+   xs       -> let (ch,cw,cr) = getchar ec xs
+                   (str,w,r)  = scanUpto ec cr
+               in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
+
+getchar :: Char -> String -> (Maybe Char, Int, String)
+getchar ec s =
+  case s of
+   []          -> (Nothing,0,[])
+   ('\n':_ )   -> (Nothing,0,s)
+   ('\t':_ )   -> (Nothing,0,s)
+   ('\'':_ )   -> (Nothing,0,s)
+   ('\\':xs)   -> let (c,l,r) = getEscChar xs
+                  in (c,l+1,r)
+   (x:xs)      
+    | ec == x   -> (Nothing,0,s)
+    | otherwise -> (Just x,1,xs)
 
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
