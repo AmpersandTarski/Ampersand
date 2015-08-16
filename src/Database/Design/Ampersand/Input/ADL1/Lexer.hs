@@ -289,7 +289,6 @@ getchar ec s =
    []          -> (Nothing,0,[])
    ('\n':_ )   -> (Nothing,0,s)
    ('\t':_ )   -> (Nothing,0,s)
-   ('\'':_ )   -> (Nothing,0,s)
    ('\\':xs)   -> let (c,l,r) = getEscChar xs
                   in (c,l+1,r)
    (x:xs)      
