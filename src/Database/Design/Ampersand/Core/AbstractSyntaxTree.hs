@@ -39,7 +39,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf, PAtomValue(..)
- , showValADL,showValPHP,showValXLSX
+ , showValADL,showValPHP,showValSQL,showValXLSX
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -526,7 +526,24 @@ data AAtomValue
 showValPHP :: AAtomValue -> String
 showValPHP val =
   case val of
-   AAVString{}  -> "'"++f (aavstr val)++"'"
+   AAVString{}  -> "'"++f (aavstr val)++"'" 
+     where 
+        f str'= 
+          case str' of
+            []        -> []
+            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
+            ('\\':s') -> "\\\\" ++ f s'
+            (c:cs)    -> c : f cs
+   AAVInteger{} -> show (aavint val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> showGregorian (aadateDay val)
+   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVFloat{}   -> show (aavflt val)
+   AtomValueOfONE{} -> "1"
+showValSQL :: AAtomValue -> String
+showValSQL val =
+  case val of
+   AAVString{}  -> f (aavstr val) 
      where 
         f str'= 
           case str' of
