@@ -277,8 +277,8 @@ scanUpto ec s =
  case s of
    ('\\':'&':xs)   -> let (str,w,r) = scanUpto ec xs  -- TODO: why do we ignore \& ?
                       in (str,w+2,r)
-   ('\\':'\'':xs)  -> let (str,w,r) = scanUpto ec xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)
-                      in ('\'': str,w+2,r)
+--   ('\\':'\'':xs)  -> let (str,w,r) = scanUpto ec xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)
+--                      in ('\'': str,w+2,r)
    xs       -> let (ch,cw,cr) = getchar ec xs
                    (str,w,r)  = scanUpto ec cr
                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
