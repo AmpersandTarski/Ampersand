@@ -1,5 +1,5 @@
 <!-- Atomic-Integer.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<div class="input-group">
+<div class="input-group" style="min-width:60px;">
 $if(isEditable)$
   $if(exprIsUni)$
   <input ng-model="val['$name$']" my-bluronenter type="number" class="form-control input-sm" ng-blur="put(ResourceId)">
