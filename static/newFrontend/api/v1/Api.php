@@ -79,6 +79,39 @@ class Api{
 			throw new RestException($e->getCode(), $e->getMessage());
 		}
 	}
+	
+	/**************************** FILE ****************************/
+	/**
+	 * @url POST file
+	 * @param string $sessionId
+	 * @param int $roleId
+	 */
+	public function fileUpload($sessionId, $roleId = 0){
+		try{
+			$session = Session::singleton($sessionId);
+			$session->setRole($roleId);
+			
+			// TODO: Check if upload is allowed in interface
+			
+			if (is_uploaded_file($_FILES['file']['tmp_name'])){
+				$tmp_name = $_FILES['file']['tmp_name'];
+				$new_name = $_FILES['file']['name'];
+				$target = UPLOAD_DIR . $new_name;
+				$result = move_uploaded_file($tmp_name, $target);
+				
+				if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
+				else Notifications::addError("Error in file upload");
+			}else{
+			    Notifications::addError('No file uploaded');
+			}
+			
+			$result = array('notifications' => Notifications::getAll(), 'files' => $_FILES, 'filename' => $new_name);
+			return $result;
+	
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
+	}
 
 	/**************************** NOTIFICATIONS ****************************/	
 	/**
