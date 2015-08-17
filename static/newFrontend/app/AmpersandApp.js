@@ -51,9 +51,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	});
 	
 	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
-		if ($.isEmptyObject(data)){
-			$rootScope.notifications.errors.push( {'message' : 'Nothing here...'} );
-		}
+		
 		return data;
 	});
 	
