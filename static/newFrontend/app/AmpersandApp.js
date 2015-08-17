@@ -1,5 +1,5 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
