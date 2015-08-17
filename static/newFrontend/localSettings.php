@@ -54,8 +54,8 @@ define ('LOGIN_ENABLED', false);
 
 // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
-$ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
-$ext['ExecEngine']['MaxRunCount'] = 10;
+$GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
+$GLOBALS['ext']['ExecEngine']['MaxRunCount'] = 10;
 
 	
 	// Config params for SendEmail function of ExecEngine (now using Gmail) 
