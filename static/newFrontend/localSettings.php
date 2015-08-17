@@ -13,6 +13,8 @@ define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
 
 define ('LOG_ENABLED', true);
 
+define ('UPLOAD_DIR', __DIR__ . '/uploads/');
+
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
 $DB_user = 'ampersand';
