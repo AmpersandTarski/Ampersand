@@ -141,7 +141,9 @@ pAtomInExpression = check (\lx -> case lx of
       case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
         Left _  -> Nothing
         Right (toks,_) 
-           -> case runParser pAtomValInPopulation (fatal 144 "No position required") "" toks of
+           -> case runParser pAtomValInPopulation 
+                               (FilePos ("Reparse `"++s++"` ") 0 0) -- Todo: Fix buggy position
+                                "" toks of
                 Left _ -> Nothing
                 Right a -> Just a
 
