@@ -247,8 +247,15 @@ instance ShowADL Expression where
           showchar (EDcI c)     = "I"++lbr++name c++rbr
           showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
-          showchar (EMp1 val c) = showADL val++lbr++name c++rbr
-
+          showchar (EMp1 val c) = "'"++showWithoutDoubleQuotes val++"'"++lbr++name c++rbr
+            
+          showWithoutDoubleQuotes str = 
+            case showADL str of
+              []  -> []
+              [c] -> [c]
+              cs  -> if head cs == '\"' && last cs == '\"'
+                     then reverse . tail . reverse .tail $ cs
+                     else cs
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
 
@@ -371,16 +378,17 @@ instance ShowADL Population where
 --    where indent = "   "
 
 instance ShowADL PSingleton where  
- showADL s = "'"++[if c=='\'' then '`' else c|c<-psRaw s]++"'"
+ showADL x = showADL (head x) --"'"++[if c=='\'' then '`' else c|c<-psRaw s]++"'"
 instance ShowADL PAtomValue where
  showADL at = case at of
-              PAVString  _ str -> "'"++[if c=='\'' then '`' else c|c<-str]++"'"
-              XlsxDouble _ d -> show d
-              XlsxBool   _ b -> show b
+              ScriptString _ s -> show s
+              XlsxString _ s   -> show s
+              ScriptInt _ s    -> show s
+              XlsxDouble _ d   -> show d
+              XlsxBool   _ b   -> show b
 instance ShowADL AAtomValue where
- showADL at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
-  where x = case at of
-              AAVString  _ str -> str
+ showADL at = case at of
+              AAVString  _ str -> show str
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b
@@ -391,12 +399,21 @@ instance ShowADL AAtomValue where
 instance ShowADL TermPrim where
  showADL (PI _)                   = "I"
  showADL (Pid _ c)                = "I["++showADL c++"]"
- showADL (Patm _ val Nothing)     = showADL val
- showADL (Patm _ val (Just c))    = showADL val++"["++show c++"]"
+ showADL (Patm _ val mSign)     = showSingleton
+  where
+   showSingleton =
+     "'"++rawString val++"'"++
+     (case mSign of
+       Nothing -> ""
+       Just c  -> "["++show c++"]")
+   rawString xs =
+     case xs of
+       []  -> fatal 402 "Empty atomvalue found!"
+       x:_ -> showADL x  
+     
  showADL (PVee _)                 = "V"
  showADL (Pfull _ s t)            = "V["++show s++"*"++show t++"]"
  showADL (PNamedR rel)            = showADL rel
- 
 instance ShowADL P_NamedRel where
  showADL (PNamedRel _ rel mSgn)                    = rel++maybe "" showsign mSgn
   where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"

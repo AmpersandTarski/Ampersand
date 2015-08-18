@@ -154,9 +154,11 @@ mkMultipleRepresentationsForConceptError cpt rs =
 mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
 mkIncompatibleAtomValueError pav t cpt msg=
   case pav of 
-    PAVString o str -> mkErr o str
-    XlsxDouble o d  -> mkErr o d
-    XlsxBool o b    -> mkErr o b
+    ScriptString  o x -> mkErr o x
+    XlsxString    o x -> mkErr o x
+    ScriptInt     o x -> mkErr o x
+    XlsxDouble    o x -> mkErr o x
+    XlsxBool      o x -> mkErr o x
  where
    mkErr :: Show a => Origin -> a -> CtxError
    mkErr o x = CTXE o $ msg ++"\n  "++show x++" isn't a valid "++show t++

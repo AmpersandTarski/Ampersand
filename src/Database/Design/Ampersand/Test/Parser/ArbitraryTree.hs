@@ -244,10 +244,13 @@ instance Arbitrary P_NamedRel where
     arbitrary = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
 
 instance Arbitrary PAtomValue where
-    arbitrary = PAVString <$> arbitrary <*> safeStr
-
-instance Arbitrary PSingleton where
-    arbitrary = PSingleton <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = oneof
+       [ScriptString <$> arbitrary <*> safeStr,
+        XlsxString <$> arbitrary <*> safeStr,
+        ScriptInt <$> arbitrary <*> arbitrary,
+        XlsxDouble <$> arbitrary <*> arbitrary,
+        XlsxBool <$> arbitrary <*> arbitrary
+       ]
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr

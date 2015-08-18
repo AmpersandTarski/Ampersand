@@ -3,14 +3,14 @@ module Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
-import Database.Design.Ampersand.Basics        (fatalMsg)
+--import Database.Design.Ampersand.Basics        (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "PrettyPrinters"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "PrettyPrinters"
 
 prettyPrint :: Pretty a => a -> String
 prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
@@ -38,12 +38,15 @@ perlinePrefix pref xs = vsep $ map addPrefix xs
 --quoteWith l r x = enclose (text l) (text r) (text x)
 
 quote :: String -> Doc
-quote = dquotes.text.escapeAll
-        where escapeAll = escapeQuote.escapeBreaklines.escapeSlash
-              escapeQuote = escape "\""
-              escapeBreaklines = replace "\n" "\\n"
-              escapeSlash = escape "\\"
-              escape x = replace x ("\\" ++ x)
+quote = text.show
+--singlequote :: String -> Doc
+--singlequote = squotes.text.escapeAll
+--escapeAll :: [Char] -> [Char]
+--escapeAll = escapeQuote.escapeBreaklines.escapeSlash
+--        where escapeQuote = escape "\""
+--              escapeBreaklines = replace "\n" "\\n"
+--              escapeSlash = escape "\\"
+--              escape x = replace x ("\\" ++ x)
 
 quoteAll :: [String] -> [Doc]
 quoteAll = map quote
@@ -210,14 +213,14 @@ instance Pretty TermPrim where
     pretty p = case p of
         PI _ -> text "I"
         Pid _ concept -> text "I[" <> pretty concept <> text "]"
-        Patm _ val (Just concept) -> pretty val <> text "[" <> pretty concept <> text "]"
-        Patm _ val Nothing -> pretty val
+        Patm _ val (Just concept) -> text "'" <> pretty val <> text "'" <> text "[" <> pretty concept <> text "]"
+        Patm _ val Nothing        -> text "'" <> pretty val <> text "'" 
         PVee _ -> text "V"
         Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
         PNamedR rel -> pretty rel
 
-instance Pretty PSingleton where
-    pretty = text . show
+--instance Pretty PSingleton where
+--    pretty = text . show
 instance Pretty P_NamedRel where
     pretty (PNamedRel _ str mpSign) = text (takeQuote str) <~> mpSign
 
@@ -395,9 +398,5 @@ instance Pretty PAtomPair where
                        <~> text ")"
 
 instance Pretty PAtomValue where
-    pretty val = 
-      case val of
-       PAVString  _ s -> quote s
-       XlsxDouble _ _ -> fatal 397 "XlsxDouble cannot be represented in an Ampersand script" -- it could be a date or a numeric thing. Who knows?
-       XlsxBool   _ b -> text $ if b then "TRUE" else "FALSE"
+    pretty val = text (show val)
 

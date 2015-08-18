@@ -126,7 +126,7 @@ toPops file x = map popForColumn' (colNrs x)
        cellToAtomValue :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
        cellToAtomValue mDelimiter cv orig
          = case cv of
-             CellText t   -> map (PAVString orig) (unDelimit mDelimiter (T.unpack t))
+             CellText t   -> map (XlsxString orig) (unDelimit mDelimiter (T.unpack t))
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [XlsxBool orig b] 
        unDelimit :: Eq a => Maybe a -> [a] -> [[a]]

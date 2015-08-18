@@ -548,9 +548,7 @@ pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   P_RelPopu <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
                   P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
-pAtomValue ::AmpParser PAtomValue
-pAtomValue = PAVString <$> currPos
-                       <*> pString
+
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation = try (P_RR <$> currPos
@@ -688,19 +686,20 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
--- | returns a non-empty list
-pSingleton :: AmpParser PSingleton
-pSingleton = reparse <$> currPos <*> pAtom
+pSingleton :: AmpParser [PAtomValue]
+pSingleton = rebuild <$> currPos <*> pAtomInExpression
   where -- | will return all possible parses of the given string. Since the string
-        --  PAVString{} will allways be an element in the list, which guarantees that the list is non-empty 
-        reparse :: Origin -> String -> PSingleton
-        reparse o str =
-            PSingleton { psOrig = o
-                       , psRaw  = str
-                       , psInterprets = [PAVString o str]
-                                     ++ [] --TODO: Also parse dates, numbers, video's whatever
-                       }
+        --  itself will allways be an element in the list, which guarantees that the list is non-empty 
+        rebuild :: Origin -> [Value] -> [PAtomValue]
+        rebuild o vals = map (value2PAtomValue o) vals
 
+pAtomValue :: AmpParser PAtomValue
+pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
+
+value2PAtomValue :: Origin -> Value -> PAtomValue
+value2PAtomValue o v = case v of 
+         VString s -> ScriptString o s
+         VInt i    -> ScriptInt o (toInteger i)
 --- Att ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
@@ -755,7 +754,7 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
     where pRecord :: AmpParser PAtomPair
           pRecord = 
              pParens (PPair <$> currPos
-                            <*> pAtomValue 
+                            <*> pAtomValue
                             <*  pComma
                             <*> pAtomValue
                      )
@@ -765,3 +764,5 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser String
 pADLid = pVarid <|> pConid <|> pString
+
+

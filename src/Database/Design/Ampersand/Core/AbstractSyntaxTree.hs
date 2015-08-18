@@ -51,7 +51,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton(..), makePSingleton
+                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
                                                 )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
@@ -858,20 +858,21 @@ contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
 --   which only exsists after disambiguation.
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val = 
-   case rights  (map (unsafePAtomVal2AtomValue typ) (psInterprets val)) of
+   case rights  (map (unsafePAtomVal2AtomValue typ) (val)) of
      [] -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
                      ++ intercalate "\n   " (showStuff val)
      x:_ -> x -- when multiple matches exist, any of them will do
   where typ = representationOf ci c
         showStuff :: PSingleton -> [String]
-        showStuff s = ["Origin: " ++show (origin s)
-                      ,"Raw:    " ++show (psRaw s)
-                      ,"Interpretations: "++ show (psInterprets s)
-                      ]
+        showStuff x = map show x
+--        showStuff s = ["Origin: " ++show (origin s)
+--                      ,"Raw:    " ++show (psRaw s)
+--                      ,"Interpretations: "++ show (psInterprets s)
+--                      ]
 unsafePAtomVal2AtomValue :: TType -> PAtomValue -> Either String AAtomValue
 unsafePAtomVal2AtomValue typ pav
   = case pav of
-      PAVString _ str 
+      ScriptString _ str 
          -> case typ of
              Alphanumeric     -> Right (AAVString typ str) 
              BigAlphanumeric  -> Right (AAVString typ str)
@@ -903,6 +904,54 @@ unsafePAtomVal2AtomValue typ pav
                                    Nothing -> Left $ "This is not of type "++show typ++": " ++str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
              Object           -> Right (AAVString typ str) 
+      XlsxString _ str
+         -> case typ of
+             Alphanumeric     -> Right (AAVString typ str) 
+             BigAlphanumeric  -> Right (AAVString typ str)
+             HugeAlphanumeric -> Right (AAVString typ str)
+             Password         -> Right (AAVString typ str)
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
+             DateTime         -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
+             Boolean          -> let table =
+                                        [("TRUE", True), ("FALSE" , False)
+                                        ,("YES" , True), ("NO"    , False)
+                                        ,("WAAR", True), ("ONWAAR", False)
+                                        ,("JA"  , True), ("NEE"   , False)
+                                        ,("WEL" , True), ("NIET"  , False)
+                                        ]
+                                 in case lookup (map toUpper str) table of
+                                    Just b -> Right (AAVBoolean typ b)
+                                    Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
+                                   where camelCase []     = []
+                                         camelCase (c:xs) = toUpper c: map toLower xs 
+                                    
+             Integer          -> case maybeRead str  of
+                                   Just i  -> Right (AAVInteger typ i)
+                                   Nothing -> Left $ "This is not of type "++show typ++": " ++str
+             Float         -> case maybeRead str of 
+                                   Just r  -> Right (AAVFloat typ r)
+                                   Nothing -> Left $ "This is not of type "++show typ++": " ++str
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> Right (AAVString typ str) 
+      ScriptInt _ i
+         -> case typ of
+             Alphanumeric     -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             BigAlphanumeric  -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             HugeAlphanumeric -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             Password         -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             DateTime         -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             Boolean          -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             Integer          -> Right (AAVInteger typ i)
+             Float            -> Right (AAVFloat typ (fromInteger i))
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show i 
       XlsxDouble _ d
          -> case typ of
              Alphanumeric     -> Left $ "Numerical value found where "++show typ++" is expected: "++ show d 

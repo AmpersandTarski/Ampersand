@@ -23,9 +23,7 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexKeyword     String  -- ^ A keyword
              | LexString      String  -- ^ A quoted string
              | LexExpl        String  -- ^ An explanation
-             | LexNonStringVal Char String -- ^ For purpose of atomvalues like number, date etc.
-                                           --   the Char is the character that ends the string.
-             | LexAtom        String  -- ^ An atom
+             | LexSingleton   String  -- ^ An atomvalue in an Expression
              | LexDecimal     Int     -- ^ A decimal number
              | LexOctal       Int     -- ^ An octal number
              | LexHex         Int     -- ^ A hexadecimal number
@@ -40,7 +38,7 @@ instance Show Lexeme where
          LexKeyword  val -> "keyword "               ++         show val
          LexString   val -> "string "                ++ "\"" ++      val  ++ "\""
          LexExpl     val -> "explanation "           ++ "{+" ++      val  ++ "+}"
-         LexAtom     val -> "atom "                  ++ "'"  ++      val  ++ "'"
+         LexSingleton val -> "singleton "            ++ "'"  ++      val  ++ "'"
          LexDecimal   _  -> "integer "               ++   lexemeText  x
          LexOctal     _  -> "octal "                 ++   lexemeText  x
          LexHex       _  -> "hexadecimal "           ++   lexemeText  x
@@ -63,7 +61,7 @@ lexemeText l = case l of
          LexKeyword  val -> val
          LexString   val -> val
          LexExpl     val -> val
-         LexAtom     val -> val
+         LexSingleton val -> val
          LexDecimal  val -> show val
          LexOctal    val -> "0o" ++ toBase 8  val
          LexHex      val -> "0x" ++ toBase 16 val

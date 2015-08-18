@@ -9,7 +9,9 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Positions
     currPos, posOf, valPosOf,
     -- Basic parsers
-    pAtom, pConid, pString, pExpl, pVarid,
+    pConid, pString, pExpl, pVarid,
+    -- special parsers
+    pAtomInExpression, pAtomValInPopulation, Value(..),
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
     -- Keywords
@@ -23,11 +25,17 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 import Control.Monad.Identity (Identity)
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
+import Database.Design.Ampersand.Input.ADL1.Lexer (lexer)
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
+
+import Database.Design.Ampersand.Basics (fatalMsg)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ParsingLib"
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
@@ -123,8 +131,33 @@ pVarid :: AmpParser String
 pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
 
 --- Atom ::= "'" Any* "'"
-pAtom :: AmpParser String
-pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing }) <?> "atom"
+pAtomInExpression :: AmpParser [Value]
+pAtomInExpression = check (\lx -> case lx of 
+                                   LexSingleton s -> Just (vals s)
+                                   _              -> Nothing 
+                          ) <?> "Singleton value"
+   where vals s = [VString s]
+            ++ 
+              case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
+                Left _  -> [] -- No parse possible
+                Right (toks,_) 
+                  -> case toks of
+                       []   -> fatal 708 "empty list of tokens should be impossible."
+                       t:ts -> fatal 711 $ show t   
+
+data Value = VString String
+           | VInt Int
+pAtomValInPopulation :: AmpParser Value
+pAtomValInPopulation = 
+  check (\lx -> 
+           case lx of
+             LexString s  -> Just (VString s)  --TODO: Make sure no unescaped single quote is present. 
+             LexDecimal i -> Just (VInt i)
+             LexHex i     -> Just (VInt i)
+             LexOctal i   -> Just (VInt i)
+             _            -> Nothing
+        ) <?> "value in population"
+--pSingletonValue :: AmpParser Value
 
 -----------------------------------------------------------
 -- Integers

@@ -77,7 +77,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                              Nothing -> Nothing
                                              Just aVal -> Just $
                                                 case aAtomValue2pAtomValue aVal of
-                                                  PAVString _ str -> CellText $ T.pack str
+                                                  XlsxString _ str -> CellText $ T.pack str
                                                   XlsxDouble _ d  -> CellDouble d
                                                   XlsxBool _ b    -> CellBool b
                                            )  
