@@ -131,27 +131,28 @@ pVarid :: AmpParser String
 pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
 
 --- Atom ::= "'" Any* "'"
-pAtomInExpression :: AmpParser [Value]
+pAtomInExpression :: AmpParser Value
 pAtomInExpression = check (\lx -> case lx of 
-                                   LexSingleton s -> Just (vals s)
+                                   LexSingleton s -> Just (VSingleton s (mval s))
                                    _              -> Nothing 
                           ) <?> "Singleton value"
-   where vals s = [VString s]
-            ++ 
-              case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
-                Left _  -> [] -- No parse possible
-                Right (toks,_) 
-                  -> case toks of
-                       []   -> fatal 708 "empty list of tokens should be impossible."
-                       t:ts -> fatal 711 $ show t   
+   where 
+    mval s = 
+      case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
+        Left _  -> Nothing
+        Right (toks,_) 
+           -> case runParser pAtomValInPopulation (fatal 144 "No position required") "" toks of
+                Left _ -> Nothing
+                Right a -> Just a
 
-data Value = VString String
+data Value = VRealString String
+           | VSingleton String (Maybe Value)
            | VInt Int
 pAtomValInPopulation :: AmpParser Value
 pAtomValInPopulation = 
   check (\lx -> 
            case lx of
-             LexString s  -> Just (VString s)  --TODO: Make sure no unescaped single quote is present. 
+             LexString s  -> Just (VRealString s)  --TODO: Make sure no unescaped single quote is present. 
              LexDecimal i -> Just (VInt i)
              LexHex i     -> Just (VInt i)
              LexOctal i   -> Just (VInt i)

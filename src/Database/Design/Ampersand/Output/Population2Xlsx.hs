@@ -4,7 +4,6 @@ module Database.Design.Ampersand.Output.Population2Xlsx
 where
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import System.Time
 import qualified Data.Map as M
@@ -13,7 +12,8 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.Text as T
 import Data.Maybe
 import Data.List
-import Database.Design.Ampersand.Core.A2P_Converters
+import Data.Time.Calendar
+import Data.Time.Clock
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Population2Xlsx"
@@ -76,10 +76,13 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
            record2Cell mVal = Cell Nothing (case mVal of
                                              Nothing -> Nothing
                                              Just aVal -> Just $
-                                                case aAtomValue2pAtomValue aVal of
-                                                  XlsxString _ str -> CellText $ T.pack str
-                                                  XlsxDouble _ d  -> CellDouble d
-                                                  XlsxBool _ b    -> CellBool b
+                                                case aVal of
+                                                  AAVString _ str -> CellText $ T.pack str
+                                                  AAVInteger _ int -> CellDouble (fromInteger int)
+                                                  AAVFloat _ x -> CellDouble x
+                                                  AAVBoolean _ b -> CellBool b
+                                                  AAVDate _ day -> (CellDouble . fromInteger) (diffDays (fromGregorian 1900 1 1) day)
+                                                  _ -> fatal 87 $ "Content found that cannot be converted to Excel (jet)." 
                                            )  
        toCell :: Maybe String -> Cell
        toCell mVal 

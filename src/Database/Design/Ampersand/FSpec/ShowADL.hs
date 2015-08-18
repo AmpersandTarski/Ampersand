@@ -377,10 +377,9 @@ instance ShowADL Population where
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
-instance ShowADL PSingleton where  
- showADL x = showADL (head x) --"'"++[if c=='\'' then '`' else c|c<-psRaw s]++"'"
 instance ShowADL PAtomValue where
  showADL at = case at of
+              PSingleton _ s _ -> show s
               ScriptString _ s -> show s
               XlsxString _ s   -> show s
               ScriptInt _ s    -> show s
@@ -402,14 +401,20 @@ instance ShowADL TermPrim where
  showADL (Patm _ val mSign)     = showSingleton
   where
    showSingleton =
-     "'"++rawString val++"'"++
+     "'"++
+     (case val of
+       PSingleton _ s _ -> s 
+       ScriptString _ s -> s
+       XlsxString _ s -> s
+       ScriptInt _ x -> show x
+       XlsxDouble _ x -> show x
+       XlsxBool _ x -> show x
+     ) ++
+     "'" ++
      (case mSign of
        Nothing -> ""
-       Just c  -> "["++show c++"]")
-   rawString xs =
-     case xs of
-       []  -> fatal 402 "Empty atomvalue found!"
-       x:_ -> showADL x  
+       Just c  -> "["++show c++"]"
+     )
      
  showADL (PVee _)                 = "V"
  showADL (Pfull _ s t)            = "V["++show s++"*"++show t++"]"

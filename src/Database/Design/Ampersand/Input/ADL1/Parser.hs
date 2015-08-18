@@ -686,19 +686,16 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
-pSingleton :: AmpParser [PAtomValue]
-pSingleton = rebuild <$> currPos <*> pAtomInExpression
-  where -- | will return all possible parses of the given string. Since the string
-        --  itself will allways be an element in the list, which guarantees that the list is non-empty 
-        rebuild :: Origin -> [Value] -> [PAtomValue]
-        rebuild o vals = map (value2PAtomValue o) vals
+pSingleton :: AmpParser PSingleton
+pSingleton = value2PAtomValue <$> currPos <*> pAtomInExpression
 
 pAtomValue :: AmpParser PAtomValue
 pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
 
 value2PAtomValue :: Origin -> Value -> PAtomValue
 value2PAtomValue o v = case v of 
-         VString s -> ScriptString o s
+         VSingleton s x -> PSingleton o s (fmap (value2PAtomValue o) x)
+         VRealString s -> ScriptString o s
          VInt i    -> ScriptInt o (toInteger i)
 --- Att ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef

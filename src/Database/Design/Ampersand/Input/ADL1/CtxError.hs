@@ -154,6 +154,7 @@ mkMultipleRepresentationsForConceptError cpt rs =
 mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
 mkIncompatibleAtomValueError pav t cpt msg=
   case pav of 
+    PSingleton o x _  -> mkErr o x
     ScriptString  o x -> mkErr o x
     XlsxString    o x -> mkErr o x
     ScriptInt     o x -> mkErr o x

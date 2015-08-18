@@ -235,15 +235,16 @@ instance Flippable PAtomPair where
 -- compare a b = compare (psRaw a) (psRaw b)
 --instance Traced PSingleton where
 -- origin = psOrig
+type PSingleton = PAtomValue
 makePSingleton :: String -> PSingleton
-makePSingleton s = [ScriptString  (Origin "ParseTree.hs") s]
+makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
 --   PSingleton { psOrig =Origin "ParseTree.hs"
 --              , psRaw = s
 --              , psInterprets = fatal 241 "Probably no need to make something up..." 
 --              }
-type PSingleton = [PAtomValue]
 data PAtomValue
-  = ScriptString Origin String -- string from script char to enquote with when printed
+  = PSingleton Origin String (Maybe PAtomValue)
+  | ScriptString Origin String -- string from script char to enquote with when printed
   | XlsxString Origin String
   | ScriptInt Origin Integer
   | XlsxDouble Origin Double
@@ -254,6 +255,8 @@ data PAtomValue
 --  | PAVBoolean Origin Bool 
   deriving Show
 instance Eq PAtomValue where
+  PSingleton _ s _ == PSingleton _ s' _ = s == s'
+  PSingleton _ _ _ == _                 = False
   ScriptString _ s == ScriptString _ s' = s == s'
   ScriptString _ _ == _                 = False
   XlsxString   _ s == XlsxString   _ s' = s == s'
@@ -268,6 +271,8 @@ instance Eq PAtomValue where
 instance Ord PAtomValue where
   compare a b = 
    case (a,b) of
+    (PSingleton _ x _ , PSingleton _ x' _) -> compare x x'
+    (PSingleton _ _ _, _              ) -> GT
     (ScriptString  _ x, ScriptString  _ x') -> compare x x'
     (ScriptString  _ _, _              ) -> GT
     (XlsxString       _ x, XlsxString       _ x') -> compare x x'
@@ -292,7 +297,7 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin [PAtomValue] (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
+   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
                                                   --   eg, when `123` is found by the parser, the list will contain both interpretations as 
                                                   --   the String "123" or as Integer 123.  
                                                   --   Since everything between the single quotes can allways be interpretated as a String, 

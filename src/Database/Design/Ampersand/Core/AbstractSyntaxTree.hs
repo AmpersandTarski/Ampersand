@@ -63,7 +63,6 @@ import GHC.Generics (Generic)
 import Data.Hashable
 import Data.Char (toUpper,toLower)
 import Data.Maybe
-import Data.Either
 import Data.Time.Calendar
 import Data.Time.Clock
 import System.Locale (defaultTimeLocale)
@@ -858,20 +857,25 @@ contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
 --   which only exsists after disambiguation.
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val = 
-   case rights  (map (unsafePAtomVal2AtomValue typ) (val)) of
-     [] -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
-                     ++ intercalate "\n   " (showStuff val)
-     x:_ -> x -- when multiple matches exist, any of them will do
+   case unsafePAtomVal2AtomValue typ val of
+     Left _ -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
+                     ++ show val
+     Right x -> x 
   where typ = representationOf ci c
-        showStuff :: PSingleton -> [String]
-        showStuff x = map show x
---        showStuff s = ["Origin: " ++show (origin s)
---                      ,"Raw:    " ++show (psRaw s)
---                      ,"Interpretations: "++ show (psInterprets s)
---                      ]
+
 unsafePAtomVal2AtomValue :: TType -> PAtomValue -> Either String AAtomValue
 unsafePAtomVal2AtomValue typ pav
   = case pav of
+      PSingleton _ str mval 
+         -> case typ of 
+             Alphanumeric     -> Right (AAVString typ str) 
+             BigAlphanumeric  -> Right (AAVString typ str)
+             HugeAlphanumeric -> Right (AAVString typ str)
+             Password         -> Right (AAVString typ str)
+             Object           -> Right (AAVString typ str) 
+             _                -> case mval of
+                                   Nothing -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
+                                   Just x -> unsafePAtomVal2AtomValue typ x
       ScriptString _ str 
          -> case typ of
              Alphanumeric     -> Right (AAVString typ str) 
