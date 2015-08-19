@@ -1,5 +1,5 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -51,9 +51,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	});
 	
 	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
-		if ($.isEmptyObject(data)){
-			$rootScope.notifications.errors.push( {'message' : 'Nothing here...'} );
-		}
+		
 		return data;
 	});
 	

@@ -29,11 +29,11 @@ TABS[ atoms : V[SESSION*Atom]
            , "pair(s)"  : in~
            ]
     , rules : V[SESSION*Rule]
-      COLS [ Name : name
-           , sign : sign
-           , Expression : rrexp
-           , Meaning : rrmean
-           , Purpose : rrpurpose
+      COLS [ name : name
+           , signature : sign
+           , expression : rrexp
+           , meaning : rrmean
+           , purpose : rrpurpose
            ]
     ]
 
@@ -46,7 +46,7 @@ ROWS [ repr : repr
 
 VIEW Concept : Concept(name)
 
-INTERFACE Concept(name[Concept*Name],isa) : I[Concept]
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
 ROWS [ name             : name
      , generalizations  : isa
      , specializations  : isa~
@@ -63,7 +63,7 @@ ROWS [ pair           : I
 
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
-INTERFACE Relation(name[Relation*Name],source,target) : I[Relation]
+INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
 ROWS [ name    : name
      , source  : source
      , target  : target

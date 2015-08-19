@@ -36,7 +36,7 @@ RELATION allShifts[DnfClause*DnfClause]
 RELATION rrexp[Rule*Expression] [UNI,TOT]
 RELATION conjNF[Expression*Expression] [UNI,TOT]
 RELATION exprIsc2list[Expression*Expression] [TOT]
-RELATION name[Rule*Identifier] [UNI,TOT]
+RELATION name[Rule*RuleName] [UNI,TOT]
 
 -- Rules
 PURPOSE RULE Conjuncts1

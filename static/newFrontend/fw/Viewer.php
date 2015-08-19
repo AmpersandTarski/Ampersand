@@ -63,6 +63,9 @@ class Viewer {
 			// ng-storage
 			$this->addHtmlLine('<script src="app/lib/angular/angular-ng-storage/ngStorage.min.js"></script>');
 			
+			// angular-file-upload
+			$this->addHtmlLine('<script src="app/lib/angular/angular-file-upload/angular-file-upload.min.js"></script>');
+			
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/restangular/lodash.min.js"></script>');

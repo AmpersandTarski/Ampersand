@@ -40,7 +40,7 @@ MEANING "When a pair in a relation is edited (created, updated or deleted), a (s
 --[Concepts]--
 RELATION allConcepts[Context*Concept] [SUR,INJ]
 -- Aanname: De smerige id van een Concept is gelijk aan de naam van dat Concept.
-RELATION name[Concept*ConceptName][TOT,UNI] 
+RELATION name[Concept*Identifier][TOT,UNI] 
 RELATION affectedInvConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Concept*ConjunctID]

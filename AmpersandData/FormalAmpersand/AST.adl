@@ -1,7 +1,7 @@
 ﻿CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-INCLUDE "AST.docadl"
 INCLUDE "AST.ifc"
+INCLUDE "Rules.adl"
 INCLUDE "Terms.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
@@ -19,9 +19,9 @@ REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
 
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-IDENT Context: Context(name[Context*TEXT])  
---CLASSIFY ContextName ISA Conid
-RELATION name[Context*TEXT] [UNI,TOT,INJ]
+IDENT Context: Context(name[Context*ContextIdentifier])  
+REPRESENT ContextIdentifier TYPE ALPHANUMERIC
+RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ]
 MEANING "The name of a context."
 RELATION patterns[Context*Pattern]
 MEANING "The patterns in a context."
@@ -35,11 +35,9 @@ ENDPATTERN
 
 PATTERN Patterns
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-IDENT Pattern: Pattern(name[Pattern*TEXT])
-
---CLASSIFY PatternName ISA Conid
-
-RELATION name[Pattern*TEXT] [UNI,TOT,INJ]
+IDENT Pattern: Pattern(name[Pattern*PatternIdentifier])
+REPRESENT PatternIdentifier TYPE ALPHANUMERIC
+RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
 RELATION rules[Pattern*Rule]
 MEANING "The user-defined rules in a pattern."
@@ -52,7 +50,7 @@ MEANING "The purposes of a pattern."
 ENDPATTERN
 
 PATTERN Specialization
-VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name[Concept*TEXT] , TXT " ISA " , gengen;name[Concept*TEXT] )
+VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
@@ -73,7 +71,7 @@ ENDPATTERN
 
 
 PATTERN Signatures
-VIEW Signature: Signature( TXT "[" , src;name[Concept*TEXT] , TXT "*" , trg;name[Concept*TEXT] , TXT "]" )
+VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , trg;name[Concept*Identifier] , TXT "]" )
 
 
 RELATION src[Signature*Concept] [UNI,TOT]
@@ -107,13 +105,13 @@ As a consequence, the type of an expression can be computed based on the types o
 ENDPATTERN
 
 PATTERN Declaration
---VIEW Declaration: Declaration( name , TXT "::", sign;src;name[Concept*TEXT] ,TXT " * ", sign;trg;name[Concept*TEXT] )
+--VIEW Declaration: Declaration( name , TXT "::", sign;src;name[Concept*Identifier] ,TXT " * ", sign;trg;name[Concept*Identifier] )
 --IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
 --CLASSIFY Declaration ISA Relation
 RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
-RELATION name[Declaration*TEXT] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
+RELATION name[Declaration*Identifier] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The name of a relation."
 RELATION sign[Declaration*Signature] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
 MEANING "The sign of a declaration."
@@ -166,34 +164,19 @@ MEANING "The user-declared relations in an expression."
 {-CLASSIFY RelationRef ISA Expression
 
 CONCEPT RelationRef "A relation reference (aka relation token) is an expression that refers to a user-declared relation"  
-VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[Concept*TEXT] , TXT "*" , relsgn;trg;name[Concept*TEXT] , TXT "]")
+VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[Concept*Identifier] , TXT "*" , relsgn;trg;name[Concept*Identifier] , TXT "]")
 
-RELATION name[RelationRef*TEXT] [UNI,TOT]
+RELATION name[RelationRef*Identifier] [UNI,TOT]
 MEANING "A relation reference has the name of the relation that is being referred to."
 RELATION relsgn[RelationRef*Signature] [UNI,TOT]
 MEANING "A relation reference has the sign of the relation that is being referred to."
 RELATION reldcl[RelationRef*Declaration] [UNI,TOT]
 MEANING "A relation reference has the relation that is being referred to."
-RULE "rel name is decl name": name = reldcl;name[Declaration*TEXT]
+RULE "rel name is decl name": name = reldcl;name[Declaration*Identifier]
 MEANING "A relation reference has the same name as the relation to which it refers."
-RULE "rel sign sub of decl sign": reldcl = name;name[Declaration*TEXT]~ /\ relsgn;subsgn;sign~
+RULE "rel sign sub of decl sign": reldcl = name;name[Declaration*Identifier]~ /\ relsgn;subsgn;sign~
 MEANING "A relation reference refers to the relation with the same name, the signature of which is larger or equal to the signature of the relation reference."
--}ENDPATTERN
-
-PATTERN Rules
-IDENT Rule: Rule(name)
-
-RELATION name[Rule*TEXT] [UNI,TOT,INJ]
-MEANING "The name of a rule."
-RELATION sign[Rule*Signature] [UNI,TOT]
-RELATION rrexp[Rule*ExpressionID] [UNI,TOT]
-MEANING "The rule expressed in relation algebra."
-RELATION rrmean[Rule * Meaning]
-MEANING "The meanings of a rule."
-RELATION rrpurpose[Rule * Purpose]
-MEANING "The purposes of a rule."
-RELATION declaredthrough[PropertyRule*Property] [TOT]
-MEANING "A property is defined as part of the declaration of relation."
+-}
 
 ENDPATTERN
 

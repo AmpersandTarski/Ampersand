@@ -61,7 +61,7 @@ This means that pairs are inserted into and deleted from relations as time goes 
 -}
 CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."
 
-PURPOSE RELATION repr
+PURPOSE RELATION repr[Atom*Representation]
 {+
 Every atom has a representation.
 As an example, suppose we have an atom that has ``Peter'' as representation and we want that atom to represent an existing person called Peter.
@@ -85,7 +85,7 @@ In the current version of Ampersand, every atom is represented by a finite list 
 In future versions, other types of representation will become possible.
 -}
 
-PURPOSE RELATION name[Relation*TEXT]
+PURPOSE RELATION name[Relation*Identifier]
 {+Each relation has a name, provided by the Ampersand-programmer.
 This name has no meaning in the language.
 Therefore, the Ampersand-programmer can invent a name that can serve as a reminder of the meaning or purpose of that relation.

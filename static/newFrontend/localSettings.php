@@ -1,4 +1,6 @@
 <?php
+define ('LOCALSETTINGS_VERSION', 1.0);
+
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", false);
 
@@ -10,6 +12,14 @@ define ('JSONLD_ID_PATH', API_PATH . 'resource/');
 define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
 
 define ('LOG_ENABLED', true);
+
+define ('UPLOAD_DIR', __DIR__ . '/uploads/');
+$GLOBALS['api']['allowedMimeTypes'] = array('application/vnd.ms-excel'
+										   ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+										   ,'application/excel'
+										   ,'application/pdf'
+										   ,'text/xml'
+										   );
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
@@ -50,8 +60,8 @@ define ('LOGIN_ENABLED', false);
 
 // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
-$ext['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
-$ext['ExecEngine']['MaxRunCount'] = 10;
+$GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
+$GLOBALS['ext']['ExecEngine']['MaxRunCount'] = 10;
 
 	
 	// Config params for SendEmail function of ExecEngine (now using Gmail) 

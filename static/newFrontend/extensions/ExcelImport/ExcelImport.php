@@ -7,7 +7,6 @@ $apps[] = array ( 'url' =>	'extensions/ExcelImport/ui/views/MenuItem.html');
 
 // UI
 $GLOBALS['hooks']['after_Viewer_load_cssFiles'][] = 'extensions/ExcelImport/ui/css/style.css';
-$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/angular-file-upload.min.js';
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/ExcelImport.js';
 
 class ImportExcel

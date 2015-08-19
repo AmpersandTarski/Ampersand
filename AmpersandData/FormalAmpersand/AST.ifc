@@ -2,10 +2,10 @@ CONTEXT "AST Interface" IN ENGLISH
 
 INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Context : V[SESSION*Context]
-    COLS ["Name" : name[Context*TEXT]
+    COLS ["name" : name[Context*ContextIdentifier]
          ]
     , "Patterns" : V[SESSION*Pattern]
-    COLS [ Pattern : name[Pattern*TEXT]
+    COLS [ Pattern : name[Pattern*PatternIdentifier]
          , Purpose : purpose
          , Rules : rules
          , Declarations : declarations
@@ -21,8 +21,8 @@ TABS[ Context : V[SESSION*Context]
        --  , "Technical Type" : cpttp
          ]
     , "Declarations" : V[SESSION*Declaration]
-    COLS [ Name : name
-         , sign : sign
+    COLS [ name : name
+         , signature : sign
          , properties : decprps;declaredthrough
          , pragmaL  : decprL
          , pragmaM  : decprM
@@ -31,8 +31,8 @@ TABS[ Context : V[SESSION*Context]
          , population : in~
          ]
     , "Rules" : V[SESSION*Rule]
-    COLS [ Name : name
-         , sign : sign
+    COLS [ name : name
+         , signature : sign
          , Expression : rrexp
          , Meaning : rrmean
          , Purpose : rrpurpose
@@ -57,14 +57,14 @@ TABS[ Atoms : V[SESSION*Atom]
          ]
     , Concepts : V[SESSION*Concept]
     COLS [ "Concept" : I 
-         , name : name -- [Concept*ConceptName]
+         , name : name -- [Concept*Identifier]
          ]
     ]
     
 
           
 INTERFACE Pattern FOR Ampersand : I[Pattern]
-BOX [ Pattern : name[Pattern*TEXT]
+BOX [ Pattern : name[Pattern*PatternIdentifier]
     ]
 
 

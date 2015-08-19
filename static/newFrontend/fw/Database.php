@@ -1,5 +1,4 @@
 <?php
-require_once (__DIR__ . '/../localSettings.php');
 
 class Database
 {	
