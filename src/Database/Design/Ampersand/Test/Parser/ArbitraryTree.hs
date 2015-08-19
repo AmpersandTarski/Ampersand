@@ -249,7 +249,7 @@ instance Arbitrary PAtomValue where
         XlsxString <$> arbitrary <*> safeStr,
         ScriptInt <$> arbitrary <*> arbitrary,
         XlsxDouble <$> arbitrary <*> arbitrary,
-        XlsxBool <$> arbitrary <*> arbitrary
+        ComnBool <$> arbitrary <*> arbitrary
        ]
 
 instance Arbitrary P_Interface where

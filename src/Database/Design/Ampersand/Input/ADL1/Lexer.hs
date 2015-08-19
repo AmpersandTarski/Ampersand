@@ -57,6 +57,9 @@ keywords      = [ "INCLUDE"
                 , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
                 , "BINARY", "BIGBINARY", "HUGEBINARY"
                 , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
+                -- Keywords for values of atoms:
+                , "TRUE", "FALSE" --for booleans
+                , "T", "Z" -- For time (ISO 8601 format)
                 ]
 
 -- | Retrieves a list of operators accepted by the ampersand language

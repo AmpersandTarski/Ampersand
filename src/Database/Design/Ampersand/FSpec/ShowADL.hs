@@ -384,14 +384,17 @@ instance ShowADL PAtomValue where
               XlsxString _ s   -> show s
               ScriptInt _ s    -> show s
               XlsxDouble _ d   -> show d
-              XlsxBool   _ b   -> show b
+              ComnBool   _ b   -> show b
+              ScriptDate _ x   -> show x
+              ScriptDateTime _ x -> show x
+              
 instance ShowADL AAtomValue where
  showADL at = case at of
               AAVString  _ str -> show str
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b
-              AAVDate _ day    -> showGregorian day
+              AAVDate _ day    -> show day
               AAVDateTime _ dt -> show dt
               AtomValueOfONE -> "1"
 
@@ -403,12 +406,14 @@ instance ShowADL TermPrim where
    showSingleton =
      "'"++
      (case val of
-       PSingleton _ s _ -> s 
-       ScriptString _ s -> s
-       XlsxString _ s -> s
-       ScriptInt _ x -> show x
-       XlsxDouble _ x -> show x
-       XlsxBool _ x -> show x
+       PSingleton   _ x _ -> x 
+       ScriptString   _ x -> x
+       XlsxString     _ x -> x
+       ScriptInt      _ x -> show x
+       XlsxDouble     _ x -> show x
+       ComnBool       _ x -> show x
+       ScriptDate     _ x -> show x
+       ScriptDateTime _ x -> show x
      ) ++
      "'" ++
      (case mSign of

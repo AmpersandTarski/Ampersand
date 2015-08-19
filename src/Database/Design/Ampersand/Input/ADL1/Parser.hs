@@ -695,8 +695,12 @@ pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
 value2PAtomValue :: Origin -> Value -> PAtomValue
 value2PAtomValue o v = case v of 
          VSingleton s x -> PSingleton o s (fmap (value2PAtomValue o) x)
-         VRealString s -> ScriptString o s
-         VInt i    -> ScriptInt o (toInteger i)
+         VRealString s  -> ScriptString o s
+         VInt i         -> ScriptInt o (toInteger i)
+         VBoolean b     -> ComnBool o b
+         VDateTime x    -> ScriptDateTime o x
+         VDate x        -> ScriptDate o x
+         
 --- Att ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.

@@ -984,11 +984,19 @@ unsafePAtomVal2AtomValue typ pav
              Float            -> Right (AAVFloat typ d)
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
              Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show d 
-      XlsxBool _ b
+      ComnBool _ b
          -> if typ == Boolean 
             then Right (AAVBoolean typ b)
             else Left $ "Boolean value found where "++show typ++" is expected."
-     
+      ScriptDate _ x
+         -> if typ == Date  
+            then Right (AAVDate typ x)
+            else Left $ "Date value found where "++show typ++" is expected."
+      ScriptDateTime _ x
+         -> if typ == DateTime  
+            then Right (AAVDateTime typ x)
+            else Left $ "DateTime value found where "++show typ++" is expected."
+         
    where
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a

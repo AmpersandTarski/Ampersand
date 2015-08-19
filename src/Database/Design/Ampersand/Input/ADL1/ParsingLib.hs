@@ -31,7 +31,9 @@ import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
-
+import Data.Time.Calendar
+import Data.Time.Clock
+import Data.Maybe
 import Database.Design.Ampersand.Basics (fatalMsg)
 
 fatal :: Int -> String -> a
@@ -94,6 +96,9 @@ pSemi = pOperator ";"
 pColon :: AmpParser String
 pColon = pOperator ":"
 
+pPlus :: AmpParser String
+pPlus = pOperator "+"
+
 -----------------------------------------------------------
 -- Token parsers
 -----------------------------------------------------------
@@ -150,18 +155,75 @@ pAtomInExpression = check (\lx -> case lx of
 data Value = VRealString String
            | VSingleton String (Maybe Value)
            | VInt Int
+           | VBoolean Bool
+           | VDateTime UTCTime
+           | VDate Day
 pAtomValInPopulation :: AmpParser Value
 pAtomValInPopulation = 
-  check (\lx -> 
-           case lx of
-             LexString s  -> Just (VRealString s)  --TODO: Make sure no unescaped single quote is present. 
-             LexDecimal i -> Just (VInt i)
-             LexHex i     -> Just (VInt i)
-             LexOctal i   -> Just (VInt i)
-             _            -> Nothing
-        ) <?> "value in population"
---pSingletonValue :: AmpParser Value
+              VInt DF.<$> pInteger
+          <|> VBoolean True  <$ pKey "TRUE"
+          <|> VBoolean False <$ pKey "FALSE"
+          <|> VRealString DF.<$> pString 
+          <|> VDate DF.<$> pDay
+          <|> VDateTime DF.<$> pUTCTime
 
+-----------------------------------------------------------
+-- Date / DateTime (ISO 8601 format)
+-----------------------------------------------------------
+
+pDay :: AmpParser Day
+pDay = rebuild DF.<$> currPos
+               CA.<*> nrDigits 4
+               CA.<*  pDash
+               CA.<*> nrDigits 2
+               CA.<*  pDash
+               CA.<*> nrDigits 2
+  where  rebuild pos year month day = 
+           case fromGregorianValid (toInteger year) month day of
+             Nothing -> fatal 184 $ show pos ++ "\n  Invalid date!" 
+             Just d  -> d
+pUTCTime :: AmpParser UTCTime
+pUTCTime = mkUTCTime DF.<$> pDay
+                     CA.<*> pHoursMinutes
+                     CA.<*> pMaybe pSeconds
+                     CA.<*> pTZD
+  where mkUTCTime :: Day -> (Int,Int) -> Maybe Int -> NominalDiffTime -> UTCTime
+        mkUTCTime day (hh, mm) mss mTZD  -- TODO: Do somehing with the time offset 
+          = addUTCTime mTZD (UTCTime day difftime)
+            where difftime = secondsToDiffTime 
+                               (24*60*toInteger hh
+                                  +60*toInteger mm
+                                     +toInteger (fromMaybe 0 mss))
+
+
+        pHoursMinutes :: AmpParser (Int,Int)
+        pHoursMinutes = rebuild DF.<$  pKey "T"
+                                CA.<*> nrDigits 2
+                                CA.<*  pSpec ':'
+                                CA.<*> nrDigits 2
+                  where rebuild hh mm = (hh,mm)
+        pSeconds :: AmpParser Int
+        pSeconds = id DF.<$ pSpec ':' 
+                      CA.<*> nrDigits 2
+        pTZD :: AmpParser NominalDiffTime
+        pTZD = 0 DF.<$ pKey "Z" 
+           <|> rebuild DF.<$> (pPlus <|> pDash)
+                       CA.<*> nrDigits 2
+                       CA.<*  pSpec ':'
+                       CA.<*> nrDigits 2
+         where rebuild :: [Char] -> Int -> Int -> NominalDiffTime
+               rebuild c hh mm = 
+                  fromRational . toRational $ 
+                    (if c == "-" then (0-) else (0+)) (60*hh+mm) 
+                    
+
+nrDigits :: Int -> AmpParser Int
+nrDigits i = check nr
+  where
+    nr (LexDecimal x) 
+      | x < (10^i) = Just x
+    nr _              = Nothing
+    
 -----------------------------------------------------------
 -- Integers
 -----------------------------------------------------------

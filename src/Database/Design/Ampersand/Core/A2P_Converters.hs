@@ -317,7 +317,7 @@ aAtomValue2pAtomValue val =
                           AAVFloat{}   -> XlsxDouble o (aavflt val)
                           _            -> fatal 317 "Unexpected combination of value types"
     Boolean          -> case val of 
-                          AAVBoolean{} -> XlsxBool o (aavbool val)
+                          AAVBoolean{} -> ComnBool o (aavbool val)
                           _            -> fatal 320 "Unexpected combination of value types"
     Object           -> case val of 
                           AAVString{} -> ScriptString o (aavstr val)

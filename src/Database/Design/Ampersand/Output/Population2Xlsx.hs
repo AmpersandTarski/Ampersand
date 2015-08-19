@@ -13,7 +13,6 @@ import qualified Data.Text as T
 import Data.Maybe
 import Data.List
 import Data.Time.Calendar
-import Data.Time.Clock
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Population2Xlsx"

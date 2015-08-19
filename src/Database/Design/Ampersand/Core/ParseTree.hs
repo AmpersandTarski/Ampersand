@@ -49,6 +49,9 @@ import Control.Applicative
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
+import Data.Time.Calendar
+import Data.Time.Clock
+import Data.Time.LocalTime() -- for instance Show UTCTime
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -248,11 +251,9 @@ data PAtomValue
   | XlsxString Origin String
   | ScriptInt Origin Integer
   | XlsxDouble Origin Double
-  | XlsxBool Origin Bool
--- TODO: Later add parsers for:  --Beware to update aAtomValue2pAtomValue as well!
---  | PAVInteger Origin Integer
---  | PAVFloat Origin Float
---  | PAVBoolean Origin Bool 
+  | ComnBool Origin Bool
+  | ScriptDate Origin Day
+  | ScriptDateTime Origin UTCTime
   deriving Show
 instance Eq PAtomValue where
   PSingleton _ s _ == PSingleton _ s' _ = s == s'
@@ -265,24 +266,32 @@ instance Eq PAtomValue where
   ScriptInt    _ _ == _                 = False
   XlsxDouble   _ d == XlsxDouble   _ d' = d == d'
   XlsxDouble   _ _ == _                 = False
-  XlsxBool     _ b == XlsxBool     _ b' = b == b'
-  XlsxBool     _ _ == _                 = False
+  ScriptDate   _ d == ScriptDate   _ d' = d == d'
+  ScriptDate   _ _ == _                 = False
+  ScriptDateTime _ d == ScriptDateTime _ d' = d == d'
+  ScriptDateTime _ _ == _               = False
+  ComnBool     _ b == ComnBool     _ b' = b == b'
+  ComnBool     _ _ == _                 = False
 
 instance Ord PAtomValue where
   compare a b = 
    case (a,b) of
-    (PSingleton _ x _ , PSingleton _ x' _) -> compare x x'
-    (PSingleton _ _ _, _              ) -> GT
-    (ScriptString  _ x, ScriptString  _ x') -> compare x x'
-    (ScriptString  _ _, _              ) -> GT
-    (XlsxString       _ x, XlsxString       _ x') -> compare x x'
-    (XlsxString  _ _     , _              ) -> GT
-    (ScriptInt  _ x, ScriptInt  _ x') -> compare x x'
-    (ScriptInt  _ _, _              ) -> GT
-    (XlsxDouble _ x, XlsxDouble _ x') -> compare x x'
-    (XlsxDouble _ _, _              ) -> GT
-    (XlsxBool   _ x, XlsxBool   _ x') -> compare x x'
-    (XlsxBool   _ _, _              ) -> GT
+    (PSingleton  _ x _ , PSingleton   _ x' _) -> compare x x'
+    (PSingleton  _ _ _ , _                  ) -> GT
+    (ScriptString   _ x, ScriptString   _ x') -> compare x x'
+    (ScriptString   _ _, _                  ) -> GT
+    (XlsxString     _ x, XlsxString     _ x') -> compare x x'
+    (XlsxString     _ _, _                  ) -> GT
+    (ScriptInt      _ x, ScriptInt      _ x') -> compare x x'
+    (ScriptInt      _ _, _                  ) -> GT
+    (XlsxDouble     _ x, XlsxDouble     _ x') -> compare x x'
+    (XlsxDouble     _ _, _                  ) -> GT
+    (ScriptDate     _ x, ScriptDate     _ x') -> compare x x'
+    (ScriptDate     _ _, _                  ) -> GT
+    (ScriptDateTime _ x, ScriptDateTime _ x') -> compare x x'
+    (ScriptDateTime _ _, _                  ) -> GT
+    (ComnBool       _ x, ComnBool       _ x') -> compare x x'
+    (ComnBool       _ _, _                  ) -> GT
  
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r 

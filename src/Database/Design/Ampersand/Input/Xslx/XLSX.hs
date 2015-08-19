@@ -128,7 +128,7 @@ toPops file x = map popForColumn' (colNrs x)
          = case cv of
              CellText t   -> map (XlsxString orig) (unDelimit mDelimiter (T.unpack t))
              CellDouble d -> [XlsxDouble orig d]
-             CellBool b -> [XlsxBool orig b] 
+             CellBool b -> [ComnBool orig b] 
        unDelimit :: Eq a => Maybe a -> [a] -> [[a]]
        unDelimit mDelimiter xs =
          case mDelimiter of
