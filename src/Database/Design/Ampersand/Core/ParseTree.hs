@@ -346,7 +346,7 @@ data Term a
    | PDia Origin (Term a) (Term a)  -- ^ diamond                 <>
    | PCps Origin (Term a) (Term a)  -- ^ composition             ;
    | PRad Origin (Term a) (Term a)  -- ^ relative addition       !
-   | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       *
+   | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       #
    | PKl0 Origin (Term a)           -- ^ Rfx.Trn closure         *  (Kleene star)
    | PKl1 Origin (Term a)           -- ^ Transitive closure      +  (Kleene plus)
    | PFlp Origin (Term a)           -- ^ conversion (flip, wok)  ~
