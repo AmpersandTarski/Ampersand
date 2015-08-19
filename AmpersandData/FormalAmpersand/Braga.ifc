@@ -1,0 +1,95 @@
+﻿{- Demo script
+Idea: add rules in Ampersand, one by one, to construct the type checker live.
+
+-}
+CONTEXT AST IN ENGLISH 
+INCLUDE "Braga.adl"
+
+--INCLUDE "Atoms.xslx"
+
+INTERFACE Overview (dom,cod): '_SESSION'
+TABS[ rules : V[SESSION*Rule]
+    , "type-terms" : V[SESSION*Concept]
+      BOX<SCOLS>
+           [ Concept      : I
+           , "type-terms" : pretype~
+             BOX<SCOLS>
+                  [ "type-term" : I[TypeTerm]
+                  , "sub"       : sub     
+                  , "sub*"      : subs    
+                  , "sub~"      : sub~    
+                  , "sub*~"     : subs~   
+                  ]
+           ]
+    , terms : V[SESSION*Term]
+    , concepts :V[SESSION*Concept]
+      BOX<SCOLS>
+           [ name        : I[Concept]
+           , "isa"       : isa
+           , "isa+"      : isas
+           , "isa~"      : isa~
+           , "isa+~"     : isas~
+           , atoms       : pop~
+           , "type-term" : popset
+           , term        : id;repr
+           ]
+    , atoms : V[SESSION*Atom]
+      BOX<SCOLS>
+           [ repr : I
+           , type : pop - pop;(isas-I)
+           , pop  : pop
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<SCOLS>
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
+           ]
+    , relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           ]
+    ]
+
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+
+INTERFACE Atom(repr[Atom*Representation]) : I[Atom]
+ROWS [ repr : repr
+     ]
+
+VIEW Concept : Concept(name)
+
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+ROWS [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+
+INTERFACE Pair(l,r,in[Pair*Relation]): I[Pair]
+ROWS [ pair           : I
+     , l              : l
+     , r              : r
+     , "relation(s)"  : in
+     ]
+
+VIEW Signature : Signature(TXT "[", src;name,TXT "*", tgt;name,TXT "]")
+
+INTERFACE Signature(type, src, tgt): I[Signature]
+ROWS [ type : I
+     , src  : src
+     , tgt  : tgt
+     ]
+
+VIEW Relation : Relation(name, TXT "(", source;name, TXT "*", target;name, TXT ")")
+
+VIEW Rule : Rule(lhs, TXT " = ", rhs)
+
+INTERFACE Term (lhs[Term*Term], rhs[Term*Term]): I[Term]
+ROWS [ operator : operator
+     , lhs  : lhs
+     , rhs  : rhs
+     ]
+
+ENDCONTEXT
