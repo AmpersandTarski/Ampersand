@@ -354,7 +354,7 @@ data Interface = Ifc { ifcParams ::   [Declaration] -- all relations that can be
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
-                     , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transation
+                     , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
                      } deriving Show

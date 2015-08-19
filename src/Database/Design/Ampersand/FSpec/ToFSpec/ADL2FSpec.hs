@@ -150,7 +150,14 @@ makeFSpec opts context
 
      fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
-     fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
+     fSpecAllInterfaces :: [Interface]
+     fSpecAllInterfaces = map enrichIfc (ctxifcs context)
+       where
+          enrichIfc :: Interface -> Interface
+          enrichIfc ifc
+           = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
+                , ifcControls = makeIfcControls (ifcParams ifc) allConjs
+                }
      
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context)
@@ -162,11 +169,6 @@ makeFSpec opts context
      concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
      gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
-     enrichIfc :: Interface -> Interface
-     enrichIfc ifc
-      = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
-           , ifcControls = makeIfcControls (ifcParams ifc) allConjs
-           }
      initialpops = [ ARelPopu{ popdcl = popdcl (head eqclass)
                              , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
                              }
@@ -492,13 +494,14 @@ makeFSpec opts context
                       [(a',qs',b')        | (a',b') `notElem` [(a,b) |(a,_,b)<-ts]]) `un` ts'
         
 makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
-makeIfcControls params allConjs = [ conj 
-                                | conj<-allConjs
-                                , (not.null) (map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
-                                -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
-                                -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
-                                -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
-                                ]
+makeIfcControls params allConjs
+ = [ conj 
+   | conj<-allConjs
+   , (not.null) (map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
+   -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
+   -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
+   -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
+   ]
   
 
 class Named a => Rename a where
