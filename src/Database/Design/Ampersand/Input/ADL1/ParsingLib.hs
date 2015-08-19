@@ -197,7 +197,7 @@ pUTCTime = mkUTCTime DF.<$> pDay
 
 
         pHoursMinutes :: AmpParser (Int,Int)
-        pHoursMinutes = rebuild DF.<$  pKey "T"
+        pHoursMinutes = rebuild DF.<$  pUpperChar 'T'
                                 CA.<*> nrDigits 2
                                 CA.<*  pSpec ':'
                                 CA.<*> nrDigits 2
@@ -205,8 +205,13 @@ pUTCTime = mkUTCTime DF.<$> pDay
         pSeconds :: AmpParser Int
         pSeconds = id DF.<$ pSpec ':' 
                       CA.<*> nrDigits 2
+        pUpperChar :: Char -> AmpParser String
+        pUpperChar c = check (\lx -> case lx of 
+                                       LexConId s -> if s == [c] then Just s else Nothing
+                                       _ -> Nothing 
+                             ) <?> "ISO 8601 time format char "++[c]
         pTZD :: AmpParser NominalDiffTime
-        pTZD = 0 DF.<$ pKey "Z" 
+        pTZD = 0 DF.<$ pUpperChar 'Z' 
            <|> rebuild DF.<$> (pPlus <|> pDash)
                        CA.<*> nrDigits 2
                        CA.<*  pSpec ':'
