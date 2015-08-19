@@ -1,6 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Atoms.adl"
+INCLUDE "Braga.ifc"
 
 PROCESS Terms
 CONCEPT SESSION ""
@@ -30,67 +31,67 @@ REPRESENT Identifier TYPE ALPHANUMERIC
 REPRESENT TypeTerm TYPE ALPHANUMERIC
 
 --Step: add type rules for source and target.
-ROLE Stef MAINTAINS "dom is total"
+ROLE ExecEngine MAINTAINS "dom is total"
 RULE "dom is total" : I |- dom;dom~
 VIOLATION (TXT "{EX} InsPair;dom;Term;", SRC I, TXT ";TypeTerm;dom(", SRC repr, TXT ")")
 
-ROLE Stef MAINTAINS "cod is total"
+ROLE ExecEngine MAINTAINS "cod is total"
 RULE "cod is total" : I |- cod;cod~
 VIOLATION (TXT "{EX} InsPair;cod;Term;", SRC I, TXT ";TypeTerm;cod(", SRC repr, TXT ")")
 
-ROLE Stef MAINTAINS typeTgt
+ROLE ExecEngine MAINTAINS typeTgt
 RULE typeTgt : type~;target |- tgt
 VIOLATION (TXT "{EX} InsPair;tgt;Signature;", SRC I, TXT ";Concept;", TGT I)
-ROLE Stef MAINTAINS typeSrc
+ROLE ExecEngine MAINTAINS typeSrc
 RULE typeSrc : type~;source |- src
 VIOLATION (TXT "{EX} InsPair;src;Signature;", SRC I, TXT ";Concept;", TGT I)
 
-ROLE Stef MAINTAINS totSign
+ROLE ExecEngine MAINTAINS totSign
 RULE totSign : I[Relation] |- type;type~
 VIOLATION (TXT "{EX} NewStruct;Signature"
           ,TXT ";type;Relation;", SRC I, TXT ";Signature;_NEW"
           )
 
-ROLE Stef MAINTAINS "dom pretype id"
+ROLE ExecEngine MAINTAINS "dom pretype id"
 RULE "dom pretype id" : id;dom |- pretype~
 VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
 
-ROLE Stef MAINTAINS "cod pretype id"
+ROLE ExecEngine MAINTAINS "cod pretype id"
 RULE "cod pretype id" : id;cod |- pretype~
 VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
 
-ROLE Stef MAINTAINS "popset is total"
+ROLE ExecEngine MAINTAINS "popset is total"
 RULE "popset is total" : I[Concept] |- popset;popset~
 VIOLATION (TXT "{EX} InsPair;popset;Concept;", SRC I, TXT ";TypeTerm;pop(", SRC name, TXT ")")
 
-ROLE Stef MAINTAINS "id is total"
+ROLE ExecEngine MAINTAINS "id is total"
 RULE "id is total" : I[Concept] |- id;id~
 VIOLATION (TXT "{EX} InsPair;id;Concept;", SRC I, TXT ";Term;id(", SRC I, TXT ")")
 
-ROLE Stef MAINTAINS "vee is total"
+ROLE ExecEngine MAINTAINS "vee is total"
 RULE "vee is total" : I[Signature] |- vee;vee~
 VIOLATION (TXT "{EX} InsPair;vee;Signature;", SRC I, TXT ";Term;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
 
-ROLE Stef MAINTAINS "Insert into pretype"
+ROLE ExecEngine MAINTAINS "Insert into pretype"
 RULE "Insert into pretype" : subs;popset~ |- pretype
 VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", SRC I, TXT ";Concept;", TGT I)
 
-ROLE Stef MAINTAINS "dom pretype vee"
+ROLE ExecEngine MAINTAINS "dom pretype vee"
 RULE "dom pretype vee" : src~;vee;dom |- pretype~
 VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
 
-ROLE Stef MAINTAINS "cod pretype vee"
+ROLE ExecEngine MAINTAINS "cod pretype vee"
 RULE "cod pretype vee" : tgt~;vee;cod |- pretype~
 VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
 
-ROLE Stef MAINTAINS subsIns
+ROLE ExecEngine MAINTAINS subsIns
 RULE subsIns : sub;subs\/subs;sub\/I |- subs
 VIOLATION (TXT "{EX} InsPair;subs;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
-ROLE Stef MAINTAINS subsDel
+ROLE ExecEngine MAINTAINS subsDel
 RULE subsDel : subs |- sub;subs\/subs;sub\/I
 VIOLATION (TXT "{EX} DelPair;subs;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
 
-ROLE Stef MAINTAINS "INS isa INTO sub"
+ROLE ExecEngine MAINTAINS "INS isa INTO sub"
 RULE "INS isa INTO sub" : popset~;isa;popset |- sub
 VIOLATION (TXT "{EX} InsPair;sub;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
 
@@ -101,11 +102,11 @@ ROLE User MAINTAINS "Complete pretype"
 RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~
 MEANING "Every type-term must have a concept as its pretype."
 
-ROLE Stef MAINTAINS "Every I-term has a representation"
+ROLE ExecEngine MAINTAINS "Every I-term has a representation"
 RULE "Every I-term has a representation" : id |- id;repr;repr~
 VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC id, TXT ";Representation;I[", SRC name, TXT "]")
 
-ROLE Stef MAINTAINS "Every V-term has a representation"
+ROLE ExecEngine MAINTAINS "Every V-term has a representation"
 RULE "Every V-term has a representation" : vee |- vee;repr;repr~
 VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC vee, TXT ";Representation;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
 

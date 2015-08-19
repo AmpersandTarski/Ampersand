@@ -3,7 +3,6 @@ Idea: add rules in Ampersand, one by one, to construct the type checker live.
 
 -}
 CONTEXT AST IN ENGLISH 
-INCLUDE "Braga.adl"
 
 --INCLUDE "Atoms.xslx"
 
