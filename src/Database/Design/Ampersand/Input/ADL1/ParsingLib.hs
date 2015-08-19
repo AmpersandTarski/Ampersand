@@ -160,74 +160,22 @@ data Value = VRealString String
            | VDate Day
 pAtomValInPopulation :: AmpParser Value
 pAtomValInPopulation = 
-              VInt DF.<$> pInteger
-          <|> VBoolean True  <$ pKey "TRUE"
+              VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
           <|> VRealString DF.<$> pString 
-          <|> VDate DF.<$> pDay
           <|> VDateTime DF.<$> pUTCTime
+          <|> VDate DF.<$> pDay
+          <|> VInt DF.<$> pInteger
 
 -----------------------------------------------------------
 -- Date / DateTime (ISO 8601 format)
 -----------------------------------------------------------
 
 pDay :: AmpParser Day
-pDay = rebuild DF.<$> currPos
-               CA.<*> nrDigits 4
-               CA.<*  pDash
-               CA.<*> nrDigits 2
-               CA.<*  pDash
-               CA.<*> nrDigits 2
-  where  rebuild pos year month day = 
-           case fromGregorianValid (toInteger year) month day of
-             Nothing -> fatal 184 $ show pos ++ "\n  Invalid date!" 
-             Just d  -> d
+pDay = check (\lx -> case lx of { LexDate s -> Just s; _ -> Nothing }) <?> "iso 8601 Date"
+
 pUTCTime :: AmpParser UTCTime
-pUTCTime = mkUTCTime DF.<$> pDay
-                     CA.<*> pHoursMinutes
-                     CA.<*> pMaybe pSeconds
-                     CA.<*> pTZD
-  where mkUTCTime :: Day -> (Int,Int) -> Maybe Int -> NominalDiffTime -> UTCTime
-        mkUTCTime day (hh, mm) mss mTZD  -- TODO: Do somehing with the time offset 
-          = addUTCTime mTZD (UTCTime day difftime)
-            where difftime = secondsToDiffTime 
-                               (24*60*toInteger hh
-                                  +60*toInteger mm
-                                     +toInteger (fromMaybe 0 mss))
-
-
-        pHoursMinutes :: AmpParser (Int,Int)
-        pHoursMinutes = rebuild DF.<$  pUpperChar 'T'
-                                CA.<*> nrDigits 2
-                                CA.<*  pSpec ':'
-                                CA.<*> nrDigits 2
-                  where rebuild hh mm = (hh,mm)
-        pSeconds :: AmpParser Int
-        pSeconds = id DF.<$ pSpec ':' 
-                      CA.<*> nrDigits 2
-        pUpperChar :: Char -> AmpParser String
-        pUpperChar c = check (\lx -> case lx of 
-                                       LexConId s -> if s == [c] then Just s else Nothing
-                                       _ -> Nothing 
-                             ) <?> "ISO 8601 time format char "++[c]
-        pTZD :: AmpParser NominalDiffTime
-        pTZD = 0 DF.<$ pUpperChar 'Z' 
-           <|> rebuild DF.<$> (pPlus <|> pDash)
-                       CA.<*> nrDigits 2
-                       CA.<*  pSpec ':'
-                       CA.<*> nrDigits 2
-         where rebuild :: [Char] -> Int -> Int -> NominalDiffTime
-               rebuild c hh mm = 
-                  fromRational . toRational $ 
-                    (if c == "-" then (0-) else (0+)) (60*hh+mm) 
-                    
-
-nrDigits :: Int -> AmpParser Int
-nrDigits i = check nr
-  where
-    nr (LexDecimal x) 
-      | x < (10^i) = Just x
-    nr _              = Nothing
+pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
     
 -----------------------------------------------------------
 -- Integers
