@@ -542,13 +542,13 @@ showValPHP val =
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> f (aavstr val) 
+   AAVString{}  -> aavstr val 
      where 
         f str'= 
           case str' of
             []        -> []
-            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
-            ('\\':s') -> "\\\\" ++ f s'
+--            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
+--            ('\\':s') -> "\\\\" ++ f s'
             (c:cs)    -> c : f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
