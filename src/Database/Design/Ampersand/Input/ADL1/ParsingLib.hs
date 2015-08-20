@@ -33,7 +33,6 @@ import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
 import Data.Time.Calendar
 import Data.Time.Clock
-import Data.Maybe
 import Database.Design.Ampersand.Basics (fatalMsg)
 
 fatal :: Int -> String -> a
@@ -95,9 +94,6 @@ pSemi = pOperator ";"
 
 pColon :: AmpParser String
 pColon = pOperator ":"
-
-pPlus :: AmpParser String
-pPlus = pOperator "+"
 
 -----------------------------------------------------------
 -- Token parsers

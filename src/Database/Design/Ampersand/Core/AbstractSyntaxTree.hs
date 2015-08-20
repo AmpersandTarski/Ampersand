@@ -535,21 +535,15 @@ showValPHP val =
             (c:cs)    -> c : f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVDate{}    -> "'"++showGregorian (aadateDay val)++"'"
+   AAVDateTime {} -> "'"++formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)++"'"
+     --formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
    AAVString{}  -> aavstr val 
-     where 
-        f str'= 
-          case str' of
-            []        -> []
---            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
---            ('\\':s') -> "\\\\" ++ f s'
-            (c:cs)    -> c : f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
