@@ -28,34 +28,37 @@
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	Notifications::addLog("InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
-	
-	$database = Database::singleton();
-	
-	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
-	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
-	
-	if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
-	
-	// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-	if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
-	
-	// if srcAtom is specified as _NEW, a new atom of srcConcept is created
-    if($srcAtom == "_NEW"){
-		$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
-	}elseif(!$database->atomExists($srcAtom, $srcConcept)){
-		$database->addAtomToConcept($srcAtom, $srcConcept);
+	try{	
+		$database = Database::singleton();
+		
+		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
+		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+		
+		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+		
+		// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
+		
+		// if srcAtom is specified as _NEW, a new atom of srcConcept is created
+	    if($srcAtom == "_NEW"){
+			$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
+		}elseif(!$database->atomExists($srcAtom, $srcConcept)){
+			$database->addAtomToConcept($srcAtom, $srcConcept);
+		}
+		
+		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
+		if($tgtAtom == "_NEW"){
+			$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
+		}elseif(!$database->atomExists($tgtAtom, $tgtConcept)){
+			$database->addAtomToConcept($tgtAtom, $tgtConcept);
+		}
+		
+		$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
+		
+		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+	}catch(Exception $e){
+		Notifications::addError('InsPair: ' . $e->getMessage());
 	}
-	
-	// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-	if($tgtAtom == "_NEW"){
-		$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
-	}elseif(!$database->atomExists($tgtAtom, $tgtConcept)){
-		$database->addAtomToConcept($tgtAtom, $tgtConcept);
-	}
-	
-	$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
-	
-	return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 }
 
 /*
@@ -68,15 +71,18 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	Notifications::addLog("DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
-	
-	$database = Database::singleton();
-	
-	// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
-	$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
-	
-	$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
-	
-	return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+	try{
+		$database = Database::singleton();
+		
+		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
+		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+		
+		$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
+		
+		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+	}catch(Exception $e){
+		Notifications::addError('DelPair: ' . $e->getMessage());
+	}
 }
 
 /* The function 'NewStruct' creates a new atom in some concept and uses this
@@ -100,83 +106,91 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 */
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
 	Notifications::addLog("Newstruct", 'ExecEngine');
-	
-	$database = Database::singleton();
-	
-	// We start with parsing the first one or two arguments
-	$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
-	$AtomC = Concept::createNewAtom($ConceptC);   // Default marker for atom-to-be-created.
-	
-	if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
-		$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
-	}elseif(func_num_args() % 5 != 1){       // check for valid number of arguments
-		throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
-	}
-	
-	// Then, we create a new atom of type $ConceptC
-	$database->addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
-
-	// Next, for every relation that follows in the argument list, we create a link
-	for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
+	try{
+		$database = Database::singleton();
 		
-		$relation   = func_get_arg($i);
-		$srcConcept = func_get_arg($i+1);
-		$srcAtom    = func_get_arg($i+2);
-		$tgtConcept = func_get_arg($i+3);
-		$tgtAtom    = func_get_arg($i+4);
+		// We start with parsing the first one or two arguments
+		$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
+		$AtomC = Concept::createNewAtom($ConceptC);   // Default marker for atom-to-be-created.
 		
-		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
-		
-		// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') continue; 
-		
-		// populate relation r1, first checking for allowed syntax:		
-		if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')){ // Note: when populating a [PROP] relation, both atoms can be new
-			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW
-			throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW", 500);
+		if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
+			$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
+		}elseif(func_num_args() % 5 != 1){       // check for valid number of arguments
+			throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
 		}
+		
+		// Then, we create a new atom of type $ConceptC
+		$database->addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
 	
-		if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){
-			// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
-			throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC", 500);
-		}
-	
-		if ($srcConcept == $ConceptC){
-			if ($srcAtom == '_NEW'){
-				$srcAtom = $AtomC;
-/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
-			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-				// NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
+		// Next, for every relation that follows in the argument list, we create a link
+		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
+			
+			$relation   = func_get_arg($i);
+			$srcConcept = func_get_arg($i+1);
+			$srcAtom    = func_get_arg($i+2);
+			$tgtConcept = func_get_arg($i+3);
+			$tgtAtom    = func_get_arg($i+4);
+			
+			if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+			
+			// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+			if($srcAtom == '_NULL' or $tgtAtom == '_NULL') continue; 
+			
+			// populate relation r1, first checking for allowed syntax:		
+			if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')){ // Note: when populating a [PROP] relation, both atoms can be new
+				// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW
+				throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW", 500);
 			}
-		}
-	
-		if ($tgtConcept == $ConceptC){  
-			if ($tgtAtom == '_NEW'){  
-				$tgtAtom = $AtomC;
-/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
-			}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-				// NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)
-				throw new Exception("NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
-			}
-		}
 		
-		// Any logging is done by InsPair:
-		InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+			if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){
+				// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
+				throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC", 500);
+			}
+		
+			if ($srcConcept == $ConceptC){
+				if ($srcAtom == '_NEW'){
+					$srcAtom = $AtomC;
+	/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
+				}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
+					// NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)
+					throw new Exception("NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
+				}
+			}
+		
+			if ($tgtConcept == $ConceptC){  
+				if ($tgtAtom == '_NEW'){  
+					$tgtAtom = $AtomC;
+	/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
+				}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
+					// NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)
+					throw new Exception("NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
+				}
+			}
+			
+			// Any logging is done by InsPair:
+			InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+		}
+		return "New structure '". $AtomC . "' created";
+	
+	}catch(Exception $e){
+		Notifications::addError('NewStruct: ' . $e->getMessage());
 	}
-	return "New structure '". $AtomC . "' created";
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($concept){
 	Notifications::addLog("InsAtom($concept)", 'ExecEngine');
-	
-	$database = Database::singleton();
-	
-	$atom = Concept::createNewAtom($concept);
-	$database->addAtomToConcept($atom, $concept); // insert new atom in database
-	
-	return "Atom '".$atom."' added to concept '". $concept . "'";
+	try{
+		$database = Database::singleton();
+		
+		$atom = Concept::createNewAtom($concept);
+		$database->addAtomToConcept($atom, $concept); // insert new atom in database
+		
+		return "Atom '".$atom."' added to concept '". $concept . "'";
+		
+	}catch(Exception $e){
+		Notifications::addError('InsAtom: ' . $e->getMessage());
+	}
 	
 }
 
@@ -188,11 +202,15 @@ function InsAtom($concept){
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atom){
 	Notifications::addLog("DelAtom($concept, $atom)", 'ExecEngine');
+	try{
+		$database = Database::singleton();
+		
+		$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+		return "Atom '".$atom."' deleted from concept '". $concept . "'";
 	
-	$database = Database::singleton();
-	
-	$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
-	return "Atom '".$atom."' deleted from concept '". $concept . "'";
+	}catch(Exception $e){
+		Notifications::addError('DelAtom: ' . $e->getMessage());
+	}
 	
 }
 ?>
