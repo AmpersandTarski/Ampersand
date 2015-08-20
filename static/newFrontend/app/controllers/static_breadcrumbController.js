@@ -3,12 +3,17 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
 	
 	$scope.$on("$routeChangeSuccess", function(event, current, previous){
 		
-		i = inHistory($scope.history, $location.path())
-		if(i !== false) $scope.history.splice(i, $scope.history.length - i); 
+		indexInHistory = linkInArray($scope.history, $location.path())
+		indexInTopLevel = linkInArray($rootScope.interfaces.top, $location.path())
+		if(indexInHistory !== false) $scope.history.splice(indexInHistory, $scope.history.length - i); 
 		
-		if($location.path() == '/'){ // i.e. 'Home'
+		// Clear history
+		if($location.path() == '/' || indexInTopLevel !== false){ // i.e. 'Home'
 			$scope.history = []; // empty history
-		}else{
+		}
+
+		// Add new breadcrumb item (except for home path '/')
+		if($location.path() != '/'){
 			$scope.history.push({ 'link' : $location.path() 
 								, 'scope': current.scope
 								, 'resourceId' : current.params.resourceId
@@ -25,7 +30,9 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
 		}
 	});
 	
-	function inHistory(arr, link) {
+	function linkInArray(arr, link) {
+		if(arr === undefined) return false;
+		
 		for (var i = 0; i < arr.length; i++) {
 			if (arr[i].link == link) {
 				return i;

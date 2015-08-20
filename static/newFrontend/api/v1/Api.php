@@ -440,13 +440,13 @@ class Api{
     		// top level interfaces
     		$top = array();
     		foreach ($session->role->getInterfacesForNavBar() as $ifc){
-    			$top[] = array('id' => $ifc->id, 'label' => $ifc->label);
+    			$top[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
     		
     		// new interfaces
     		$new = array();
     		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
-    			$new[] = array('id' => $ifc->id, 'label' => $ifc->label);
+    			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
     		return array ('top' => $top
     					 ,'new' => $new);
