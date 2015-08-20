@@ -184,6 +184,90 @@ class Database
 		}
 	}
 	
+	// Adding an atom[ConceptA] as member to ConceptB set. This can only be done when ConceptA and ConceptB are in the same classification tree.
+	public function atomSetConcept($conceptA, $atom, $conceptB){
+		Notifications::addLog("atomSetConcept($conceptA, $atom, $conceptB)", 'DATABASE');
+		try{
+			// Check if conceptA and conceptB are in the same classification tree
+			if(!Concept::inSameClassificationTree($conceptA, $conceptB)) throw new Exception("Concepts $conceptA and $conceptB are not in the same classification tree", 500);
+			
+			// Check if atom is part of conceptA
+			if(!$this->atomExists($atom, $conceptA)) throw new Exception("Atom $atom is not a member of $conceptA", 500);
+			
+			// this function is under control of transaction check!
+			if (!isset($this->transaction)) $this->startTransaction();
+			
+			// Get table info
+			$conceptTableInfoB = Concept::getConceptTableInfo($conceptB);
+			$conceptTableB = $conceptTableInfoB['table'];
+			$conceptColsB = $conceptTableInfoB['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
+			
+			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
+			$atomEsc = $this->escape($atom);
+			$queryString = "\"" . implode("\" = '$atomEsc', \"", $conceptColsB) . "\" = '$atomEsc'";
+			
+			$conceptTableInfoA = Concept::getConceptTableInfo($conceptA);
+			$conceptTableA = $conceptTableInfoA['table'];
+			$anyConceptColForA = current($conceptTableInfoA['cols']);
+			
+			// Perform update
+			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"$anyConceptColForA\" = '$atomEsc'");
+			
+			if(!in_array($conceptB, $this->affectedConcepts)){
+				$this->affectedConcepts[] = $conceptB; // add $concept to affected concepts. Needed for conjunct evaluation.
+				Notifications::addLog("Mark concept $conceptB as affected concept", 'CONJUNCTS');
+			}
+			
+			Notifications::addLog("Atom '$atom' added as member to concept '$conceptB'", 'DATABASE');
+		
+		}catch(Exception $e){
+			throw $e;
+		}
+	}
+	
+	// Removing an atom as member from a Concept set. This can only be done when the concept is a specialization of another concept.
+	public function atomClearConcept($concept, $atom){
+		Notifications::addLog("atomSetConcept($conceptA, $atom, $conceptB)", 'DATABASE');
+		try{
+			// Check if concept is a specialization of another concept
+			if(empty(Concept::getGeneralizations($concept))) throw new Exception("Concept $concept has no generalizations, atom can therefore not be removed as member from this set", 500);
+				
+			// Check if atom is part of conceptA
+			if(!$this->atomExists($atom, $concept)) throw new Exception("Atom $atom is not a member of $concept", 500);
+				
+			// this function is under control of transaction check!
+			if (!isset($this->transaction)) $this->startTransaction();
+				
+			// Get col information for $concept and its specializations
+			$cols = array();
+			$conceptTableInfo = Concept::getConceptTableInfo($concept);
+			$conceptTable = $conceptTableInfo['table'];
+			$conceptCol = reset($conceptTableInfo['cols']);
+			
+			$cols[] = $conceptCol;
+			foreach(Concept::getSpecializations($concept) as $specConcept){
+				$conceptTableInfo = Concept::getConceptTableInfo($specConcept);
+				$cols[] = reset($conceptTableInfo['cols']);
+			}			
+			
+			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
+			$atomEsc = $this->escape($atom);
+			$queryString = "\"" . implode("\" = NULL, \"", $cols) . "\" = NULL";
+			
+			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"$conceptCol\" = '$atomEsc'");
+			
+			if(!in_array($concept, $this->affectedConcepts)){
+				$this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+				Notifications::addLog("Mark concept $concept as affected concept", 'CONJUNCTS');
+			}
+			
+			Notifications::addLog("Atom '$atom' removed as member from concept '$concept'", 'DATABASE');
+			
+		}catch(Exception $e){
+			throw $e;
+		}
+	}
+	
 	/* 
 	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
 	 */

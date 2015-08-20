@@ -213,4 +213,42 @@ function DelAtom($concept, $atom){
 	}
 	
 }
+
+/*
+ ROLE ExecEngine MAINTAINS "SetConcept" -- Adding an atom[ConceptA] as member to ConceptB set. This can only be done when ConceptA and ConceptB are in the same classification tree.
+ RULE "SetConcept": I[ConceptA] |- expr
+ VIOLATION (TXT "SetConcept;ConceptA;ConceptB;" SRC I)
+ */
+// Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atom>")
+function SetConcept($conceptA, $conceptB, $atom){
+	Notifications::addLog("SetConcept($conceptA, $conceptB, $atom)", 'ExecEngine');
+	try{
+		$database = Database::singleton();
+		
+		$database->atomSetConcept($conceptA, $atom, $conceptB);
+		return "Atom '$atom' added as member to concept '$conceptB'";
+	
+	}catch(Exception $e){
+		Notifications::addError('SetConcept: ' . $e->getMessage());
+	}
+}
+
+/*
+ ROLE ExecEngine MAINTAINS "ClearConcept" -- Removing an atom as member from a Concept set. This can only be done when the concept is a specialization of another concept.
+ RULE "ClearConcept": I[Concept] |- expr
+ VIOLATION (TXT "ClearConcept;Concept;" SRC I)
+ */
+// Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
+function ClearConcept($concept, $atom){
+	Notifications::addLog("ClearConcept($concept, $atom)", 'ExecEngine');
+	try{
+		$database = Database::singleton();
+
+		$database->atomClearConcept($concept, $atom);
+		return "Atom '$atom' removed as member from concept '$concept'";
+
+	}catch(Exception $e){
+		Notifications::addError('ClearConcept: ' . $e->getMessage());
+	}
+}
 ?>
