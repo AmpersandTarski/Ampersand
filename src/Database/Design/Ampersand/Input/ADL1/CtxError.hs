@@ -151,23 +151,9 @@ mkMultipleRepresentationsForConceptError cpt rs =
                   concatMap (("\n    "++ ) . show . origin ) rs
     _ -> fatal 142 "There are no multiple representations."
 
-mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
-mkIncompatibleAtomValueError pav t cpt msg=
-  case pav of 
-    PSingleton   o x _ -> mkErr o x
-    ScriptString   o x -> mkErr o x
-    XlsxString     o x -> mkErr o x
-    ScriptInt      o x -> mkErr o x
-    ScriptFloat    o x -> mkErr o x
-    XlsxDouble     o x -> mkErr o x
-    ComnBool       o x -> mkErr o x
-    ScriptDate     o x -> mkErr o x
-    ScriptDateTime o x -> mkErr o x
+mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
+mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg
     
- where
-   mkErr :: Show a => Origin -> a -> CtxError
-   mkErr o x = CTXE o $ msg ++"\n  "++show x++" isn't a valid "++show t++
-                                ", which is the type of "++name cpt++"."
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
 mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error

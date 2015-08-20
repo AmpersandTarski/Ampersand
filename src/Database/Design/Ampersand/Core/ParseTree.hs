@@ -297,7 +297,19 @@ instance Ord PAtomValue where
     (ScriptDateTime _ _, _                  ) -> GT
     (ComnBool       _ x, ComnBool       _ x') -> compare x x'
     (ComnBool       _ _, _                  ) -> GT
- 
+instance Traced PAtomValue where
+  origin pav =
+   case pav of 
+    PSingleton   o _ _ -> o
+    ScriptString   o _ -> o
+    XlsxString     o _ -> o
+    ScriptInt      o _ -> o
+    ScriptFloat    o _ -> o
+    XlsxDouble     o _ -> o
+    ComnBool       o _ -> o
+    ScriptDate     o _ -> o
+    ScriptDateTime o _ -> o
+
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r 
    = PPair { pppos   = o

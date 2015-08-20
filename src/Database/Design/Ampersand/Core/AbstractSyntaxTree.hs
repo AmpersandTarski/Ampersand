@@ -881,25 +881,9 @@ unsafePAtomVal2AtomValue typ mCpt pav
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
              Date             -> message str
              DateTime         -> message str
-             Boolean          -> let table =
-                                        [("TRUE", True), ("FALSE" , False)
-                                        ,("YES" , True), ("NO"    , False)
-                                        ,("WAAR", True), ("ONWAAR", False)
-                                        ,("JA"  , True), ("NEE"   , False)
-                                        ,("WEL" , True), ("NIET"  , False)
-                                        ]
-                                 in case lookup (map toUpper str) table of
-                                    Just b -> Right (AAVBoolean typ b)
-                                    Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
-                                   where camelCase []     = []
-                                         camelCase (c:xs) = toUpper c: map toLower xs 
-                                    
-             Integer          -> case maybeRead str  of
-                                   Just i  -> Right (AAVInteger typ i)
-                                   Nothing -> Left $ "This is not of type "++show typ++": " ++str
-             Float         -> case maybeRead str of 
-                                   Just r  -> Right (AAVFloat typ r)
-                                   Nothing -> Left $ "This is not of type "++show typ++": " ++str
+             Boolean          -> message str
+             Integer          -> message str
+             Float            -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
              Object           -> Right (AAVString typ str) 
       XlsxString _ str
@@ -947,7 +931,7 @@ unsafePAtomVal2AtomValue typ mCpt pav
              DateTime         -> message i 
              Boolean          -> message i 
              Integer          -> Right (AAVInteger typ i)
-             Float            -> Right (AAVFloat typ (fromInteger i))
+             Float            -> Right (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
              Object           -> message i 
       ScriptFloat _ x
@@ -1009,16 +993,17 @@ unsafePAtomVal2AtomValue typ mCpt pav
          
    where
      message :: Show x => x -> Either String a
-     message x = Left . intercalate "\n   " $
+     message x = Left . intercalate "\n    " $
                  ["Representation mismatch"
-                 , "Found: `"++show x++"`."
-                 , "Expected representation-type is "++show expected++","
-                 ]++  
-                 ["which is the "++implicit++"representation-type of concept `"++name c++"`." | Just c <- [mCpt]
+                 , "Found: `"++show x++"`,"
+                 , "as representation of an atom in concept `"++name c++"`."
+                 , "However, the representation-type of that concept is "++implicitly
+                 , "defined as "++show expected++". The found value does not match that type."
                  ]
         where
+          c = fromMaybe (fatal 1004 $ "Representation mismatch without concept known should not happen.") mCpt
           expected = if typ == Object then Alphanumeric else typ
-          implicit = if typ == Object then "implicit " else ""
+          implicitly = if typ == Object then "(implicitly) " else ""
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads
