@@ -156,7 +156,8 @@ mainLexer p cs@(c:s)
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
-            Just (tk,_,width,s') -> returnToken tk p mainLexer (addPos width p) s'
+            Just (Right (tk,_,width,s')) -> returnToken tk p mainLexer (addPos width p) s'
+            Just (Left msg) -> lexerError msg p
             Nothing 
               -> case getDate cs of
                   Just (tk,_,width,s') -> returnToken tk p mainLexer (addPos width p) s'
@@ -240,21 +241,23 @@ lexExpl = lexExpl' ""
 -- iso 8601 date / time
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the UTCTime, the amount of read characters and the rest of the text
-getDateTime :: String -> Maybe (Lexeme, UTCTime, Int, String)
+getDateTime :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String) )
 getDateTime cs = 
   case getDate cs of
    Nothing -> Nothing
    Just (_,day,ld,rd) -> 
       case getTime rd of
-        Nothing -> Nothing
+        Nothing -> case rd of
+                    'T':_ -> Just . Left $ ProblematicISO8601DateTime
+                    _     -> Nothing
         Just (timeOfDay, tzoneOffset,lt,rt) -> 
             let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
-            in Just ( LexDateTime ucttime
+            in Just . Right $ 
+                    ( LexDateTime ucttime
                     , ucttime
                     , ld + lt
                     , rt
                     )
-
 getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
 getTime cs =
   case cs of

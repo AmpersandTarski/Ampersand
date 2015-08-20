@@ -21,7 +21,7 @@ data LexerError = LexerError FilePos LexerErrorInfo -- ^ The lexer file position
 data LexerErrorInfo
     -- | The comment was not terminated
     = UnterminatedComment
-	-- | The purpose statement was not terminated
+    -- | The purpose statement was not terminated
     | UnterminatedPurpose
     -- | The atom was not terminated
     | UnterminatedAtom
@@ -37,6 +37,8 @@ data LexerErrorInfo
     | UnexpectedClose Char FilePos Char
     -- | Brackets were not closed at the end of the file
     | StillOpenAtEOF [(FilePos, Char)]
+    -- | DateTime not conforming to ISO 8601 format
+    | ProblematicISO8601DateTime
     deriving(Show)
 
 -- | Converts the error information into a list of error messages
@@ -55,7 +57,7 @@ showLexerErrorInfo info =
         StillOpenAtEOF bs              -> [ Texts.lexerStillOpenAtEOF (reverse (map (show.snd) bs)) ]
             -- 'reverse' because positions will be sorted and brackets are
             -- reported in reversed order
-
+        ProblematicISO8601DateTime   -> [ Texts.lexerProblematicISO8601DateTime        ]
 correctStrings :: String
 correctStrings = Texts.lexerCorrectStrings
 

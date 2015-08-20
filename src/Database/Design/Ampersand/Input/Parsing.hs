@@ -91,8 +91,12 @@ parse p fn ts =
               | otherwise = tokPos (head ts)
 
 --TODO: Give the errors in a better way
-lexerErrors :: LexerError -> [CtxError]
-lexerErrors err = [PE (Message ("Lexer error "++show err))]
+lexerError2CtxError :: LexerError -> CtxError
+lexerError2CtxError (LexerError pos err) = 
+   PE (Message ("Lexer error at "++show pos++"\n  "
+                ++ intercalate "\n    " (showLexerErrorInfo err)
+               )
+      )
 
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run
@@ -104,7 +108,7 @@ runParser parser filename input =
   --TODO: Give options to the lexer
   let lexed = lexer [] filename input
   in case lexed of
-    Left err -> Errors $ lexerErrors err
+    Left err -> Errors [lexerError2CtxError err]
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
     Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
 

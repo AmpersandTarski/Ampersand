@@ -11,6 +11,7 @@ module Database.Design.Ampersand.Input.ADL1.LexerTexts
     , lexerUnterminatedAtom
     , lexerUnterminatedComment
     , lexerUnterminatedPurpose
+    , lexerProblematicISO8601DateTime
     , lexerUtfChar
     ) where
 
@@ -41,7 +42,7 @@ lexerUnterminatedComment = select language
     [ English :-> "Unterminated comment"
     , Dutch   :-> "Commentaar niet afgesloten"
     ]
-	
+
 -- | Translates 'Unterminated purpose' into the chosen language
 lexerUnterminatedPurpose:: String -- ^ The translated string
 lexerUnterminatedPurpose= select language
@@ -55,7 +56,12 @@ lexerUnterminatedAtom = select language
     [ English :-> "Unterminated Atom literal"
     , Dutch   :-> "Atom literal niet afgesloten"
     ]
-
+-- | Translates 'ProblematicISO8601DateTime' into the chosen language
+lexerProblematicISO8601DateTime:: String 
+lexerProblematicISO8601DateTime = select language
+    [ English :-> "Incorrect DATETIME value (ISO 8601 standard)"
+    , Dutch   :-> "foutieve DATETIME waarde (Zie ISO 8601)"
+    ]
 -- | Translates 'Unexpected character' into the chosen language
 lexerUnexpectedChar :: Char -> String -- ^ The translated string
 lexerUnexpectedChar c = select language
