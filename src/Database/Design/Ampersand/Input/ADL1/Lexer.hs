@@ -350,7 +350,7 @@ getNumber cs@(c:s)
                           '.':cs' -> let (n',rs') = span isDigit cs'
                                          wholeNumberString = n++"."++n'
                                      in (all (=='0') n',wholeNumberString,rs')
-                          _       -> (True,n, cs)
+                          _       -> (True,n, rs)
                      nrInt = read n
                  in if isWhole
                     then (LexDecimal nrInt , Left nrInt, length readed,rest)
