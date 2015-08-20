@@ -166,7 +166,10 @@ class Database
 				
 				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
 				
-				if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+				if(!in_array($concept, $this->affectedConcepts)){
+					$this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+					Notifications::addLog("Mark concept $concept as affected concept", 'CONJUNCTS');
+				}
 				
 				Notifications::addLog("Atom $newAtom added into concept $concept", 'DATABASE');
 			}else{
@@ -261,7 +264,10 @@ class Database
 				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$originalAtomEsc'");			
 			}
 			
-			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+			if(!in_array($fullRelationSignature, $this->affectedRelations)) {
+				$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+				Notifications::addLog("Mark relation $fullRelationSignature as affected relation", 'CONJUNCTS');
+			}
 	
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -319,7 +325,10 @@ class Database
 				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			}
 			
-			if(!in_array($fullRelationSignature, $this->affectedRelations)) $this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+			if(!in_array($fullRelationSignature, $this->affectedRelations)){
+				Notifications::addLog("Mark relation $fullRelationSignature as affected relation", 'CONJUNCTS');
+				$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+			}
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -358,7 +367,10 @@ class Database
 				}
 			}
 			
-			if(!in_array($concept, $this->affectedConcepts)) $this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+			if(!in_array($concept, $this->affectedConcepts)){
+				Notifications::addLog("Mark concept $concept as affected concept", 'CONJUNCTS');
+				$this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+			}
 			
 			Notifications::addLog("Atom $atom (and all related links) deleted in database", 'DATABASE');
 		}catch(Exception $e){
