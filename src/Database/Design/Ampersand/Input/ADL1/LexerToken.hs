@@ -28,6 +28,7 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexExpl        String  -- ^ An explanation
              | LexSingleton   String  -- ^ An atomvalue in an Expression
              | LexDecimal     Int     -- ^ A decimal number
+             | LexFloat      Double   -- ^ A decimal floating point thing
              | LexOctal       Int     -- ^ An octal number
              | LexHex         Int     -- ^ A hexadecimal number
              | LexConId       String  -- ^ An upper case identifier
@@ -45,6 +46,7 @@ instance Show Lexeme where
          LexExpl     val -> "explanation "           ++ "{+" ++      val  ++ "+}"
          LexSingleton val -> "singleton "            ++ "'"  ++      val  ++ "'"
          LexDecimal   _  -> "integer "               ++   lexemeText  x
+         LexFloat     _  -> "float "                 ++   lexemeText  x
          LexOctal     _  -> "octal "                 ++   lexemeText  x
          LexHex       _  -> "hexadecimal "           ++   lexemeText  x
          LexVarId    val -> "lower case identifier " ++              val
@@ -70,6 +72,7 @@ lexemeText l = case l of
          LexExpl     val -> val
          LexSingleton val -> val
          LexDecimal  val -> show val
+         LexFloat    val -> show val
          LexOctal    val -> "0o" ++ toBase 8  val
          LexHex      val -> "0x" ++ toBase 16 val
          LexConId    val -> val

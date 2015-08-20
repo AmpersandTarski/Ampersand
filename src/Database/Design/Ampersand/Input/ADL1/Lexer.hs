@@ -263,8 +263,8 @@ getTime cs =
   case cs of
    'T':h1:h2:':':m1:m2:rest 
     -> if (all isDigit [h1,h2,m1,m2])
-       then let (_,hours,_,_) = getNumber [h1,h2]
-                (_,minutes,_,_) = getNumber [m1,m2]
+       then let (_,Left hours,_,_) = getNumber [h1,h2]
+                (_,Left minutes,_,_) = getNumber [m1,m2]
                 (seconds,ls,rs) = getSeconds rest
             in case getTZD rs of
                  Nothing -> Nothing
@@ -308,8 +308,8 @@ getTZD cs =
   where
    mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int,String)
    mkOffset hs ms rest op = 
-    let (_,hours  ,_,_) = getNumber hs
-        (_,minutes,_,_) = getNumber ms
+    let (_,Left hours  ,_,_) = getNumber hs
+        (_,Left minutes,_,_) = getNumber ms
         total = hours*60+minutes
     in if hours <= 24 && minutes < 60
        then Just (fromRational . toRational $ 0 `op` total
@@ -324,16 +324,16 @@ getDate cs =
              Nothing -> Nothing 
              Just d -> Just (LexDate d, d, 10, rest)
       else Nothing
-     where (_,year ,_,_) = getNumber [y1,y2,y3,y4]
-           (_,month,_,_) = getNumber [m1,m2]
-           (_,day  ,_,_) = getNumber [d1,d2]
+     where (_,Left year ,_,_) = getNumber [y1,y2,y3,y4]
+           (_,Left month,_,_) = getNumber [m1,m2]
+           (_,Left day  ,_,_) = getNumber [d1,d2]
    _  -> Nothing
      
 -----------------------------------------------------------
 -- Numbers
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the integer, the amount of read characters and the rest of the text
-getNumber :: String -> (Lexeme, Int, Int, String)
+getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
 getNumber [] = fatal 294 "getNumber"
 getNumber cs@(c:s)
   | c /= '0'         = num10
@@ -342,19 +342,29 @@ getNumber cs@(c:s)
   | hs `elem` "oO"   = num8
   | otherwise        = num10
   where (hs:ts) = s
-        const0 = (LexDecimal 0, 0, 1, s)
+        const0 = (LexDecimal 0, Left 0, 1, s)
+        num10 :: (Lexeme, (Either Int Double), Int, String)
         num10  = let (n, rs) = span isDigit cs
-                     nr = read n
-                 in (LexDecimal nr, nr, length n, rs)
-        num16   = readNum isHexaDigit  16 LexHex
-        num8    = readNum isOctDigit 8  LexOctal
-        readNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Int, Int, String)
-        readNum p base lx
+                     (isWhole,readed,rest) = 
+                        case rs of
+                          '.':cs' -> let (n',rs') = span isDigit cs'
+                                         wholeNumberString = n++"."++n'
+                                     in (all (=='0') n',wholeNumberString,rs')
+                          _       -> (True,n, cs)
+                     nrInt = read n
+                 in if isWhole
+                    then (LexDecimal nrInt , Left nrInt, length readed,rest)
+                    else let x = fst.head.readFloat $ readed
+                         in (LexFloat x, Right x, length readed,rest)
+        num16   = readIntNum isHexaDigit  16 LexHex
+        num8    = readIntNum isOctDigit 8  LexOctal
+        readIntNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Either Int a , Int, String)
+        readIntNum p base lx
           = let (n, rs) = span p ts
             in  if null n
                 then const0
                 else let nr = readn base n
-                     in (lx nr, nr, 2 + length n, rs)
+                     in (lx nr, Left nr, 2 + length n, rs)
 
 isHexaDigit :: Char -> Bool
 isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
@@ -405,7 +415,7 @@ getchar isAtomScan echrs s =
     (doubleQuote,singleQuote) = ('\"','\'')
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
-getEscChar s@(x:xs) | isDigit x = let (_, val, len, rest) = getNumber s
+getEscChar s@(x:xs) | isDigit x = let (_, Left val, len, rest) = getNumber s
                                   in  if val >= 0 && val <= 255
                                          then (Just (chr val),len, rest)
                                          else (Nothing, 1, rest)

@@ -360,7 +360,7 @@ pCtx2aCtx' _
 
     pAtomValue2aAtomValue ::A_Concept -> PAtomValue -> Guarded AAtomValue
     pAtomValue2aAtomValue cpt pav =
-       case unsafePAtomVal2AtomValue typ pav of
+       case unsafePAtomVal2AtomValue typ (Just cpt) pav of
         Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
         Right av -> pure av
       where typ = representationOf contextInfo cpt

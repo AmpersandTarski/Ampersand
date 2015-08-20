@@ -250,6 +250,7 @@ data PAtomValue
   | ScriptString Origin String -- string from script char to enquote with when printed
   | XlsxString Origin String
   | ScriptInt Origin Integer
+  | ScriptFloat Origin Double
   | XlsxDouble Origin Double
   | ComnBool Origin Bool
   | ScriptDate Origin Day
@@ -264,6 +265,8 @@ instance Eq PAtomValue where
   XlsxString   _ _ == _                 = False
   ScriptInt    _ i == ScriptInt    _ i' = i == i'
   ScriptInt    _ _ == _                 = False
+  ScriptFloat  _ x == ScriptFloat  _ x' = x == x'
+  ScriptFloat  _ _ == _                 = False
   XlsxDouble   _ d == XlsxDouble   _ d' = d == d'
   XlsxDouble   _ _ == _                 = False
   ScriptDate   _ d == ScriptDate   _ d' = d == d'
@@ -284,6 +287,8 @@ instance Ord PAtomValue where
     (XlsxString     _ _, _                  ) -> GT
     (ScriptInt      _ x, ScriptInt      _ x') -> compare x x'
     (ScriptInt      _ _, _                  ) -> GT
+    (ScriptFloat    _ x, ScriptFloat    _ x') -> compare x x'
+    (ScriptFloat    _ _, _                  ) -> GT
     (XlsxDouble     _ x, XlsxDouble     _ x') -> compare x x'
     (XlsxDouble     _ _, _                  ) -> GT
     (ScriptDate     _ x, ScriptDate     _ x') -> compare x x'

@@ -697,6 +697,7 @@ value2PAtomValue o v = case v of
          VSingleton s x -> PSingleton o s (fmap (value2PAtomValue o) x)
          VRealString s  -> ScriptString o s
          VInt i         -> ScriptInt o (toInteger i)
+         VFloat x       -> ScriptFloat o x
          VBoolean b     -> ComnBool o b
          VDateTime x    -> ScriptDateTime o x
          VDate x        -> ScriptDate o x

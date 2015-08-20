@@ -851,14 +851,14 @@ contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
 --   which only exsists after disambiguation.
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val = 
-   case unsafePAtomVal2AtomValue typ val of
+   case unsafePAtomVal2AtomValue typ (Just c) val of
      Left _ -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
                      ++ show val
      Right x -> x 
   where typ = representationOf ci c
 
-unsafePAtomVal2AtomValue :: TType -> PAtomValue -> Either String AAtomValue
-unsafePAtomVal2AtomValue typ pav
+unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
+unsafePAtomVal2AtomValue typ mCpt pav
   = case pav of
       PSingleton _ str mval 
          -> case typ of 
@@ -868,8 +868,8 @@ unsafePAtomVal2AtomValue typ pav
              Password         -> Right (AAVString typ str)
              Object           -> Right (AAVString typ str) 
              _                -> case mval of
-                                   Nothing -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
-                                   Just x -> unsafePAtomVal2AtomValue typ x
+                                   Nothing -> message str
+                                   Just x -> unsafePAtomVal2AtomValue typ mCpt x
       ScriptString _ str 
          -> case typ of
              Alphanumeric     -> Right (AAVString typ str) 
@@ -879,8 +879,8 @@ unsafePAtomVal2AtomValue typ pav
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
-             DateTime         -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
+             Date             -> message str
+             DateTime         -> message str
              Boolean          -> let table =
                                         [("TRUE", True), ("FALSE" , False)
                                         ,("YES" , True), ("NO"    , False)
@@ -911,8 +911,8 @@ unsafePAtomVal2AtomValue typ pav
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
-             DateTime         -> Left $ "String cannot be converted to a "++show typ++".\n   String: "++show str
+             Date             -> message str
+             DateTime         -> message str
              Boolean          -> let table =
                                         [("TRUE", True), ("FALSE" , False)
                                         ,("YES" , True), ("NO"    , False)
@@ -928,34 +928,50 @@ unsafePAtomVal2AtomValue typ pav
                                     
              Integer          -> case maybeRead str  of
                                    Just i  -> Right (AAVInteger typ i)
-                                   Nothing -> Left $ "This is not of type "++show typ++": " ++str
+                                   Nothing -> message str
              Float         -> case maybeRead str of 
                                    Just r  -> Right (AAVFloat typ r)
-                                   Nothing -> Left $ "This is not of type "++show typ++": " ++str
+                                   Nothing -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
              Object           -> Right (AAVString typ str) 
       ScriptInt _ i
          -> case typ of
-             Alphanumeric     -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
-             BigAlphanumeric  -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
-             HugeAlphanumeric -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
-             Password         -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             Alphanumeric     -> message i 
+             BigAlphanumeric  -> message i 
+             HugeAlphanumeric -> message i 
+             Password         -> message i 
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
-             DateTime         -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
-             Boolean          -> Left $ "Numerical value found where "++show typ++" is expected: "++ show i 
+             Date             -> message i 
+             DateTime         -> message i 
+             Boolean          -> message i 
              Integer          -> Right (AAVInteger typ i)
              Float            -> Right (AAVFloat typ (fromInteger i))
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show i 
+             Object           -> message i 
+      ScriptFloat _ x
+         -> case typ of
+             Alphanumeric     -> message x
+             BigAlphanumeric  -> message x 
+             HugeAlphanumeric -> message x 
+             Password         -> message x 
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> message x 
+             DateTime         -> message x 
+             Boolean          -> message x 
+             Integer          -> message x
+             Float            -> Right (AAVFloat typ x)
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> message x
       XlsxDouble _ d
          -> case typ of
-             Alphanumeric     -> Left $ "Numerical value found where "++show typ++" is expected: "++ show d 
-             BigAlphanumeric  -> Left $ "Numerical value found where "++show typ++" is expected: "++ show d 
-             HugeAlphanumeric -> Left $ "Numerical value found where "++show typ++" is expected: "++ show d 
-             Password         -> Left $ "Numerical value found where "++show typ++" is expected: "++ show d 
+             Alphanumeric     -> message d 
+             BigAlphanumeric  -> message d 
+             HugeAlphanumeric -> message d 
+             Password         -> message d 
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -969,29 +985,40 @@ unsafePAtomVal2AtomValue typ pav
                                                 })
                                      where picosecondsPerDay = 24*60*60*1000000000000
                                            (daysSinceZero, fractionOfDay) = properFraction d 
-             Boolean          -> Left $ "Numerical value found where "++show typ++" is expected: "++ show d 
+             Boolean          -> message d 
              Integer          -> if frac == 0
                                  then Right (AAVInteger typ int)
-                                 else Left $ "Numerical value found that is not an "++show typ++": " ++show d
+                                 else message d
                                   where
                                     (int,frac) = properFraction d
              Float            -> Right (AAVFloat typ d)
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show d 
+             Object           -> message d 
       ComnBool _ b
          -> if typ == Boolean 
             then Right (AAVBoolean typ b)
-            else Left $ "Boolean value found where "++show typ++" is expected."
+            else message b
       ScriptDate _ x
          -> if typ == Date  
             then Right (AAVDate typ x)
-            else Left $ "Date value found where "++show typ++" is expected."
+            else message x
       ScriptDateTime _ x
          -> if typ == DateTime  
             then Right (AAVDateTime typ x)
-            else Left $ "DateTime value found where "++show typ++" is expected."
+            else message x
          
    where
+     message :: Show x => x -> Either String a
+     message x = Left . intercalate "\n   " $
+                 ["Representation mismatch"
+                 , "Found: `"++show x++"`."
+                 , "Expected representation-type is "++show expected++","
+                 ]++  
+                 ["which is the "++implicit++"representation-type of concept `"++name c++"`." | Just c <- [mCpt]
+                 ]
+        where
+          expected = if typ == Object then Alphanumeric else typ
+          implicit = if typ == Object then "implicit " else ""
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads

@@ -18,7 +18,7 @@ import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
-import Data.Time.Calendar
+--import Data.Time.Calendar
 
 
 fatal :: Int -> String -> a
@@ -383,6 +383,7 @@ instance ShowADL PAtomValue where
               ScriptString _ s -> show s
               XlsxString _ s   -> show s
               ScriptInt _ s    -> show s
+              ScriptFloat  _ x -> show x
               XlsxDouble _ d   -> show d
               ComnBool   _ b   -> show b
               ScriptDate _ x   -> show x
@@ -408,8 +409,13 @@ instance ShowADL TermPrim where
      (case val of
        PSingleton   _ x _ -> x 
        ScriptString   _ x -> x
-       XlsxString     _ x -> x
+       XlsxString     _ x -> concatMap escapeSingleQuote x
+                               where escapeSingleQuote c=
+                                       case c of
+                                         '\'' -> ['\\','\'']
+                                         _    -> [c]
        ScriptInt      _ x -> show x
+       ScriptFloat    _ x -> show x
        XlsxDouble     _ x -> show x
        ComnBool       _ x -> show x
        ScriptDate     _ x -> show x

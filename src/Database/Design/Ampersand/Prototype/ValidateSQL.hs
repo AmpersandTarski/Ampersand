@@ -89,7 +89,7 @@ type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
 showVExp :: ShowADL a => (a, String) -> String
-showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
+showVExp (exp, orig) = "Origin: "++orig++", expression: "++showADL exp
 
 -- validate a single expression and report the results
 validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
@@ -97,8 +97,8 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
  do { putStr "."
     ; return (vExp, True)
     }
-validateExp fSpec vExp@(exp, origin) =
- do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
+validateExp fSpec vExp@(exp, orig) =
+ do { --putStr $ "Checking "++orig ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec tempDbName $ exp
     ; let violationsAmp = sort [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- fullContents (contextInfo fSpec) (initialPops fSpec) exp]
 
@@ -108,7 +108,7 @@ validateExp fSpec vExp@(exp, origin) =
           ; return (vExp, True)
           }
       else
-       do { putStr $ "Checking "++origin ++": expression = "++showADL exp
+       do { putStr $ "Checking "++orig ++": expression = "++showADL exp
           ; putStrLn "\nMismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
           ; putStrLn $ "SQL violations:\n"++show violationsSQL

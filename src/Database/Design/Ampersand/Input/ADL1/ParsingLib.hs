@@ -151,6 +151,7 @@ pAtomInExpression = check (\lx -> case lx of
 data Value = VRealString String
            | VSingleton String (Maybe Value)
            | VInt Int
+           | VFloat Double
            | VBoolean Bool
            | VDateTime UTCTime
            | VDate Day
@@ -162,6 +163,7 @@ pAtomValInPopulation =
           <|> VDateTime DF.<$> pUTCTime
           <|> VDate DF.<$> pDay
           <|> VInt DF.<$> pInteger
+          <|> VFloat DF.<$> pFloat
 
 -----------------------------------------------------------
 -- Date / DateTime (ISO 8601 format)
@@ -174,11 +176,14 @@ pUTCTime :: AmpParser UTCTime
 pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
     
 -----------------------------------------------------------
--- Integers
+-- Integers /float(Double)
 -----------------------------------------------------------
 
 pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
+
+pFloat :: AmpParser Double
+pFloat = check (\lx -> case lx of { LexFloat d -> Just d; _ -> Nothing }) <?> "float"
 
 pInteger :: AmpParser Int
 pInteger = check isNr

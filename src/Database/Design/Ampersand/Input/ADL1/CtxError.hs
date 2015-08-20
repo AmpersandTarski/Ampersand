@@ -158,6 +158,7 @@ mkIncompatibleAtomValueError pav t cpt msg=
     ScriptString   o x -> mkErr o x
     XlsxString     o x -> mkErr o x
     ScriptInt      o x -> mkErr o x
+    ScriptFloat    o x -> mkErr o x
     XlsxDouble     o x -> mkErr o x
     ComnBool       o x -> mkErr o x
     ScriptDate     o x -> mkErr o x
