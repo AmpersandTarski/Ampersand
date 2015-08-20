@@ -115,6 +115,16 @@ class InterfaceObject {
 		
 		return (array)$allInterfaceObjects;
 	}
+	
+	public static function getAllInterfacesForConcept($concept){
+		$interfaces = array();
+	
+		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
+			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
+		}
+	
+		return $interfaces;
+	}
 }
 
 ?>
