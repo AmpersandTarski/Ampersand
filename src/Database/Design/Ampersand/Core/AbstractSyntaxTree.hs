@@ -66,7 +66,7 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import System.Locale (defaultTimeLocale)
-import Data.Time.Format (formatTime)
+import Data.Time.Format (formatTime,readTime)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -857,7 +857,25 @@ safePSingleton2AAtomVal ci c val =
   where typ = representationOf ci c
 
 unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
-unsafePAtomVal2AtomValue typ mCpt pav
+unsafePAtomVal2AtomValue typ mCpt pav =
+  case unsafePAtomVal2AtomValue' typ mCpt pav of
+    Left err -> Left err
+    Right rawVal -> Right roundedVal
+      where roundedVal =
+             case rawVal of
+              AAVDateTime t x -> -- Rounding is needed, to maximize the number of databases
+                                 -- on wich this runs. (MySQL 5.5 only knows seconds)  
+                                 AAVDateTime t (truncateByFormat x)
+                                  where
+                                    truncateByFormat :: UTCTime  -> UTCTime
+                                    truncateByFormat = f readTime . f formatTime
+                                      where
+                                        format = iso8601DateFormat (Just "%H:%M:%S")
+                                        f fun = fun defaultTimeLocale format
+              _          -> rawVal
+             
+unsafePAtomVal2AtomValue' :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
+unsafePAtomVal2AtomValue' typ mCpt pav
   = case pav of
       PSingleton _ str mval 
          -> case typ of 
@@ -1007,6 +1025,20 @@ unsafePAtomVal2AtomValue typ mCpt pav
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads
 
--- case string2AtomValue (representationOf ci c) a of
---                             Right av -> av
---                             Left err -> fatal 43 $ "Could not convert the string. That should have been checked earlier. \n  "++err
+-- Awaiting use of time package 1.5, we copy from there:
+
+{- | Construct format string according to <http://en.wikipedia.org/wiki/ISO_8601 ISO-8601>.
+
+The @Maybe String@ argument allows to supply an optional time specification. E.g.:
+
+@
+'iso8601DateFormat' Nothing            == "%Y-%m-%d"           -- i.e. @/YYYY-MM-DD/@
+'iso8601DateFormat' (Just "%H:%M:%S")  == "%Y-%m-%dT%H:%M:%S"  -- i.e. @/YYYY-MM-DD/T/HH:MM:SS/@
+@
+-}
+
+iso8601DateFormat :: Maybe String -> String
+iso8601DateFormat mTimeFmt =
+    "%Y-%m-%d" ++ case mTimeFmt of
+             Nothing  -> ""
+             Just fmt -> 'T' : fmt
