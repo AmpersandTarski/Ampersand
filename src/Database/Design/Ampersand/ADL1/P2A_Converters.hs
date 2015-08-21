@@ -101,7 +101,7 @@ checkInterfaceCycles gCtx =
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                  -> []
-                                   Just (InterfaceRef _ nm) -> [nm]
+                                   Just (InterfaceRef isLinkto nm) -> [nm | not isLinkto]
                                    Just (Box _ _ objs)      -> concatMap getDeepIfcRefs objs
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
