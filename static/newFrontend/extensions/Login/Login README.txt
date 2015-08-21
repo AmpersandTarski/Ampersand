@@ -4,6 +4,11 @@ The 'Login' extension allows you to easily add a user (account) registration to 
 * add session variables, and use them for controlling access to data.
 
 --[How to INSTALL the extension]--
+To use this on localhost, you have to add a local certificate for php CURL
+* Goto http://curl.haxx.se/ca/cacert.pem
+* Save entire content as 'cacert.pem' in php folder
+* Add 'curl.cainfo = "[pathtothisfile]\cacert.pem"' to php.ini
+
 
 --[How to CONFIGURE the extension]--
 
