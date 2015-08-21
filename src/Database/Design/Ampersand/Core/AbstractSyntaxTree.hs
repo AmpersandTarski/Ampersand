@@ -39,7 +39,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf, PAtomValue(..)
- , showValADL,showValPHP,showValSQL,showValXLSX
+ , showValADL,showValPHP,showValSQL
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -550,8 +550,6 @@ showValSQL val =
    AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
-showValXLSX :: AAtomValue -> String
-showValXLSX = showValADL  -- Todo: Eigen maken
 showValADL :: AAtomValue -> String
 showValADL val = 
   case val of

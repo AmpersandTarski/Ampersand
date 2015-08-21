@@ -29,7 +29,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
-          , showValADL,showValPHP,showValSQL,showValXLSX
+          , showValADL,showValPHP,showValSQL
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
