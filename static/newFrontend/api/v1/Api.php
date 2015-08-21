@@ -2,32 +2,7 @@
 
 use Luracast\Restler\Data\Object;
 use Luracast\Restler\RestException;
-class Api{
-	
-	
-	/*
-	 * @url GET login
-	 * @param string @sessionId
-	 * @param string @accessToken
-	 */
-	public function login($sessionId, $accessToken){
-		
-		// Stap 4 & 5, get validated email from Oauth provider
-		
-		// If response valid,
-		// Autenticate user and create session user relation in db (stap 6)
-		try{
-			$session = Session::singleton($sessionId);
-			
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-		// Return true (stap 7)
-		
-		// If response false,
-		// Return error (stap 8)
-	}
-	
+class Api{	
 	
 	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
