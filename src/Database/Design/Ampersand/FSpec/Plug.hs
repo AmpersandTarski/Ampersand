@@ -295,7 +295,7 @@ tblcontents ci ps plug
                        [] -> Nothing
                        [p] -> Just (apRight p)
                        _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
-                               "Looking for: '"++showVal a++"'.\n"++
+                               "Looking for: '"++showValADL a++"'.\n"++
                                "Multiple values in one field. \n"
                                )
                        

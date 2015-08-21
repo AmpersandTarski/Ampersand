@@ -355,7 +355,7 @@ genView_Object fSpec depth obj =
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
             ; conceptTemplate <- getTemplateForConcept (objTarget obj)
-            ; let (templateFilename, viewAttrs) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
+            ; let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
@@ -400,9 +400,7 @@ genView_Object fSpec depth obj =
                                        return $ if exists
                                                 then cptfn
                                                 else "views" </> "Atomic-"++show ttp++".html" 
-           where ttp = case lookup cpt (allTTypes fSpec) of
-                         Nothing -> fatal 400 $ "Concept `"++"` has no representation!"
-                         Just x  -> x
+           where ttp = cptTType fSpec $ cpt
                  cptfn = "views" </> "Concept-"++name cpt++".html" 
             
 ------ Generate controller JavaScript code
@@ -420,12 +418,12 @@ genController_Interface fSpec interf =
                                          ( filter (targetIsObject ) 
                                          . filter (isAtomic . atomicOrBox)
                                          . filter objIsEditable $ allObjs)
-          targetIsObject o = (ttp . objTarget) o == Object
+          targetIsObject o = (cptTType fSpec . objTarget) o == Object
           isAtomic FEAtomic{} = True
           isAtomic _ = False                              
           containsEditable          = any objIsEditable allObjs
           containsEditableObjects    = (not . null) allEditableObjects
-          containsDATE              = any (\o -> ttp (objTarget o) == Date && objIsEditable o) allObjs
+          containsDATE              = any (\o -> (cptTType fSpec) (objTarget o) == Date && objIsEditable o) allObjs
           
     ; template <- readTemplate fSpec "controllers/controller.js"
     ; let contents = renderTemplate template $
@@ -439,7 +437,7 @@ genController_Interface fSpec interf =
                      . setAttribute "containsEditableObjects"  containsEditableObjects
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (escapeIdentifier . ifcName $ interf)
-					 . setAttribute "interfaceLabel"           (ifcName interf) -- no escaping for labels in templates needed
+                                         . setAttribute "interfaceLabel"           (ifcName interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
@@ -448,10 +446,6 @@ genController_Interface fSpec interf =
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
-  where
-          ttp cpt = case lookup cpt (allTTypes fSpec) of
-            Nothing -> fatal 400 $ "Concept `"++"` has no representation!"
-            Just x  -> x
       
 ------ Utility functions
 -- data type to keep template and source file together for better errors

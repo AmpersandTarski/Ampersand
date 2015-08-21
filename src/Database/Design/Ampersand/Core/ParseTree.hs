@@ -16,7 +16,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , ConceptDef(..)
    , Representation(..), TType(..)
    , P_Population(..)
-   , PAtomPair(..), PAtomValue(..), mkPair
+   , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -49,6 +49,9 @@ import Control.Applicative
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
+import Data.Time.Calendar
+import Data.Time.Clock
+import Data.Time.LocalTime() -- for instance Show UTCTime
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -222,16 +225,91 @@ instance Traced PAtomPair where
 instance Flippable PAtomPair where
   flp pr = pr{ppLeft = ppRight pr
              ,ppRight = ppLeft pr}
-
+--data PSingleton
+--  = PSingleton { psOrig :: Origin
+--               , psRaw  :: String 
+--               , psInterprets :: [PAtomValue]
+--               }
+--instance Show PSingleton where
+-- show = psRaw
+--instance Eq PSingleton where
+-- a == b = psRaw a == psRaw b 
+--instance Ord PSingleton where
+-- compare a b = compare (psRaw a) (psRaw b)
+--instance Traced PSingleton where
+-- origin = psOrig
+type PSingleton = PAtomValue
+makePSingleton :: String -> PSingleton
+makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
+--   PSingleton { psOrig =Origin "ParseTree.hs"
+--              , psRaw = s
+--              , psInterprets = fatal 241 "Probably no need to make something up..." 
+--              }
 data PAtomValue
-  = PAVString Origin String
+  = PSingleton Origin String (Maybe PAtomValue)
+  | ScriptString Origin String -- string from script char to enquote with when printed
+  | XlsxString Origin String
+  | ScriptInt Origin Integer
+  | ScriptFloat Origin Double
   | XlsxDouble Origin Double
-  | XlsxBool Origin Bool
--- TODO: Later add parsers for:  --Beware to update aAtomValue2pAtomValue as well!
---  | PAVInteger Origin Integer
---  | PAVFloat Origin Float
---  | PAVBoolean Origin Bool 
+  | ComnBool Origin Bool
+  | ScriptDate Origin Day
+  | ScriptDateTime Origin UTCTime
   deriving Show
+instance Eq PAtomValue where
+  PSingleton _ s _ == PSingleton _ s' _ = s == s'
+  PSingleton _ _ _ == _                 = False
+  ScriptString _ s == ScriptString _ s' = s == s'
+  ScriptString _ _ == _                 = False
+  XlsxString   _ s == XlsxString   _ s' = s == s'
+  XlsxString   _ _ == _                 = False
+  ScriptInt    _ i == ScriptInt    _ i' = i == i'
+  ScriptInt    _ _ == _                 = False
+  ScriptFloat  _ x == ScriptFloat  _ x' = x == x'
+  ScriptFloat  _ _ == _                 = False
+  XlsxDouble   _ d == XlsxDouble   _ d' = d == d'
+  XlsxDouble   _ _ == _                 = False
+  ScriptDate   _ d == ScriptDate   _ d' = d == d'
+  ScriptDate   _ _ == _                 = False
+  ScriptDateTime _ d == ScriptDateTime _ d' = d == d'
+  ScriptDateTime _ _ == _               = False
+  ComnBool     _ b == ComnBool     _ b' = b == b'
+  ComnBool     _ _ == _                 = False
+
+instance Ord PAtomValue where
+  compare a b = 
+   case (a,b) of
+    (PSingleton  _ x _ , PSingleton   _ x' _) -> compare x x'
+    (PSingleton  _ _ _ , _                  ) -> GT
+    (ScriptString   _ x, ScriptString   _ x') -> compare x x'
+    (ScriptString   _ _, _                  ) -> GT
+    (XlsxString     _ x, XlsxString     _ x') -> compare x x'
+    (XlsxString     _ _, _                  ) -> GT
+    (ScriptInt      _ x, ScriptInt      _ x') -> compare x x'
+    (ScriptInt      _ _, _                  ) -> GT
+    (ScriptFloat    _ x, ScriptFloat    _ x') -> compare x x'
+    (ScriptFloat    _ _, _                  ) -> GT
+    (XlsxDouble     _ x, XlsxDouble     _ x') -> compare x x'
+    (XlsxDouble     _ _, _                  ) -> GT
+    (ScriptDate     _ x, ScriptDate     _ x') -> compare x x'
+    (ScriptDate     _ _, _                  ) -> GT
+    (ScriptDateTime _ x, ScriptDateTime _ x') -> compare x x'
+    (ScriptDateTime _ _, _                  ) -> GT
+    (ComnBool       _ x, ComnBool       _ x') -> compare x x'
+    (ComnBool       _ _, _                  ) -> GT
+instance Traced PAtomValue where
+  origin pav =
+   case pav of 
+    PSingleton   o _ _ -> o
+    ScriptString   o _ -> o
+    XlsxString     o _ -> o
+    ScriptInt      o _ -> o
+    ScriptFloat    o _ -> o
+    XlsxDouble     o _ -> o
+    ComnBool       o _ -> o
+    ScriptDate     o _ -> o
+    ScriptDateTime o _ -> o
+
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r 
    = PPair { pppos   = o
@@ -245,7 +323,12 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin String (Maybe P_Concept)   -- ^ an atom, possibly with a type
+   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
+                                                  --   eg, when `123` is found by the parser, the list will contain both interpretations as 
+                                                  --   the String "123" or as Integer 123.  
+                                                  --   Since everything between the single quotes can allways be interpretated as a String, 
+                                                  --   it is quaranteed that the list contains the interpretation as String, and thus cannot
+                                                  --   be empty.    
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
@@ -280,7 +363,7 @@ data Term a
    | PDia Origin (Term a) (Term a)  -- ^ diamond                 <>
    | PCps Origin (Term a) (Term a)  -- ^ composition             ;
    | PRad Origin (Term a) (Term a)  -- ^ relative addition       !
-   | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       *
+   | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       #
    | PKl0 Origin (Term a)           -- ^ Rfx.Trn closure         *  (Kleene star)
    | PKl1 Origin (Term a)           -- ^ Transitive closure      +  (Kleene plus)
    | PFlp Origin (Term a)           -- ^ conversion (flip, wok)  ~

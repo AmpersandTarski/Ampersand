@@ -213,7 +213,7 @@ data DisambPrim
  = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
  | Ident -- identity, and we know nothing about its type
  | Vee -- vee, type unknown
- | Mp1 String -- an atom, type unknown
+ | Mp1 PSingleton -- a singleton atomvalue, type unknown
  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
  deriving Show  -- Here, deriving Show serves debugging purposes only.
 
@@ -227,7 +227,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
                 ((findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
                  `orWhenEmpty` xs)
      Ident   -> determineBySize suggest (map EDcI     (Set.toList possibleConcs))
-     Mp1 s   -> determineBySize suggest (map (EMp1 s) (Set.toList possibleConcs))
+     Mp1 x   -> determineBySize suggest (map (EMp1 x) (Set.toList possibleConcs))
      Vee     -> determineBySize (const (pure unkn))
                   [EDcV (Sign a b) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
  where

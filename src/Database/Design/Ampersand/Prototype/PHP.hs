@@ -122,7 +122,7 @@ populateTablesPHP fSpec =
                                                                     ++" (`conjId`, `src`, `tgt`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlConjId++", "++sqlAtomQuote (apLeft p)++", "++sqlAtomQuote (apRight p)++")" 
+                                                [ "(" ++sqlConjId++", "++showValPHP (apLeft p)++", "++showValPHP (apRight p)++")" 
                                                 | (conj, viols) <- conjSignals
                                                 , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
                                                 , p <- viols
@@ -146,7 +146,7 @@ populateTablesWithPopsPHP fSpec pops =
                              ):
                              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
      where
-        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> sqlAtomQuote val | fld<-record]
+        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> showValPHP val | fld<-record]
 
 
 dropplug :: PlugSQL -> String
@@ -306,3 +306,4 @@ setSqlModePHP =
        , "  }"
        , ""
        ]
+

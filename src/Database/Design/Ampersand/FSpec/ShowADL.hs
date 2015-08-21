@@ -18,7 +18,7 @@ import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
-import Data.Time.Calendar
+--import Data.Time.Calendar
 
 
 fatal :: Int -> String -> a
@@ -245,10 +245,17 @@ instance ShowADL Expression where
           showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (EDcD dcl)   = name dcl
           showchar (EDcI c)     = "I"++lbr++name c++rbr
-          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr --HJO, 20140622: Modified this, because the output must comply to Ampersand syntax.
+          showchar (EEps i _)   = "I{-Eps-}"++lbr++name i++rbr
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
-          showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
-
+          showchar (EMp1 val c) = "'"++showWithoutDoubleQuotes val++"'"++lbr++name c++rbr
+            
+          showWithoutDoubleQuotes str = 
+            case showADL str of
+              []  -> []
+              [c] -> [c]
+              cs  -> if head cs == '\"' && last cs == '\"'
+                     then reverse . tail . reverse .tail $ cs
+                     else cs
 instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
 
@@ -340,16 +347,12 @@ instance ShowADL P_Population where
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          P_RelPopu{} -> map showPPaire (p_popps pop)
-                          P_CptPopu{} -> map showPAtom  (p_popas pop)
-showPPaire :: PAtomPair -> String
-showPPaire p = showPAtom (ppLeft p)++", "++ showPAtom (ppRight p)
-showAPaire :: AAtomPair -> String
-showAPaire p = showADL (apLeft p)++", "++ showADL (apRight p)
+                          P_RelPopu{} -> map showADL (p_popps pop)
+                          P_CptPopu{} -> map showADL  (p_popas pop)
 instance ShowADL PAtomPair where
- showADL p = "("++showPAtom (ppLeft p)++","++ showPAtom (ppRight p)++")"
-instance ShowADL [PAtomPair] where
- showADL ps = "["++intercalate ", " (map showADL ps)++"]"
+ showADL p = "("++showADL (ppLeft p)++","++ showADL (ppRight p)++")"
+instance ShowADL AAtomPair where
+ showADL p = "("++showADL (apLeft p)++","++ showADL (apRight p)++")"
   
 instance ShowADL Population where
  showADL pop
@@ -366,7 +369,7 @@ instance ShowADL Population where
      else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
           showContent = case pop of
-                          ARelPopu{} -> map showAPaire (popps pop)
+                          ARelPopu{} -> map showADL (popps pop)
                           ACptPopu{} -> map showADL (popas pop)
 
 -- showADL (ARelPopu r pairs)
@@ -374,33 +377,59 @@ instance ShowADL Population where
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
-
-showPAtom :: PAtomValue -> String
-showPAtom at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
-  where x = case at of
-              PAVString  _ str -> str
-              XlsxDouble _ d -> show d
-              XlsxBool   _ b -> show b
+instance ShowADL PAtomValue where
+ showADL at = case at of
+              PSingleton _ s _ -> show s
+              ScriptString _ s -> show s
+              XlsxString _ s   -> show s
+              ScriptInt _ s    -> show s
+              ScriptFloat  _ x -> show x
+              XlsxDouble _ d   -> show d
+              ComnBool   _ b   -> show b
+              ScriptDate _ x   -> show x
+              ScriptDateTime _ x -> show x
+              
 instance ShowADL AAtomValue where
- showADL at = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
-  where x = case at of
-              AAVString  _ str -> str
+ showADL at = case at of
+              AAVString  _ str -> show str
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b
-              AAVDate _ day    -> showGregorian day
+              AAVDate _ day    -> show day
               AAVDateTime _ dt -> show dt
               AtomValueOfONE -> "1"
 
 instance ShowADL TermPrim where
- showADL (PI _)                                   = "I"
- showADL (Pid _ c)                                = "I["++showADL c++"]"
- showADL (Patm _ a Nothing)                       = "'"++a++"'"
- showADL (Patm _ a (Just c))                      = "'"++a++"'["++show c++"]"
- showADL (PVee _)                                 = "V"
- showADL (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
- showADL (PNamedR rel)                            = showADL rel
- 
+ showADL (PI _)                   = "I"
+ showADL (Pid _ c)                = "I["++showADL c++"]"
+ showADL (Patm _ val mSign)     = showSingleton
+  where
+   showSingleton =
+     "'"++
+     (case val of
+       PSingleton   _ x _ -> x 
+       ScriptString   _ x -> x
+       XlsxString     _ x -> concatMap escapeSingleQuote x
+                               where escapeSingleQuote c=
+                                       case c of
+                                         '\'' -> ['\\','\'']
+                                         _    -> [c]
+       ScriptInt      _ x -> show x
+       ScriptFloat    _ x -> show x
+       XlsxDouble     _ x -> show x
+       ComnBool       _ x -> show x
+       ScriptDate     _ x -> show x
+       ScriptDateTime _ x -> show x
+     ) ++
+     "'" ++
+     (case mSign of
+       Nothing -> ""
+       Just c  -> "["++show c++"]"
+     )
+     
+ showADL (PVee _)                 = "V"
+ showADL (Pfull _ s t)            = "V["++show s++"*"++show t++"]"
+ showADL (PNamedR rel)            = showADL rel
 instance ShowADL P_NamedRel where
  showADL (PNamedRel _ rel mSgn)                    = rel++maybe "" showsign mSgn
   where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"
@@ -471,10 +500,10 @@ showPAclause indent pa@Do{}
          showADL (paDelta pa)++
          indent++motivate indent "TO MAINTAIN " (paMotiv pa)
 showPAclause indent (New c clause cj_ruls)
-       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause (makePSingleton "x"))++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (Rmv c clause cj_ruls)
-       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
+       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause (makePSingleton "x"))++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
 showPAclause indent (CHC ds cj_ruls)
        = "ONE OF "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls

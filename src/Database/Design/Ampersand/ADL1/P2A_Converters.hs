@@ -360,20 +360,9 @@ pCtx2aCtx' _
 
     pAtomValue2aAtomValue ::A_Concept -> PAtomValue -> Guarded AAtomValue
     pAtomValue2aAtomValue cpt pav =
-       case pav of
-         PAVString _ str 
-            -> case string2AtomValue typ str of
-                 Right aav -> pure aav 
-                 Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
-         XlsxDouble _ d
-            -> case double2AtomValue typ d of
-                 Right aav -> pure aav 
-                 Left msg -> Errors [mkIncompatibleAtomValueError pav typ cpt msg]
-         XlsxBool _ b
-            -> if typ == Boolean 
-               then pure (AAVBoolean typ b)
-               else Errors [mkIncompatibleAtomValueError pav typ cpt msg] 
-                where msg = "Boolean value found where "++show typ++" is expected."
+       case unsafePAtomVal2AtomValue typ (Just cpt) pav of
+        Left msg -> Errors [mkIncompatibleAtomValueError pav msg]
+        Right av -> pure av
       where typ = representationOf contextInfo cpt
                
 

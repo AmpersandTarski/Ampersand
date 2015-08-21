@@ -28,10 +28,13 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlFieldUsage(..)
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..),AAtomValue,showVal
+          , Language(..),AAtomValue
+          , showValADL,showValPHP,showValSQL
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
-          
+-- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
+--       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
+--       hyrarchie to reflect the Architecture. 
 import Data.List
 import Data.Typeable
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
@@ -79,7 +82,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
-                   , allTTypes :: [(A_Concept,TType)]
+                   , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
@@ -118,7 +121,7 @@ data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmVal   :: AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where
-  showUnique a = showVal (atmVal a)++" in "
+  showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x

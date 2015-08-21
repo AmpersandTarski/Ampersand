@@ -33,11 +33,13 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , A_RoleRule(..)
  , A_RoleRelation(..)
  , Representation(..), TType(..), contextInfoOf
+ , unsafePAtomVal2AtomValue, safePSingleton2AAtomVal
  , Signature(..)
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..),showVal, mkAtomPair, ContextInfo(..), string2AtomValue, double2AtomValue, representationOf
+ , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf, PAtomValue(..)
+ , showValADL,showValPHP,showValSQL
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith
@@ -49,7 +51,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..)
+                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
                                                 )
 import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
@@ -64,7 +66,7 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import System.Locale (defaultTimeLocale)
-import Data.Time.Format (formatTime)
+import Data.Time.Format (formatTime,readTime)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -440,11 +442,11 @@ data PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | New { paCpt :: A_Concept                  -- make a new instance of type c
-                    , paCl :: String->PAclause            -- to be done after creating the concept
+                    , paCl :: PSingleton ->PAclause            -- to be done after creating the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
-                    , paCl :: String->PAclause            -- to be done afteremoving the concept
+                    , paCl :: PSingleton->PAclause            -- to be done afteremoving the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
@@ -500,74 +502,6 @@ data AAtomPair
           }deriving(Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
-string2AtomValue :: TType -> String -> Either String AAtomValue
-string2AtomValue dom str
-  = case dom of 
-     Alphanumeric     -> Right (AAVString dom str) 
-     BigAlphanumeric  -> Right (AAVString dom str)
-     HugeAlphanumeric -> Right (AAVString dom str)
-     Password         -> Right (AAVString dom str)
-     Binary           -> Left "Binary cannot be populated in an ADL script"
-     BigBinary        -> Left "Binary cannot be populated in an ADL script"
-     HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-     Date             -> Left $ "String cannot be converted to a "++show dom++".\n   String: "++show str
-     DateTime         -> Left $ "String cannot be converted to a "++show dom++".\n   String: "++show str
-     Boolean          -> let table =
-                                [("TRUE", True), ("FALSE" , False)
-                                ,("YES" , True), ("NO"    , False)
-                                ,("WAAR", True), ("ONWAAR", False)
-                                ,("JA"  , True), ("NEE"   , False)
-                                ,("WEL" , True), ("NIET"  , False)
-                                ]
-                         in case lookup (map toUpper str) table of
-                            Just b -> Right (AAVBoolean dom b)
-                            Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
-                           where camelCase []     = []
-                                 camelCase (c:xs) = toUpper c: map toLower xs 
-                            
-     Integer          -> case maybeRead str  of
-                           Just i  -> Right (AAVInteger dom i)
-                           Nothing -> Left $ "This is not of type "++show dom++": " ++str
-     Float         -> case maybeRead str of 
-                           Just r  -> Right (AAVFloat dom r)
-                           Nothing -> Left $ "This is not of type "++show dom++": " ++str
-     TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-     Object           -> Right (AAVString dom str) 
-     
-   where
-     maybeRead :: Read a => String -> Maybe a
-     maybeRead = fmap fst . listToMaybe . reads
-double2AtomValue :: TType -> Double -> Either String AAtomValue
-double2AtomValue dom d
-  = case dom of 
-     Alphanumeric     -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
-     BigAlphanumeric  -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
-     HugeAlphanumeric -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
-     Password         -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
-     Binary           -> Left "Binary cannot be populated in an ADL script"
-     BigBinary        -> Left "Binary cannot be populated in an ADL script"
-     HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-     Date             -> Right (AAVDate {aavtyp = dom
-                                        ,aadateDay = addDays (floor d) dayZeroExcel
-                                        })
-     DateTime         -> Right (AAVDateTime {aavtyp = dom
-                                            ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
-                                                                  (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
-                                                      
-                                        })
-                             where picosecondsPerDay = 24*60*60*1000000000000
-                                   (daysSinceZero, fractionOfDay) = properFraction d 
-     Boolean          -> Left $ "Numerical value found where "++show dom++" is expected: "++ show d 
-     Integer          -> if frac == 0
-                         then Right (AAVInteger dom int)
-                         else Left $ "Numerical value found that is not an "++show dom++": " ++show d
-                          where
-                            (int,frac) = properFraction d
-     Float            -> Right (AAVFloat dom d)
-     TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-     Object           -> Left $ "Numerical value found where "++show Alphanumeric++" is expected: "++ show d 
- where
-   dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
 data AAtomValue
   = AAVString  { aavtyp :: TType
                , aavstr :: String
@@ -588,8 +522,37 @@ data AAtomValue
                 , aadatetime ::  UTCTime
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord)
-showVal :: AAtomValue -> String
-showVal val = 
+showValPHP :: AAtomValue -> String
+showValPHP val =
+  case val of
+   AAVString{}  -> "'"++f (aavstr val)++"'" 
+     where 
+        f str'= 
+          case str' of
+            []        -> []
+            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
+            ('\\':s') -> "\\\\" ++ f s'
+            (c:cs)    -> c : f cs
+   AAVInteger{} -> show (aavint val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> "'"++showGregorian (aadateDay val)++"'"
+   AAVDateTime {} -> "'"++formatTime defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+     --formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVFloat{}   -> show (aavflt val)
+   AtomValueOfONE{} -> "1"
+showValSQL :: AAtomValue -> String
+showValSQL val =
+  case val of
+   AAVString{}  -> aavstr val 
+   AAVInteger{} -> show (aavint val)
+   AAVBoolean{} -> show (aavbool val)
+   AAVDate{}    -> showGregorian (aadateDay val)
+   AAVDateTime {} -> "'"++formatTime defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+     --formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVFloat{}   -> show (aavflt val)
+   AtomValueOfONE{} -> "1"
+showValADL :: AAtomValue -> String
+showValADL val = 
   case val of
    AAVString{}  ->      (aavstr val)
    AAVInteger{} -> show (aavint val)
@@ -641,12 +604,37 @@ data Expression
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
-      | EMp1 String A_Concept          -- ^ constant (string between single quotes)
+      | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet. 
       deriving (Eq, Prelude.Ord, Show, Typeable, Generic)
 instance Unique Expression where
   showUnique = show
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
-instance Hashable Expression
+instance Hashable Expression where
+   hashWithSalt s expr = 
+     s `hashWithSalt` 
+       case expr of
+        EEqu (a,b) -> ( 0::Int) `hashWithSalt` a `hashWithSalt` b
+        EImp (a,b) -> ( 1::Int) `hashWithSalt` a `hashWithSalt` b
+        EIsc (a,b) -> ( 2::Int) `hashWithSalt` a `hashWithSalt` b
+        EUni (a,b) -> ( 3::Int) `hashWithSalt` a `hashWithSalt` b
+        EDif (a,b) -> ( 4::Int) `hashWithSalt` a `hashWithSalt` b
+        ELrs (a,b) -> ( 5::Int) `hashWithSalt` a `hashWithSalt` b
+        ERrs (a,b) -> ( 6::Int) `hashWithSalt` a `hashWithSalt` b
+        EDia (a,b) -> ( 7::Int) `hashWithSalt` a `hashWithSalt` b
+        ECps (a,b) -> ( 8::Int) `hashWithSalt` a `hashWithSalt` b
+        ERad (a,b) -> ( 9::Int) `hashWithSalt` a `hashWithSalt` b
+        EPrd (a,b) -> (10::Int) `hashWithSalt` a `hashWithSalt` b
+        EKl0 e     -> (11::Int) `hashWithSalt` e
+        EKl1 e     -> (12::Int) `hashWithSalt` e
+        EFlp e     -> (13::Int) `hashWithSalt` e
+        ECpl e     -> (14::Int) `hashWithSalt` e
+        EBrk e     -> (15::Int) `hashWithSalt` e
+        EDcD d     -> (16::Int) `hashWithSalt` d
+        EDcI c     -> (17::Int) `hashWithSalt` c
+        EEps c sgn -> (18::Int) `hashWithSalt` c `hashWithSalt` sgn
+        EDcV sgn   -> (19::Int) `hashWithSalt` sgn
+        EMp1 val c -> (21::Int) `hashWithSalt` show val `hashWithSalt` c        
+
 instance Unique (PairView Expression) where
   showUnique = show
 instance Unique (PairViewSegment Expression) where
@@ -830,7 +818,7 @@ class Association rel where
   isEndo s        = source s == target s
 
 
--- Convenient data structure to hold information about concepts and their populations
+-- Convenient data structure to hold information about concepts and their representations
 --  in a context. 
 data ContextInfo =
   CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
@@ -855,4 +843,202 @@ contextInfoOf :: A_Context -> ContextInfo
 contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
                        , ctxiRepresents = ctxreprs ctx
                        }
+-- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
+--   after the expression has been built inside an A_Context. Only at that time
+--   the TType is known, enabling the correct transformation. 
+--   To ensure that this function is not used too early, ContextInfo is required, 
+--   which only exsists after disambiguation.
+safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
+safePSingleton2AAtomVal ci c val = 
+   case unsafePAtomVal2AtomValue typ (Just c) val of
+     Left _ -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
+                     ++ show val
+     Right x -> x 
+  where typ = representationOf ci c
 
+unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
+unsafePAtomVal2AtomValue typ mCpt pav =
+  case unsafePAtomVal2AtomValue' typ mCpt pav of
+    Left err -> Left err
+    Right rawVal -> Right roundedVal
+      where roundedVal =
+             case rawVal of
+              AAVDateTime t x -> -- Rounding is needed, to maximize the number of databases
+                                 -- on wich this runs. (MySQL 5.5 only knows seconds)  
+                                 AAVDateTime t (truncateByFormat x)
+                                  where
+                                    truncateByFormat :: UTCTime  -> UTCTime
+                                    truncateByFormat = f readTime . f formatTime
+                                      where
+                                        format = iso8601DateFormat (Just "%H:%M:%S")
+                                        f fun = fun defaultTimeLocale format
+              _          -> rawVal
+             
+unsafePAtomVal2AtomValue' :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
+unsafePAtomVal2AtomValue' typ mCpt pav
+  = case pav of
+      PSingleton _ str mval 
+         -> case typ of 
+             Alphanumeric     -> Right (AAVString typ str) 
+             BigAlphanumeric  -> Right (AAVString typ str)
+             HugeAlphanumeric -> Right (AAVString typ str)
+             Password         -> Right (AAVString typ str)
+             Object           -> Right (AAVString typ str) 
+             _                -> case mval of
+                                   Nothing -> message str
+                                   Just x -> unsafePAtomVal2AtomValue typ mCpt x
+      ScriptString _ str 
+         -> case typ of
+             Alphanumeric     -> Right (AAVString typ str) 
+             BigAlphanumeric  -> Right (AAVString typ str)
+             HugeAlphanumeric -> Right (AAVString typ str)
+             Password         -> Right (AAVString typ str)
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> message str
+             DateTime         -> message str
+             Boolean          -> message str
+             Integer          -> message str
+             Float            -> message str
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> Right (AAVString typ str) 
+      XlsxString _ str
+         -> case typ of
+             Alphanumeric     -> Right (AAVString typ str) 
+             BigAlphanumeric  -> Right (AAVString typ str)
+             HugeAlphanumeric -> Right (AAVString typ str)
+             Password         -> Right (AAVString typ str)
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> message str
+             DateTime         -> message str
+             Boolean          -> let table =
+                                        [("TRUE", True), ("FALSE" , False)
+                                        ,("YES" , True), ("NO"    , False)
+                                        ,("WAAR", True), ("ONWAAR", False)
+                                        ,("JA"  , True), ("NEE"   , False)
+                                        ,("WEL" , True), ("NIET"  , False)
+                                        ]
+                                 in case lookup (map toUpper str) table of
+                                    Just b -> Right (AAVBoolean typ b)
+                                    Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
+                                   where camelCase []     = []
+                                         camelCase (c:xs) = toUpper c: map toLower xs 
+                                    
+             Integer          -> case maybeRead str  of
+                                   Just i  -> Right (AAVInteger typ i)
+                                   Nothing -> message str
+             Float         -> case maybeRead str of 
+                                   Just r  -> Right (AAVFloat typ r)
+                                   Nothing -> message str
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> Right (AAVString typ str) 
+      ScriptInt _ i
+         -> case typ of
+             Alphanumeric     -> message i 
+             BigAlphanumeric  -> message i 
+             HugeAlphanumeric -> message i 
+             Password         -> message i 
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> message i 
+             DateTime         -> message i 
+             Boolean          -> message i 
+             Integer          -> Right (AAVInteger typ i)
+             Float            -> Right (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> message i 
+      ScriptFloat _ x
+         -> case typ of
+             Alphanumeric     -> message x
+             BigAlphanumeric  -> message x 
+             HugeAlphanumeric -> message x 
+             Password         -> message x 
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> message x 
+             DateTime         -> message x 
+             Boolean          -> message x 
+             Integer          -> message x
+             Float            -> Right (AAVFloat typ x)
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> message x
+      XlsxDouble _ d
+         -> case typ of
+             Alphanumeric     -> message d 
+             BigAlphanumeric  -> message d 
+             HugeAlphanumeric -> message d 
+             Password         -> message d 
+             Binary           -> Left "Binary cannot be populated in an ADL script"
+             BigBinary        -> Left "Binary cannot be populated in an ADL script"
+             HugeBinary       -> Left "Binary cannot be populated in an ADL script"
+             Date             -> Right (AAVDate {aavtyp = typ
+                                                ,aadateDay = addDays (floor d) dayZeroExcel
+                                                })
+             DateTime         -> Right (AAVDateTime {aavtyp = typ
+                                                    ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
+                                                                          (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+                                                              
+                                                })
+                                     where picosecondsPerDay = 24*60*60*1000000000000
+                                           (daysSinceZero, fractionOfDay) = properFraction d 
+             Boolean          -> message d 
+             Integer          -> if frac == 0
+                                 then Right (AAVInteger typ int)
+                                 else message d
+                                  where
+                                    (int,frac) = properFraction d
+             Float            -> Right (AAVFloat typ d)
+             TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
+             Object           -> message d 
+      ComnBool _ b
+         -> if typ == Boolean 
+            then Right (AAVBoolean typ b)
+            else message b
+      ScriptDate _ x
+         -> if typ == Date  
+            then Right (AAVDate typ x)
+            else message x
+      ScriptDateTime _ x
+         -> if typ == DateTime  
+            then Right (AAVDateTime typ x)
+            else message x
+         
+   where
+     message :: Show x => x -> Either String a
+     message x = Left . intercalate "\n    " $
+                 ["Representation mismatch"
+                 , "Found: `"++show x++"`,"
+                 , "as representation of an atom in concept `"++name c++"`."
+                 , "However, the representation-type of that concept is "++implicitly
+                 , "defined as "++show expected++". The found value does not match that type."
+                 ]
+        where
+          c = fromMaybe (fatal 1004 $ "Representation mismatch without concept known should not happen.") mCpt
+          expected = if typ == Object then Alphanumeric else typ
+          implicitly = if typ == Object then "(implicitly) " else ""
+     dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
+     maybeRead :: Read a => String -> Maybe a
+     maybeRead = fmap fst . listToMaybe . reads
+
+-- Awaiting use of time package 1.5, we copy from there:
+
+{- | Construct format string according to <http://en.wikipedia.org/wiki/ISO_8601 ISO-8601>.
+
+The @Maybe String@ argument allows to supply an optional time specification. E.g.:
+
+@
+'iso8601DateFormat' Nothing            == "%Y-%m-%d"           -- i.e. @/YYYY-MM-DD/@
+'iso8601DateFormat' (Just "%H:%M:%S")  == "%Y-%m-%dT%H:%M:%S"  -- i.e. @/YYYY-MM-DD/T/HH:MM:SS/@
+@
+-}
+
+iso8601DateFormat :: Maybe String -> String
+iso8601DateFormat mTimeFmt =
+    "%Y-%m-%d" ++ case mTimeFmt of
+             Nothing  -> ""
+             Just fmt -> 'T' : fmt

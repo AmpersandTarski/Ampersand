@@ -548,9 +548,7 @@ pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
                   P_RelPopu <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
                   P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
-pAtomValue ::AmpParser PAtomValue
-pAtomValue = PAVString <$> currPos
-                       <*> pString
+
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList
 pRoleRelation :: AmpParser P_RoleRelation
 pRoleRelation = try (P_RR <$> currPos
@@ -677,17 +675,33 @@ rightAssociate combinator operator term
                           where g orig y Nothing  = (orig, y)
                                 g orig y (Just (org,z)) = (orig, combinator org y z)
 
---- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Atom ('[' ConceptOneRef ']')?
+--- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Singleton ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = PNamedR <$> pNamedRel                                                           <|>
-                    pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)  <|>
-                    pfull <$> currPos <* pKey "V" <*> pMaybe pSign                       <|>
-                    Patm  <$> currPos <*> pAtom   <*> pMaybe (pBrackets pConceptOneRef)
+pRelationRef      = PNamedR <$> pNamedRel                                                
+                <|> pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)
+                <|> pfull <$> currPos <* pKey "V" <*> pMaybe pSign
+                <|> Patm  <$> currPos <*> pSingleton <*> pMaybe (pBrackets pConceptOneRef)
                     where pid orig Nothing = PI orig
                           pid orig (Just c)= Pid orig c
                           pfull orig Nothing = PVee orig
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
+pSingleton :: AmpParser PSingleton
+pSingleton = value2PAtomValue <$> currPos <*> pAtomInExpression
+
+pAtomValue :: AmpParser PAtomValue
+pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
+
+value2PAtomValue :: Origin -> Value -> PAtomValue
+value2PAtomValue o v = case v of 
+         VSingleton s x -> PSingleton o s (fmap (value2PAtomValue o) x)
+         VRealString s  -> ScriptString o s
+         VInt i         -> ScriptInt o (toInteger i)
+         VFloat x       -> ScriptFloat o x
+         VBoolean b     -> ComnBool o b
+         VDateTime x    -> ScriptDateTime o x
+         VDate x        -> ScriptDate o x
+         
 --- Att ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
@@ -742,7 +756,7 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
     where pRecord :: AmpParser PAtomPair
           pRecord = 
              pParens (PPair <$> currPos
-                            <*> pAtomValue 
+                            <*> pAtomValue
                             <*  pComma
                             <*> pAtomValue
                      )
@@ -752,3 +766,5 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser String
 pADLid = pVarid <|> pConid <|> pString
+
+

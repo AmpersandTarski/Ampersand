@@ -484,7 +484,7 @@ instance ShowMath Expression where
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{[\\text{"++latexEscShw (name (source sgn))++"}"++"*"
                                    ++"\\text{"++latexEscShw (name (target sgn))++"}]}"
-          showExpr (EMp1 a _)   = "`\\text{"++latexEscShw a++"}`"
+          showExpr (EMp1 val _) = "`\\text{"++(latexEscShw . showADL $ val)++"}`"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)

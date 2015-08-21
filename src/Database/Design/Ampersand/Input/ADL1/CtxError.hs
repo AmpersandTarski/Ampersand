@@ -151,16 +151,9 @@ mkMultipleRepresentationsForConceptError cpt rs =
                   concatMap (("\n    "++ ) . show . origin ) rs
     _ -> fatal 142 "There are no multiple representations."
 
-mkIncompatibleAtomValueError :: PAtomValue -> TType -> A_Concept -> String -> CtxError
-mkIncompatibleAtomValueError pav t cpt msg=
-  case pav of 
-    PAVString o str -> mkErr o str
-    XlsxDouble o d  -> mkErr o d
-    XlsxBool o b    -> mkErr o b
- where
-   mkErr :: Show a => Origin -> a -> CtxError
-   mkErr o x = CTXE o $ msg ++"\n  "++show x++" isn't a valid "++show t++
-                                ", which is the type of "++name cpt++"."
+mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
+mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg
+    
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
 mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error

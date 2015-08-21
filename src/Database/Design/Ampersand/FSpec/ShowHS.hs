@@ -136,10 +136,10 @@ instance ShowHS PAclause where
                          indent++"       ("++showHS opts (indent++"        ") (paDelta p)++indent++"       )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         New{} -> "New ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p "x")++indent++"    )"++
+                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         Rmv{} -> "Rmv ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p "x")++indent++"    )"++
+                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
         Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
@@ -363,7 +363,7 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map showVal (sort (atomValuesOf (contextInfo fSpec) (initialPops fSpec) c))
+                    strs = map showValADL (sort (atomValuesOf (contextInfo fSpec) (initialPops fSpec) c))
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
@@ -371,7 +371,7 @@ instance ShowHS FSpec where
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
-                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showVal.apLeft) p++", "++(show.showVal.apRight) p++")"
+                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
                                                                    in showPair) ps++
                       indent'++" )"
                      ]

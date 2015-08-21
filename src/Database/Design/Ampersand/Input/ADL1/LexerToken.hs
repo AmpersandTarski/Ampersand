@@ -8,6 +8,9 @@ module Database.Design.Ampersand.Input.ADL1.LexerToken
 
 import Database.Design.Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
 import Text.Parsec()
+import Data.Time.Calendar
+import Data.Time.Clock
+import Data.Time.LocalTime() -- for instance Show UTCTime
 
 -- | The Ampersand token
 data Token = Tok { tokLex :: Lexeme  -- ^ The lexeme
@@ -23,12 +26,15 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexKeyword     String  -- ^ A keyword
              | LexString      String  -- ^ A quoted string
              | LexExpl        String  -- ^ An explanation
-             | LexAtom        String  -- ^ An atom
+             | LexSingleton   String  -- ^ An atomvalue in an Expression
              | LexDecimal     Int     -- ^ A decimal number
+             | LexFloat      Double   -- ^ A decimal floating point thing
              | LexOctal       Int     -- ^ An octal number
              | LexHex         Int     -- ^ A hexadecimal number
              | LexConId       String  -- ^ An upper case identifier
              | LexVarId       String  -- ^ A lower case identifier
+             | LexDateTime    UTCTime -- ^ A date-time
+             | LexDate        Day     -- ^ A date
   deriving (Eq, Ord)
 
 instance Show Lexeme where
@@ -38,13 +44,16 @@ instance Show Lexeme where
          LexKeyword  val -> "keyword "               ++         show val
          LexString   val -> "string "                ++ "\"" ++      val  ++ "\""
          LexExpl     val -> "explanation "           ++ "{+" ++      val  ++ "+}"
-         LexAtom     val -> "atom "                  ++ "'"  ++      val  ++ "'"
+         LexSingleton val -> "singleton "            ++ "'"  ++      val  ++ "'"
          LexDecimal   _  -> "integer "               ++   lexemeText  x
+         LexFloat     _  -> "float "                 ++   lexemeText  x
          LexOctal     _  -> "octal "                 ++   lexemeText  x
          LexHex       _  -> "hexadecimal "           ++   lexemeText  x
          LexVarId    val -> "lower case identifier " ++              val
          LexConId    val -> "upper case identifier " ++              val
-
+         LexDateTime _   -> "iso 8601 date time "    ++   lexemeText  x
+         LexDate     _   -> "iso 8601 date "         ++   lexemeText  x
+         
 -- A Stream instance is responsible for maintaining the "position within the stream" in the stream state (Token).
 -- This is trivial unless you are using the monad in a non-trivial way.
 -- instance (Monad m) => Stream [Token] m Char where
@@ -61,12 +70,15 @@ lexemeText l = case l of
          LexKeyword  val -> val
          LexString   val -> val
          LexExpl     val -> val
-         LexAtom     val -> val
+         LexSingleton val -> val
          LexDecimal  val -> show val
+         LexFloat    val -> show val
          LexOctal    val -> "0o" ++ toBase 8  val
          LexHex      val -> "0x" ++ toBase 16 val
          LexConId    val -> val
          LexVarId    val -> val
+         LexDateTime val -> show val
+         LexDate     val -> show val
 
 toBase :: Integral a => Show a => a -> a -> String
 toBase b x = conv x ""

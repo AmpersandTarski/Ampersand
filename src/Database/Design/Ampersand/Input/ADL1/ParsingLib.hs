@@ -9,7 +9,9 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Positions
     currPos, posOf, valPosOf,
     -- Basic parsers
-    pAtom, pConid, pString, pExpl, pVarid,
+    pConid, pString, pExpl, pVarid,
+    -- special parsers
+    pAtomInExpression, pAtomValInPopulation, Value(..),
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
     -- Keywords
@@ -23,11 +25,18 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 import Control.Monad.Identity (Identity)
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
+import Database.Design.Ampersand.Input.ADL1.Lexer (lexer)
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
+import Data.Time.Calendar
+import Data.Time.Clock
+import Database.Design.Ampersand.Basics (fatalMsg)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ParsingLib"
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
@@ -123,15 +132,58 @@ pVarid :: AmpParser String
 pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
 
 --- Atom ::= "'" Any* "'"
-pAtom :: AmpParser String
-pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing }) <?> "atom"
+pAtomInExpression :: AmpParser Value
+pAtomInExpression = check (\lx -> case lx of 
+                                   LexSingleton s -> Just (VSingleton s (mval s))
+                                   _              -> Nothing 
+                          ) <?> "Singleton value"
+   where 
+    mval s = 
+      case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
+        Left _  -> Nothing
+        Right (toks,_) 
+           -> case runParser pAtomValInPopulation 
+                               (FilePos ("Reparse `"++s++"` ") 0 0) -- Todo: Fix buggy position
+                                "" toks of
+                Left _ -> Nothing
+                Right a -> Just a
+
+data Value = VRealString String
+           | VSingleton String (Maybe Value)
+           | VInt Int
+           | VFloat Double
+           | VBoolean Bool
+           | VDateTime UTCTime
+           | VDate Day
+pAtomValInPopulation :: AmpParser Value
+pAtomValInPopulation = 
+              VBoolean True  <$ pKey "TRUE"
+          <|> VBoolean False <$ pKey "FALSE"
+          <|> VRealString DF.<$> pString 
+          <|> VDateTime DF.<$> pUTCTime
+          <|> VDate DF.<$> pDay
+          <|> VInt DF.<$> pInteger
+          <|> VFloat DF.<$> pFloat
 
 -----------------------------------------------------------
--- Integers
+-- Date / DateTime (ISO 8601 format)
+-----------------------------------------------------------
+
+pDay :: AmpParser Day
+pDay = check (\lx -> case lx of { LexDate s -> Just s; _ -> Nothing }) <?> "iso 8601 Date"
+
+pUTCTime :: AmpParser UTCTime
+pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
+    
+-----------------------------------------------------------
+-- Integers /float(Double)
 -----------------------------------------------------------
 
 pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
+
+pFloat :: AmpParser Double
+pFloat = check (\lx -> case lx of { LexFloat d -> Just d; _ -> Nothing }) <?> "float"
 
 pInteger :: AmpParser Int
 pInteger = check isNr

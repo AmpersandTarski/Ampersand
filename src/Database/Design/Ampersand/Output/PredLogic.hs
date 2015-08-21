@@ -331,7 +331,7 @@ assemble expr
             Rn   -> R (Funs b []) (dcl) (Funs a [])
             Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
    f exclVars (EFlp e)       (a,b) = f exclVars e (b,a)
-   f _ (EMp1 atom _) _             = Atom atom
+   f _ (EMp1 val _) _             = Atom . showADL $ val
    f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
    f _ (EDcV _) _                  = Atom "True"
    f _ e _ = fatal 298 ("Non-exhaustive pattern in subexpression "++showADL e++" of assemble (<"++showADL expr++">)")
@@ -440,7 +440,7 @@ assemble expr
      = case e of
          EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t'])
          EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t'])
-         EMp1 atom _     -> \_ _->Atom atom
+         EMp1 val _      -> \_ _-> Atom . showADL $ val
          EFlp EMp1{}     -> relFun exclVars lhs e rhs
          _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)
 

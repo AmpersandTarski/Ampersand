@@ -278,8 +278,8 @@ chpNatLangReqs lev fSpec =
 
        Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
        Vs{}      -> fatal 300 "Vs  is not supposed to be here expected here."
-   where srcAtom = showVal (apLeft pair)
-         tgtAtom = showVal (apRight pair)
+   where srcAtom = showValADL (apLeft pair)
+         tgtAtom = showValADL (apRight pair)
          prL = decprL decl
          prM = decprM decl
          prR = decprR decl

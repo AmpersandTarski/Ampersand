@@ -5,8 +5,8 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , indentBlockBetween,quote,sqlAtomQuote
-         , phpIndent,showPhpStr,escapePhpStr,showPhpBool
+         , indentBlockBetween,quote
+         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool
          ) where
  
 import Prelude hiding (putStrLn, readFile, writeFile)
@@ -89,12 +89,6 @@ quote s = "`"++s++"`"
 --          quo (c:s')    = c: quo s'
 --          quo []       = []
 -- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks
-sqlAtomQuote :: AAtomValue->String
-sqlAtomQuote s = "'"++sAQ (showVal s)++"'"
- where sAQ ('\'':s') = "\\'" ++ sAQ s'
-       sAQ ('\\':s') = "\\\\" ++ sAQ s'
-       sAQ (c:s')    = c: sAQ s'
-       sAQ []       = []
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"++replicate lnth '*'++"*\\"]

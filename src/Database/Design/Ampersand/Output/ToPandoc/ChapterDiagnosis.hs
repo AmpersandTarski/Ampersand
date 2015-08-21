@@ -572,8 +572,8 @@ chpDiagnosis fSpec
       oneviol :: Rule -> [AAtomPair] -> [Inline]
       oneviol r [p]
        = if source r==target r && apLeft p==apRight p
-         then [Quoted  SingleQuote [Str (name (source r)),Space,Str ((showVal.apLeft) p)]]
-         else [Str "(",Str (name (source r)),Space,Str ((showVal.apLeft) p),Str ", ",Str (name (target r)),Space,Str ((showVal.apRight) p),Str ")"]
+         then [Quoted  SingleQuote [Str (name (source r)),Space,Str ((showValADL.apLeft) p)]]
+         else [Str "(",Str (name (source r)),Space,Str ((showValADL.apLeft) p),Str ", ",Str (name (target r)),Space,Str ((showValADL.apRight) p),Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
       popwork :: [[(Rule,[AAtomPair])]];
       popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
@@ -594,7 +594,7 @@ chpDiagnosis fSpec
                                (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
 
                    showRow :: AAtomPair -> [Blocks]
-                   showRow p = [(para.text.showVal.apLeft) p,(para.text.showVal.apRight) p]
+                   showRow p = [(para.text.showValADL.apLeft) p,(para.text.showValADL.apRight) p]
                in para ( case fsLang fSpec of
                             Dutch   -> text "Regel "
                             English -> text "Rule "
@@ -638,14 +638,14 @@ chpDiagnosis fSpec
              [AlignLeft]
              [0.0]
              [[Plain [(Str . name . source) r]]]
-             [ [[Plain [Str (showVal(apLeft p))]]]
+             [ [[Plain [Str (showValADL(apLeft p))]]]
              | p <-take 10 ps
              ]
         else Table []
              [AlignLeft,AlignLeft]
              [0.0,0.0]
              [[Plain [(Str . name . source) r]], [Plain [(Str . name . target) r] ]]
-             [ [[Plain [Str (showVal (apLeft p))]], [Plain [Str (showVal(apRight p))]]]
+             [ [[Plain [Str (showValADL (apLeft p))]], [Plain [Str (showValADL(apRight p))]]]
              | p <-take 10 ps
              ]
 

@@ -13,7 +13,7 @@ module Database.Design.Ampersand.FSpec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
-       (FSpec(..), concDefs, ECArule(..), plugFields, lookupCpt, metaValues,AAtomValue,showVal,A_Concept,Declaration,A_Gen)
+       (FSpec(..), concDefs, ECArule(..), plugFields, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,A_Concept,Declaration,A_Gen)
 import Database.Design.Ampersand.FSpec.Plug
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlTType(..), tblcontents,
         Plugable(..),

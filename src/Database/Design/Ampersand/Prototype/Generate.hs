@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.Generate (generateGenerics, generateCustomCss) where
 
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
@@ -223,7 +223,7 @@ generateAllDefPopQueries fSpec =
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate "\n     , " 
-                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, showVal (apLeft p), showVal (apRight p)])++ ")" 
+                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, showValPHP (apLeft p), showValPHP (apRight p)])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
@@ -251,9 +251,8 @@ generateAllDefPopQueries fSpec =
              = intercalate ", " 
                  [case fld of 
                     Nothing -> "NULL"
-                    Just val -> showAsValue (showVal val)
+                    Just val -> showValPHP val
                  | fld <- record ]
-
 
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
@@ -308,8 +307,7 @@ generateTableInfos fSpec =
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
                   | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
-              [ ", 'type' => '"++(maybe (fatal 311 ("Unknown TType for concept "++show (name c)))
-                                        show . lookup c . allTTypes) fSpec++"'" ]++
+              [ ", 'type' => '"++(show . cptTType fSpec) c++"'" ]++
               [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
               [ ")" ]
            )
