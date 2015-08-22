@@ -231,6 +231,9 @@ class Api{
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
 	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
+		
+		throw new RestException(501); // 501: disabled until CRUD rights can be specified in interfaces
+		
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);

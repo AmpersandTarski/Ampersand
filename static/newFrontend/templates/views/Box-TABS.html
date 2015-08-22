@@ -4,7 +4,7 @@
     <div class="pull-right" style="padding-top : 3px;">
       <button type="button" class="btn btn-sm btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
       <button type="button" class="btn btn-sm btn-danger" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
-      <span class="glyphicon glyphicon-trash" ng-click="deleteResource(ResourceId)" style="vertical-align : middle;"></span>
+      <!--<span class="glyphicon glyphicon-trash" ng-click="deleteResource(ResourceId)" style="vertical-align : middle;"></span>-->
     </div>
     <h4><my-nav-to-interfaces ifcs="val['@interfaces']" resource="val.id" label="val['@label']"></my-nav-to-interfaces>&nbsp;</h4>
   </div>
