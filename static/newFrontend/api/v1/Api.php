@@ -113,41 +113,7 @@ class Api{
 		}
 	}
 
-	/**************************** NOTIFICATIONS ****************************/	
-	/**
-	 * @url GET notifications/all
-	 * @param int $roleId
-	 */
-	public function getAllNotifications($roleId = 0){
-		try{
-			$session = Session::singleton();
-			$session->setRole($roleId);
-			
-			foreach ((array)$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'] as $hook) call_user_func($hook);
-		
-			$session->role->getViolations();
-			// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
-		
-			return Notifications::getAll();
-			
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
-	
-	/**
-	 * @url GET extensions/all
-	 */
-	public function getAllExtensions(){
-		try{
-			return (array) $GLOBALS['apps'];
-		
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
-
-	/**************************** OBJECTINTERFACES ****************************/
+	/**************************** INTERFACES ****************************/
 	/**
 	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}
 	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
@@ -333,9 +299,6 @@ class Api{
        		throw new RestException($e->getCode(), $e->getMessage());
        	}
     }
-    
-    
-    /**************************** ATOMS ********************************/
 	
 	/**
      * @url GET resource/{concept}
@@ -361,39 +324,9 @@ class Api{
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
    		}
-    }    
-    
-	/**
-     * @url POST resource/{concept}
-	 * @status 201
-     */
-	function postConceptAtom($concept){ 
-		try{
-			$database = Database::singleton();
-			return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
-			
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
-
-	/**
-	 * @url DELETE resource/{concept}/{atomId}
-	 * @status 204
-	 */
-	function deleteConceptAtom($concept, $atomId){ 
-		try{
-			$database = Database::singleton();
-			$atom = new Atom($atomId, $concept);
-			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
-			$atom->delete();
-		
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
+    }
     	
-	/**************************** ROLES ****************************/
+	/**************************** UI stuff ****************************/
 	/**
      * @url GET roles
      * @param string $sessionId
@@ -425,8 +358,6 @@ class Api{
    		}
     }
     
-    
-	/**************************** INTERFACES ****************************/
     /**
      * @url GET interfaces/all
      * @param string $sessionId
@@ -453,6 +384,39 @@ class Api{
     		
     	}catch(Exception $e){
     		throw new RestException(404, $e->getMessage());
+    	}
+    }
+    
+    /**
+     * @url GET notifications/all
+     * @param int $roleId
+     */
+    public function getAllNotifications($roleId = 0){
+    	try{
+    		$session = Session::singleton();
+    		$session->setRole($roleId);
+    			
+    		foreach ((array)$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'] as $hook) call_user_func($hook);
+    
+    		$session->role->getViolations();
+    		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
+    
+    		return Notifications::getAll();
+    			
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+    	}
+    }
+    
+    /**
+     * @url GET extensions/all
+     */
+    public function getAllExtensions(){
+    	try{
+    		return (array) $GLOBALS['apps'];
+    
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
     	}
     }
 }
