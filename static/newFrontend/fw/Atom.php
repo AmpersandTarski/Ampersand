@@ -108,16 +108,34 @@ Class Atom {
 			}
 			
 			// subinterfaces
-			if(!empty($interface->subInterfaces) && !$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is primitive datatype and can not have subinterfaces", 501);
-			foreach($interface->subInterfaces as $subinterface){
-				$otherAtom = $tgtAtom->getContent($subinterface, false);
-				$content[$subinterface->id] = $otherAtom;
+			if(!empty($interface->subInterfaces)){
+				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
 				
-				// _sortValues_ (if subInterface is uni)
-				if($subinterface->univalent){
-					$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+				foreach($interface->subInterfaces as $subinterface){
+					$otherAtom = $tgtAtom->getContent($subinterface, false);
+					$content[$subinterface->id] = $otherAtom;
+					
+					// _sortValues_ (if subInterface is uni)
+					if($subinterface->univalent){
+						$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+					}
 				}
+			}
+			
+			// ref subinterfaces
+			if(!empty($interface->refInterfaceId)){
+				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
 				
+				$refInterface = new InterfaceObject($interface->refInterfaceId, null);
+				foreach($refInterface->subInterfaces as $subinterface){
+					$otherAtom = $tgtAtom->getContent($subinterface, false);
+					$content[$subinterface->id] = $otherAtom;
+					
+					// _sortValues_ (if subInterface is uni)
+					if($subinterface->univalent){
+						$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+					}
+				}
 			}
 			
 			// determine whether value of atom must be inserted as list or as single value

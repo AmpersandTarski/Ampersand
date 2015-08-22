@@ -29,10 +29,7 @@ class InterfaceObject {
 	
 	public $expressionSQL;
 
-	/*
-	 * $refInterfacesArr is used to determine infinite loops in refInterfaceId
-	 */
-	public function __construct($id, $interface = array(), $refInterfacesArr = array()){
+	public function __construct($id, $interface = array()){
 		global $allInterfaceObjects; // from Generics.php
 		
 		if(empty($interface)) $interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
@@ -63,30 +60,15 @@ class InterfaceObject {
 		// Determine if tgtConcept is Object (true) or Scalar (false)
 		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "OBJECT") ? true : false;
 		
-	/* Information about subinterfaces */
 		// Set attributes
 		$this->refInterfaceId = $interface['refSubInterfaceId'];
 		$this->isLinkTo = $interface['isLinkTo'];
 		$this->boxSubInterfaces = $interface['boxSubInterfaces'];
 		$this->expressionSQL = $interface['expressionSQL'];
-		
-		// Check for infinite loop in interface (i.e. subinterface refers back to interface).
-		$refInterfacesArr[] = $this->id;
-		if(in_array($this->refInterfaceId, $refInterfacesArr)) throw new Exception("Infinite loop in interface '$this->id' by referencing '$this->refInterfaceId'", 500);
 				
 		// Determine subInterfaces
-		if($this->isLinkTo){
-			// do nothing
-		}elseif(!empty($this->refInterfaceId)){
-					
-			$refInterface = new InterfaceObject($this->refInterfaceId, null, $refInterfacesArr);
-			foreach($refInterface->subInterfaces as $subInterface){
-				$this->subInterfaces[] = $subInterface;
-			}
-		}else{
-			foreach ((array)$this->boxSubInterfaces as $subInterface){
-				$this->subInterfaces[] = new InterfaceObject($subInterface['id'], $subInterface, $refInterfacesArr);
-			}
+		foreach ((array)$this->boxSubInterfaces as $subInterface){
+			$this->subInterfaces[] = new InterfaceObject($subInterface['id'], $subInterface);
 		}
 	}
 	
