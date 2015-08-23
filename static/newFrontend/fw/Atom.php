@@ -57,7 +57,7 @@ Class Atom {
 	 * var $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
 	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
 	 */
-	public function getContent($interface, $rootElement = true, $tgtAtom = null){
+	public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false){
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
@@ -112,7 +112,7 @@ Class Atom {
 				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
 				
 				foreach($interface->subInterfaces as $subinterface){
-					$otherAtom = $tgtAtom->getContent($subinterface, false);
+					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData);
 					$content[$subinterface->id] = $otherAtom;
 					
 					// _sortValues_ (if subInterface is uni)
@@ -123,12 +123,12 @@ Class Atom {
 			}
 			
 			// ref subinterfaces
-			if(!empty($interface->refInterfaceId)){
+			if(!empty($interface->refInterfaceId) && $inclLinktoData){
 				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
 				
 				$refInterface = new InterfaceObject($interface->refInterfaceId, null);
 				foreach($refInterface->subInterfaces as $subinterface){
-					$otherAtom = $tgtAtom->getContent($subinterface, false);
+					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData);
 					$content[$subinterface->id] = $otherAtom;
 					
 					// _sortValues_ (if subInterface is uni)
