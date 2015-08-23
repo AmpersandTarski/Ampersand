@@ -124,8 +124,10 @@ class Api{
 	 * @param string $sessionId
 	 * @param int $roleId
 	 * @param boolean $inclLinktoData
+	 * @param string $arrayType
+	 * @param boolean $metaData
 	 */
-	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = 0, $inclLinktoData = false){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = 0, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -138,7 +140,7 @@ class Api{
 			$atom = new Atom($srcAtomId, $concept);
 			if(!$atom->atomExists()) throw new Exception("Resource '$srcAtomId' not found", 404);
 			
-			$result = (array)$atom->getContent($session->interface, true, $tgtAtomId, $inclLinktoData);
+			$result = (array)$atom->getContent($session->interface, true, $tgtAtomId, $inclLinktoData, $arrayType, $metaData);
 			
 			if(empty($result)) Notifications::addInfo("No results found");			
 	

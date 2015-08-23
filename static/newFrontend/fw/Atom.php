@@ -56,8 +56,11 @@ Class Atom {
 	/*
 	 * var $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
 	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
+	 * var $inclLinktoData specifies if data from LINKTO (ref) subinterfaces must be included or not.
+	 * var $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
+	 * var $metaData specifies if meta data about objects must be included or not
 	 */
-	public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false){
+	public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
@@ -85,22 +88,28 @@ Class Atom {
 			}elseif($interface->tgtConceptIsObject){
 				$content = array();
 				
-				// Add @context for JSON-LD to rootElement
-				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
+				// Add meta data
+				if($metaData){
+					// Add @context for JSON-LD to rootElement
+					if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
+					
+					// Define interface(s) to navigate to for this tgtAtom
+					$atomInterfaces = array();
+					if($interface->isLinkTo) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
+					
+					// Add meta data elements
+					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
+															, '@label' => $tgtAtom->label
+					                    					, '@view' => $tgtAtom->view
+														 	, '@type' => $tgtAtom->jsonld_type
+															, '@interfaces' => $atomInterfaces
+															, '_sortValues_' => array())
+															);
+				}
 				
-				// Define interface(s) to navigate to for this tgtAtom
-				$atomInterfaces = array();
-				if($interface->isLinkTo) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-				elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
-				
-				// Add other elements
-				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
-														, '@label' => $tgtAtom->label
-				                    					, '@view' => $tgtAtom->view
-													 	, '@type' => $tgtAtom->jsonld_type
-														, '@interfaces' => $atomInterfaces
-														, '_sortValues_' => array()
-													 	, 'id' => $tgtAtom->id));
+				// Add id TODO:can be removed when angular templates use @id instead of id
+				$content = array_merge($content, array (  'id' => $tgtAtom->id));
 				
 			}else{ // Representation of tgtconcept of interface is scalar (i.e. not object)
 				
@@ -112,11 +121,11 @@ Class Atom {
 				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
 				
 				foreach($interface->subInterfaces as $subinterface){
-					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData);
+					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
 					$content[$subinterface->id] = $otherAtom;
 					
 					// _sortValues_ (if subInterface is uni)
-					if($subinterface->univalent){
+					if($subinterface->univalent && $metaData){
 						$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
 					}
 				}
@@ -128,11 +137,11 @@ Class Atom {
 				
 				$refInterface = new InterfaceObject($interface->refInterfaceId, null);
 				foreach($refInterface->subInterfaces as $subinterface){
-					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData);
+					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
 					$content[$subinterface->id] = $otherAtom;
 					
 					// _sortValues_ (if subInterface is uni)
-					if($subinterface->univalent){
+					if($subinterface->univalent && $metaData){
 						$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
 					}
 				}
@@ -142,7 +151,15 @@ Class Atom {
 			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
 			}elseif($interface->tgtConceptIsObject){
-				$arr[$content['id']] = $content;
+				switch($arrayType){
+					case "num" :
+						$arr[] = $content;
+						break;
+					case "assoc" :
+					default :
+						$arr[$content['id']] = $content;
+						break;
+				}
 			}elseif($interface->univalent){
 				$arr = $content;
 			}else{
