@@ -176,6 +176,16 @@ fieldset {
 	padding-bottom		: 1px;
 }
 
+.interface .panel-heading-options {
+	height				: 38px;
+	display				: flex;
+	align-items			: center;
+}
+
+.interface .panel-heading-options .btn {
+	margin				: 3px;
+}
+
 .wordwrap {
 	/* source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
 	white-space			: pre-wrap;		/* CSS3 */

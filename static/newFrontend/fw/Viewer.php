@@ -37,8 +37,8 @@ class Viewer {
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-ui-1.10.4.custom.js"></script>');		
 		
 		// Bootstrap (requires Jquery, loaded above)
-		$this->addHtmlLine('<link href="app/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before app specific css files that overwrite bootstrap.css
-		$this->addHtmlLine('<script src="app/lib/bootstrap/js/bootstrap.min.js"></script>');
+		$this->addHtmlLine('<link href="app/lib/bootstrap-3.3.5-dist/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before app specific css files that overwrite bootstrap.css
+		$this->addHtmlLine('<script src="app/lib/bootstrap-3.3.5-dist/js/bootstrap.min.js"></script>');
 		
 		// Angular
 		$this->addHtmlLine('<script src="app/lib/angular/angular.min.js"></script>');

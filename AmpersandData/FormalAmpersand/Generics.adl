@@ -57,8 +57,9 @@ MEANING "the database-table column of the concept"
 RELATION tableInfo[Context*DBTable] [SUR,INJ]  
 RELATION columninfo[DBTable*TableColumn] [SUR,INJ]
 RELATION concept[TableColumn*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
-RELATION unique[TableColumn*BOOLEAN] [UNI,TOT] -- is this column unique? ('true' or 'false')
-RELATION null[TableColumn*BOOLEAN] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
+RELATION unique[TableColumn*Boolean] [UNI,TOT] -- is this column unique? ('true' or 'false')
+REPRESENT Boolean TYPE BOOLEAN
+RELATION null[TableColumn*Boolean] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
 
 
 --[Rules]--
