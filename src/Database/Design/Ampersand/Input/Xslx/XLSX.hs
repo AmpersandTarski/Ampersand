@@ -62,19 +62,18 @@ toPops file x = map popForColumn' (colNrs x)
                                          ] 
                       }
       else  P_RelPopu { p_orig = popOrigin
+                      , p_src = src
+                      , p_tgt = trg
                       , p_nmdr 
-                         = PNamedRel popOrigin relName
-                               (case mTargetConceptName of
-                                       Just tCptName
-                                          -> Just . (if isFlipped then flp else id) $ 
-                                               P_Sign {pSrc = PCpt sourceConceptName
-                                                      ,pTgt = PCpt tCptName
-                                                      }
-                                       Nothing -> Nothing
-                               )
+                         = PNamedRel popOrigin relName Nothing
                       , p_popps = thePairs
                       }
      where                             
+       src, trg :: Maybe String
+       (src,trg) = case mTargetConceptName of
+                  Just tCptName -> (if isFlipped then swap else id) (Just sourceConceptName, Just tCptName)
+                  Nothing -> (Nothing,Nothing)
+          where swap (a,b) = (b,a)
        popOrigin :: Origin
        popOrigin = originOfCell (relNamesRow, targetCol)
        conceptNamesRow = headerRowNrs x !! 1
