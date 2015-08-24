@@ -5,17 +5,20 @@ INCLUDE "Terms.adl"
 PROCESS "Domain Analysis"
 
 CLASSIFY Composition ISA Term
+CONCEPT Rule ""
+CONCEPT Operator ""
 
-RELATION lhs[Composition*Term]
-RELATION rhs[Composition*Term]
+RELATION lhs[Term*Term] [UNI]
+RELATION rhs[Term*Term] [UNI]
+RELATION operator[Term*Operator] [UNI]
 
 ROLE ExecEngine MAINTAINS domainDomComposition
 RULE domainDomComposition : dom~;I[Composition];lhs;dom |- sub
-VIOLATION (TXT "{EX} InsPair;sub;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE ExecEngine MAINTAINS domainCodComposition
 RULE domainCodComposition : cod~;I[Composition];rhs;cod |- sub
-VIOLATION (TXT "{EX} InsPair;sub;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ENDPROCESS
 

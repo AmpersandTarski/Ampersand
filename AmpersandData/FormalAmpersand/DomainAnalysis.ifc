@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "DomainAnalysis.adl"
 INCLUDE "Terms.adl"
---INCLUDE "Atoms.xslx"
+INCLUDE "Braga.xslx"
 
 INTERFACE Overview : '_SESSION'
 TABS[concepts :V[SESSION*Concept]
@@ -35,7 +35,7 @@ TABS[concepts :V[SESSION*Concept]
                   , "sub*~"     : subs~   
                   ]
            ]
-    ,  atoms : V[SESSION*Atom]
+    , atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
            , type : pop - pop;(isas-I)
