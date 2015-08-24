@@ -536,7 +536,9 @@ data P_Markup =
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_orig  :: Origin  -- the origin
+  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+              , p_orig  :: Origin  -- the origin
               , p_nmdr  :: P_NamedRel  -- the named relation
               , p_popps :: [PAtomPair]   -- the contents
               }
