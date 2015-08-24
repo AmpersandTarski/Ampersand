@@ -23,6 +23,7 @@ import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 import Database.Design.Ampersand.Input.Xslx.XLSX
+import Control.Exception
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
@@ -45,8 +46,8 @@ parseADLs _    _               []        = return $ Checked []
 parseADLs opts parsedFilePaths filePaths =
  do { let filePathsToParse = nub filePaths \\ parsedFilePaths
     ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
-       do { let (ctxts, newFilessToParse) = unzip ctxtNewFilePathss
-          ; whenCheckedIO (parseADLs opts (parsedFilePaths ++ filePaths) $ concat newFilessToParse) $ \ctxts' ->
+       do { let (ctxts, newFilesToParse) = unzip ctxtNewFilePathss
+          ; whenCheckedIO (parseADLs opts (parsedFilePaths ++ filePaths) $ concat newFilesToParse) $ \ctxts' ->
               return $ Checked $ ctxts ++ ctxts'
           }
     }
@@ -54,24 +55,34 @@ parseADLs opts parsedFilePaths filePaths =
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts filePath
- | extension == ".xlsx" = 
-     do { verboseLn opts $ "Reading Excel populations from " ++ filePath
-        ; popFromExcel <- parseXlsxFile opts filePath
-        ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
-        }
- | otherwise =   
-     do { verboseLn opts $ "Reading file " ++ filePath
-        ; mFileContents <- readUTF8File filePath
-        ; case mFileContents of
-            Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
-            Right fileContents ->
-                 whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
-                       do filePaths <- mapM normalizePath relativePaths
-                          return (Checked (ctxts, filePaths))
-    }
- where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
-       extension = map toLower $ takeExtension filePath
-
+ = do verboseLn opts $ "Reading file " ++ filePath
+      exists <- doesFileExist filePath
+      if exists 
+      then parseSingleADL'
+      else return . makeError $ "Could not find `"++filePath++"`."
+    where
+     parseSingleADL' :: IO(Guarded (P_Context, [FilePath]))
+     parseSingleADL'
+         | extension == ".xlsx" = 
+             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts filePath
+                ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+                }
+         | otherwise =   
+             do { mFileContents <- readUTF8File filePath
+                ; case mFileContents of
+                    Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
+                    Right fileContents ->
+                         whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
+                               do filePaths <- mapM normalizePath relativePaths
+                                  return (Checked (ctxts, filePaths))
+            }
+         where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
+               extension = map toLower $ takeExtension filePath
+               catchInvalidXlsx :: IO a -> IO a 
+               catchInvalidXlsx m = catch m f 
+                 where f :: SomeException -> IO a
+                       f exception = fatal 34 $ "The file does not seem to have a valid .xlsx structure:\n  "++show exception
+             
 parseErrors :: Lang -> ParseError -> [CtxError]
 parseErrors lang err = [PE (Message msg)]
                 where msg :: String
