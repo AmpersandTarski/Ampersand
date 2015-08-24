@@ -1,0 +1,22 @@
+﻿CONTEXT AST IN ENGLISH LATEX
+-- The comments for this script can be found in DomainAnalysis.docadl
+INCLUDE "Terms.adl"
+
+PROCESS "Domain Analysis"
+
+CLASSIFY Composition ISA Term
+
+RELATION lhs[Composition*Term]
+RELATION rhs[Composition*Term]
+
+ROLE ExecEngine MAINTAINS domainDomComposition
+RULE domainDomComposition : dom~;I[Composition];lhs;dom |- sub
+VIOLATION (TXT "{EX} InsPair;sub;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+
+ROLE ExecEngine MAINTAINS domainCodComposition
+RULE domainCodComposition : cod~;I[Composition];rhs;cod |- sub
+VIOLATION (TXT "{EX} InsPair;sub;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+
+ENDPROCESS
+
+ENDCONTEXT
