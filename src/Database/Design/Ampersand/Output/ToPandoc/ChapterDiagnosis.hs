@@ -503,10 +503,8 @@ chpDiagnosis fSpec
   wipReport :: [Block]
   wipReport
    = [ Para (case (fsLang fSpec, concat popwork,popwork) of
-              (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is dit correct? Waarom?
-              (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is this correct? Why
+              (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "]
+              (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "]
               (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (length ps) "taak"++" zien.") ]
               (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (length ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
@@ -576,7 +574,7 @@ chpDiagnosis fSpec
          else [Str "(",Str (name (source r)),Space,Str ((showValADL.apLeft) p),Str ", ",Str (name (target r)),Space,Str ((showValADL.apRight) p),Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
       popwork :: [[(Rule,[AAtomPair])]];
-      popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
+      popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- ruleviolations fSpec r, isSignal r, partofThemes r]
   partofThemes r =
         or [ null (themes fSpec)
            , r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]

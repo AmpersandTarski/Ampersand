@@ -261,11 +261,11 @@ orderingByTheme fSpec
     = CDcl { cDcl      = dcl
            , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
            , cDclMeaning = meaning (fsLang fSpec) dcl
-           , cDclPairs =
-                  case filter theDecl (initialPops fSpec) of
-                    []    -> []
-                    [pop] -> popps pop
-                    _     -> fatal 273 "Multiple entries found in populationTable"
+           , cDclPairs = pairsInExpr fSpec (EDcl dcl)
+--                  case filter theDecl (initialPops fSpec) of
+--                    []    -> []
+--                    [pop] -> popps pop
+--                    _     -> fatal 273 "Multiple entries found in populationTable"
            } 
    where
      theDecl :: Population -> Bool

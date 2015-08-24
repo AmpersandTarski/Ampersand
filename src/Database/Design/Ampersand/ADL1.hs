@@ -67,6 +67,6 @@ import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.ADL1.ECArule (
          isAll, isCHC, isBlk, isNop, isDo, eventsFrom)
 import Database.Design.Ampersand.ADL1.Rule (
-          rulefromProp, ruleviolations
+          rulefromProp
          ,consequent,antecedent,hasantecedent)
 

@@ -99,7 +99,7 @@ getPopulationsFrom opts filePath =
    where
      f :: P_Context -> Guarded [Population]
      f pCtx = unguard $ 
-                pure . initialPops . makeFSpec opts
+                pure . initialPopsOLD . makeFSpec opts
                  <$> pCtx2aCtx opts pCtx
 
 doGenMetaFile :: MetaType -> FSpec -> IO()
