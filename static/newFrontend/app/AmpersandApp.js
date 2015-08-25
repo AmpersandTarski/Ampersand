@@ -38,6 +38,10 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	
 	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
 	
+	$rootScope.setRole = function(roleId){
+		$localStorage.roleId = roleId;
+	};
+	
 	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
 	if($localStorage.roleId === undefined){

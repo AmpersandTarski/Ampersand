@@ -12,7 +12,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		$localStorage.roleId = roleId;
 		
 		// refresh interfaces list + notifications
-		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
+		$rootScope.refreshNavBar();
 		$rootScope.notifications = Restangular.one('notifications/all').get().$object;
 		$route.reload();
 	};
@@ -29,6 +29,15 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 			return;
 		});
 		
+	}
+	
+	$rootScope.refreshNavBar = function(){
+		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
+		
+	}
+	
+	$rootScope.refreshRoleMenu = function(){
+		$scope.roles = Restangular.all('roles').getList().$object;
 	}
 	
 	$scope.destroySession = function(){
