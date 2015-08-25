@@ -394,7 +394,7 @@ class Api{
      */
     public function getAllExtensions(){
     	try{
-    		return (array) $GLOBALS['apps'];
+    		return (array) $GLOBALS['navBar'];
     
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());

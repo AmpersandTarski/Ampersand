@@ -6,7 +6,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		
 	$scope.roles = Restangular.all('roles').getList().$object;
 	
-	$scope.extensions = Restangular.all('extensions/all').getList().$object;
+	$scope.extensions = Restangular.one('extensions/all').get().$object;
 	
 	$scope.selectRole = function(roleId){
 		$localStorage.roleId = roleId;
