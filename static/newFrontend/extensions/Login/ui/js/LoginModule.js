@@ -35,12 +35,6 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 		);
 	}
 	
-}).controller('SecureController', function($scope,$http,$sce){
-	$http.get('src/content.php').success(function(data){
-		$scope.title = "Classified page";
-		$scope.html = $sce.trustAsHtml(data);
-	});
-	
 });
 
 app.config(function($routeProvider) {
