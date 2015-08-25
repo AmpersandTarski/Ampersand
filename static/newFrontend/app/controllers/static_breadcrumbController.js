@@ -5,7 +5,7 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
 		
 		indexInHistory = linkInArray($scope.history, $location.path())
 		indexInTopLevel = linkInArray($rootScope.interfaces.top, $location.path())
-		if(indexInHistory !== false) $scope.history.splice(indexInHistory, $scope.history.length - i); 
+		if(indexInHistory !== false) $scope.history.splice(indexInHistory, $scope.history.length - indexInHistory); 
 		
 		// Clear history
 		if($location.path() == '/' || indexInTopLevel !== false){ // i.e. 'Home'
