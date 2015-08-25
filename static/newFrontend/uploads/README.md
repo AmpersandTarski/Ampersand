@@ -1,0 +1,1 @@
+Folder to which files will be uploaded by php. This config can be changed in localsetting.php
