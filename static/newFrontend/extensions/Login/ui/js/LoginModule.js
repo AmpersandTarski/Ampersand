@@ -16,11 +16,24 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 	);
 		
 	
-}).controller('LoginExtLogoutController', function($scope,$http,$sce){
-	$http.get('src/loginout.php?action=logout').success(function(data){
-		$scope.title = "Logout";
-		$scope.html = $sce.trustAsHtml(data);
-	});
+}).controller('LoginExtLogoutController', function($scope, $rootScope, LoginRestangular, $location){
+	
+	$scope.logout = function(){
+		$rootScope.setRole(0);
+		$rootScope.refreshNavBar();
+		$rootScope.refreshRoleMenu();
+		$location.path('/'); // goto home
+		
+		LoginRestangular.one('logout').get().then(
+			function(data){ // success
+				
+				$rootScope.updateNotifications(data.notifications);
+				
+			}, function(){ // error
+				
+			}
+		);
+	}
 	
 }).controller('SecureController', function($scope,$http,$sce){
 	$http.get('src/content.php').success(function(data){
@@ -38,16 +51,11 @@ app.config(function($routeProvider) {
 			,	templateUrl: 'extensions/Login/ui/views/Login.html'
 			,	interfaceLabel: 'Login'
 			})
-		.when('/ext/Logout',
-			{	controller: 'LoginExtLogoutController'
-			,	templateUrl: 'extensions/Login/ui/views/Logout.html'
-			,	interfaceLabel: 'Logout'
-			});
 });
 
 //Restangular service for the ExecEngine
 LoginModule.factory('LoginRestangular', function(Restangular) {
-  return Restangular.withConfig(function(RestangularConfigurer) {
-    RestangularConfigurer.setBaseUrl('extensions/Login/api');
-  });
+	return Restangular.withConfig(function(RestangularConfigurer) {
+		RestangularConfigurer.setBaseUrl('extensions/Login/api');
+	});
 });

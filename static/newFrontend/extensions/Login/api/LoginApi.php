@@ -5,7 +5,6 @@ use Luracast\Restler\RestException;
 
 class LoginApi{
 	
-	/****************************** PARSE FILE ******************************/
 	/**
 	 * @url GET login
 	 */
@@ -29,6 +28,26 @@ class LoginApi{
 			$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
 			
 			return array('loginUrl' => $url, 'notifications' => Notifications::getAll());
+			
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
+	}
+	
+	/**
+	 * @url GET logout
+	 */
+	public function logout(){
+		try{
+			
+			$session = Session::singleton();
+			$db = Database::singleton();
+			
+			$db->deleteAtom(session_id(), 'SESSION');
+			
+			$db->closeTransaction('Logout successfull', false, true, false);
+			
+			return array('notifications' => Notifications::getAll());
 			
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
