@@ -2,6 +2,10 @@
 // UI
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/Login/ui/js/LoginModule.js';
 
+// Zet login/logout button in roles menu
+$GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/Login/ui/views/MenuItemLogin.html');
+$GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/Login/ui/views/MenuItemLogout.html');
+
 class OAuthController {
 
 	private $token_url;
