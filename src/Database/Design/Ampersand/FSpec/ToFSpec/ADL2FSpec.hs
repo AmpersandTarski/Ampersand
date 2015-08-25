@@ -7,7 +7,6 @@ import Data.List
 import Data.Maybe
 import Text.Pandoc
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -96,7 +95,8 @@ makeFSpec opts context
               , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
               , initialPopsOLD  = initialpopsOLD
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsOLD
-              , pairsInExpr  = pairsinexpr
+              , tableContents = tblcontents contextinfo initialpopsOLD
+              ,  pairsInExpr  = pairsinexpr
               , allAtoms     = allatoms
               , allViolations  = [ (r,vs)
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
@@ -521,4 +521,36 @@ class Named a => Rename a where
 instance Rename PlugSQL where
  rename p x = p{sqlname=x}
      
- 
+
+tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
+tblcontents ci ps plug
+   = case plug of
+     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
+     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
+     TblSQL{}    -> 
+ --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
+ --fields are assumed to be in the order kernel+other,
+ --where NULL in a kernel field implies NULL in the following kernel fields
+ --and the first field is unique and not null
+ --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
+       case fields plug of 
+         []   -> fatal 593 "no fields in plug."
+         f:fs -> transpose
+                 ( map Just cAtoms
+                 : [case fExp of
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
+                   | fld<-fs, let fExp=fldexpr fld
+                   ]
+                 )
+                 where
+                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
+                   lkp a pairs
+                    = case [ p | p<-pairs, a==apLeft p ] of
+                       [] -> Nothing
+                       [p] -> Just (apRight p)
+                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++showValADL a++"'.\n"++
+                               "Multiple values in one field. \n"
+                               )
+                        

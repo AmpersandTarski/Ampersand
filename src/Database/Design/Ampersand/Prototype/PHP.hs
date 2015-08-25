@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.PHP 
          ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP, setSqlModePHP
          , evaluateExpSQL, performQuery
-         , createTablesPHP, populateTablesPHP, populateTablesWithPopsPHP, plug2TableSpec
+         , createTablesPHP, populateTablesPHP, populateTablesWithInitialPopsPHP, plug2TableSpec
          , dropplug, historyTableSpec, sessionTableSpec, signalTableSpec, TableSpec, getTableName) where
 
 import Prelude hiding (exp)
@@ -114,7 +114,7 @@ historyTableSpec
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
   fillSignalTable (initialConjunctSignals fSpec) ++
-  populateTablesWithPopsPHP fSpec
+  populateTablesWithInitialPopsPHP fSpec
   where
     fillSignalTable []          = []
     fillSignalTable conjSignals =
@@ -131,12 +131,12 @@ populateTablesPHP fSpec =
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
       ]
 
-populateTablesWithPopsPHP :: FSpec -> [String]
-populateTablesWithPopsPHP fSpec =
+populateTablesWithInitialPopsPHP :: FSpec -> [String]
+populateTablesWithInitialPopsPHP fSpec =
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
-         = case tblcontents (contextInfo fSpec) (initialPops fSpec) plug of
+         = case tableContents fSpec plug of
                [] -> []
                tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"

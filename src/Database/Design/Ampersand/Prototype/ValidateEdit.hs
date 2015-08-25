@@ -85,7 +85,12 @@ createTempDatabase fSpec pops =
  do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
                                      createTempDbPHP tempDbName ++
                                      createTablesPHP fSpec ++
-                                     populateTablesWithPopsPHP fSpec pops
+--                                     [ "TODO: "
+--                                     , "*** Beware: This script has bitrotted! ***"
+--                                     , "To get it on her feet again, bsure not to forget"
+--                                     , "to initialize the signal table too. "
+--                                     ] ++
+                                     populateTablesWithInitialPopsPHP fSpec
     ; return ()
     }
 
