@@ -3,12 +3,12 @@ app.requires[app.requires.length] = 'LoginModule'; // add ur.file module to depe
 
 var LoginModule = angular.module('LoginModule', ['ngRoute', 'restangular']);
 
-LoginModule.controller('LoginExtLoginController', function($scope, LoginRestangular){
+LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, LoginRestangular){
 	
 	LoginRestangular.one('login').get().then(
 		function(data){ // success
 			$scope.loginUrl = data.loginUrl;
-			// $rootScope.updateNotifications(data.notifications);
+			$rootScope.updateNotifications(data.notifications);
 			
 		}, function(){ // error
 		

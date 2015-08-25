@@ -92,6 +92,7 @@ class LoginApi{
 			}
 			
 			header('Location: '.HOME);
+			exit;
 			
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
