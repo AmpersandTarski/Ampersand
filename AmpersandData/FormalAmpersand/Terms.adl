@@ -9,15 +9,15 @@ RELATION type[Relation*Signature]
 
 ROLE ExecEngine MAINTAINS totSign
 RULE totSign : I[Relation] |- type;type~
-VIOLATION (TXT "{EX} NewStruct;Signature" -- maak een nieuw atoom in concept Optelling
-                ,TXT ";type;Relation;", SRC I, TXT ";Signature;_NEW"
+VIOLATION (TXT "{EX} NewStruct_;Signature" -- maak een nieuw atoom in concept Optelling
+                ,TXT "_;type_;Relation_;", SRC I, TXT "_;Signature_;_NEW"
           )
 ROLE ExecEngine MAINTAINS typeTgt
 RULE typeTgt : type~;target |- tgt
-VIOLATION (TXT "{EX} InsPair;tgt;Signature;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
 ROLE ExecEngine MAINTAINS typeSrc
 RULE typeSrc : type~;source |- src
-VIOLATION (TXT "{EX} InsPair;src;Signature;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;src_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
 
 RELATION pretype[TypeTerm*Concept]
 RELATION sub[TypeTerm*TypeTerm]
@@ -26,47 +26,47 @@ RELATION typehalf[Term*Signature]
 RELATION dom[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "dom is total"
 RULE "dom is total" : I |- dom;dom~
-VIOLATION (TXT "{EX} InsPair;dom;Term;", SRC I, TXT ";TypeTerm;dom(", SRC repr, TXT ")")
+VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")
 
 ROLE ExecEngine MAINTAINS "dom pretype id"
 RULE "dom pretype id" : id;dom |- pretype~
-VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
+VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 RELATION cod[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "cod is total"
 RULE "cod is total" : I |- cod;cod~
-VIOLATION (TXT "{EX} InsPair;cod;Term;", SRC I, TXT ";TypeTerm;cod(", SRC repr, TXT ")")
+VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")
 
 ROLE ExecEngine MAINTAINS "cod pretype id"
 RULE "cod pretype id" : id;cod |- pretype~
-VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
+VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 RELATION popset[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "popset is total"
 RULE "popset is total" : I[Concept] |- popset;popset~
-VIOLATION (TXT "{EX} InsPair;popset;Concept;", SRC I, TXT ";TypeTerm;pop(", SRC name, TXT ")")
+VIOLATION (TXT "{EX} InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
 
 RELATION id[Concept*Term] [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "id is total"
 RULE "id is total" : I[Concept] |- id;id~
-VIOLATION (TXT "{EX} InsPair;id;Concept;", SRC I, TXT ";Term;id(", SRC I, TXT ")")
+VIOLATION (TXT "{EX} InsPair_;id_;Concept_;", SRC I, TXT "_;Term_;id(", SRC I, TXT ")")
 
 RELATION vee[Signature*Term] [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "vee is total"
 RULE "vee is total" : I[Signature] |- vee;vee~
-VIOLATION (TXT "{EX} InsPair;vee;Signature;", SRC I, TXT ";Term;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
+VIOLATION (TXT "{EX} InsPair_;vee_;Signature_;", SRC I, TXT "_;Term_;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
 RULE "Insert into pretype" : subs;popset~ |- pretype
-VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", SRC I, TXT ";Concept;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "dom pretype vee"
 RULE "dom pretype vee" : src~;vee;dom |- pretype~
-VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
+VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 ROLE ExecEngine MAINTAINS "cod pretype vee"
 RULE "cod pretype vee" : tgt~;vee;cod |- pretype~
-VIOLATION (TXT "{EX} InsPair;pretype;TypeTerm;", TGT I, TXT ";Concept;", SRC I)
+VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 RELATION sub[TypeTerm*TypeTerm]
 MEANING "s sub g  means that each element of type-term  s  is defined to be an element of type-term  g  as well."
@@ -74,14 +74,14 @@ RELATION subs[TypeTerm*TypeTerm]
 MEANING "s subs g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
 ROLE ExecEngine MAINTAINS subsIns
 RULE subsIns : sub;subs\/subs;sub\/I |- subs
-VIOLATION (TXT "{EX} InsPair;subs;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ROLE ExecEngine MAINTAINS subsDel
 RULE subsDel : subs |- sub;subs\/subs;sub\/I
-VIOLATION (TXT "{EX} DelPair;subs;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+VIOLATION (TXT "{EX} DelPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "INS isa INTO sub"
 RULE "INS isa INTO sub" : popset~;isa;popset |- sub
-VIOLATION (TXT "{EX} InsPair;sub;TypeTerm;", SRC I, TXT ";TypeTerm;", TGT I)
+VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE User MAINTAINS "Unambiguous pretype"
 RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept] - isas;isas~
@@ -93,11 +93,11 @@ MEANING "Every type-term must have a concept as its pretype."
 RELATION repr[Term*Representation] [UNI]
 ROLE ExecEngine MAINTAINS "Every I-term has a representation"
 RULE "Every I-term has a representation" : id |- id;repr;repr~
---VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC id, TXT ";Representation;I[", SRC name, TXT "]")
+--VIOLATION (TXT "{EX} InsPair_;repr_;Term_;", SRC id, TXT "_;Representation_;I[", SRC name, TXT "]")
 
 ROLE ExecEngine MAINTAINS "Every V-term has a representation"
 RULE "Every V-term has a representation" : vee |- vee;repr;repr~
-VIOLATION (TXT "{EX} InsPair;repr;Term;", SRC vee, TXT ";Representation;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
+VIOLATION (TXT "{EX} InsPair_;repr_;Term_;", SRC vee, TXT "_;Representation_;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
 ENDPROCESS
 
 {-

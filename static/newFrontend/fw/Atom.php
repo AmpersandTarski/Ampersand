@@ -569,20 +569,30 @@ Class Atom {
 			$viewStrs = array ();
 			
 			foreach ($view['segments'] as $viewSegment){
-				
+				// text segment
 				if ($viewSegment['segmentType'] == 'Text'){ 
-					$viewStrs[$viewSegment['label']] = htmlSpecialChars($viewSegment['Text']);
+					$viewStrs[$viewSegment['label']] = $viewSegment['Text'];
 				
-				}elseif($viewSegment['segmentType'] == 'Html'){
-					$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
-				
-				}else{
+				// expressie segment
+				}elseif($viewSegment['segmentType'] == 'Exp'){
 					$idEsc = $this->database->escape($this->id);
 					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 					
-					$txt = count($tgtAtoms) ? htmlSpecialChars($tgtAtoms[0]) : null;
+					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
 					$viewStrs[$viewSegment['label']] = $txt;
+				
+				// html segment
+				}elseif($viewSegment['segmentType'] == 'Html'){
+					$errorMessage = "Unsupported segmentType 'Html' in view '" . $view['label'] . "'";
+					throw new Exception($errorMessage, 501); // 501: Not implemented
+					
+					//$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
+				
+				// unknown segment
+				}else{
+					$errorMessage = "Unknown segmentType '" . $viewSegment['segmentType'] . "' in view '" . $view['label'] . "'";
+					throw new Exception($errorMessage, 501); // 501: Not implemented
 				}
 			}
 			return $viewStrs;

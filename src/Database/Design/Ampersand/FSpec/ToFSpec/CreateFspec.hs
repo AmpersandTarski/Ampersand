@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
-  (createFSpec,getPopulationsFrom)
+  (createFSpec)
   
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -92,15 +92,15 @@ createFSpec opts =
                _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
             
      
-getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
-getPopulationsFrom opts filePath =
- do gpCtx <- parseADL opts filePath
-    return (unguard $ f <$> gpCtx) 
-   where
-     f :: P_Context -> Guarded [Population]
-     f pCtx = unguard $ 
-                pure . initialPops . makeFSpec opts
-                 <$> pCtx2aCtx opts pCtx
+--getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
+--getPopulationsFrom opts filePath =
+-- do gpCtx <- parseADL opts filePath
+--    return (unguard $ f <$> gpCtx) 
+--   where
+--     f :: P_Context -> Guarded [Population]
+--     f pCtx = unguard $ 
+--                pure . initialPops . makeFSpec opts
+--                 <$> pCtx2aCtx opts pCtx
 
 doGenMetaFile :: MetaType -> FSpec -> IO()
 doGenMetaFile mType fSpec =

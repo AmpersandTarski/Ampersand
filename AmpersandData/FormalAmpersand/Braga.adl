@@ -3,6 +3,7 @@
 INCLUDE "Atoms.adl"
 --INCLUDE "Rules.adl"
 INCLUDE "Braga.ifc"
+INCLUDE "Braga.xlsx"
 
 PROCESS Terms
 CONCEPT SESSION ""

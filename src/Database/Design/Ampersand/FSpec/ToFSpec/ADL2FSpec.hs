@@ -7,7 +7,6 @@ import Data.List
 import Data.Maybe
 import Text.Pandoc
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -19,6 +18,7 @@ import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
 import Database.Design.Ampersand.FSpec.ShowADL
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -93,16 +93,16 @@ makeFSpec opts context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
-              , initialPops  = initialpops
-              , allAtoms     = allatoms
-              , allLinks     = alllinks
+              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
+              , tableContents = tblcontents contextinfo initialpopsDefinedInScript
+              , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
-                                 | r <- allrules, not (isSignal r)
-                                 , let vs = ruleviolations contextinfo initialpops r, not (null vs) ]
+                                 | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
+                                 , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
               , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
-                                         , let viols = conjunctViolations contextinfo initialpops conj
+                                         , let viols = conjunctViolations conj
                                          , not $ null viols
                                          ]
               , contextInfo = contextinfo
@@ -110,43 +110,22 @@ makeFSpec opts context
               , generalizationsOf = largerConcepts  (gens context)
               }
    where           
-     contextinfo = contextInfoOf context
-     allatoms :: [Atom]
-     allatoms = nub (concatMap atoms initialpops)
-       where
-         atoms :: Population -> [Atom]
-         atoms udp = case udp of
-           ARelPopu{} ->  map (mkAtom ((source.popdcl) udp).apLeft) (popps udp)
-                       ++ map (mkAtom ((target.popdcl) udp).apRight) (popps udp)
-           ACptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> AAtomValue -> Atom
-     mkAtom cpt value = 
-        Atom { atmRoots = rootConcepts gs [cpt]
-               , atmIn   = largerConcepts gs cpt `uni` [cpt]
-               , atmVal  = value
-               }
-       where
-         gs = gens context
-     dclLinks :: Declaration -> [A_Pair]
-     dclLinks dcl
-       = [Pair   { lnkDcl   = dcl
-                 , lnkLeft  = mkAtom (source dcl) (apLeft p) 
-                 , lnkRight = mkAtom (target dcl) (apRight p)
-                 }
-         | p <- pairsOf dcl]
-     alllinks ::  [A_Pair]
-     alllinks = concatMap dclLinks fSpecAllDecls
-     pairsOf :: Declaration -> [AAtomPair]
-     pairsOf d = case filter theDecl initialpops of
-                    []    -> []
-                    [pop] -> popps pop
-                    _     -> fatal 273 "Multiple entries found in populationTable"
-        where
-          theDecl :: Population -> Bool
-          theDecl p = case p of
-                        ARelPopu{} -> popdcl p == d
-                        ACptPopu{} -> False
+     pairsinexpr  :: Expression -> [AAtomPair]
+     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
+     ruleviolations :: Rule -> [AAtomPair]
+     ruleviolations r = case rrexp r of
+          EEqu{} -> (cra >- crc) ++ (crc >- cra)
+          EImp{} -> cra >- crc
+          _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
+          where cra = pairsinexpr (antecedent r)
+                crc = pairsinexpr (consequent r)
+     conjunctViolations :: Conjunct -> [AAtomPair]
+     conjunctViolations conj =
+       let vConts    = Set.fromList $ pairsinexpr (EDcV (sign (rc_conjunct conj)))
+           conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
+       in  Set.toList $ vConts `Set.difference` conjConts 
 
+     contextinfo = contextInfoOf context
 
      fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
@@ -169,7 +148,8 @@ makeFSpec opts context
      concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
      gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
-     initialpops = [ ARelPopu{ popdcl = popdcl (head eqclass)
+     initialpopsDefinedInScript = 
+                   [ ARelPopu{ popdcl = popdcl (head eqclass)
                              , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
@@ -178,7 +158,6 @@ makeFSpec opts context
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
-
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
@@ -517,3 +496,37 @@ class Named a => Rename a where
 
 instance Rename PlugSQL where
  rename p x = p{sqlname=x}
+     
+
+tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
+tblcontents ci ps plug
+   = case plug of
+     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
+     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
+     TblSQL{}    -> 
+ --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
+ --fields are assumed to be in the order kernel+other,
+ --where NULL in a kernel field implies NULL in the following kernel fields
+ --and the first field is unique and not null
+ --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
+       case fields plug of 
+         []   -> fatal 593 "no fields in plug."
+         f:fs -> transpose
+                 ( map Just cAtoms
+                 : [case fExp of
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
+                   | fld<-fs, let fExp=fldexpr fld
+                   ]
+                 )
+                 where
+                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
+                   lkp a pairs
+                    = case [ p | p<-pairs, a==apLeft p ] of
+                       [] -> Nothing
+                       [p] -> Just (apRight p)
+                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++showValADL a++"'.\n"++
+                               "Multiple values in one field. \n"
+                               )
+                        

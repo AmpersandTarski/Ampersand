@@ -1,7 +1,6 @@
 module Main where
 
 import Control.Monad
-import Control.Applicative
 import Data.List
 import Data.Function (on)
 import System.Exit
@@ -13,7 +12,6 @@ import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
 import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
 import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import Database.Design.Ampersand.Prototype.ValidateEdit
 
 main :: IO ()
 main =
@@ -30,19 +28,24 @@ main =
 
 generateProtoStuff :: FSpec -> IO ()
 generateProtoStuff fSpec
-  | Just nm <- validateEdit (getOpts fSpec) =
-      do { verboseLn (getOpts fSpec) "Validating edit operations:"
-         ; gBeforePops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".before.pop"
-         ; gAfterPops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".after.pop"
-         ; case (,) <$> gBeforePops <*> gAfterPops of
-              Errors err -> do putStrLn "Error(s) found in before/after populations:"
-                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
-                               exitWith $ ExitFailure 10
-              Checked (beforePops, afterPops) ->
-               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit.json")
-                  ; unless isValid (exitWith (ExitFailure 30))
-                  }
-         }
+-- HJO: The following has been commented out, because:
+-- 1) it does not seem to be used
+-- 2) It's purpose is unclear
+-- 3) underlying code has been modified. It is unclear what that would mean for this functionality
+--     ==> Hence, we have bitrot.
+--  | Just nm <- validateEdit (getOpts fSpec) =
+--      do { verboseLn (getOpts fSpec) "Validating edit operations:"
+--         ; gBeforePops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".before.pop"
+--         ; gAfterPops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".after.pop"
+--         ; case (,) <$> gBeforePops <*> gAfterPops of
+--              Errors err -> do putStrLn "Error(s) found in before/after populations:"
+--                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+--                               exitWith $ ExitFailure 10
+--              Checked (beforePops, afterPops) ->
+--               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit.json")
+--                  ; unless isValid (exitWith (ExitFailure 30))
+--                  }
+--         }
   | validateSQL (getOpts fSpec) =
       do { verboseLn (getOpts fSpec) "Validating SQL expressions..."
          ; isValid <- validateRulesSQL fSpec
@@ -62,9 +65,9 @@ generateProtoStuff fSpec
 doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
  do { verboseLn (getOpts fSpec) "Checking on rule violations..."
-    ; reportViolations (allViolations fSpec)
+    ; reportViolations violationsOfInvariants
     ; reportSignals (initialConjunctSignals fSpec)
-    ; if (not . null) (allViolations fSpec) && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
+    ; if (not . null) violationsOfInvariants && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               }
@@ -87,7 +90,12 @@ doGenProto fSpec =
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
     }
- where reportViolations :: [(Rule,[AAtomPair])] -> IO()
+ where violationsOfInvariants :: [(Rule,[AAtomPair])]
+       violationsOfInvariants 
+         = [(r,vs) |(r,vs) <- allViolations fSpec
+                   , not (isSignal r)
+           ]
+       reportViolations :: [(Rule,[AAtomPair])] -> IO()
        reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
        reportViolations viols = 
          let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]

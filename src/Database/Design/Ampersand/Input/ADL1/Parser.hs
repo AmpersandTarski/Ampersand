@@ -8,7 +8,7 @@ module Database.Design.Ampersand.Input.ADL1.Parser
     , pRule
     ) where
 
-import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
@@ -57,8 +57,9 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
-       , [s | CIncl s<-ces]) -- the INCLUDE filenames
-
+       , [s | CIncl s<-ces] -- the INCLUDE filenames
+       ) 
+      
     --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
     pContextElement :: AmpParser ContextElement
     pContextElement = CMeta    <$> pMeta         <|>
