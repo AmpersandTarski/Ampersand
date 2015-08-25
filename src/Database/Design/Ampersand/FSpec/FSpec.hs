@@ -99,7 +99,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                    , initialPopsOLD ::  [Population]             -- ^ All user defined populations of relations and concepts
-                   , popsOfCptWithoutSmaller :: A_Concept -> [Population]  -- ^ All user defined populations of an A_concept, WITHOUT the populations of smaller A_Concepts
+               --    , popsOfCptWithoutSmaller :: A_Concept -> [Population]  -- ^ All user defined populations of an A_concept, WITHOUT the populations of smaller A_Concepts
                    , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
                    , pairsInExpr :: Expression -> [AAtomPair]   
                    , allAtoms ::     [Atom]

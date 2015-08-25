@@ -62,9 +62,9 @@ generateProtoStuff fSpec
 doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
  do { verboseLn (getOpts fSpec) "Checking on rule violations..."
-    ; reportViolations (allViolations fSpec)
+    ; reportViolations violationsOfInvariants
     ; reportSignals (initialConjunctSignals fSpec)
-    ; if (not . null) (allViolations fSpec) && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
+    ; if (not . null) violationsOfInvariants && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               }
@@ -87,7 +87,12 @@ doGenProto fSpec =
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
     }
- where reportViolations :: [(Rule,[AAtomPair])] -> IO()
+ where violationsOfInvariants :: [(Rule,[AAtomPair])]
+       violationsOfInvariants 
+         = [(r,vs) |(r,vs) <- allViolations fSpec
+                   , not (isSignal r)
+           ]
+       reportViolations :: [(Rule,[AAtomPair])] -> IO()
        reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
        reportViolations viols = 
          let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]

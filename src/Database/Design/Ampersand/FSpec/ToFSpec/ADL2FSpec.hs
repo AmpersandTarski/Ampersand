@@ -99,7 +99,7 @@ makeFSpec opts context
               , pairsInExpr  = pairsinexpr
               , allAtoms     = allatoms
               , allViolations  = [ (r,vs)
-                                 | r <- allrules -- HJO, removed, for violations of invariants are violations too! was: , not (isSignal r)
+                                 | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
               , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)

@@ -114,7 +114,7 @@ historyTableSpec
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
   fillSignalTable (initialConjunctSignals fSpec) ++
-  populateTablesWithPopsPHP fSpec (initialPops fSpec)
+  populateTablesWithPopsPHP fSpec
   where
     fillSignalTable []          = []
     fillSignalTable conjSignals =
@@ -131,12 +131,12 @@ populateTablesPHP fSpec =
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
       ]
 
-populateTablesWithPopsPHP :: FSpec -> [Population] -> [String]
-populateTablesWithPopsPHP fSpec pops =
+populateTablesWithPopsPHP :: FSpec -> [String]
+populateTablesWithPopsPHP fSpec =
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
-         = case tblcontents (contextInfo fSpec) pops plug of
+         = case tblcontents (contextInfo fSpec) (initialPops fSpec) plug of
                [] -> []
                tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
