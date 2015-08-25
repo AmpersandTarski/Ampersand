@@ -3,7 +3,8 @@
 INCLUDE "Atoms.adl"
 --INCLUDE "Rules.adl"
 INCLUDE "Braga.ifc"
-INCLUDE "BragaConverted.xlsx"
+INCLUDE "Braga.xlsx"
+
 PROCESS Terms
 CONCEPT SESSION ""
 RELATION src[Signature*Concept]

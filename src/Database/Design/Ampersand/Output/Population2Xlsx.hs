@@ -68,7 +68,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                      | isPrefixOf "tgt_" orig = drop 4 orig
                      | isPrefixOf "src_" orig = drop 4 orig ++"~" --TODO: Make in less hacky! (See also the way the fieldname is constructed.
                      | otherwise         = orig
-           content = fmap record2Cells (tblcontents (contextInfo fSpec) (initialPops fSpec) plug)
+           content = fmap record2Cells (tableContents fSpec plug)
            record2Cells :: [Maybe AAtomValue] -> [Cell]
            record2Cells = map record2Cell
            record2Cell :: Maybe AAtomValue -> Cell

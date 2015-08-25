@@ -235,7 +235,7 @@ generateAllDefPopQueries fSpec =
       where
         populatePlug :: PlugSQL -> [String]
         populatePlug plug 
-          = case tblcontents (contextInfo fSpec) (initialPops fSpec) plug of
+          = case tableContents fSpec plug of
              []  -> []
              tblRecords 
                  -> [intercalate "\n           " $ 
