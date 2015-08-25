@@ -28,13 +28,7 @@ class LoginApi{
 			// build url
 			$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
 			
-			// show auth error if needed
-			$error = '';
-			if(isset($_SESSION["auth_error"])){
-				$error = $_SESSION["auth_error"];
-			}
-			
-			return array('loginUrl' => $url, 'error' => $error);
+			return array('loginUrl' => $url, 'notifications' => Notifications::getAll());
 			
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
@@ -62,7 +56,7 @@ class LoginApi{
 			$authController = new OAuthController($client_id,$client_secret,$redirect_uri,$token_url);
 			
 			// request token
-			if($authController->requestToken($_GET['code'])){
+			if($authController->requestToken($code)){
 				// request data
 				if($authController->requestData($api_url)){
 						
@@ -84,9 +78,6 @@ class LoginApi{
 					}
 					
 					$db->closeTransaction('Login successfull', false, true, false);
-						
-					// set session data
-					// $authController->setSessionData();
 					
 				}
 			}
