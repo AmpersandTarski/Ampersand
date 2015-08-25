@@ -275,7 +275,6 @@ instance ShowHS FSpec where
         ,wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
         ,wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,     ", metas         = allMetas"
-        ,wrap ", initialPops   = " indentA (showHS opts)   (initialPopsOLD fSpec)
         ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
         ,wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
         ,"}"

@@ -32,5 +32,5 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.FSpec.Motivations
        (Meaning(..),Motivated(..))
 import Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
-       (createFSpec,getPopulationsFrom)
+       (createFSpec)
        

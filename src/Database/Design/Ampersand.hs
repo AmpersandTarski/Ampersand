@@ -64,7 +64,7 @@ module Database.Design.Ampersand
    , createFSpec
     -- * Type checking and calculus
    , Guarded(..), pCtx2aCtx
-   , makeFSpec, getPopulationsFrom
+   , makeFSpec
     -- * Generators of output
    , generateAmpersandOutput
    -- * Prettyprinters

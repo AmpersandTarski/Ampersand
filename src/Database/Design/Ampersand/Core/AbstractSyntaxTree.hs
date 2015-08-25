@@ -840,9 +840,10 @@ representationOf ci cpt =
     isAboutThisCpt :: Representation -> Bool 
     isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
 contextInfoOf :: A_Context -> ContextInfo
-contextInfoOf ctx = CI { ctxiGens       = ctxgs ctx
-                       , ctxiRepresents = ctxreprs ctx
-                       }
+contextInfoOf context 
+  = CI { ctxiGens       = concatMap ptgns (ctxpats context) ++ ctxgs context
+       , ctxiRepresents = ctxreprs context
+       }
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
 --   after the expression has been built inside an A_Context. Only at that time
 --   the TType is known, enabling the correct transformation. 

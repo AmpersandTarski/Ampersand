@@ -93,11 +93,9 @@ makeFSpec opts context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
-              , initialPopsOLD  = initialpopsOLD
-              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsOLD
-              , tableContents = tblcontents contextinfo initialpopsOLD
-              ,  pairsInExpr  = pairsinexpr
-              , allAtoms     = allatoms
+              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
+              , tableContents = tblcontents contextinfo initialpopsDefinedInScript
+              , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
@@ -113,7 +111,7 @@ makeFSpec opts context
               }
    where           
      pairsinexpr  :: Expression -> [AAtomPair]
-     pairsinexpr = fullContents contextinfo initialpopsOLD
+     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
      ruleviolations r = case rrexp r of
           EEqu{} -> (cra >- crc) ++ (crc >- cra)
@@ -128,22 +126,6 @@ makeFSpec opts context
        in  Set.toList $ vConts `Set.difference` conjConts 
 
      contextinfo = contextInfoOf context
-     allatoms :: [Atom]
-     allatoms = nub (concatMap atoms initialpopsOLD)
-       where
-         atoms :: Population -> [Atom]
-         atoms udp = case udp of
-           ARelPopu{} ->  map (mkAtom ((source.popdcl) udp).apLeft) (popps udp)
-                       ++ map (mkAtom ((target.popdcl) udp).apRight) (popps udp)
-           ACptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> AAtomValue -> Atom
-     mkAtom cpt value = 
-        Atom { atmRoots = rootConcepts gs [cpt]
-               , atmIn   = largerConcepts gs cpt `uni` [cpt]
-               , atmVal  = value
-               }
-       where
-         gs = gens context
 
      fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
@@ -166,12 +148,8 @@ makeFSpec opts context
      concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
      gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
-     initialpopsOLD = debug initialpops'
-       where debug ps = trace (f ps) ps
-             f ps = "initialpops = [ "++
-                    intercalate "              , " 
-                       (map showADL ps)    
-     initialpops' = [ ARelPopu{ popdcl = popdcl (head eqclass)
+     initialpopsDefinedInScript = 
+                   [ ARelPopu{ popdcl = popdcl (head eqclass)
                              , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
@@ -179,9 +157,7 @@ makeFSpec opts context
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
                    | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
-       where populations = debug $ ctxpopus context++concatMap ptups (patterns context)       
-             debug ps = trace (f ps) ps
-               where f  = intercalate "\n  ". map showADL 
+       where populations = ctxpopus context++concatMap ptups (patterns context)       
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
