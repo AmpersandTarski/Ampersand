@@ -40,7 +40,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_lang   = lang
             , ctx_markup = fmt
             , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional specification. (For partial documents.)
-            , ctx_pats   = [debug p | CPat p<-ces]       -- The patterns defined in this context
+            , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
             , ctx_cs     = [c ("CONTEXT "++nm) | CCon c<-ces]    -- The concept definitions defined in this context, outside the scope of patterns
@@ -57,9 +57,8 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
-       , [s | CIncl s<-ces]) -- the INCLUDE filenames
-    debug pat = trace (f pat) pat
-      where f pat = "In Pattern: "++ (show . pt_gns) pat 
+       , [s | CIncl s<-ces] -- the INCLUDE filenames
+       ) 
       
     --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
     pContextElement :: AmpParser ContextElement
