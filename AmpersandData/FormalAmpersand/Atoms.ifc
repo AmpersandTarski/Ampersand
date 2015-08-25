@@ -27,6 +27,8 @@ TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
            ]
     , garbage : V[SESSION*Atom];(I - pop;pop~)
       COLS [ repr : repr

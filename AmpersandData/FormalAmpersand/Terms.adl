@@ -3,38 +3,38 @@
 INCLUDE "Atoms.adl"
 
 PROCESS Terms
-RELATION src[Signature*Concept]
-RELATION tgt[Signature*Concept]
-RELATION type[Relation*Signature]
+RELATION src[Signature*Concept] [UNI]        -- TOT is maintained in RULE signatureSrc
+RELATION tgt[Signature*Concept] [UNI]        -- TOT is maintained in RULE signatureTgt
+RELATION signature[Relation*Signature] [UNI] -- TOT is maintained in RULE totSign
 
 ROLE ExecEngine MAINTAINS totSign
-RULE totSign : I[Relation] |- type;type~
-VIOLATION (TXT "{EX} NewStruct_;Signature" -- maak een nieuw atoom in concept Optelling
-                ,TXT "_;type_;Relation_;", SRC I, TXT "_;Signature_;_NEW"
+RULE totSign : I[Relation] |- signature;signature~
+VIOLATION (TXT "{EX} NewStruct_;Signature" -- maak een nieuw atoom in concept Signature
+                ,TXT "_;signature_;Relation_;", SRC I, TXT "_;Signature_;_NEW"
           )
-ROLE ExecEngine MAINTAINS typeTgt
-RULE typeTgt : type~;target |- tgt
+ROLE ExecEngine MAINTAINS signatureTgt
+RULE signatureTgt : signature~;target |- tgt
 VIOLATION (TXT "{EX} InsPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
-ROLE ExecEngine MAINTAINS typeSrc
-RULE typeSrc : type~;source |- src
+ROLE ExecEngine MAINTAINS signatureSrc
+RULE signatureSrc : signature~;source |- src
 VIOLATION (TXT "{EX} InsPair_;src_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
 
 RELATION pretype[TypeTerm*Concept]
 RELATION sub[TypeTerm*TypeTerm]
 RELATION typehalf[Term*Signature]
 
-RELATION dom[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
+RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
 ROLE ExecEngine MAINTAINS "dom is total"
-RULE "dom is total" : I |- dom;dom~
+RULE "dom is total" : I/\repr;repr~ |- dom;dom~
 VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")
 
 ROLE ExecEngine MAINTAINS "dom pretype id"
 RULE "dom pretype id" : id;dom |- pretype~
 VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
-RELATION cod[Term*TypeTerm] [UNI]    -- TOT is computed by the exec-engine
+RELATION cod[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "cod is total"
 ROLE ExecEngine MAINTAINS "cod is total"
-RULE "cod is total" : I |- cod;cod~
+RULE "cod is total" : I/\repr;repr~ |- cod;cod~
 VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")
 
 ROLE ExecEngine MAINTAINS "cod pretype id"
@@ -110,5 +110,15 @@ MEANING "A specialisation of a concept and the concept itself are both part of t
 RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
 MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
 -}
+
+
+PROCESS Signatures
+RELATION isas[Signature]
+ROLE ExecEngine MAINTAINS signatureIsasIns, signatureIsasDel
+RULE signatureIsasIns : src;isas;src~ /\ tgt;isas;tgt~ |- isas[Signature]
+VIOLATION (TXT "{EX} InsPair;isas[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+RULE signatureIsasDel : isas[Signature] |- src;isas;src~ /\ tgt;isas;tgt~
+VIOLATION (TXT "{EX} DelPair;isas[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+ENDPROCESS
 
 ENDCONTEXT

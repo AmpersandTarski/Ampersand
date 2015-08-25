@@ -17,7 +17,7 @@ TABS[concepts :V[SESSION*Concept]
            ]
     , types : V[SESSION*Signature]
       BOX<SCOLS>
-           [ type  : I[Signature]
+           [ signature  : I[Signature]
            , src   : src
            , tgt   : tgt
            , vee   : vee
@@ -81,8 +81,8 @@ ROWS [ pair           : I
 
 VIEW Signature : Signature(TXT "[", src;name,TXT "*", tgt;name,TXT "]")
 
-INTERFACE Signature(type, src, tgt) FOR Ampersand: I[Signature]
-ROWS [ type : I
+INTERFACE Signature(signature, src, tgt) FOR Ampersand: I[Signature]
+ROWS [ signature : I
      , src  : src
      , tgt  : tgt
      ]

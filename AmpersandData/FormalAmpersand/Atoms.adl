@@ -34,6 +34,18 @@ RELATION name[Relation*Identifier] [UNI,TOT]
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
+RELATION sources[Relation*Concept] -- meant for: sources = source;isas~
+RELATION targets[Relation*Concept] -- meant for: targets = target;isas~
+
+ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
+RULE isaRelInsSrc: source;(I\/isas~) |- sources
+VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelInsTgt: target;(I\/isas~) |- targets
+VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelSrc: sources |- source;(I\/isas~)
+VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelTgt: targets |- target;(I\/isas~)
+VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
 RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
@@ -45,4 +57,5 @@ RULE delPop : pop |- l~;in;source;(isas\/I) \/ r~;in;target;(isas\/I)
 VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
 ENDPROCESS
+
 ENDCONTEXT

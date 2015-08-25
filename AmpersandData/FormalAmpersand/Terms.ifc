@@ -1,6 +1,6 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
---INCLUDE "Atoms.xslx"
+INCLUDE "Issue142.xlsx"
 
 INTERFACE Overview : '_SESSION'
 TABS[concepts :V[SESSION*Concept]
@@ -16,13 +16,13 @@ TABS[concepts :V[SESSION*Concept]
            ]
     , types : V[SESSION*Signature]
       BOX<SCOLS>
-           [ type  : I[Signature]
+           [ signature  : I[Signature]
            , src   : src
            , tgt   : tgt
            , vee   : vee
            ]
     , terms : V[SESSION*Term]
-    , "type-terms" : V[SESSION*Concept]
+    , "pretypes" : V[SESSION*Concept]
       BOX<SCOLS>
            [ Concept      : I
            , "type-terms" : pretype~
@@ -33,6 +33,14 @@ TABS[concepts :V[SESSION*Concept]
                   , "sub~"      : sub~    
                   , "sub*~"     : subs~   
                   ]
+           ]
+    , "type-terms" : V[SESSION*TypeTerm]
+      BOX<SCOLS>
+           [ "type-term" : I[TypeTerm]
+           , "sub"       : sub     
+           , "sub*"      : subs    
+           , "sub~"      : sub~    
+           , "sub*~"     : subs~   
            ]
     ,  atoms : V[SESSION*Atom]
       BOX<SCOLS>
@@ -49,6 +57,8 @@ TABS[concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
            ]
     , garbage : V[SESSION*Atom];(I - pop;pop~)
       COLS [ repr : repr
@@ -80,8 +90,8 @@ ROWS [ pair           : I
 
 VIEW Signature : Signature(TXT "[", src;name,TXT "*", tgt;name,TXT "]")
 
-INTERFACE Signature(type, src, tgt) FOR Ampersand: I[Signature]
-ROWS [ type : I
+INTERFACE Signature(signature, src, tgt) FOR Ampersand: I[Signature]
+ROWS [ signature : I
      , src  : src
      , tgt  : tgt
      ]
