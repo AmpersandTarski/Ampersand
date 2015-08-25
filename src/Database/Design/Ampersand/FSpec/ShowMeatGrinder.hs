@@ -97,8 +97,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.allConcepts) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
-  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
+--  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
+--  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
 --  ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
 --  ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
@@ -109,8 +109,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
-  ++[ Comment " ", Comment $ "[InitialPopulation]--: (count="++(show.length.initialPops) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (allLinks fSpec)
+--  ++[ Comment " ", Comment $ "[Initial pairs]--: (count="++(show.length.allLinks) fSpec++")"]
+--  ++   concatMap (metaPops fSpec) (allLinks fSpec)
   )
    where
 

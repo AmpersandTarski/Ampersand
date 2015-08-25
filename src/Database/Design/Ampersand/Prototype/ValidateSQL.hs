@@ -100,7 +100,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
 validateExp fSpec vExp@(exp, orig) =
  do { --putStr $ "Checking "++orig ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec tempDbName $ exp
-    ; let violationsAmp = sort [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- fullContents (contextInfo fSpec) (initialPops fSpec) exp]
+    ; let violationsAmp = sort [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
 
     ; if violationsSQL == violationsAmp
       then

@@ -1,11 +1,9 @@
 module Database.Design.Ampersand.ADL1.Rule 
-  (consequent, antecedent, rulefromProp, ruleviolations, conjunctViolations, hasantecedent) where
+  (consequent, antecedent, rulefromProp, hasantecedent) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec.ToFSpec.Populated ( fullContents)
 import Database.Design.Ampersand.Misc
-import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Rule"
@@ -29,20 +27,6 @@ consequent r
      EEqu (_,re) -> re
      EImp (_,re) -> re
      x           -> x
-
-conjunctViolations :: ContextInfo -> [Population]  -> Conjunct -> [AAtomPair]
-conjunctViolations ci ps conj =
-  let vConts    = Set.fromList $ fullContents ci ps (EDcV (sign (rc_conjunct conj)))
-      conjConts = Set.fromList $ fullContents ci ps (rc_conjunct conj)
-  in  Set.toList $ vConts `Set.difference` conjConts 
-     
-ruleviolations :: ContextInfo -> [Population]  -> Rule -> [AAtomPair]
-ruleviolations ci ps r = case rrexp r of
-     EEqu{} -> (cra >- crc) ++ (crc >- cra)
-     EImp{} -> cra >- crc
-     _      -> fullContents ci ps (EDcV (sign (consequent r))) >- crc  --everything not in con
-     where cra = fullContents ci ps (antecedent r)
-           crc = fullContents ci ps (consequent r)
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.

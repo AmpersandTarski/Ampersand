@@ -9,8 +9,6 @@ module Database.Design.Ampersand.FSpec.Plug
      ,SqlTType(..)
      ,showSQL
      ,plugpath
-
-     ,tblcontents
      ,fldauto
      ,PlugSQL(..)
      )
@@ -264,38 +262,3 @@ eLkpTbl p = clos1 [([r],s,t)|(r,s,t)<-mLkpTbl p]
         f q x = q `uni` [( r++r' , a, b') | (r ,a, b) <- q, b == x, (r', a', b') <- q, a' == x]
 
 
--- | tblcontents is meant to compute the contents of an entity table.
---   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
-type TblRecord = [Maybe AAtomValue]
-tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [TblRecord]
-tblcontents ci ps plug
-   = case plug of
-     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
-     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
-     TblSQL{}    -> 
- --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
- --fields are assumed to be in the order kernel+other,
- --where NULL in a kernel field implies NULL in the following kernel fields
- --and the first field is unique and not null
- --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
-       case fields plug of 
-         []   -> fatal 593 "no fields in plug."
-         f:fs -> transpose
-                 ( map Just cAtoms
-                 : [case fExp of
-                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
-                   | fld<-fs, let fExp=fldexpr fld
-                   ]
-                 )
-                 where
-                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
-                   lkp a pairs
-                    = case [ p | p<-pairs, a==apLeft p ] of
-                       [] -> Nothing
-                       [p] -> Just (apRight p)
-                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
-                               "Looking for: '"++showValADL a++"'.\n"++
-                               "Multiple values in one field. \n"
-                               )
-                       
