@@ -364,7 +364,7 @@ class Api{
     					 ,'new' => $new);
     		
     	}catch(Exception $e){
-    		throw new RestException(404, $e->getMessage());
+    		throw new RestException($e->getCode(), $e->getMessage());
     	}
     }
     
