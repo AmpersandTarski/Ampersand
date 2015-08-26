@@ -23,37 +23,44 @@ VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
 RELATION isa[Concept*Concept] [IRF,ASY]
 MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
-RELATION isas[Concept*Concept]
+RELATION isaPlus[Concept*Concept]
 MEANING "the transitive closure isa+ ."
+
 RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
 ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
 RULE "Compute transitive closure of isa" : isa = isaCopy
-VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isas")
+VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
+
+RELATION isaPlus[Concept*Concept] -- necessary only for calling the Transitive closure function.
+ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+RULE "Compute transitive closure of isa" : isa = isaCopy
+VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
+
 
 RELATION name[Relation*Identifier] [UNI,TOT] 
 RELATION source[Relation*Concept] [UNI,TOT] 
 RELATION target[Relation*Concept] [UNI,TOT] 
 
-RELATION sources[Relation*Concept] -- meant for: sources = source;isas~
-RELATION targets[Relation*Concept] -- meant for: targets = target;isas~
+RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
+RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
 
 ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
-RULE isaRelInsSrc: source;(I\/isas~) |- sources
+RULE isaRelInsSrc: source;(I\/isaPlus~) |- sources
 VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
-RULE isaRelInsTgt: target;(I\/isas~) |- targets
+RULE isaRelInsTgt: target;(I\/isaPlus~) |- targets
 VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
-RULE isaRelDelSrc: sources |- source;(I\/isas~)
+RULE isaRelDelSrc: sources |- source;(I\/isaPlus~)
 VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
-RULE isaRelDelTgt: targets |- target;(I\/isas~)
+RULE isaRelDelTgt: targets |- target;(I\/isaPlus~)
 VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
 RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
 ROLE ExecEngine MAINTAINS insPop, delPop
-RULE insPop : l~;in;source;(isas\/I) \/ r~;in;target;(isas\/I) |- pop
+RULE insPop : l~;in;source;(isaPlus\/I) \/ r~;in;target;(isaPlus\/I) |- pop
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-RULE delPop : pop |- l~;in;source;(isas\/I) \/ r~;in;target;(isas\/I)
+RULE delPop : pop |- l~;in;source;(isaPlus\/I) \/ r~;in;target;(isaPlus\/I)
 VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
 ENDPROCESS

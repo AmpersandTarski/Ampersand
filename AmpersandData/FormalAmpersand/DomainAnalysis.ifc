@@ -8,9 +8,9 @@ TABS[concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ name         : I[Concept]
            , "isa"        : isa
-           , "isa+"       : isas
+           , "isa+"       : isaPlus
            , "isa~"       : isa~
-           , "isa+~"      : isas~
+           , "isa+~"      : isaPlus~
            , atoms        : pop~
            , "type-term"  : popset
            , term         : id;repr
@@ -38,7 +38,7 @@ TABS[concepts :V[SESSION*Concept]
     , atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
-           , type : pop - pop;(isas-I)
+           , type : pop - pop;isaPlus
            , pop  : pop
            ]
     , pairs : V[SESSION*Pair]

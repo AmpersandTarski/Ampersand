@@ -2,7 +2,7 @@
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Atoms.adl"
 
-PROCESS Terms
+PROCESS "Declaring Relations"
 RELATION src[Signature*Concept] [UNI]        -- TOT is maintained in RULE signatureSrc
 RELATION tgt[Signature*Concept] [UNI]        -- TOT is maintained in RULE signatureTgt
 RELATION signature[Relation*Signature] [UNI] -- TOT is maintained in RULE totSign
@@ -12,30 +12,44 @@ RULE totSign : I[Relation] |- signature;signature~
 VIOLATION (TXT "{EX} NewStruct_;Signature" -- maak een nieuw atoom in concept Signature
                 ,TXT "_;signature_;Relation_;", SRC I, TXT "_;Signature_;_NEW"
           )
-ROLE ExecEngine MAINTAINS signatureTgt
-RULE signatureTgt : signature~;target |- tgt
-VIOLATION (TXT "{EX} InsPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
-ROLE ExecEngine MAINTAINS signatureSrc
-RULE signatureSrc : signature~;source |- src
+ROLE ExecEngine MAINTAINS signatureSrcIns
+RULE signatureSrcIns : signature~;source |- src
 VIOLATION (TXT "{EX} InsPair_;src_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
+ROLE ExecEngine MAINTAINS signatureTgtIns
+RULE signatureTgtIns : signature~;target |- tgt
+VIOLATION (TXT "{EX} InsPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
+ROLE ExecEngine MAINTAINS signatureSrcDel
+RULE signatureSrcDel : src |- signature~;source
+VIOLATION (TXT "{EX} DelPair_;src_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
+ROLE ExecEngine MAINTAINS signatureTgtDel
+RULE signatureTgtDel : tgt |- signature~;target
+VIOLATION (TXT "{EX} DelPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
+ENDPROCESS
 
+PROCESS "Defining type-terms"
+RELATION repr[Term*Representation] [UNI, TOT, INJ]
+ROLE ExecEngine MAINTAINS "Every term has a representation"
+--The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+
+RELATION dom[Term*TypeTerm] [UNI,INJ]    -- TOT is maintained in RULE "dom is total"
+ROLE ExecEngine MAINTAINS "dom is total"
+RULE "dom is total" : I |- dom;dom~
+VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC I, TXT ")")
+
+RELATION cod[Term*TypeTerm] [UNI,INJ]    -- TOT is maintained in RULE "cod is total"
+ROLE ExecEngine MAINTAINS "cod is total"
+RULE "cod is total" : I |- cod;cod~
+VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC I, TXT ")")
+ENDPROCESS
+
+PROCESS "Defining type-terms"
 RELATION pretype[TypeTerm*Concept]
 RELATION sub[TypeTerm*TypeTerm]
 RELATION typehalf[Term*Signature]
 
-RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
-ROLE ExecEngine MAINTAINS "dom is total"
-RULE "dom is total" : I/\repr;repr~ |- dom;dom~
-VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")
-
 ROLE ExecEngine MAINTAINS "dom pretype id"
 RULE "dom pretype id" : id;dom |- pretype~
 VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
-
-RELATION cod[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "cod is total"
-ROLE ExecEngine MAINTAINS "cod is total"
-RULE "cod is total" : I/\repr;repr~ |- cod;cod~
-VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")
 
 ROLE ExecEngine MAINTAINS "cod pretype id"
 RULE "cod pretype id" : id;cod |- pretype~
@@ -45,16 +59,6 @@ RELATION popset[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "popset is total"
 RULE "popset is total" : I[Concept] |- popset;popset~
 VIOLATION (TXT "{EX} InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
-
-RELATION id[Concept*Term] [UNI] -- TOT is computed by the exec-engine
-ROLE ExecEngine MAINTAINS "id is total"
-RULE "id is total" : I[Concept] |- id;id~
-VIOLATION (TXT "{EX} InsPair_;id_;Concept_;", SRC I, TXT "_;Term_;id(", SRC I, TXT ")")
-
-RELATION vee[Signature*Term] [UNI] -- TOT is computed by the exec-engine
-ROLE ExecEngine MAINTAINS "vee is total"
-RULE "vee is total" : I[Signature] |- vee;vee~
-VIOLATION (TXT "{EX} InsPair_;vee_;Signature_;", SRC I, TXT "_;Term_;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
 RULE "Insert into pretype" : subs;popset~ |- pretype
@@ -84,20 +88,11 @@ RULE "INS isa INTO sub" : popset~;isa;popset |- sub
 VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE User MAINTAINS "Unambiguous pretype"
-RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept] - isas;isas~
+RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept] - isaStar;isaStar~
 MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
 ROLE User MAINTAINS "Complete pretype"
 RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~
 MEANING "Every type-term must have a concept as its pretype."
-
-RELATION repr[Term*Representation] [UNI]
-ROLE ExecEngine MAINTAINS "Every I-term has a representation"
-RULE "Every I-term has a representation" : id |- id;repr;repr~
---VIOLATION (TXT "{EX} InsPair_;repr_;Term_;", SRC id, TXT "_;Representation_;I[", SRC name, TXT "]")
-
-ROLE ExecEngine MAINTAINS "Every V-term has a representation"
-RULE "Every V-term has a representation" : vee |- vee;repr;repr~
-VIOLATION (TXT "{EX} InsPair_;repr_;Term_;", SRC vee, TXT "_;Representation_;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
 ENDPROCESS
 
 {-
@@ -113,12 +108,12 @@ MEANING "Atoms can be in the population of different Concepts only if such Conce
 
 
 PROCESS Signatures
-RELATION isas[Signature]
+RELATION isaStar[Signature]
 ROLE ExecEngine MAINTAINS signatureIsasIns, signatureIsasDel
-RULE signatureIsasIns : src;isas;src~ /\ tgt;isas;tgt~ |- isas[Signature]
-VIOLATION (TXT "{EX} InsPair;isas[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
-RULE signatureIsasDel : isas[Signature] |- src;isas;src~ /\ tgt;isas;tgt~
-VIOLATION (TXT "{EX} DelPair;isas[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+RULE signatureIsasIns : src;isaStar;src~ /\ tgt;isaStar;tgt~ |- isaStar[Signature]
+VIOLATION (TXT "{EX} InsPair;isaStar[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+RULE signatureIsasDel : isaStar[Signature] |- src;isaStar;src~ /\ tgt;isaStar;tgt~
+VIOLATION (TXT "{EX} DelPair;isaStar[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
 ENDPROCESS
 
 ENDCONTEXT
