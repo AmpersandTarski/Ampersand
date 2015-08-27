@@ -81,7 +81,7 @@ class ExecEngine {
 					if(empty($functionToBeCalled)) continue; // skips to the next iteration if $functionToBeCalled is empty. This is the case when violation text starts with delimiter {EX}
 					
 					// Determine delimiter
-					$delimiter = (strpos($functionToBeCalled, '_;') === false) ? ';' : '_;';
+					$delimiter = (substr($functionToBeCalled, 0, 2) == '_;') ? '_;' : ';';
 					
 					$params = explode($delimiter, $functionToBeCalled); // Split off variables
 					$params = array_map('trim', $params); // Trim all params
