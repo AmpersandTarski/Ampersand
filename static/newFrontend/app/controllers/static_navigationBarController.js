@@ -2,43 +2,30 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.$storage = $localStorage;
 	
-	$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
-		
-	$scope.roles = Restangular.all('roles').getList().$object;
-	
-	$scope.extensions = Restangular.one('extensions/all').get().$object;
-	
 	$scope.selectRole = function(roleId){
 		$localStorage.roleId = roleId;
 		
-		// refresh interfaces list + notifications
+		// refresh navbar + notifications
 		$rootScope.refreshNavBar();
-		$rootScope.notifications = Restangular.one('notifications/all').get().$object;
-		$route.reload();
+		$rootScope.getNotifications();
+		$scope.reload();
 	};
 	
 	$scope.selectRoleByLabel = function (roleLabel){
-		
-		angular.forEach($scope.roles, function(role) {
+		angular.forEach($scope.navbar.roles, function(role) {
 			if(role.label == roleLabel){
 				$scope.selectRole(role.id);
 				return;
 			}
 			
-			console.log('Unknown role: ' + roleLabel);
+			$rootScope.addError('Unknown role: ' + roleLabel);
 			return;
 		});
-		
-	}
+	};
 	
 	$rootScope.refreshNavBar = function(){
-		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
-		
-	}
-	
-	$rootScope.refreshRoleMenu = function(){
-		$scope.roles = Restangular.all('roles').getList().$object;
-	}
+		$rootScope.navbar = Restangular.one('navbar').get().$object;	
+	};
 	
 	$scope.destroySession = function(){
 		$rootScope.session.remove().then(function(data){
@@ -50,10 +37,11 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 			
 			$rootScope.session = Restangular.one('session').get().$object;
 		});
-	}
+	};
 	
 	$scope.reload = function(){
 		$route.reload();
-	}
+	};
 	
+	$rootScope.refreshNavBar(); // initialize navbar
 });

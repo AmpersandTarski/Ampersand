@@ -35,12 +35,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	// Declare $rootScope objects
 	$rootScope.session = {};
 	$rootScope.notifications = {'errors' : []};
-	
 	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
-	
-	$rootScope.setRole = function(roleId){
-		$localStorage.roleId = roleId;
-	};
 	
 	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
@@ -61,7 +56,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	
-    	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
+    	$rootScope.addError( response.status + ' ' + response.data.error.message);	
     	
     	return true; // proceed with success or error hooks of promise
     });

@@ -308,43 +308,13 @@ class Api{
     }
     	
 	/**************************** UI stuff ****************************/
-	/**
-     * @url GET roles
-     * @param string $sessionId
-     */
-    public function getAllRoles($sessionId){
-    	try{
-    		$roles = array();
-    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoles();
-			foreach((array)$allRoles as $role){
-				$roles[] = array('id' => $role->id, 'label' => $role->label);
-			}
-			return $roles;
-		
-    	}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-    }
     
     /**
-     * @url GET role
-     * @url GET role/{roleId}
-     * @param int $roleId
-     */
-    public function getRole($roleId = 0){
-    	try{
-    		return new Role($roleId); // Return role with properties as defined in class Role
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-   		}
-    }
-    
-    /**
-     * @url GET interfaces/all
+     * @url GET navBar
      * @param string $sessionId
      * @param int $roleId
      */
-    public function getAllInterfaces($sessionId = null, $roleId = 0){
+    public function getNavBar($sessionId = null, $roleId = 0){
     	try{
     		$session = Session::singleton($sessionId);
     		$session->setRole($roleId);
@@ -360,8 +330,20 @@ class Api{
     		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
     			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
+    		
+    		// roles
+    		$roles = array();
+    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoleObjects();
+    		foreach((array)$allRoles as $role){
+    			$roles[] = array('id' => $role->id, 'label' => $role->label);
+    		}
+    		
     		return array ('top' => $top
-    					 ,'new' => $new);
+    					 ,'new' => $new
+    					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
+    					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
+    					 ,'roles' => $roles
+    		);
     		
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
@@ -384,18 +366,6 @@ class Api{
     
     		return Notifications::getAll();
     			
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-    	}
-    }
-    
-    /**
-     * @url GET extensions/all
-     */
-    public function getAllExtensions(){
-    	try{
-    		return (array) $GLOBALS['navBar'];
-    
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
     	}
