@@ -140,8 +140,8 @@ PURPOSE RELATION isa[Concept*Concept]
 {+Specialization is required for the purpose of code re-use.
 Ampersand defines specialization so that type checking can be performed statically.
 -}
-PURPOSE RELATION isas[Concept*Concept]
-{+The relation $\id{isas}$ is defined as the transitive closure of $\id{isa}$.
+PURPOSE RELATION isaPlus[Concept*Concept]
+{+The relation $\id{isaPlus}$ is defined as the transitive closure of $\id{isa}$.
 -}
 
 RELATION eq[Atom*Atom]

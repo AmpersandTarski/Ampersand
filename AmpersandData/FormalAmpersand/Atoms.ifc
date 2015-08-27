@@ -6,16 +6,18 @@ INTERFACE Overview : '_SESSION'[SESSION]
 TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
-           , type : pop - pop;(isas-I)
+           , type : pop - pop;isaStar
            , pop  : pop
            ]
     , concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ name    : I[Concept]
            , "isa"   : isa
-           , "isa+"  : isas
+           , "isa+"  : isaPlus
+           , "isa*"  : isaStar
            , "isa~"  : isa~
-           , "isa+~" : isas~
+           , "isa+~" : isaPlus~
+           , "isa*~" : isaStar~
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
@@ -27,6 +29,8 @@ TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ relation   : I[Relation]
            , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
            ]
     , garbage : V[SESSION*Atom];(I - pop;pop~)
       COLS [ repr : repr
