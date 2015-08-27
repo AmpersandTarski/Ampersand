@@ -491,6 +491,8 @@ instance Traced Purpose where
 data Population -- The user defined populations
   = ARelPopu { popdcl :: Declaration
              , popps ::  [AAtomPair]     -- The user-defined pairs that populate the relation
+             , popsrc :: A_Concept -- potentially more specific types than the type of Declaration
+             , poptgt :: A_Concept
              }
   | ACptPopu { popcpt :: A_Concept
              , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
