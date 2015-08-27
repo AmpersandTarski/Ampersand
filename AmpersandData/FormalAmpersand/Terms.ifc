@@ -1,6 +1,6 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
-INCLUDE "Issue142.xlsx"
+INCLUDE "Braga.xlsx"
 
 INTERFACE Overview : '_SESSION'
 TABS[concepts :V[SESSION*Concept]
@@ -12,14 +12,13 @@ TABS[concepts :V[SESSION*Concept]
            , "isa+~"      : isaPlus~
            , atoms        : pop~
            , "type-term"  : popset
-           , term         : id;repr
+           , term         : id~;repr
            ]
     , types : V[SESSION*Signature]
       BOX<SCOLS>
            [ signature  : I[Signature]
            , src   : src
            , tgt   : tgt
-           , vee   : vee
            ]
     , terms : V[SESSION*Term]
     , "pretypes" : V[SESSION*Concept]
@@ -29,18 +28,18 @@ TABS[concepts :V[SESSION*Concept]
              BOX<SCOLS>
                   [ "type-term" : I[TypeTerm]
                   , "sub"       : sub     
-                  , "sub*"      : subs    
+                  , "sub*"      : subStar    
                   , "sub~"      : sub~    
-                  , "sub*~"     : subs~   
+                  , "sub*~"     : subStar~   
                   ]
            ]
     , "type-terms" : V[SESSION*TypeTerm]
       BOX<SCOLS>
            [ "type-term" : I[TypeTerm]
            , "sub"       : sub     
-           , "sub*"      : subs    
+           , "sub*"      : subStar    
            , "sub~"      : sub~    
-           , "sub*~"     : subs~   
+           , "sub*~"     : subStar~   
            ]
     ,  atoms : V[SESSION*Atom]
       BOX<SCOLS>

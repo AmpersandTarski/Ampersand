@@ -20,8 +20,8 @@ RELATION id[Concept*Term] [UNI] -- TOT is computed by the exec-engine
 RELATION vee[Signature*Term] [UNI] -- TOT is computed by the exec-engine
 RELATION sub[TypeTerm*TypeTerm]
 MEANING "s sub g  means that each element of type-term  s  is defined to be an element of type-term  g  as well."
-RELATION subs[TypeTerm*TypeTerm]
-MEANING "s subs g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
+RELATION subStar[TypeTerm*TypeTerm]
+MEANING "s subStar g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
 RELATION repr[Term*Representation] [UNI]
 RELATION lhs[Term*Term]
 RELATION rhs[Term*Term]
@@ -75,7 +75,7 @@ RULE "vee is total" : I[Signature] |- vee;vee~
 VIOLATION (TXT "{EX} InsPair_;vee_;Signature_;", SRC I, TXT "_;Term_;vee(", SRC src, TXT ",", SRC tgt, TXT ")")
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
-RULE "Insert into pretype" : subs;popset~ |- pretype
+RULE "Insert into pretype" : subStar;popset~ |- pretype
 VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "dom pretype vee"
@@ -87,11 +87,11 @@ RULE "cod pretype vee" : tgt~;vee;cod |- pretype~
 VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 ROLE ExecEngine MAINTAINS subsIns
-RULE subsIns : sub;subs\/subs;sub\/I |- subs
-VIOLATION (TXT "{EX} InsPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+RULE subsIns : sub;subStar\/subStar;sub\/I |- subStar
+VIOLATION (TXT "{EX} InsPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ROLE ExecEngine MAINTAINS subsDel
-RULE subsDel : subs |- sub;subs\/subs;sub\/I
-VIOLATION (TXT "{EX} DelPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+RULE subsDel : subStar |- sub;subStar\/subStar;sub\/I
+VIOLATION (TXT "{EX} DelPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "INS isa INTO sub"
 RULE "INS isa INTO sub" : popset~;isa;popset |- sub

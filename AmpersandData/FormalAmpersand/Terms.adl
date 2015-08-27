@@ -29,14 +29,24 @@ VIOLATION (TXT "{EX} DelPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I
 
 ROLE ExecEngine MAINTAINS "id is surjective"
 RULE "id is surjective" : I[Concept] |- id~;id
-VIOLATION (TXT "{EX} InsPair_;id_;Term_;", SRC I, TXT "_;Concept_;id(", SRC I, TXT ")")
+VIOLATION (TXT "{EX} InsPair_;id_;Term_;I[", SRC I, TXT "]_;Concept_;", SRC I)
+ENDPROCESS
+
+PROCESS "Terms"
+RELATION repr[Term*Representation] [UNI, TOT, INJ]
+--The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+CLASSIFY Composition ISA Term
+RELATION lhs[Composition*Term] [UNI]
+RELATION rhs[Composition*Term] [UNI]
+RELATION operator[Term*Operator] [UNI]
+RELATION lhs[Rule*Term] [UNI]
+RELATION rhs[Rule*Term] [UNI]
+REPRESENT Representation TYPE ALPHANUMERIC
+REPRESENT Identifier TYPE ALPHANUMERIC
+REPRESENT TypeTerm TYPE ALPHANUMERIC
 ENDPROCESS
 
 PROCESS "Defining type-terms"
-RELATION repr[Term*Representation] [UNI, TOT, INJ]
-ROLE ExecEngine MAINTAINS "Every term has a representation"
---The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
-
 RELATION dom[Term*TypeTerm] [UNI,INJ]    -- TOT is maintained in RULE "dom is total"
 ROLE ExecEngine MAINTAINS "dom is total"
 RULE "dom is total" : I |- dom;dom~
@@ -53,13 +63,13 @@ RULE "popset is total" : I[Concept] |- popset;popset~
 VIOLATION (TXT "{EX} InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
 ENDPROCESS
 
-PROCESS "Defining type-terms"
+PROCESS "Analysing terms"
 RELATION pretype[TypeTerm*Concept]
 RELATION sub[TypeTerm*TypeTerm]
 RELATION typehalf[Term*Signature]
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
-RULE "Insert into pretype" : subs;popset~ |- pretype
+RULE "Insert into pretype" : subStar;popset~ |- pretype
 VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
 {-
@@ -82,14 +92,14 @@ VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SR
 
 RELATION sub[TypeTerm*TypeTerm]
 MEANING "s sub g  means that each element of type-term  s  is defined to be an element of type-term  g  as well."
-RELATION subs[TypeTerm*TypeTerm]
-MEANING "s subs g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
+RELATION subStar[TypeTerm*TypeTerm]
+MEANING "s subStar g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
 ROLE ExecEngine MAINTAINS subsIns
-RULE subsIns : sub;subs\/subs;sub\/I |- subs
-VIOLATION (TXT "{EX} InsPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+RULE subsIns : sub;subStar\/subStar;sub\/I |- subStar
+VIOLATION (TXT "{EX} InsPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ROLE ExecEngine MAINTAINS subsDel
-RULE subsDel : subs |- sub;subs\/subs;sub\/I
-VIOLATION (TXT "{EX} DelPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+RULE subsDel : subStar |- sub;subStar\/subStar;sub\/I
+VIOLATION (TXT "{EX} DelPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "INS isa INTO sub"
 RULE "INS isa INTO sub" : popset~;isa;popset |- sub
@@ -122,9 +132,9 @@ RELATION signature[Relation*Signature]
 RELATION isaStar[Signature]
 ROLE ExecEngine MAINTAINS signatureIsasIns, signatureIsasDel
 RULE signatureIsasIns : src;isaStar;src~ /\ tgt;isaStar;tgt~ |- isaStar[Signature]
-VIOLATION (TXT "{EX} InsPair;isaStar[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+VIOLATION (TXT "{EX} InsPair;isaStar;Signature;", SRC I, TXT ";Signature;", TGT I)
 RULE signatureIsasDel : isaStar[Signature] |- src;isaStar;src~ /\ tgt;isaStar;tgt~
-VIOLATION (TXT "{EX} DelPair;isaStar[Signature];Signature;", SRC I, TXT ";Signature;", TGT I)
+VIOLATION (TXT "{EX} DelPair;isaStar;Signature;", SRC I, TXT ";Signature;", TGT I)
 ENDPROCESS
 
 ENDCONTEXT

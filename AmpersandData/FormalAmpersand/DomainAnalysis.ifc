@@ -30,9 +30,9 @@ TABS[concepts :V[SESSION*Concept]
              BOX<SCOLS>
                   [ "type-term" : I[TypeTerm]
                   , "sub"       : sub     
-                  , "sub*"      : subs    
+                  , "sub*"      : subStar    
                   , "sub~"      : sub~    
-                  , "sub*~"     : subs~   
+                  , "sub*~"     : subStar~   
                   ]
            ]
     , atoms : V[SESSION*Atom]

@@ -17,6 +17,7 @@ TABS[ atoms : V[SESSION*Atom]
            , "isa*"  : isaStar
            , "isa~"  : isa~
            , "isa+~" : isaPlus~
+           , "isa*~" : isaStar~
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
