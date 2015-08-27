@@ -685,7 +685,7 @@ data DerivStep = DStep { lhs :: RTerm
 dRule :: Term TermPrim -> [DerivRule]
 dRule (PEqu _ l r) = [DEquR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule (PImp _ l r) = [DImpR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
-dRule term         = fatal 279 ("Illegal use of dRule with term "++show term)
+dRule term         = fatal 279 ("Illegal use of dRule with term "++showADL term)
 
 slideDown :: (RTerm -> Integer) -> RTerm -> [(Integer,DerivStep)]
 slideDown weight term

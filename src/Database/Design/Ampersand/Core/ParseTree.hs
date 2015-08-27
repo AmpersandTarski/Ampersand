@@ -78,7 +78,7 @@ data P_Context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         } deriving (Show) --For QuickCheck error messages
+         } deriving (Show) --For QuickCheck error messages only!
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
@@ -140,7 +140,7 @@ data P_Pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           }  deriving (Show)
+           } deriving (Show) --For QuickCheck error messages only!
 
 instance Named P_Pattern where
  name = pt_nm
@@ -205,7 +205,7 @@ data P_Declaration =
             , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
-            } deriving Show -- for debugging and testing only
+            } deriving (Show) --For QuickCheck error messages only!
 instance Eq P_Declaration where
  decl==decl' = origin decl==origin decl'
 instance Prelude.Ord P_Declaration where
@@ -219,7 +219,7 @@ data PAtomPair
   = PPair { pppos :: Origin
           , ppLeft  :: PAtomValue
           , ppRight :: PAtomValue
-          } deriving Show
+          } deriving (Show) --For QuickCheck error messages only!
 instance Traced PAtomPair where
   origin = pppos
 instance Flippable PAtomPair where
@@ -255,7 +255,25 @@ data PAtomValue
   | ComnBool Origin Bool
   | ScriptDate Origin Day
   | ScriptDateTime Origin UTCTime
-  deriving Show
+  -- deriving Show
+instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
+ show pav =
+  case pav of 
+    PSingleton   _ s _ -> singleQuote s
+    ScriptString   _ s -> singleQuote s
+    XlsxString     _ s -> singleQuote s
+    ScriptInt      _ i -> singleQuote (show i)
+    ScriptFloat    _ d -> singleQuote (show d)
+    XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    ComnBool       _ b -> singleQuote (show b)
+    ScriptDate     _ x -> singleQuote (show x)
+    ScriptDateTime _ x -> singleQuote (show x)
+   where 
+     singleQuote :: String -> String
+     singleQuote str = "\'" ++concatMap f str++"\'"
+     f :: Char -> String
+     f '\'' = "\\'"
+     f c    = [c] 
 instance Eq PAtomValue where
   PSingleton _ s _ == PSingleton _ s' _ = s == s'
   PSingleton _ _ _ == _                 = False
@@ -333,7 +351,7 @@ data TermPrim
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
    | PNamedR P_NamedRel
-   deriving Show
+   deriving (Show) --For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
    deriving Show
@@ -543,8 +561,9 @@ data P_Population
   | P_CptPopu { p_orig  :: Origin  -- the origin
               , p_cnme  :: String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
-              }
-    deriving Show
+              } 
+   deriving (Show) --For QuickCheck error messages only!
+  
 
 instance Named P_Population where
  name P_RelPopu{p_nmdr = nr} = name nr
@@ -562,7 +581,7 @@ data P_Interface =
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
            , ifc_Pos :: Origin
            , ifc_Prp :: String
-           } deriving Show
+           } deriving (Show) --For QuickCheck error messages only!
 
 instance Named P_Interface where
  name = ifc_Name
