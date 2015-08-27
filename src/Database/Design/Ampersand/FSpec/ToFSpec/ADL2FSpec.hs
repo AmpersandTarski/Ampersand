@@ -149,9 +149,12 @@ makeFSpec opts context
      gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
      initialpopsDefinedInScript = 
-                   [ ARelPopu{ popdcl = popdcl (head eqclass)
-                             , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
-                             }
+                   [ let dcl = popdcl (head eqclass)
+                     in ARelPopu{ popsrc = source dcl
+                                , poptgt = target dcl
+                                , popdcl = dcl
+                                , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
+                                }
                    | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
                    [ ACptPopu{ popcpt = popcpt (head eqclass)
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]

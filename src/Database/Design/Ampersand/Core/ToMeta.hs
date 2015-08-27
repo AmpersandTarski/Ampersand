@@ -227,7 +227,9 @@ instance MakeMeta PMessage where
 instance MakeMeta P_Population where
   makeMeta f pop 
    = case pop of
-      P_RelPopu{} -> P_RelPopu { p_nmdr  = makeMeta f (p_nmdr pop)
+      P_RelPopu{} -> P_RelPopu { p_src   =            (p_src pop)
+                               , p_tgt   =            (p_tgt pop)
+                               , p_nmdr  = makeMeta f (p_nmdr pop)
                                , p_orig  = makeMeta f (p_orig pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }

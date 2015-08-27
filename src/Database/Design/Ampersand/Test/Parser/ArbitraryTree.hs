@@ -236,7 +236,7 @@ instance Arbitrary PAtomPair where
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          P_RelPopu <$> arbitrary <*> arbitrary <*> arbitrary,
+          (P_RelPopu Nothing Nothing) <$> arbitrary <*> arbitrary <*> arbitrary,
           P_CptPopu <$> arbitrary <*> lowerId <*> arbitrary
         ]
 
