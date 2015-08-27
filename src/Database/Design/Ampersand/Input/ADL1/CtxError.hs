@@ -6,14 +6,15 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
+  , GetOneGuarded(..), uniqueNames
+  , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
   , mkTypeMismatchError
   , Guarded(..)
-  , whenCheckedIO, whenChecked
+  , whenCheckedIO, whenChecked, whenError
   , unguard
   )
 -- SJC: I consider it ill practice to export CTXE
@@ -300,6 +301,11 @@ whenChecked ga fgb =
       case ga of
          Checked a  -> fgb a
          Errors err -> Errors err
+
+whenError :: Guarded a -> Guarded a -> Guarded a
+whenError (Errors _) a = a
+whenError a@(Checked _) _ = a
+
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o

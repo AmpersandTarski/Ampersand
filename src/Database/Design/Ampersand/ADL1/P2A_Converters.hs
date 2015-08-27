@@ -364,7 +364,10 @@ pCtx2aCtx' _
                   ) <$> traverse (pAtomPair2aAtomPair dcl) aps
                     <*> maybeOverGuarded (isMoreGeneric pop dcl Src) src
                     <*> maybeOverGuarded (isMoreGeneric pop dcl Tgt) tgt
-             ) <$> findDeclLooselyTyped pop (name nmdr) (castConcept <$> src) (castConcept <$> tgt) -- disambiguate
+             ) <$> (namedRel2Decl nmdr
+                   `whenError`
+                    findDeclLooselyTyped pop (name nmdr) (castConcept <$> src) (castConcept <$> tgt)
+                   ) -- disambiguate
        P_CptPopu{}
          -> let cpt = castConcept (p_cnme pop) in  
             (\vals
