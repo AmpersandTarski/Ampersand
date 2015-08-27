@@ -398,7 +398,7 @@ genView_Object fSpec depth obj =
         getTemplateForObject :: IO(FilePath)
         getTemplateForObject 
            | exprIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $  templatePath </> "Propery"++".html"
+                       = return $  templatePath </> "Relation-PROP"++".html"
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO(FilePath)
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
@@ -481,6 +481,7 @@ renderTemplate (Template template absPath) setAttrs =
              ([],  [],    []) -> render appliedTemplate
              (parseErrs@(_:_), _, _)        -> templateError $ concat [ "Parse error in " ++ tmplt ++ " " ++ err ++ "\n" 
                                                                       | (tmplt,err) <- parseErrs]
-             ([], attrs@(_:_), _)        -> templateError $ "Uninitialized template attributes: " ++ show attrs
+             ([], attrs@(_:_), _)        -> templateError $ "Uninitialized template attributes: " ++ show attrs++
+                                                           "\n   Maybe you have an old version of that template. "
              ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
   where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
