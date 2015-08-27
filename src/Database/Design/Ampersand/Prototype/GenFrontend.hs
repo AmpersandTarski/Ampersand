@@ -341,7 +341,6 @@ genView_Object fSpec depth obj =
                         . setAttribute "exprIsUni"  (exprIsUni obj)
                         . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "exprIsProp" (exprIsProp obj)
-                        . setAttribute "exprIsIdent"(exprIsIdent obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName $ obj) -- no escaping for labels in templates needed
                         . setAttribute "expAdl"     (showADL . objExp $ obj) 
